@@ -1,0 +1,49 @@
+# EXACT COMMANDS — adversarial verification of the arm-37 "closest approach 9.50 pts" claim
+DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+
+# 1. arm 37 row + the UTC/CT offset trap in updated_at
+sqlite3 -header -column "$DB" "SELECT id,entry_px,stop_px,target_px,state,state_reason,signal_id,created_at,updated_at FROM armed_orders WHERE id IN (35,36,37);"
+sqlite3 "$DB" "SELECT id, created_at, updated_at, datetime(strftime('%s',replace(substr(updated_at,1,19),' ','T'))-18000,'unixepoch') AS updated_at_CT FROM armed_orders WHERE id=37;"
+#  -> 37 | 2026-09-03 11:58:33.110688496-05:00 | 2026-09-03 17:15:01.127106542+00:00 | 2026-09-03 12:15:01
+
+# 2. THE REFUTATION — max high over every 1m bar OVERLAPPING the live window 11:58:33 .. 12:15:01 CT
+sqlite3 -header -column "$DB" "
+SELECT datetime(open_time_ms/1000,'unixepoch','-5 hours') ct,o,h,l,c, round(29543.75-h,2) AS pts_below_entry
+FROM bars WHERE symbol='MNQ' AND tf='1m'
+ AND open_time_ms+60000 > (strftime('%s','2026-09-03 11:58:33')+18000)*1000
+ AND open_time_ms       < (strftime('%s','2026-09-03 12:15:01')+18000)*1000
+ORDER BY h DESC LIMIT 5;"
+#  -> 11:58:00 | 29539.25 | 29548.0 | 29530.5 | 29532.0 | -4.25     <-- THROUGH the entry
+#     12:00:00 | 29528.50 | 29534.25| 29520.0 | 29520.5 |  9.50     <-- what the peer reported
+
+# 3. reproduce the peer's 9.50 — only with a window that starts at 11:59:00 (drops the creation bar)
+sqlite3 -header -column "$DB" "
+SELECT datetime(open_time_ms/1000,'unixepoch','-5 hours') ct,h, round(29543.75-h,2) pts
+FROM bars WHERE symbol='MNQ' AND tf='1m'
+ AND open_time_ms >= (strftime('%s','2026-09-03 11:59:00')+18000)*1000
+ AND open_time_ms <  (strftime('%s','2026-09-03 12:15:01')+18000)*1000
+ORDER BY h DESC LIMIT 3;"
+#  -> 12:00:00 | 29534.25 | 9.5
+
+# 4. corroborate the 29548.00 print on 3 other timeframes (not a 1m artifact)
+for T in 3m 5m 15m; do sqlite3 "$DB" "SELECT '$T',datetime(open_time_ms/1000,'unixepoch','-5 hours'),o,h,l,c FROM bars WHERE symbol='MNQ' AND tf='$T' AND open_time_ms>=(strftime('%s','2026-09-03 11:45:00')+18000)*1000 AND open_time_ms<(strftime('%s','2026-09-03 12:00:00')+18000)*1000;"; done
+#  -> 3m 11:57 h=29548.0 ; 5m 11:55 h=29548.0 ; 15m 11:45 h=29548.0
+
+# 5. no sub-minute data exists anywhere, all time
+sqlite3 "$DB" "SELECT DISTINCT tf FROM bars WHERE symbol='MNQ';"   # finest = 1m
+
+# 6. peer's query, run verbatim (it reproduces; their TZ math is correct)
+sqlite3 "$DB" "SELECT datetime(open_time_ms/1000,'unixepoch','-5 hours'),o,h,l,c FROM bars WHERE symbol='MNQ' AND tf='1m' AND open_time_ms>=strftime('%s','2026-09-03 12:15:00')*1000+5*3600000 AND h>=29543.75 ORDER BY open_time_ms LIMIT 1;"
+sqlite3 "$DB" "SELECT strftime('%s','2026-09-03 12:15:00')*1000+5*3600000 theirs, (strftime('%s','2026-09-03 12:15:00')+18000)*1000 mine;"
+
+# 7. the two — and only two — order_update summary lines on 09-03
+grep -n "armed order_update summary" /home/hoang/nofx/data/nofx_2026-09-03.log
+# 8. the arm + cancel log lines
+grep -n "43512e1d" /home/hoang/nofx/data/nofx_2026-09-03.log
+awk '/^09-03 12:15:/{p=1} /^09-03 12:16:/{p=0} p' /home/hoang/nofx/data/nofx_2026-09-03.log | grep -E "DORMANT|summary|cancelled in NT8|disarmed"
+# 9. source: counter scope + placement price source (worktree /home/hoang/nofx-2day04)
+sed -n '1078,1105p' trader/armed_executor.go     # global atomics, Swap(0), 1/60s throttle
+sed -n '853,866p'   trader/armed_executor.go     # price = bars[len(bars)-1].Close
+sed -n '917,930p'   trader/armed_executor.go     # marketable guard / place
+sed -n '1145,1155p' trader/armed_executor.go     # state=="cancelled" -> "cancelled in NT8"
+sed -n '1432,1450p' trader/armed_executor.go     # cancelArmedOrdersSyncWith drains through onArmedOrderUpdate

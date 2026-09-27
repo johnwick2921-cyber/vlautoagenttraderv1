@@ -1,8 +1,72 @@
 // Dispatch 102 freezes load-bearing identifiers, including their surrounding guards.
+// Auth baseline advanced 2026-09-26 for FIX-SEC (fix/sec-0926-auth, DS-106,
+// audit 0926-system): auth/auth.go adds the TokenBlacklistStore interface +
+// fingerprint (P2-10 persistence behind the memory map) and the
+// BlacklistStoreEnabled reader (B-rule pass re-pinned the hash again — the
+// protected guards are byte-untouched: the HMAC signing-method check,
+// `&& token.Valid`, the Issuer, and the blacklist lookup; no identifier
+// renamed).
 // Lock baseline advanced after the separately authorized lock-keeper wave:
 // deploy/nofx-lock.sh @ ace51598 (fix/lock-defects-release-meta-halfbuilt),
 // following keeper @ 97a6525cb6d10d6c8898b2d277c0fe7581872c24.
 // Only its recorded hash changes; protected-file mutation checks remain enforced.
+// Auth baseline advanced 2026-09-24 for W-ONE-BUTTON M3 (CTO-dispatched,
+// feat/one-button-m3-update-authz; red-team H1/H2/M2 + defect 4, each ruled).
+// Delta against the PR base (dev 710e96aa): auth/auth.go +78 −4. The four
+// removed lines, each re-issued: BlacklistToken's comment; its entry
+// `items[token] = exp` → `exp.Add(ClockLeeway)` (a logged-out token must stay
+// refused through the parser's 60 s exp leeway); GenerateJWT's comment; and
+// `jwt.ParseWithClaims(` → `strictParser.ParseWithClaims(` (strict base64url
+// + WithIssuedAt + WithLeeway(ClockLeeway)). Added: the Scope claim, the
+// machine-token scopes and Claims.IsMachine (machine tokens are denied the
+// credential, Telegram-config and update routes), GenerateScopedJWT, and one
+// signToken every mint goes through. The protected guards are byte-untouched:
+// the HMAC signing-method check, `&& token.Valid`, the Issuer, and the
+// blacklist lookup. No identifier renamed.
+// Bar-feed baseline advanced 2026-09-24 for DS-102 U6 (fix/owed-ui-ci-1):
+//   provider/ninjatrader/tcp_server.go — the hello handshake log now renders an
+//     absent NT8 identity as n/a via helloProcessPair (nt8_pid/assembly_mvid;
+//     runbook 2026-09-23-addon-m21-f5.md C5, L7). Additive; no identifier
+//     renamed.
+// Bar-feed baselines advanced 2026-09-25 for W117 PR-A execution-evidence
+// (fix/w117-a-exec-evidence, PR #218; re-pinned after the CTO's frontend gate
+// found the red at HEAD cb025d64 — the wave changed both files and never
+// re-pinned, class 110 again). Deltas against the PR base 0fb0f980, +63 −38:
+//   provider/ninjatrader/tcp_framing.go  sha256 09344e8b… — F1 c66e2d5e
+//     (entry receipt fences: EntryReceipt/ReadOnlyReceipt bookkeeping and the
+//     readLoop note) + F2 e3af23ec (ordered execution dispatch frame fields).
+//   provider/ninjatrader/tcp_server.go   sha256 92bcd868… — F1's GetPositions
+//     fence and F2's ordered-execution dispatch: OrderedHandled guards around
+//     the order fan-out, the handleFill extraction, installNTOrderedExecutions.
+//   No identifier renamed, no guard removed; every removed line re-issued.
+// Bar-feed baselines advanced AGAIN the same day (2026-09-25, CTO review
+// of PR #218): F2 was ruled OUT of the PR and reverted (e3af23ec + b49f659c),
+// and the F-1 P0 fix landed on the PRODUCTION FramePositions path.
+//   provider/ninjatrader/tcp_framing.go  sha256 5c5a015c… — the F2 revert
+//     restored the pre-F2 bytes exactly (the earlier 09344e8b… pin is gone).
+//   provider/ninjatrader/tcp_server.go   sha256 479de30b… — the F2 revert
+//     minus the F-1 receipt-clock stamp in the FramePositions case.
+//   No identifier renamed, no guard removed.
+// Bar-feed baselines advanced AGAIN on the dev merge (origin/dev 9c106d0b,
+// #216/#219 touched tcp_server.go): the MERGED bytes pin to sha256 fdb54226…
+//   (re-computed from the merged tree — both pre-merge pins are superseded).
+// Bar-feed baseline advanced 2026-09-26 for FIX-P1A (fix/farside-proof-reconnect,
+// the far-side AddOn build proof must be cleared on disconnect and re-proven by
+// the new connection's hello):
+//   provider/ninjatrader/tcp_server.go — closeConn gains one line
+//     `s.farSideBuild.Store("")` plus its comment (the FIX-P1A retirement of the
+//     proof). Additive; no identifier renamed, no guard removed, the hello/
+//     heartbeat/order_snapshot prove sites are byte-untouched.
+// Baseline advanced AGAIN 2026-09-26 for the FIX-P1A CI-red fix-up (same branch,
+// the CTO's traceability ruling): provider/ninjatrader/tcp_framing.go gains
+//   `ErrFarSideNotProven` (a new sentinel beside ErrAddonBuildTooOld so a
+//   link-down / not-yet-re-proven refusal names its true reason). Additive; no
+//   existing identifier renamed, no wire shape changed.
+// Bar-feed baseline advanced 2026-09-25 for DS-105 DEFAULTS-SANE (#212 fold):
+//   provider/ninjatrader/tcp_server.go — the live-sink age bound's name is
+//     exported for the Picture floor pins (liveFrameMaxAgeMs → LiveFrameMaxAgeMs
+//     in bar_live_sink.go; tcp_server.go only re-qualifies its WARN field, one
+//     identifier renamed, no guard touched).
 // Bar-feed baselines advanced 2026-09-10 for two owner-dispatched waves that
 // touched the protected files without renaming an identifier:
 //   provider/ninjatrader/tcp_server.go  @ a53359ce (fix/contract-roll: the
@@ -43,6 +107,17 @@
 // compiler (the partner mirror). Nothing removed or bumped: modernc.org/sqlite
 // stays v1.40.0, libc stays v1.66.10, gorm.io/driver/sqlite stays v1.6.0. The
 // Go security guard the pin protects (patched toolchain/deps) is intact.
+// go.mod baseline advanced 2026-09-25 for WAVE 117 PR-I (fix/w117-i-deps,
+// CTO-dispatched dependency-security fold, CTO ruling on F33):
+//   golang.org/x/crypto v0.53.0 -> v0.55.0 — the highest 1.25-compatible
+//     (v0.56.0 declares go 1.26.0; the toolchain wave owns the remainder).
+//     Clears GO-2026-6303; GO-2026-6354/6355 remain, unreachable per
+//     govulncheck; GO-2026-5932 has no fix.
+//   github.com/consensys/gnark-crypto v0.19.0 -> v0.19.2 (patched).
+//   tidy's x/net v0.56.0 -> v0.57.0, x/text v0.39.0 -> v0.41.0,
+//     x/sync v0.21.0 -> v0.22.0, x/sys v0.46.0 -> v0.47.0.
+// The go directive is BYTE-UNTOUCHED: `go 1.25.13` stays (CTO §1(a): a
+// go 1.26.0 directive is a separate owner-visible toolchain wave).
 // tcp_server.go baseline advanced 2026-09-21 for W-PICTURE-HTF (owner GO,
 // merged 23050993): the baseline hash was last pinned at 42c35e2d (the picture
 // branch's own 5/6 commit); the merged-HEAD delta vs that pin is EXACTLY the
@@ -52,6 +127,135 @@
 // removals, no identifier renamed, no guard removed; the bar-feed guards this
 // pin protects (SubscribeBarsHistoryFor, bars_history_request write,
 // bars_history_data/_error fan-out) are byte-untouched by that delta.
+// tcp_server.go baseline advanced 2026-09-24 for WAVE 1a-plan N2 (comment
+// hunks only, owner GO): the two stale "NT8 does not re-emit the just-closed
+// bar" comments corrected to the real re-emit behaviour
+// (VLBarsSubscriptionManager.cs:539-551, cache finalises the re-emitted bar).
+// Zero code change, no identifier renamed, no guard removed.
+// tcp_server.go baseline advanced again 2026-09-24 by the origin/dev merge of
+// PR #199 (one-button M5): helloProcessPair renders nt8_pid/assembly_mvid as
+// "n/a" when absent (L7 — an unread value must not read as a datum, runbook
+// 2026-09-23-addon-m21-f5.md C5). ADDITIVE helper + one log line; the bar-feed
+// guards this pin protects are byte-untouched by that delta.
+// Wire baselines advanced 2026-09-22 for W-ONE-BUTTON M2 site 7 (CTO-dispatched,
+// feat/one-button-m2-maintenance-hold; the TCP schema must change in lockstep):
+//   provider/ninjatrader/tcp_framing.go — +59 −0: HelloPayload's five omitempty
+//     epoch fields + the maintenance / maintenance_ack frames and payloads.
+//   provider/ninjatrader/tcp_server.go  — +94 −6: the maint field, the accept-time
+//     connection record + maintenance push, the hello/ack record calls, and the
+//     queue's hold drop. The six removed lines are flushPending's return shape
+//     (it now wraps flushPendingReport), one comment, and the hello log's extra
+//     args — the stale-age check and the requeue-on-error guard are intact.
+//   ninjascript/VLTraderTCPClient.cs   — +197 −3: VL_BUILD_ID 2026-09-20-p1 →
+//     2026-09-22-m2 (lockstep with ExpectedAddonBuild), SendHello builds its
+//     dictionary before the same WriteEnvelope (hello is still the first frame),
+//     HandleMaintenance + census ack + the entry refusal. No identifier renamed.
+// Wire baselines advanced 2026-09-23 for W-ONE-BUTTON M2.1 (review hardening;
+// feat/one-button-m2.1-hardening), each delta measured against the M2 head:
+//   provider/ninjatrader/tcp_framing.go — +4 −0: CensusConnection.Settled.
+//   provider/ninjatrader/tcp_server.go  — +16 −4: the flush re-checks the hold
+//     with the writer lock held (review F1), and threads the caller's own signal
+//     id through it so a drop inside its own send is reported Own (review N2).
+//     The four removed lines are M2's own flushPendingReport / reportDrops call
+//     shapes, re-issued with the id; no pre-M2 line, guard or identifier touched.
+//   ninjascript/VLTraderTCPClient.cs   — +60 −38: VL_BUILD_ID 2026-09-22-m2 →
+//     2026-09-23-m21; the census M2 added is restructured to snapshot each NT8
+//     collection under its own lock (no nesting) and to report 'settled';
+//     source_hash is taken at activation. Every removed line is M2's own census
+//     code; no pre-M2 line, guard or identifier is touched.
+// Wire baselines advanced 2026-09-23 for W-EXEC-TRUTH W4 (PR #192,
+// fix/w4-picture-evidence; found RED by the CTO's own gate at 17:03 CT — the
+// wave's PR line had reported the GUIDE vitest subset, 5 files / 24 tests,
+// which is a claim about a subset and not about the suite: class 110 again,
+// this time on the lane that had just filed it against others). Deltas
+// measured against the PR base eb7294c9:
+//   provider/ninjatrader/tcp_framing.go — +12 −2: the Contract field on
+//     BarsHistoricalPayload and BarUpdatePayload (json contract,omitempty)
+//     plus their doc comments. The AddOn has stamped `contract` on EVERY bar
+//     frame since 2026-09-11 (VLBarsSubscriptionManager.cs:488 / :562) and Go
+//     had no field for it. The two removed lines are the two `Bars []Bar`
+//     lines re-issued with gofmt's new field alignment — nothing else. No
+//     identifier renamed, no frame type changed, no C# change in the wave.
+//   provider/ninjatrader/tcp_server.go  — +20 −5: barIngestMsg.contract; the
+//     D24 liveFrameTooOld gate around the fan-out in drainBarIngest (a frame
+//     that reached us long after it was emitted is CACHED but not treated as
+//     a live entry event); and the contract threaded through enqueueBarUpdate
+//     to its readLoop caller. EVERY removed line is re-issued with the
+//     contract added: the `bars []Bar` field (gofmt realignment), the
+//     fanOutLiveBars call (now in the else branch), enqueueBarUpdate's
+//     signature, its barIngestMsg literal, and its call site. The cache write
+//     (s.barCache.Upsert) is byte-untouched and still runs for every frame,
+//     including a refused one. No identifier renamed, no guard removed.
+//   The bar-feed guards this pin protects are byte-untouched by both deltas:
+//   SubscribeBarsHistoryFor, the bars_history_request write, and the
+//   bars_history_data / _error fan-out.
+// Ops baselines advanced 2026-09-26 for DS-104 FIX-OPS (fix/ops-observability,
+// CTO-dispatched observability/ops wave) — the wave's P2 items change two pinned
+// files BY DISPATCH, not by drift:
+//   deploy/nofx-db-backup.sh  sha256 6d49d291… — P2-5: dual-DB online backup
+//     (main + 212 GB research.db) via a backup_one(src,prefix) helper, prune
+//     and promote_weekly stages, NOFX_DB_RESEARCH / NOFX_KEEP_RESEARCH_* knobs.
+//     The pre-existing main-DB backup path, quick_check and gzip steps are
+//     preserved byte-for-byte inside backup_one; the script's CLI contract
+//     (daily|weekly|prune) is unchanged.
+//   deploy/nofx-db-backup.sh  sha256 0e9dae38… — REVISED same wave after the
+//     CTO's P0 gate on the first version (a 213 GB research snapshot every
+//     timer run would fill the disk): research is now OPT-IN
+//     (NOFX_BACKUP_RESEARCH=1, default OFF — default run = main DB only),
+//     a disk-space precheck (2.5 × source size AND a NOFX_BACKUP_MIN_FREE_GB
+//     50 GB post-backup floor) refuses loudly with nothing written, and the
+//     opted-in retention defaults to 1/1 instead of mirroring 14/8.
+//     Contract tests: deploy/nofx_db_backup_test.go (fake small DBs + a PATH
+//     df shim) — default-touches-only-main, opt-in-backs-up-research,
+//     refuse-on-low-space, refuse-on-floor; mutation "default ON" fails the
+//     first one.
+//   logger/logger.go          sha256 318022bbb6… — P2-2: logRetentionDays()
+//     (LOG_RETENTION_DAYS, 0 = OFF) and pruneOldLogs(dir, now, days, current)
+//     called once at init; never today's/live file. Default OFF: with the knob
+//     unset the shipped behavior is identical to before the change.
+// The protections these pins exist for are byte-untouched: the NT8 wire
+// (tcp_server.go / tcp_framing.go), the auth guard, and the bar-feed guards.
+// Wire baseline advanced 2026-09-25 for W117 slice B (fix/w117-b-cancel-truth,
+// port of #117 2f4db4f3): tcp_server.go's history-delivery send now holds
+// histSubMu through the nonblocking channel send (teardown closes the channel
+// under the write lock, so the read lock must span lookup + delivery). The
+// bars_history_data / _error fan-out guards themselves are byte-untouched;
+// only the lock release point moved. No identifier renamed.
+// Wire baselines advanced 2026-09-25 for W117 slice A (fix/w117-a2-ordered-exec,
+// the F2 rebuild — per-(symbol,account) FIFO workers instead of the failed
+// read-goroutine consumers), each delta measured against the PR base:
+//   provider/ninjatrader/tcp_framing.go — the three wire structs gain
+//     OrderedOwned / BookGate json:"-" fields (routing flags, never
+//     serialized). No identifier renamed, no frame type changed.
+//   provider/ninjatrader/tcp_server.go  — orderedMu/orderedOwners/snapSeq
+//     fields; the read loop enqueues order/fill/close to the owner's worker
+//     before the advisory channel send, and advances the snapshot watermark.
+//     The bar-feed guards this pin protects are byte-untouched by the delta.
+//     Re-pinned at the dev-merge heads against the MERGED bytes (093a40e7 →
+//     9ef5a75b…, 9c106d0b → 664cc10b…).
+// Wire baselines advanced 2026-09-26 for FIX-DOUBLE-ENTRY (fix/double-entry-replay,
+// the reconnect re-send double-entry guard), each delta measured against the
+// wave base 04ae1c2f:
+//   provider/ninjatrader/tcp_framing.go — +1 −1: FillPayload.Status's comment
+//     gains "duplicate_ignored" (AddOn seen-signal dedupe). No field, frame or
+//     identifier changed.
+//   provider/ninjatrader/tcp_server.go  — +56 −2: the attempted-replay guard in
+//     the flush path (settle/resend-once/hold/drop before the write), the
+//     writeFrameHook test seam, the accept-time reconnect stamp, the fill-echo
+//     note, the boot line, and the B2/B3 log hardening (settle/drop WARN with
+//     trader_id + symbol + signal_id + op). The two removed lines are the old
+//     write call re-issued with the seam — the stale-age check, the hold checks
+//     and the Sunday-Shield re-queue are intact. (Re-pinned once after the
+//     first full -race run caught a botched accept-loop edit — beginConnectionRecord
+//     and the client-connected log were restored byte-for-byte; that fix is
+//     inside the +56.)
+//   ninjascript/VLTraderTCPClient.cs   — +45 −0: the seen-signal set
+//     (SEEN_SIGNAL_TTL_MINUTES 10 / SEEN_SIGNAL_CAP 1024, never cleared on
+//     fill) answering a replayed entry with fill status "duplicate_ignored"
+//     before CreateOrder; P3 (DS-101 review) hardened the cap to
+//     oldest-first eviction past the cap + a WARN. ADDITIVE only: no
+//     identifier renamed, no guard removed, no VL_BUILD_ID bump (the owner
+//     compiles + F5s).
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

@@ -1,0 +1,63 @@
+{
+  "assignment": 15,
+  "current_base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_base": "7a8adce0",
+  "historical_graph_artifact": "historical-graph.json",
+  "historical_covered_paths": 7,
+  "current_assigned_paths": 41,
+  "cgc_evidence": "root cgc-file-paths.json, historical 781-file export, same seven assigned paths",
+  "corrections": [
+    {
+      "node": "function:store/driver.go:openSQLite",
+      "historic": "WAL",
+      "current": "DELETE journal mode",
+      "evidence": "store/driver.go:190"
+    },
+    {
+      "node": "function:store/driver.go:boolDefault",
+      "historic": "environment parser",
+      "current": "SQL boolean literal selection",
+      "evidence": "store/driver.go:269-281"
+    },
+    {
+      "node": "function:store/visibility.go:IsVisibleExchange",
+      "historic": "fully configured",
+      "current": "any config field or enabled",
+      "evidence": "store/visibility.go:72-89"
+    },
+    {
+      "node": "function:store/ai_model.go:hasUsableAPIKey",
+      "historic": "placeholder rejection",
+      "current": "nonblank stored key or provider env key",
+      "evidence": "store/ai_model.go:191-207"
+    }
+  ],
+  "source_verified_edges": [
+    {
+      "from": "api/strategy.go:330",
+      "to": "store/strategy.go:554",
+      "relationship": "calls preservation helper before persistence"
+    },
+    {
+      "from": "api/strategy.go:354",
+      "to": "store/strategy.go:805",
+      "relationship": "json.Marshal dispatches custom MarshalJSON"
+    },
+    {
+      "from": "api/handler_trader.go:772",
+      "to": "store/trader.go:223",
+      "relationship": "calls Delete before runtime side effects"
+    },
+    {
+      "from": "trader/fade_facts.go:43",
+      "to": "store/fade_or_history.go:19",
+      "relationship": "reads prior OR median"
+    },
+    {
+      "from": "trader/ninjatrader/close_sync.go:169",
+      "to": "store/position_builder.go:56",
+      "relationship": "calls ProcessTradeWithExitReason"
+    }
+  ],
+  "limitations": "AST syntax-only edges in functions.json are not type-resolved; historical package import fan-out not equivalent to function usage; report names unreviewed caller boundaries."
+}

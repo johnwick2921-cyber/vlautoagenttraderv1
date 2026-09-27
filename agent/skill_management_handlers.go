@@ -21,10 +21,6 @@ func hasExplicitCreateIntentForDomain(text, domain string) bool {
 	return containsAny(lower, []string{"创建", "新建", "创一个", "创个", "建一个", "create", "new"})
 }
 
-func extractURL(text string) string {
-	return strings.TrimSpace(urlPattern.FindString(text))
-}
-
 func setField(session *skillSession, key, value string) {
 	ensureSkillFields(session)
 	key = normalizeFieldKey(session, key)
@@ -148,10 +144,6 @@ func supportsBulkTargetSelection(skillName, action string) bool {
 	}
 }
 
-func resolveTargetFromText(text string, options []traderSkillOption, existing *EntityReference) *EntityReference {
-	return resolveTargetSelection(text, options, existing).Ref
-}
-
 func hasStrictOptionMention(text string, options []traderSkillOption) bool {
 	lower := strings.ToLower(strings.TrimSpace(text))
 	if lower == "" {
@@ -168,17 +160,6 @@ func hasStrictOptionMention(text string, options []traderSkillOption) bool {
 		}
 	}
 	return false
-}
-
-func isSimpleEntityMutationAction(action string) bool {
-	switch strings.TrimSpace(action) {
-	case "update", "update_name", "update_status", "update_endpoint", "update_bindings",
-		"configure_strategy", "configure_exchange", "configure_model",
-		"update_prompt", "update_config", "activate", "duplicate":
-		return true
-	default:
-		return false
-	}
 }
 
 func hasExplicitManagementDomainCue(text, domain string) bool {
@@ -601,32 +582,6 @@ func strategyCreateConfigReady(session skillSession, cfg store.StrategyConfig, t
 
 func strategyCreateFinalConfirmationReady(session skillSession) bool {
 	return strings.EqualFold(strings.TrimSpace(fieldValue(session, "awaiting_final_confirmation")), "true")
-}
-
-func strategyCreateHasExplicitConfigBeyondType(session skillSession) bool {
-	for _, key := range manualStrategyEditableFieldKeys() {
-		switch key {
-		case "name", "description", "is_public", "config_visible", "strategy_type":
-			continue
-		}
-		if strings.TrimSpace(fieldValue(session, key)) != "" {
-			return true
-		}
-	}
-	patchRaw := strings.TrimSpace(fieldValue(session, strategyCreateConfigPatchField))
-	if patchRaw == "" {
-		return false
-	}
-	var patch map[string]any
-	if err := json.Unmarshal([]byte(patchRaw), &patch); err != nil {
-		return true
-	}
-	for key := range patch {
-		if strings.TrimSpace(key) != "" && strings.TrimSpace(key) != "strategy_type" {
-			return true
-		}
-	}
-	return false
 }
 
 func strategyCreateMissingTemplateFields(session skillSession, cfg store.StrategyConfig) []string {
@@ -1287,36 +1242,6 @@ func availableModelProvidersMessage(lang string) string {
 	return modelProviderChoicePrompt(lang)
 }
 
-func inferCreateDisplayName(text string) string {
-	clean := func(value string) string {
-		value = strings.TrimSpace(value)
-		value = strings.Trim(value, "“”\"'：: ，,。.;；")
-		for _, sep := range []string{"，", ",", "。", "；", ";", "\n"} {
-			if idx := strings.Index(value, sep); idx >= 0 {
-				value = strings.TrimSpace(value[:idx])
-			}
-		}
-		for _, marker := range []string{" 交易所", " 模型", " 策略", " exchange", " model", " strategy"} {
-			if idx := strings.Index(value, marker); idx >= 0 {
-				value = strings.TrimSpace(value[:idx])
-			}
-		}
-		for _, suffix := range []string{"的交易员", "的模型", "的策略", "的交易所", "这个交易员", "这个模型", "这个策略", "这个交易所"} {
-			if strings.HasSuffix(value, suffix) {
-				value = strings.TrimSpace(strings.TrimSuffix(value, suffix))
-			}
-		}
-		return strings.TrimSpace(value)
-	}
-	if value := extractDelimitedSegmentAfterKeywords(text, []string{"名称叫", "名字叫", "配置名", "叫", "名为", "名称", "名字是", "called"}); value != "" {
-		return clean(value)
-	}
-	if value := extractQuotedContent(text); value != "" && !containsAny(strings.ToLower(text), []string{"api key", "apikey", "api_key", "secret", "passphrase"}) {
-		return clean(value)
-	}
-	return ""
-}
-
 func formatModelCreateDraftSummary(lang string, session skillSession) string {
 	providerID := fieldValue(session, "provider")
 	name := defaultIfEmpty(fieldValue(session, "name"), defaultIfEmpty(defaultModelConfigName(providerID), "未命名模型"))
@@ -1550,45 +1475,6 @@ func hasExplicitStrategyDetailIntent(text string) bool {
 		"什么样", "怎么样", "详情", "详细", "prompt", "提示词",
 		"哪个策略", "哪一个策略", "你改的是哪个策略", "你把哪个策略",
 		"what kind", "details", "detail", "prompt", "which strategy",
-	})
-}
-
-func shouldPreferStrategyQueryDetail(text string) bool {
-	lower := strings.ToLower(strings.TrimSpace(text))
-	if lower == "" {
-		return false
-	}
-	if !containsAny(lower, []string{"?", "？", "哪个", "哪一个", "哪条", "which"}) {
-		return false
-	}
-	return containsAny(lower, []string{"策略", "strategy"})
-}
-
-func shouldExplainStrategyRuntimeBoundary(text string) bool {
-	lower := strings.ToLower(strings.TrimSpace(text))
-	if lower == "" {
-		return false
-	}
-	if !containsAny(lower, []string{"策略", "strategy"}) {
-		return false
-	}
-	if !containsAny(lower, []string{"启动", "运行", "run", "start", "deploy"}) {
-		return false
-	}
-	if containsAny(lower, []string{"交易员", "trader", "机器人", "bot"}) {
-		return false
-	}
-	return true
-}
-
-func wantsDefaultStrategyConfig(text string) bool {
-	lower := strings.ToLower(strings.TrimSpace(text))
-	if lower == "" {
-		return false
-	}
-	return containsAny(lower, []string{
-		"默认配置", "默认策略", "默认模板", "模板配置",
-		"default config", "default strategy", "default template",
 	})
 }
 
@@ -1839,24 +1725,6 @@ func formatStrategyDetailResponse(lang string, strategy *store.Strategy, cfg sto
 	}
 	lines = append(lines, "- I can also expand the full strategy config JSON or walk through the prompt section by section.")
 	return strings.Join(lines, "\n")
-}
-
-func (a *Agent) describeDefaultStrategyConfig(lang string) string {
-	if lang != "zh" {
-		lang = "en"
-	}
-	cfg := store.GetDefaultStrategyConfig(lang)
-	name := "Default Strategy Template"
-	description := "System default strategy configuration template"
-	if lang == "zh" {
-		name = "默认策略模板"
-		description = "系统默认策略配置模板"
-	}
-	return formatStrategyDetailResponse(lang, &store.Strategy{
-		ID:          "default_strategy_template",
-		Name:        name,
-		Description: description,
-	}, cfg)
 }
 
 func (a *Agent) describeTrader(storeUserID, lang string, target *EntityReference) (string, bool) {
@@ -2337,43 +2205,6 @@ func (a *Agent) handleModelCreateSkill(storeUserID string, userID int64, lang, t
 	return fmt.Sprintf("Created model config %s.", fieldValue(session, "name"))
 }
 
-func inferModelCredentialFromText(provider, text string) string {
-	provider = strings.ToLower(strings.TrimSpace(provider))
-	text = strings.TrimSpace(text)
-	if provider == "" || text == "" {
-		return ""
-	}
-
-	if value := extractQuotedContent(text); value != "" {
-		trimmed := strings.TrimSpace(value)
-		if credentialLooksCompatibleWithProvider(provider, trimmed) {
-			return trimmed
-		}
-	}
-
-	if credentialLooksCompatibleWithProvider(provider, text) {
-		return text
-	}
-	return ""
-}
-
-func credentialLooksCompatibleWithProvider(provider, value string) bool {
-	provider = strings.ToLower(strings.TrimSpace(provider))
-	value = strings.TrimSpace(value)
-	if provider == "" || value == "" {
-		return false
-	}
-
-	switch provider {
-	case "claw402", "blockrun-base", "blockrun-sol":
-		return hexCredentialPattern.MatchString(value)
-	case "openai":
-		return openAIAPIKeyPattern.MatchString(value)
-	default:
-		return genericAPIKeyPattern.MatchString(value) || hexCredentialPattern.MatchString(value)
-	}
-}
-
 func (a *Agent) handleStrategyCreateSkill(storeUserID string, userID int64, lang, text string, session skillSession) string {
 	if session.Name == "" {
 		session = skillSession{Name: "strategy_management", Action: "create", Phase: "collecting"}
@@ -2623,10 +2454,6 @@ func (a *Agent) handleSimpleEntitySkill(storeUserID string, userID int64, lang, 
 	default:
 		return "", false
 	}
-}
-
-func (a *Agent) askLLMAmbiguousTargetQuestion(storeUserID string, userID int64, lang, text string, session skillSession, skillName, action string, allOptions, ambiguous []traderSkillOption) string {
-	return formatAmbiguousTargetPrompt(lang, ambiguous)
 }
 
 func defaultIfEmpty(value, fallback string) string {

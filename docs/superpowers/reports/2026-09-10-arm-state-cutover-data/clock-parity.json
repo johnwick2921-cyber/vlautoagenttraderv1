@@ -1,0 +1,12 @@
+{
+  "parent": "2f80d743",
+  "result": "byte-identical",
+  "samples": [
+    "10:07",
+    "11:07",
+    "\ud83d\udcc8 regime input window @10:07:08 CT: BEFORE window=UNKNOWN (warming: 0 5m rows via 5m-ring (pre-wave) did not reach 5 complete session-days) \u00b7 AFTER window=UNKNOWN (warming: 0 5m rows via none did not reach 5 complete session-days) \u00b7 \u0394UNKNOWN \u00b7 cap=3 days (rule UNCHANGED \u2014 same estimator, deeper input; owner ruling 2026-09-09)",
+    "\ud83d\udcc8 regime input window @11:07:08 CT: BEFORE window=UNKNOWN (warming: 0 5m rows via 5m-ring (pre-wave) did not reach 5 complete session-days) \u00b7 AFTER window=UNKNOWN (warming: 0 5m rows via none did not reach 5 complete session-days) \u00b7 \u0394UNKNOWN \u00b7 cap=3 days (rule UNCHANGED \u2014 same estimator, deeper input; owner ruling 2026-09-09)",
+    "\ud83d\udd73 bar horizon: ring=2500 \u00b7 warn window=15m0s \u00b7 boot grace=10m0s \u00b7 at 10:07:08 CT \u00b7 depths none cached yet",
+    "\ud83d\udd73 bar horizon: ring=2500 \u00b7 warn window=15m0s \u00b7 boot grace=10m0s \u00b7 at 11:07:08 CT \u00b7 depths none cached yet"
+  ]
+}

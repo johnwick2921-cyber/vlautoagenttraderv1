@@ -1,0 +1,84 @@
+{
+  "method": "connected browser; no signing-secret access; protected pages redirected to login",
+  "base": "http://localhost:8080",
+  "rows": [
+    {
+      "path": "/agent",
+      "landed": "/agent",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": [
+        "NOFXi may make mistakes.",
+        "Ask NOFXi anything...  ⌘K"
+      ]
+    },
+    {
+      "path": "/traders",
+      "landed": "/login",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": []
+    },
+    {
+      "path": "/dashboard",
+      "landed": "/login",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": []
+    },
+    {
+      "path": "/strategy",
+      "landed": "/login",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": []
+    },
+    {
+      "path": "/guide",
+      "landed": "/login",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": []
+    },
+    {
+      "path": "/settings",
+      "landed": "/login",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": []
+    },
+    {
+      "path": "/faq",
+      "landed": "/faq",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": [
+        "NoFx",
+        "nofx",
+        "NoFx",
+        "nofx",
+        "nofx",
+        "nofx",
+        "nofx",
+        "NOFX",
+        "NOFX",
+        "nofx",
+        "nofx",
+        "nofx",
+        "NoFx",
+        "nofx"
+      ]
+    },
+    {
+      "path": "/welcome",
+      "landed": "/login",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": []
+    },
+    {
+      "path": "/register",
+      "landed": "/register",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": []
+    },
+    {
+      "path": "/login",
+      "landed": "/login",
+      "title": "VL Trader - AI Trading System",
+      "occurrences": []
+    }
+  ]
+}

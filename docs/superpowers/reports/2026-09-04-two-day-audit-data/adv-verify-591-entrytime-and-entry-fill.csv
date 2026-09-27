@@ -1,0 +1,28 @@
+check,value,source,evidence_tier,command
+pos591_entry_time_ms,1788444314627,trader_positions,A,"sqlite3 ""file:/home/hoang/nofx/data/data.db?mode=ro"" ""SELECT entry_time FROM trader_positions WHERE id=591;"""
+pos591_entry_time_ct,2026-09-03 09:05:14.627,trader_positions,A,"datetime(entry_time/1000,'unixepoch','-5 hours')"
+pos591_created_at_ms,1788444314627,trader_positions,A,same row
+pos591_exchange_position_id,reconcile_MNQ_SHORT_1788444314627,trader_positions,A,"same nowMs embedded in the id => entry_time IS the materialization instant"
+pos591_source,reconcile,trader_positions,A,same row
+pos591_updated_at,1788465858 (SECONDS not ms = 2026-09-03 15:04:18 CT),trader_positions,A,"separate unit bug; entry_time never corrected"
+log_untracked,"09-03 09:03:54 [INFO] ninjatrader/reconcile.go:395 UNTRACKED MNQ SHORT @ 29285.00",/home/hoang/nofx/data/nofx_2026-09-02.log:84995,A,"grep -nE ""UNTRACKED position|MATERIALIZED untracked"" nofx_2026-09-02.log"
+log_materialized,"09-03 09:05:14 [WARN] ninjatrader/reconcile.go:436 MATERIALIZED MNQ SHORT qty=1 @ 29285.00 acct=Sim101",/home/hoang/nofx/data/nofx_2026-09-02.log:84997,A,same grep
+note_logfile,"09-03 events live in nofx_2026-09-02.log (mtime Sep 3 10:28); nofx_2026-09-03.log has ZERO matches",filesystem,A,"ls -la /home/hoang/nofx/data/*.log"
+src_entrytime,"trader/ninjatrader/reconcile.go:415  EntryTime: nowMs",worktree dev tip,A,"grep -n ""EntryTime:"" trader/ninjatrader/reconcile.go"
+src_log_line_drift,"MATERIALIZED Warnf is line 445 at dev tip vs 436 in the log => the 09-03 09:05 binary was an older rev (boot 7 started 23:12:54)",worktree,A,"grep -n ""MATERIALIZED untracked"" trader/ninjatrader/reconcile.go"
+src_no_fill_write,"reconcile.go contains ZERO fill-recording calls (no CreateFill/Fill()) — the materialize path structurally cannot write trader_fills",worktree,A,"grep -n ""Fill(|Fills()|CreateFill|InsertFill"" trader/ninjatrader/reconcile.go -> no matches"
+reconcile_interval,20s,trader/ninjatrader/reconcile.go:35,A,"grep -n reconcileInterval trader/ninjatrader/reconcile.go"
+untracked_grace,60s,trader/ninjatrader/reconcile.go:60,A,same
+fills_total_rows,433,trader_fills,A,"SELECT COUNT(*) FROM trader_fills;"
+fills_max_id,433 = nt8-exit-591 BUY 29355.0 @ 2026-09-03 09:20:45 CT,trader_fills,A,"SELECT MAX(id),MAX(created_at) FROM trader_fills;"
+fills_at_29285_alltime,0,trader_fills,A,"SELECT * FROM trader_fills WHERE price BETWEEN 29280 AND 29290;  -> only id 366 @29283.75 on 08-23"
+peer_window_query_reproduced,"1 row (id 433) — window 1788440000000..1788460000000 = 09-03 07:53:20..13:26:40 CT, correctly brackets the fill",trader_fills,A,"SELECT ... WHERE created_at BETWEEN 1788440000000 AND 1788460000000;"
+entry_fill_by_source_587_590_system,"4 of 4 have an entry fill (ids 425/427/429/431, order_id=2)",trader_fills+trader_positions,A,"correlated subquery on price+/-600s"
+entry_fill_by_source_reconcile,"0 of 5 (591,586,584,580,575) have an entry fill",trader_fills+trader_positions,A,same
+entry_fill_by_source_armed_entry,"0 of 4 (585,582,579,577,576) have an entry fill",trader_fills+trader_positions,A,same
+armed_orders_35_state,filled / fill_price 29285.0 / fill_quantity 0 / entry_class armed_fill,armed_orders,A,"SELECT * FROM armed_orders WHERE id=35;"
+armed_orders_no_fill_timestamp,"schema has fill_price + fill_quantity but NO fill timestamp column; updated_at = 2026-09-03 15:28:29+00 = 10:28:29 CT, ~85 min after the fill",armed_orders,A,".schema armed_orders"
+tape_bound_on_fill,"1m MNQ: 09:02 high 29278.25 (<29285, no touch); 09:03 high 29291.75 (touch). Arm placed 09:02:54. => fill inside 09:03:00-09:03:59",bars,A,"SELECT datetime(open_time_ms/1000,'unixepoch','-5 hours'),o,h,l,c FROM bars WHERE symbol='MNQ' AND tf='1m' AND open_time_ms BETWEEN 1788443880000 AND 1788444700000;"
+cadence_bound_on_fill,"prior reconcile pass ~09:03:34 (20s ticker) saw nothing => fill in (09:03:34, 09:03:54]",derived,B,reconcileInterval=20s + first UNTRACKED log at 09:03:54
+lag_entry_time_vs_fill,"between 80.6s and 100.6s (NOT a point value of 81s)",derived,B,"09:05:14.627 minus the (09:03:34, 09:03:54] window"
+new_finding_armed_fill_stamp,"09-03 09:05:35 auto_trader: 'armed fill S1 @ 29285.00: position row not materialized yet — stamp pending (reconcile completes it)' — logged 21s AFTER reconcile already materialized at 09:05:14",/home/hoang/nofx/data/nofx_2026-09-02.log:85030,A,"grep -nE ""29285|f2b1eb20"" nofx_2026-09-02.log"

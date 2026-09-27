@@ -73,15 +73,6 @@ func modelProviderSpecByID(provider string) (modelProviderSpec, bool) {
 	return modelProviderSpec{}, false
 }
 
-func supportedModelProviderIDs() []string {
-	specs := supportedModelProviders()
-	out := make([]string, 0, len(specs))
-	for _, spec := range specs {
-		out = append(out, spec.ID)
-	}
-	return out
-}
-
 func defaultModelNameForProvider(provider string) string {
 	spec, ok := modelProviderSpecByID(provider)
 	if !ok {

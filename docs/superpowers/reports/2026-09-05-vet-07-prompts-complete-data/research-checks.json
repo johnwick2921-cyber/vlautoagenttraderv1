@@ -1,0 +1,37 @@
+{
+  "checked_on": "2026-09-05",
+  "overnight": {
+    "source": "https://tradingstats.net/overnight-high-low-breakout-strategy/",
+    "instrument": "NQ",
+    "dates": "2015-01-02 through 2025-12-30",
+    "n_days": 2827,
+    "high_only": 1094,
+    "low_only": 922,
+    "both": 646,
+    "neither": 165,
+    "either_break": 2662,
+    "wilson95_percent": [
+      93.23780337617134,
+      94.9691807235395
+    ],
+    "raw_ids": "not supplied by publisher; not independently reproduced",
+    "transfer": "whole-day any-boundary event; not MNQ at-touch stop-out or net strategy P&L"
+  },
+  "fvg": {
+    "source": "https://mpmmarkets.com/research/does-the-fair-value-gap-strategy-work",
+    "instruments": [
+      "ES",
+      "NQ",
+      "GC",
+      "SI"
+    ],
+    "sample": "roughly 40000 occurrences, seven years, three timeframes",
+    "transfer": "raw-gap null does not prove this sweep-displacement chain profitable"
+  },
+  "unidentified_claims": [
+    "20–80-point sweet spot",
+    "1h+ 70–80% fills",
+    "MSS displacement floor"
+  ],
+  "token_count_source": "https://api-docs.deepseek.com/quick_start/token_usage/"
+}

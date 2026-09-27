@@ -1,0 +1,18 @@
+=== PART/CLASS header lines
+1:# AUDIT-CHECKLIST — the permanent audit playbook
+11:## PART 1 — THE BUG CLASSES (name · root cause · probe · law)
+1845:## PART 2 — PRE-AUDIT (standing hard rules)
+1867:## PART 3 — PRE-CUTOVER (standing 8-step protocol, 0-7; flat gate = 5 legs, class 33)
+2002:## CLASS 75 — SYSTEM-MAP CONTRACT (born 2026-09-04, docs/system-map-0904)
+=== numbered entries (^N. **)
+86
+=== distinct numbers
+79
+=== dup numbers
+1 2 3 4 5 6 7 
+=== max number, missing
+79
+46 
+=== Law lines
+80
+80

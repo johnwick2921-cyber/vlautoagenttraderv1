@@ -1,0 +1,22 @@
+metric,value,n,source,note
+resolved_stale_confirm_atr,2.0,,"boot 8 line 'S-wave: stale_confirm=2.0xATR5m' + kernel/plan_confirm.go:124-131 resolver","STALE_CONFIRM_ATR absent from /proc/878451/environ AND from /home/hoang/nofx/.env -> resolver returns 2.0"
+research_stale_confirm_atr,2.0,,"docs/superpowers/reports/2026-08-26-s-fix-wave.md:42,48","'stale-MET count under the new rule (2.0xATR5m)' - shipped value IS the researched value"
+research_stale_rate_structure_covered,0.539,293,"2026-08-26-s-fix-wave.md:44","158/293 = 54% (n the peer omitted)"
+research_stale_rate_bars_covered,0.462,1434,"2026-08-26-s-fix-wave.md:45","663/1434 = 46% (n the peer omitted)"
+research_prior_unit_rate,0.013,2908,"2026-08-26-s-fix-wave.md:48","38/2908 under the deleted 1.0xdATR unit"
+peer_evidence_log_hits,0,4,"grep 'stale — written' /home/hoang/nofx/data/nofx_2026-09-0[1-4].log","TRUE but VOID: block header 'Machine-computed confirmations' is ALSO 0/4 logs - the prompt is never written to nofx_*.log"
+measured_fires_since_0826,983,2468,"decision_records.system_prompt LIKE '%stale — written%' vs '%Machine-computed confirmations%'","39.8% of confirm-block prompts carried the annotation"
+measured_fires_0901_to_0904,308,1147,"decision_records, datetime(timestamp,'-5 hours')","26.9% in the exact window the peer measured as zero"
+measured_fires_0901,99,301,decision_records,CT day
+measured_fires_0902,70,378,decision_records,CT day
+measured_fires_0903,125,378,decision_records,CT day
+measured_fires_0904,14,90,decision_records,"latest fire 07:56:02 CT (pre boot-8); post-boot 0/14 in 41 min of a fresh plan"
+sample_ids_0904,"37628;37629;37630;37631",4,decision_records.id,"S1 confirm: touch below 29649.59 — MET (stale — written 29649.59 context, price now 29507.75; treat as expired)"
+post_boot8_records,22,22,"decision_records >= 2026-09-04 08:30:11 CT","14 carried the confirm block; 0 stale fires yet = evaluated-and-false, not dead"
+superseded_wait_hits_0901_0904,37,4,"decision_records execution_log LIKE '%superseded_wait%'","the ONLY consumer path of armed_executor.go:180 is reached 37x in the window"
+callers_StaleConfirmATR,3,,"kernel/plan_confirm.go:177; kernel/levels_volume_boot.go:20; trader/armed_executor.go:180","peer said ':177 (only use)'"
+callers_staleConfirmAnnotation,2,,"kernel/plan_confirm.go:367; kernel/plan_confirm.go:398","peer cited neither"
+callers_StaleConfirmATR5m,6,,"kernel/mss.go:110; kernel/engine_analysis.go:494; trader/rootfix_shadow_ab.go:159; trader/auto_trader_planner.go:1242; :1722; trader/auto_trader_weekly.go:353","unit helper, shared"
+method_value_indirection,0,,"grep -w bare identifier, no '(' required","no callback/interface dispatch hides a caller"
+fvg_anchor_branch_live_plans,0,172,"plans.doc LIKE '%\"fvg\"%' since 2026-08-26","plan_confirm.go:171-176 FVG-anchor override never exercised on live plans; armed_executor.go:180 omits it -> divergence currently inert"
+code_identical_at_deployed_rev,yes,,"git diff 70af663d HEAD -- kernel/plan_confirm.go trader/armed_executor.go trader/auto_trader_loop.go kernel/levels_volume_boot.go","empty diff; also identical to dev tip 492d2067"

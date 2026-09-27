@@ -81,6 +81,7 @@ func swingPointsFor(agg []market.Kline, tfMin int, now time.Time) []DetectedLeve
 	type pt struct {
 		high        bool
 		price       float64
+		pivotOpenMs int64 // exact defining candle, distinct from presentation close
 		timeMs      int64
 		confirmedMs int64 // recording only; pivot selection continues to use timeMs
 	}
@@ -110,7 +111,7 @@ func swingPointsFor(agg []market.Kline, tfMin int, now time.Time) []DetectedLeve
 			if (hi && price <= swings[len(swings)-1].price) || (!hi && price >= swings[len(swings)-1].price) {
 				continue
 			}
-			swings[len(swings)-1] = pt{price: price, timeMs: t, high: hi, confirmedMs: closed[i+k].CloseTime}
+			swings[len(swings)-1] = pt{price: price, timeMs: t, pivotOpenMs: closed[i].OpenTime, high: hi, confirmedMs: closed[i+k].CloseTime}
 			continue
 		}
 		if len(swings) > 0 {
@@ -122,7 +123,7 @@ func swingPointsFor(agg []market.Kline, tfMin int, now time.Time) []DetectedLeve
 				continue
 			}
 		}
-		swings = append(swings, pt{price: price, timeMs: t, high: hi, confirmedMs: closed[i+k].CloseTime})
+		swings = append(swings, pt{price: price, timeMs: t, pivotOpenMs: closed[i].OpenTime, high: hi, confirmedMs: closed[i+k].CloseTime})
 	}
 	if len(swings) == 0 {
 		return nil
@@ -166,7 +167,7 @@ func swingPointsFor(agg []market.Kline, tfMin int, now time.Time) []DetectedLeve
 		out[len(out)-1] = WithFormationClose(out[len(out)-1], s.confirmedMs, len(closed), "pivot_confirmation_close", now)
 		// Presentation evidence from the exact selected pivot, after selection.
 		for _, bar := range closed {
-			if bar.OpenTime == s.timeMs {
+			if bar.OpenTime == s.pivotOpenMs {
 				wick := ZonePivotWick(bar, s.high)
 				out[len(out)-1].ZoneDefiningWick = &wick
 				break
@@ -202,7 +203,7 @@ func aggregateBars(bars []market.Kline, tfMin int) []market.Kline {
 		key := b.OpenTime - b.OpenTime%bucket
 		a, ok := m[key]
 		if !ok {
-			a = &agg{o: b.Open, h: b.High, l: b.Low, c: b.Close}
+			a = &agg{o: b.Open, h: b.High, l: b.Low, c: b.Close, v: b.Volume}
 			m[key] = a
 			order = append(order, key)
 			continue

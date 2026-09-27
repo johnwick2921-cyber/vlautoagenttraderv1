@@ -23,12 +23,19 @@ import (
 // because a silent correction hides a planner that has misunderstood the play.
 // A condition with no kind at all is refused too — the composer must not paper
 // over an arm the validator should have caught.
+//
+// W-EXEC-TRUTH W3 (2026-09-23): the leg's EFFECTIVE entry policy (its own,
+// else the arm's) decides the table. market_in_zone ⇒ a limit for every known
+// condition (the far edge of the entry zone) and an authored stop_entry is
+// refused by name; an absent policy (legacy) or planned_order keeps
+// ArmKindFor / ArmKindMismatch exactly.
 func armLegKindFor(sc kernel.PlanScenario, leg kernel.PlanArmLeg) (kind string, refusal string) {
-	want := kernel.ArmKindFor(sc.Condition)
+	policy := kernel.EffectiveArmPolicy(sc.Arm, &leg)
+	want := kernel.ArmKindForPolicy(sc.Condition, policy)
 	if want == "" {
 		return "", fmt.Sprintf("%s condition %q has no arm kind — not armable", sc.ID, sc.Condition)
 	}
-	if err := kernel.ArmKindMismatch(sc.Condition, leg.Kind); err != nil {
+	if err := kernel.ArmKindMismatchPolicy(sc.Condition, policy, leg.Kind); err != nil {
 		return "", fmt.Sprintf("%s %v", sc.ID, err)
 	}
 	return want, ""

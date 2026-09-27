@@ -348,7 +348,7 @@ the card.
 | Min Confidence | `min_confidence` | 50–100, unset→60 | `kernel/engine_position.go:190-191` |
 | Risk guardrails (master) | `guardrails_enabled` | nil→ON | `engine_analysis.go:155-202` |
 | Daily loss limit (USD) / profit target / max daily trades | `daily_loss_limit_usd` `daily_profit_target_usd` `max_daily_trades` | toggles + min-0 inputs; loss ON, profit/trades OFF | `kernel/risk_limits.go:235-243` |
-| Consecutive-loss halt (stop after N losers) | `consecutive_loss_halt` | toggle→2, default 0 (off); NOT master-gated | `trader/auto_trader_orders.go:107-135` |
+| Consecutive-loss halt (stop after N losers) | `consecutive_loss_halt` | presence-aware (W1): toggle OFF → 0 = OFF; ON / blank → inherit (env `BREAKER_HALT_N`, else 8); N = N; NOT master-gated | `store/resolve_source.go` `ResolveBreakerHalt` · `trader/auto_trader_orders.go` `consecutiveLossHaltedAt` · `trader/session_risk.go` `sessionRiskGateAt` |
 | Re-entry cooldown after stop (futures) | `reentry_cooldown_minutes` | toggle→20, default 0 | `kernel/engine_analysis.go:585-595` |
 | Consistency cap (day ≤ % of total) | `consistency_max_day_pct` | 0–100, OFF; **no backend clamp** | `engine_analysis.go:195-199` |
 | Max contracts / order (AlwaysOn badge) | `max_contracts_per_order` | min 0, default 2 | `trader/auto_trader_orders.go:57` |
@@ -367,7 +367,7 @@ Value Ratio (read-only), Max Margin Usage (prompt hint only), Min Position Size.
 | Plan mode | `plan_mode` | advisory / direction / strict | `trader/auto_trader_planconfig.go:195-225` |
 | Planner reads | `planner_timeframes` | multiselect, default [D,4h,1h,15m] | planner structure summary |
 | Proximity | `proximity_filter_atr` | **UI slider 0.5–3.0** (planner resolver accepts 0.1–3.0 — [BUG 3]) default 1.5 (live: retuned 0.3) | `engine_analysis.go:369-371` |
-| Max levels / Max scenarios / Max re-plans | `max_levels` `scenario_cap` `replan_cap` | 3–12 def 8 / 1–5 def 3 / 0–4 def 2 | `engine_analysis.go:363-365` etc. |
+| Max levels / Max scenarios / Max re-plans | `max_levels` `scenario_cap` `replan_cap` | 3–12 def 8 / 1–5 def 3 / 0–4, blank = inherit 2, an explicit 0 = no re-plan (W1 presence-aware) | `engine_analysis.go:363-365` · `store/resolve_source.go` `ResolveReplanCap` etc. |
 | Acceptance | `acceptance_rule` | 2×5m / 15m | `store/strategy.go:1046` |
 | Approval required | `approval_required` | toggle, false | entry gate `auto_trader_orders.go:302` |
 | Digest | `evening_digest` | toggle, true | `trader/auto_trader_planner.go:1457` |

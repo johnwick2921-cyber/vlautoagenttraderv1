@@ -1,0 +1,4 @@
+pos_id,side,entry_price,recorded_entry_ct,first_UNTRACKED_log_ct,MATERIALIZED_log_ct,lag_s_untracked_to_materialized,armed_id,armed_entry_px,armed_created_ct,bar_minute_containing_entry_price_ct,recorded_minute_high
+584,SHORT,29138.00,2026-09-01 08:36:47,2026-09-01 08:35:27,2026-09-01 08:36:47,80,24,29138.0,2026-09-01 07:57:28,2026-09-01 08:35 (H 29140.50),29127.25
+586,LONG,29082.75,2026-09-01 13:33:06,2026-09-01 13:31:46,2026-09-01 13:33:06,80,28,29082.75,2026-09-01 13:31:06,n/a (not measured),n/a
+591,SHORT,29285.00,2026-09-03 09:05:14,2026-09-03 09:03:54,2026-09-03 09:05:14,80,35,29285.0,2026-09-03 09:02:54,2026-09-03 09:03 (H 29291.75),29283.00

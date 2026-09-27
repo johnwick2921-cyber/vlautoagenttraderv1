@@ -1,0 +1,168 @@
+{
+  "status": "PASS",
+  "cohort_crosschecks": [
+    {
+      "file": "2026-09-05-vet-01-way-it-trades-complete-data/trades.csv",
+      "n": 58,
+      "sum": -466.4285719999971,
+      "ids_match": true
+    },
+    {
+      "file": "2026-09-05-vet-03-decisions-data/complete/population58.csv",
+      "n": 58,
+      "sum": -466.4285719999971,
+      "ids_match": true
+    },
+    {
+      "file": "2026-09-05-vet-06-risk-data/complete/trade_sample.csv",
+      "n": 58,
+      "sum": -466.4285719999971,
+      "ids_match": true
+    },
+    {
+      "file": "2026-09-05-vet-07-prompts-complete-data/eligible-positions.csv",
+      "n": 58,
+      "sum": -466.4285719999971,
+      "ids_match": true
+    },
+    {
+      "file": "2026-09-05-vet-08-stretch-data/complete-0905/era.csv",
+      "n": 58,
+      "sum": -466.4285719999971,
+      "ids_match": true
+    },
+    {
+      "file": "2026-09-05-vet-10-ideas-data/complete/population.csv",
+      "n": 58,
+      "sum": -466.4285719999971,
+      "ids_match": true
+    }
+  ],
+  "canonical_ids": [
+    521,
+    522,
+    523,
+    524,
+    525,
+    526,
+    527,
+    528,
+    529,
+    531,
+    532,
+    533,
+    534,
+    535,
+    536,
+    537,
+    538,
+    540,
+    541,
+    542,
+    543,
+    544,
+    547,
+    548,
+    549,
+    550,
+    551,
+    552,
+    553,
+    554,
+    555,
+    556,
+    557,
+    558,
+    559,
+    560,
+    561,
+    562,
+    563,
+    564,
+    565,
+    567,
+    568,
+    569,
+    570,
+    575,
+    578,
+    581,
+    582,
+    583,
+    584,
+    585,
+    586,
+    587,
+    588,
+    589,
+    590,
+    591
+  ],
+  "reports": [
+    {
+      "section": 1,
+      "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades.md",
+      "lines": 338,
+      "sha256": "b090981080b738f93957740452717aff7f02176ae43d8a3655130b5bb5241905"
+    },
+    {
+      "section": 2,
+      "path": "docs/superpowers/reports/2026-09-05-vet-02-levels.md",
+      "lines": 296,
+      "sha256": "8bf641266e09e6320278fd5f12963117fc0dc720a47ac8250d4cbbe076b8250a"
+    },
+    {
+      "section": 3,
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions.md",
+      "lines": 369,
+      "sha256": "1cb0dbc4f7ee34beb1ea5b06a0b6c4215c129f79cef8ee1810b28f614b826944"
+    },
+    {
+      "section": 4,
+      "path": "docs/superpowers/reports/2026-09-05-vet-04-monitoring.md",
+      "lines": 242,
+      "sha256": "da1b94b794dbe771ccc06981cc734d1976237d348a720598508a043efdf0500e"
+    },
+    {
+      "section": 5,
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution.md",
+      "lines": 326,
+      "sha256": "64b6e759aec4caba969939b9b49fb1106b29b3c88a895af0aea22a79e6a6f320"
+    },
+    {
+      "section": 6,
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk.md",
+      "lines": 282,
+      "sha256": "4e2e63b00dd68f587159fe49c9483eab479a4adc162f511d49f6484760d16d2b"
+    },
+    {
+      "section": 7,
+      "path": "docs/superpowers/reports/2026-09-05-vet-07-prompts.md",
+      "lines": 328,
+      "sha256": "f9b369672a841190e7372960e98bfe9fb8f8c1491d033e722a6b02c9f2f71da7"
+    },
+    {
+      "section": 8,
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch.md",
+      "lines": 218,
+      "sha256": "e81df554b321d9fe601bda5a6f88a124aacdd12df0aad95215d2ba6d6c0ab59f"
+    },
+    {
+      "section": 9,
+      "path": "docs/superpowers/reports/2026-09-05-vet-09-top-ten.md",
+      "lines": 234,
+      "sha256": "a89a27b1287184f0b8ebd1ec395e943c84519ba7f902f920f316ed54f81d0da2"
+    },
+    {
+      "section": 10,
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas.md",
+      "lines": 222,
+      "sha256": "16e1af20064209e6b621e133131f3a7bdbf4905435fa31d4350bc6799e8598a3"
+    }
+  ],
+  "numbered_requirement_groups": 47,
+  "docs_only": true,
+  "local_markdown_links_exist": true,
+  "credential_shape_scan": "PASS",
+  "limits": "Audit evidence and artifact checks; no runtime acceptance, live expectancy, model behavioral equivalence or exact counterfactual broker fills established."
+}

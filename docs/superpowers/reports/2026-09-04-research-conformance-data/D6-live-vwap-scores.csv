@@ -1,0 +1,6 @@
+level_kind,score,n,first_ct,last_ct,implied_typeEvidence,source
+VWAP,1.44,10,2026-09-04 00:30:54,2026-09-04 08:46:09,0.90 (1.44/1.6),data.db candidate_pool
+VWAP±2σ,1.36,4,2026-09-04 00:30:54,2026-09-04 02:00:46,0.85 (1.36/1.6),data.db candidate_pool
+eVWAP,1.36,2,2026-09-04 01:10:49,2026-09-04 01:30:48,0.85 (1.36/1.6),data.db candidate_pool
+VWAP±2σ,0.0,1,2026-09-04 01:30:48,2026-09-04 01:30:48,n/a (unscored/cut row),data.db candidate_pool
+pdVWAP,0.0,1,2026-09-04 02:00:46,2026-09-04 02:00:46,n/a (unscored/cut row),data.db candidate_pool

@@ -26,6 +26,8 @@ var armAuthorizationPath = []string{
 	"armed_executor.go",
 	"entry_gate.go",
 	"auto_trader_orders.go",
+	"entry_admission.go",
+	"picture_admission.go",
 	"session_risk.go",
 	"../kernel/risk_limits.go",
 	"../kernel/plan_authored_invalidation.go",

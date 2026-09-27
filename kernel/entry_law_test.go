@@ -167,6 +167,23 @@ func TestRehearsalS4CaseStillRejects(t *testing.T) {
 	}
 }
 
+// P8 — bd_min_closes and accept_hold_min print as AUTHORING DEFAULTS: since
+// W2 the STORED rule governs, and the process-level value is only what a new
+// rule is authored from (#190). The label is READ from the planner's own
+// constant and the values from the same readers the ledger prints — never two
+// literals.
+func TestEntryLawBootLedgerLabelsAuthoringDefaults(t *testing.T) {
+	line := EntryLawBootLedger(nil)
+	for _, want := range []string{
+		fmt.Sprintf("bd_min_closes=%d (%s)", bdConfirmCloses(), ConfirmSourceAuthoringDefault),
+		fmt.Sprintf("accept_hold_min=%d (%s)", AcceptHoldMin(), ConfirmSourceAuthoringDefault),
+	} {
+		if !strings.Contains(line, want) {
+			t.Fatalf("the 🎛 line must label the authoring default %q: %q", want, line)
+		}
+	}
+}
+
 // TestEntryLawLegacyDocsStillParse — the read-path contract: a stored doc with
 // a pre-law confirm shape unmarshals (json) and the LOAD path stays armored.
 func TestEntryLawLegacyDocsStillParse(t *testing.T) {

@@ -1,0 +1,29 @@
+{
+  "path": "/home/hoang/nofx-backups/structural-stop-20260912",
+  "files": [
+    {
+      "name": "backtest.db",
+      "bytes": 1236602880,
+      "sha256": "c264a1e0cde4b105a8b78c8b95fe94b9ab2d3baf86ace5b9436e87e13b2496ca",
+      "source_copy_verified": true
+    },
+    {
+      "name": "events.jsonl",
+      "bytes": 3843589419,
+      "sha256": "35711940cf48801df1b4d3d0ca4711e86f4d4c798fd4128d9376a8e5ca94f260",
+      "source_copy_verified": true
+    },
+    {
+      "name": "sweep.jsonl",
+      "bytes": 45828093,
+      "sha256": "ba1a759037a2c3aa84f243c1479ab5bb46af807539f465aaeb58fcdfe953477c",
+      "source_copy_verified": true
+    },
+    {
+      "name": "last200-stop-lines.txt",
+      "bytes": 73831,
+      "sha256": "bb6b92bf49da1b20a123e9d316637db2f54532107a19b53013c0913bdc3ce25b",
+      "source_copy_verified": true
+    }
+  ]
+}

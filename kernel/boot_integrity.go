@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"fmt"
+	"nofx/internal/installpath"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -70,8 +71,8 @@ func (b BootIntegrity) Line() string {
 	if b.Modified {
 		dirty = " +dirty"
 	}
-	return fmt.Sprintf("🔐 BOOT INTEGRITY %s — rev %s%s · built %s · expected %s · goldens %s",
-		status, rev, dirty, b.BuildTime, exp, goldensWord(b.GoldensOK))
+	return fmt.Sprintf("🔐 BOOT INTEGRITY %s — rev %s%s · pid %d · built %s · expected %s · goldens %s",
+		status, rev, dirty, os.Getpid(), b.BuildTime, exp, goldensWord(b.GoldensOK))
 }
 
 func goldensWord(ok bool) string {
@@ -87,7 +88,16 @@ func expectedRevision() string {
 	if v := strings.TrimSpace(os.Getenv("NOFX_EXPECTED_REVISION")); v != "" {
 		return v
 	}
-	if b, err := os.ReadFile("deploy/RELEASE"); err == nil {
+	// With NOFX_RELEASE_DIR set, the marker that matters is the ACTIVE
+	// release's own RELEASE file — deploy/RELEASE in the working directory
+	// belongs to whatever tree the process was started from and would answer
+	// for a different build. Unset (the default) reads exactly what it always
+	// read, from exactly where it always read it.
+	for _, path := range releaseMarkerPaths() {
+		b, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
 		for _, ln := range strings.Split(string(b), "\n") {
 			ln = strings.TrimSpace(ln)
 			if ln != "" && !strings.HasPrefix(ln, "#") {
@@ -206,4 +216,12 @@ func shortRev(r string) string {
 		return r[:12]
 	}
 	return r
+}
+
+// releaseMarkerPaths delegates to internal/installpath, the ONE resolver.
+// It used to call os.Getenv here while api/release_dir.go latched the value
+// behind a sync.Once — two reads that can DISAGREE, which is precisely the
+// failure resolving-once exists to prevent.
+func releaseMarkerPaths() []string {
+	return installpath.ReleaseMarkerPaths()
 }

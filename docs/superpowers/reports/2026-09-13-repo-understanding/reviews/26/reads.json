@@ -1,0 +1,799 @@
+{
+  "assignment": 26,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "web/postcss.config.js",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          6
+        ]
+      ],
+      "sha256": "190c877db466995bf1482f4a16abd06e04a89ede3119341e2a86ff96e1737b27",
+      "notes": "Tailwind and autoprefixer plugin config."
+    },
+    {
+      "path": "web/scripts/stamp-guide-rev.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "sha256": "de45bf5d0a9a58ccbc8820ba464f0806abdb6ce9fb34eb182dd984ab6f29e25f",
+      "notes": "Reads health revision via curl+sed then edits guide constant; refuses empty/short revision. Does not require curl HTTP success or verify exactly one replacement. NOT executed."
+    },
+    {
+      "path": "web/src/App.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          18
+        ]
+      ],
+      "sha256": "930457344658f8cfcef8da29e295eb68337be08ea4e728cbcfcd16290ac9fe95",
+      "notes": "Mounts LanguageProvider, AuthProvider, confirmation provider, sandbox banner and route tree."
+    },
+    {
+      "path": "web/src/components/agent/ChatInput.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          193
+        ]
+      ],
+      "sha256": "350553b514872565fe63363c66678c401ff2a66d0953da50d5f4edc9c66928fc",
+      "notes": "Controlled draft, imperative focus/clear/getValue, trim/send/clear, Enter and IME state guard, global Ctrl/Cmd K listener removed on cleanup."
+    },
+    {
+      "path": "web/src/components/agent/MessageRenderer.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          187
+        ]
+      ],
+      "sha256": "83d34ba4fcbaccf54e1fc68060c675cc599faeb20dd0edcc6d65f6948a52cc99",
+      "notes": "React text markdown subset: inline bold/code/link plus fenced blocks/lists/headings; http(s) URL allowlist. Nested capturing split groups duplicate link components; unfinished code fence buffered and not flushed."
+    },
+    {
+      "path": "web/src/components/agent/PositionsPanel.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          164
+        ]
+      ],
+      "sha256": "a11552c0a32f72b59d8165c1d43c7d0b82f4ab6fd42331021d57871fc1ff4746",
+      "notes": "Polls first running trader rather than selected account; missing/error positions render no open positions; alphabetic MNQ follows US-stock shares display."
+    },
+    {
+      "path": "web/src/components/agent/UserPreferencesPanel.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          241
+        ]
+      ],
+      "sha256": "422d004820a88ef97b25be086446ee270eb54e6be3115b4ec8254ef04bc84218",
+      "notes": "Loads/adds/removes preferences via business-response HTTP client; load ignores success flag; load promises not canceled or generation checked on token changes."
+    },
+    {
+      "path": "web/src/components/auth/LoginPage.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          199
+        ]
+      ],
+      "sha256": "ddb65c4f86e1157b469a2d95cf2e5906cbc04f83c3068fb3468ffd67771fb2e3",
+      "notes": "Login/password UI and destructive-reset request button. Mount clears auth storage without clearing auth context. Reset backend is protected and gated; this unauthenticated UI cannot bypass it."
+    },
+    {
+      "path": "web/src/components/auth/RegistrationDisabled.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          40
+        ]
+      ],
+      "sha256": "c9d8829ae11a57b8692413977c7dd31af3103ad769bebf93186287e728e27f33",
+      "notes": "Static registration-disabled notice and login navigation."
+    },
+    {
+      "path": "web/src/components/auth/ResetPasswordPage.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          259
+        ]
+      ],
+      "sha256": "d0a0cceed809f135d4a7b77ba640518d767e2d69288f3fa5ee62a5b832707941",
+      "notes": "Password strength/confirmation form calling auth reset. Backend permanently returns410, so current form advertises an unavailable path; not an account-takeover finding."
+    },
+    {
+      "path": "web/src/components/charts/AdvancedChart.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          1667
+        ]
+      ],
+      "sha256": "04b0db61bfb64dd1df894d2c61a2aa9aa753a868fae42654aa5066cd8d6da1c2",
+      "notes": "Lightweight Charts candles/volume/MA/EMA/Bollinger, markers, pending price lines and server SVP. Polling without request generation or abort; stale closure toggles, last-bar-open marker range, stale cached markers, UTC seconds with mixed tooltip timezone, crypto quote units for MNQ. Cleanup removes chart/interval/observer but leaves refs and pending fetches."
+    },
+    {
+      "path": "web/src/components/charts/ChartWithOrdersSimple.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          121
+        ]
+      ],
+      "sha256": "08a69c38f18ea035e4ffa8b84dad8d54f97827e8dae7cf5f158f6dff1df0aedf",
+      "notes": "Diagnostic counts and status, not actual candles; catches trade fetch error separately so data-success display can mask failed order read; no refresh/cancellation."
+    },
+    {
+      "path": "web/src/components/charts/ComparisonChart.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          578
+        ]
+      ],
+      "sha256": "8ef0072bc334782dddebaa2137ac79ce03ee47f0d607c7da48d450cd7486eca1",
+      "notes": "Batch equity30s SWR; minute buckets latest timestamp, forward fills gaps, trims latest500points, ranks currentPnL. Sorted-ID cache key stores arrays in input order: reordering same traders can assign histories to wrong trader. Missing/error values become zero/no history; viewer-local times."
+    },
+    {
+      "path": "web/src/components/charts/primitives/positions.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          78
+        ]
+      ],
+      "sha256": "38a7d9c111cafba8c60950f2751dace0df1ca8b96041b4bb1fc3610f0860beaf",
+      "notes": "Apache-attributed pixel-alignment primitives for centered line and bounded box sizing; no external mutation."
+    },
+    {
+      "path": "web/src/components/common/DeepVoidBackground.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          48
+        ]
+      ],
+      "sha256": "48ac2e95f0c35d37738ae3d8dcbff104d8ff533f6779bcb5fb0b04cafb48eb79",
+      "notes": "Decorative static/animated backgrounds; animated version references remote grain texture; disabledAnimation static variant."
+    },
+    {
+      "path": "web/src/components/common/ExchangeIcons.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          121
+        ]
+      ],
+      "sha256": "dc81bdb3c7dd38b49e6d413849f0e66a162a0b3f92ae9799b7b614d3d290fda0",
+      "notes": "Substring-normalized crypto exchange icon mapping, unknown including NT falls back first letter."
+    },
+    {
+      "path": "web/src/components/common/HeaderBar.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          527
+        ]
+      ],
+      "sha256": "9efb2a739548c26d2359afe741390c328e4906a661d6bd32a7a3c15ba233e160",
+      "notes": "Desktop/mobile auth-gated navigation, language, user menu and stored beginner/advanced mode; outside-click listener removed. Empty malformed email can throw at email[0]."
+    },
+    {
+      "path": "web/src/components/common/MetricTooltip.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          366
+        ]
+      ],
+      "sha256": "082350007589690c9320ab923434f0af1727d5d9c61997d70ae453544a394236",
+      "notes": "Static formula definitions, KaTeX rendering fallback, fixed portal placement and translated labels; formulas are explanatory not engine calculations; fixed width may overflow narrow viewports."
+    },
+    {
+      "path": "web/src/components/common/ModelIcons.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "sha256": "4464237707816aeaecd32404fd93e85682431269fdb8b979d7ad38b0958ea2b4",
+      "notes": "Suffix model icon/color map, case-sensitive known tokens; unknown icon null and color fallback."
+    },
+    {
+      "path": "web/src/components/common/PunkAvatar.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          343
+        ]
+      ],
+      "sha256": "aa90abf50098d4409b160d21b0db4e5dc23db311754f3c520eea3c07ef28e99b",
+      "notes": "Seed hash deterministic SVG pixel avatar and hair/eye/mouth/accessory local renderers; nibble shifts wrap after32bits so accessory traits correlated, cosmetic only."
+    },
+    {
+      "path": "web/src/components/common/SandboxBanner.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          29
+        ]
+      ],
+      "sha256": "e72208235c960eb467a9084066bb2de1c48edb1209d1f2ba7dca1426818809b6",
+      "notes": "Shown only for truthy system config sandbox; absent/failed config hides marker, not proof of live safety."
+    },
+    {
+      "path": "web/src/components/common/SiteFooter.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          22
+        ]
+      ],
+      "sha256": "a1029bbe804676f2eb13988934d65b335bf2e949d646a6174e691feedf011ae4",
+      "notes": "Translated footer title/warning display."
+    },
+    {
+      "path": "web/src/components/common/WebCryptoEnvironmentCheck.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          161
+        ]
+      ],
+      "sha256": "a2b58bf19ede7ba26419c513949d277aee1fe3001a243c61cb6992ae127e1fa4",
+      "notes": "Fetch encryption setting and inspect secure context/WebCrypto, status renderer; config failure treated as disabled; UI diagnostic not transport security proof."
+    },
+    {
+      "path": "web/src/components/faq/FAQContent.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          444
+        ]
+      ],
+      "sha256": "e37b09e8484cb68f6ced0667a6717892a7596c087c6832516707bc528cbbd3fd",
+      "notes": "IntersectionObserver active section, ref map and translated answers; observer deps omit changing categories and cleanup reads current map. Special contribution item IDs absent from assigned faqData, so bespoke blocks unreachable through current list."
+    },
+    {
+      "path": "web/src/components/faq/FAQLayout.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          178
+        ]
+      ],
+      "sha256": "21f818f8de0f3a75e65cefd37742c1656768b80b102088717d2b03f385663ab4",
+      "notes": "Translated question/answer search and smooth scroll sidebar; trim only for emptiness, search retains whitespace. Placeholder contact hrefs; no external requests."
+    },
+    {
+      "path": "web/src/components/faq/FAQSearchBar.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          36
+        ]
+      ],
+      "sha256": "6e4c3b59948a54c458a7ad75ff4f35e0ab0b68ec3cd9ef72f1d6d9d66babb5f8",
+      "notes": "Controlled search and clear button; icon clear lacks accessible label."
+    },
+    {
+      "path": "web/src/components/settings/ResolvedKnobPanel.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          155
+        ]
+      ],
+      "sha256": "1be92d454779031b6aae1fc2dd3ceab154ee26ab4fe5df28c4d59ac85cc1c1fd",
+      "notes": "Read-only server classification and resolved lines, live flag blocks stale component writes; no HTTP status/payload validation so401 body can crash summary access; error/data not reset on identity changes. Absent and empty resolved list both hidden."
+    },
+    {
+      "path": "web/src/components/ui/alert-dialog.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          142
+        ]
+      ],
+      "sha256": "a4fd10bda8403c83b4ac33b097f65ebd681b56746d0d701c7b8238ae67da910e",
+      "notes": "Radix alert dialog aliases and forwarded styled primitives; delegates focus/role handling to Radix."
+    },
+    {
+      "path": "web/src/components/ui/input.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          24
+        ]
+      ],
+      "sha256": "4058cf49812917983c2317828a6763aa250b8703abc3e163176812fcdfdefec1",
+      "notes": "Forward-ref styled HTML input, caller props preserved."
+    },
+    {
+      "path": "web/src/components/ui/select.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          102
+        ]
+      ],
+      "sha256": "11aa50cd594c23a12e9d7300988f04bae233a76551baddd3a8a705142a683552",
+      "notes": "Portal custom select stringifies values; outside-click/scroll close listeners cleaned; no keyboard semantics/tabindex, disabled changing while open does not block option click."
+    },
+    {
+      "path": "web/src/contexts/AuthContext.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          355
+        ]
+      ],
+      "sha256": "e802060324644d63e80ac936bc6075a02c309f5bce0dec96dfd03afa062fdeb7",
+      "notes": "Local bearer/session persistence and setup config; JWT expiry check on hydration only; malformed saved-user parsing repeats in fallback; login/admin/register/reset/logout direct fetch; 401 event listener cleanup. No SWR purge or active stream cancellation."
+    },
+    {
+      "path": "web/src/contexts/LanguageContext.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          41
+        ]
+      ],
+      "sha256": "818d62b67a9931197f936151c96fb530e6925aeb0333c0d3b4ac490457607cc4",
+      "notes": "Persists en/zh/id language with localStorage, exposes context guard; storage access is not contained."
+    },
+    {
+      "path": "web/src/data/faqData.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          372
+        ]
+      ],
+      "sha256": "4e52b2038edf85d55067821ce7db03e340b7d92d0a31f0832f1f300b98605702",
+      "notes": "Nine FAQ category/key tables; retains crypto, competition, bounty entries. Actual translated answers outside scope except display routing."
+    },
+    {
+      "path": "web/src/i18n/plan-translations.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          737
+        ]
+      ],
+      "sha256": "ae23c9383cde5284dc962cd7b9ac320c29d8558f44a269ce4666a88fcf3b1edf",
+      "notes": "Typed en/zh/id plan lifecycle, approval, owner-edit, guard/budget labels and interpolation. Labels are claims requiring backend verification; regex parameter names not escaped and string replacement expands dollar syntax."
+    },
+    {
+      "path": "web/src/i18n/strategy-translations.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          1007
+        ]
+      ],
+      "sha256": "8e99780891c762bf82760c5933cf5d7770d7a6a987618811de7a51eae694fad7",
+      "notes": "zh/en/es strategy domains and helper fallback; app supports id not es, so id falls back English. Flat spreads collide (e.g.dailyLossLimit grid percent overwritten futures USD); plan registry uses separate keyspace."
+    },
+    {
+      "path": "web/src/lib/api/config.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          304
+        ]
+      ],
+      "sha256": "6ad8e57ac64c85b8dbbc24881d60bf0cd839e6be138ce7a6980f17ed69e5655d",
+      "notes": "Model/exchange config CRUD, optional RSA/AES browser encryption with user/session AAD, supported catalog reads and onboarding helpers; NinjaTrader create plain JSON; backend owns authentication/account constraints."
+    },
+    {
+      "path": "web/src/lib/api/data.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          177
+        ]
+      ],
+      "sha256": "a3a4adf02b4badd075683587fe2623274afb6be4248f2d69e2ebcd7cf8d55896",
+      "notes": "Status/account/positions/decisions/stats/history/competition API reads; account query only appended with traderID, mostly unencoded path IDs, runtime shape unchecked."
+    },
+    {
+      "path": "web/src/lib/api/guarded.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          41
+        ]
+      ],
+      "sha256": "de9b7ec0f3b6d0a65114839d47c4bf78278081f913ce4792310ef44c1cf34d2e",
+      "notes": "Converts standardized API failure to ApiError and friendly long-running timeout wording; no backend timeout cancellation guarantee."
+    },
+    {
+      "path": "web/src/lib/api/helpers.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          40
+        ]
+      ],
+      "sha256": "8e7da17c590febaf567a17700923521aa70bdc9b0ad22a912d9624ab13f8cb8d",
+      "notes": "Bearer header from localStorage, fetch status/text/JSON response handling; successful empty body cast empty object."
+    },
+    {
+      "path": "web/src/lib/api/strategies.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          72
+        ]
+      ],
+      "sha256": "6a75b8e572045202f637e796f8adcecac3d3577ab52335e8627f226889ad9cd1",
+      "notes": "Strategy list/read/default/create/update/delete/activate/duplicate HTTP wrapper boundary; throws on failed API responses."
+    },
+    {
+      "path": "web/src/lib/api/telegram.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          25
+        ]
+      ],
+      "sha256": "5930a3432d529588f44fb095ea96c0946e1c89b0f7a60cfcae10e5798d89d9c9",
+      "notes": "Get/update/unbind/model Telegram wrappers; plain HTTP JSON protected by bearer backend, no browser encryption layer."
+    },
+    {
+      "path": "web/src/lib/cn.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          7
+        ]
+      ],
+      "sha256": "b1ebef5fa9efae2f8628eb10554b3082ae41ad0651e3d247015c91055be3531e",
+      "notes": "clsx composition then tailwind class conflict merge."
+    },
+    {
+      "path": "web/src/lib/config.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          32
+        ]
+      ],
+      "sha256": "31c0585ad2d3fc40be0c5975c797866e2bee4d8f5f437cc880e025f708e70f81",
+      "notes": "Singleton cached config fetch promise; no response.ok validation, rejected promise retained until explicit invalidate; config is not evidence of live encryption/sandbox when unavailable."
+    },
+    {
+      "path": "web/src/lib/instrument.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          55
+        ]
+      ],
+      "sha256": "d3511c27a152228162a0e3a3b03576b89400db44f5809ec7322eea5d5447f354",
+      "notes": "Frontend CME symbol recognition shared helper; distinct from PositionsPanel stock heuristic."
+    },
+    {
+      "path": "web/src/lib/notify.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          87
+        ]
+      ],
+      "sha256": "c16b09fb1f60fe047f7cc548af48265093526272e71e158dfbd5d452383da5ac",
+      "notes": "Global confirmation registration refuses false if uninitialized, Sonner wrappers; provider owns concurrent confirmation lifecycle."
+    },
+    {
+      "path": "web/src/main.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          29
+        ]
+      ],
+      "sha256": "6f5fc0cf2725cfd535c302f251fd1ba631c2f742a9aec59b4fadce13ef5088bb",
+      "notes": "StrictMode browser router and Sonner root; imports styles and mounts React root."
+    },
+    {
+      "path": "web/src/pages/AgentChatPage.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          924
+        ]
+      ],
+      "sha256": "7da5f5febb75547ef38ec8e08114c9c94b11b918edb18964f0f4211ace6da8eb",
+      "notes": "Module-global reader/controller and Zustand message store; SSE plan/step/delta/done processing, CT timestamps and user-local history/drafts. Event type reset per network chunk drops split events; old cleanup touches new reader/loading; no abort on user change/unmount. Full trace and persistence implications in report."
+    },
+    {
+      "path": "web/src/pages/PageNotFound.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          43
+        ]
+      ],
+      "sha256": "b721a790cc78c7fff7c89853334ae85d7939ee1961f209b78082986658992331",
+      "notes": "Static404view and full-navigation home anchor; current wildcard route redirects home instead."
+    },
+    {
+      "path": "web/src/router/AppRoutes.tsx",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          585
+        ]
+      ],
+      "sha256": "469e12785c62945890f876769033fbd74caf965d140c188236c159d698815b1d",
+      "notes": "Auth/setup/legacy-hash routing plus trader dashboard polling. URL/memory/storage/stable fallback selection. Shared SWR keys and retry timeout callbacks; no user namespace or cache purge. Empty trader list returns without clearing selected trader."
+    },
+    {
+      "path": "web/src/router/paths.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          76
+        ]
+      ],
+      "sha256": "1d1b76e8fedf4399eaa5f43c48e075f3cdefb78019b105a8472d07d9d604dcae",
+      "notes": "Canonical route constants, pathname-to-page classification and encoded dashboard query construction."
+    },
+    {
+      "path": "web/src/router/selectedTrader.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          108
+        ]
+      ],
+      "sha256": "25535cedee765619bc0a4a294b2a2dc115ebdb45b87426af47aea0a0652faa98",
+      "notes": "Safe storage helpers; URL then memory then saved identifier then deterministic name/id sort; invalid stored selection cleared only on fallback branch."
+    },
+    {
+      "path": "web/src/stores/index.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          2
+        ]
+      ],
+      "sha256": "5292f804c3fbc5c35e5a1066deb51399fd3dcf09606a9e52bbd838ba3817adc4",
+      "notes": "Barrel exports traders config/modal stores; no own runtime methods."
+    },
+    {
+      "path": "web/src/test/setup.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          32
+        ]
+      ],
+      "sha256": "1bd476e9fddaa24adf9fa63ff5dbd2070021b8d4245a5cfcc2c1a59eca3b35e7",
+      "notes": "Vitest localStorage mock with clear after each; empty stored string returns null unlike browser and no quota/security failure simulation."
+    },
+    {
+      "path": "web/src/types/trading.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          276
+        ]
+      ],
+      "sha256": "4f378164ef66ac322f14979cfb00b629b19df9a35a1d18605efe2263347c3c90",
+      "notes": "Compile-time API shapes for accounts/positions/decisions/history/grid. Optional corrected-PnL semantics documented but COALESCE comment conflicts strict exclusion comment; no runtime validation."
+    },
+    {
+      "path": "web/src/utils/format.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          135
+        ]
+      ],
+      "sha256": "96ce47e4ee25364d2b2b2f0042fccbd34c7c0aebb09155ef66c55c42cee92e2c",
+      "notes": "Adaptive numeric formatting, strips/pads decimals. Null/undefined/NaN fabricated as0; infinity and invalid precision not bounded."
+    },
+    {
+      "path": "web/src/utils/indicators.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          97
+        ]
+      ],
+      "sha256": "1e68de1ed639edb4a5a645e36ee9fde10fe1c98503e2fbffe1e478d9224ed38c",
+      "notes": "SMA, seeded EMA, population-variance Bollinger. EMA accesses first period without length guard; short history throws; nonpositive periods unchecked."
+    },
+    {
+      "path": "web/src/vite-env.d.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          1
+        ]
+      ],
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "notes": "Vite client ambient types only."
+    },
+    {
+      "path": "web/tailwind.config.js",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          77
+        ]
+      ],
+      "sha256": "00b19f93c543958a0b2a37c705275d239c4a9770747b7667c1c9d7bd35faaada",
+      "notes": "Content globs, shared color/font/background/animation/shadow tokens; no runtime functions."
+    },
+    {
+      "path": "web/vite.preview.config.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          15
+        ]
+      ],
+      "sha256": "9bb4b9bfd8123adddf07436161f84b1ad6d46c85fe14adadbadf829b295d67d6",
+      "notes": "Loopback3001 strict preview proxy to8232; comment says untracked but file in baseline assignment. Config alone does not prove backend isolated/stopped."
+    },
+    {
+      "path": "web/src/lib/agentChatStorage.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          142
+        ]
+      ],
+      "sha256": "de7f24ff74a913a4e9d4dad2563712a562239c4f9d206b1099bb1477896f6fb0",
+      "notes": "Additional dependency/test full read; not included in59assigned files. See report storage/HTTP/selection boundary. Tests read only, not executed."
+    },
+    {
+      "path": "web/src/stores/agentChatStore.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "sha256": "13385cc88e10ca3a1149687bccba301c94b770eab19c209ec0cfb8077d33e291",
+      "notes": "Additional dependency/test full read; not included in59assigned files. See report storage/HTTP/selection boundary. Tests read only, not executed."
+    },
+    {
+      "path": "web/src/lib/httpClient.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          321
+        ]
+      ],
+      "sha256": "06fd3e97f63395e7cfb4704478d96610a54f6396cbcfdef7004fefaf4f2dda66",
+      "notes": "Additional dependency/test full read; not included in59assigned files. See report storage/HTTP/selection boundary. Tests read only, not executed."
+    },
+    {
+      "path": "web/src/router/selectedTrader.test.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          103
+        ]
+      ],
+      "sha256": "a998b852ab2bb3483c7cc2649c9be734110448bd13400aa1a1a12cfa6dfbb694",
+      "notes": "Additional dependency/test full read; not included in59assigned files. See report storage/HTTP/selection boundary. Tests read only, not executed."
+    },
+    {
+      "path": "web/src/lib/agentChatStorage.test.ts",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "sha256": "5c72a085f1a87bd6e12e758ab0b6e431f29f3ba9c643f3f14bc33c572e9bc670",
+      "notes": "Additional dependency/test full read; not included in59assigned files. See report storage/HTTP/selection boundary. Tests read only, not executed."
+    },
+    {
+      "path": "api/server.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          125,
+          155
+        ]
+      ],
+      "sha256": "d52f48dfe9f649b89f36484f3ffa1773a82ea47fce5a946619456cecf8868d4b",
+      "notes": "Negative security check: email password reset disabled410; account reset protected+additional gates. No backend exploit reproduced."
+    },
+    {
+      "path": "api/handler_user.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          205,
+          230
+        ]
+      ],
+      "sha256": "15539f6fa9b736113d65fd93811d4f75d22b60aff505ae952118b054bb28c7a0",
+      "notes": "Negative security check: email password reset disabled410; account reset protected+additional gates. No backend exploit reproduced."
+    }
+  ],
+  "unread": []
+}

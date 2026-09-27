@@ -24,6 +24,14 @@ interface Props {
   level?: PlanLevelFact
   levelIndex?: number
   scenarioIds?: string[]
+  /** F17 — the revision the user VIEWED (plan/today's plan_id + version +
+   * overlay_version): sent with every overlay edit so a stale draft is
+   * refused 409 instead of silently overwriting a newer edit. */
+  planRevision?: {
+    planId?: string
+    planVersion?: number
+    overlayVersion?: number
+  }
   onClose: () => void
   onSaved: (change?: RealignChange) => void // parent re-fetches + W13 re-align
 }
@@ -69,6 +77,7 @@ export function EditSheet({
   level,
   levelIndex,
   scenarioIds = [],
+  planRevision,
   onClose,
   onSaved,
 }: Props) {
@@ -135,7 +144,14 @@ export function EditSheet({
           traderId,
           [{ op: 'replace', path: `/levels/${levelIndex}`, value }],
           'owner',
-          symbol
+          symbol,
+          planRevision && planRevision.planId
+            ? {
+                expected_plan_id: planRevision.planId,
+                expected_plan_version: planRevision.planVersion ?? 1,
+                expected_overlay_version: planRevision.overlayVersion ?? 0,
+              }
+            : null
         )
       )
       setBusy(false)
@@ -189,7 +205,14 @@ export function EditSheet({
         traderId,
         [{ op: 'remove', path: `/levels/${levelIndex}` }],
         'owner',
-        symbol
+        symbol,
+        planRevision && planRevision.planId
+          ? {
+              expected_plan_id: planRevision.planId,
+              expected_plan_version: planRevision.planVersion ?? 1,
+              expected_overlay_version: planRevision.overlayVersion ?? 0,
+            }
+          : null
       )
     )
     setBusy(false)

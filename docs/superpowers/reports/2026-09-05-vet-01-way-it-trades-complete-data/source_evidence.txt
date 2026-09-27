@@ -1,0 +1,634 @@
+CODE BASE b4376246; excerpts from own isolated tree; line labels are repository lines.
+trader/entry_gate.go:146: func EntryGate(in EntryIntent) (reason string, refused bool) {
+trader/entry_gate.go:147: 	side := strings.ToLower(strings.TrimSpace(in.Action))
+trader/entry_gate.go:148: 	if side == "open_long" {
+trader/entry_gate.go:149: 		side = "long"
+trader/entry_gate.go:150: 	} else if side == "open_short" {
+trader/entry_gate.go:151: 		side = "short"
+trader/entry_gate.go:152: 	}
+trader/entry_gate.go:153: 	if side != "long" && side != "short" {
+trader/entry_gate.go:154: 		return "", false // not an entry intent — not this gate's job
+trader/entry_gate.go:155: 	}
+trader/entry_gate.go:156:
+trader/entry_gate.go:157: 	// Leg D — DAILY LOSS LIMIT (wiring wave 2026-09-05). Runs BEFORE leg 0:
+trader/entry_gate.go:158: 	// a tripped daily limit outranks every other reason to take or refuse an
+trader/entry_gate.go:159: 	// entry, and its refusal is the one the journal should show.
+trader/entry_gate.go:160: 	//
+trader/entry_gate.go:161: 	// This leg is the half of the daily guardrail that was missing.
+trader/entry_gate.go:162: 	// DailyGuardrails.Check() always returned RiskForceFlat on a daily-loss
+trader/entry_gate.go:163: 	// trip, its only caller discarded the value, and this file contained
+trader/entry_gate.go:164: 	// neither "daily" nor "guardrail" — so the limit stopped the decision cycle
+trader/entry_gate.go:165: 	// and a RESTING ARM FILLED STRAIGHT THROUGH IT.
+trader/entry_gate.go:166: 	//
+trader/entry_gate.go:167: 	// Fail-open per the file's contract: a nil resolver, or an empty reason,
+trader/entry_gate.go:168: 	// is not evidence of a trip and never refuses.
+trader/entry_gate.go:169: 	if in.DailyForceFlat != nil {
+trader/entry_gate.go:170: 		if why := in.DailyForceFlat(); strings.TrimSpace(why) != "" {
+trader/entry_gate.go:171: 			return fmt.Sprintf("entry_gate: refused: daily_force_flat — %s (new entries blocked on the %s path until the daily window resets; open positions are not closed by this leg)", why, in.Path), true
+trader/entry_gate.go:172: 		}
+trader/entry_gate.go:173: 	}
+trader/entry_gate.go:174:
+trader/entry_gate.go:175: 	// Leg 0 — plan_mode STRICT (R4, OWNER RULING 2026-09-03). FIRST
+trader/entry_gate.go:176: 	// IMPLEMENTATION, not a restoration: "strict" was listed in a doc comment
+trader/entry_gate.go:177: 	// and never implemented — PlanModeFor returned it unchanged and no consumer
+trader/entry_gate.go:178: 	// ever compared against it. This is therefore a NEW GATE, ruled by the
+trader/entry_gate.go:179: 	// owner, and it runs FIRST so its refusal is the one the journal shows.
+trader/entry_gate.go:180: 	//
+trader/entry_gate.go:181: 	// Only plan scenarios execute: the arm path may proceed when it cites a
+trader/entry_gate.go:182: 	// scenario and its side matches; the decision path's market entries are
+trader/entry_gate.go:183: 	// refused outright.
+trader/entry_gate.go:184: 	if in.PlanMode == "strict" {
+trader/entry_gate.go:185: 		if in.Path != "arm" {
+trader/entry_gate.go:186: 			return fmt.Sprintf("entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a %s-path market entry", in.Path), true
+trader/entry_gate.go:187: 		}
+trader/entry_gate.go:188: 		if strings.TrimSpace(in.CitedScenario) == "" {
+trader/entry_gate.go:189: 			return "entry_gate: refused: strict — plan_mode=strict requires the entry to cite a plan scenario (none cited)", true
+trader/entry_gate.go:190: 		}
+trader/entry_gate.go:191: 		dir := strings.ToLower(strings.TrimSpace(in.ScenarioDir))
+trader/entry_gate.go:192: 		if dir != "long" && dir != "short" {
+trader/entry_gate.go:193: 			return fmt.Sprintf("entry_gate: refused: strict — scenario %s has no authored direction, so a strict entry cannot be matched to it", in.CitedScenario), true
+trader/entry_gate.go:194: 		}
+trader/entry_gate.go:195: 		if dir != side {
+trader/entry_gate.go:196: 			return fmt.Sprintf("entry_gate: refused: strict — %s entry against scenario %s authored %s (plan_mode=strict)", side, in.CitedScenario, dir), true
+trader/entry_gate.go:197: 		}
+trader/entry_gate.go:198: 	}
+trader/entry_gate.go:259: 	}
+trader/entry_gate.go:260:
+trader/entry_gate.go:261: 	// Leg 5 — R:R at the REAL entry price (the fix for 587/589): the floor is
+trader/entry_gate.go:262: 	// judged at the price the order will transact at, not the prompt snapshot.
+trader/entry_gate.go:263: 	// entry<=0 or stop<=0 → skip (fail-open; validateDecision owns wrong-side).
+trader/entry_gate.go:264: 	rr := 0.0
+trader/entry_gate.go:265: 	ok := false
+trader/entry_gate.go:266: 	if in.Entry > 0 && in.Stop > 0 && in.Target > 0 && in.Entry != in.Stop {
+trader/entry_gate.go:267: 		if side == "long" && in.Entry > in.Stop {
+trader/entry_gate.go:268: 			rr = (in.Target - in.Entry) / (in.Entry - in.Stop)
+trader/entry_gate.go:269: 			ok = true
+trader/entry_gate.go:270: 		} else if side == "short" && in.Stop > in.Entry {
+trader/entry_gate.go:271: 			rr = (in.Entry - in.Target) / (in.Stop - in.Entry)
+trader/entry_gate.go:272: 			ok = true
+trader/entry_gate.go:273: 		}
+trader/entry_gate.go:274: 	}
+trader/entry_gate.go:275: 	if ok {
+trader/entry_gate.go:276: 		floor := in.MinRR
+trader/entry_gate.go:277: 		if floor <= 0 {
+trader/entry_gate.go:278: 			floor = 3.0 // same fallback validateDecision uses for an unset knob
+trader/entry_gate.go:279: 		}
+trader/entry_gate.go:280: 		if rr+1e-9 < floor {
+trader/entry_gate.go:281: 			return fmt.Sprintf("entry_gate: R:R %.2f below floor %.2f at execution price %.4f (SL %.4f TP %.4f)", rr, floor, in.Entry, in.Stop, in.Target), true
+trader/entry_gate.go:282: 		}
+trader/entry_gate.go:283: 	}
+trader/entry_gate.go:284:
+trader/entry_gate.go:285: 	// Leg 6 — min-SL ×ATR5m (same floor as both legacy chains).
+trader/entry_gate.go:286: 	if in.ATR5m > 0 && in.MinSLMult > 0 && in.Entry > 0 && in.Stop > 0 {
+trader/entry_gate.go:287: 		dist := in.Entry - in.Stop
+trader/entry_gate.go:288: 		if side == "short" {
+trader/entry_gate.go:289: 			dist = in.Stop - in.Entry
+trader/entry_gate.go:290: 		}
+trader/entry_gate.go:291: 		if dist+1e-9 < in.MinSLMult*in.ATR5m {
+trader/entry_gate.go:292: 			return fmt.Sprintf("entry_gate: stop %.2f too close (%.2f < %.2f = %.1f×ATR5m)", in.Stop, dist, in.MinSLMult*in.ATR5m, in.MinSLMult), true
+trader/entry_gate.go:293: 		}
+trader/entry_gate.go:294: 	}
+trader/entry_gate.go:295:
+trader/entry_gate.go:296: 	// Leg 7 — ONE OPEN POSITION PER INSTRUMENT (owner ruling 2026-09-03).
+trader/entry_gate.go:297: 	// Was one-live-ARM (class 27 FIX 4), which refused only the opposite side.
+trader/entry_gate.go:298: 	// Now: any open position refuses any open, either side, any plan version.
+trader/entry_gate.go:299: 	// An explicitly authored exit leg is exempt — that is how a position is
+trader/entry_gate.go:300: 	// flattened, and exits are out of this wave's scope.
+trader/entry_gate.go:301: 	if in.OpenPositionSide != "" && !in.IsExitLeg {
+trader/entry_gate.go:302: 		open := strings.ToLower(strings.TrimSpace(in.OpenPositionSide))
+trader/entry_gate.go:303: 		if open == "long" || open == "short" {
+trader/entry_gate.go:304: 			return fmt.Sprintf("entry_gate: %s entry refused: %s (one_open_position, owner ruling 2026-09-03); no adds, no flips",
+trader/entry_gate.go:305: 				side, openPositionLabel(in)), true
+trader/entry_gate.go:306: 		}
+trader/entry_gate.go:325: // armSeamATR5mFromBars is the ONE ATR5m math for BOTH seams (no-trade-rider
+trader/entry_gate.go:326: // 2026-09-03): the arm seam's exact expression — 5m aggregate, ATR(14). The
+trader/entry_gate.go:327: // decision path MUST share this, never kernel.PlanDATRFor: SetPlanDATR stores
+trader/entry_gate.go:328: // the DAILY ATR (kernel/plan_render.go:370, `SetPlanDATR(traderID, dATR)`), and
+trader/entry_gate.go:329: // the 09-02 evening proved the difference — decision records 36640/36641/36642
+trader/entry_gate.go:330: // were refused against `1.5×ATR5m = 450.56` (dATR 300.4) while the arm seam in
+trader/entry_gate.go:331: // the same minutes used ATR5m 12.78-14.12. "One gate, two ATRs" is the bug.
+trader/entry_gate.go:332: func armSeamATR5mFromBars(bars []market.Kline) float64 {
+trader/entry_gate.go:333: 	if len(bars) == 0 {
+trader/entry_gate.go:334: 		return 0
+trader/entry_gate.go:335: 	}
+trader/entry_gate.go:336: 	return market.ExportCalculateATR(kernel.AcceptanceBars(bars, "2x5m"), 14)
+trader/entry_gate.go:337: }
+trader/arm_stop_anchor.go:20: // The rule (owner ruling): stop = BEYOND the nearest seated level on the risk
+trader/arm_stop_anchor.go:21: // side + tick clearance, then floored at MIN_SL_ATR_MULT×ATR5m — WHICHEVER IS
+trader/arm_stop_anchor.go:22: // WIDER WINS. The authored stop is a third floor: this composition never
+trader/arm_stop_anchor.go:23: // TIGHTENS what the planner wrote, it only widens. When no seated level sits
+trader/arm_stop_anchor.go:24: // within a sane range on the risk side, the arm is `stop_unanchored` and the
+trader/arm_stop_anchor.go:25: // ATR floor governs — a level is never invented.
+trader/arm_stop_anchor.go:71: func composeArmStop(side string, entry, authored, atr5m, tick float64, levels []kernel.PlanLevel, mult float64, clearTicks int, maxAnchorATR float64) StopComposition {
+trader/arm_stop_anchor.go:72: 	c := StopComposition{Stop: authored, Authored: authored, Bound: "authored"}
+trader/arm_stop_anchor.go:73: 	long := strings.EqualFold(strings.TrimSpace(side), "long")
+trader/arm_stop_anchor.go:74: 	if entry <= 0 || authored <= 0 {
+trader/arm_stop_anchor.go:75: 		return c // no usable geometry — leave the authored stop untouched
+trader/arm_stop_anchor.go:76: 	}
+trader/arm_stop_anchor.go:77: 	if tick <= 0 {
+trader/arm_stop_anchor.go:78: 		tick = 0.25
+trader/arm_stop_anchor.go:79: 	}
+trader/arm_stop_anchor.go:80: 	clearance := float64(clearTicks) * tick
+trader/arm_stop_anchor.go:81:
+trader/arm_stop_anchor.go:82: 	// ATR floor leg.
+trader/arm_stop_anchor.go:83: 	if atr5m > 0 && mult > 0 {
+trader/arm_stop_anchor.go:84: 		if long {
+trader/arm_stop_anchor.go:85: 			c.ATRFloorStop = entry - mult*atr5m
+trader/arm_stop_anchor.go:86: 		} else {
+trader/arm_stop_anchor.go:87: 			c.ATRFloorStop = entry + mult*atr5m
+trader/arm_stop_anchor.go:88: 		}
+trader/arm_stop_anchor.go:91: 	// Anchor leg: the NEAREST seated level on the RISK side (below entry for a
+trader/arm_stop_anchor.go:92: 	// long, above for a short), within the dead-zone bound.
+trader/arm_stop_anchor.go:93: 	if maxAnchorATR > 0 {
+trader/arm_stop_anchor.go:94: 		bound := math.MaxFloat64
+trader/arm_stop_anchor.go:95: 		if atr5m > 0 {
+trader/arm_stop_anchor.go:96: 			bound = maxAnchorATR * atr5m
+trader/arm_stop_anchor.go:138: 	// WIDEST WINS. For a long a wider stop is LOWER; for a short, HIGHER.
+trader/arm_stop_anchor.go:139: 	pick := func(cand float64, name string) {
+trader/arm_stop_anchor.go:140: 		if cand <= 0 {
+trader/arm_stop_anchor.go:141: 			return
+trader/arm_stop_anchor.go:142: 		}
+trader/arm_stop_anchor.go:143: 		if (long && cand < c.Stop) || (!long && cand > c.Stop) {
+trader/arm_stop_anchor.go:144: 			c.Stop, c.Bound = cand, name
+trader/arm_stop_anchor.go:145: 		}
+trader/arm_stop_anchor.go:146: 	}
+trader/arm_stop_anchor.go:147: 	pick(c.AnchorStop, "anchor")
+trader/arm_stop_anchor.go:148: 	pick(c.ATRFloorStop, "atr_floor")
+trader/arm_stop_anchor.go:149: 	return c
+kernel/session_registry.go:83: func DefaultSessionRegistry() SessionRegistry {
+kernel/session_registry.go:84: 	return SessionRegistry{
+kernel/session_registry.go:85: 		Sessions: []SessionDef{
+kernel/session_registry.go:86: 			{
+kernel/session_registry.go:87: 				Name:          SessionAsia,
+kernel/session_registry.go:88: 				WindowStartCT: "17:00",
+kernel/session_registry.go:89: 				WindowEndCT:   "02:00", // wraps midnight
+kernel/session_registry.go:90: 				ReadCT:        "16:30", // owner ruling 2026-08-31: open−30 (was 16:55)
+kernel/session_registry.go:91: 				FlatCT:        "02:00",
+kernel/session_registry.go:92: 				Killzones:     []KillzoneCT{{Name: "asia_kz", StartCT: "19:00", EndCT: "23:00"}},
+kernel/session_registry.go:93: 				Enabled:       false,
+kernel/session_registry.go:94: 			},
+kernel/session_registry.go:95: 			{
+kernel/session_registry.go:96: 				Name:          SessionLondon,
+kernel/session_registry.go:97: 				WindowStartCT: "02:00",
+kernel/session_registry.go:98: 				WindowEndCT:   "08:30",
+kernel/session_registry.go:99: 				ReadCT:        "01:30", // owner ruling 2026-08-31: open−30 (was 01:55)
+kernel/session_registry.go:100: 				FlatCT:        "08:30",
+kernel/session_registry.go:101: 				Killzones:     []KillzoneCT{{Name: "london_kz", StartCT: "02:00", EndCT: "05:00"}},
+kernel/session_registry.go:102: 				Enabled:       false,
+kernel/session_registry.go:103: 			},
+kernel/session_registry.go:104: 			{
+kernel/session_registry.go:105: 				Name:          SessionNY,
+kernel/session_registry.go:106: 				WindowStartCT: "08:30",
+kernel/session_registry.go:107: 				WindowEndCT:   "14:45", // = 15:45 ET — session end == EOD flat (owner contract)
+kernel/session_registry.go:108: 				ReadCT:        "08:00", // owner ruling 2026-08-31: open−30 (was 08:25)
+kernel/session_registry.go:109: 				FlatCT:        "14:45", // = 15:45 ET — same instant as WindowEndCT by contract
+kernel/session_registry.go:110: 				Killzones: []KillzoneCT{
+kernel/session_registry.go:111: 					{Name: "ny_am", StartCT: "08:30", EndCT: "11:00"},
+kernel/session_registry.go:112: 					{Name: "ny_pm", StartCT: "13:00", EndCT: "14:45"},
+kernel/session_registry.go:113: 				},
+kernel/session_registry.go:114: 				Enabled: true,
+kernel/session_registry.go:115: 			},
+kernel/arm_kind.go:36: func ArmKindFor(condition string) string {
+kernel/arm_kind.go:37: 	switch strings.ToLower(strings.TrimSpace(condition)) {
+kernel/arm_kind.go:38: 	// Rests AT a price: the entry is the level itself.
+kernel/arm_kind.go:39: 	//   reject                    — the anchor, one tick into the trade's favour
+kernel/arm_kind.go:40: 	//   fvg_entry                 — the gap edge or CE
+kernel/arm_kind.go:41: 	//   sweep_reclaim             — the split arm's legs rest at the sweep ref
+kernel/arm_kind.go:42: 	//   breakup/breakdown_continue — the PULLBACK limit at the broken level,
+kernel/arm_kind.go:43: 	//       chained on confirm leg 1. This is the shipped waterfall design
+kernel/arm_kind.go:44: 	//       (ArmSpecValid requires entry_mode=pullback) and it is NOT flipped
+kernel/arm_kind.go:45: 	//       here: the executor's stop_entry branch remains the no-retest
+kernel/arm_kind.go:46: 	//       FALLBACK it has always been, not an authored primary. Changing that
+kernel/arm_kind.go:47: 	//       would be a live behaviour change, not a labelling one.
+kernel/arm_kind.go:48: 	case "reject", "fvg_entry", "sweep_reclaim", "breakup_continue", "breakdown_continue":
+kernel/arm_kind.go:49: 		return ArmKindLimit
+kernel/arm_kind.go:50:
+kernel/arm_kind.go:51: 	// Triggers BEYOND a price. A reclaim is only valid once price travels back
+kernel/arm_kind.go:52: 	// through the level, so a resting limit would fill on the wrong side of the
+kernel/arm_kind.go:53: 	// move — a BUY STOP above the trigger (SELL STOP below, short) is the only
+kernel/arm_kind.go:54: 	// honest expression of it.
+kernel/arm_kind.go:55: 	//
+kernel/arm_kind.go:56: 	// Owner ruling 2026-09-04 (B), the gate change that makes LONGS armable: 19
+kernel/arm_kind.go:57: 	// long plans were stranded because every long play they wrote (reclaim,
+kernel/arm_kind.go:58: 	// breakout_retest) was un-armable, so a long-biased plan had no way to
+kernel/arm_kind.go:59: 	// reach the market with the decision path closed.
+kernel/arm_kind.go:60: 	case "reclaim":
+kernel/arm_kind.go:61: 		return ArmKindStopEntry
+kernel/arm_kind.go:62: 	}
+kernel/arm_kind.go:63: 	return ""
+kernel/armed.go:10: // ArmableCondition reports whether a condition supports a price-deterministic
+kernel/armed.go:11: // resting entry. acceptance and raw sweep_reclaim need close-confirmation
+kernel/armed.go:12: // first and stay on the AI path. breakout_retest was EXCLUDED by the
+kernel/armed.go:13: // grand-audit response wave (F4, 2026-08-28): its replay expectancy is negative
+kernel/armed.go:14: // at every R-floor, so it stays a normal AI play and is never armed.
+kernel/armed.go:15: // breakdown_continue/breakup_continue (waterfall-class, 2026-08-28) ARE
+kernel/armed.go:16: // armable: the retest entry rests AT the broken level.
+kernel/armed.go:17: func ArmableCondition(condition string) bool {
+kernel/armed.go:18: 	switch strings.ToLower(strings.TrimSpace(condition)) {
+kernel/armed.go:19: 	// reclaim added 2026-09-04 by owner ruling (arms-follow-bias, B): it arms
+kernel/armed.go:20: 	// as a STOP-ENTRY beyond the reclaim trigger (ArmKindFor). Until then every
+kernel/armed.go:21: 	// long-side play the planner favoured was un-armable, which is why long
+kernel/armed.go:22: 	// arm-enablement sat at 4.3% while shorts ran at 44%.
+kernel/armed.go:23: 	case "fvg_entry", "reject", "breakdown_continue", "breakup_continue", "reclaim":
+kernel/armed.go:24: 		return true
+kernel/armed.go:25: 	}
+kernel/armed.go:26: 	return false
+kernel/armed.go:27: }
+kernel/armed.go:28:
+kernel/armed.go:29: // ArmedEntryPx derives the resting LIMIT price for an armed scenario.
+kernel/plan_doc.go:97: // PlanArmSpec is the machine-manageable arming contract for one scenario.
+kernel/plan_doc.go:98: // Entry is the resting LIMIT price; Stop/Target form the bracket. Long:
+kernel/plan_doc.go:99: // stop < entry < target. Short: target < entry < stop.
+kernel/plan_doc.go:100: // E4 (entry-mechanics 2026-08-30): a sweep_reclaim arm may carry Legs — the
+kernel/plan_doc.go:101: // SPLIT entry (two child orders, shared plan lineage, independent OCO
+kernel/plan_doc.go:102: // brackets). When Legs is present the top-level Entry/Stop/Target mirror
+kernel/plan_doc.go:103: // Legs[0] (legacy readers stay coherent).
+kernel/plan_doc.go:104: type PlanArmSpec struct {
+kernel/plan_doc.go:105: 	Enabled     bool    `json:"enabled"`                // the arming authorization itself
+kernel/plan_doc.go:106: 	Entry       float64 `json:"entry"`                  // resting limit price
+kernel/plan_doc.go:107: 	Stop        float64 `json:"stop"`                   // bracket stop
+kernel/plan_doc.go:108: 	Target      float64 `json:"target"`                 // bracket target
+kernel/plan_doc.go:109: 	WaitConfirm bool    `json:"wait_confirm,omitempty"` // chain-arm: rest until the scenario's confirm{} is MET (sweep_reclaim retrace fast path, autopsy-response wave)
+kernel/plan_doc.go:110: 	// Legs (E4): the split entry. Exactly 2 when present, sweep_reclaim only.
+kernel/plan_doc.go:111: 	// Leg 0 = the touch leg (wait_confirm false, resting AT the sweep ref);
+kernel/plan_doc.go:112: 	// Leg 1 = the momentum leg (wait_confirm true, chains on 1m_mss or
+kernel/plan_doc.go:113: 	// 1x5m_close). Either leg's stop-out cancels the sibling's unfilled order.
+kernel/plan_doc.go:114: 	Legs []PlanArmLeg `json:"legs,omitempty"`
+kernel/plan_doc.go:130: func ArmSpecValid(sc PlanScenario) error {
+kernel/plan_doc.go:131: 	if sc.Arm == nil || !sc.Arm.Enabled {
+kernel/plan_doc.go:132: 		return nil // not armed — nothing to validate
+kernel/plan_doc.go:133: 	}
+kernel/plan_doc.go:134: 	// Autopsy-response wave (2026-08-27): sweep_reclaim becomes armable ONLY
+kernel/plan_doc.go:135: 	// as a CHAINED arm (wait_confirm) — the arm rests until the scenario's own
+kernel/plan_doc.go:136: 	// confirm{} is machine-MET, then the retrace entry goes live.
+kernel/plan_doc.go:137: 	// E4 (2026-08-30): the SPLIT entry replaces the single chain — the legacy
+kernel/plan_doc.go:138: 	// wait_confirm requirement applies to single arms only.
+kernel/plan_doc.go:139: 	if strings.EqualFold(strings.TrimSpace(sc.Condition), "sweep_reclaim") {
+kernel/plan_doc.go:140: 		if len(sc.Arm.Legs) == 0 && !sc.Arm.WaitConfirm {
+kernel/plan_doc.go:141: 			return fmt.Errorf("sweep_reclaim arm on %s requires wait_confirm:true (the retrace arm must chain on its confirm)", sc.ID)
+kernel/plan_doc.go:142: 		}
+kernel/plan_doc.go:143: 		if sc.Confirm == nil {
+kernel/plan_doc.go:144: 			return fmt.Errorf("sweep_reclaim arm on %s requires a confirm{} object to chain on", sc.ID)
+kernel/plan_doc.go:145: 		}
+kernel/plan_doc.go:146: 	} else if IsBreakdownCondition(sc.Condition) {
+kernel/plan_doc.go:147: 		// Waterfall-class arms (2026-08-28): the resting limit sits AT the broken
+kernel/plan_doc.go:148: 		// level and chains on confirm leg 1 — exactly the pullback-that-fails
+kernel/plan_doc.go:149: 		// entry the play describes. Immediate-mode entries cannot rest.
+kernel/plan_doc.go:150: 		if sc.Breakdown == nil {
+kernel/plan_doc.go:151: 			return fmt.Errorf("%s arm requires the breakdown{} facts object", sc.ID)
+kernel/plan_doc.go:152: 		}
+kernel/plan_doc.go:153: 		if !strings.EqualFold(strings.TrimSpace(sc.Breakdown.EntryMode), "pullback") {
+kernel/plan_doc.go:154: 			return fmt.Errorf("%s arm requires entry_mode=pullback (immediate-mode entries are AI-path only)", sc.ID)
+kernel/plan_doc.go:155: 		}
+kernel/plan_doc.go:156: 		if !sc.Arm.WaitConfirm {
+kernel/plan_doc.go:157: 			return fmt.Errorf("%s arm requires wait_confirm:true (it chains on confirm leg 1 before resting at the level)", sc.ID)
+kernel/plan_doc.go:158: 		}
+kernel/plan_doc.go:159: 		if sc.Confirm == nil {
+kernel/plan_doc.go:160: 			return fmt.Errorf("%s arm requires a confirm{} (leg 1) to chain on", sc.ID)
+kernel/plan_doc.go:161: 		}
+kernel/plan_doc.go:162: 	} else if !ArmableCondition(sc.Condition) {
+kernel/plan_doc.go:163: 		return fmt.Errorf("arm enabled on non-armable condition %q (fvg_entry | reject | breakdown_continue | breakup_continue; sweep_reclaim via wait_confirm; breakout_retest is a normal AI play and never arms — GAR-F4)", sc.Condition)
+kernel/condition_status.go:25: // defaultConditionStatus is the owner-ruled baseline (0C, 2026-08-31).
+kernel/condition_status.go:26: var defaultConditionStatus = map[string]string{
+kernel/condition_status.go:27: 	"fvg_entry":       ConditionShadow,
+kernel/condition_status.go:28: 	"breakout_retest": ConditionShadow,
+kernel/condition_status.go:29: }
+trader/exit_mechs_suspend.go:30: // ExitMechSuspendedLabel is the one-line reason shown in logs and the Guide.
+trader/exit_mechs_suspend.go:31: const ExitMechSuspendedLabel = "suspended 2026-09-02 pending MFE data (wave 1A)"
+trader/exit_mechs_suspend.go:32:
+trader/exit_mechs_suspend.go:33: // exitMechsSuspended resolves the suspension (env EXIT_MECHS_SUSPENDED,
+trader/exit_mechs_suspend.go:34: // default TRUE = suspended).
+trader/exit_mechs_suspend.go:35: func exitMechsSuspended() bool {
+trader/exit_mechs_suspend.go:36: 	if v := strings.TrimSpace(os.Getenv("EXIT_MECHS_SUSPENDED")); v != "" {
+trader/exit_mechs_suspend.go:37: 		switch strings.ToLower(v) {
+trader/exit_mechs_suspend.go:38: 		case "0", "false", "off", "no":
+trader/exit_mechs_suspend.go:39: 			return false
+trader/exit_mechs_suspend.go:40: 		}
+trader/exit_mechs_suspend.go:41: 	}
+trader/exit_mechs_suspend.go:42: 	return true
+trader/exit_mechs_suspend.go:43: }
+trader/auto_trader_clock.go:476: func (at *AutoTrader) enforceEODFlatAt(now time.Time) bool {
+trader/auto_trader_clock.go:477: 	if !at.dayPlanEnabled() || at.store == nil || at.trader == nil {
+trader/auto_trader_clock.go:478: 		return false
+trader/auto_trader_clock.go:479: 	}
+trader/auto_trader_clock.go:480: 	reg := at.sessionRegistry(now)
+trader/auto_trader_clock.go:481: 	flat := "" // resolved wall-clock, for the log only
+trader/auto_trader_clock.go:482: 	if sess, ok := reg.ActiveSession(now); ok {
+trader/auto_trader_clock.go:483: 		offset := at.config.StrategyConfig.DayPlan.EODFlatOffsetFor(sess.Name)
+trader/auto_trader_clock.go:484: 		flatMin, hhmm, okC := sessionCutoffCT(sess, offset)
+trader/auto_trader_clock.go:485: 		if !okC {
+trader/auto_trader_clock.go:503: 	positions, err := at.store.Position().GetOpenPositions(at.id)
+trader/auto_trader_clock.go:504: 	if err != nil || len(positions) == 0 {
+trader/auto_trader_clock.go:505: 		return false
+trader/auto_trader_clock.go:506: 	}
+trader/auto_trader_clock.go:507: 	// S-LIST CLOSER (2026-08-27) — cancel ALL resting arms FIRST, synchronously
+trader/auto_trader_clock.go:508: 	// (ack-waited, one retry), THEN flatten. This kills the ≤2m window where a
+trader/auto_trader_clock.go:509: 	// working limit could fill after the flat (deep-verify hole 11). The same
+trader/auto_trader_clock.go:510: 	// ordering guards the session-end branch (no active session above), the T1
+trader/auto_trader_clock.go:511: 	// force-flat, and the dormancy path in maybeManageArmedOrders.
+trader/auto_trader_clock.go:512: 	n, unacked := at.cancelArmedOrdersSync("session close — EOD flat")
+trader/auto_trader_clock.go:513: 	if n > 0 {
+trader/auto_trader_clock.go:514: 		at.logWarnf("🔒 EOD-FLAT: %d armed order(s) cancelled before flattening", n)
+trader/auto_trader_clock.go:515: 	}
+trader/auto_trader_clock.go:516: 	if unacked > 0 {
+trader/auto_trader_clock.go:517: 		at.logWarnf("⚠️ EOD-FLAT: %d armed cancel(s) unacked after retry — flattening anyway (wire reconciles next cycle)", unacked)
+trader/auto_trader_clock.go:518: 	}
+trader/auto_trader_clock.go:519: 	// A fill that won the race mid-cancel must be flattened too — re-read.
+trader/auto_trader_clock.go:520: 	if fresh, err2 := at.store.Position().GetOpenPositions(at.id); err2 == nil {
+trader/auto_trader_clock.go:521: 		positions = fresh
+trader/auto_trader_clock.go:522: 	}
+trader/auto_trader_clock.go:523: 	at.logWarnf("🕒 EOD-FLAT (%s): session close — flattening %d open position(s) via the trader close path.", flat, len(positions))
+trader/auto_trader_clock.go:524: 	for _, p := range positions {
+trader/auto_trader_clock.go:525: 		at.flattenPosition(p, "🕒 EOD-FLAT")
+trader/auto_trader_clock.go:526: 	}
+trader/auto_trader_clock.go:750: 	bars := market.FuturesBarsProvider(at.futuresSymbol(), "1m", kernel.AISVPBarCount)
+trader/auto_trader_clock.go:751: 	// E4 (wave 1A, 2026-09-02) — the same path computation the excursion table
+trader/auto_trader_clock.go:752: 	// uses, so trader_positions.mae/mfe and trade_excursions cannot disagree.
+trader/auto_trader_clock.go:753: 	// It INCLUDES the bar containing the fill; ComputeExcursion dropped it
+trader/auto_trader_clock.go:754: 	// whenever a fill did not land exactly on a bar boundary.
+trader/auto_trader_clock.go:755: 	path := kernel.ComputePathExcursion(p.EntryPrice, p.Side, 0, 0, bars, p.EntryTime, exitMs, "1m")
+trader/auto_trader_clock.go:756: 	if !path.Computed {
+trader/auto_trader_clock.go:757: 		// No coverage. The columns stay NULL: an uncomputed excursion is not a
+trader/auto_trader_clock.go:758: 		// zero, and writing 0 here is what made 517 closed rows unreadable.
+trader/auto_trader_clock.go:759: 		at.logWarnf("📐 excursion for %s pos=%d has no 1m coverage — mae/mfe left NULL, not zeroed", p.Symbol, p.ID)
+trader/auto_trader_clock.go:760: 	} else if err := at.store.Position().UpdateExcursion(p.ID, path.MAEPts, path.MFEPts); err != nil {
+trader/auto_trader_clock.go:761: 		at.logWarnf("📐 excursion update failed for %s: %v", p.Symbol, err)
+trader/auto_trader_clock.go:762: 		return
+trader/auto_trader_clock.go:763: 	}
+trader/auto_trader_clock.go:764: 	ex := kernel.Excursion{MAE: path.MAEPts, MFE: path.MFEPts}
+trader/auto_trader_clock.go:765: 	// E3 (wave 1A) — the excursion row's exit half. This funnel is reached by
+trader/auto_trader_clock.go:766: 	// EVERY exit path (AI close, NT8 OCO, EOD-flat, manual), which is why the
+trader/auto_trader_clock.go:767: 	// hook lives here and not in one of them.
+trader/auto_trader_clock.go:768: 	at.excursionOnClose(p)
+kernel/mae_mfe.go:22: // ComputeExcursion scans the bars whose OpenTime falls in [entryMs, exitMs] and
+kernel/mae_mfe.go:23: // returns the MAE/MFE for a position opened at entryPrice on the given side.
+kernel/mae_mfe.go:24: func ComputeExcursion(entryPrice float64, side string, bars []market.Kline, entryMs, exitMs int64) Excursion {
+kernel/mae_mfe.go:25: 	if entryPrice <= 0 || entryMs < 0 || exitMs < entryMs {
+kernel/mae_mfe.go:26: 		return Excursion{}
+kernel/mae_mfe.go:27: 	}
+kernel/mae_mfe.go:28: 	long := isLongSide(side)
+kernel/mae_mfe.go:29: 	var ex Excursion
+kernel/mae_mfe.go:30: 	for i := range bars {
+kernel/mae_mfe.go:31: 		b := bars[i]
+kernel/mae_mfe.go:32: 		if b.OpenTime < entryMs || b.OpenTime > exitMs {
+kernel/mae_mfe.go:33: 			continue
+kernel/mae_mfe.go:34: 		}
+kernel/mae_mfe.go:35: 		var fav, adv float64
+kernel/mae_mfe.go:36: 		if long {
+kernel/mae_mfe.go:37: 			fav = b.High - entryPrice // price up = favorable for a long
+kernel/mae_mfe.go:38: 			adv = entryPrice - b.Low  // price down = adverse
+kernel/mae_mfe.go:39: 		} else {
+kernel/mae_mfe.go:40: 			fav = entryPrice - b.Low
+kernel/mae_mfe.go:41: 			adv = b.High - entryPrice
+kernel/mae_mfe.go:42: 		}
+kernel/mae_mfe.go:43: 		if fav > ex.MFE {
+kernel/mae_mfe.go:44: 			ex.MFE = fav
+kernel/mae_mfe.go:45: 		}
+kernel/mae_mfe.go:46: 		if adv > ex.MAE {
+kernel/mae_mfe.go:47: 			ex.MAE = adv
+kernel/mae_mfe.go:48: 		}
+kernel/mae_mfe.go:49: 	}
+kernel/mae_mfe.go:50: 	return ex
+trader/trade_excursion_hook.go:39: // excursionOnOpen (E1) writes the entry half. Every excursion column stays
+trader/trade_excursion_hook.go:40: // NULL: nothing has been measured yet.
+trader/trade_excursion_hook.go:41: func (at *AutoTrader) excursionOnOpen(p *store.TraderPosition, stopPx, targetPx, atr5m float64) {
+trader/trade_excursion_hook.go:42: 	if p == nil || !at.excursionsEnabled() {
+trader/trade_excursion_hook.go:43: 		return
+trader/trade_excursion_hook.go:44: 	}
+trader/trade_excursion_hook.go:45: 	at.safeExcursion(fmt.Sprintf("open pos=%d", p.ID), func() error {
+trader/trade_excursion_hook.go:46: 		row := store.TradeExcursion{
+trader/trade_excursion_hook.go:47: 			PositionID: p.ID, PlanID: p.PlanID, Version: p.PlanVersion,
+trader/trade_excursion_hook.go:48: 			Session: p.PlanSession, Scenario: p.CitedScenarioID,
+trader/trade_excursion_hook.go:49: 			Condition: excursionCondition(at.store, p.PlanID, p.PlanVersion, p.CitedScenarioID),
+trader/trade_excursion_hook.go:50: 			Side:      p.Side, EntryPx: p.EntryPrice, EntryTs: p.EntryTime,
+trader/trade_excursion_hook.go:51: 			StopPxInitial: stopPx, TargetPx: targetPx,
+trader/trade_excursion_hook.go:52: 			Size: p.Quantity, ATR5mAtEntry: atr5m, Source: "live",
+trader/trade_excursion_hook.go:53: 		}
+trader/trade_excursion_hook.go:54: 		// atr_mult_stop_at_entry: how many ATR5m the initial stop sat away from
+trader/trade_excursion_hook.go:55: 		// the fill. NULL when either input is unknown — never a computed 0/0.
+trader/trade_excursion_hook.go:56: 		if atr5m > 0 && stopPx > 0 && p.EntryPrice > 0 {
+trader/trade_excursion_hook.go:57: 			mult := (p.EntryPrice - stopPx) / atr5m
+trader/trade_excursion_hook.go:58: 			if mult < 0 {
+trader/trade_excursion_hook.go:59: 				mult = -mult
+trader/trade_excursion_hook.go:60: 			}
+trader/trade_excursion_hook.go:61: 			row.ATRMultStopEntry = &mult
+trader/trade_excursion_hook.go:62: 		}
+trader/trade_excursion_hook.go:63: 		id, err := at.store.TradeExcursions().Open(row)
+trader/trade_excursion_hook.go:64: 		if err != nil {
+trader/trade_excursion_hook.go:65: 			return err
+trader/trade_excursion_hook.go:66: 		}
+trader/trade_excursion_hook.go:67: 		at.logInfof("📐 excursion opened row=%d pos=%d %s %s entry=%.2f stop=%.2f target=%.2f atr5m=%.2f",
+trader/trade_excursion_hook.go:68: 			id, p.ID, p.Symbol, p.Side, p.EntryPrice, stopPx, targetPx, atr5m)
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:7: > ## ⛔ CORRECTION (2026-08-17, P0 investigation)
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:8: >
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:9: > **The "empty risk_control" headline below is WRONG, and the error was mine.** `risk_control` is nested under `ai_config` — exactly where the hand-rolled codec writes it (`store/strategy.go:763-769` / `:806-811`). My audit query read the **top level**, found nothing, and defaulted the miss to `{}`.
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:10: >
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:11: > The live values were correct all along: **`min_risk_reward_ratio: 3` · `min_confidence: 65` · `max_contracts_per_order: 2` · `hold_discipline: true` · `breakeven_enabled: true`**, on BOTH running strategies. Proven by loading the real stored JSON through the production codec: after `ClampLimits()` the effective gate values are **minRR=3.00 · minConf=65 · maxContracts=2 · holdLock=true**.
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:12: >
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:13: > Therefore, in the table and prose below: **R:R gate = ✅ MATCH (3.0)**, **confidence gate = ✅ MATCH (65)**, **size cap = ✅ MATCH (2)**, and the §5.3 finding "hold-lock is OFF on both live traders" is **withdrawn**. `guardrails_enabled: false` is unchanged and remains the owner's deliberate decision.
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:14: >
+docs/superpowers/reports/2026-08-17-cto-final-verification.md:15: > Pinned against recurrence by `kernel/risk_config_truth_test.go` (`TestRiskConfigLivesUnderAIConfig`).
+trader/detector_record.go:38: 	scope := kernel.ResolveVoidScope(symbol, now)
+trader/detector_record.go:39: 	if len(scope.Bars) == 0 {
+trader/detector_record.go:40: 		at.logInfof("🔬 detector: no bars in scope — nothing recorded this read (not zero episodes; UNMEASURED)")
+trader/detector_record.go:41: 		return
+trader/detector_record.go:42: 	}
+trader/detector_record.go:43: 	delta := kernel.MeanAbsIncrement(scope.Bars)
+trader/detector_record.go:44: 	if delta <= 0 {
+trader/detector_record.go:45: 		at.logWarnf("🔬 detector: Δ resolved to 0 — the band would be degenerate; skipping rather than recording a meaningless verdict")
+trader/detector_record.go:46: 		return
+trader/detector_record.go:47: 	}
+trader/detector_record.go:48: 	k, horizon, exitOn := kernel.DetectorK(), kernel.DetectorHorizonBars(), kernel.DetectorExitOn()
+trader/detector_record.go:49: 	dayMs := kernel.CMESessionDayStart(now).UnixMilli()
+trader/detector_record.go:50: 	ts := at.store.TouchOutcomes()
+trader/detector_record.go:51:
+trader/detector_record.go:52: 	written := 0
+trader/detector_record.go:53: 	for _, lv := range seated {
+trader/detector_record.go:54: 		if lv.Price <= 0 {
+trader/detector_record.go:55: 			continue
+trader/detector_record.go:56: 		}
+trader/detector_record.go:57: 		eps := kernel.DetectTouchOutcomes(scope.Bars, lv.Price, k, delta, horizon, exitOn)
+trader/detector_record.go:58: 		if len(eps) == 0 {
+trader/detector_record.go:59: 			continue
+trader/detector_record.go:60: 		}
+trader/detector_record.go:61: 		last := ts.LastOpenedAtMs(at.id, symbol, lv.Price, dayMs)
+trader/detector_record.go:62: 		for _, e := range kernel.NewEpisodesSince(eps, last) {
+trader/detector_record.go:63: 			row := &store.TouchOutcomeRow{
+trader/detector_record.go:64: 				TraderID: at.id, Symbol: symbol,
+trader/detector_record.go:65: 				LevelPrice: lv.Price, LevelKind: string(lv.Kind),
+trader/detector_record.go:66: 				CandidateSeated: true, PlanID: planID, PlanVersion: planVersion, Session: session,
+trader/detector_record.go:67: 				Ordinal: ts.NextOrdinal(at.id, symbol, lv.Price, dayMs),
+trader/detector_record.go:68: 				K:       k, Delta: delta, BandPts: k * delta, Horizon: horizon, ExitOn: exitOn,
+trader/detector_record.go:69: 				EntrySide: e.Entry, ExitSide: e.Exit, Outcome: e.Outcome,
+trader/detector_record.go:70: 				Ambiguous: e.IsAmbiguous(), BarsToExit: e.BarsToExit,
+trader/detector_record.go:71: 				MFEPts: e.MFE, MAEPts: e.MAE,
+trader/detector_record.go:72: 				OpenedAtMs: e.OpenedAtMs, ClosedAtMs: e.ClosedAtMs,
+trader/detector_record.go:73: 			}
+kernel/levels_multiday.go:88: 		session := ""
+kernel/levels_multiday.go:89: 		if s, ok := reg.ActiveSession(bt); ok {
+kernel/levels_multiday.go:90: 			session = s.Name
+kernel/levels_multiday.go:91: 		}
+kernel/levels_multiday.go:92: 		if session == SessionNY {
+kernel/levels_multiday.go:93: 			a.hasRTH = true
+kernel/levels_multiday.go:94: 			if b.High > a.rthHigh {
+kernel/levels_multiday.go:95: 				a.rthHigh = b.High
+kernel/levels_multiday.go:96: 			}
+kernel/levels_multiday.go:97: 			if b.Low < a.rthLow {
+kernel/levels_multiday.go:98: 				a.rthLow = b.Low
+kernel/levels_multiday.go:99: 			}
+kernel/levels_multiday.go:146: 	// Prior calendar day (PDH/PDL/PDC + its RTH). Coverage-guarded (P0.4-F,
+kernel/levels_multiday.go:147: 	// 2026-08-25): a truncated bucket — bot down part of the day, or a fresh
+kernel/levels_multiday.go:148: 	// boot whose 1m ring only reaches the prior day's afternoon — yields a
+kernel/levels_multiday.go:149: 	// WRONG low/high/close. Live proof: ASIA v4 anchored its flip on "PDL
+kernel/levels_multiday.go:150: 	// 29263.25", which was Friday's close region (PDC 29266.25 − 3.00) read
+kernel/levels_multiday.go:151: 	// off a Friday-afternoon-only bucket; the true prior-day low was ~29116.
+kernel/levels_multiday.go:152: 	// A day with < priorDayMinBars closed bars is OMITTED — the WARMING badge
+kernel/levels_multiday.go:153: 	// surfaces the honest gap instead of a fabricated anchor.
+kernel/levels_multiday.go:154: 	if priorCal := mostRecentPriorDay(cal, todayCal, priorDayMinBars); priorCal != "" {
+kernel/levels_multiday.go:155: 		a := cal[priorCal]
+kernel/levels_multiday.go:156: 		out = append(out,
+kernel/levels_multiday.go:157: 			lineLevel(KindPDH, a.high, "PDH", priorCal, true),
+kernel/levels_multiday.go:158: 			lineLevel(KindPDL, a.low, "PDL", priorCal, true),
+kernel/levels_multiday.go:159: 			lineLevel(KindPDC, a.closePx, "PDC", priorCal, true),
+kernel/levels_multiday.go:160: 		)
+kernel/levels_multiday.go:161: 		if a.hasRTH {
+kernel/levels_multiday.go:162: 			out = append(out,
+kernel/levels_multiday.go:163: 				lineLevel(KindRTHH, a.rthHigh, "RTH-H", priorCal, false),
+kernel/levels_multiday.go:164: 				lineLevel(KindRTHL, a.rthLow, "RTH-L", priorCal, false),
+kernel/levels_multiday.go:165: 			)
+kernel/levels_multiday.go:166: 		}
+kernel/planner_prompt.go:721: 		"ENTRY LAW (per condition — the machine REJECTS violations by name): reject → touch ONLY (fade_requires_touch) with a structure stop ≥2 ticks beyond the level · fvg_entry → touch ONLY, entry price inside the FVG edge..CE band · sweep_reclaim → leg-1 touch at the sweep ref, leg-2 1m_mss (1x5m_close accepted as the leg-2 alternative) · reclaim → 1x5m_close or 1m_mss, never 2x5m_close · breakout_retest → touch at the retest + stop-entry fallback, 1x5m_close legal for the break leg · acceptance/hold → time_hold (price holds beyond ref for ACCEPT_HOLD_MIN minutes of 1m closes) with 1x5m_close as fallback · breakdown/breakup_continue → 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m (BD_MIN_CLOSES=1) or stop-entry — 2x5m_close is legal ONLY here (everywhere else: 2x5m_reserved). Default confirm = 1x5m_close (single close). " +
+kernel/planner_prompt.go:722: 		"target_chain is GUIDANCE for the executor AI (which sets the actual take_profit) — it is validated for reachability at write time but never enforced at execution (D2 ruling). " +
+kernel/planner_prompt.go:733: 		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). NEVER arm acceptance or a raw sweep WITHOUT the wait_confirm chain. Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. The system places arms within a tick band, manages them tick-level, and cancels on veto/dormant/session-end. FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target\u2212entry| \u00f7 |stop\u2212entry| must be \u2265 2.0 (ARM_MIN_RR) AND the stop distance must be \u2265 " + fmt.Sprintf("%.1f", MinSLATRMult()) + "\u00d7 the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). If your setup cannot meet BOTH, OMIT arm{} and let the AI path take it. WATERFALL ARMS (F1): a breakdown_continue / breakup_continue at quality A or B SHOULD carry arm{} with wait_confirm:true + entry_mode=pullback — the resting limit sits AT the broken level and chains on confirm leg 1, so the pullback-that-fails FILLS it (immediate-mode waterfall plays stay on the AI path). " +
+market/data_indicators.go:86: func calculateATR(klines []Kline, period int) float64 {
+market/data_indicators.go:87: 	if len(klines) <= period {
+market/data_indicators.go:88: 		return 0
+market/data_indicators.go:89: 	}
+market/data_indicators.go:90:
+market/data_indicators.go:91: 	trs := make([]float64, len(klines))
+market/data_indicators.go:92: 	for i := 1; i < len(klines); i++ {
+market/data_indicators.go:93: 		high := klines[i].High
+market/data_indicators.go:94: 		low := klines[i].Low
+market/data_indicators.go:95: 		prevClose := klines[i-1].Close
+market/data_indicators.go:96:
+market/data_indicators.go:97: 		tr1 := high - low
+market/data_indicators.go:98: 		tr2 := math.Abs(high - prevClose)
+market/data_indicators.go:99: 		tr3 := math.Abs(low - prevClose)
+market/data_indicators.go:100:
+market/data_indicators.go:101: 		trs[i] = math.Max(tr1, math.Max(tr2, tr3))
+market/data_indicators.go:102: 	}
+market/data_indicators.go:103:
+market/data_indicators.go:104: 	// Calculate initial ATR
+market/data_indicators.go:105: 	sum := 0.0
+market/data_indicators.go:106: 	for i := 1; i <= period; i++ {
+market/data_indicators.go:107: 		sum += trs[i]
+market/data_indicators.go:108: 	}
+market/data_indicators.go:109: 	atr := sum / float64(period)
+market/data_indicators.go:110:
+market/data_indicators.go:111: 	// Wilder smoothing
+market/data_indicators.go:112: 	for i := period + 1; i < len(klines); i++ {
+market/data_indicators.go:113: 		atr = (atr*float64(period-1) + trs[i]) / float64(period)
+market/data_indicators.go:114: 	}
+market/data_indicators.go:115:
+market/data_indicators.go:116: 	return atr
+docs/superpowers/AUDIT-CHECKLIST.md:113: 15. **Fantasy-R.** Root cause: planned R:R > ~6 on an arm — mathematically a
+docs/superpowers/AUDIT-CHECKLIST.md:114:     fantasy target; the arm is refused every cycle and learns nothing.
+docs/superpowers/AUDIT-CHECKLIST.md:115:     **Probe:** grep plans for `R:R = |target−entry| / |stop−entry|` > 6 + the
+docs/superpowers/AUDIT-CHECKLIST.md:116:     arm feasibility contract (R:R ≥ 2.0 AND stop ≥ 1.0×ATR5m or the arm is
+docs/superpowers/AUDIT-CHECKLIST.md:117:     refused). **Law:** the contract says what the gate enforces; fantasy
+docs/superpowers/AUDIT-CHECKLIST.md:118:     targets get WARN-flagged at write.
+docs/superpowers/AUDIT-CHECKLIST.md:119:
+docs/superpowers/AUDIT-CHECKLIST.md:120: 16. **Small-n crowns.** Root cause: verdicts like "reject 75% win +665" quoted
+docs/superpowers/AUDIT-CHECKLIST.md:121:     without n (a 3-trade week crowned as a rule). **Probe:** every verdict in a
+docs/superpowers/AUDIT-CHECKLIST.md:122:     report MUST carry its n (e.g. "A-touch react 79% (n=52)"); n < 10 is
+docs/superpowers/AUDIT-CHECKLIST.md:123:     explicitly labeled anecdote. **Law:** every verdict carries n; no crowns
+docs/superpowers/AUDIT-CHECKLIST.md:124:     on small n.
+docs/superpowers/AUDIT-CHECKLIST.md:125:
+docs/superpowers/AUDIT-CHECKLIST.md:126: 17. **Secrets in baks.** Root cause: `.env.bak.*` and other backup files left
+docs/superpowers/AUDIT-CHECKLIST.md:127:     in the tree with live keys; they also flip the binary's `+dirty` vcs flag.
+docs/superpowers/AUDIT-CHECKLIST.md:128:     **Probe:** the dirty-flag account in every cutover report lists each
+docs/superpowers/AUDIT-CHECKLIST.md:129:     untracked file by name + a secret-scan on every `.env*` and `*.bak`.
+docs/superpowers/AUDIT-CHECKLIST.md:130:     **Law:** baks live OUTSIDE the repo (or are gitignored + scanned); the
+docs/superpowers/AUDIT-CHECKLIST.md:1010:     that exit rules, stop sizes and targets come from MAE/MFE distributions, so
+docs/superpowers/AUDIT-CHECKLIST.md:1011:     every one of those rulings was waiting on a column that was 88% unreadable.
+docs/superpowers/AUDIT-CHECKLIST.md:1012:     Two more faces of the same defect: `kernel.LearningLine` guarded its average
+docs/superpowers/AUDIT-CHECKLIST.md:1013:     with `if t.MAE > 0 || t.MFE > 0`, which silently drops a genuine zero AND
+docs/superpowers/AUDIT-CHECKLIST.md:1014:     counts an uncomputed row as merely absent, then printed an average with no n
+docs/superpowers/AUDIT-CHECKLIST.md:1015:     at all; and `ComputeExcursion` filtered bars with `b.OpenTime < entryMs →
+docs/superpowers/AUDIT-CHECKLIST.md:1016:     skip`, so unless a fill landed exactly on a bar boundary the bar CONTAINING
+docs/superpowers/AUDIT-CHECKLIST.md:1017:     the entry — the one holding the first adverse move — was excluded. **Probe:**
+docs/superpowers/AUDIT-CHECKLIST.md:1018:     for every numeric column, ask what value means "not measured" and count the
+docs/superpowers/AUDIT-CHECKLIST.md:1019:     rows holding it; if that value is also a legal measurement, the column
+docs/superpowers/AUDIT-CHECKLIST.md:1020:     cannot answer the question it exists for. For every average, ask what its n
+docs/superpowers/AUDIT-CHECKLIST.md:1021:     is and whether the reader is told. For every window over bars, ask whether
+docs/superpowers/AUDIT-CHECKLIST.md:1022:     the boundary bar is in or out and whether the answer is the same at both
+docs/superpowers/AUDIT-CHECKLIST.md:1023:     ends. **Fix:** `trade_excursions` — one row per position, every numeric
+docs/superpowers/AUDIT-CHECKLIST.md:1024:     NULLABLE and NULL until computed, written by the machine at open, recomputed
+docs/superpowers/AUDIT-CHECKLIST.md:1025:     each tick while the position lives, closed with the exit half, and carrying
+docs/superpowers/AUDIT-CHECKLIST.md:1026:     what a distribution needs: extremes with their timestamps and bar offsets,
+docs/superpowers/AUDIT-CHECKLIST.md:1027:     bars held, bars that reached BOTH the stop and the target, the resolution
+docs/superpowers/AUDIT-CHECKLIST.md:1028:     the path was built from, and pnl_corrected. A hold the tape does not reach
+docs/superpowers/AUDIT-CHECKLIST.md:1029:     is marked `resolution="none"` and keeps its NULLs — never a guessed number,
+docs/superpowers/AUDIT-CHECKLIST.md:1030:     and the count of those rows rides the boot line. `mae`/`mfe` on
+docs/superpowers/AUDIT-CHECKLIST.md:1031:     trader_positions became `*float64` with a migration that nulls only the
+docs/superpowers/AUDIT-CHECKLIST.md:1032:     517-row pair; `LearningTrade` carries `Measured` and the line prints
+docs/superpowers/AUDIT-CHECKLIST.md:1089:     in a comment listing alternatives. **Fix:** `strict` was **documented,
+docs/superpowers/AUDIT-CHECKLIST.md:1090:     never implemented; first implementation 2026-09-03 by owner ruling** — it is
+docs/superpowers/AUDIT-CHECKLIST.md:1091:     a NEW GATE, not a restoration, and it is recorded as such because the
+docs/superpowers/AUDIT-CHECKLIST.md:1092:     dispatch that ordered it believed it was reviving deprecated behaviour.
+docs/superpowers/AUDIT-CHECKLIST.md:1093:     Semantics: only plan scenarios execute · arm path only · decision-path
+docs/superpowers/AUDIT-CHECKLIST.md:1094:     market entries refused · direction must equal the cited scenario's ·
+docs/superpowers/AUDIT-CHECKLIST.md:1095:     refusals logged `refused: strict`. Implemented as leg 0 of the ONE
+docs/superpowers/AUDIT-CHECKLIST.md:1096:     EntryGate (class 48) so its refusal is the one the journal shows, with pins
+docs/superpowers/AUDIT-CHECKLIST.md:1097:     in both directions (refuses a decision-path open; allows an arm whose side
+docs/superpowers/AUDIT-CHECKLIST.md:1820: 79. **Silence read as death.** (Number assigned at merge; highest occupied on
+docs/superpowers/AUDIT-CHECKLIST.md:1821:     dev at authoring: 78.) The stale-working reaper cancelled any armed row that
+docs/superpowers/AUDIT-CHECKLIST.md:1822:     had seen no `order_update` for the stale window. But `order_update` is an
+docs/superpowers/AUDIT-CHECKLIST.md:1823:     EVENT frame: a resting limit that nobody touches emits **nothing at all**, so
+docs/superpowers/AUDIT-CHECKLIST.md:1824:     after N minutes a perfectly healthy order is byte-for-byte indistinguishable
+docs/superpowers/AUDIT-CHECKLIST.md:1825:     from a dead one. The reaper turned an ABSENCE OF EVIDENCE into a cancel — and
+docs/superpowers/AUDIT-CHECKLIST.md:1826:     a cancel is not a read, it is an execution against a live order at the broker.
+docs/superpowers/AUDIT-CHECKLIST.md:1827:     The failure was not that it reaped too eagerly. It is that the only input it
+docs/superpowers/AUDIT-CHECKLIST.md:1828:     had could not answer the question it was asking. No threshold tuning fixes
+docs/superpowers/AUDIT-CHECKLIST.md:1829:     that: a longer window delays the wrong answer, it does not make the evidence
+docs/superpowers/AUDIT-CHECKLIST.md:1830:     exist.
+docs/superpowers/AUDIT-CHECKLIST.md:1831:     **Probe:** for every predicate that concludes something is DEAD, GONE, DONE or
+docs/superpowers/AUDIT-CHECKLIST.md:1832:     STALE, ask what the healthy case emits. If the healthy case is also silent,
+docs/superpowers/AUDIT-CHECKLIST.md:1833:     the predicate cannot distinguish them and its threshold is decoration. Then
+docs/superpowers/AUDIT-CHECKLIST.md:1834:     ask the harder one: **what does this code do when it does not know?** If the
+docs/superpowers/AUDIT-CHECKLIST.md:1835:     answer is the same as what it does when the thing is dead, ignorance and death
+docs/superpowers/AUDIT-CHECKLIST.md:1836:     are the same branch, and the destructive one wins by default.
+docs/superpowers/AUDIT-CHECKLIST.md:1837:     **Law:** silence is not evidence. A destructive action needs a POSITIVE
+docs/superpowers/AUDIT-CHECKLIST.md:1838:     observation from the system that owns the fact — here the broker's own book
+docs/superpowers/AUDIT-CHECKLIST.md:1839:     (F12's `order_snapshot`), which answers whether or not anything happened.
+docs/superpowers/AUDIT-CHECKLIST.md:1840:     Where no such observation exists, the answer is a THIRD verdict — unknown —
+docs/superpowers/AUDIT-CHECKLIST.md:1841:     and unknown must do NOTHING. Fixed by giving the reaper three verdicts
+docs/superpowers/AUDIT-CHECKLIST.md:1842:     (alive / gone / unknown) where it had a boolean; silence now selects which
+docs/superpowers/AUDIT-CHECKLIST.md:1845: ## PART 2 — PRE-AUDIT (standing hard rules)
+docs/superpowers/AUDIT-CHECKLIST.md:1846:
+docs/superpowers/AUDIT-CHECKLIST.md:1847: - **R1 fresh evidence only** — produced THIS run: CT-timestamped queries,
+docs/superpowers/AUDIT-CHECKLIST.md:1848:   quoted journal lines, committed script deltas. Citing any prior report as
+docs/superpowers/AUDIT-CHECKLIST.md:1849:   proof = automatic UNVERIFIED.
+docs/superpowers/AUDIT-CHECKLIST.md:1850: - **R2 independent math** — recompute from raw stores; never call the function
+docs/superpowers/AUDIT-CHECKLIST.md:1851:   under test (the recompute is its own implementation).
+docs/superpowers/AUDIT-CHECKLIST.md:1852: - **R3 twin paths** — long/short mirrors both exercised.
+docs/superpowers/AUDIT-CHECKLIST.md:1853: - **R4 file:line** — every code claim cites the exact location.
+docs/superpowers/AUDIT-CHECKLIST.md:1854: - **R5 grades** — S/A/B/C; S-findings listed first.
+docs/superpowers/AUDIT-CHECKLIST.md:1855: - **R6 verdict grammar** — PROVEN / EVENT-WAIT (SHIPPED-UNPROVEN + the exact
+docs/superpowers/AUDIT-CHECKLIST.md:1856:   awaited event) / BROKEN / UNVERIFIED; never upgrade a grade without fresh
+docs/superpowers/AUDIT-CHECKLIST.md:1857:   evidence.
+docs/superpowers/AUDIT-CHECKLIST.md:1858: - **R7 pnl rule** — `pnl_corrected` everywhere + `excluded_null_pnl` for the
+docs/superpowers/AUDIT-CHECKLIST.md:1859:   354 legacy NULL rows (`WHERE pnl_corrected IS NOT NULL` in every expectancy
+docs/superpowers/AUDIT-CHECKLIST.md:1860:   query; position_query.go).
+docs/superpowers/AUDIT-CHECKLIST.md:1861: - **R8 times** — all times CT.
+docs/superpowers/AUDIT-CHECKLIST.md:1862: - **R9 isolation** — read-only sweeps run in a worktree at the RUNNING rev;
+docs/superpowers/AUDIT-CHECKLIST.md:1863:   zero code/config/DB/env changes; no restarts. Main tree untouched.
+/home/hoang/nofx/data/nofx_2026-09-02.log:16710: 09-02 07:49:06 [INFO] clone0b2/main.go:240 🔐 BOOT INTEGRITY OK — rev 4175e0b62de7 · built 2026-09-02T12:44:37Z · expected 4175e0b62de7 · goldens PASS
+/home/hoang/nofx/data/nofx_2026-09-02.log:16755: 09-02 07:49:06 [INFO] clone0b2/main.go:267 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
+/home/hoang/nofx/data/nofx_2026-09-03.log:3658: 09-03 11:10:33 [INFO] cc2/main.go:243 🔐 BOOT INTEGRITY OK — rev f478ed880dc9 · built 2026-09-03T16:07:06Z · expected f478ed880dc9 · goldens PASS
+/home/hoang/nofx/data/nofx_2026-09-03.log:3696: 09-03 11:10:33 [INFO] cc2/main.go:270 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
+BOOT f478ed880dc9 trader/entry_gate.go:124: 	if in.PlanMode == "strict" {
+BOOT f478ed880dc9 trader/entry_gate.go:125: 		if in.Path != "arm" {
+BOOT f478ed880dc9 trader/entry_gate.go:126: 			return fmt.Sprintf("entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a %s-path market entry", in.Path), true
+READ-ONLY HEALTH {"revision":"36648655cfe0","status":"ok","time":null}
+HTTP 200

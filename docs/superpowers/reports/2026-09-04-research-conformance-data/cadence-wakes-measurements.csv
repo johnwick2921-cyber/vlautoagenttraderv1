@@ -1,0 +1,39 @@
+scope,metric,n,note
+boot8 2026-09-04 08:30:11-08:49:25 CT (19m14s),level_wake_fired,1,"08:46:09 CT NY — seated OB(bull)-4h invalidated close 29616.50 below 29863.50 (noise 6.73)"
+boot8 window,mss_wake_fired,0,
+boot8 window,skip_min_interval,0,"lastPlannerWakeAt zero after boot -> first wake bypasses the throttle by construction"
+boot8 window,skip_cutoff_25m,0,"NY flat 14:45; 359 min to flat at the wake"
+boot8 window,skip_cooldown_30m,0,"NY v2 was owner_reset-authored -> WakeCadenceGoverns=false -> HaveLastWakeVersion=false -> cooldown INAPPLICABLE 83s after a fresh plan"
+boot8 window,defer_stream,0,
+boot8 window,cooldown_bypass_fastmarket,0,
+boot8 window,stale_arms_superseded,0,
+boot8 window,scheduled_reads,0,"NY 08:00 read ran under boot 7; produced planner_fail_closed v1 at 08:11:45 CT"
+boot8 window,owner_reset,1,"08:32:00 CT — chain abandoned at v1, budget re-armed (4 re-plans)"
+boot8 window,plans_written,1,"NY v2 08:44:46 CT, trigger owner_reset, lifecycle active, 566.3s planner call, attempt 2/3 after a repair"
+calendar 2026-09-01,level_wake_fired,21,
+calendar 2026-09-01,skip_min_interval,256,
+calendar 2026-09-01,mss_wake_fired,1,"last MSS wake ever observed in the logs"
+calendar 2026-09-02 (WARN-first from 21:19 CT),level_wake_fired,36,
+calendar 2026-09-02,skip_min_interval,366,
+calendar 2026-09-02,would_skip_warnfirst,3,
+calendar 2026-09-03 (ENFORCING),level_wake_fired,15,
+calendar 2026-09-03,skip_min_interval,127,
+calendar 2026-09-03,skip_cooldown_30m,20,
+calendar 2026-09-03,skip_cutoff_25m,0,
+calendar 2026-09-03,would_skip_warnfirst,5,
+calendar 2026-09-03,defer_stream,3,
+calendar 2026-09-03,cooldown_bypass_fastmarket,1,
+calendar 2026-09-04 (to 08:49 CT),level_wake_fired,5,
+calendar 2026-09-04,skip_min_interval,46,
+calendar 2026-09-04,skip_cutoff_25m,23,"20 LONDON td-2026-09-04 + 3 ASIA td-2026-09-03"
+calendar 2026-09-04,skip_cooldown_30m,5,
+WARN-first promotion basis,would_skip_total_before_enforce,8,"1 cutoff + 7 cooldown; report:126 asked for ONE WEEK of counting"
+counter reconciliation,wake_cutoff_class47_sum,24,"23 SKIPPED + 1 would_skip — exact match to system_config counters"
+counter reconciliation,wake_cooldown_class47_sum,32,"25 SKIPPED + 7 would_skip — exact match to system_config counters"
+counter reconciliation,wake_stream_defer_class47_sum,3,"3 DEFERRED — exact match"
+all-time plans table,trigger_reason=level_event,106,2026-08-25 .. 2026-09-04
+all-time plans table,trigger_reason=structure_mss,2,2026-08-24 .. 2026-08-26 (none in 9 days)
+all-time plans table,trigger_reason=death_replan,0,"label introduced 2026-09-01 class 35 — never landed a version"
+all-time plans table,trigger_reason=owner_reread,0,"never exercised"
+all-time plans table,trigger_reason=owner_reset,24,2026-08-17 .. 2026-09-04
+all-time plans table,ASIA/LONDON/NY_scheduled_read,24/17/19,

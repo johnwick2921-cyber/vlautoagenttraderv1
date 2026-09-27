@@ -1,0 +1,198 @@
+[
+  {
+    "rule": "void_reclaimed",
+    "n": 21,
+    "share_of_64": 32.812,
+    "wilson95_percent": [
+      22.57,
+      45.0
+    ],
+    "ids": [
+      73,
+      74,
+      75,
+      77,
+      83,
+      88,
+      92,
+      94,
+      96,
+      98,
+      100,
+      101,
+      102,
+      103,
+      105,
+      107,
+      108,
+      109,
+      110,
+      111,
+      113
+    ]
+  },
+  {
+    "rule": "transport",
+    "n": 6,
+    "share_of_64": 9.375,
+    "wilson95_percent": [
+      4.37,
+      18.98
+    ],
+    "ids": [
+      71,
+      72,
+      87,
+      89,
+      90,
+      91
+    ]
+  },
+  {
+    "rule": "minimum_displacement",
+    "n": 6,
+    "share_of_64": 9.375,
+    "wilson95_percent": [
+      4.37,
+      18.98
+    ],
+    "ids": [
+      114,
+      115,
+      117,
+      126,
+      129,
+      132
+    ]
+  },
+  {
+    "rule": "arm_split_shape",
+    "n": 5,
+    "share_of_64": 7.812,
+    "wilson95_percent": [
+      3.38,
+      17.02
+    ],
+    "ids": [
+      69,
+      80,
+      84,
+      85,
+      86
+    ]
+  },
+  {
+    "rule": "entry_rule_pair",
+    "n": 5,
+    "share_of_64": 7.812,
+    "wilson95_percent": [
+      3.38,
+      17.02
+    ],
+    "ids": [
+      70,
+      78,
+      81,
+      112,
+      118
+    ]
+  },
+  {
+    "rule": "fade_touch",
+    "n": 5,
+    "share_of_64": 7.812,
+    "wilson95_percent": [
+      3.38,
+      17.02
+    ],
+    "ids": [
+      76,
+      93,
+      99,
+      104,
+      106
+    ]
+  },
+  {
+    "rule": "minimum_confirming_closes",
+    "n": 5,
+    "share_of_64": 7.812,
+    "wilson95_percent": [
+      3.38,
+      17.02
+    ],
+    "ids": [
+      119,
+      121,
+      124,
+      127,
+      130
+    ]
+  },
+  {
+    "rule": "arm_pullback_required",
+    "n": 5,
+    "share_of_64": 7.812,
+    "wilson95_percent": [
+      3.38,
+      17.02
+    ],
+    "ids": [
+      120,
+      122,
+      125,
+      128,
+      131
+    ]
+  },
+  {
+    "rule": "confirm_enum",
+    "n": 2,
+    "share_of_64": 3.125,
+    "wilson95_percent": [
+      0.86,
+      10.7
+    ],
+    "ids": [
+      79,
+      82
+    ]
+  },
+  {
+    "rule": "gap_trigger_reachability",
+    "n": 2,
+    "share_of_64": 3.125,
+    "wilson95_percent": [
+      0.86,
+      10.7
+    ],
+    "ids": [
+      116,
+      123
+    ]
+  },
+  {
+    "rule": "maximum_level_distance",
+    "n": 1,
+    "share_of_64": 1.562,
+    "wilson95_percent": [
+      0.28,
+      8.33
+    ],
+    "ids": [
+      95
+    ]
+  },
+  {
+    "rule": "level_cap",
+    "n": 1,
+    "share_of_64": 1.562,
+    "wilson95_percent": [
+      0.28,
+      8.33
+    ],
+    "ids": [
+      97
+    ]
+  }
+]

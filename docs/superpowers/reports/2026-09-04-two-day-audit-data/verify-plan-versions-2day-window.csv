@@ -1,0 +1,52 @@
+plan_ct,trade_date,session,version,trigger_reason,lifecycle
+"2026-09-02 00:19:46",2026-09-01,ASIA,8,level_event,active
+"2026-09-02 00:47:12",2026-09-01,ASIA,9,"rearmed:2x5m close back above 29035.25 (buffer 0.5×ATR14, 2× 5m closes)",active
+"2026-09-02 01:37:44",2026-09-02,LONDON,1,planner_fail_closed,no_trade
+"2026-09-02 01:51:21",2026-09-01,ASIA,10,level_event,active
+"2026-09-02 07:15:26",2026-09-02,LONDON,2,owner_reset,active
+"2026-09-02 07:21:59",2026-09-02,LONDON,3,level_event,active
+"2026-09-02 07:44:03",2026-09-02,LONDON,4,level_event,active
+"2026-09-02 08:01:50",2026-09-02,LONDON,5,level_event,active
+"2026-09-02 08:09:44",2026-09-02,NY,1,"dormant:flip:flip-condition: 5m_close close above 29058.75 (buffer 0.5×ATR14, 6× 5m closes) → bias long",dormant
+"2026-09-02 08:20:47",2026-09-02,LONDON,6,level_event,active
+"2026-09-02 08:45:28",2026-09-02,NY,2,level_event,active
+"2026-09-02 09:21:18",2026-09-02,NY,3,level_event,active
+"2026-09-02 09:45:52",2026-09-02,NY,4,level_event,active
+"2026-09-02 10:22:33",2026-09-02,NY,5,level_event,active
+"2026-09-02 10:50:53",2026-09-02,NY,6,level_event,active
+"2026-09-02 11:20:19",2026-09-02,NY,7,level_event,active
+"2026-09-02 11:47:10",2026-09-02,NY,8,level_event,active
+"2026-09-02 12:25:10",2026-09-02,NY,9,level_event,active
+"2026-09-02 13:02:15",2026-09-02,NY,10,level_event,active
+"2026-09-02 13:28:36",2026-09-02,NY,11,level_event,active
+"2026-09-02 13:56:59",2026-09-02,NY,12,level_event,active
+"2026-09-02 16:36:02",2026-09-02,ASIA,1,ASIA_scheduled_read,active
+"2026-09-02 17:18:29",2026-09-02,ASIA,2,level_event,active
+"2026-09-02 17:50:56",2026-09-02,ASIA,3,level_event,active
+"2026-09-02 18:04:42",2026-09-02,ASIA,4,level_event,active
+"2026-09-02 18:21:05",2026-09-02,ASIA,5,level_event,active
+"2026-09-02 18:43:33",2026-09-02,ASIA,6,level_event,active
+"2026-09-02 19:02:39",2026-09-02,ASIA,7,level_event,active
+"2026-09-02 19:06:24",2026-08-31,WEEKLY,1,weekly_boot_backfill,active
+"2026-09-02 20:05:55",2026-09-02,ASIA,8,"dormant:flip:flip-condition: 2x5m close above 29175.66 (buffer 0.5×ATR14, 2× 5m closes) → bias long",dormant
+"2026-09-02 20:38:20",2026-09-02,ASIA,9,level_event,active
+"2026-09-02 21:03:03",2026-09-02,ASIA,10,level_event,active
+"2026-09-02 21:31:58",2026-09-02,ASIA,11,level_event,active
+"2026-09-02 21:49:57",2026-09-02,ASIA,12,level_event,active
+"2026-09-02 22:12:42",2026-09-02,ASIA,13,"rearmed:5m_close close back below 29211.00 (buffer 0.5×ATR14, 2× 5m closes)",active
+"2026-09-03 00:08:45",2026-09-02,ASIA,14,level_event,active
+"2026-09-03 00:34:14",2026-09-02,ASIA,15,"dormant:death:death-condition: 5m_close close above 29132.50 (buffer 0.5×ATR14, 2× 5m closes)",dormant
+"2026-09-03 01:34:53",2026-09-03,LONDON,1,"dormant:flip:flip-condition: 2x5m close above 29221.98 (buffer 0.5×ATR14, 2× 5m closes) → bias long",dormant
+"2026-09-03 08:05:19",2026-09-03,NY,1,"dormant:death:death-condition: 2x5m close above 29293.00 (buffer 0.5×ATR14, 2× 5m closes)",dormant
+"2026-09-03 08:15:44",2026-09-03,LONDON,2,level_event,active
+"2026-09-03 08:45:05",2026-09-03,NY,2,level_event,active
+"2026-09-03 09:15:31",2026-09-03,NY,3,level_event,active
+"2026-09-03 09:44:33",2026-09-03,NY,4,level_event,active
+"2026-09-03 10:14:45",2026-09-03,NY,5,level_event,active
+"2026-09-03 10:49:57",2026-09-03,NY,6,level_event,active
+"2026-09-03 11:27:53",2026-09-03,NY,7,"dormant:death:death-condition: 2x5m close below 29502.25 (buffer 0.5×ATR14, 2× 5m closes)",dormant
+"2026-09-03 16:37:36",2026-09-03,ASIA,1,ASIA_scheduled_read,active
+"2026-09-03 18:47:53",2026-09-03,ASIA,2,level_event,dormant
+"2026-09-03 19:28:36",2026-09-03,ASIA,3,level_event,active
+"2026-09-03 19:53:35",2026-09-03,ASIA,4,level_event,active
+"2026-09-03 20:32:32",2026-09-03,ASIA,5,level_event,dormant

@@ -1,0 +1,10 @@
+ACCEPTANCE GATE v2 — Part E Playwright run (2026-08-15 20:12 CT)
+browser: Windows Chrome 151.0.7922.138 headless over CDP (WSL2 mirrored networking)
+frontend: vite dev :3000 → proxy → deployed bot :8080
+
+  ✓ E0 · app shell loads and gates on auth              (2.2s)
+  ✓ E0 · protected API refused from the browser (401)   (776ms)
+  ✓ E7 · mobile 390×844 — no horizontal scroll          (1.2s)
+  - 6 skipped (E1–E6 require E2E_TOKEN / E2E_EMAIL+E2E_PASSWORD)
+
+  3 passed (2.3m)

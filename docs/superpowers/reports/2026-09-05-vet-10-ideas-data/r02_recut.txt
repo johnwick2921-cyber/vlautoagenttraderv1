@@ -1,0 +1,75 @@
+### R-set as the report built it (n=60)
+[R60] n=60 W/L/F=18/40/2 sum$=-610.90 mean$=-10.18 CI[-36.40,16.04]
+   meanR=-0.077 CI[-0.465,0.312]  payoff=1.75 avgW=124.39 avgL=71.25
+   plannedRR mean=3.31 median=2.70 max=18.73  below2.0=10
+   MFE>=planned target 9/60=0.150 wilson(0.081, 0.261) ids=['521', '523', '524', '529', '532', '536', '549', '555', '584']
+   MFE>=0.5R 38/60=0.633 wilson(0.507, 0.744)
+   MFE>=1.0R 22/60=0.367 wilson(0.256, 0.493)
+   MFE>=2.0R 13/60=0.217 wilson(0.131, 0.336)
+   risk pts min=3.75 p25=25.06 med=34.38 p75=48.75 max=280.00
+   win rate 18/58=0.310 wilson(0.206, 0.438); breakeven need=0.364
+### compliant R-set (UNRESOLVABLE removed)
+[Rcomp] n=56 W/L/F=17/37/2 sum$=-421.40 mean$=-7.52 CI[-35.35,20.30]
+   meanR=-0.031 CI[-0.444,0.381]  payoff=1.83 avgW=130.94 avgL=71.55
+   plannedRR mean=3.33 median=2.70 max=18.73  below2.0=10
+   MFE>=planned target 9/56=0.161 wilson(0.087, 0.278) ids=['521', '523', '524', '529', '532', '536', '549', '555', '584']
+   MFE>=0.5R 37/56=0.661 wilson(0.53, 0.771)
+   MFE>=1.0R 21/56=0.375 wilson(0.26, 0.506)
+   MFE>=2.0R 13/56=0.232 wilson(0.141, 0.358)
+   risk pts min=3.75 p25=25.06 med=33.75 p75=48.94 max=280.00
+   win rate 17/54=0.315 wilson(0.207, 0.447); breakeven need=0.353
+### compliant R-set excl 568/569 (class-27 artefacts)
+[Rcomp-x] n=54 W/L/F=16/36/2 sum$=-452.40 mean$=-8.38 CI[-37.11,20.35]
+   meanR=-0.031 CI[-0.459,0.397]  payoff=1.86 avgW=135.19 avgL=72.65
+   plannedRR mean=3.45 median=2.73 max=18.73  below2.0=8
+   MFE>=planned target 9/54=0.167 wilson(0.09, 0.287) ids=['521', '523', '524', '529', '532', '536', '549', '555', '584']
+   MFE>=0.5R 37/54=0.685 wilson(0.553, 0.793)
+   MFE>=1.0R 21/54=0.389 wilson(0.27, 0.522)
+   MFE>=2.0R 13/54=0.241 wilson(0.146, 0.369)
+   risk pts min=3.75 p25=24.56 med=33.12 p75=48.75 max=92.75
+   win rate 16/52=0.308 wilson(0.199, 0.443); breakeven need=0.350
+### compliant R-set excl 568/569 and ASIA
+[Rcomp-x-noASIA] n=38 W/L/F=14/23/1 sum$=100.00 mean$=2.63 CI[-36.38,41.64]
+   meanR=0.175 CI[-0.375,0.724]  payoff=1.73 avgW=143.46 avgL=82.98
+   plannedRR mean=2.86 median=2.66 max=6.29  below2.0=6
+   MFE>=planned target 8/38=0.211 wilson(0.111, 0.363) ids=['521', '523', '524', '529', '532', '549', '555', '584']
+   MFE>=0.5R 26/38=0.684 wilson(0.525, 0.809)
+   MFE>=1.0R 15/38=0.395 wilson(0.256, 0.553)
+   MFE>=2.0R 10/38=0.263 wilson(0.15, 0.42)
+   risk pts min=19.75 p25=30.00 med=39.00 p75=49.31 max=92.75
+   win rate 14/37=0.378 wilson(0.241, 0.539); breakeven need=0.366
+### ASIA only, compliant
+[ASIA] n=16 W/L/F=2/13/1 sum$=-552.40 mean$=-34.52 CI[-60.62,-8.43]
+   meanR=-0.520 CI[-1.090,0.050]  payoff=1.42 avgW=77.25 avgL=54.38
+   plannedRR mean=4.83 median=3.07 max=18.73  below2.0=2
+   MFE>=planned target 1/16=0.062 wilson(0.011, 0.283) ids=['536']
+   MFE>=0.5R 11/16=0.688 wilson(0.444, 0.858)
+   MFE>=1.0R 6/16=0.375 wilson(0.185, 0.614)
+   MFE>=2.0R 3/16=0.188 wilson(0.066, 0.43)
+   risk pts min=3.75 p25=16.12 med=23.75 p75=38.06 max=62.25
+   win rate 2/15=0.133 wilson(0.037, 0.379); breakeven need=0.413
+
+### losers by MFE bucket, compliant excl 568/569
+{'<0.25R': 14, '0.25-0.5R': 3, '0.5-1R': 12, '>=1R': 7} n= 36  MFE>=0.5R 19/36=0.528 wilson(0.37, 0.68)  MFE>=1R 7/36 wilson(0.098, 0.35)
+
+### stop-distance quartiles, compliant excl 568/569 (mean R and $)
+  Q1 3.75-24.00 n=13 meanR=+0.900 sum$=+562.50
+  Q2 24.75-32.50 n=13 meanR=-0.668 sum$=-493.00
+  Q3 33.00-44.25 n=13 meanR=-0.246 sum$=-296.00
+  Q4 45.25-92.75 n=15 meanR=-0.099 sum$=-225.90
+
+### planned RR below 2.0 rows (compliant excl 568/569)
+   550 0.98 decision ASIA S2
+   587 1.09 decision ASIA S3
+   542 1.16 decision NY S2
+   523 1.21 decision NY S1
+   589 1.61 decision NY S3
+   562 1.69 decision LONDON S2
+   529 1.86 decision LONDON S2
+   582 1.91 arm LONDON S2
+   526 2.03 decision ASIA S2
+   578 2.09 arm NY S1
+   591 2.11 arm NY S1
+   567 2.12 arm ASIA S1
+   549 2.19 decision NY S2
+   584 2.21 arm LONDON S2

@@ -30,6 +30,31 @@ func IsTerminalArmState(state string) bool {
 	return armStates[strings.ToLower(strings.TrimSpace(state))]
 }
 
+// IsCancelledArmState is the ONE predicate for "this arm ended by
+// cancellation" (cancelled, or the broker's US spelling) — as opposed to a
+// fill or any other terminal state. The withdraw view reads it (W-EXEC-TRUTH
+// W0 (f)); no reader re-types the pair.
+func IsCancelledArmState(state string) bool {
+	s := strings.ToLower(strings.TrimSpace(state))
+	return s == StateCancelled || s == "canceled"
+}
+
+// PictureSendStarted is the ONE predicate for "this Picture row's entry send
+// has started" (W-EXEC-TRUTH W0, CTO M5): working, or place_pending carrying a
+// submission stamp. A place_pending row without the stamp never reached the
+// wire. The entry latch's ledger clause and reconcile's ledger-explains check
+// both read it — it lives here, beside IsTerminalArmState, so no reader
+// re-types the stage set.
+func PictureSendStarted(p PictureHtfOpportunityDB) bool {
+	switch strings.ToLower(strings.TrimSpace(p.Stage)) {
+	case StateWorking:
+		return true
+	case StatePlacePending:
+		return p.SubmittedAt > 0
+	}
+	return false
+}
+
 // IsKnownArmState permits lifecycle actions to retain their refusal of unknown
 // states while still using the canonical terminal predicate for exposure reads.
 func IsKnownArmState(state string) bool {

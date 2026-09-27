@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VL — Day Plan Config + Level Editing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0C0E12;--card:#14171D;--card2:#181C23;--gold:#C9A24B;
+    --gold-dim:rgba(201,162,75,.14);--gold-line:rgba(201,162,75,.22);
+    --ivory:#E8E3D8;--muted:#8A8F98;--faint:#5A6069;--long:#3FBF8F;
+    --short:#E06C6C;--hair:rgba(232,227,216,.08);}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--ink);color:var(--ivory);font-family:Inter,system-ui;
+    display:flex;flex-direction:column;align-items:center;gap:20px;padding:18px 12px 50px}
+  .panel{width:100%;max-width:430px;background:linear-gradient(180deg,var(--card2),var(--card));
+    border:1px solid var(--gold-line);border-radius:14px;overflow:hidden}
+  .ph{padding:14px 16px 10px;border-bottom:1px solid var(--hair)}
+  .ph h1{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:600}
+  .ph small{font-size:10.5px;color:var(--faint)}
+  .sec{padding:12px 16px 6px}
+  .sec h2{font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--gold);margin-bottom:9px}
+  .row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--hair)}
+  .row:last-child{border-bottom:none}
+  .row .lbl{flex:1;font-size:12.5px}
+  .row .lbl small{display:block;font-size:10px;color:var(--faint);margin-top:1px}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .tog{width:38px;height:21px;border-radius:999px;background:rgba(232,227,216,.12);position:relative;flex:none}
+  .tog.on{background:var(--gold-dim);border:1px solid var(--gold-line)}
+  .tog::after{content:'';position:absolute;top:2.5px;left:3px;width:15px;height:15px;border-radius:50%;background:var(--faint)}
+  .tog.on::after{left:auto;right:3px;background:var(--gold)}
+  .dd{font-size:11.5px;color:var(--ivory);border:1px solid var(--hair);border-radius:8px;
+      padding:6px 10px;background:rgba(232,227,216,.03)}
+  .dd b{color:var(--gold);font-weight:600}
+  .seg{display:flex;border:1px solid var(--hair);border-radius:8px;overflow:hidden;font-size:10px;font-weight:600;letter-spacing:.06em}
+  .seg span{padding:6px 10px;color:var(--faint)}
+  .seg .on{background:var(--gold-dim);color:var(--gold);border-right:1px solid var(--gold-line)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px}
+  .chip{font-size:10.5px;padding:5px 10px;border-radius:999px;border:1px solid var(--hair);color:var(--faint)}
+  .chip.on{border-color:var(--gold-line);background:var(--gold-dim);color:var(--ivory)}
+  .chip .g{font-size:9px;font-weight:700;color:var(--gold);margin-left:4px}
+  .chip .g.b{color:#9AA3AE}.chip .g.c{color:var(--faint)}
+  .slider{flex:1.2;height:3px;background:rgba(232,227,216,.12);border-radius:2px;position:relative}
+  .slider::after{content:'';position:absolute;left:55%;top:-5px;width:13px;height:13px;border-radius:50%;background:var(--gold)}
+  .val{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--gold);min-width:64px;text-align:right}
+  .note{margin:8px 16px 14px;padding:9px 12px;border:1px solid var(--hair);border-radius:10px;
+        font-size:10.5px;color:var(--muted);line-height:1.5}
+  /* edit sheet */
+  .sheet{width:100%;max-width:430px;background:var(--card2);border:1px solid var(--gold-line);
+    border-radius:16px 16px 14px 14px;overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.5)}
+  .grab{width:36px;height:4px;border-radius:2px;background:var(--faint);margin:9px auto 2px;opacity:.5}
+  .sh{display:flex;align-items:center;gap:9px;padding:8px 16px 10px;border-bottom:1px solid var(--hair)}
+  .sh h1{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;flex:1}
+  .own{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--gold);
+       border:1px solid var(--gold-line);background:var(--gold-dim);border-radius:5px;padding:3px 7px}
+  .f{padding:9px 16px;border-bottom:1px solid var(--hair)}
+  .f label{display:block;font-size:9.5px;font-weight:600;letter-spacing:.12em;color:var(--faint);margin-bottom:5px}
+  .in{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--ivory);
+      border:1px solid var(--gold-line);border-radius:8px;padding:8px 11px;background:rgba(201,162,75,.05)}
+  .sel{display:flex;flex-wrap:wrap;gap:6px}
+  .sel .o{font-size:10.5px;padding:5px 10px;border-radius:8px;border:1px solid var(--hair);color:var(--faint)}
+  .sel .o.on{border-color:var(--gold-line);background:var(--gold-dim);color:var(--ivory)}
+  .warn{margin:9px 16px 0;padding:8px 11px;border:1px solid rgba(224,108,108,.25);
+    background:rgba(224,108,108,.06);border-radius:9px;font-size:10.5px;color:var(--short)}
+  .btns{display:flex;gap:9px;padding:13px 16px 15px}
+  .btn{flex:1;text-align:center;font-size:12px;font-weight:600;padding:10px;border-radius:9px}
+  .btn.save{background:var(--gold);color:#14171D}
+  .btn.del{border:1px solid rgba(224,108,108,.3);color:var(--short)}
+  .cap{font-size:10px;color:var(--faint);letter-spacing:.1em;font-weight:600;margin:2px 0 -8px}
+</style>
+</head>
+<body>
+
+<div class="cap">1 · STRATEGY PAGE → NEW "DAY PLAN" BLOCK (set once, like your other config)</div>
+<div class="panel">
+  <div class="ph"><h1>Day Plan</h1><small>MNQ Strategy · per-strategy settings</small></div>
+
+  <div class="sec">
+    <div class="row"><span class="lbl">Enable Day Plan</span><span class="tog on"></span></div>
+    <div class="row"><span class="lbl">Planner model<small>from your model keys — pick the reasoner</small></span>
+      <span class="dd"><b>DeepSeek V4 Pro</b> ▾</span></div>
+    <div class="row"><span class="lbl">Plan mode<small>how hard the plan binds entries</small></span>
+      <span class="seg"><span class="on">ADVISORY</span><span>DIRECTION</span><span>STRICT</span></span></div>
+  </div>
+
+  <div class="sec">
+    <h2>WHAT THE PLANNER READS <span style="color:var(--faint);letter-spacing:.02em;font-weight:500">· its own charts, not the executor's</span></h2>
+    <div class="chips">
+      <span class="chip on">Daily</span><span class="chip on">4h</span>
+      <span class="chip on">1h</span><span class="chip on">15m</span><span class="chip">5m</span>
+    </div>
+    <div class="row"><span class="lbl">Structure summaries<small>trend/swings/ranges — auto-computed per TF</small></span><span class="chip" style="color:var(--gold);border-color:var(--gold-line)">AUTO</span></div>
+    <div class="row"><span class="lbl">Overnight + prior-day story<small>Globex range, gap, value migration</small></span><span class="chip" style="color:var(--gold);border-color:var(--gold-line)">AUTO</span></div>
+    <div class="row"><span class="lbl">Economic calendar<small>session-sliced · global feed</small></span><span class="chip" style="color:var(--gold);border-color:var(--gold-line)">AUTO</span></div>
+    <div class="row"><span class="lbl">Yesterday digest + my note</span><span class="tog on"></span></div>
+  </div>
+
+  <div class="sec">
+    <h2>LEVELS THE PLAN WATCHES <span style="color:var(--faint);letter-spacing:.02em;font-weight:500">· the detector toggles</span></h2>
+    <div class="chips">
+      <span class="chip on">PDH/PDL/PDC<span class="g">A</span></span>
+      <span class="chip on">ONH/ONL<span class="g">A</span></span>
+      <span class="chip on">naked POC<span class="g">A</span></span>
+      <span class="chip on">Prior wk/mo<span class="g b">B</span></span>
+      <span class="chip on">Opening range<span class="g b">B</span></span>
+      <span class="chip on">Round #<span class="g b">B</span></span>
+      <span class="chip on">Equal H/L<span class="g b">B</span></span>
+      <span class="chip on">S/D zones<span class="g c">C</span></span>
+      <span class="chip on">FVG / OB<span class="g c">C</span></span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>FILTERS & BEHAVIOR</h2>
+    <div class="row"><span class="lbl">Proximity filter<small>only levels reachable today</small></span>
+      <span class="slider"></span><span class="val">1.5× dATR</span></div>
+    <div class="row"><span class="lbl">Max levels on card</span><span class="val">8</span></div>
+    <div class="row"><span class="lbl">Max scenarios</span><span class="val">3</span></div>
+    <div class="row"><span class="lbl">Acceptance rule</span>
+      <span class="seg"><span class="on mono">2×5m</span><span class="mono">15m close</span></span></div>
+    <div class="row"><span class="lbl">Re-plans per day</span><span class="val">2</span></div>
+    <div class="row"><span class="lbl">Approval required<small>OFF = fully automatic</small></span><span class="tog"></span></div>
+    <div class="row"><span class="lbl">Evening digest</span><span class="tog on"></span></div>
+  </div>
+
+  <div class="note">The executor's chart/indicator config below this block stays exactly as-is —
+  the planner has its own inputs. Calendar feed & session times live in global settings.</div>
+</div>
+
+<div class="cap">2 · ON THE CARD — TAP ANY LEVEL ROW → EDIT SHEET (daily, optional)</div>
+<div class="sheet">
+  <div class="grab"></div>
+  <div class="sh"><h1>Edit level</h1><span class="own">👤 OWNER</span></div>
+  <div class="f"><label>PRICE / ZONE RANGE</label><div class="in">30160.00 – 30152.00</div></div>
+  <div class="f"><label>TYPE</label>
+    <div class="sel"><span class="o on">D-zone</span><span class="o">S-zone</span><span class="o">Level</span><span class="o">Liquidity</span><span class="o">My level</span></div></div>
+  <div class="f"><label>INSTRUCTION (what the AI does here)</label>
+    <div class="sel"><span class="o on">sweep+reclaim = entry</span><span class="o">watch reclaim</span><span class="o">fade first touch</span><span class="o">target only</span><span class="o">magnet — no entries</span><span class="o">no touch</span></div></div>
+  <div class="f"><label>GRADE</label>
+    <div class="sel"><span class="o on">A</span><span class="o">B</span><span class="o">C</span></div></div>
+  <div class="f"><label>NOTE (goes to the AI)</label>
+    <div class="in" style="font-family:Inter;font-size:12px;color:var(--muted)">strong 4h OB — tôi tin zone này</div></div>
+  <div class="warn">⛔ armor check runs on save — a price 8×ATR away gets rejected, same as the AI's would</div>
+  <div class="btns"><div class="btn del">Delete</div><div class="btn save">Save → plan v1+o1</div></div>
+</div>
+
+<div class="cap" style="margin-top:2px">＋ ADD LEVEL = same sheet, empty · or long-press a price on the mini chart</div>
+
+<div class="cap" style="margin-top:10px">3 · SAME STRATEGY PAGE, JUST BELOW — YOUR EXISTING INDICATOR SETTINGS (unchanged)</div>
+<div class="panel">
+  <div class="ph"><h1>Indicators</h1><small>feeds the EXECUTOR's tables only — exactly as today</small></div>
+  <div class="sec">
+    <div class="chips">
+      <span class="chip on">EMA 50/200</span><span class="chip on">RSI 14</span>
+      <span class="chip">BOLL</span><span class="chip">ATR</span><span class="chip">MACD</span>
+      <span class="chip on">Volume</span><span class="chip on">SVP</span>
+    </div>
+  </div>
+  <div class="note">⚠️ THE PLANNER HAS <b style="color:var(--ivory)">NO INDICATOR TOGGLES — BY DESIGN.</b>
+  It auto-computes a fixed 7-field regime line instead (research verdict: every optional toggle
+  becomes a future dead-field; your own audit found 7):<br><br>
+  <span class="mono" style="color:var(--gold)">REGIME · trend: above EMA200 D, below 1h · ATR 85th pct HIGH ·
+  RV 78th · VIX 22 elevated · exp range ±310 · gap +0.4×ATR</span><br><br>
+  This line is computed fresh every read, shows on the card as one annotation, and cannot be
+  misconfigured — because it cannot be configured.</div>
+</div>
+
+</body>
+</html>

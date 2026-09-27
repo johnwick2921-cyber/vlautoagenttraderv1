@@ -29,6 +29,26 @@ export interface PictureHtfRow {
   fill_rr: number
   reject_reason: string
   created_at_ms: number
+  /** W-EXEC-TRUTH W5 — the Day Plan scenario carrying this opportunity (the
+   * armed_orders row whose source_ref is opp_key). ABSENT when there is none. */
+  plan_link?: PictureHtfPlanLink
+}
+
+export interface PictureHtfPlanLink {
+  plan_id: string
+  scenario_id: string
+  plan_version: number
+  arm_row_id: number
+  arm_state: string
+  arm_signal_id?: string
+}
+
+/** "→ Day Plan P1 · <plan_id> v3 · arm #52 working" — READ from the link;
+ * a missing number reads "n/a". */
+export function planLinkText(l: PictureHtfPlanLink): string {
+  const n = (v: unknown) =>
+    typeof v === 'number' && Number.isFinite(v) && v > 0 ? String(v) : 'n/a'
+  return `→ Day Plan ${l.scenario_id || 'n/a'} · ${l.plan_id || 'n/a'} v${n(l.plan_version)} · arm #${n(l.arm_row_id)} ${l.arm_state || 'n/a'}`
 }
 
 const num = (v: number | undefined, digits = 2) =>
@@ -92,6 +112,19 @@ function Row({ r }: { r: PictureHtfRow }) {
             {r.stage_reason}
           </div>
         )}
+        {r.plan_link && (
+          <div
+            data-testid={`picture-plan-link-${r.opp_key}`}
+            className="text-nofx-text-muted text-[10px]"
+            title={
+              r.plan_link.arm_signal_id
+                ? `arm signal ${r.plan_link.arm_signal_id}`
+                : undefined
+            }
+          >
+            {planLinkText(r.plan_link)}
+          </div>
+        )}
       </td>
     </tr>
   )
@@ -99,6 +132,9 @@ function Row({ r }: { r: PictureHtfRow }) {
 
 export function PictureHtfPanel({ traderId }: { traderId: string }) {
   const [rows, setRows] = useState<PictureHtfRow[] | null>(null)
+  // W5 — the server could not read the Day Plan links: say so, so an absent
+  // link is never read as "never became a Day Plan scenario".
+  const [linksUnread, setLinksUnread] = useState('')
 
   useEffect(() => {
     if (!traderId) return
@@ -108,7 +144,13 @@ export function PictureHtfPanel({ traderId }: { traderId: string }) {
         `/api/picture-htf/opportunities?trader_id=${encodeURIComponent(traderId)}`
       )
         .then((r) => r.json())
-        .then((j) => live && setRows(Array.isArray(j?.rows) ? j.rows : []))
+        .then((j) => {
+          if (!live) return
+          setRows(Array.isArray(j?.rows) ? j.rows : [])
+          setLinksUnread(
+            typeof j?.plan_links_unread === 'string' ? j.plan_links_unread : ''
+          )
+        })
         .catch(() => live && setRows(null))
     }
     poll()
@@ -137,6 +179,14 @@ export function PictureHtfPanel({ traderId }: { traderId: string }) {
           </span>
         )}
       </div>
+      {linksUnread && (
+        <div
+          data-testid="picture-plan-links-unread"
+          className="text-[10px] text-rose-400 mb-2"
+        >
+          Day Plan links unread: {linksUnread}
+        </div>
+      )}
       {rows === null ? (
         <div className="text-xs text-nofx-text-muted">reading the ledger…</div>
       ) : rows.length === 0 ? (

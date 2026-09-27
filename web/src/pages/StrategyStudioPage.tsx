@@ -44,6 +44,7 @@ import { CoinSourceEditor } from '../components/strategy/CoinSourceEditor'
 import { IndicatorEditor } from '../components/strategy/IndicatorEditor'
 import { RiskControlEditor } from '../components/strategy/RiskControlEditor'
 import { DayPlanEditor } from '../components/strategy/DayPlanEditor'
+import { useStudioEffective } from '../components/strategy/useStudioEffective'
 import { tp } from '../i18n/plan-translations'
 import { PromptSectionsEditor } from '../components/strategy/PromptSectionsEditor'
 import { PublishSettingsEditor } from '../components/strategy/PublishSettingsEditor'
@@ -175,6 +176,14 @@ export function StrategyStudioPage() {
   const gridConfigCacheRef = useRef<Record<string, GridStrategyConfig>>({})
   const selectedStrategyIDRef = useRef<string>('')
   const hasChangesRef = useRef(false)
+
+  // W1 (g) — the effective value · origin · scope of every Risk Control / Day
+  // Plan row, resolved by the server from the SAVED strategy: one read without
+  // a session (strategy-level rows) + one per session NY/ASIA/LONDON (the
+  // per-session rows). Refreshed after a successful save; unsaved edits never
+  // move a chip.
+  const { effective: studioEffective, refresh: refreshEffective } =
+    useStudioEffective(selectedStrategy?.id)
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -632,6 +641,8 @@ export function StrategyStudioPage() {
       }
       setHasChanges(false)
       notify.success(tr('strategySaved'))
+      // W1 (g) — the saved row changed: re-read the effective rows.
+      refreshEffective()
       await fetchStrategies()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
@@ -903,6 +914,7 @@ export function StrategyStudioPage() {
           disabled={selectedStrategy?.is_default}
           language={language}
           isFutures={isFuturesStrategy}
+          effective={studioEffective}
         />
       ),
     },
@@ -919,6 +931,7 @@ export function StrategyStudioPage() {
           onChange={(dayPlan) => updateConfig('day_plan', dayPlan)}
           disabled={selectedStrategy?.is_default}
           language={language}
+          effective={studioEffective}
         />
       ),
     },

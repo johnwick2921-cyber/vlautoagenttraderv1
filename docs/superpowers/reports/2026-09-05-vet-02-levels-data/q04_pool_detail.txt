@@ -1,0 +1,49 @@
+plan_id                                                                              plan_version  session  read_ct              n   seated  max_rank  thr 
+-----------------------------------------------------------------------------------  ------------  -------  -------------------  --  ------  --------  ----
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265    5             ASIA     2026-09-04 00:30:54  24  12      12        1.28
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265    6             ASIA     2026-09-04 01:10:49  24  12      12        0.8 
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265  0             LONDON   2026-09-04 01:30:48  24  11      12        0.96
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265  1             LONDON   2026-09-04 02:00:46  24  12      12        0.8 
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265  2             LONDON   2026-09-04 07:45:01  24  12      12        0.8 
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      0             NY       2026-09-04 08:00:38  24  12      12        0.8 
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265  3             LONDON   2026-09-04 08:17:32  24  12      12        0.8 
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      1             NY       2026-09-04 08:32:00  24  12      12        0.8 
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      2             NY       2026-09-04 08:46:09  24  12      12        0.96
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      3             NY       2026-09-04 09:26:06  24  12      12        0.56
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      3             NY       2026-09-04 09:58:05  24  12      12        0.56
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      3             NY       2026-09-04 10:28:02  24  12      12        0.56
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      3             NY       2026-09-04 10:55:10  24  12      12        0.56
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      4             NY       2026-09-04 11:25:08  24  12      12        0.56
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265      5             NY       2026-09-04 12:01:01  24  12      12        0.56
+seated  grade  n    avg    MIN(score)  MAX(score)  nulls
+------  -----  ---  -----  ----------  ----------  -----
+0              181  0.0    0.0         0.0         0    
+1       A      125  1.52   1.12        1.92        0    
+1       B      40   0.904  0.8         0.96        0    
+1       C      14   0.586  0.56        0.68        0    
+level_kind  label        seated  rank  score  grade  threshold  cut_reason                     sc
+----------  -----------  ------  ----  -----  -----  ---------  -----------------------------  --
+OB          OB(bull)·4h  0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+OB          OB(bull)·4h  0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+OB          OB(bear)·4h  0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+OB          OB(bear)·4h  0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+SUPPLY      Supply·4h    0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+DEMAND      Demand·1h    0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+DEMAND      Demand·4h    0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+DEMAND      Demand·1h    0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+OB          OB(bull)·4h  0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+OB          OB(bull)·1h  0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+OB          OB(bull)·4h  0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+OB          OB(bear)·4h  0       0     0.0           0.56       max_levels: 12 seated, cap 12  {}
+VWAP        VWAP         1       1     1.44   A      0.56                                      {}
+RTH-H       RTH-H        1       2     0.8    B      0.56                                      {}
+OR-L        OR-L         1       3     0.56   C      0.56                                      {}
+PDC         PDC          1       4     0.96   B      0.56                                      {}
+PDH         PDH          1       5     0.96   B      0.56                                      {}
+OR-H        OR-H         1       6     0.56   C      0.56                                      {}
+ONL         ONL          1       7     0.68   C      0.56                                      {}
+FVG         FVG·1h       1       8     1.56   A      0.56                                      {}
+ONH         ONH          1       9     1.36   A      0.56                                      {}
+RTH-L       RTH-L        1       10    0.8    B      0.56                                      {}
+DEMAND      Demand·1h    1       11    1.716  A      0.56                                      {}
+PDL         PDL          1       12    1.92   A      0.56                                      {}

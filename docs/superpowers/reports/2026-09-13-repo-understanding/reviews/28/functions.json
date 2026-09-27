@@ -1,0 +1,3036 @@
+{
+  "assignment": 28,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "method": "TypeScript AST named function/method census; anonymous callbacks grouped under owning named function, top-level callbacks explicit; parser only, no source evaluation.",
+  "functions": [
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "Toggle",
+      "start_line": 67,
+      "end_line": 114,
+      "purpose": "Controlled accessible boolean switch with disabled guard",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "Toggle",
+          "start_line": 89,
+          "end_line": 89
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "Segmented",
+      "start_line": 116,
+      "end_line": 160,
+      "purpose": "Render mutually exclusive string choice buttons",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "Segmented",
+          "start_line": 140,
+          "end_line": 157
+        },
+        {
+          "owner": "Segmented",
+          "start_line": 146,
+          "end_line": 146
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "NumberField",
+      "start_line": 162,
+      "end_line": 202,
+      "purpose": "Parse numeric input and clamp min/max",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "NumberField",
+          "start_line": 188,
+          "end_line": 191
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "FieldRow",
+      "start_line": 204,
+      "end_line": 222,
+      "purpose": "Pair label and controls",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "MODE_OPTS",
+      "start_line": 224,
+      "end_line": 228,
+      "purpose": "Translate planner mode choices",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "migrateEqualOverrides",
+      "start_line": 234,
+      "end_line": 257,
+      "purpose": "Strip session mode/quality overrides equal to global values",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "migrateEqualOverrides",
+          "start_line": 241,
+          "end_line": 255
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "DayPlanEditor",
+      "start_line": 259,
+      "end_line": 889,
+      "purpose": "Edit global and session planner configuration",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 266,
+          "end_line": 270
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 332,
+          "end_line": 332
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 333,
+          "end_line": 333
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 344,
+          "end_line": 344
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 349,
+          "end_line": 349
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 365,
+          "end_line": 365
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 381,
+          "end_line": 381
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 410,
+          "end_line": 437
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 423,
+          "end_line": 423
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 471,
+          "end_line": 472
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 488,
+          "end_line": 488
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 497,
+          "end_line": 497
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 506,
+          "end_line": 506
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 514,
+          "end_line": 514
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 521,
+          "end_line": 521
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 528,
+          "end_line": 528
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 543,
+          "end_line": 543
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 563,
+          "end_line": 563
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 570,
+          "end_line": 570
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 577,
+          "end_line": 577
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 584,
+          "end_line": 584
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 591,
+          "end_line": 591
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 600,
+          "end_line": 600
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 607,
+          "end_line": 607
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 619,
+          "end_line": 619
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 637,
+          "end_line": 884
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 639,
+          "end_line": 639
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 660,
+          "end_line": 660
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 664,
+          "end_line": 664
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 709,
+          "end_line": 719
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 753,
+          "end_line": 756
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 775,
+          "end_line": 778
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 801,
+          "end_line": 804
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 813,
+          "end_line": 814
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 833,
+          "end_line": 836
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 844,
+          "end_line": 847
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 856,
+          "end_line": 856
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 863,
+          "end_line": 866
+        },
+        {
+          "owner": "DayPlanEditor",
+          "start_line": 874,
+          "end_line": 875
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "DayPlanEditor.update",
+      "start_line": 272,
+      "end_line": 278,
+      "purpose": "Merge field into migrated config unless disabled",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "DayPlanEditor.sessionOf",
+      "start_line": 281,
+      "end_line": 282,
+      "purpose": "Find session override by exact session identifier",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "DayPlanEditor.sessionOf",
+          "start_line": 282,
+          "end_line": 282
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "DayPlanEditor.setSessionField",
+      "start_line": 283,
+      "end_line": 296,
+      "purpose": "Create or merge a session-specific override field",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "DayPlanEditor.setSessionField",
+          "start_line": 289,
+          "end_line": 289
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "DayPlanEditor.clearSessionField",
+      "start_line": 297,
+      "end_line": 305,
+      "purpose": "Unset one session override field",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "DayPlanEditor.clearSessionField",
+          "start_line": 301,
+          "end_line": 302
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "DayPlanEditor.sessionRunnableUI",
+      "start_line": 309,
+      "end_line": 315,
+      "purpose": "Resolve explicit enable then registry enable and allowed subset",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "DayPlanEditor.sessionRunnableUI",
+          "start_line": 310,
+          "end_line": 310
+        },
+        {
+          "owner": "DayPlanEditor.sessionRunnableUI",
+          "start_line": 312,
+          "end_line": 312
+        },
+        {
+          "owner": "DayPlanEditor.sessionRunnableUI",
+          "start_line": 314,
+          "end_line": 314
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "DayPlanEditor.toggleTimeframe",
+      "start_line": 318,
+      "end_line": 325,
+      "purpose": "Toggle planner timeframe preserving allowed ordering",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "DayPlanEditor.toggleTimeframe",
+          "start_line": 322,
+          "end_line": 322
+        },
+        {
+          "owner": "DayPlanEditor.toggleTimeframe",
+          "start_line": 323,
+          "end_line": 323
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "TriStateRow",
+      "start_line": 893,
+      "end_line": 917,
+      "purpose": "Display inherit/override state with child controls",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/DayPlanEditor.tsx",
+      "name": "OverrideRow",
+      "start_line": 920,
+      "end_line": 950,
+      "purpose": "Toggle field override and conditionally expose editor",
+      "connections": [
+        "StrategyStudioPage:879 \u2192 updateConfig:609 \u2192 strategy save; trader/auto_trader_planconfig.go and store/strategy.go resolve values",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Full source read. DayPlanEditor controls global and session planner options; helper Toggle/Segmented/NumberField, session CRUD, registry+subset runnable mirror and ordered timeframes. migrateEqualOverrides strips explicit plan_mode/min_scenario_quality equal to global each render; mount effect emits migration even disabled. This cannot preserve deliberate equal overrides when global later changes: trace backend/tests before final finding. Enable toggle writes explicit bool but no rendered clear-to-inherit action despite comment. NumberField clamps parsed floats but not integer steps. Structural buffer raw Number input accepts HTML-invalid values; backend authority pending. Legacy day clocks intentionally hidden; bodyDisabled gates planner widgets; structural stop outside master planner disable. TriStateRow/OverrideRow display inherit versus explicit states."
+      ],
+      "callbacks": [
+        {
+          "owner": "OverrideRow",
+          "start_line": 938,
+          "end_line": 938
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/GridConfigEditor.tsx",
+      "name": "GridConfigEditor",
+      "start_line": 32,
+      "end_line": 474,
+      "purpose": "Render controlled crypto grid parameters",
+      "connections": [
+        "StrategyStudioPage:813 grid_trading editor \u2192 updateConfig",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridConfigEditor + updateField are controlled crypto-grid editor and disabled guard. Literal defaults BTCUSDT/10grids/1000investment/5leverage; ATR/manual bounds, percent risk and maker/direction settings. Numeric changes parse then fallback with ||; zero replaced by defaults, HTML min/max not enforced in handler and manual bounds lack relational validation. UI leveragemax5 does not alone prove backend enforcement; current callsite pending. Crypto grid settings are not owner futures daily-loss policy."
+      ],
+      "callbacks": [
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 80,
+          "end_line": 80
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 106,
+          "end_line": 106
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 126,
+          "end_line": 126
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 158,
+          "end_line": 158
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 177,
+          "end_line": 177
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 215,
+          "end_line": 215
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 235,
+          "end_line": 235
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 256,
+          "end_line": 256
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 274,
+          "end_line": 274
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 306,
+          "end_line": 306
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 325,
+          "end_line": 325
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 344,
+          "end_line": 344
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 369,
+          "end_line": 369
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 403,
+          "end_line": 403
+        },
+        {
+          "owner": "GridConfigEditor",
+          "start_line": 446,
+          "end_line": 446
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/GridConfigEditor.tsx",
+      "name": "GridConfigEditor.updateField",
+      "start_line": 38,
+      "end_line": 45,
+      "purpose": "Merge one grid config field unless disabled",
+      "connections": [
+        "StrategyStudioPage:813 grid_trading editor \u2192 updateConfig",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridConfigEditor + updateField are controlled crypto-grid editor and disabled guard. Literal defaults BTCUSDT/10grids/1000investment/5leverage; ATR/manual bounds, percent risk and maker/direction settings. Numeric changes parse then fallback with ||; zero replaced by defaults, HTML min/max not enforced in handler and manual bounds lack relational validation. UI leveragemax5 does not alone prove backend enforcement; current callsite pending. Crypto grid settings are not owner futures daily-loss policy."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/GridRiskPanel.tsx",
+      "name": "GridRiskPanel",
+      "start_line": 21,
+      "end_line": 467,
+      "purpose": "Poll and render grid risk snapshot with loading/error branches",
+      "connections": [
+        "TraderDashboardPage:759 only grid_trading \u2192 GET grid-risk \u2192 api/handler_trader_status.go:27",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridRiskPanel fetchRiskInfo GET per-trader grid-risk with auth_token; callback catches and resolves errors so useAutoRefresh advertised backoff cannot observe rejection. Old riskInfo/loading not reset on trader change; no abort/generation. Need actual caller/mount/refresh helper dependency before operational finding. getRegimeColor/getBreakoutColor/getPositionColor thresholds; formatPrice zero->dash, variable precision; formatUSD rounds. Render trusts numeric fields toFixed and known translation keys; positionbar only upperclamped; zero liquidation distance rendered dash. Error branch hides stale data after fetch failure."
+      ],
+      "callbacks": [
+        {
+          "owner": "GridRiskPanel",
+          "start_line": 145,
+          "end_line": 145
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/GridRiskPanel.tsx",
+      "name": "GridRiskPanel.fetchRiskInfo",
+      "start_line": 31,
+      "end_line": 52,
+      "purpose": "Authenticated grid-risk GET and local state updates",
+      "connections": [
+        "TraderDashboardPage:759 only grid_trading \u2192 GET grid-risk \u2192 api/handler_trader_status.go:27",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridRiskPanel fetchRiskInfo GET per-trader grid-risk with auth_token; callback catches and resolves errors so useAutoRefresh advertised backoff cannot observe rejection. Old riskInfo/loading not reset on trader change; no abort/generation. Need actual caller/mount/refresh helper dependency before operational finding. getRegimeColor/getBreakoutColor/getPositionColor thresholds; formatPrice zero->dash, variable precision; formatUSD rounds. Render trusts numeric fields toFixed and known translation keys; positionbar only upperclamped; zero liquidation distance rendered dash. Error branch hides stale data after fetch failure."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/GridRiskPanel.tsx",
+      "name": "GridRiskPanel.getRegimeColor",
+      "start_line": 58,
+      "end_line": 73,
+      "purpose": "Map regime enum to display color",
+      "connections": [
+        "TraderDashboardPage:759 only grid_trading \u2192 GET grid-risk \u2192 api/handler_trader_status.go:27",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridRiskPanel fetchRiskInfo GET per-trader grid-risk with auth_token; callback catches and resolves errors so useAutoRefresh advertised backoff cannot observe rejection. Old riskInfo/loading not reset on trader change; no abort/generation. Need actual caller/mount/refresh helper dependency before operational finding. getRegimeColor/getBreakoutColor/getPositionColor thresholds; formatPrice zero->dash, variable precision; formatUSD rounds. Render trusts numeric fields toFixed and known translation keys; positionbar only upperclamped; zero liquidation distance rendered dash. Error branch hides stale data after fetch failure."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/GridRiskPanel.tsx",
+      "name": "GridRiskPanel.getBreakoutColor",
+      "start_line": 75,
+      "end_line": 88,
+      "purpose": "Map breakout enum to display color",
+      "connections": [
+        "TraderDashboardPage:759 only grid_trading \u2192 GET grid-risk \u2192 api/handler_trader_status.go:27",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridRiskPanel fetchRiskInfo GET per-trader grid-risk with auth_token; callback catches and resolves errors so useAutoRefresh advertised backoff cannot observe rejection. Old riskInfo/loading not reset on trader change; no abort/generation. Need actual caller/mount/refresh helper dependency before operational finding. getRegimeColor/getBreakoutColor/getPositionColor thresholds; formatPrice zero->dash, variable precision; formatUSD rounds. Render trusts numeric fields toFixed and known translation keys; positionbar only upperclamped; zero liquidation distance rendered dash. Error branch hides stale data after fetch failure."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/GridRiskPanel.tsx",
+      "name": "GridRiskPanel.getPositionColor",
+      "start_line": 90,
+      "end_line": 94,
+      "purpose": "Select utilization color at 50/80 percent thresholds",
+      "connections": [
+        "TraderDashboardPage:759 only grid_trading \u2192 GET grid-risk \u2192 api/handler_trader_status.go:27",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridRiskPanel fetchRiskInfo GET per-trader grid-risk with auth_token; callback catches and resolves errors so useAutoRefresh advertised backoff cannot observe rejection. Old riskInfo/loading not reset on trader change; no abort/generation. Need actual caller/mount/refresh helper dependency before operational finding. getRegimeColor/getBreakoutColor/getPositionColor thresholds; formatPrice zero->dash, variable precision; formatUSD rounds. Render trusts numeric fields toFixed and known translation keys; positionbar only upperclamped; zero liquidation distance rendered dash. Error branch hides stale data after fetch failure."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/GridRiskPanel.tsx",
+      "name": "GridRiskPanel.formatPrice",
+      "start_line": 96,
+      "end_line": 105,
+      "purpose": "Render price by magnitude; zero/missing becomes dash",
+      "connections": [
+        "TraderDashboardPage:759 only grid_trading \u2192 GET grid-risk \u2192 api/handler_trader_status.go:27",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridRiskPanel fetchRiskInfo GET per-trader grid-risk with auth_token; callback catches and resolves errors so useAutoRefresh advertised backoff cannot observe rejection. Old riskInfo/loading not reset on trader change; no abort/generation. Need actual caller/mount/refresh helper dependency before operational finding. getRegimeColor/getBreakoutColor/getPositionColor thresholds; formatPrice zero->dash, variable precision; formatUSD rounds. Render trusts numeric fields toFixed and known translation keys; positionbar only upperclamped; zero liquidation distance rendered dash. Error branch hides stale data after fetch failure."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/GridRiskPanel.tsx",
+      "name": "GridRiskPanel.formatUSD",
+      "start_line": 107,
+      "end_line": 109,
+      "purpose": "Format whole-dollar amount",
+      "connections": [
+        "TraderDashboardPage:759 only grid_trading \u2192 GET grid-risk \u2192 api/handler_trader_status.go:27",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "GridRiskPanel fetchRiskInfo GET per-trader grid-risk with auth_token; callback catches and resolves errors so useAutoRefresh advertised backoff cannot observe rejection. Old riskInfo/loading not reset on trader change; no abort/generation. Need actual caller/mount/refresh helper dependency before operational finding. getRegimeColor/getBreakoutColor/getPositionColor thresholds; formatPrice zero->dash, variable precision; formatUSD rounds. Render trusts numeric fields toFixed and known translation keys; positionbar only upperclamped; zero liquidation distance rendered dash. Error branch hides stale data after fetch failure."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/strategy/PublishSettingsEditor.tsx",
+      "name": "PublishSettingsEditor",
+      "start_line": 13,
+      "end_line": 182,
+      "purpose": "Edit public visibility and configuration visibility flags",
+      "connections": [
+        "StrategyStudioPage:939 \u2192 selectedStrategy public/configVisible dirty flags",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PublishSettingsEditor controls public/configVisible via callbacks, disabled honored in mouse handlers; div toggles lack keyboard/role semantics; hidden configVisible preserved on private; backend owns visibility enforcement."
+      ],
+      "callbacks": [
+        {
+          "owner": "PublishSettingsEditor",
+          "start_line": 33,
+          "end_line": 33
+        },
+        {
+          "owner": "PublishSettingsEditor",
+          "start_line": 112,
+          "end_line": 112
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/TokenEstimateBar.tsx",
+      "name": "TokenEstimateBar",
+      "start_line": 27,
+      "end_line": 122,
+      "purpose": "Debounce token estimate requests and render count/bar",
+      "connections": [
+        "StrategyStudioPage:1213 \u2192 POST strategies/estimate-tokens \u2192 api/strategy.go:49",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TokenEstimateBar debounces config POST800ms but does not abort/invalidate in-flight responses or notify parent0when config null; stale estimates persist on error; fixed200K progress ignores returned per-model_limits and suggestions."
+      ],
+      "callbacks": [
+        {
+          "owner": "TokenEstimateBar",
+          "start_line": 34,
+          "end_line": 69
+        },
+        {
+          "owner": "TokenEstimateBar",
+          "start_line": 44,
+          "end_line": 62
+        },
+        {
+          "owner": "TokenEstimateBar",
+          "start_line": 64,
+          "end_line": 68
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/strategy/TokenEstimateBar.tsx",
+      "name": "TokenEstimateBar.tr",
+      "start_line": 32,
+      "end_line": 32,
+      "purpose": "Select localized token estimate label",
+      "connections": [
+        "StrategyStudioPage:1213 \u2192 POST strategies/estimate-tokens \u2192 api/strategy.go:49",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TokenEstimateBar debounces config POST800ms but does not abort/invalidate in-flight responses or notify parent0when config null; stale estimates persist on error; fixed200K progress ignores returned per-model_limits and suggestions."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/AccountSelector.tsx",
+      "name": "AccountSelector",
+      "start_line": 20,
+      "end_line": 250,
+      "purpose": "Render persisted selected account versus shared current stream and SIM-only choices",
+      "connections": [
+        "TraderDashboardPage:488 \u2192 api/traders.ts:157,165 \u2192 handler_account.go:43,109; AppRoutes:310 shares SWR accounts key",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "AccountSelector correctly separates persisted selected account from streamed current with mismatch warning and disables nonSIM entries. SWR accounts key trader-only and no refreshInterval; endpoint truth may grow stale. Selection early-return on alreadybound selected prevents switching shared stream back when current differs; inspect backend intent. Portal position updates on focus/open not resize; scroll closes."
+      ],
+      "callbacks": [
+        {
+          "owner": "AccountSelector",
+          "start_line": 37,
+          "end_line": 43
+        },
+        {
+          "owner": "AccountSelector",
+          "start_line": 39,
+          "end_line": 42
+        },
+        {
+          "owner": "AccountSelector",
+          "start_line": 64,
+          "end_line": 93
+        },
+        {
+          "owner": "AccountSelector",
+          "start_line": 89,
+          "end_line": 92
+        },
+        {
+          "owner": "AccountSelector",
+          "start_line": 143,
+          "end_line": 143
+        },
+        {
+          "owner": "AccountSelector",
+          "start_line": 144,
+          "end_line": 144
+        },
+        {
+          "owner": "AccountSelector",
+          "start_line": 205,
+          "end_line": 243
+        },
+        {
+          "owner": "AccountSelector",
+          "start_line": 208,
+          "end_line": 212
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/AccountSelector.tsx",
+      "name": "AccountSelector.handleTriggerRef",
+      "start_line": 59,
+      "end_line": 61,
+      "purpose": "Capture trigger element and dropdown position",
+      "connections": [
+        "TraderDashboardPage:488 \u2192 api/traders.ts:157,165 \u2192 handler_account.go:43,109; AppRoutes:310 shares SWR accounts key",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "AccountSelector correctly separates persisted selected account from streamed current with mismatch warning and disables nonSIM entries. SWR accounts key trader-only and no refreshInterval; endpoint truth may grow stale. Selection early-return on alreadybound selected prevents switching shared stream back when current differs; inspect backend intent. Portal position updates on focus/open not resize; scroll closes."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/AccountSelector.tsx",
+      "name": "AccountSelector.handleClickOutside",
+      "start_line": 74,
+      "end_line": 79,
+      "purpose": "Close menu when event falls outside menu/trigger",
+      "connections": [
+        "TraderDashboardPage:488 \u2192 api/traders.ts:157,165 \u2192 handler_account.go:43,109; AppRoutes:310 shares SWR accounts key",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "AccountSelector correctly separates persisted selected account from streamed current with mismatch warning and disables nonSIM entries. SWR accounts key trader-only and no refreshInterval; endpoint truth may grow stale. Selection early-return on alreadybound selected prevents switching shared stream back when current differs; inspect backend intent. Portal position updates on focus/open not resize; scroll closes."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/AccountSelector.tsx",
+      "name": "AccountSelector.handleScroll",
+      "start_line": 82,
+      "end_line": 84,
+      "purpose": "Close dropdown on scrolling",
+      "connections": [
+        "TraderDashboardPage:488 \u2192 api/traders.ts:157,165 \u2192 handler_account.go:43,109; AppRoutes:310 shares SWR accounts key",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "AccountSelector correctly separates persisted selected account from streamed current with mismatch warning and disables nonSIM entries. SWR accounts key trader-only and no refreshInterval; endpoint truth may grow stale. Selection early-return on alreadybound selected prevents switching shared stream back when current differs; inspect backend intent. Portal position updates on focus/open not resize; scroll closes."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/AccountSelector.tsx",
+      "name": "AccountSelector.handleSelectAccount",
+      "start_line": 95,
+      "end_line": 115,
+      "purpose": "Persist account selection then refresh account snapshot and notify parent",
+      "connections": [
+        "TraderDashboardPage:488 \u2192 api/traders.ts:157,165 \u2192 handler_account.go:43,109; AppRoutes:310 shares SWR accounts key",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "AccountSelector correctly separates persisted selected account from streamed current with mismatch warning and disables nonSIM entries. SWR accounts key trader-only and no refreshInterval; endpoint truth may grow stale. Selection early-return on alreadybound selected prevents switching shared stream back when current differs; inspect backend intent. Portal position updates on focus/open not resize; scroll closes."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/DecisionCard.tsx",
+      "name": "formatPrice",
+      "start_line": 57,
+      "end_line": 62,
+      "purpose": "Render price by magnitude; zero/missing becomes dash",
+      "connections": [
+        "TraderDashboardPage:1205 timestamp+cycle key, isFutures passed; ActionCard local child",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "DecisionCard displays server decisions, raw escaped prompts/reasoning/log, Chicago timestamp, copy/download helpers with URL revoke. ActionCard action->colors, futures flag removes leverage; formatPrice/calcPctChange/getConfidenceColor treat missing/zero via truthiness; absolute-distance RR cannot validate stop side. Watch malformed/unknown JSON falls into green status and none green structural dot. Neutral guardrail skip header still unconditional red error footer. Guardrail feed/clock stays hard failure. Nested copy/download buttons inside prompt-toggle button invalid HTML. No API mutation or AI execution. Need actual mounted caller and server record semantics before severity."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/DecisionCard.tsx",
+      "name": "calcPctChange",
+      "start_line": 65,
+      "end_line": 74,
+      "purpose": "Render directional target percentage from entry",
+      "connections": [
+        "TraderDashboardPage:1205 timestamp+cycle key, isFutures passed; ActionCard local child",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "DecisionCard displays server decisions, raw escaped prompts/reasoning/log, Chicago timestamp, copy/download helpers with URL revoke. ActionCard action->colors, futures flag removes leverage; formatPrice/calcPctChange/getConfidenceColor treat missing/zero via truthiness; absolute-distance RR cannot validate stop side. Watch malformed/unknown JSON falls into green status and none green structural dot. Neutral guardrail skip header still unconditional red error footer. Guardrail feed/clock stays hard failure. Nested copy/download buttons inside prompt-toggle button invalid HTML. No API mutation or AI execution. Need actual mounted caller and server record semantics before severity."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/DecisionCard.tsx",
+      "name": "getConfidenceColor",
+      "start_line": 77,
+      "end_line": 82,
+      "purpose": "Map confidence threshold to display color",
+      "connections": [
+        "TraderDashboardPage:1205 timestamp+cycle key, isFutures passed; ActionCard local child",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "DecisionCard displays server decisions, raw escaped prompts/reasoning/log, Chicago timestamp, copy/download helpers with URL revoke. ActionCard action->colors, futures flag removes leverage; formatPrice/calcPctChange/getConfidenceColor treat missing/zero via truthiness; absolute-distance RR cannot validate stop side. Watch malformed/unknown JSON falls into green status and none green structural dot. Neutral guardrail skip header still unconditional red error footer. Guardrail feed/clock stays hard failure. Nested copy/download buttons inside prompt-toggle button invalid HTML. No API mutation or AI execution. Need actual mounted caller and server record semantics before severity."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/DecisionCard.tsx",
+      "name": "ActionCard",
+      "start_line": 85,
+      "end_line": 294,
+      "purpose": "Display decision action geometry, success, confidence and risk reward",
+      "connections": [
+        "TraderDashboardPage:1205 timestamp+cycle key, isFutures passed; ActionCard local child",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "DecisionCard displays server decisions, raw escaped prompts/reasoning/log, Chicago timestamp, copy/download helpers with URL revoke. ActionCard action->colors, futures flag removes leverage; formatPrice/calcPctChange/getConfidenceColor treat missing/zero via truthiness; absolute-distance RR cannot validate stop side. Watch malformed/unknown JSON falls into green status and none green structural dot. Neutral guardrail skip header still unconditional red error footer. Guardrail feed/clock stays hard failure. Nested copy/download buttons inside prompt-toggle button invalid HTML. No API mutation or AI execution. Need actual mounted caller and server record semantics before severity."
+      ],
+      "callbacks": [
+        {
+          "owner": "ActionCard",
+          "start_line": 116,
+          "end_line": 116
+        },
+        {
+          "owner": "ActionCard",
+          "start_line": 235,
+          "end_line": 265
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/DecisionCard.tsx",
+      "name": "DecisionCard",
+      "start_line": 296,
+      "end_line": 703,
+      "purpose": "Display cycle result, watch/skip badges, actions and collapsible raw prompts",
+      "connections": [
+        "TraderDashboardPage:1205 timestamp+cycle key, isFutures passed; ActionCard local child",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "DecisionCard displays server decisions, raw escaped prompts/reasoning/log, Chicago timestamp, copy/download helpers with URL revoke. ActionCard action->colors, futures flag removes leverage; formatPrice/calcPctChange/getConfidenceColor treat missing/zero via truthiness; absolute-distance RR cannot validate stop side. Watch malformed/unknown JSON falls into green status and none green structural dot. Neutral guardrail skip header still unconditional red error footer. Guardrail feed/clock stays hard failure. Nested copy/download buttons inside prompt-toggle button invalid HTML. No API mutation or AI execution. Need actual mounted caller and server record semantics before severity."
+      ],
+      "callbacks": [
+        {
+          "owner": "DecisionCard",
+          "start_line": 375,
+          "end_line": 465
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 471,
+          "end_line": 479
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 489,
+          "end_line": 489
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 500,
+          "end_line": 503
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 515,
+          "end_line": 521
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 564,
+          "end_line": 564
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 575,
+          "end_line": 578
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 590,
+          "end_line": 596
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 639,
+          "end_line": 639
+        },
+        {
+          "owner": "DecisionCard",
+          "start_line": 680,
+          "end_line": 684
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/DecisionCard.tsx",
+      "name": "DecisionCard.copyToClipboard",
+      "start_line": 307,
+      "end_line": 314,
+      "purpose": "Write selected prompt text to browser clipboard",
+      "connections": [
+        "TraderDashboardPage:1205 timestamp+cycle key, isFutures passed; ActionCard local child",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "DecisionCard displays server decisions, raw escaped prompts/reasoning/log, Chicago timestamp, copy/download helpers with URL revoke. ActionCard action->colors, futures flag removes leverage; formatPrice/calcPctChange/getConfidenceColor treat missing/zero via truthiness; absolute-distance RR cannot validate stop side. Watch malformed/unknown JSON falls into green status and none green structural dot. Neutral guardrail skip header still unconditional red error footer. Guardrail feed/clock stays hard failure. Nested copy/download buttons inside prompt-toggle button invalid HTML. No API mutation or AI execution. Need actual mounted caller and server record semantics before severity."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/DecisionCard.tsx",
+      "name": "DecisionCard.downloadAsFile",
+      "start_line": 317,
+      "end_line": 327,
+      "purpose": "Create text blob download and revoke URL",
+      "connections": [
+        "TraderDashboardPage:1205 timestamp+cycle key, isFutures passed; ActionCard local child",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "DecisionCard displays server decisions, raw escaped prompts/reasoning/log, Chicago timestamp, copy/download helpers with URL revoke. ActionCard action->colors, futures flag removes leverage; formatPrice/calcPctChange/getConfidenceColor treat missing/zero via truthiness; absolute-distance RR cannot validate stop side. Watch malformed/unknown JSON falls into green status and none green structural dot. Neutral guardrail skip header still unconditional red error footer. Guardrail feed/clock stays hard failure. Nested copy/download buttons inside prompt-toggle button invalid HTML. No API mutation or AI execution. Need actual mounted caller and server record semantics before severity."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "StepIndicator",
+      "start_line": 79,
+      "end_line": 124,
+      "purpose": "Render wizard step labels and completed status",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": [
+        {
+          "owner": "StepIndicator",
+          "start_line": 88,
+          "end_line": 121
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "ExchangeCard",
+      "start_line": 127,
+      "end_line": 185,
+      "purpose": "Render selectable provider template and class",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "ExchangeConfigModal",
+      "start_line": 187,
+      "end_line": 1535,
+      "purpose": "Configure exchange credential or NT parameters and await parent save",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": [
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 239,
+          "end_line": 239
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 244,
+          "end_line": 244
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 247,
+          "end_line": 247
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 289,
+          "end_line": 304
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 307,
+          "end_line": 316
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 312,
+          "end_line": 312
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 313,
+          "end_line": 313
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 314,
+          "end_line": 314
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 525,
+          "end_line": 525
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 528,
+          "end_line": 528
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 531,
+          "end_line": 531
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 565,
+          "end_line": 565
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 579,
+          "end_line": 579
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 646,
+          "end_line": 661
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 653,
+          "end_line": 654
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 674,
+          "end_line": 689
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 681,
+          "end_line": 682
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 703,
+          "end_line": 718
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 710,
+          "end_line": 711
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 797,
+          "end_line": 797
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 828,
+          "end_line": 828
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 858,
+          "end_line": 858
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 901,
+          "end_line": 901
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 931,
+          "end_line": 931
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 961,
+          "end_line": 961
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1015,
+          "end_line": 1015
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1075,
+          "end_line": 1075
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1102,
+          "end_line": 1102
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1129,
+          "end_line": 1129
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1193,
+          "end_line": 1193
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1213,
+          "end_line": 1213
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1269,
+          "end_line": 1269
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1291,
+          "end_line": 1291
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1320,
+          "end_line": 1321
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1369,
+          "end_line": 1369
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1388,
+          "end_line": 1388
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1398,
+          "end_line": 1399
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1434,
+          "end_line": 1435
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1490,
+          "end_line": 1490
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1495,
+          "end_line": 1495
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1506,
+          "end_line": 1506
+        },
+        {
+          "owner": "ExchangeConfigModal",
+          "start_line": 1530,
+          "end_line": 1530
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "ExchangeConfigModal.handleCopyIP",
+      "start_line": 318,
+      "end_line": 341,
+      "purpose": "Copy displayed IP with clipboard or textarea fallback",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": [
+        {
+          "owner": "ExchangeConfigModal.handleCopyIP",
+          "start_line": 323,
+          "end_line": 323
+        },
+        {
+          "owner": "ExchangeConfigModal.handleCopyIP",
+          "start_line": 335,
+          "end_line": 335
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "ExchangeConfigModal.handleSecureInputComplete",
+      "start_line": 350,
+      "end_line": 359,
+      "purpose": "Assign two-stage key result to selected provider secret state",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "ExchangeConfigModal.maskSecret",
+      "start_line": 361,
+      "end_line": 369,
+      "purpose": "Show first/last four secret characters and mask middle",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "ExchangeConfigModal.handleSelectExchange",
+      "start_line": 371,
+      "end_line": 374,
+      "purpose": "Choose provider and advance wizard",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "ExchangeConfigModal.handleBack",
+      "start_line": 376,
+      "end_line": 383,
+      "purpose": "Close editing or return selection while retaining input state",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "name": "ExchangeConfigModal.handleSubmit",
+      "start_line": 385,
+      "end_line": 518,
+      "purpose": "Validate minimal fields and invoke provider-specific save callback",
+      "connections": [
+        "SettingsPage:784 and AITradersPage:769 \u2192 parent onSave \u2192 configApi \u2192 handler_exchange.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ExchangeConfigModal full source. StepIndicator/ExchangeCard render static supported templates; WebCrypto gates selection only, editing skips. Initialize editing sets CEX/wallet fields but NEVER ntDataDir/ntInstrumentName/ntDefaultContractQty, so NT editing shows empty directory+MNQ+1 defaults and requires reentry directory before save overwrites existing instrument/qty. NT prose still CSV Bridge and mandatory directory contrary TCP current architecture; actual store getter contract pending. CEX fields required and submit require keys/passphrase even saved has_* flags/placeholder imply optional replacement. Back changes provider without clearing credentials so cross-provider stale state possible. handleSubmit guards pending and awaits parent onSave; parent catches errors, retained form. Account name sent but SettingsPage update excludes account_name. NT testnet state defaultfalse but no testnet UI. handleCopyIP fallback execCommand result ignored; timers uncleaned. secure key helper retains child mount on hide (assignment25 finding); Aster secure branch unused rendered direct password. Delete has no local confirmation (parent SettingsPage none). No application calls."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/LedgerDayPnl.tsx",
+      "name": "ledgerDayLabel",
+      "start_line": 10,
+      "end_line": 26,
+      "purpose": "Format server corrected day PNL or status with row counts",
+      "connections": [
+        "TraderDashboardPage:676 \u2192 server account ledger_day fields; handler_order.go:159 \u2192 GetLedgerDayTotal",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ledgerDayLabel uses server ledger_day_pnl and resolved/unresolved counts; absent numericPNL prints status; typeof number accepts NaN/Infinity and missing counts default0. Does not recompute trading PNL; corrected-column display positive."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/LedgerDayPnl.tsx",
+      "name": "LedgerDayPnl",
+      "start_line": 28,
+      "end_line": 46,
+      "purpose": "Render server day ledger summary label",
+      "connections": [
+        "TraderDashboardPage:676 \u2192 server account ledger_day fields; handler_order.go:159 \u2192 GetLedgerDayTotal",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ledgerDayLabel uses server ledger_day_pnl and resolved/unresolved counts; absent numericPNL prints status; typeof number accepts NaN/Infinity and missing counts default0. Does not recompute trading PNL; corrected-column display positive."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "ModelConfigModal",
+      "start_line": 36,
+      "end_line": 262,
+      "purpose": "Resolve provider row and edit model configuration via parent callback",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "ModelConfigModal",
+          "start_line": 58,
+          "end_line": 58
+        },
+        {
+          "owner": "ModelConfigModal",
+          "start_line": 59,
+          "end_line": 59
+        },
+        {
+          "owner": "ModelConfigModal",
+          "start_line": 61,
+          "end_line": 70
+        },
+        {
+          "owner": "ModelConfigModal",
+          "start_line": 104,
+          "end_line": 104
+        },
+        {
+          "owner": "ModelConfigModal",
+          "start_line": 154,
+          "end_line": 154
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "ModelConfigModal.handleSelectModel",
+      "start_line": 72,
+      "end_line": 75,
+      "purpose": "Select model/provider catalog ID and advance wizard",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "ModelConfigModal.handleBack",
+      "start_line": 77,
+      "end_line": 84,
+      "purpose": "Close editing or return selection while retaining input state",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "ModelConfigModal.handleSubmit",
+      "start_line": 86,
+      "end_line": 101,
+      "purpose": "Validate minimal fields and invoke provider-specific save callback",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "ModelSelectionStep",
+      "start_line": 266,
+      "end_line": 418,
+      "purpose": "Render Claw402 featured and conventional/blockrun provider catalogs",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 286,
+          "end_line": 286
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 289,
+          "end_line": 292
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 290,
+          "end_line": 290
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 320,
+          "end_line": 320
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 337,
+          "end_line": 337
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 373,
+          "end_line": 374
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 376,
+          "end_line": 384
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 381,
+          "end_line": 381
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 386,
+          "end_line": 386
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 400,
+          "end_line": 400
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 401,
+          "end_line": 409
+        },
+        {
+          "owner": "ModelSelectionStep",
+          "start_line": 406,
+          "end_line": 406
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "Claw402ConfigForm",
+      "start_line": 420,
+      "end_line": 1167,
+      "purpose": "Validate wallet key and render wallet/deposit/model setup",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 474,
+          "end_line": 513
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 489,
+          "end_line": 510
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 512,
+          "end_line": 512
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 583,
+          "end_line": 594
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 612,
+          "end_line": 669
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 618,
+          "end_line": 618
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 726,
+          "end_line": 726
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 743,
+          "end_line": 757
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 803,
+          "end_line": 807
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 806,
+          "end_line": 806
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 895,
+          "end_line": 899
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 898,
+          "end_line": 898
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 937,
+          "end_line": 937
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 997,
+          "end_line": 1001
+        },
+        {
+          "owner": "Claw402ConfigForm",
+          "start_line": 1000,
+          "end_line": 1000
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "Claw402ConfigForm.getClientError",
+      "start_line": 455,
+      "end_line": 464,
+      "purpose": "Validate lowercase 0x prefix, length66 and hexadecimal key shape",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "Claw402ConfigForm.handleTestConnection",
+      "start_line": 515,
+      "end_line": 548,
+      "purpose": "POST key validation and update address/balance/connectivity state",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/ModelConfigModal.tsx",
+      "name": "StandardProviderConfigForm",
+      "start_line": 1169,
+      "end_line": 1606,
+      "purpose": "Render API credentials, custom endpoint/model and thinking controls",
+      "connections": [
+        "SettingsPage:763 and AITradersPage:753 \u2192 parent onSave \u2192 configApi \u2192 handler_ai_model.go; Claw wallet endpoints handler_wallet.go",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelConfigModal full source. Selection/edit prefers supported catalog if ID matches configured row; missing edit row explicit fallback. Back preserves apiKey/baseURL/name/thinking and can carry to new provider; submit no await/inflight guard. Edit handler allows blank key but StandardProviderConfigForm password input unconditionally required blocks browser submit, and Claw form required/isKeyValid also demands reentry. Claw402ConfigForm validates key regex then automatically POST plaintext private_key to wallet/validate with no auth header; debounce cleanup cancels timer only, in-flight old key can overwrite wallet address/balance used for deposit QR and copy. Generate wallet POST server-generated key, backup plaintext remains if apiKey later changed; copy does not await error and reuses copiedAddr flag. Validation defaults unknown balance to0.00 and compares connectivity only; save allowed by syntax not server validation. Claw submit says startTrading but parent only saves model config. Standard provider model/URL/name/thinking fields controlled; wallet provider model selection literals. No wallet/network calls executed. Actual wallet route/generator/security/privateKeyNote translation trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "StandardProviderConfigForm",
+          "start_line": 1300,
+          "end_line": 1300
+        },
+        {
+          "owner": "StandardProviderConfigForm",
+          "start_line": 1338,
+          "end_line": 1338
+        },
+        {
+          "owner": "StandardProviderConfigForm",
+          "start_line": 1384,
+          "end_line": 1384
+        },
+        {
+          "owner": "StandardProviderConfigForm",
+          "start_line": 1425,
+          "end_line": 1425
+        },
+        {
+          "owner": "StandardProviderConfigForm",
+          "start_line": 1452,
+          "end_line": 1452
+        },
+        {
+          "owner": "StandardProviderConfigForm",
+          "start_line": 1474,
+          "end_line": 1474
+        },
+        {
+          "owner": "StandardProviderConfigForm",
+          "start_line": 1515,
+          "end_line": 1543
+        },
+        {
+          "owner": "StandardProviderConfigForm",
+          "start_line": 1521,
+          "end_line": 1521
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/ModelStepIndicator.tsx",
+      "name": "ModelStepIndicator",
+      "start_line": 9,
+      "end_line": 41,
+      "purpose": "Render model configuration wizard step labels",
+      "connections": [
+        "ModelConfigModal:183 renders step labels",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "ModelStepIndicator visual stepper; labels/current index control completed checks and active styling."
+      ],
+      "callbacks": [
+        {
+          "owner": "ModelStepIndicator",
+          "start_line": 12,
+          "end_line": 38
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "formatNumber",
+      "start_line": 21,
+      "end_line": 29,
+      "purpose": "Format numbers with K/M suffixes",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "formatDuration",
+      "start_line": 32,
+      "end_line": 37,
+      "purpose": "Format positive holding minutes as minutes/hours/days",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "formatDate",
+      "start_line": 40,
+      "end_line": 51,
+      "purpose": "Format valid timestamp in Chicago timezone",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "effectivePnl",
+      "start_line": 67,
+      "end_line": 72,
+      "purpose": "Use corrected numeric PNL else raw realized fallback",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "classifyPosition",
+      "start_line": 81,
+      "end_line": 100,
+      "purpose": "Classify unknown/test/duplicate rows using close reason and matching order ID",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "classifyPosition",
+          "start_line": 90,
+          "end_line": 95
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "duplicateOfId",
+      "start_line": 103,
+      "end_line": 118,
+      "purpose": "Locate real-row ID sharing entry order with unknown close",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "duplicateOfId",
+          "start_line": 110,
+          "end_line": 115
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "isTodayCT",
+      "start_line": 121,
+      "end_line": 130,
+      "purpose": "Compare timestamp Chicago calendar date to browser current date",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "computeDayTotal",
+      "start_line": 135,
+      "end_line": 148,
+      "purpose": "Sum corrected normal rows closed on current Chicago calendar date",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "StatCard",
+      "start_line": 151,
+      "end_line": 208,
+      "purpose": "Render metric with optional formula tooltip",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "SymbolStatsRow",
+      "start_line": 211,
+      "end_line": 255,
+      "purpose": "Render symbol trades/winrate/PNL",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "DirectionStatsCard",
+      "start_line": 258,
+      "end_line": 338,
+      "purpose": "Render side-specific trade count and PNL metrics",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionRow",
+      "start_line": 341,
+      "end_line": 531,
+      "purpose": "Render history row geometry, effective PNL and duplicate/unresolved status",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory",
+      "start_line": 533,
+      "end_line": 1280,
+      "purpose": "Fetch bounded history and metrics, classify/filter/sort/page rows",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "PositionHistory",
+          "start_line": 553,
+          "end_line": 578
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 584,
+          "end_line": 595
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 697,
+          "end_line": 699
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 933,
+          "end_line": 939
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 959,
+          "end_line": 961
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 985,
+          "end_line": 985
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 991,
+          "end_line": 994
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1013,
+          "end_line": 1025
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1016,
+          "end_line": 1016
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1031,
+          "end_line": 1031
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1031,
+          "end_line": 1031
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1047,
+          "end_line": 1054
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1145,
+          "end_line": 1152
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1204,
+          "end_line": 1204
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1223,
+          "end_line": 1223
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1234,
+          "end_line": 1234
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1234,
+          "end_line": 1234
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1248,
+          "end_line": 1249
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1249,
+          "end_line": 1249
+        },
+        {
+          "owner": "PositionHistory",
+          "start_line": 1262,
+          "end_line": 1262
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory.fetchData",
+      "start_line": 554,
+      "end_line": 573,
+      "purpose": "Initial bounded history GET with loading/error state",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory.uniqueSymbols",
+      "start_line": 598,
+      "end_line": 601,
+      "purpose": "Build sorted symbol filter options",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "PositionHistory.uniqueSymbols",
+          "start_line": 599,
+          "end_line": 599
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory.classified",
+      "start_line": 606,
+      "end_line": 616,
+      "purpose": "Memoize per-row kind and duplicate target",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory.filteredAndSortedPositions",
+      "start_line": 619,
+      "end_line": 666,
+      "purpose": "Exclude hidden rows and apply symbol/side/filter order",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": [
+        {
+          "owner": "PositionHistory.filteredAndSortedPositions",
+          "start_line": 624,
+          "end_line": 629
+        },
+        {
+          "owner": "PositionHistory.filteredAndSortedPositions",
+          "start_line": 633,
+          "end_line": 633
+        },
+        {
+          "owner": "PositionHistory.filteredAndSortedPositions",
+          "start_line": 637,
+          "end_line": 637
+        },
+        {
+          "owner": "PositionHistory.filteredAndSortedPositions",
+          "start_line": 642,
+          "end_line": 663
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory.visibleTotal",
+      "start_line": 678,
+      "end_line": 686,
+      "purpose": "Sum normal effective PNL for entire filtered fetched window",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory.dayTotal",
+      "start_line": 690,
+      "end_line": 690,
+      "purpose": "Memoize corrected-only current-day sum",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory.paginatedPositions",
+      "start_line": 702,
+      "end_line": 705,
+      "purpose": "Slice filtered window by current page",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/PositionHistory.tsx",
+      "name": "PositionHistory.profitLossRatio",
+      "start_line": 711,
+      "end_line": 717,
+      "purpose": "Compute avg win/avg loss with infinity for positive win and zero loss",
+      "connections": [
+        "TraderDashboardPage:1250 overview tab \u2192 api/data.ts:165 (no account param) \u2192 handler_order.go:205 \u2192 store GetClosedPositions/GetFullStats",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "PositionHistory full read. effectivePnl corrected number else realized||0; classifyPosition normal unless unknown/test reason, so ordinary NULL corrected rows render/sum unverified fallback, contrary corrected-only canon, while computeDayTotal excludes them. Duplicate evidence only matching entry_order_id in fetched window; normal rows never deduped. computeDayTotal Chicago calendar date over bounded fetched max(200,pageSize*5), no unresolved count, differs session-day ledger boundary potentially. PNL sort uses raw realized vs corrected displayed; pnl_pct branch ignores short direction but not offered in select. PositionRow value=price*quantity misses futures multiplier; unknown exits still show exit_price/default0. Initial effect and background fetch can race across trader/page changes; successful background poll does not clear initial error, permanent error view until dependency reload. No pagination clamp/reset trader or duplicates change; shrinking visible rows can strand page beyond total. Row stats fetched separately global scope, nullstats fallbacks fabricate zero; netPnL subtracts fees (check backend gross/net). Anonymous refresh/callbacks grouped under component. Test/caller/backend trace pending."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/TelegramConfigModal.tsx",
+      "name": "StepIndicator",
+      "start_line": 10,
+      "end_line": 42,
+      "purpose": "Render current/completed step labels",
+      "connections": [
+        "SettingsPage:806 and AITradersPage:784 \u2192 Telegram API \u2192 handler_telegram.go singleton configuration",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TelegramConfigModal StepIndicator and ModelSelector guide create-token/save/check-bind/unbind; loads config/models independently swallowing errors to null/[] so outage resembles unconfigured. Token regex locally validates, save/unbind duplicate guards, success toast before refresh so refresh failure emits contradictory failure after mutation. No polling for binding: explicit check-status. BoundModelSelector syncs prop model, saves model-only endpoint; selector remains editable during save and parent callback captures submitted model. Modal token only cleared after full save+refresh; no close cancellation; actual backend binding ownership and supported control commands pending. No Telegram requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "StepIndicator",
+          "start_line": 13,
+          "end_line": 39
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/TelegramConfigModal.tsx",
+      "name": "TelegramConfigModal",
+      "start_line": 49,
+      "end_line": 447,
+      "purpose": "Load Telegram configuration and drive token/bind/unbind wizard",
+      "connections": [
+        "SettingsPage:806 and AITradersPage:784 \u2192 Telegram API \u2192 handler_telegram.go singleton configuration",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TelegramConfigModal StepIndicator and ModelSelector guide create-token/save/check-bind/unbind; loads config/models independently swallowing errors to null/[] so outage resembles unconfigured. Token regex locally validates, save/unbind duplicate guards, success toast before refresh so refresh failure emits contradictory failure after mutation. No polling for binding: explicit check-status. BoundModelSelector syncs prop model, saves model-only endpoint; selector remains editable during save and parent callback captures submitted model. Modal token only cleared after full save+refresh; no close cancellation; actual backend binding ownership and supported control commands pending. No Telegram requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 60,
+          "end_line": 78
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 62,
+          "end_line": 62
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 63,
+          "end_line": 63
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 64,
+          "end_line": 77
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 65,
+          "end_line": 65
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 77,
+          "end_line": 77
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 170,
+          "end_line": 170
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 247,
+          "end_line": 247
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 323,
+          "end_line": 323
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 330,
+          "end_line": 343
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 392,
+          "end_line": 394
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 393,
+          "end_line": 393
+        },
+        {
+          "owner": "TelegramConfigModal",
+          "start_line": 411,
+          "end_line": 418
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/TelegramConfigModal.tsx",
+      "name": "TelegramConfigModal.handleSaveToken",
+      "start_line": 80,
+      "end_line": 103,
+      "purpose": "Validate token then save config and refresh before advancing",
+      "connections": [
+        "SettingsPage:806 and AITradersPage:784 \u2192 Telegram API \u2192 handler_telegram.go singleton configuration",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TelegramConfigModal StepIndicator and ModelSelector guide create-token/save/check-bind/unbind; loads config/models independently swallowing errors to null/[] so outage resembles unconfigured. Token regex locally validates, save/unbind duplicate guards, success toast before refresh so refresh failure emits contradictory failure after mutation. No polling for binding: explicit check-status. BoundModelSelector syncs prop model, saves model-only endpoint; selector remains editable during save and parent callback captures submitted model. Modal token only cleared after full save+refresh; no close cancellation; actual backend binding ownership and supported control commands pending. No Telegram requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/TelegramConfigModal.tsx",
+      "name": "TelegramConfigModal.handleUnbind",
+      "start_line": 105,
+      "end_line": 119,
+      "purpose": "Unbind bot and refresh wizard state",
+      "connections": [
+        "SettingsPage:806 and AITradersPage:784 \u2192 Telegram API \u2192 handler_telegram.go singleton configuration",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TelegramConfigModal StepIndicator and ModelSelector guide create-token/save/check-bind/unbind; loads config/models independently swallowing errors to null/[] so outage resembles unconfigured. Token regex locally validates, save/unbind duplicate guards, success toast before refresh so refresh failure emits contradictory failure after mutation. No polling for binding: explicit check-status. BoundModelSelector syncs prop model, saves model-only endpoint; selector remains editable during save and parent callback captures submitted model. Modal token only cleared after full save+refresh; no close cancellation; actual backend binding ownership and supported control commands pending. No Telegram requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/TelegramConfigModal.tsx",
+      "name": "TelegramConfigModal.ModelSelector",
+      "start_line": 124,
+      "end_line": 156,
+      "purpose": "Render enabled-model selector for initial Telegram setup",
+      "connections": [
+        "SettingsPage:806 and AITradersPage:784 \u2192 Telegram API \u2192 handler_telegram.go singleton configuration",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TelegramConfigModal StepIndicator and ModelSelector guide create-token/save/check-bind/unbind; loads config/models independently swallowing errors to null/[] so outage resembles unconfigured. Token regex locally validates, save/unbind duplicate guards, success toast before refresh so refresh failure emits contradictory failure after mutation. No polling for binding: explicit check-status. BoundModelSelector syncs prop model, saves model-only endpoint; selector remains editable during save and parent callback captures submitted model. Modal token only cleared after full save+refresh; no close cancellation; actual backend binding ownership and supported control commands pending. No Telegram requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "TelegramConfigModal.ModelSelector",
+          "start_line": 139,
+          "end_line": 139
+        },
+        {
+          "owner": "TelegramConfigModal.ModelSelector",
+          "start_line": 142,
+          "end_line": 142
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/TelegramConfigModal.tsx",
+      "name": "BoundModelSelector",
+      "start_line": 451,
+      "end_line": 515,
+      "purpose": "Edit active bot model without resubmitting token",
+      "connections": [
+        "SettingsPage:806 and AITradersPage:784 \u2192 Telegram API \u2192 handler_telegram.go singleton configuration",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TelegramConfigModal StepIndicator and ModelSelector guide create-token/save/check-bind/unbind; loads config/models independently swallowing errors to null/[] so outage resembles unconfigured. Token regex locally validates, save/unbind duplicate guards, success toast before refresh so refresh failure emits contradictory failure after mutation. No polling for binding: explicit check-status. BoundModelSelector syncs prop model, saves model-only endpoint; selector remains editable during save and parent callback captures submitted model. Modal token only cleared after full save+refresh; no close cancellation; actual backend binding ownership and supported control commands pending. No Telegram requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "BoundModelSelector",
+          "start_line": 466,
+          "end_line": 466
+        },
+        {
+          "owner": "BoundModelSelector",
+          "start_line": 492,
+          "end_line": 492
+        },
+        {
+          "owner": "BoundModelSelector",
+          "start_line": 495,
+          "end_line": 495
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/TelegramConfigModal.tsx",
+      "name": "BoundModelSelector.handleSave",
+      "start_line": 468,
+      "end_line": 480,
+      "purpose": "Persist selected Telegram model and notify parent",
+      "connections": [
+        "SettingsPage:806 and AITradersPage:784 \u2192 Telegram API \u2192 handler_telegram.go singleton configuration",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TelegramConfigModal StepIndicator and ModelSelector guide create-token/save/check-bind/unbind; loads config/models independently swallowing errors to null/[] so outage resembles unconfigured. Token regex locally validates, save/unbind duplicate guards, success toast before refresh so refresh failure emits contradictory failure after mutation. No polling for binding: explicit check-status. BoundModelSelector syncs prop model, saves model-only endpoint; selector remains editable during save and parent callback captures submitted model. Modal token only cleared after full save+refresh; no close cancellation; actual backend binding ownership and supported control commands pending. No Telegram requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/TraderConfigViewModal.tsx",
+      "name": "getShortName",
+      "start_line": 7,
+      "end_line": 10,
+      "purpose": "Take final underscore segment of identifier for legacy display",
+      "connections": [
+        "No current import/mount found by repository source search; local display helpers only",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TraderConfigViewModal display-only config; getShortName extracts suffix not actual provider from UUID-based IDs; scan interval missing0 defaults3; relies on typed balances; no fetch or write."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/TraderConfigViewModal.tsx",
+      "name": "TraderConfigViewModal",
+      "start_line": 18,
+      "end_line": 147,
+      "purpose": "Render read-only trader config modal",
+      "connections": [
+        "No current import/mount found by repository source search; local display helpers only",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TraderConfigViewModal display-only config; getShortName extracts suffix not actual provider from UUID-based IDs; scan interval missing0 defaults3; relies on typed balances; no fetch or write."
+      ],
+      "callbacks": [
+        {
+          "owner": "TraderConfigViewModal",
+          "start_line": 45,
+          "end_line": 45
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/TraderConfigViewModal.tsx",
+      "name": "TraderConfigViewModal.InfoRow",
+      "start_line": 26,
+      "end_line": 39,
+      "purpose": "Render label/value config row",
+      "connections": [
+        "No current import/mount found by repository source search; local display helpers only",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "TraderConfigViewModal display-only config; getShortName extracts suffix not actual provider from UUID-based IDs; scan interval missing0 defaults3; relies on typed balances; no fetch or write."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/model-constants.ts",
+      "name": "getModelDisplayName",
+      "start_line": 26,
+      "end_line": 37,
+      "purpose": "Map known provider identifiers to display labels",
+      "connections": [
+        "ModelConfigModal catalogs, ModelCard:4, TradersList:215/277/300 and ConfigStatusGrid formatting",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Static model/provider catalog and display helpers. Pricing/default strings are source literals not verified service prices. DefaultClaw402 flash matches policy only if backend default same. getShortName suffix lossy for UUIDentries; getExchangeDisplayName does actualIDlookup; Aster wallet address helper returns signer rather than main holder."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/model-constants.ts",
+      "name": "getShortName",
+      "start_line": 40,
+      "end_line": 43,
+      "purpose": "Take final underscore segment of identifier for legacy display",
+      "connections": [
+        "ModelConfigModal catalogs, ModelCard:4, TradersList:215/277/300 and ConfigStatusGrid formatting",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Static model/provider catalog and display helpers. Pricing/default strings are source literals not verified service prices. DefaultClaw402 flash matches policy only if backend default same. getShortName suffix lossy for UUIDentries; getExchangeDisplayName does actualIDlookup; Aster wallet address helper returns signer rather than main holder."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/model-constants.ts",
+      "name": "getExchangeDisplayName",
+      "start_line": 254,
+      "end_line": 270,
+      "purpose": "Resolve configured exchange display or shortened fallback ID",
+      "connections": [
+        "ModelConfigModal catalogs, ModelCard:4, TradersList:215/277/300 and ConfigStatusGrid formatting",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Static model/provider catalog and display helpers. Pricing/default strings are source literals not verified service prices. DefaultClaw402 flash matches policy only if backend default same. getShortName suffix lossy for UUIDentries; getExchangeDisplayName does actualIDlookup; Aster wallet address helper returns signer rather than main holder."
+      ],
+      "callbacks": [
+        {
+          "owner": "getExchangeDisplayName",
+          "start_line": 264,
+          "end_line": 264
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/trader/model-constants.ts",
+      "name": "isPerpDexExchange",
+      "start_line": 273,
+      "end_line": 277,
+      "purpose": "Recognize hyperliquid/lighter/aster provider names",
+      "connections": [
+        "ModelConfigModal catalogs, ModelCard:4, TradersList:215/277/300 and ConfigStatusGrid formatting",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Static model/provider catalog and display helpers. Pricing/default strings are source literals not verified service prices. DefaultClaw402 flash matches policy only if backend default same. getShortName suffix lossy for UUIDentries; getExchangeDisplayName does actualIDlookup; Aster wallet address helper returns signer rather than main holder."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/model-constants.ts",
+      "name": "getWalletAddress",
+      "start_line": 280,
+      "end_line": 302,
+      "purpose": "Pick exchange-specific wallet/signer address for display",
+      "connections": [
+        "ModelConfigModal catalogs, ModelCard:4, TradersList:215/277/300 and ConfigStatusGrid formatting",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Static model/provider catalog and display helpers. Pricing/default strings are source literals not verified service prices. DefaultClaw402 flash matches policy only if backend default same. getShortName suffix lossy for UUIDentries; getExchangeDisplayName does actualIDlookup; Aster wallet address helper returns signer rather than main holder."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/components/trader/model-constants.ts",
+      "name": "truncateAddress",
+      "start_line": 305,
+      "end_line": 312,
+      "purpose": "Shorten long address with front/back slices",
+      "connections": [
+        "ModelConfigModal catalogs, ModelCard:4, TradersList:215/277/300 and ConfigStatusGrid formatting",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "Static model/provider catalog and display helpers. Pricing/default strings are source literals not verified service prices. DefaultClaw402 flash matches policy only if backend default same. getShortName suffix lossy for UUIDentries; getExchangeDisplayName does actualIDlookup; Aster wallet address helper returns signer rather than main holder."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "configBadge",
+      "start_line": 27,
+      "end_line": 39,
+      "purpose": "Render active/inactive configuration presence pill",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage",
+      "start_line": 41,
+      "end_line": 840,
+      "purpose": "Own settings tabs, model/exchange mutations and modal mounts",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "SettingsPage",
+          "start_line": 49,
+          "end_line": 56
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 51,
+          "end_line": 51
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 52,
+          "end_line": 54
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 55,
+          "end_line": 55
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 100,
+          "end_line": 109
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 102,
+          "end_line": 102
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 105,
+          "end_line": 106
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 111,
+          "end_line": 119
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 117,
+          "end_line": 118
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 435,
+          "end_line": 449
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 438,
+          "end_line": 438
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 475,
+          "end_line": 475
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 482,
+          "end_line": 482
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 514,
+          "end_line": 517
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 537,
+          "end_line": 647
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 542,
+          "end_line": 545
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 582,
+          "end_line": 582
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 590,
+          "end_line": 590
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 612,
+          "end_line": 612
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 619,
+          "end_line": 619
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 662,
+          "end_line": 665
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 679,
+          "end_line": 740
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 686,
+          "end_line": 689
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 754,
+          "end_line": 754
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 784,
+          "end_line": 787
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 801,
+          "end_line": 804
+        },
+        {
+          "owner": "SettingsPage",
+          "start_line": 814,
+          "end_line": 814
+        }
+      ]
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.refreshModelConfigs",
+      "start_line": 85,
+      "end_line": 92,
+      "purpose": "Fetch configured models and provider catalog together",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.refreshExchangeConfigs",
+      "start_line": 94,
+      "end_line": 97,
+      "purpose": "Fetch configured exchange rows",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.handleRefresh",
+      "start_line": 112,
+      "end_line": 115,
+      "purpose": "Refresh models and exchanges after agent config event",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "SettingsPage.handleRefresh",
+          "start_line": 113,
+          "end_line": 113
+        },
+        {
+          "owner": "SettingsPage.handleRefresh",
+          "start_line": 114,
+          "end_line": 114
+        }
+      ]
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.handleChangePassword",
+      "start_line": 121,
+      "end_line": 150,
+      "purpose": "Validate minimum length then authenticated password PUT",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "SettingsPage.handleChangePassword",
+          "start_line": 138,
+          "end_line": 138
+        }
+      ]
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.handleSaveModel",
+      "start_line": 152,
+      "end_line": 260,
+      "purpose": "Create extra provider row or send row-keyed model configuration update",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "SettingsPage.handleSaveModel",
+          "start_line": 162,
+          "end_line": 162
+        },
+        {
+          "owner": "SettingsPage.handleSaveModel",
+          "start_line": 163,
+          "end_line": 163
+        },
+        {
+          "owner": "SettingsPage.handleSaveModel",
+          "start_line": 179,
+          "end_line": 179
+        },
+        {
+          "owner": "SettingsPage.handleSaveModel",
+          "start_line": 182,
+          "end_line": 182
+        },
+        {
+          "owner": "SettingsPage.handleSaveModel",
+          "start_line": 202,
+          "end_line": 214
+        },
+        {
+          "owner": "SettingsPage.handleSaveModel",
+          "start_line": 233,
+          "end_line": 249
+        }
+      ]
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.handleDeleteModel",
+      "start_line": 262,
+      "end_line": 292,
+      "purpose": "Confirm, inspect trader bindings, delete model row then refresh",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": [
+        {
+          "owner": "SettingsPage.handleDeleteModel",
+          "start_line": 269,
+          "end_line": 269
+        },
+        {
+          "owner": "SettingsPage.handleDeleteModel",
+          "start_line": 270,
+          "end_line": 270
+        },
+        {
+          "owner": "SettingsPage.handleDeleteModel",
+          "start_line": 272,
+          "end_line": 272
+        }
+      ]
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.openAddEntry",
+      "start_line": 294,
+      "end_line": 298,
+      "purpose": "Initialize provider-keyed extra model entry form",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.cancelAddEntry",
+      "start_line": 300,
+      "end_line": 304,
+      "purpose": "Clear extra entry form including key",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.handleCreateEntry",
+      "start_line": 306,
+      "end_line": 326,
+      "purpose": "Create named provider credential row then refresh",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.handleSaveExchange",
+      "start_line": 328,
+      "end_line": 404,
+      "purpose": "Construct encrypted exchange create/update payload then refresh",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": []
+    },
+    {
+      "path": "web/src/pages/SettingsPage.tsx",
+      "name": "SettingsPage.handleDeleteExchange",
+      "start_line": 406,
+      "end_line": 416,
+      "purpose": "Delete configured exchange and refresh list",
+      "connections": [
+        "AppRoutes:516 authenticated settings \u2192 model/exchange/Telegram modals; /user/password \u2192 handler_user.go:184; ResolvedKnobPanel registry GET without trader ID",
+        "Local named helper/JSX callbacks recorded with exact AST start/end; anonymous callbacks grouped under owner."
+      ],
+      "invariants_or_risks": [
+        "SettingsPage active account/models/exchanges/Telegram control surface. refreshModelConfigs Promise.all config/catalog; tab/event effects no auth identity generation/cancel. Password PUT authenticated min8 only local; backend pending. handleSaveModel existing row builds full configuredModels map (stale unrelated values risk); add-provider duplicate guard createModelEntry branch drops chosen thinkingMode/reasoningEffort/name in favor generated name. Existing row blank key preservation delegated backend. handleDeleteModel confirms, fail-open advisory trader lookup but backend authoritative delete. Inline add state keyed provider, rendered beneath every same-provider row (duplicate forms). Exchange encrypted update/create, no account_name on update; all defaults sent. Save/delete success before refresh can later failure and stay modal. Configured exchange count described connected and unconditional TCP Bridge true is config badge not live proof. Modal conditional mount scrubs local state on close; outer editor requests can still resolve later. ResolvedKnobPanel and revision server-driven; no settings/live requests executed."
+      ],
+      "callbacks": []
+    }
+  ],
+  "status": "Complete assigned source semantic census; runtime not executed.",
+  "callback_count": 267
+}

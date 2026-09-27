@@ -1,0 +1,5 @@
+trade_id,entry_ct,era,min_risk_reward_ratio,ARM_MIN_RR,min_sl_atr_mult,max_contracts,breakeven_pts,trailing
+587,2026-09-02 00:17:44,2.0-era,2.0,2.0,1.0,2,40,2.0xATR14
+588,2026-09-02 07:41:05,2.0-era,2.0,2.0,1.0,2,40,2.0xATR14
+589,2026-09-02 09:41:04,2.0-era,2.0,2.0,1.5,2,40,2.0xATR14
+590,2026-09-02 10:37:17,2.0-era,2.0,2.0,1.5,2,40,2.0xATR14

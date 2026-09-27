@@ -15,6 +15,7 @@ import (
 
 	"nofx/kernel"
 	"nofx/logger"
+	"nofx/market"
 	"nofx/mcp"
 	"nofx/safe"
 	"nofx/security"
@@ -719,6 +720,14 @@ func buildAgentTools() []mcp.Tool {
 						"leverage": map[string]any{
 							"type":        "number",
 							"description": "Leverage multiplier (e.g. 5, 10, 20). Optional, defaults to trader's current setting.",
+						},
+						"stop_loss": map[string]any{
+							"type":        "number",
+							"description": "Protective stop price (absolute). REQUIRED for open_long/open_short: an open proposed without its own stop AND target is refused before any confirmation is asked.",
+						},
+						"take_profit": map[string]any{
+							"type":        "number",
+							"description": "Take-profit price (absolute). REQUIRED for open_long/open_short, on the far side of the price from the stop.",
 						},
 					},
 					"required": []string{"action", "symbol", "quantity"},
@@ -2742,17 +2751,17 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 		Symbol   string  `json:"symbol"`
 		Quantity float64 `json:"quantity"`
 		Leverage int     `json:"leverage"`
+		// W1b E9 — the entry's own bracket: required for an open (refused
+		// below at proposal; the admission chain refuses it again at send).
+		StopLoss   float64 `json:"stop_loss"`
+		TakeProfit float64 `json:"take_profit"`
 	}
 	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
 		return fmt.Sprintf(`{"error": "invalid arguments: %s"}`, err)
 	}
 
-	// Normalize symbol
-	sym := strings.ToUpper(args.Symbol)
-	// Only append USDT for crypto symbols; stock tickers (e.g. AAPL, TSLA) stay as-is
-	if !isStockSymbol(sym) && !strings.HasSuffix(sym, "USDT") {
-		sym += "USDT"
-	}
+	// Normalize symbol (the one chat-symbol canonicalizer, W1b FOLD-5)
+	sym := chatTradeSymbol(args.Symbol)
 
 	// Validate action
 	validActions := map[string]bool{
@@ -2766,6 +2775,12 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 	// For open actions, quantity must be > 0
 	if (args.Action == "open_long" || args.Action == "open_short") && args.Quantity <= 0 {
 		return `{"error": "quantity must be > 0 for opening positions"}`
+	}
+	// W1b E9 repair — an open needs its OWN stop and target at PROPOSAL time:
+	// the admission chain refuses one without them, so a pending trade that
+	// lacks either would only ask the owner to confirm a certain refusal.
+	if (args.Action == "open_long" || args.Action == "open_short") && !(args.StopLoss > 0 && args.TakeProfit > 0) {
+		return `{"error": "stop_loss and take_profit are both required for open_long/open_short (absolute prices): a chat entry is sent with its own bracket or not at all"}`
 	}
 
 	// For stock symbols, check market hours and warn if closed
@@ -2793,13 +2808,15 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 
 	// Create pending trade — requires user confirmation
 	trade := &TradeAction{
-		ID:        fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		Action:    args.Action,
-		Symbol:    sym,
-		Quantity:  args.Quantity,
-		Leverage:  args.Leverage,
-		Status:    "pending_confirmation",
-		CreatedAt: time.Now().Unix(),
+		ID:         fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		Action:     args.Action,
+		Symbol:     sym,
+		Quantity:   args.Quantity,
+		Leverage:   args.Leverage,
+		StopLoss:   args.StopLoss,
+		TakeProfit: args.TakeProfit,
+		Status:     "pending_confirmation",
+		CreatedAt:  time.Now().Unix(),
 	}
 	if _, selectedTrader, underlyingTrader, err := a.resolveTradeExecutionContext(trade); err != nil {
 		return fmt.Sprintf(`{"error": %q}`, err.Error())
@@ -2823,6 +2840,8 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 		"symbol":                            trade.Symbol,
 		"quantity":                          trade.Quantity,
 		"leverage":                          trade.Leverage,
+		"stop_loss":                         trade.StopLoss,
+		"take_profit":                       trade.TakeProfit,
 		"estimated_price":                   trade.EstimatedPrice,
 		"estimated_notional":                trade.EstimatedNotional,
 		"requires_large_order_confirmation": trade.RequiresLargeOrderConfirmation,
@@ -2943,16 +2962,14 @@ func (a *Agent) toolGetMarketPrice(argsJSON string) string {
 		return fmt.Sprintf(`{"error": "invalid arguments: %s"}`, err)
 	}
 
-	sym := strings.ToUpper(args.Symbol)
-	if !isStockSymbol(sym) && !strings.HasSuffix(sym, "USDT") {
-		sym += "USDT"
-	}
+	sym := chatTradeSymbol(args.Symbol)
 
 	if a.traderManager == nil {
 		return `{"error": "no trader manager configured"}`
 	}
 
 	wantStock := isStockSymbol(sym)
+	wantCME := isCMEFuturesChatSymbol(sym) // W1b FOLD-5: a CME price is the NT8 trader's
 	for _, t := range a.traderManager.GetAllTraders() {
 		underlying := t.GetUnderlyingTrader()
 		if underlying == nil {
@@ -2964,6 +2981,9 @@ func (a *Agent) toolGetMarketPrice(argsJSON string) string {
 			continue
 		}
 		if !wantStock && isAlpaca {
+			continue
+		}
+		if wantCME && t.GetExchange() != "ninjatrader" {
 			continue
 		}
 		price, err := underlying.GetMarketPrice(sym)
@@ -3027,7 +3047,7 @@ func (a *Agent) toolGetMarketSnapshot(argsJSON string) string {
 	if symbol == "" {
 		return `{"error":"symbol is required"}`
 	}
-	if isStockSymbol(symbol) {
+	if isStockSymbol(symbol) || isCMEFuturesChatSymbol(symbol) {
 		return `{"error":"get_market_snapshot currently supports crypto symbols only"}`
 	}
 	if !strings.HasSuffix(symbol, "USDT") {
@@ -3630,7 +3650,7 @@ func normalizeWatchSymbol(raw string) string {
 		return ""
 	}
 	hasQuoteSuffix := strings.HasSuffix(symbol, "USDT") || strings.HasSuffix(symbol, "BUSD") || strings.HasSuffix(symbol, "USDC")
-	if !hasQuoteSuffix && isStockSymbol(symbol) == false {
+	if !hasQuoteSuffix && isStockSymbol(symbol) == false && !isCMEFuturesChatSymbol(symbol) {
 		return symbol + "USDT"
 	}
 	return symbol
@@ -3731,10 +3751,44 @@ var knownCryptoSymbols = map[string]bool{
 	"BONK": true, "FLOKI": true, "ORDI": true, "STX": true, "RUNE": true,
 }
 
+// isCMEFuturesChatSymbol reports whether a chat symbol is a CME futures
+// symbol (W1b FOLD-5): market.IsCMEFuturesSymbol, or a known CME root in any
+// form (market.FuturesRoot: "mnq", "MNQU6", "MNQ.c.0", "MNQ 06-26").
+func isCMEFuturesChatSymbol(sym string) bool {
+	return market.IsCMEFuturesSymbol(sym) || market.FuturesRoot(sym) != ""
+}
+
+// chatTradeSymbol is the ONE canonicalizer for a symbol a chat trade names
+// (W1b FOLD-5, canon 28), called where it enters: a CME futures symbol is its
+// ROOT ("MNQU6" → "MNQ" — the NT8 trader trades its own resolved front month,
+// and the pending trade the owner confirms shows the root), stock tickers
+// (AAPL, TSLA) stay as-is, crypto gets its USDT quote.
+func chatTradeSymbol(raw string) string {
+	if isCMEFuturesChatSymbol(raw) {
+		if root := market.FuturesRoot(raw); root != "" {
+			return root
+		}
+		return strings.ToUpper(strings.TrimSpace(raw))
+	}
+	sym := strings.ToUpper(raw)
+	// Only append USDT for crypto symbols; stock tickers (e.g. AAPL, TSLA) stay as-is
+	if !isStockSymbol(sym) && !strings.HasSuffix(sym, "USDT") {
+		sym += "USDT"
+	}
+	return sym
+}
+
 // isStockSymbol heuristically determines if a symbol is a stock ticker (not crypto).
 // Stock tickers are 1-5 uppercase letters without numeric suffixes like "USDT".
 // Known crypto base symbols (BTC, ETH, SOL etc.) are excluded.
 func isStockSymbol(sym string) bool {
+	// W1b FOLD-5 — a CME futures symbol is NEVER a stock, checked BEFORE the
+	// letters heuristic: "MNQ" is three uppercase letters, and as a "stock"
+	// every chat MNQ entry was routed to Alpaca and never reached the NT8
+	// trader's door ("no running stock trader (Alpaca) found").
+	if isCMEFuturesChatSymbol(sym) {
+		return false
+	}
 	sym = strings.ToUpper(sym)
 
 	// Check known crypto base symbols first (critical: "BTC", "ETH" etc. are NOT stocks)

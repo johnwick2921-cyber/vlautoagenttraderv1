@@ -1,0 +1,24 @@
+{
+  "task": "go-race",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./store",
+    "./provider/ninjatrader",
+    "./trader/ninjatrader",
+    "./trader"
+  ],
+  "cwd": "/tmp/nofx-audit-repairs-20260913",
+  "source_revision": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
+  "end_revision": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
+  "source_clean_before": true,
+  "source_clean_after": true,
+  "started_utc": "2026-09-13T14:41:38.259128+00:00",
+  "duration_seconds": 373.162,
+  "exit_code": 0,
+  "log": "/tmp/nofx-final-verification/go-race.log",
+  "log_bytes": 127,
+  "log_sha256": "3d06ef5d377ab34513322f29541a92a4742a722312fa8b379cf1652c07e2c442",
+  "revision_unchanged": true
+}

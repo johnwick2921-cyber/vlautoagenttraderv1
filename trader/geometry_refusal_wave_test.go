@@ -194,6 +194,7 @@ func nilLevelIDOverride(t *testing.T) string {
 // outside a live session window).
 func TestGeometryRefusalWarnOncePerKeyChange(t *testing.T) {
 	oneSetupFixtureDocOverride = nilLevelIDOverride(t)
+	t.Cleanup(func() { oneSetupFixtureDocOverride = "" }) // A7: restore the package seam — it leaked into TestOneSetupE2OffKeepsSelectionOffWithStructuralGeometry
 	entry := 29010.0
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}}
 	cfg.RiskControl.MinRiskRewardRatio = 2

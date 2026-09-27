@@ -1,0 +1,3 @@
+PASS: corrected 58-row population, 12 CME days, five trades and point conversion; 188 unique opportunities with complete 39-arm/24-intent/5-position lineage; 20 refusals; no future minute bars in checkpoints; exact copied source functions; broker stop591 evidence; 7/6 submissions and 4/3 conditional reaches; docs-only tracked diff.
+NOT VERIFIED / NOT CLAIMED: complete current-rule broker replay, actual counterfactual fills/P&L, original intrabar receipt history, immutable initial risk, post-strict expectancy or a validated continuation edge.
+PASS: unauthenticated read-only GET http://localhost:8080/api/health returned HTTP 200; no deployment or runtime mutation.

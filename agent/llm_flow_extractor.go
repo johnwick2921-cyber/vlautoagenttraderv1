@@ -183,15 +183,6 @@ func formatConversationMissingFields(lang string, missingFields []string) string
 	return "Current missing slots: " + strings.Join(display, ", ")
 }
 
-func skillSessionExtractionContext(session skillSession, lang string) (string, []llmFlowFieldSpec, map[string]string, []string) {
-	currentStep, _ := currentSkillDAGStep(session)
-	fieldSpecs := allowedFieldSpecsForSkillSession(session, lang)
-	currentValues := currentFieldValuesForSkillSession(session)
-	missing := missingFieldKeysForSkillSession(session)
-	summary := fmt.Sprintf("Active flow type: skill_session\nSkill: %s\nAction: %s\nCurrent DAG step: %s", session.Name, session.Action, currentStep.ID)
-	return summary, fieldSpecs, currentValues, missing
-}
-
 func allowedFieldSpecsForSkillSession(session skillSession, lang string) []llmFlowFieldSpec {
 	add := func(out *[]llmFlowFieldSpec, key, description string, required bool) {
 		*out = append(*out, llmFlowFieldSpec{Key: key, Description: description, Required: required})
@@ -289,29 +280,6 @@ func allowedFieldSpecsForSkillSession(session skillSession, lang string) []llmFl
 		}
 	}
 	return out
-}
-
-func currentFieldValuesForSkillSession(session skillSession) map[string]string {
-	values := map[string]string{}
-	for key, value := range session.Fields {
-		if trimmed := strings.TrimSpace(value); trimmed != "" {
-			values[key] = trimmed
-		}
-	}
-	if session.TargetRef != nil {
-		if session.TargetRef.ID != "" {
-			values["target_ref_id"] = session.TargetRef.ID
-		}
-		if session.TargetRef.Name != "" {
-			values["target_ref_name"] = session.TargetRef.Name
-		}
-	}
-	for _, key := range []string{"name", "exchange_id", "exchange_name", "model_id", "model_name", "strategy_id", "strategy_name", "auto_start"} {
-		if value := fieldValue(session, key); value != "" {
-			values[key] = value
-		}
-	}
-	return values
 }
 
 func missingFieldKeysForSkillSession(session skillSession) []string {

@@ -1,0 +1,7 @@
+metric,value,n,source,note
+plan_versions_with_levels_array,246,251,plans table (ro),5 rows have no levels[] (fail-closed NO-TRADE)
+plans_with_any_HTF_tier_row,162,246,"label LIKE '%·1h%' OR '%·4h%'",65.9% -- LOWER BOUND on compliance
+plans_with_1h_SD_row,116,246,"label LIKE 'Supply·1h%' OR 'Demand·1h%'",47.2% -- LOWER BOUND on compliance
+plans_without_any_HTF_row,84,246,complement,"<=34.1% non-compliance; rule is CONDITIONAL and HTFZones at write is not reconstructable from plans table"
+class38_contract_restrictions,19,19,kernel/prompt_contract.go:38-142,HTF-inclusion MUST is NOT one of them
+production_callers_plannerOutputContract,2,2,"planner_prompt.go:674; prompt_contract.go:168",peer reported 1

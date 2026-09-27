@@ -1,0 +1,483 @@
+{
+  "assignment": 1,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "api/agent_preferences.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          110
+        ]
+      ],
+      "sha256": "1784e9c4a463d3e9b81ffdc57c3fc42c52f6885a49242119905ef015a895e83d",
+      "notes": "Per-user preference JSON in system config; trim validation 500 runes, newest-first max20, read/parse failure becomes empty. Unsynchronized read-modify-write can lose concurrent edits."
+    },
+    {
+      "path": "api/agent_routes.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "sha256": "5a9baec454a412d323ce3945fd4422a00e5b3d01e72c24de283a271e0fd6f600",
+      "notes": "JWT chat and streaming inject store-user context and execution-capable session policy; sensitive secrets disabled. Public agent market endpoints separately registered."
+    },
+    {
+      "path": "api/config_resolved.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          202
+        ]
+      ],
+      "sha256": "3f2e5430262a30f17833631c9546a052f3925f5b2e6161a3bad134e720af0086",
+      "notes": "Registry metadata plus three actual shared resolver results; no cfg omits resolved. Direct trader-manager lookup lacks owner check."
+    },
+    {
+      "path": "api/crypto_handler.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          106
+        ]
+      ],
+      "sha256": "f7183cea1523fc58ea9294a3635423dda40b04e0b4dae87208cebe5ea4388216",
+      "notes": "Public crypto configuration/key; decrypt protected and transport-encryption gated. Private-key helper checks length/prefix only."
+    },
+    {
+      "path": "api/errors.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          126
+        ]
+      ],
+      "sha256": "99c08ae7044d7fcb6071428fddb8da8b272e6c3977f0402e9858042676ca5ed2",
+      "notes": "Structured safe JSON errors, server-side logging, heuristic sensitive substring/IP-like filtering; not a universal error scrubber."
+    },
+    {
+      "path": "api/handler_account.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          238
+        ]
+      ],
+      "sha256": "0a22d9f47fad24313bc6745921d9c0dfe738703e1734f6061a12dcad72db1905",
+      "notes": "NT TCP account list, persisted binding distinct from streamed current; SIM/allowlist checked. Select resets memory then persists and returns success even on error; ownership gap."
+    },
+    {
+      "path": "api/handler_ai_model.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          384
+        ]
+      ],
+      "sha256": "3c98ffd1a7066d4af48a536db58ac24b28ab22c8f5255f024a41f84ac1566be2",
+      "notes": "Scoped model reads with secret omission, encryption-conditional config writes, SSRF URL validation; thinking validation after base write, warning-only thinking/reload failure; entry CRUD."
+    },
+    {
+      "path": "api/handler_armed_seam.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          86
+        ]
+      ],
+      "sha256": "c2bbe123b45843e9b3fba623e97ae8cd4c9d8ab5829b9dd990095799823fb9db",
+      "notes": "Explicit ownership check; TEST-E2 place/place_stop/cancel dispatches actual AutoTrader methods; feature flag and SIM enforcement delegated downstream."
+    },
+    {
+      "path": "api/handler_bars_sse.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          120
+        ]
+      ],
+      "sha256": "9e7caa7c9a00557f5c8a4a7977c767805da8b5cffbfb68798c70e4b56591793a",
+      "notes": "Single-use ticket establishes user; scoped query resolver; snapshot and lastT-based 1s deltas, 15s keepalive, context cancellation. Older backfill updates omitted after lastT."
+    },
+    {
+      "path": "api/handler_competition.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          479
+        ]
+      ],
+      "sha256": "1615f2717fe3aaa29c73df3de9f93368987dda5dd2e20a75f07d0dfa2d2a5467",
+      "notes": "Owned query APIs and public competition/equity paths coexist. Single history uses unrealized/base; batch uses equity-minus-initial percentage and may append live point."
+    },
+    {
+      "path": "api/handler_debug.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          182
+        ]
+      ],
+      "sha256": "98c2ae61df03847388fc130ec69362d9e7281f4dfbeab20e5e2a6b4b5ad41626",
+      "notes": "Scoped futures/TCP resolution; runtime symbol changes feature-gated, legacy debug unsubscribe separate; test trade routes directly to broker debug helper."
+    },
+    {
+      "path": "api/handler_decisions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          72
+        ]
+      ],
+      "sha256": "c3bb2c7a65f05135035017951e9a71e61b32e2bbd73ec7e00ddd46c8adaf3101",
+      "notes": "Audit since parsing UTC date/RFC3339, default7d/100; manager lookup unscoped; optional account filter passed to store."
+    },
+    {
+      "path": "api/handler_desk.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          39
+        ]
+      ],
+      "sha256": "4afa8b8b6c2d6ed9020ec1b460bbd6eab5b1a48fde537d00393f92683461d2dd",
+      "notes": "Direct manager lookup and DeskStripAt(now); caller clock and unknown handling delegated; ownership gap."
+    },
+    {
+      "path": "api/handler_expectancy.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "sha256": "889fba3a56d2154aea1082701bd1a6bcabacd2b2b48f6a00e2b26e1d5a5f6b18",
+      "notes": "Global read model with view and era filtering, min_n and exclusion metadata; no per-user scope; 200 empty rows plus error on load failure."
+    },
+    {
+      "path": "api/handler_klines.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          431
+        ]
+      ],
+      "sha256": "e1873be153dfffbb0b83fe275a59b9c8d45a3910386df558924146244c4635b1",
+      "notes": "Provider dispatch; NT same market hook no alternate feed; crypto fallbacks, context.Background external fetches; TwelveData parse failure leaves zero slot."
+    },
+    {
+      "path": "api/handler_onboarding.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          344
+        ]
+      ],
+      "sha256": "bbc096123cdea78a91bc36d6a7b7303111a18ed3c554c84522a8bdb4d871653d",
+      "notes": "Claw402 wallet find/adopt/generate; returns key, writes global env and .env; per-user model storage but shared process persistence; file rewrite non-atomic."
+    },
+    {
+      "path": "api/handler_plan_geometry.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          12
+        ]
+      ],
+      "sha256": "b17b972dd24c9c83ee1e11bdf6b6f57809bccd8f95bec12eeaae14db1d1a5465",
+      "notes": "Thin structural geometry store reader; WARN and nil when unavailable."
+    },
+    {
+      "path": "api/handler_plan_position_provenance.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "sha256": "d61d456d79c1e5537d7d3918817e3d6d23710145bb3a42f6e632b950dfaa0601",
+      "notes": "First open DB position entry-version identity, distinguishes missing attribution; no account selection and only first row displayed."
+    },
+    {
+      "path": "api/handler_trader.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          1027
+        ]
+      ],
+      "sha256": "70a8bdf77633fe9a481ef4906b48efa48d43352e501a58e1dae8d517042997b3",
+      "notes": "Trader lifecycle create/update/delete/start/stop/pause/resume, localized validation helpers. NT start binding required. Unix-second IDs; unsafe unowned delete flow; asynchronous run and warning-only reload/status errors."
+    },
+    {
+      "path": "api/handler_trader_status.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          531
+        ]
+      ],
+      "sha256": "b0cc4639b75b3bf86ad3dc62bd025846c91607bccbb6ffedf7cfd3d3e91373e9",
+      "notes": "Grid read, initial-balance sync, manual broker close. NT reuses bound live TCP; other brokers temp instances; non-synced close records manufacture price/fee/FILLED state."
+    },
+    {
+      "path": "api/route_registry.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          66
+        ]
+      ],
+      "sha256": "928934934aa5732e176cf624e9e2373d2b74c1b01141a1096fac5524914c69af",
+      "notes": "Global registry records docs and Gin route; schema injected verbatim to LLM; repeated server construction appends duplicate docs; unknown verbs documented but not mounted."
+    },
+    {
+      "path": "api/server.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          950
+        ]
+      ],
+      "sha256": "d52f48dfe9f649b89f36484f3ffa1773a82ea47fce5a946619456cecf8868d4b",
+      "notes": "Gin public/protected boundaries, prefix-limited ownership middleware, query resolver, JWT blacklist verification, loopback default listener; no HTTP timeouts configured here; substantial route prose drift."
+    },
+    {
+      "path": "api/strategy.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          873
+        ]
+      ],
+      "sha256": "52ca77a5f07024351544821d0ad26ac3a7999fb63321c65d410d6f3286d0cba6",
+      "notes": "Scoped strategy CRUD/merge/clamp/period validation; token overflow check after persistence; reload bound traders. Prompt preview/test analysis, optional provider call, observational config diffs."
+    },
+    {
+      "path": "api/utils.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          105
+        ]
+      ],
+      "sha256": "98199a7e94436859e1602e33bf331be87434918dc734725d17bdb9e37c7bb18d",
+      "notes": "Mask secrets and email for logs; URL/wallet metadata stays unmasked; byte slicing for masks."
+    },
+    {
+      "path": "api/handler_plan.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          160
+        ]
+      ],
+      "sha256": "451cdba597d3a832e946f7d065941882d290209e64d36ad9538bcbb59750d432",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "api/stream_ticket.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          87
+        ]
+      ],
+      "sha256": "2ca8a0898a07cc2e2f834aaed5c41c86b72288e6623504f45757bedad6647dc4",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "store/trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          180,
+          245
+        ]
+      ],
+      "sha256": "2319c4d6c7cc11dc407ecbc9accc40ac4f6f94fbfb8d1cdbfad353a451fa6180",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "api/exchange_account_state.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          226,
+          328
+        ]
+      ],
+      "sha256": "adad47c09f9c8cd89c56d38be7d393d3e86088b5a30414e9f7e8a706c1d4bbfa",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "api/handler_trader_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "sha256": "4156fc23878ec9e1fd70bc832a74dc670ce863b849c4791ca88353016365a06e",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "api/traderid_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          123
+        ]
+      ],
+      "sha256": "1b86e3dc4c3a1e803200e3bc61b9b1f7e5486a1514c092b5a17c177cf8f20d72",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "api/config_resolved_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          256
+        ]
+      ],
+      "sha256": "f75ee40686b4951f34fee96dad3753293cef7aba3b2dad4cb490a5161c0991a2",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "api/handler_plan_idor_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          194
+        ]
+      ],
+      "sha256": "a5a7dc64db962ec6761d5a8711d83bdec3dfbfe3ab4063a37e5edcb03ff3b1ea",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "api/handler_risk_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          152,
+          179
+        ]
+      ],
+      "sha256": "96af592fb9690e4e13515f81a4c8215e299e8c9d75f9f6ecefdfffc43c5436e6",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "manager/trader_manager.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          40,
+          79
+        ],
+        [
+          350,
+          390
+        ]
+      ],
+      "sha256": "80d5a0199c7aeb69978c5637db1cc2b95f069202257e88d22349e5bdb8f04dff",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "sha256": "1b498eed50f406c5c05f33f943ba2b73a47b04e71391a8eee017261de9b83e29",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          180
+        ],
+        [
+          2280,
+          2445
+        ]
+      ],
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "docs/superpowers/SYSTEM-MAP.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          30
+        ],
+        [
+          90,
+          155
+        ],
+        [
+          348,
+          378
+        ]
+      ],
+      "sha256": "04905d4e659519c1459daa4b96872f3395a83f0c564324ad779301484904d417",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          24
+        ],
+        [
+          185,
+          228
+        ]
+      ],
+      "sha256": "d0b7a8726694d28a06c32fdfc817999d0438743553ec130bab65072b5aa91d1e",
+      "notes": "Additional dependency/test/rule read; not part of assigned source coverage. Documentation long initial combined output truncated; only confirmed selected ranges credited."
+    }
+  ],
+  "unread": []
+}

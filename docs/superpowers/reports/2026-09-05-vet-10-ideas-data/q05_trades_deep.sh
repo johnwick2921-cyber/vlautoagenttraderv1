@@ -1,0 +1,18 @@
+#!/bin/bash
+# q05: era usable trades — per-row detail for R-multiples, hold time, time-of-day, MAE/MFE
+DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+E="strftime('%s','2026-08-15 05:00:00')*1000"
+echo "--- era rows excluded and why"
+sqlite3 "$DB" "select id, source, pnl_corrected is null pnl_null, substr(coalesce(pnl_correction_note,''),1,60) from trader_positions where entry_time>=$E and (source='e7_farside_test' or pnl_corrected is null or coalesce(pnl_correction_note,'') like '%UNRESOLVABLE%') order by id"
+echo "--- usable per-row: id, day, entry CT, side, entry, exit, hold_min, pnl_c, mae, mfe, source, session, cited, grade"
+sqlite3 -header "$DB" "select id, date(entry_time/1000,'unixepoch','-5 hours') d, time(entry_time/1000,'unixepoch','-5 hours') t_in, time(exit_time/1000,'unixepoch','-5 hours') t_out, side, entry_price, exit_price, round((exit_time-entry_time)/60000.0,1) hold_min, round(pnl_corrected,2) pnl, mae, mfe, source, plan_session, cited_scenario_id, adherence_grade, plan_band, close_reason from trader_positions where entry_time>=$E and source<>'e7_farside_test' and pnl_corrected is not null and coalesce(pnl_correction_note,'') not like '%UNRESOLVABLE%' order by entry_time"
+echo "--- hold time distribution (usable)"
+sqlite3 "$DB" "select case when (exit_time-entry_time)/60000.0<5 then 'a<5m' when (exit_time-entry_time)/60000.0<15 then 'b5-15m' when (exit_time-entry_time)/60000.0<30 then 'c15-30m' when (exit_time-entry_time)/60000.0<60 then 'd30-60m' when (exit_time-entry_time)/60000.0<120 then 'e60-120m' else 'f>120m' end bucket, count(*), round(sum(pnl_corrected),1), sum(pnl_corrected>0) from trader_positions where entry_time>=$E and source<>'e7_farside_test' and pnl_corrected is not null and coalesce(pnl_correction_note,'') not like '%UNRESOLVABLE%' group by 1 order by 1"
+echo "--- entry hour CT distribution (usable)"
+sqlite3 "$DB" "select strftime('%H', entry_time/1000,'unixepoch','-5 hours') h, count(*), round(sum(pnl_corrected),1), sum(pnl_corrected>0) from trader_positions where entry_time>=$E and source<>'e7_farside_test' and pnl_corrected is not null and coalesce(pnl_correction_note,'') not like '%UNRESOLVABLE%' group by 1 order by 1"
+echo "--- side"
+sqlite3 "$DB" "select side, count(*), round(sum(pnl_corrected),1), sum(pnl_corrected>0) from trader_positions where entry_time>=$E and source<>'e7_farside_test' and pnl_corrected is not null and coalesce(pnl_correction_note,'') not like '%UNRESOLVABLE%' group by 1"
+echo "--- mae/mfe populated among usable; mfe>0 count; trades where mfe>=2x|pnl| and pnl<0 (gave back)"
+sqlite3 "$DB" "select count(*), sum(mae is not null), sum(mfe is not null), sum(mfe>0), sum(mae<0), sum(pnl_corrected<0 and mfe>=20), sum(pnl_corrected<0 and mfe>=40) from trader_positions where entry_time>=$E and source<>'e7_farside_test' and pnl_corrected is not null and coalesce(pnl_correction_note,'') not like '%UNRESOLVABLE%'"
+echo "--- mae/mfe units check: mae, mfe, pnl side by side for 10 rows"
+sqlite3 "$DB" "select id, side, entry_price, exit_price, round(pnl_corrected,1), mae, mfe from trader_positions where entry_time>=$E and mae is not null order by id desc limit 12"

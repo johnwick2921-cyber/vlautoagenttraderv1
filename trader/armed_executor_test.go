@@ -163,11 +163,19 @@ func TestArmedOrderUpdateTransitions(t *testing.T) {
 	if len(rows) != 1 || rows[0].State != "filled" {
 		t.Fatalf("filled transition: %+v", rows)
 	}
-	_ = ledger.SetState(rows[0].ID, "working", "")
-	at.onArmedOrderUpdate(ntwire.OrderUpdatePayload{SignalID: "sig-1", State: "rejected"}, ledger)
+	// W117 F2 — a filled row is TERMINAL (the R2 CAS): the old test demoted it
+	// back to working with SetState; that move is exactly what the guard now
+	// refuses (a fill that became a position is never unwound). The reject leg
+	// uses its own working row instead.
+	if err := ledger.UpsertArm(&store.ArmedOrderDB{TraderID: at.id, PlanID: "2026-08-27:NY:trader-1", Version: 1, Session: "NY", Scenario: "S2", Side: "long", EntryPx: 101, StopPx: 96, TargetPx: 111, State: "working", SignalID: "sig-2"}); err != nil {
+		t.Fatal(err)
+	}
+	at.onArmedOrderUpdate(ntwire.OrderUpdatePayload{SignalID: "sig-2", State: "rejected"}, ledger)
 	rows, _ = ledger.ListForPlan("2026-08-27:NY:trader-1")
-	if rows[0].State != "rejected" || rows[0].StateReason != "reason unavailable (NT8 frame omitted reason)" {
-		t.Fatalf("reject must disarm with a reason: %+v", rows[0])
+	for _, r := range rows {
+		if r.SignalID == "sig-2" && (r.State != "rejected" || r.StateReason != "reason unavailable (NT8 frame omitted reason)") {
+			t.Fatalf("reject must disarm with a reason: %+v", r)
+		}
 	}
 }
 

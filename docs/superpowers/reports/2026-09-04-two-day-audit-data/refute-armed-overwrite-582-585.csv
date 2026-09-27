@@ -1,0 +1,25 @@
+# ADVERSARIAL VERIFICATION of peer claim: "armed_orders for 582/585 overwritten in place; brackets UNRECOVERABLE from DB, survive ONLY in the file log"
+# All DB reads: sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"
+# armed_orders.created_at/updated_at are stored in UTC (CT = UTC-5).
+part,verdict,evidence
+mechanism_overwrite,CONFIRMED,"store/armed_orders.go:155 UpsertArm -> row.ID=existing.ID; db.Model(&existing).Updates({entry_px,stop_px,target_px,created_at,...}) = SAME ROW rewritten. Index is a guard, not the cause."
+brackets_unrecoverable,REFUTED,"plans.doc is immutable per (plan_id,version) (store/plan.go:15; only lifecycle is UPDATEd, plan.go:295). Every arm spec is in plans.doc.scenarios[].arm. View position_plan_join joins position_id -> doc in ONE query."
+n_overwrites_0901,CORRECTION,"peer found 2; actual n=5 overwrite events on 09-01 (13 arm log lines across 8 distinct session/scenario/leg keys)"
+recoverable_fraction,CORRECTION,"13 of 13 arm specs logged on 09-01 are present in plans.doc (100%)"
+
+# RECOVERY QUERY (reproduces both 'lost' brackets from the DB alone):
+# SELECT j.position_id,j.plan_session,j.plan_version,j.cited_scenario_id,
+#        json_extract(s.value,'$.arm.entry'),json_extract(s.value,'$.arm.stop'),json_extract(s.value,'$.arm.target')
+# FROM position_plan_join j, json_each(json_extract(j.doc,'$.scenarios')) s
+# WHERE j.position_id IN (582,585) AND json_extract(s.value,'$.id')=j.cited_scenario_id;
+position_id,plan_session,plan_version,scenario,arm_entry,arm_stop,arm_target,pos_side,pos_entry,pos_exit,pnl_corrected,exit_matches
+582,LONDON,3,S2,29246.75,29273,29182,SHORT,29246.75,29182.00,129.5,TP
+585,NY,3,S1,29182,29220.75,29085,SHORT,29182.00,29220.75,-77.5,SL
+
+# ALL 09-01 arm log lines vs plans.doc (grep "⚔️ armed" /home/hoang/nofx/data/nofx_2026-09-01.log)
+ct_time,session,scenario,leg,side,entry,stop,target,plans_version_holding_it,armed_orders_row_now
+04:55:29,LONDON,S2,1,short,29246.75,29273.00,29182.00,LONDON v3,"OVERWRITTEN (row 24 now v6)"
+06:05:58,LONDON,S2,1,long,29212.50,29170.00,29323.92,LONDON v4,"OVERWRITTEN (row 24 now v6)"
+07:57:28,LONDON,S2,1,short,29138.00,29162.00,29085.00,LONDON v6,"row 24 (current)"
+09:21:08,NY,S1,1,short,29182.00,29220.75,29085.00,NY v3,"OVERWRITTEN (row 27 now v4)"
+11:27:07,NY,S1,1,short,29170.00,29210.00,29082.75,NY v4,"row 27 (current)"

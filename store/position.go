@@ -300,6 +300,21 @@ func (s *PositionStore) SetEntryOrderID(id int64, entryOrderID string) error {
 		Update("entry_order_id", entryOrderID).Error
 }
 
+// EntryOrderIDInUse reports whether ANY position row — any trader, any status —
+// already carries entryOrderID as its entry identity (W1b E15: a fill signal
+// that already explains one position must never tag a second). "" is never in
+// use.
+func (s *PositionStore) EntryOrderIDInUse(entryOrderID string) (bool, error) {
+	if strings.TrimSpace(entryOrderID) == "" {
+		return false, nil
+	}
+	var n int64
+	if err := s.db.Model(&TraderPosition{}).Where("entry_order_id = ?", entryOrderID).Count(&n).Error; err != nil {
+		return false, fmt.Errorf("failed to check entry order id: %w", err)
+	}
+	return n > 0, nil
+}
+
 // GetUngradedClosedPositions returns a trader's closed positions that have NO
 // adherence grade yet and closed at/after sinceMs (W5 — the loop poll grades every
 // real exit; the epoch excludes pre-day-plan history). Oldest exit first.
@@ -368,6 +383,10 @@ func (s *PositionStore) InitTables() error {
 
 	if err := s.db.AutoMigrate(&TraderPosition{}); err != nil {
 		return fmt.Errorf("failed to migrate trader_positions table: %w", err)
+	}
+	// W117 F3 — durable NT8 exit receipts (pending-exit retention).
+	if err := s.db.AutoMigrate(&NT8ExitReceipt{}); err != nil {
+		return fmt.Errorf("failed to migrate nt8_exit_receipts: %w", err)
 	}
 
 	// Create unique partial index for exchange position deduplication

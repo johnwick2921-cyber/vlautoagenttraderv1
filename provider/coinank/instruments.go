@@ -1,53 +1,5 @@
 package coinank
 
-import (
-	"context"
-	"encoding/json"
-	"nofx/provider/coinank/coinank_enum"
-)
-
-// GetLastPrice get symbol latest information, param example -> symbol:`BTCUSDT`,exchange:`Binance`,productType:`SWAP`
-func (c *CoinankClient) GetLastPrice(ctx context.Context,
-	symbol string, exchange coinank_enum.Exchange, productType coinank_enum.ProductType) (*GetLastPriceResponse, error) {
-	paramsMap := make(map[string]string, 3)
-	paramsMap["symbol"] = symbol
-	paramsMap["exchange"] = string(exchange)
-	paramsMap["productType"] = string(productType)
-	resp, err := c.Get(ctx, "/api/instruments/getLastPrice", paramsMap)
-	if err != nil {
-		return nil, err
-	}
-	var result CoinankResponse[GetLastPriceResponse]
-	err = json.Unmarshal([]byte(resp), &result)
-	if err != nil {
-		return nil, err
-	}
-	if !result.Success {
-		return nil, HttpError
-	}
-	return &result.Data, nil
-}
-
-// GetCoinMarketCap get market cap info for coin ,example -> baseCoin:`BTC`
-func (c *CoinankClient) GetCoinMarketCap(ctx context.Context,
-	baseCoin string) (*GetCoinMarketResponse, error) {
-	paramsMap := make(map[string]string, 1)
-	paramsMap["baseCoin"] = baseCoin
-	resp, err := c.Get(ctx, "/api/instruments/getCoinMarketCap", paramsMap)
-	if err != nil {
-		return nil, err
-	}
-	var result CoinankResponse[GetCoinMarketResponse]
-	err = json.Unmarshal([]byte(resp), &result)
-	if err != nil {
-		return nil, err
-	}
-	if !result.Success {
-		return nil, HttpError
-	}
-	return &result.Data, nil
-}
-
 type GetLastPriceResponse struct {
 	BaseCoin       string  `json:"baseCoin"`       //symbol base_coin
 	QuoteCoin      string  `json:"quoteCoin"`      //symbol quote_coin

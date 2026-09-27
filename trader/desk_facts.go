@@ -3,6 +3,7 @@ package trader
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -706,7 +707,14 @@ func (at *AutoTrader) deskPlanner(now time.Time) DeskLine {
 			if r.Level == nil {
 				txt += fmt.Sprintf(" · %s level_id=%s (%s)", sc.ID, identityIDText(r.LevelID), r.Basis)
 			} else {
-				txt += fmt.Sprintf(" · %s level_id=%s @ %.2f formed_close_ms=%d", sc.ID, *r.LevelID, r.Level.Price, *r.Level.FormedCloseMs)
+				// A reference level ("ref|…") has NO formation close by construction
+				// (W-GEOMETRY-REFUSAL b1): n/a, never a dereference of nil (the
+				// live "line 10 (planner) panicked" on every scan, 2026-09-23).
+				formed := "n/a"
+				if r.Level.FormedCloseMs != nil {
+					formed = strconv.FormatInt(*r.Level.FormedCloseMs, 10)
+				}
+				txt += fmt.Sprintf(" · %s level_id=%s @ %.2f formed_close_ms=%s", sc.ID, identityIDText(r.LevelID), r.Level.Price, formed)
 				if r.Disagreed {
 					txt += fmt.Sprintf(" (evaluator %.2f differs; decision unchanged)", *r.EvaluatorAnchor)
 				}

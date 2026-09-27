@@ -242,6 +242,10 @@ jobs:
 
       - name: Build and Type Check
         working-directory: ./web
+        env:
+          # CLASS 250: a production build REFUSES without this (web/vite.config.ts).
+          # Every producer of the bundle supplies it; this is one of them.
+          VITE_GUIDE_BUILT_REV: ${{ github.event.pull_request.head.sha || github.sha }}
         run: npm run build
         # Note: build script runs "tsc && vite build" which includes type checking
 

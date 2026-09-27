@@ -1,0 +1,15 @@
+E4-authority
+path: kernel/scenario_level_identity.go
+BEFORE:
+r.Level = &l
+AFTER:
+l.Price = anchor
+ r.Level = &l
+replacement confirmed: True
+go build ./kernel: PASS
+test rc: 1
+--- FAIL: TestIdentityE3WarnOnlyAndE4EvaluatorUnchanged (0.00s)
+    level_identity_test.go:128: identity lost authority for recording: {LevelID:0xc000311a50 Level:0xc000316210 Basis:candidate_id EvaluatorAnchor:0xc0003296b0 Disagreed:false}
+FAIL
+FAIL	nofx/kernel	0.007s
+FAIL

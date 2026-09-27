@@ -1,0 +1,9 @@
+{
+  "command": "kill -9 3566770",
+  "exit_code": 0,
+  "recorded_at": "2026-09-08T23:12:04.707084+00:00",
+  "owner_requested_agent_boot": true,
+  "release_before_swap": true,
+  "swap_exit": 0,
+  "verify_exit": 0
+}

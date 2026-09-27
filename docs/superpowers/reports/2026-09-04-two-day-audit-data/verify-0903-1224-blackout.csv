@@ -1,0 +1,23 @@
+metric,value,source,command_or_query,tier
+file_log_last_readable_line_before_gap,2026-09-03 12:23:33 CT [WARN] ninjatrader/bar_persist.go:304,/home/hoang/nofx/data/nofx_2026-09-03.log line 5422,"grep -n '^09-03 12:2[0-9]' nofx_2026-09-03.log | tail",A
+nul_hole_after_that_line,"548 NUL bytes at offset 779709 (line 5423) = LOST log data, not silence",nofx_2026-09-03.log,"python3 re.finditer(rb'\x00{8,}') over the file",A
+bar_persist_line_length_bytes,263,source string,"len() of the emitted line; 548/263 = 2.08 lines lost",A
+true_last_emission_before_blackout,2026-09-03 12:24:33 CT (log_events id 25754 warning bar_persist),data.db log_events,"SELECT id,datetime(ts_utc/1000,'unixepoch','-5 hours'),level FROM log_events WHERE ts_utc < strftime('%s','2026-09-03 19:18:24')*1000 ORDER BY ts_utc DESC LIMIT 3;",A
+first_emission_after_blackout,2026-09-03 14:18:24 CT cc2/main.go:38-39 boot banner,nofx_2026-09-03.log line 5423-5424 / log_events,"grep -n '^09-03 14:' nofx_2026-09-03.log | head",A
+peer_claimed_silence,114 min (12:23:33 -> 14:18:24),peer,-,A
+file_log_gap_actual,114 min 51 s (114.85),nofx_2026-09-03.log,"gap scan >240s over all ^09-03 HH:MM:SS stamps; exactly ONE gap in the whole day",A
+corrected_process_silence,113 min 51 s (113.85) 12:24:33 -> 14:18:24,log_events + file log,see rows above,A
+log_events_rows_1300_to_1418_CT,0,data.db,"SELECT COUNT(*) FROM log_events WHERE ts_utc >= strftime('%s','2026-09-03 17:24:34')*1000 AND ts_utc < strftime('%s','2026-09-03 19:18:24')*1000;",A
+log_events_ct_hour_13,absent from GROUP BY (0 rows),data.db,"SELECT strftime('%H',datetime(ts_utc/1000,'unixepoch','-5 hours')),COUNT(*) FROM log_events WHERE ... GROUP BY 1;",A
+file_log_ct_hour_13,0 lines,nofx_2026-09-03.log,"grep -oE '^09-03 [0-9]{2}:' nofx_2026-09-03.log | sort | uniq -c",A
+ROOT_CAUSE_host_reboot,"WSL2 kernel 6.6.87.2 system boot Thu Sep 3 14:18 - the Linux HOST was down, not a silent process",utmp,"last reboot | head -8   /   who -b   -> 'system boot 2026-09-03 14:18'",A
+nofx_web_unit_start,2026-09-03 14:18:24 CDT (vite PID 392 lstart 14:18:43),systemd,"systemctl show nofx-web.service -p ExecMainStartTimestamp",A
+nofx_service_restart_policy,Restart=on-failure; NRestarts=8 (cumulative all-time),systemd,"systemctl show nofx.service -p Restart -p NRestarts",A
+decision_records_27247,2026-09-03 12:22:44 CT (id 37169),data.db,"SELECT id,cycle_number,datetime(created_at,'-5 hours') FROM decision_records WHERE datetime(created_at,'-5 hours') BETWEEN '2026-09-03 11:00:00' AND '2026-09-03 16:30:00' ORDER BY created_at;",A
+decision_records_27248,2026-09-03 15:08:51 CT (id 37170),data.db,same query,A
+decision_gap_27247_to_27248,166 min 07 s,data.db,arithmetic on the two rows above,A
+decision_gap_MINUS_silence,52 min 16 s of decision drought with the process ALIVE and logging,log_events 14:xx,"84 log_events rows in CT hour 14; 559 file-log lines in 14:xx",A
+cause_of_that_52min,"no_balance_frame (equity 0, waiting for the NT8 AddOn) + dead-man watchdog NT8 TCP link DOWN + FEED DOWN - NOT cadence, NOT silence",log_events,"SELECT datetime(ts_utc/1000,'unixepoch','-5 hours'),substr(message,1,200) FROM log_events WHERE ts_utc BETWEEN strftime('%s','2026-09-03 19:18:00')*1000 AND strftime('%s','2026-09-03 20:10:00')*1000 ORDER BY ts_utc;",A
+skip_cycles_counted,"#1 @14:18:27 ... #12 @14:40:27 and on, all 'no balance frame yet'",log_events,same query,A
+MNQ_1m_bars_across_outage,"complete: 15 bars per 15-min bucket 12:00-15:15 CT incl. 13:00-14:15",data.db bars,"SELECT ... FROM bars WHERE symbol='MNQ' AND tf='1m' AND open_time_ms BETWEEN ... GROUP BY 15-min bucket;",A
+boot_banners_on_0903,"11 boots from >=6 build trees: 10:28:29 cleanclone, 11:10:33 cc2, 14:18:24 cc2, 14:59:03 cc3, 15:02:18 cc3, 18:08:56 cleanbuild, 19:06:06 cc6, 21:19:00 nofx, 21:48:12 nofx, 23:11:59 nofx, 23:12:54 cleanclone",nofx_2026-09-03.log,"grep -nE 'NOFX - AI-Powered Trading System' nofx_2026-09-03.log",A

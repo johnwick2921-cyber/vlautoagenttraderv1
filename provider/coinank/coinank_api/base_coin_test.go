@@ -1,13 +1,12 @@
 package coinank_api
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 )
 
 func TestBaseCoinSymbolsNoArgs(t *testing.T) {
-	resp, err := BaseCoinSymbols(context.TODO(), "", "", "")
+	resp, err := BaseCoinSymbols(liveNetworkGate(t), "", "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -19,7 +18,7 @@ func TestBaseCoinSymbolsNoArgs(t *testing.T) {
 }
 
 func TestBaseCoinSymbolsBTC(t *testing.T) {
-	resp, err := BaseCoinSymbols(context.TODO(), "", "", "BTC")
+	resp, err := BaseCoinSymbols(liveNetworkGate(t), "", "", "BTC")
 	if err != nil {
 		t.Error(err)
 	}
@@ -31,7 +30,7 @@ func TestBaseCoinSymbolsBTC(t *testing.T) {
 }
 
 func TestBaseCoinSymbolsBTCUSDT(t *testing.T) {
-	resp, err := BaseCoinSymbols(context.TODO(), "", "BTCUSDT", "")
+	resp, err := BaseCoinSymbols(liveNetworkGate(t), "", "BTCUSDT", "")
 	if err != nil {
 		t.Error(err)
 	}

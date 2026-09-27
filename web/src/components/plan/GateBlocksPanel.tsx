@@ -32,6 +32,56 @@ const GATE_LABELS: Record<string, { en: string; icon: string }> = {
   b3_rate_breaker: { en: 'Order rate breaker', icon: '🚨' },
   level_burned_retouch: { en: 'Burned level re-touched', icon: '🔥' },
   night_transition: { en: 'Night/day transition', icon: '🌙' },
+  maintenance_hold: { en: 'Update hold (maintenance)', icon: '🔒' },
+  maintenance_drop: {
+    en: 'Queued entry dropped by the update hold',
+    icon: '🔒',
+  },
+  maintenance_drop_attempted: {
+    en: 'Dropped entry may have reached NT8',
+    icon: '⚠️',
+  },
+  // W-EXEC-TRUTH W0b — the one admission chain counts every gate under its
+  // own name on every entry path; each needs a label (pinned by
+  // trader/w0b_guide_test.go).
+  stop_until: { en: 'Owner pause', icon: '⏸' },
+  contract_roll_resolved: { en: 'Contract roll unresolved', icon: '🔁' },
+  no_trade_band: { en: 'No-trade band', icon: '🚫' },
+  force_flat_window: {
+    en: 'Force-flat window (T1 lead / EOD flat)',
+    icon: '🔚',
+  },
+  cme_closed: { en: 'CME closed', icon: '🔕' },
+  // PR #200 F9: a failed current-password compare on PUT /api/user/password
+  // (process-wide, under the "" key — it shows on every trader's panel).
+  credential_current_password_wrong: {
+    en: 'Wrong current password (password change)',
+    icon: '🔑',
+  },
+  reentry_cooldown: { en: 'Re-entry cooldown after a stop', icon: '⏳' },
+  entry_gate: { en: 'Entry gate', icon: '🚦' },
+  trader_stopped: { en: 'Trader stopped (Picture)', icon: '⏹' },
+  day_plan_off: { en: 'Day Plan off (Picture)', icon: '📴' },
+  arm_not_admitted: {
+    en: 'Arm not admitted this pass',
+    icon: '⏸',
+  },
+  reconcile_owned: {
+    en: 'Held position belongs to a ledger order',
+    icon: '⛔',
+  },
+  market_in_zone_short_of_zone: {
+    en: 'Price short of the entry zone (waiting)',
+    icon: '⏳',
+  },
+  market_in_zone_unknown: {
+    en: 'Entry zone not adjudicated (no fresh price)',
+    icon: '⚠️',
+  },
+  market_in_zone_zone_refused: {
+    en: 'Entry zone invalid — leg never placed',
+    icon: '⚔️',
+  },
 }
 
 export function GateBlocksPanel({

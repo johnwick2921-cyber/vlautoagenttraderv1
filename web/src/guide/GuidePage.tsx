@@ -27,6 +27,7 @@ import { faq } from './content/faq'
 import { weeklyBias } from './content/weeklyBias'
 import { expectancy } from './content/expectancy'
 import { candidates } from './content/candidates'
+import { updates } from './content/updates'
 
 export const GUIDE_SECTIONS: GuideSection[] = [
   welcome,
@@ -44,6 +45,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
   weeklyBias,
   expectancy,
   candidates,
+  updates,
 ]
 
 const ivory = { color: 'var(--vl-ivory)' }

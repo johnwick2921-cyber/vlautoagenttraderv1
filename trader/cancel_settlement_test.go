@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	nt "nofx/provider/ninjatrader"
 	"nofx/store"
 )
 
@@ -169,4 +170,68 @@ func TestDarkBookRaisesOneP0PerOutageAndClearsOnRecovery(t *testing.T) {
 		t.Fatalf("a SECOND outage must raise its own alert, got %d P0(s) total", p0)
 	}
 	t.Logf("one outage → 1 P0 with the age; a later outage → a second, independent P0")
+}
+
+// F9 (port of #117 efcb13c9) — CANCELLATION EVIDENCE MUST FOLLOW THE REQUEST.
+// A snapshot taken BEFORE the cancel request cannot settle it; a nil book or a
+// missing receipt is not a book; a future-dated receipt is refused.
+
+func TestCancelSettledRefusesAFutureDatedBook(t *testing.T) {
+	sig := slot1664Signals()[0]
+	if ok, _ := cancelSettled([]nt.NT8Order{}, true, -time.Second, bookBound, sig); ok {
+		t.Fatal("a book whose receipt is in the future settled the cancel")
+	}
+}
+
+func f9Pending(t *testing.T, at *AutoTrader, ordersJSON string, receivedMs int64) {
+	t.Helper()
+	ledger := at.store.ArmedOrders()
+	if err := at.store.NT8OrderSnapshots().Insert(&store.NT8OrderSnapshot{
+		Account: "", OrdersJSON: ordersJSON, ReceivedMs: receivedMs,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	row := &store.ArmedOrderDB{
+		TraderID: at.id, PlanID: "p1", Version: 1, Session: "ASIA", Scenario: "S9",
+		Side: "long", EntryPx: 1, StopPx: 1, TargetPx: 1,
+		State: store.StateWorking, SignalID: "sig-S9",
+	}
+	if err := ledger.UpsertArm(row); err != nil {
+		t.Fatal(err)
+	}
+	if err := ledger.RequestCancel(row.ID, "gate changed", time.Now().Add(-500*time.Millisecond).UnixMilli()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestConfirmPendingCancelsRefusesASnapshotOlderThanTheRequest(t *testing.T) {
+	at := class33Trader(t)
+	ledger := at.store.ArmedOrders()
+	base := time.Now()
+	// Fresh book (10s old, inside the 60s bound) persisted BEFORE the request.
+	f9Pending(t, at, "[]", base.Add(-10*time.Second).UnixMilli())
+	settled, stillPending, _ := at.confirmPendingCancels(ledger, nil, base)
+	if settled != 0 || stillPending != 1 {
+		t.Fatalf("a snapshot that PREDATES the request settled it: settled=%d pending=%d", settled, stillPending)
+	}
+}
+
+func TestConfirmPendingCancelsRefusesANilBookSnapshot(t *testing.T) {
+	at := class33Trader(t)
+	ledger := at.store.ArmedOrders()
+	f9Pending(t, at, "null", time.Now().Add(-time.Second).UnixMilli())
+	settled, stillPending, _ := at.confirmPendingCancels(ledger, nil, time.Now())
+	if settled != 0 || stillPending != 1 {
+		t.Fatalf("a nil book settled the cancel: settled=%d pending=%d", settled, stillPending)
+	}
+}
+
+func TestConfirmPendingCancelsRefusesASnapshotWithoutAReceiptTime(t *testing.T) {
+	at := class33Trader(t)
+	ledger := at.store.ArmedOrders()
+	f9Pending(t, at, "[]", 0)
+	settled, stillPending, _ := at.confirmPendingCancels(ledger, nil, time.Now())
+	if settled != 0 || stillPending != 1 {
+		t.Fatalf("a snapshot with no receipt time settled the cancel: settled=%d pending=%d", settled, stillPending)
+	}
 }

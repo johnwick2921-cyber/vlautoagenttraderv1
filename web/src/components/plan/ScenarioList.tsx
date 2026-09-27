@@ -12,10 +12,12 @@ import type {
   StructuralGeometryView,
 } from '../../lib/api/plan'
 import { OrderTerms } from './OrderTerms'
+import { EntryPolicyLine } from './EntryPolicyLine'
 import { ExecutorVerdict } from './ExecutorVerdict'
 import { ScenarioEconomics } from './ScenarioEconomics'
 import { FadePermissionChip, type FadeLabelView } from './FadePermissionChip'
 import { OneSetupChip, type OneSetupView } from './OneSetupChip'
+import { PictureSourceBadge } from './PictureSourceBadge'
 import { StatusDot, type ScenarioStatus } from './chips'
 
 export function QualityChip({ quality }: { quality: string }) {
@@ -55,6 +57,10 @@ export type ConfirmVerdict = {
     closed: boolean
   }
   rule: string
+  // W2 (confirm resolver): where the rule's count/duration came from —
+  // 'stored' (the scenario's own confirm) or 'authoring_default'
+  // (BD_MIN_CLOSES / ACCEPT_HOLD_MIN). Absent on pre-W2 records: unknown.
+  rule_source?: string
   ref_price: number
   side: string
   met: boolean
@@ -91,11 +97,13 @@ export function ConfirmChip({ id, c }: { id: string; c: ConfirmVerdict }) {
   const legs = c.legs && c.legs.length > 0
   const label = confirmRuleLabel(c.rule)
   const outcome = c.outcome || 'UNKNOWN'
+  const source =
+    c.rule_source === 'authoring_default' ? ' (authoring default)' : ''
   return (
     <span
       data-testid={`confirm-chip-${id}`}
       className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-      title={`${label} ${c.side} ${c.ref_price} — ${c.detail} (machine-computed, advisory)`}
+      title={`${label}${source} ${c.side} ${c.ref_price} — ${c.detail} (machine-computed, advisory)`}
       style={
         c.met && outcome === 'MET'
           ? {
@@ -108,7 +116,8 @@ export function ConfirmChip({ id, c }: { id: string; c: ConfirmVerdict }) {
             }
       }
     >
-      Recorded {label} {outcome}
+      Recorded {label}
+      {source} {outcome}
       {legs &&
         ` (${c.legs!.map((l, i) => `${i + 1}/${c.legs!.length} ${l.met ? 'MET' : 'NOT MET'}`).join(' · ')})`}
       <span className="block font-normal">
@@ -189,6 +198,8 @@ function ScenarioRow({
         >
           {scenario.id}
         </span>
+        {/* W5 — a machine-authored (Picture HTF) scenario says so. */}
+        <PictureSourceBadge scenario={scenario} language={language} />
         <span title="quality is INFORMATIONAL (D3 ruling) — the planner's own read; no gate, sizing, or filter consumes it">
           <QualityChip quality={scenario.quality} />
         </span>
@@ -426,7 +437,11 @@ export function ScenarioList({
                 >
                   <span>?</span>
                   <span className="font-bold">{s.id}</span>
+                  <PictureSourceBadge scenario={s} language={language} />
                   <span className="truncate">{s.trigger}</span>
+                  {/* W3 — order evidence stays visible when activation is
+                      unevaluable (same rule as OrderTerms). */}
+                  <EntryPolicyLine legs={armedStates?.[s.id]?.legs} />
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
@@ -443,6 +458,9 @@ export function ScenarioList({
                   )}
                   {/* Wave 2 armed orders — the arm state chip (⏳/📌/⚡/✕). */}
                   <ArmedChip arm={armedStates?.[s.id]} />
+                  {/* W3 market_in_zone — "Entry: around X (zone lo–hi) ·
+                      status", read from the ledger row; legacy renders nothing. */}
+                  <EntryPolicyLine legs={armedStates?.[s.id]?.legs} />
                   {/* W-ARM-STATE-UI — what the EXECUTOR decided (refused / not
                       attempted / armed / filled / cancelled), beside the
                       evaluator's verdict. No record → renders nothing. */}

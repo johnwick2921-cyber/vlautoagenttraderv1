@@ -431,17 +431,6 @@ func marshalStringList(values []string) string {
 	return string(raw)
 }
 
-func unmarshalStringList(raw string) []string {
-	if strings.TrimSpace(raw) == "" {
-		return nil
-	}
-	var values []string
-	if err := json.Unmarshal([]byte(raw), &values); err != nil {
-		return nil
-	}
-	return values
-}
-
 func normalizeExchangePatchToManualLimits(lang string, patch exchangeUpdatePatch) (exchangeUpdatePatch, []string) {
 	warnings := make([]string, 0, 1)
 	if patch.LighterAPIKeyIndex != nil {

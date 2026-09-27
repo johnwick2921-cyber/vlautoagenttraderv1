@@ -1,0 +1,22 @@
+== era rows by plan_id UNRESOLVABLE ==
+530|UNRESOLVABLE|system||13.0|SHORT
+539|UNRESOLVABLE|system||-84.5|SHORT
+545|UNRESOLVABLE|system||-29.5|LONG
+546|UNRESOLVABLE|system||-88.5|LONG
+566|UNRESOLVABLE|reconcile||97.0|LONG
+571|UNRESOLVABLE|reconcile||-44.5|LONG
+573|UNRESOLVABLE|e7_farside_test||6.0|LONG
+574|UNRESOLVABLE|e7_farside_test||-1.0|LONG
+580|UNRESOLVABLE|reconcile||39.5|SHORT
+== count era, era non-test, non-null pnl ==
+71
+armed_entry|5
+e7_farside_test|3
+reconcile|12
+system|51
+== compliant population: era, non-test, pnl non-null, plan_id != UNRESOLVABLE ==
+58|-466.43|-8.0419|18|38|2
+== the 65-set (includes UNRESOLVABLE) ==
+65|-563.93|21|42|2
+== ids in compliant set ==
+521,522,523,524,525,526,527,528,529,531,532,533,534,535,536,537,538,540,541,542,543,544,547,548,549,550,551,552,553,554,555,556,557,558,559,560,561,562,563,564,565,567,568,569,570,575,578,581,582,583,584,585,586,587,588,589,590,591

@@ -1,0 +1,218 @@
+[
+  {
+    "id": 35508,
+    "timestamp": "2026-09-01 07:52:45.045796526+00:00",
+    "ai_request_duration_ms": 69564,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": false
+  },
+  {
+    "id": 35621,
+    "timestamp": "2026-09-01 11:35:05.778927045+00:00",
+    "ai_request_duration_ms": 91553,
+    "action": "open_long",
+    "cited_scenario": "S2",
+    "strict_refused": false
+  },
+  {
+    "id": 35879,
+    "timestamp": "2026-09-01 20:08:00.920154004+00:00",
+    "ai_request_duration_ms": 290036,
+    "action": "open_short",
+    "cited_scenario": "off-plan",
+    "strict_refused": false
+  },
+  {
+    "id": 36122,
+    "timestamp": "2026-09-02 05:17:45.541277513+00:00",
+    "ai_request_duration_ms": 67074,
+    "action": "open_long",
+    "cited_scenario": "S3",
+    "strict_refused": false
+  },
+  {
+    "id": 36164,
+    "timestamp": "2026-09-02 06:51:52.371278481+00:00",
+    "ai_request_duration_ms": 107225,
+    "action": "open_long",
+    "cited_scenario": "S2",
+    "strict_refused": false
+  },
+  {
+    "id": 36336,
+    "timestamp": "2026-09-02 12:41:06.673264647+00:00",
+    "ai_request_duration_ms": 45341,
+    "action": "open_long",
+    "cited_scenario": "S2",
+    "strict_refused": false
+  },
+  {
+    "id": 36394,
+    "timestamp": "2026-09-02 14:41:05.834076934+00:00",
+    "ai_request_duration_ms": 55003,
+    "action": "open_long",
+    "cited_scenario": "S3",
+    "strict_refused": false
+  },
+  {
+    "id": 36422,
+    "timestamp": "2026-09-02 15:37:18.168303133+00:00",
+    "ai_request_duration_ms": 67092,
+    "action": "open_long",
+    "cited_scenario": "S4",
+    "strict_refused": false
+  },
+  {
+    "id": 36640,
+    "timestamp": "2026-09-02 23:48:49.460042542+00:00",
+    "ai_request_duration_ms": 36043,
+    "action": "open_short",
+    "cited_scenario": "S2",
+    "strict_refused": false
+  },
+  {
+    "id": 36641,
+    "timestamp": "2026-09-02 23:50:36.259409601+00:00",
+    "ai_request_duration_ms": 50125,
+    "action": "open_short",
+    "cited_scenario": "S2",
+    "strict_refused": false
+  },
+  {
+    "id": 36642,
+    "timestamp": "2026-09-02 23:52:33.457783323+00:00",
+    "ai_request_duration_ms": 29310,
+    "action": "open_short",
+    "cited_scenario": "S2",
+    "strict_refused": false
+  },
+  {
+    "id": 36645,
+    "timestamp": "2026-09-03 00:00:23.260187049+00:00",
+    "ai_request_duration_ms": 46385,
+    "action": "open_short",
+    "cited_scenario": "S2",
+    "strict_refused": false
+  },
+  {
+    "id": 36703,
+    "timestamp": "2026-09-03 01:53:52.582859887+00:00",
+    "ai_request_duration_ms": 79711,
+    "action": "open_short",
+    "cited_scenario": "S2",
+    "strict_refused": false
+  },
+  {
+    "id": 36864,
+    "timestamp": "2026-09-03 07:12:56.120731912+00:00",
+    "ai_request_duration_ms": 36469,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": false
+  },
+  {
+    "id": 37304,
+    "timestamp": "2026-09-04 01:35:06.219368968+00:00",
+    "ai_request_duration_ms": 60074,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37305,
+    "timestamp": "2026-09-04 01:37:51.598175366+00:00",
+    "ai_request_duration_ms": 31852,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37306,
+    "timestamp": "2026-09-04 01:39:40.877842879+00:00",
+    "ai_request_duration_ms": 95399,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37307,
+    "timestamp": "2026-09-04 01:42:27.961590429+00:00",
+    "ai_request_duration_ms": 44451,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37308,
+    "timestamp": "2026-09-04 01:43:53.777649208+00:00",
+    "ai_request_duration_ms": 41086,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37310,
+    "timestamp": "2026-09-04 01:49:04.688046514+00:00",
+    "ai_request_duration_ms": 144482,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37311,
+    "timestamp": "2026-09-04 01:52:05.891964798+00:00",
+    "ai_request_duration_ms": 35594,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37313,
+    "timestamp": "2026-09-04 01:54:28.156955478+00:00",
+    "ai_request_duration_ms": 85895,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37315,
+    "timestamp": "2026-09-04 01:58:56.332391458+00:00",
+    "ai_request_duration_ms": 84566,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37318,
+    "timestamp": "2026-09-04 02:03:22.090366504+00:00",
+    "ai_request_duration_ms": 82148,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37319,
+    "timestamp": "2026-09-04 02:06:44.158256191+00:00",
+    "ai_request_duration_ms": 98968,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37320,
+    "timestamp": "2026-09-04 02:09:03.188727281+00:00",
+    "ai_request_duration_ms": 60890,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  },
+  {
+    "id": 37322,
+    "timestamp": "2026-09-04 02:12:40.9842155+00:00",
+    "ai_request_duration_ms": 123727,
+    "action": "open_short",
+    "cited_scenario": "S1",
+    "strict_refused": true
+  }
+]

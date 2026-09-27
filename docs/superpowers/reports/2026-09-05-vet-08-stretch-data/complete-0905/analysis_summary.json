@@ -1,0 +1,49 @@
+{
+  "opportunity_n": 188,
+  "carry_in_only": [
+    "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1"
+  ],
+  "overlap_arm_enabled_opps": 60,
+  "observed_arm_opps": 13,
+  "observed_placed_opps": 7,
+  "observed_filled_arm_opps": 1,
+  "observed_intent_opps": 9,
+  "observed_refused_intent_opps": 5,
+  "observed_traded_opps": 5,
+  "local_pass_opps": 13,
+  "actual_send_opps": 7,
+  "corrected_send_opps": 6,
+  "static": {
+    "checkpoint_evaluated": 66,
+    "disabled": 127
+  },
+  "win_era": [
+    18,
+    58,
+    31.03448275862069,
+    20.622095622819327,
+    43.803064424281345
+  ],
+  "win_decisive": [
+    18,
+    56,
+    32.142857142857146,
+    21.40099479255177,
+    45.177360090261104
+  ],
+  "win_3day": [
+    0,
+    5,
+    0.0,
+    5.551115123125783e-15,
+    43.44824647831612
+  ],
+  "observed_traded_rate": [
+    5,
+    188,
+    2.6595744680851063,
+    1.141244667396855,
+    6.073806190630106
+  ],
+  "trades_pnl_corrected": -521.5
+}

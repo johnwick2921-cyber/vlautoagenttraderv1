@@ -1,0 +1,25 @@
+{
+ "ai_model": "deepseek",
+ "ai_provider": "DeepSeek",
+ "call_count": 2,
+ "exchange": "ninjatrader",
+ "initial_balance": 50000,
+ "is_running": true,
+ "last_reset_time": "2026-09-04T13:25:47-05:00",
+ "revision": "36648655cfe0",
+ "roll": {
+  "contract_expiry": "2026-09-18",
+  "resolved": true,
+  "resolved_contract": "MNQ SEP26",
+  "roll_blocked": false,
+  "roll_days_left": 13,
+  "roll_window_start": "2026-09-15"
+ },
+ "runtime_minutes": 1245,
+ "scan_interval": "2m0s",
+ "start_time": "2026-09-04T13:25:47-05:00",
+ "stop_until": "0001-01-01T00:00:00Z",
+ "strategy_type": "ai_trading",
+ "trader_id": "8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+ "trader_name": "hoang"
+}

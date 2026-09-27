@@ -171,7 +171,10 @@ func (at *AutoTrader) cancelSignalIfSafe(send func(string) error, signalID, who 
 // its cancel loop only after reading the broker FLAT for every row it is about
 // to sweep.
 func (at *AutoTrader) cancelSignalIfSafeWith(send func(string) error, signalID, who string, now time.Time, pos positionContext) bool {
-	book, have, _ := at.liveBook(now)
+	book, have, age := at.liveBook(now)
+	// F10 (port of #117 da2f76c9): a book older than the snapshot bound, or a
+	// future-dated receipt, is not evidence either way.
+	have = have && age >= 0 && age <= snapshotMaxAge()
 	v := adjudicateArmCancelWith(store.StateWorking, signalID, book, have, pos)
 	if !v.Allow {
 		at.logWarnf("🛟 cancel REFUSED (%s) signal=%s — %s", who, shortID(signalID), v.Why)
@@ -179,6 +182,7 @@ func (at *AutoTrader) cancelSignalIfSafeWith(send func(string) error, signalID, 
 	}
 	if err := send(signalID); err != nil {
 		at.logWarnf("✕ cancel SEND failed (%s) signal=%s: %v", who, shortID(signalID), err)
+		return false // a failed send is not a completed cancellation
 	}
 	return true
 }
@@ -186,6 +190,7 @@ func (at *AutoTrader) cancelSignalIfSafeWith(send func(string) error, signalID, 
 // cancelSafetyFor is the production entry point: it reads THIS trader's live
 // book and adjudicates one row. now is the caller's clock (A28).
 func (at *AutoTrader) cancelSafetyFor(r store.ArmedOrderDB, now time.Time) armCancelVerdict {
-	book, have, _ := at.liveBook(now)
+	book, have, age := at.liveBook(now)
+	have = have && age >= 0 && age <= snapshotMaxAge()
 	return adjudicateArmCancel(r.State, r.SignalID, book, have)
 }

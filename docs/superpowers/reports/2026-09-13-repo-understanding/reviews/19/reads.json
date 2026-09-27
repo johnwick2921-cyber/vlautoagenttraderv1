@@ -1,0 +1,1343 @@
+{
+  "assignment": 19,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          724
+        ]
+      ],
+      "sha256": "6a634d9e7d49aa68ade74f96a5e252906b1d6e51de08380facf6714c274f98f2",
+      "notes": "Boot: dotenv/logger/config/encryption before stores; migrations and trader loading precede integrity in this base; research sidecar, boot ledgers, agent/API/Telegram then SIGTERM shutdown."
+    },
+    {
+      "path": "config/config.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          277
+        ]
+      ],
+      "sha256": "d6ee1f5682782341f1c4b3ca68d5e4bf3523197f272e96abde4a770b81a5a0ed",
+      "notes": "Loopback API defaults, insecure JWT warning fallback, permissive numeric env parsing, per-process telemetry initialization; strategies own trading knobs."
+    },
+    {
+      "path": "crypto/crypto.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          469
+        ]
+      ],
+      "sha256": "bdb2c22e8aecde26797989bfe7395e0631a6e5f63c20c60a6fdb294337826660",
+      "notes": "RSA OAEP browser envelope and AES-GCM ENC:v1 storage; optional timestamp; EncryptedString silently falls back on errors; key decoding hashes nonstandard lengths."
+    },
+    {
+      "path": "security/url_validator.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          228
+        ]
+      ],
+      "sha256": "dbd3086598acf8ae0ee3bc12262e853718cc69cf38adf34f8f389e5f445a21c1",
+      "notes": "SSRF scheme/name/IP checks and redirects; safe dialer re-resolves checked hostname instead of pinning IP."
+    },
+    {
+      "path": "deploy/nofx-lock.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          525
+        ]
+      ],
+      "sha256": "46fcbf76478c43943fb7607bd2929fe3629371ae5b8571ec9da8e1fa6e96c6ab",
+      "notes": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
+    },
+    {
+      "path": "deploy/nofx-lock-test.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          493
+        ]
+      ],
+      "sha256": "d2d46f6bc0664c0159089234b1a4b5d2a96089096aa5e0db1c8a2773f17086ec",
+      "notes": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
+    },
+    {
+      "path": "deploy/nofx-claim.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          106
+        ]
+      ],
+      "sha256": "d110a108cb7d1d6f3e92a48a1cca0ef8ab59ec4df320ec519898ead08e7bc236",
+      "notes": "Claim regex validates routable session; remote branch presence check, branch/empty commit/push; check/audit read local remote tracking refs."
+    },
+    {
+      "path": "deploy/nofx-claim-test.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          56
+        ]
+      ],
+      "sha256": "dec3fc974200cb1b1999290c03345a41ac7ad7102261fb17520711b734152796",
+      "notes": "Claim regex source-derived table pins for real malformed/routable messages; no execution."
+    },
+    {
+      "path": "deploy/nofx-db-backup.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          79
+        ]
+      ],
+      "sha256": "2f762c1f41fcef933583e570a73acaab6ef4751add3ef6a577939e1d43e99757",
+      "notes": "Online sqlite backup, quick_check, gzip/move, first ISO-week promotion, retention; no trap removes partial files, no locking or retention input validation."
+    },
+    {
+      "path": "deploy/leveltruth-cutover.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          52
+        ]
+      ],
+      "sha256": "7b52816becbe124a0706d444983186f23bb57840325d44cc38c3fe7b579f059e",
+      "notes": "Historical hardcoded cutover revision; DB position and journal substring checks; writes RELEASE before binary validation, no lock/full flat gate/rollback, boot match unbound to new process."
+    },
+    {
+      "path": "deploy/install-autostart.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          122
+        ]
+      ],
+      "sha256": "aa6fb25f9bcfd95b57bcafff2464168f65031d44d2f482f0dc9f55b382d933dc",
+      "notes": "Root installer detects sudo user/node, appends NT_TRANSPORT=tcp, stops instances and renders/enables service units."
+    },
+    {
+      "path": "deploy/fix-wsl2-clock.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          78
+        ]
+      ],
+      "sha256": "85670e953ec2d1674ba321cf00c7aee9a3e436ed924819a0263eaf8534264f5c",
+      "notes": "Root chrony installer replaces config, enables service, attempts makestep, installs cron fallback; enable --now does not restart already-running service."
+    },
+    {
+      "path": "deploy/nofx-clock-guard.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          80
+        ]
+      ],
+      "sha256": "42a442c8e1c78c9b00c53fbe870c6c02a9d75987474da662ec14a7951b4c6db3",
+      "notes": "Root-free RTC/NTP/Windows drift detector, atomic JSON state; only RTC determines CRITICAL, unknown RTC still OK."
+    },
+    {
+      "path": "deploy/install-clock-guard.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          26
+        ]
+      ],
+      "sha256": "18e6a8c81614f9d9037e3d9479ccc32e4ead40ac533007b70fd7ee3dcbb6138f",
+      "notes": "Copies/enables clock user timer, chmod script, starts one immediate measurement."
+    },
+    {
+      "path": "deploy/install-db-backup.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          23
+        ]
+      ],
+      "sha256": "e2fd2421f70fbbbb5a33ea5d7edb328443ae2c9260d56225ecbd2503f59f15e2",
+      "notes": "Copies/enables backup user timer; requires existing user session/linger setup."
+    },
+    {
+      "path": "deploy/install-journald.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "sha256": "e2ed14fad6aa6bf02414d745160a2ae518561b3d115d41f27e5b074026f2c43c",
+      "notes": "Root journald persistence installer, vacuum-size 2G and effective config printing."
+    },
+    {
+      "path": "calendar/calendar.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          203
+        ]
+      ],
+      "sha256": "3c41bd415529714bca19a26bf8be040ee2c66639cfa06eb47b403487ff1cbb5c",
+      "notes": "Weekly FF feed 10s/5MiB; high/medium currencies and CT dates; invalid event dates silently skipped, valid empty feed no fallback, timezone fallback UTC."
+    },
+    {
+      "path": "discipline/freeze.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          73
+        ]
+      ],
+      "sha256": "297a73263e4df070c059d7a6d209130157afd95050e4399e6603fa53983fcfbc",
+      "notes": "Mutex-protected in-memory trader freeze latch; first reason wins; clear owner API boundary; state gone on restart."
+    },
+    {
+      "path": "discipline/reentry_cooldown.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          119
+        ]
+      ],
+      "sha256": "1e3c2302c2ddbdce0a3c778e9dd4337f2873a5a0e347d19cccafe44ebac9ef76",
+      "notes": "Mutex-protected stop-loss cooldown per trader/symbol/normalized side; earlier timer or absolute ATR move unlock; read/delete separate critical sections."
+    },
+    {
+      "path": "internal/retry/circuit_breaker.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          69
+        ]
+      ],
+      "sha256": "ac6c186e8e6f30066a1b0139edcfc29fa25d523ad8855351e239049a072d2979",
+      "notes": "Circuit breaker cooldown returns Allow true to all callers, despite single-probe comment; no half-open reservation."
+    },
+    {
+      "path": "internal/retry/retry.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          38
+        ]
+      ],
+      "sha256": "6c83b46b9e4ccaa789935d0940d766d05c63708648b1a9671cecb0071aa3e315",
+      "notes": "Exponential 200ms..5s retry, checks cancellation only between failed attempts, no jitter."
+    },
+    {
+      "path": "levelidentity/identity.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          57
+        ]
+      ],
+      "sha256": "6a6235bdaf23da7d6db94e7d7810ae69ee101c7af97c74a92e56a64f71745b97",
+      "notes": "Recording identity requires seven inputs and formation-close; SHA256 raw string fields and positive finite bounds, does not canonicalize or order bounds."
+    },
+    {
+      "path": "logger/config.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          13
+        ]
+      ],
+      "sha256": "64a804317a98a4141a018ece7795d3cf932c740c3068b195953485f33ca22a1b",
+      "notes": "Logger level defaults info."
+    },
+    {
+      "path": "logger/db_sink.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          82
+        ]
+      ],
+      "sha256": "752f6ac1864059e9ae2e55e6a79f959bc04d937d869dd947652e6dd7d17b8974",
+      "notes": "WARN+ logrus hook injected once; atomic sink replacement, trader tag extraction; callback must be nonblocking/nonrecursive by contract."
+    },
+    {
+      "path": "logger/logger.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          212
+        ]
+      ],
+      "sha256": "2e799bce8b1718cbecc4974b9c1c8746bf10525872a2b641338547e1e5965998",
+      "notes": "Logrus stdout plus boot-date data file, no rollover; formatter local entry.Time and discards structured fields in text; wrappers and MCP adapter."
+    },
+    {
+      "path": "safe/go.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "sha256": "1390af1940c85d7c0a63f7878ba03f018755fc583d86f21d1afbeb447ce63070",
+      "notes": "Goroutine panic recovery including callback containment; Must converts panic to error; no restart of failed goroutine."
+    },
+    {
+      "path": "safe/io.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          29
+        ]
+      ],
+      "sha256": "cdfb468643020b4257a4ce94aed5c508ddc2834109ddfa42423efc0f075d97b6",
+      "notes": "Reader limit+1 detects oversized body, default10MiB."
+    },
+    {
+      "path": "branding/branding.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          15
+        ]
+      ],
+      "sha256": "32b928106d13e7f9eeb24d4b3273f8591aa778dcddcc73ef537be22d7b2b70ec",
+      "notes": "Embedded display-only product/persona text without trim."
+    },
+    {
+      "path": "hook/hooks.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          40
+        ]
+      ],
+      "sha256": "98ee46ec0352aef2b3cca36940e7e2f5ab6656c1c86592f5d735ba01257b47d0",
+      "notes": "Global unsynchronized hook registry; generic return assertion can panic; disabled/missing hooks return nil."
+    },
+    {
+      "path": "hook/http_client_hook.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          23
+        ]
+      ],
+      "sha256": "c32dc38c0c130a330ae13ebb9691b832ec4bffb566b3c80b26782a03b2025db9",
+      "notes": "HTTP hook result wrappers log error and return client anyway."
+    },
+    {
+      "path": "hook/ip_hook.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          19
+        ]
+      ],
+      "sha256": "5d18baa649644056a95dc3bbc16c14833165b1100efa40581887b071ee40f496",
+      "notes": "IP hook result wrapper logs error and returns IP anyway."
+    },
+    {
+      "path": "hook/trader_hook.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "sha256": "59f59f1ace4717a0e1953aa296f1194d9ef27248cceeb58d9243f00c3e6fe3eb",
+      "notes": "Binance/Aster hook result wrappers log error and return client anyway."
+    },
+    {
+      "path": "wallet/balance_cache.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          67
+        ]
+      ],
+      "sha256": "19da57b9dc31ba8817a32b02f5430b287cf190946eed8c6b92857851e9b7abba",
+      "notes": "30s normalized address cache; double-check per-address mutex; no eviction of mutex/key maps; backend called with untrimmed original address."
+    },
+    {
+      "path": "wallet/usdc.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          105
+        ]
+      ],
+      "sha256": "ab7aa81b15f17069577949d79e1689ad5b33e8f276200b5a81df376fa925b3aa",
+      "notes": "Base USDC eth_call and float conversion; display helper maps errors to0.00, missing result to real zero; no status/body/address validation."
+    },
+    {
+      "path": "telemetry/bar_horizon.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "sha256": "fc154d51a96aa55e7c563bc79ae2e394bedcba7d3ba5df1b0f1d8ae282a38241",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. Horizon counters atomic and non-resetting."
+    },
+    {
+      "path": "telemetry/errors.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          153
+        ]
+      ],
+      "sha256": "f4d9e76c528640520d986d62bd9a3a0310b5eb68ce7fdf047d5b18953119453b",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. Error aggregator holds mutex while announce callback executes; lastOccurred unused."
+    },
+    {
+      "path": "telemetry/experience.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          242
+        ]
+      ],
+      "sha256": "fd6f6db5b726968686f856aa04bf93ceb6d5b7a0133abdc893c9aaa5dc0932d4",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. GA enabled by default; trade/model/token plus user/trader/install IDs sent asynchronously; response status ignored, no bounded queue."
+    },
+    {
+      "path": "telemetry/far_arms.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          39
+        ]
+      ],
+      "sha256": "9a6a6f4f580e81544b63bd5eed8668d3071678806ee4045125cddc370e2b6d1d",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. Far-arm denominator increment separate from side counter; comment says unknown side counts authored but implementation does not."
+    },
+    {
+      "path": "telemetry/gate_blocks.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          146
+        ]
+      ],
+      "sha256": "31d60092842919abc60c5f592cd981594ce9bdc76622c5a12998203ddef0b045",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. Gate counters roll on any differing day, counts include observational/shadow names; snapshots copy state."
+    },
+    {
+      "path": "telemetry/metrics.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          72
+        ]
+      ],
+      "sha256": "09bccab7e5a139e21df136f661d4ee553fb7423c4e8519eb2e510f2ac9b0f3ee",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. Prometheus promauto registry labels trader/action/status and gate; latency default buckets stop10s."
+    },
+    {
+      "path": "telemetry/planner_wave.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          19
+        ]
+      ],
+      "sha256": "7d48b6ea8fbb1e88460124bf19270cae1b11082c8bae5fb111872413a3713772",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. Repair regression counter process-wide; trader argument unused."
+    },
+    {
+      "path": "telemetry/shadow_conditions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          18
+        ]
+      ],
+      "sha256": "6ce79dc1a3399d09c5e5525efcf681dc6b785b6b3668d63c7b030ccb2ad4545a",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. Atomic shadow-arm refusal counter."
+    },
+    {
+      "path": "telemetry/weekly.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          78
+        ]
+      ],
+      "sha256": "026958102c28214939caf83fac6ad38870e3e7f42fe17a67a01c00a05e7f64ae",
+      "notes": "Process-local metrics/counters or outbound GA telemetry; exact function semantics covered in functions.json. Session resets depend on callers; unknown inputs generally ignored. Weekly shadow counters describe daily reset but only test reset present; reserved day unused."
+    },
+    {
+      "path": ".github/workflows/scripts/calculate_coverage.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          192
+        ]
+      ],
+      "sha256": "1856f4bcca18722057cab0a234123df073ee7452efe7c4c992299eac6a7ce51f",
+      "notes": "Go coverage parser uses authoritative total but unweighted average of function percentages per package; generates raw cover report and GitHub outputs."
+    },
+    {
+      "path": ".github/workflows/scripts/comment_pr.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          246
+        ]
+      ],
+      "sha256": "7729ee6495b61896ad808369edcb9e997a7390cfa2b9fe02129bfcd1699067dd",
+      "notes": "Coverage PR comments via GitHub requests; first-page bot marker match; no timeout/pagination; fork JSON failure defaults non-fork; advisory only."
+    },
+    {
+      "path": ".husky/_/husky.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          36
+        ]
+      ],
+      "sha256": "c1641b48a19909e308e8f203af9e945932a7a28dedc22d87f1ac070337cfdadb",
+      "notes": "Husky hook wrapper honors HUSKY=0, sources user rc, invokes same hook under sh -e, propagates exit."
+    },
+    {
+      "path": "cmd/arm-state-sql/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          19
+        ]
+      ],
+      "sha256": "1657433e83f884349bfa4a3f4511b709312a00a693e4948fb26e184403e6db0f",
+      "notes": "Prints canonical store terminal/nonterminal arm SQL; no DB opened."
+    },
+    {
+      "path": "cmd/bars-export/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          98
+        ]
+      ],
+      "sha256": "213b14f376c3a395c562b75fec792148a260a1552388a0c0b69f4f07292d1b7d",
+      "notes": "Export ladder bars to CSV uses store.New (migrations despite readonly claim), unfiltered BarsBetween, no source/contract columns or CSV write-error checks."
+    },
+    {
+      "path": "cmd/dayplan-arm/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          83
+        ]
+      ],
+      "sha256": "3a72706a5d0614a7b94e17966383231c16d76d5d79ef977457ec4210090c20c3",
+      "notes": "Dry-run strategy arm preview; non-grid strategies, day-plan defaults; confirm persists full codec; store.New still mutates on preview."
+    },
+    {
+      "path": "cmd/dayplan-level-repair/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          85
+        ]
+      ],
+      "sha256": "fee4d8c31fe2da9a308c8171e2729828b37d0c5d251a71e9ddc897253cee4e04",
+      "notes": "Burned-level repair cutoff preview; confirm ResetBurns to C; store.New initialization happens before confirm."
+    },
+    {
+      "path": "cmd/dayplan-sessions/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          192
+        ]
+      ],
+      "sha256": "74d373a69ed2fa40e12e7c8993610933be504e126388bd66ff122ab60c231134",
+      "notes": "Existing day-plan session overrides tighten grades/caps unless allow-loosen; no validation of arbitrary grade/negative cap; roundtrip checks parse only; store.New preview side effects."
+    },
+    {
+      "path": "cmd/decisive-test/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          164
+        ]
+      ],
+      "sha256": "59dc32fed20e9076c6bc5338b3d282d38f2e2b3d1a803f1de1e001a1e35541e9",
+      "notes": "Diagnostic hardcoded historical decision IDs/model: readonly GORM wrapper then direct DeepSeek network call after stripping prompt sections; not offline."
+    },
+    {
+      "path": "cmd/detector-report/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          58
+        ]
+      ],
+      "sha256": "9ebccb9e64b2c7253136678833bbf84b0cb701700498093092b72a399517cc94",
+      "notes": "Detector readonly URI still invokes migrating constructor; sensitivity flag only prints text, does not recompute."
+    },
+    {
+      "path": "cmd/excursions/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          60
+        ]
+      ],
+      "sha256": "462c67d1bf10c193c8c9771cf41279f09a00e2340cd394cfd6329ba04f6ef419",
+      "notes": "Excursion report or explicit date backfill; UTC date parse, optional trader/symbol; constructor migrations; no built-in backup."
+    },
+    {
+      "path": "cmd/gate-jwt/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          68
+        ]
+      ],
+      "sha256": "8f2ca7006397e1ad503a2d25ee817e8c09d184a92a49748676ee8a1b5d41eda8",
+      "notes": "Local JWT mint matches dotenv\u2192config\u2192auth path but opens migrating store, logs may precede token."
+    },
+    {
+      "path": "cmd/levelstats-backfill/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          103
+        ]
+      ],
+      "sha256": "7d1d95b49e0c01b6b18d67b901efdaf91ae3f655e8b49aa1bd7d63d2694d060d",
+      "notes": "LevelStats backfill writes by covered days and hardcoded fallback trader; unfiltered MNQ bars coverage; errors on summary ignored."
+    },
+    {
+      "path": "cmd/nq_smoke/help.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          20
+        ]
+      ],
+      "sha256": "8ecc6d121c2a3184e5481d569c66917252734c11690a16b0753ae752a5372268",
+      "notes": "Smoke help documents legacy Databento/CSV matrix, omits tcp."
+    },
+    {
+      "path": "cmd/nq_smoke/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          174
+        ]
+      ],
+      "sha256": "ac3340fcd8af52310172d3fd4a5952eb8c3a75b22da25e35b1d75b93f9b3b5a0",
+      "notes": "Legacy default fetches96h-old NQ window then stdin decision\u2192CSV signal\u219230s fills; unknown subcommand falls into this path."
+    },
+    {
+      "path": "cmd/nq_smoke/smoke_all.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          28
+        ]
+      ],
+      "sha256": "8faa9d25a97d33cac7fc5648979235a0a225073495c19a3a10778248beb68662",
+      "notes": "Runs databento,resolver,prompt,roundtrip, excludes tcp and lists skipped components as ran."
+    },
+    {
+      "path": "cmd/nq_smoke/smoke_databento.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "sha256": "5b25b8a9fb2b6cf3eed23cd619572f8b77224bf7341df089970e443e76b5e0c9",
+      "notes": "Credential-dependent Databento historical shape check >=40 bars; first bar OHLC unchecked."
+    },
+    {
+      "path": "cmd/nq_smoke/smoke_prompt.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          55
+        ]
+      ],
+      "sha256": "5e634ce5f944dd939a021e2f542ce2c1083184bb563f3f6986cbf773777de573",
+      "notes": "Offline future prompt construction, keyword omissions WARN only."
+    },
+    {
+      "path": "cmd/nq_smoke/smoke_resolver.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          40
+        ]
+      ],
+      "sha256": "6a1d4bc0233380eb158b2d7682031d21c6d633fad374f6cc1a23a9d4c5df28ff",
+      "notes": "Network resolver regex root+quarter+single-digit year; credential absence skips."
+    },
+    {
+      "path": "cmd/nq_smoke/smoke_roundtrip.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          61
+        ]
+      ],
+      "sha256": "37a4b2c88a03b4fd56888302d39ae6a3c64538669124fd1b84dcfd7dae61ccfe",
+      "notes": "Temp CSV/mock roundtrip; any fill passes without comparing fields."
+    },
+    {
+      "path": "cmd/nq_smoke/smoke_tcp.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          81
+        ]
+      ],
+      "sha256": "9f79ae65a347b425a256db94931ebebcee963b8f3a19f36bd1c3e2bcbc663b75",
+      "notes": "Loopback ephemeral test TCP server/mock client and signal; any fill passes; close-then-bind port race."
+    },
+    {
+      "path": "cmd/planner_ab/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          162
+        ]
+      ],
+      "sha256": "1cb8b38fba51ae96827bcc0d72b7aa02f5e79ae9b56ef55aa4f90e4dea106622",
+      "notes": "Provider A/B called offline means outside live loop, actually network+credential use and migrating store; unchecked argv; hardcoded DeepSeek endpoint; no HTTP timeout; schema only."
+    },
+    {
+      "path": "cmd/research_export/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          46
+        ]
+      ],
+      "sha256": "6e356ccfe5895b146fc7f26eee1c0834f685966b96e9355ec7a37f1b15c6e3e4",
+      "notes": "Actual readonly archive exporter RFC3339 receipt [from,to), verifies checksum/counts and writes stdout."
+    },
+    {
+      "path": "cmd/sandbox-seed/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          285
+        ]
+      ],
+      "sha256": "d4f3140f82731ae922095b94f5efdc1cfc377d701fe53512b73557fe26f45c6e",
+      "notes": "Sandbox seed only substring path guard (not symlink identity), initializes/mutates multiple tables; appends plans/trades despite idempotence claim; errors often ignored."
+    },
+    {
+      "path": "expectancy/aggregate.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          693
+        ]
+      ],
+      "sha256": "621c721f5c187b15b611b35b7d243bc4e650c907b504b55f041f0574472a5945",
+      "notes": "Expectancy load positions corrected PNL, optional arms/excursion/counterfactual joins; atom-based rollups and era filter; n>=30 normal mean CI gate; E8 keys omit rule; globally scoped database query."
+    },
+    {
+      "path": "expectancy/levelkind.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          77
+        ]
+      ],
+      "sha256": "62e1964cb84fab9d81adf35dda345cb6c9e530e6939c6e7490d5fcd37161b906",
+      "notes": "Kernel kind vocabulary; decorated label longest prefix recovery can accept unrelated suffixed text; no dedicated unknown-kind counter here."
+    },
+    {
+      "path": "expectancy/model.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          240
+        ]
+      ],
+      "sha256": "563f0a3778b7ee221ceaaf2ae90f7daa7417a09ead85012b05104b7fc62e901f",
+      "notes": "Typed realized/counterfactual read model, nullable optional stats, MinN30, fixed historical CT era; rows retained for reaggregation."
+    },
+    {
+      "path": "install-stable.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          106
+        ]
+      ],
+      "sha256": "4bdd661739d9f3a9708ff03a8d912e6bef9c19f27b05b947517847d098ee9cad",
+      "notes": "Legacy upstream stable Docker installer overwrites compose, creates keys/ShanghaiTZ if absent, no chmod/env validation, starts services."
+    },
+    {
+      "path": "install.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          294
+        ]
+      ],
+      "sha256": "b9554b22ebe02c7c4a84b4e45f2361a2583fffd51d0195c87282932bfb22dc5f",
+      "notes": "Legacy upstream main Docker installer overwrites compose; optional unscoped trade-table deletion no backup, image pull/restart; curl health accepts HTTP errors."
+    },
+    {
+      "path": "railway/start.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          57
+        ]
+      ],
+      "sha256": "77ffe30e250341619eb617bbba0908a612fc4e232cd2437007a5753360b3ec58",
+      "notes": "Railway generates ephemeral encryption keys each unset boot, nginx health always200, backend background unsupervised then tail forever; no JWT creation."
+    },
+    {
+      "path": "researchsnapshot/archive.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          286
+        ]
+      ],
+      "sha256": "a8e4a73ade0180b23ef3165389928a9227974ab1d5de3e9bd82f4fa60f96c689",
+      "notes": "Separate SQLite WAL archive schema1, transaction atomic validated facts, nullable clocks, receipt-range deterministic export with hash; verify counts+objects hash only."
+    },
+    {
+      "path": "researchsnapshot/fact.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          106
+        ]
+      ],
+      "sha256": "e5a5ab5b41b1ca8282c35abf2cc518e8b0277e7e0cf28df559b5823c5190bb80",
+      "notes": "Registered five-object evidence dictionary initializes NULL+reason; typed nil normalized; validates known object/required fields; extra fields accepted."
+    },
+    {
+      "path": "researchsnapshot/plan.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          184
+        ]
+      ],
+      "sha256": "707e25ebfb1a5124c9cb5fce1de266904c7d20542e4559af0189412f78bb5784",
+      "notes": "Per-authoring PlanTrace capture snapshots of prompts/attempts/replies/verdicts/publication/model config; publishes scenario evidence and explicitly unknown actual permission/risk."
+    },
+    {
+      "path": "researchsnapshot/recorder.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          216
+        ]
+      ],
+      "sha256": "b4e7707c44f5a1c755e031d6784eaa1798680df98f71e09870ef87a2fb7fd59e",
+      "notes": "Nonblocking128-capacity record queue, 5ms admission check; builders/SQLite on worker,2s save timeout, counted drops, p50 admission histogram; builders themselves not bounded."
+    },
+    {
+      "path": "researchsnapshot/runtime.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          147
+        ]
+      ],
+      "sha256": "cc71e2c636d0adc5e68f9191eb6e201e85c958c847b6ca108741fa606dc686b4",
+      "notes": "Atomic global recorder; archive-start fail disables capture, boot counts by CT captured date and reports UNKNOWN; contained producer panics."
+    },
+    {
+      "path": "scripts/arm_state.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          31
+        ]
+      ],
+      "sha256": "18525bc552f2e0ee2d69b4f9ad2429996116f3d6532968755c8afbfefb6c84a6",
+      "notes": "Python caches canonical Go arm SQL and evaluates states in memory SQLite, no handcopied enum."
+    },
+    {
+      "path": "scripts/backfill-position-plan.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          125
+        ]
+      ],
+      "sha256": "929f0116dd01a8dfa9bb5197762b680ff73d85bb9fb790185398661bd7136233",
+      "notes": "Immediate DB migration/backfill by row id; no backup despite unused shutil; fixed CT session windows; plans dict overwrites ambiguity instead of proving exactly one."
+    },
+    {
+      "path": "scripts/leveltruth_missed_turns.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          103
+        ]
+      ],
+      "sha256": "ee882ada742a391fe360cd49ac3fcdcb5692e61adb92cfa618a1204231457abd",
+      "notes": "Historical missed-turn estimator fixed-CDT dates and hardcoded trader/session; row-count m5 grouping, full-session future swing seating against last high, not causal production evidence."
+    },
+    {
+      "path": "scripts/mpm_resolution_fixture.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          62
+        ]
+      ],
+      "sha256": "76259882b58dd859aae97301042507ce65feca691d60a1b5daca38a43de4dd85",
+      "notes": "Synthetic OHLC aggregation ordering example; local TP-first vs SL-first assumptions; proves fixture inversion only."
+    },
+    {
+      "path": "scripts/mutate-selftest.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          93
+        ]
+      ],
+      "sha256": "5839616c5c1b3d98212dcc61a541d531d31fbba0d87ee3dd6bbd550a562ef119",
+      "notes": "Mutation selftest builds throwaway module with no-match/build-fail/killed/survived/no-tests and restore cases."
+    },
+    {
+      "path": "scripts/mutate.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          103
+        ]
+      ],
+      "sha256": "37bca4539e24c72f786e7440188413428904c34b86c2af1144f358848092e9a9",
+      "notes": "Mutation file backup/sed/cmp/build/test/restore; broad FAIL catches infrastructure errors, ignores nonzero RC without FAIL and [no test files]; trap restore on signal does not explicitly exit."
+    },
+    {
+      "path": "scripts/sandbox-down.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          11
+        ]
+      ],
+      "sha256": "0631e48961cf443635d89476db979db46bc6870f34c1ee14db904d5a30ca8836",
+      "notes": "Stops sandbox via path regex and globally matching vite.sandbox config; ports are system observations not owned-process proof."
+    },
+    {
+      "path": "scripts/sandbox-reset.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          9
+        ]
+      ],
+      "sha256": "f989772aac4178a0bde14195376893669fc60def2cf971e49f2f46f0f9fcf0c4",
+      "notes": "Stops sandbox then removes fixed sandbox db/WAL/SHM and calls up; up reads live DB despite never-open claim."
+    },
+    {
+      "path": "scripts/sandbox-up.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          70
+        ]
+      ],
+      "sha256": "096e28811547afe6810770fa9923a7558f4a2d8a9d94eaa6b7e97f2c130ed919",
+      "notes": "Copies live DB readonly into sandbox then partial scrub; keeps credentials, ignores scrub errors, existing DB not rescrubbed; same cwd dotenv loaded, synthetic mode not isolation proof; listener check still prints READY on timeout."
+    },
+    {
+      "path": "scripts/stale_met_replay.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          106
+        ]
+      ],
+      "sha256": "1ca9cdb22dd29c44b35663d55fc5fd9fa3c1cd2e0b64a2c4c5eafff37dee6af1",
+      "notes": "Historical stale-MET replay read-only SQLite; fixed epoch buckets can use forming/future constituents at decision time, no contract/source filtering or row IDs."
+    },
+    {
+      "path": "start.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          422
+        ]
+      ],
+      "sha256": "35d1f2434357eff149735d7209de8cc81083baac2a6743b29ed7874496709dfe",
+      "notes": "Docker lifecycle wrapper; missing-key creation and forced rotation, local env permissions600, pull/update/clean/restart independent of current lock/flat gates; compose detection malformed command -v."
+    },
+    {
+      "path": "telegram/agent/agent.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          286
+        ]
+      ],
+      "sha256": "14fd9889a9ae989e0ff5220cd6730e1d2480a1fe67ae911eced0265cc2c36f4e",
+      "notes": "Per-chat LLM tool loop10 iterations: arbitrary authenticated local API verbs/paths, first-turn account snapshot; no local action allowlist, max iterations falsely says completed; token minted through24h auth."
+    },
+    {
+      "path": "telegram/agent/apicall.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "sha256": "a585dd9e33d1256faadccfb2186ddd140447afc58ccbe603c7ef3775d4eef69a",
+      "notes": "Localhost API tool, authenticated JSON request,30s timeout, no path/method allowlist and unbounded response, errors rendered into model context."
+    },
+    {
+      "path": "telegram/agent/manager.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          79
+        ]
+      ],
+      "sha256": "f63984a93aaad206a0e1886febf7530729d1e5464955aa9029c813c63ecc3c00",
+      "notes": "Per-chat semaphore60s wait, agents/lanes never evicted; Reset bypasses lane (memory race)."
+    },
+    {
+      "path": "telegram/agent/prompt.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          100
+        ]
+      ],
+      "sha256": "16f54b58b2973d80dba5be3ae6d8b1e32ac4d64e51129d1beb5ee5464fdaf51b",
+      "notes": "Prompt embeds docs/user identity and immediate-action workflows, GET-after-write is instruction not enforcement; stale crypto default examples."
+    },
+    {
+      "path": "telegram/bot.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          461
+        ]
+      ],
+      "sha256": "fddcab6a71c41b26cad2f7cfbb840bc557d0b23680507d23dd7d5bae1792ef35",
+      "notes": "DB token, first DB user and first /start chat binding, command handling and LLM responses; running bot never receives reload; JWT not renewed for unchanged user; /lang before ACL."
+    },
+    {
+      "path": "telegram/session/memory.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          105
+        ]
+      ],
+      "sha256": "b93f5c0eb17094e5d9600f351564788793d8d19725b522fa002aad0e6e1ac0cd",
+      "notes": "In-memory conversation summary at3000 rough tokens; appends new summaries to old summary (growth), captured initial LLM, no locks; ResetFull clears both."
+    }
+  ],
+  "unread": [],
+  "additional_dependency_reads": [
+    {
+      "path": "store/store.go",
+      "mode": "excerpt/manual",
+      "ranges": [
+        [
+          63,
+          270
+        ]
+      ],
+      "sha256": "198b6c37c8d317961c1dc66b2578ec15e45497ea9476d7bd121e0a3aa74f3eca",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "auth/auth.go",
+      "mode": "excerpt/manual",
+      "ranges": [
+        [
+          82,
+          110
+        ]
+      ],
+      "sha256": "5f03d4ee50086221d92db7461b8255bfbec7b5c0d2f694f700a572d0bd0238ea",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "api/crypto_handler.go",
+      "mode": "excerpt/manual",
+      "ranges": [
+        [
+          55,
+          100
+        ]
+      ],
+      "sha256": "f7183cea1523fc58ea9294a3635423dda40b04e0b4dae87208cebe5ea4388216",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "api/security_p0_test.go",
+      "mode": "excerpt/manual",
+      "ranges": [
+        [
+          355,
+          377
+        ]
+      ],
+      "sha256": "e105beb0e62e8d046c22574d1cf091c151e4ab42ab18e54be96cc257650e0f0f",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "trader/auto_trader_decision.go",
+      "mode": "excerpt/manual",
+      "ranges": [
+        [
+          400,
+          427
+        ]
+      ],
+      "sha256": "b584c65fd27133c9cc86e7b102c82a5630e0b51f5ffb2a911fb9600a11176dc7",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "trader/auto_trader_loop.go",
+      "mode": "excerpt/manual",
+      "ranges": [
+        [
+          242,
+          263
+        ]
+      ],
+      "sha256": "13a7cbbacc519af026d7ee2fe8a8a5b0d3fed9cf01a5ed4476fd22aa97c87115",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpt/manual",
+      "ranges": [
+        [
+          2281,
+          2316
+        ],
+        [
+          2470,
+          2514
+        ],
+        [
+          3339,
+          3400
+        ]
+      ],
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "deploy/nofx.service",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          46
+        ]
+      ],
+      "sha256": "b3d1a0c78d39a4ff9d4e2de16e500b1ee40b403d58dc2ec7e47e3f6843ab4e5d",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "deploy/nofx-web.service",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          32
+        ]
+      ],
+      "sha256": "10a06fc959623207bcb89280fcea89ee55794e875f3ad72e525b795891e7d377",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "deploy/systemd-user/nofx-backup.service",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          10
+        ]
+      ],
+      "sha256": "b3909698c869355ffd9b12fefbea98b07ffff83ca4f45502b5e07af6b8e9e81d",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "deploy/systemd-user/nofx-backup.timer",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          14
+        ]
+      ],
+      "sha256": "8dcd448bd0d302f51bd808d2b20fc19989883cd38c0352a5c93a450bbc229dc4",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "deploy/systemd-user/nofx-clock-guard.service",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          12
+        ]
+      ],
+      "sha256": "d4311e270a9fdefeda15bdfc2214e2b69161217dc33229110d64d3e91677095a",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "deploy/systemd-user/nofx-clock-guard.timer",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          13
+        ]
+      ],
+      "sha256": "a0c9c3c03d9546a76a2f7edba8ad3abb2e769b6893d8a80cea439f0da50bcfc9",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "internal/retry/circuit_breaker_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          105
+        ]
+      ],
+      "sha256": "7837c43a5666a82e53dedffbc9ce885ab181327406fab93cbaea88bc9d2871c8",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    },
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "sha256": "1b498eed50f406c5c05f33f943ba2b73a47b04e71391a8eee017261de9b83e29",
+      "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
+    }
+  ],
+  "coverage_summary": {
+    "assigned_files": 95,
+    "assigned_lines": 12529,
+    "unread_assigned_files": 0,
+    "tests_executed": false
+  }
+}

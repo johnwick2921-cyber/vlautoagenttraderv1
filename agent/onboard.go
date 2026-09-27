@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"nofx/branding"
 	"strings"
-	"time"
+
+	"nofx/store"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"nofx/store"
 )
 
 var titleCaser = cases.Title(language.English)
@@ -33,17 +33,9 @@ type SetupState struct {
 	AIBaseURL  string
 }
 
-// needsSetup returns true if no traders are configured.
-func (a *Agent) needsSetup() bool {
-	if a.traderManager == nil {
-		return true
-	}
-	return len(a.traderManager.GetAllTraders()) == 0
-}
-
 // getSetupState loads the current setup state from user preferences.
 func (a *Agent) getSetupState(userID int64) *SetupState {
-	if cached, ok := a.setupStates.Load(userID); ok {
+	if cached, ok := a.stateOwner().setupStates.Load(userID); ok {
 		if state, ok := cached.(*SetupState); ok && state != nil {
 			return cloneSetupState(state)
 		}
@@ -64,7 +56,7 @@ func (a *Agent) getSetupState(userID int64) *SetupState {
 }
 
 func (a *Agent) saveSetupState(userID int64, s *SetupState) {
-	a.setupStates.Store(userID, cloneSetupState(s))
+	a.stateOwner().setupStates.Store(userID, cloneSetupState(s))
 	a.store.SetSystemConfig(fmt.Sprintf("setup_step_%d", userID), s.Step)
 	setConfig(a.store, userID, "exchange", s.Exchange)
 	setConfig(a.store, userID, "exchange_id", s.ExchangeID)
@@ -75,7 +67,7 @@ func (a *Agent) saveSetupState(userID int64, s *SetupState) {
 }
 
 func (a *Agent) clearSetupState(userID int64) {
-	a.setupStates.Delete(userID)
+	a.stateOwner().setupStates.Delete(userID)
 	for _, k := range []string{"step", "exchange", "exchange_id", "ai_provider", "ai_model", "ai_model_id", "ai_base_url"} {
 		a.store.SetSystemConfig(fmt.Sprintf("setup_%s_%d", k, userID), "")
 	}
@@ -99,124 +91,6 @@ func cloneSetupState(s *SetupState) *SetupState {
 	return &copy
 }
 
-// handleSetupFlow processes the setup conversation.
-// Returns (response, handled). If handled=false, continue to normal routing.
-func (a *Agent) handleSetupFlow(userID int64, text string, L string) (string, bool) {
-	return a.handleSetupFlowForStoreUser("default", userID, text, L)
-}
-
-func (a *Agent) handleSetupFlowForStoreUser(storeUserID string, userID int64, text string, L string) (string, bool) {
-	state := a.getSetupState(userID)
-
-	lower := strings.ToLower(text)
-
-	// Cancel setup — explicit or implicit (user asking unrelated questions)
-	if lower == "cancel" || lower == "取消" || lower == "/cancel" {
-		a.clearSetupState(userID)
-		return a.setupMsg(L, "cancelled"), true
-	}
-
-	// If in a step that expects a key/secret, check if user is NOT sending a key
-	// Keys are typically long strings without spaces and Chinese characters
-	if state.Step == "await_api_key" || state.Step == "await_api_secret" || state.Step == "await_passphrase" || state.Step == "await_ai_key" {
-		trimmed := strings.TrimSpace(text)
-		hasChinese := false
-		for _, r := range trimmed {
-			if r >= 0x4e00 && r <= 0x9fff {
-				hasChinese = true
-				break
-			}
-		}
-		hasSpaces := strings.Contains(trimmed, " ") && !strings.HasPrefix(trimmed, "sk-")
-		tooShort := len(trimmed) < 8
-
-		if hasChinese || hasSpaces || tooShort {
-			// User is probably asking a question, not providing a key
-			a.clearSetupState(userID)
-			if L == "zh" {
-				return "👌 配置已暂停。我先回答你的问题——\n\n随时发送 *开始配置* 继续配置。", false
-			}
-			return "👌 Setup paused. Let me answer your question first—\n\nSend *setup* anytime to continue.", false
-		}
-	}
-
-	switch state.Step {
-	case "await_exchange":
-		return a.handleExchangeChoice(userID, text, state, L)
-	case "await_api_key":
-		state.APIKey = strings.TrimSpace(text)
-		state.Step = "await_api_secret"
-		a.saveSetupState(userID, state)
-		return a.setupMsg(L, "ask_secret"), true
-	case "await_api_secret":
-		state.APISecret = strings.TrimSpace(text)
-		// OKX/Bitget/KuCoin need passphrase
-		if needsPassphrase(state.Exchange) {
-			state.Step = "await_passphrase"
-			a.saveSetupState(userID, state)
-			return a.setupMsg(L, "ask_passphrase"), true
-		}
-		exchangeID, err := a.saveSetupExchange(storeUserID, state)
-		if err != nil {
-			a.logger.Error("save exchange from setup failed", "error", err, "exchange", state.Exchange, "store_user_id", storeUserID)
-			if L == "zh" {
-				return fmt.Sprintf("⚠️ 交易所配置保存失败: %v\n请再试一次，或稍后去 Web UI 继续。", err), true
-			}
-			return fmt.Sprintf("⚠️ I could not save the exchange settings just now: %v\nPlease try again, or continue later on the web page.", err), true
-		}
-		state.ExchangeID = exchangeID
-		state.Step = "await_ai_model"
-		a.saveSetupState(userID, state)
-		if L == "zh" {
-			return "✅ 交易所配置已保存，在配置页里现在就能看到。\n\n" + a.setupMsg(L, "ask_ai"), true
-		}
-		return "✅ Exchange config saved. It should now be visible in the config page.\n\n" + a.setupMsg(L, "ask_ai"), true
-	case "await_passphrase":
-		state.Passphrase = strings.TrimSpace(text)
-		exchangeID, err := a.saveSetupExchange(storeUserID, state)
-		if err != nil {
-			a.logger.Error("save exchange from setup failed", "error", err, "exchange", state.Exchange, "store_user_id", storeUserID)
-			if L == "zh" {
-				return fmt.Sprintf("⚠️ 交易所配置保存失败: %v\n请再试一次，或稍后去 Web UI 继续。", err), true
-			}
-			return fmt.Sprintf("⚠️ I could not save the exchange settings just now: %v\nPlease try again, or continue later on the web page.", err), true
-		}
-		state.ExchangeID = exchangeID
-		state.Step = "await_ai_model"
-		a.saveSetupState(userID, state)
-		if L == "zh" {
-			return "✅ 交易所配置已保存，在配置页里现在就能看到。\n\n" + a.setupMsg(L, "ask_ai"), true
-		}
-		return "✅ Exchange config saved. It should now be visible in the config page.\n\n" + a.setupMsg(L, "ask_ai"), true
-	case "await_ai_model":
-		return a.handleAIChoice(storeUserID, userID, text, state, L)
-	case "await_ai_key":
-		state.AIKey = strings.TrimSpace(text)
-		aiModelID, err := a.saveSetupAIModel(storeUserID, state)
-		if err != nil {
-			a.logger.Error("save AI model from setup failed", "error", err, "provider", state.AIProvider, "store_user_id", storeUserID)
-			if L == "zh" {
-				return fmt.Sprintf("⚠️ AI 模型配置保存失败: %v\n请再试一次，或稍后去 Web UI 继续。", err), true
-			}
-			return fmt.Sprintf("⚠️ I could not save the AI model settings just now: %v\nPlease try again, or continue later on the web page.", err), true
-		}
-		state.AIModelID = aiModelID
-		return a.finishSetup(storeUserID, userID, state, L)
-	}
-
-	// Not in setup flow — only enter setup for a tiny set of explicit commands.
-	// Natural-language configuration requests should go to the planner first,
-	// including phrases like "开始配置" or "帮我配置交易所".
-	if isDirectSetupCommand(lower) {
-		state.Step = "await_exchange"
-		a.saveSetupState(userID, state)
-		return a.setupMsg(L, "ask_exchange"), true
-	}
-
-	// Everything else — let normal routing handle it
-	return "", false
-}
-
 func isDirectSetupCommand(text string) bool {
 	text = strings.ToLower(strings.TrimSpace(text))
 	if text == "" {
@@ -228,294 +102,6 @@ func isDirectSetupCommand(text string) bool {
 	default:
 		return false
 	}
-}
-
-func (a *Agent) handleExchangeChoice(userID int64, text string, state *SetupState, L string) (string, bool) {
-	lower := strings.ToLower(strings.TrimSpace(text))
-
-	exchanges := map[string]string{
-		"binance": "binance", "币安": "binance", "1": "binance",
-		"okx": "okx", "欧易": "okx", "2": "okx",
-		"bybit": "bybit", "3": "bybit",
-		"bitget": "bitget", "4": "bitget",
-		"gate": "gate", "5": "gate",
-		"kucoin": "kucoin", "库币": "kucoin", "6": "kucoin",
-		"hyperliquid": "hyperliquid", "7": "hyperliquid",
-	}
-
-	ex, ok := exchanges[lower]
-	if !ok {
-		return a.setupMsg(L, "invalid_exchange"), true
-	}
-
-	state.Exchange = ex
-	state.Step = "await_api_key"
-	a.saveSetupState(userID, state)
-
-	if L == "zh" {
-		return fmt.Sprintf("✅ 选择了 *%s*\n\n请发送你的 API Key：", titleCaser.String(ex)), true
-	}
-	return fmt.Sprintf("✅ Selected *%s*\n\nPlease send your API Key:", titleCaser.String(ex)), true
-}
-
-func (a *Agent) handleAIChoice(storeUserID string, userID int64, text string, state *SetupState, L string) (string, bool) {
-	lower := strings.ToLower(strings.TrimSpace(text))
-
-	models := map[string]struct{ provider, model, url string }{
-		"deepseek": {"deepseek", "deepseek-v4-pro", "https://api.deepseek.com/v1"},
-		"1":        {"deepseek", "deepseek-v4-pro", "https://api.deepseek.com/v1"},
-		"qwen":     {"qwen", "qwen-plus", "https://dashscope.aliyuncs.com/compatible-mode/v1"},
-		"通义":       {"qwen", "qwen-plus", "https://dashscope.aliyuncs.com/compatible-mode/v1"},
-		"2":        {"qwen", "qwen-plus", "https://dashscope.aliyuncs.com/compatible-mode/v1"},
-		"openai":   {"openai", "gpt-4o", "https://api.openai.com/v1"},
-		"gpt":      {"openai", "gpt-4o", "https://api.openai.com/v1"},
-		"3":        {"openai", "gpt-4o", "https://api.openai.com/v1"},
-		"claude":   {"claude", "claude-3-5-sonnet-20241022", "https://api.anthropic.com/v1"},
-		"4":        {"claude", "claude-3-5-sonnet-20241022", "https://api.anthropic.com/v1"},
-		"skip":     {"", "", ""},
-		"跳过":       {"", "", ""},
-		"5":        {"", "", ""},
-	}
-
-	choice, ok := models[lower]
-	if !ok {
-		return a.setupMsg(L, "invalid_ai"), true
-	}
-
-	if choice.model == "" {
-		// Skip AI, just create trader with exchange
-		state.AIProvider = ""
-		state.AIModel = ""
-		state.AIModelID = ""
-		state.AIKey = ""
-		return a.finishSetup(storeUserID, userID, state, L)
-	}
-
-	state.AIProvider = choice.provider
-	state.AIModel = choice.model
-	state.AIBaseURL = choice.url
-	state.Step = "await_ai_key"
-	a.saveSetupState(userID, state)
-
-	if L == "zh" {
-		return fmt.Sprintf("✅ AI 模型: *%s*\n\n请发送你的 API Key：", choice.model), true
-	}
-	return fmt.Sprintf("✅ AI Model: *%s*\n\nPlease send your API Key:", choice.model), true
-}
-
-func (a *Agent) finishSetup(storeUserID string, userID int64, state *SetupState, L string) (string, bool) {
-	// Create exchange in store
-	a.logger.Info("creating trader from setup",
-		"exchange", state.Exchange,
-		"ai_model", state.AIModel,
-		"store_user_id", storeUserID,
-	)
-
-	// TODO: Use store to create exchange + trader config
-	// For now, log the config and tell user
-	a.clearSetupState(userID)
-
-	result := ""
-	maskedKey := maskKey(state.APIKey)
-	if L == "zh" {
-		result = fmt.Sprintf("🎉 *配置完成！*\n\n"+
-			"• 交易所: %s\n"+
-			"• API Key: %s\n",
-			titleCaser.String(state.Exchange), maskedKey)
-		if state.AIModel != "" {
-			result += fmt.Sprintf("• AI 模型: %s\n", state.AIModel)
-		}
-		result += "\n正在创建 Trader..."
-	} else {
-		result = fmt.Sprintf("🎉 *Setup Complete!*\n\n"+
-			"• Exchange: %s\n"+
-			"• API Key: %s\n",
-			titleCaser.String(state.Exchange), maskedKey)
-		if state.AIModel != "" {
-			result += fmt.Sprintf("• AI Model: %s\n", state.AIModel)
-		}
-		result += "\nCreating Trader..."
-	}
-
-	// Actually create the trader via store
-	err := a.createTraderFromSetupForStoreUser(storeUserID, state)
-	if err != nil {
-		a.logger.Error("create trader failed", "error", err)
-		if L == "zh" {
-			result += fmt.Sprintf("\n\n⚠️ 创建失败: %v\n交易所配置已保存，下次配置时可直接复用。\n也可以在 Web UI 中继续完成。", err)
-		} else {
-			result += fmt.Sprintf("\n\n⚠️ Failed: %v\nYour exchange config was saved, so you can reuse it next time.\nYou can also finish setup in the Web UI.", err)
-		}
-	} else {
-		if L == "zh" {
-			result += "\n\n✅ Trader 已创建！现在你可以:\n• `/analyze BTC` — 分析市场\n• `/positions` — 查看持仓\n• 或者直接跟我聊天"
-		} else {
-			result += "\n\n✅ Trader created! Now you can:\n• `/analyze BTC` — analyze market\n• `/positions` — view positions\n• Or just chat with me"
-		}
-	}
-
-	return result, true
-}
-
-func (a *Agent) createTraderFromSetup(state *SetupState) error {
-	return a.createTraderFromSetupForStoreUser("default", state)
-}
-
-func (a *Agent) createTraderFromSetupForStoreUser(storeUserID string, state *SetupState) error {
-	if a.store == nil {
-		return fmt.Errorf("store not available")
-	}
-	exchangeID := state.ExchangeID
-	if exchangeID == "" {
-		var err error
-		exchangeID, err = a.saveSetupExchange(storeUserID, state)
-		if err != nil {
-			return fmt.Errorf("save exchange: %w", err)
-		}
-	}
-
-	aiModelID := state.AIModelID
-	if state.AIModel != "" && state.AIKey != "" && aiModelID == "" {
-		var err error
-		aiModelID, err = a.saveSetupAIModel(storeUserID, state)
-		if err != nil {
-			a.logger.Error("save AI model", "error", err)
-		}
-	}
-
-	// Reuse an existing trader if the same exchange/model pair already exists.
-	existingTraders, err := a.store.Trader().List(storeUserID)
-	if err != nil {
-		return fmt.Errorf("list traders: %w", err)
-	}
-	for _, existing := range existingTraders {
-		if existing.ExchangeID == exchangeID && existing.AIModelID == aiModelID {
-			a.logger.Info("reusing existing trader created via chat setup",
-				"trader", existing.Name,
-				"exchange_id", exchangeID,
-				"ai_model_id", aiModelID,
-			)
-			return nil
-		}
-	}
-
-	// Create trader config
-	exchangeIDShort := exchangeID
-	if len(exchangeIDShort) > 8 {
-		exchangeIDShort = exchangeIDShort[:8]
-	}
-	modelPart := aiModelID
-	if modelPart == "" {
-		modelPart = "manual"
-	}
-	trader := &store.Trader{
-		ID:         fmt.Sprintf("%s_%s_%d", exchangeIDShort, modelPart, time.Now().UnixNano()),
-		Name:       fmt.Sprintf("NOFXi-%s", titleCaser.String(state.Exchange)),
-		UserID:     storeUserID,
-		ExchangeID: exchangeID,
-		AIModelID:  aiModelID,
-		IsRunning:  false,
-	}
-	if err := a.store.Trader().Create(trader); err != nil {
-		return fmt.Errorf("save trader: %w", err)
-	}
-
-	a.logger.Info("trader created via chat",
-		"trader", trader.Name,
-		"exchange", state.Exchange,
-		"ai", aiModelID,
-	)
-
-	return nil
-}
-
-func (a *Agent) saveSetupExchange(storeUserID string, state *SetupState) (string, error) {
-	if a.store == nil {
-		return "", fmt.Errorf("store not available")
-	}
-
-	hlWallet := ""
-	hlUnified := false
-	passphrase := state.Passphrase
-	apiKey := state.APIKey
-	apiSecret := state.APISecret
-
-	if state.Exchange == "hyperliquid" {
-		hlWallet = state.APISecret
-		apiKey = ""
-		apiSecret = state.APIKey
-	}
-
-	exchanges, err := a.store.Exchange().List(storeUserID)
-	if err != nil {
-		return "", err
-	}
-	for _, ex := range exchanges {
-		if ex.ExchangeType == state.Exchange && ex.AccountName == setupExchangeAccountName {
-			if err := a.store.Exchange().Update(
-				storeUserID, ex.ID, true,
-				apiKey, apiSecret, passphrase,
-				false,
-				hlWallet, hlUnified,
-				"", "", "",
-				"", "", "", 0,
-				"", "", 0,
-			); err != nil {
-				return "", err
-			}
-			return ex.ID, nil
-		}
-	}
-
-	return a.store.Exchange().Create(
-		storeUserID,
-		state.Exchange,
-		setupExchangeAccountName,
-		true,
-		apiKey, apiSecret, passphrase,
-		false,
-		hlWallet, hlUnified,
-		"", "", "",
-		"", "", "", 0,
-		"", "", 0,
-	)
-}
-
-func (a *Agent) saveSetupAIModel(storeUserID string, state *SetupState) (string, error) {
-	if a.store == nil {
-		return "", fmt.Errorf("store not available")
-	}
-	if state.AIProvider == "" {
-		return "", nil
-	}
-
-	modelID := state.AIProvider
-	if err := a.store.AIModel().Update(
-		storeUserID,
-		modelID,
-		true,
-		state.AIKey,
-		state.AIBaseURL,
-		state.AIModel,
-	); err != nil {
-		return "", err
-	}
-
-	if modelID == state.AIProvider {
-		modelID = fmt.Sprintf("%s_%s", storeUserID, state.AIProvider)
-	}
-	return modelID, nil
-}
-
-func maskKey(key string) string {
-	if len(key) <= 8 {
-		return "****"
-	}
-	return key[:4] + "****" + key[len(key)-4:]
-}
-
-func needsPassphrase(exchange string) bool {
-	return exchange == "okx" || exchange == "bitget" || exchange == "kucoin"
 }
 
 func containsAny(s string, words []string) bool {
@@ -594,14 +180,4 @@ var setupMessages = map[string]map[string]string{
 		"zh": "👌 配置已取消。随时发送 *开始配置* 重新开始。",
 		"en": "👌 Setup cancelled. Send *setup* anytime to restart.",
 	},
-}
-
-func (a *Agent) setupMsg(L, key string) string {
-	if m, ok := setupMessages[key]; ok {
-		if s, ok := m[L]; ok {
-			return s
-		}
-		return m["en"]
-	}
-	return key
 }

@@ -1,0 +1,35 @@
+trader/auto_trader_levelstate.go
+6f677b55daa1c7da33b8c35f8bcc67883f36b470 2026-09-08T18:01:58-05:00 test(w7): freeze consumed-level clocks and add behavior-preserving clock seam
+
+trader/w7_levelstate_test.go
+6f677b55daa1c7da33b8c35f8bcc67883f36b470 2026-09-08T18:01:58-05:00 test(w7): freeze consumed-level clocks and add behavior-preserving clock seam
+
+clock-seams.list
+6f677b55daa1c7da33b8c35f8bcc67883f36b470 2026-09-08T18:01:58-05:00 test(w7): freeze consumed-level clocks and add behavior-preserving clock seam
+
+kernel/scenario_economics.go
+c40bb45a6e47c796810441cbf15069f2bee19e1e 2026-09-08T16:43:32-05:00 docs(scenario-economics): state legacy UNKNOWN intent and superseding C5 correction
+
+researchsnapshot/runtime.go
+ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+
+researchsnapshot/archive.go
+896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+
+main.go
+896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+
+config/config.go
+d7a1b1a6a19a1cb5d28494a5807b534fba06a19b 2026-08-27T00:02:49-05:00 fix1 hysteresis: close-only flip/death + FLIP_ATR_BUFFER(0.5)×ATR14(5m) + FLIP_CONFIRM_CLOSES(2); test expectations old→new: 5m_close one-close→floor
+
+trader/f12_leg4.go
+c84bd2475a02eb9fd4662441958a3b4767a76c0b 2026-09-03T20:04:23-05:00 feat(F12): the AddOn emits its order book; leg 4 asks the broker; build_id is proven by receipt
+
+trader/class33_boot_sweep.go
+6310eaf8941f53194fa2c5e7368552eed1ed8d64 2026-09-07T23:51:51-05:00 merge: reconcile placement confirmation with pre-send identity and owner ruling
+
+docs/superpowers/SYSTEM-MAP.md
+6f677b55daa1c7da33b8c35f8bcc67883f36b470 2026-09-08T18:01:58-05:00 test(w7): freeze consumed-level clocks and add behavior-preserving clock seam
+
+docs/superpowers/AUDIT-CHECKLIST.md
+6f677b55daa1c7da33b8c35f8bcc67883f36b470 2026-09-08T18:01:58-05:00 test(w7): freeze consumed-level clocks and add behavior-preserving clock seam

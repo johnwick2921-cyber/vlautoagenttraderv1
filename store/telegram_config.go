@@ -1,8 +1,10 @@
 package store
 
 import (
+	"crypto/subtle"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,8 +20,13 @@ type TelegramConfig struct {
 	BoundAt   time.Time `gorm:"column:bound_at"`
 	ModelID   string    `gorm:"column:model_id;default:''"` // AI model used for Telegram replies
 	Language  string    `gorm:"column:language;default:''"` // "zh" or "en"; empty = not chosen yet
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	// P2-12 (audit 0926-system): the first-/start bind needs a confirmation
+	// gate — a one-time code issued in the owner-authenticated app that the
+	// chat must send back. Empty code = none issued.
+	PendingBindCode   string    `gorm:"column:pending_bind_code;default:''"`
+	BindCodeExpiresAt time.Time `gorm:"column:bind_code_expires_at"`
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // String returns a safe string representation of TelegramConfig with the token masked.
@@ -43,6 +50,8 @@ type TelegramConfigStore interface {
 	Unbind() error                                // Remove binding
 	SetLanguage(lang string) error                // Set UI language ("en" or "zh")
 	GetLanguage() string                          // Get UI language; returns "en" if not set
+	IssueBindCode(code string, expiresAt time.Time) error // P2-12: store a one-time bind code
+	ConsumeBindCode(code string) (bool, error)    // P2-12: true if code matches and is unexpired; clears it
 }
 
 type telegramConfigStore struct {
@@ -135,6 +144,67 @@ func (s *telegramConfigStore) Unbind() error {
 		"chat_id":  0,
 		"username": "",
 	}).Error
+}
+
+// IssueBindCode (P2-12) stores a one-time bind code with its expiry on the
+// single config row.
+func (s *telegramConfigStore) IssueBindCode(code string, expiresAt time.Time) error {
+	if strings.TrimSpace(code) == "" {
+		return fmt.Errorf("store: empty bind code")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var cfg TelegramConfig
+	result := s.db.First(&cfg, 1)
+	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return result.Error
+	}
+	cfg.ID = 1
+	cfg.PendingBindCode = code
+	cfg.BindCodeExpiresAt = expiresAt.UTC()
+	return s.db.Save(&cfg).Error
+}
+
+// ConsumeBindCode (P2-12) verifies a submitted code against the stored one in
+// constant time. On a match the code is cleared (single use) and true is
+// returned. A mismatch or an expired code returns false and clears an expired
+// code.
+func (s *telegramConfigStore) ConsumeBindCode(code string) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var cfg TelegramConfig
+	result := s.db.First(&cfg, 1)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, result.Error
+	}
+	if cfg.PendingBindCode == "" {
+		return false, nil
+	}
+	stored := cfg.PendingBindCode
+	clear := func() error {
+		cfg.PendingBindCode = ""
+		cfg.BindCodeExpiresAt = time.Time{}
+		return s.db.Save(&cfg).Error
+	}
+	if !cfg.BindCodeExpiresAt.IsZero() && time.Now().After(cfg.BindCodeExpiresAt) {
+		if err := clear(); err != nil {
+			return false, fmt.Errorf("store: clear expired bind code: %w", err)
+		}
+		return false, nil
+	}
+	if subtle.ConstantTimeCompare([]byte(stored), []byte(strings.TrimSpace(code))) == 1 {
+		if err := clear(); err != nil {
+			// The code MATCHED; the clear failed, so it stays valid and a
+			// retry can still consume it. The error is surfaced, never
+			// swallowed (B1).
+			return true, fmt.Errorf("store: bind code matched but clearing failed: %w", err)
+		}
+		return true, nil
+	}
+	return false, nil
 }
 
 func (s *telegramConfigStore) SetLanguage(lang string) error {

@@ -1,0 +1,25 @@
+=== wake re-read failed 09-04
+09-04 09:43:31 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🗓️ wake re-r
+09-04 10:05:36 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🗓️ wake re-r
+09-04 10:34:21 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🗓️ wake re-r
+=== fail-closed / planner_fail_closed 09-04
+09-04 07:38:40 [INFO] kernel/levels_volume_boot.go:22 🛡 plan facts guards: 0-levels-on-a-side + empty machine map = fail-closed (2026-08-18 pathology guards) — per-side counts REMOVED entirely (o
+09-04 07:38:40 [INFO] nofx/main.go:330 🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: <S>_scheduled_read, level_event, structure_mss (incl. fast-market
+09-04 07:38:40 [INFO] nofx/main.go:411 🗓 no-trade band: first_n=5m lunch=12:00–13:30 (source=code-constant, shared by gate+grader+card) · T1 taken from the enforcing gate at plan time (widening 
+09-04 08:30:11 [INFO] kernel/levels_volume_boot.go:22 🛡 plan facts guards: 0-levels-on-a-side + empty machine map = fail-closed (2026-08-18 pathology guards) — per-side counts REMOVED entirely (o
+09-04 08:30:11 [INFO] nofx/main.go:330 🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: <S>_scheduled_read, level_event, structure_mss (incl. fast-market
+09-04 08:30:11 [INFO] nofx/main.go:411 🗓 no-trade band: first_n=5m lunch=12:00–13:30 (source=code-constant, shared by gate+grader+card) · T1 taken from the enforcing gate at plan time (widening 
+09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:22 🛡 plan facts guards: 0-levels-on-a-side + empty machine map = fail-closed (2026-08-18 pathology guards) — per-side counts REMOVED entirely (o
+09-04 10:53:10 [INFO] nofx/main.go:330 🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: <S>_scheduled_read, level_event, structure_mss (incl. fast-market
+=== boots 09-04 (revision lines)
+09-04 07:38:40 [INFO] kernel/levels_volume_boot.go:23 🚀 planner speed wave (2026-08-31): retry=repair stream=on stream_idle=30s stream_total=1200s (class 37:
+09-04 08:30:11 [INFO] kernel/levels_volume_boot.go:23 🚀 planner speed wave (2026-08-31): retry=repair stream=on stream_idle=30s stream_total=1200s (class 37:
+09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:23 🚀 planner speed wave (2026-08-31): retry=repair stream=on stream_idle=30s stream_total=1200s (class 37:
+09-04 13:25:47 [INFO] kernel/levels_volume_boot.go:23 🚀 planner speed wave (2026-08-31): retry=repair stream=on stream_idle=30s stream_total=1200s (class 37:
+=== boot lines at 13:25 CT 09-04
+09-04 13:25:47 [INFO] kernel/levels_volume_boot.go:30 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [breakout_retest, fvg_entry] (process-level: defaults+e
+09-04 13:25:47 [INFO] kernel/levels_volume_boot.go:42 📜 prompt/validator contract: 19 restrictions, all stated in prompt (class 38 guard)
+09-04 13:25:47 [INFO] nofx/main.go:335 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
+09-04 13:25:47 [INFO] nofx/main.go:429 ⚙ settings: schema=57 classified=167 live=144 ineffective=7 candidate-unverified=16 suspended=0 advisory=0 display-only=0 infra=0 · env-shadows=0
+09-04 13:25:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛑 min-sl guard: atr_mult=1.5 level_clearance=2tick(s)
+09-04 13:25:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim,

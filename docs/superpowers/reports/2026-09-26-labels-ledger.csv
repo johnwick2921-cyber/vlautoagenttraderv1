@@ -1,0 +1,106 @@
+row,old_label,new_label,code_truth,code_line,guide_fixed,guard_test,status
+ai_config.coin_source.ai500_limit,,,AI500 coin pool maximum count,store/strategy.go:1915,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.coin_source.excluded_coins,,,excluded coins list (filtered out from all sources),store/strategy.go:1911,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.coin_source.oi_low_limit,,,OI Low maximum count,store/strategy.go:1923,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.coin_source.oi_top_limit,,,OI Top maximum count,store/strategy.go:1919,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.coin_source.source_type,,,SourceType comment: source type shown in the product editor: static|ai500|oi_top|oi_low,store/strategy.go:1907,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.coin_source.static_coins,,,static coin list (used when source_type = static),store/strategy.go:1909,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.coin_source.use_ai500,,,whether to use AI500 coin pool,store/strategy.go:1913,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.coin_source.use_oi_low,,,"whether to use OI Low (OI decrease ranking, suitable for short positions)",store/strategy.go:1921,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.coin_source.use_oi_top,,,"whether to use OI Top (OI increase ranking, suitable for long positions)",store/strategy.go:1917,"yes (settings.ts coinSource block, 9 KnobSpecs)",strategy-translations.labels.test.ts (5 pins),done
+ai_config.custom_prompt,,extra text appended to the System Prompt; empty = nothing; f,extra text appended to the System Prompt; empty = nothing; format/risk rules fixed,store/strategy.go:792,yes (prompt array),yes (census 114 + prompt/language pins),done
+ai_config.indicators.atr_periods,,,strategy field (ai_config.indicators.atr_periods),store/strategy.go:1954,yes (settings.ts indicators block),,done
+ai_config.indicators.boll_periods,,,strategy field (ai_config.indicators.boll_periods),store/strategy.go:1956,yes (settings.ts indicators block),,done
+ai_config.indicators.ema_periods,,,strategy field (ai_config.indicators.ema_periods),store/strategy.go:1950,yes (settings.ts indicators block),,done
+ai_config.indicators.enable_atr,,,ATR block on/off (14) — feeds stop/anchor sizing,store/strategy.go:1943,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_boll,,,Bollinger band block on/off (OFF live),store/strategy.go:1944,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_ema,,,EMA indicator block on/off (50/200 periods stored),store/strategy.go:1940,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_funding_rate,,,funding-rate block on/off,store/strategy.go:1947,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_macd,,,MACD block on/off (OFF live),store/strategy.go:1941,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_netflow_ranking,,,strategy field (ai_config.indicators.enable_netflow_ranking),store/strategy.go:1975,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_oi,,,open-interest block on/off (OFF live),store/strategy.go:1946,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_oi_ranking,,,strategy field (ai_config.indicators.enable_oi_ranking),store/strategy.go:1970,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_price_ranking,,,rankings block on/off (OFF live),store/strategy.go:1980,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_quant_data,,,quant analysis block on/off (OFF live),store/strategy.go:1965,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_quant_netflow,,,strategy field (ai_config.indicators.enable_quant_netflow),store/strategy.go:1967,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_quant_oi,,,strategy field (ai_config.indicators.enable_quant_oi),store/strategy.go:1966,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_raw_klines,,,raw price bars on/off,store/strategy.go:1938,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_rsi,,,RSI block on/off (14),store/strategy.go:1942,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_svp,,,session-volume-profile block on/off,store/strategy.go:1948,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.enable_volume,,,volume profile block on/off,store/strategy.go:1945,yes (settings.ts indicators block),"labels.test.ts pins (ema 20,50 / rsi 7,14 / atr 14 / boll 20 fixed-2 / svp OFF / raw always-on)",done
+ai_config.indicators.klines.enable_multi_timeframe,,,strategy field (ai_config.indicators.klines.enable_multi_timeframe),store/strategy.go:1996,yes (settings.ts indicators block),,done
+ai_config.indicators.klines.primary_count,,,strategy field (ai_config.indicators.klines.primary_count),store/strategy.go:1990,yes (settings.ts indicators block),,done
+ai_config.indicators.klines.primary_timeframe,,,primary decision timeframe,store/strategy.go:1988,yes (settings.ts indicators block),,done
+ai_config.indicators.klines.selected_timeframes,,,strategy field (ai_config.indicators.klines.selected_timeframes),store/strategy.go:1998,yes (settings.ts indicators block),,done
+ai_config.indicators.netflow_ranking_duration,,,strategy field (ai_config.indicators.netflow_ranking_duration),store/strategy.go:1976,yes (settings.ts indicators block),,done
+ai_config.indicators.netflow_ranking_limit,,,strategy field (ai_config.indicators.netflow_ranking_limit),store/strategy.go:1977,yes (settings.ts indicators block),,done
+ai_config.indicators.nofxos_api_key,,,strategy field (ai_config.indicators.nofxos_api_key),store/strategy.go:1962,yes (settings.ts indicators block),,done
+ai_config.indicators.oi_ranking_duration,,,strategy field (ai_config.indicators.oi_ranking_duration),store/strategy.go:1971,yes (settings.ts indicators block),,done
+ai_config.indicators.oi_ranking_limit,,,strategy field (ai_config.indicators.oi_ranking_limit),store/strategy.go:1972,yes (settings.ts indicators block),,done
+ai_config.indicators.price_ranking_duration,,,strategy field (ai_config.indicators.price_ranking_duration),store/strategy.go:1981,yes (settings.ts indicators block),,done
+ai_config.indicators.price_ranking_limit,,,strategy field (ai_config.indicators.price_ranking_limit),store/strategy.go:1982,yes (settings.ts indicators block),,done
+ai_config.indicators.rsi_periods,,,strategy field (ai_config.indicators.rsi_periods),store/strategy.go:1952,yes (settings.ts indicators block),,done
+ai_config.prompt_sections.decision_process,,editable System Prompt section: decision steps + thinking,editable System Prompt section: decision steps + thinking,store/strategy.go:1922-1923,yes (prompt array),yes (census 114 + prompt/language pins),done
+ai_config.prompt_sections.entry_standards,,editable System Prompt section: entry signals + avoidances,editable System Prompt section: entry signals + avoidances,store/strategy.go:1920-1921,yes (prompt array),yes (census 114 + prompt/language pins),done
+ai_config.prompt_sections.role_definition,,editable System Prompt section (title + description),editable System Prompt section (title + description),store/strategy.go:1915-1917,yes (prompt array),yes (census 114 + prompt/language pins),done
+ai_config.prompt_sections.trading_frequency,,,"how often the bot should trade (live text claims exits SUSPENDED — stale, see P2-1)",store/strategy.go:1897,,,"skip-owned(DS-102 P2-1: saved prompt data, not a label)"
+ai_config.risk_control.altcoin_max_leverage,,save clamps 1-20 (AI guided),save clamps 1-20 (AI guided),store/strategy.go:171-175,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.altcoin_max_position_value_ratio,,"CODE ENFORCED, default 1","CODE ENFORCED, default 1",store/strategy.go:2042,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.blackout_enabled,,toggle default OFF; no decisions in window,toggle default OFF; no decisions in window,store/strategy.go:2117-2120,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.blackout_end_ct,,window America/Chicago,window America/Chicago,store/strategy.go:2119,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.blackout_start_ct,,window America/Chicago,window America/Chicago,store/strategy.go:2118,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.breakeven_enabled,,,0B SUSPENDED (auto_trader_trailing.go:178),store/strategy.go:2119,,labels.test.ts suspension pins,done-i18n
+ai_config.risk_control.breakeven_trigger_points,,,0B SUSPENDED (auto_trader_trailing.go:178),store/strategy.go:2120,,labels.test.ts suspension pins,done-i18n
+ai_config.risk_control.btc_eth_max_leverage,,save clamps 1-20 (AI guided),save clamps 1-20 (AI guided),store/strategy.go:165-169,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.btc_eth_max_position_value_ratio,,"CODE ENFORCED, default 5","CODE ENFORCED, default 5",store/strategy.go:2039,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.consecutive_loss_halt,,"presence-aware: inherit (default 8, ON); 0 = OFF; not master","presence-aware: inherit (default 8, ON); 0 = OFF; not master-gated",store/strategy.go:2082-2091,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.consistency_enabled,,default OFF,default OFF,store/strategy.go:2128-2132,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.consistency_max_day_pct,,day <= pct of all-time total; needs prior-day profit,day <= pct of all-time total; needs prior-day profit,store/strategy.go:2128-2132,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.daily_loss_limit_usd,,default ON; blank = RISK_MAX_DAILY_LOSS_USD,default ON; blank = RISK_MAX_DAILY_LOSS_USD,store/strategy.go:2065-2068,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.daily_profit_enabled,,default OFF,default OFF,store/strategy.go:2071-2074,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.daily_profit_target_usd,,profit >= target stops entries; default OFF,profit >= target stops entries; default OFF,store/strategy.go:2072-2073,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.hold_discipline,,AI closes gated; Emergency Flat + drawdown bypass; default O,AI closes gated; Emergency Flat + drawdown bypass; default OFF,store/strategy.go:2127-2131,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.max_contracts_per_order,,"default 2, always-on clamp; old toggle never read","default 2, always-on clamp; old toggle never read",store/strategy.go:2096-2102,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.max_daily_trades,,entries per session-day; default OFF,entries per session-day; default OFF,store/strategy.go:2076-2078,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.max_daily_trades_enabled,,default OFF,default OFF,store/strategy.go:2077,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.max_notional_leverage,,"default 20, safety backstop, toggle default ON","default 20, safety backstop, toggle default ON",store/strategy.go:2088-2093,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.reentry_cooldown_minutes,,default 20; 0 = OFF; not master-gated,default 20; 0 = OFF; not master-gated,store/strategy.go:2093-2098,pending,yes (labels.test.ts guardrail block),done-i18n
+ai_config.risk_control.trailing_arm,,,0B SUSPENDED (auto_trader_trailing.go:178),store/strategy.go:2131,,labels.test.ts suspension pins,done-i18n
+ai_config.risk_control.trailing_arm_points,,,0B SUSPENDED (auto_trader_trailing.go:178),store/strategy.go:2132,,labels.test.ts suspension pins,done-i18n
+ai_config.risk_control.trailing_atr_mult,,,0B SUSPENDED (auto_trader_trailing.go:178),store/strategy.go:2128,,labels.test.ts suspension pins,done-i18n
+ai_config.risk_control.trailing_atr_period,,,0B SUSPENDED (auto_trader_trailing.go:178),store/strategy.go:2129,,labels.test.ts suspension pins,done-i18n
+ai_config.risk_control.trailing_enabled,,,0B SUSPENDED (auto_trader_trailing.go:178),store/strategy.go:2127,,labels.test.ts suspension pins,done-i18n
+day_plan.condition_status,,live|shadow map; arm seam only; fvg_entry+breakout_retest de,live|shadow map; arm seam only; fvg_entry+breakout_retest default SHADOW,store/strategy.go:1154-1158,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.entry_policy_default,,stamped at parse on NEW plans; market_in_zone|planned_order|,stamped at parse on NEW plans; market_in_zone|planned_order|legacy; empty/illegal → market_in_zone,store/strategy.go:1160-1166 + resolve_source.go:234-245,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.geometry_reference_levels,,nil = ON (owner ruling); explicit false = legacy,nil = ON (owner ruling); explicit false = legacy,store/strategy.go:1132-1144,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.htf_seats,,nil = legacy path = 2 (kernel.LegacyHtfSeats); 0 = no HTF se,nil = legacy path = 2 (kernel.LegacyHtfSeats); 0 = no HTF seating; 0-6,store/strategy.go:1019-1022,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.min_hold_min,,floor on resolved hold of ARMED time_hold; nil/<=0 = 3,floor on resolved hold of ARMED time_hold; nil/<=0 = 3,store/strategy.go:1181-1184,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.picture_htf.entry_window_sec,,,"PictureHtfResolved defaults (store/strategy.go:921-922, 931-936)",store/strategy.go:934,yes (settings.ts pictureHtf block),,done
+day_plan.picture_htf.freshness_sec,,,"PictureHtfResolved defaults (store/strategy.go:921-922, 931-936)",store/strategy.go:935,yes (settings.ts pictureHtf block),,done
+day_plan.picture_htf.min_rr,,,"PictureHtfResolved defaults (store/strategy.go:921-922, 931-936)",store/strategy.go:936,yes (settings.ts pictureHtf block),,done
+day_plan.picture_htf.pivot_window,,,"PictureHtfResolved defaults (store/strategy.go:921-922, 931-936)",store/strategy.go:932,yes (settings.ts pictureHtf block),,done
+day_plan.picture_htf.swing_lookback,,,"PictureHtfResolved defaults (store/strategy.go:921-922, 931-936)",store/strategy.go:933,yes (settings.ts pictureHtf block),,done
+day_plan.picture_htf.tick_size,,,"PictureHtfResolved defaults (store/strategy.go:921-922, 931-936)",store/strategy.go:931,yes (settings.ts pictureHtf block),,done
+day_plan.plan_enabled,,master switch default false = off,master switch default false = off,store/strategy.go:968,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.planner_fresh_tape,,nil = ON (A6 born-dead retry fresh tape); explicit false = b,nil = ON (A6 born-dead retry fresh tape); explicit false = blind retry,store/strategy.go:1040-1047,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.planner_model,,reasoner binding; empty falls back to strategy primary (RECO,reasoner binding; empty falls back to strategy primary (RECON #9),store/strategy.go:969-971,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.sessions.condition_status,,per-session live|shadow override; nil inherits base map,per-session live|shadow override; nil inherits base map,store/strategy.go:1213,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.structural_stop.buffer_points,,MNQ unset = 4.5 (C5 6181-sample p95); saved = owner_override,MNQ unset = 4.5 (C5 6181-sample p95); saved = owner_override[I]; missing/uncalibrated refuses,"store/structural_geometry.go:12,32-59",yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.write_time_feasibility,,nil = ON (owner default); explicit false = WARN-only legacy,nil = ON (owner default); explicit false = WARN-only legacy,store/strategy.go:1124-1131,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.zone_max_pts,,widest entry_zone pts; nil/<=0 = 10,widest entry_zone pts; nil/<=0 = 10,store/strategy.go:1167-1169,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.zone_place_within_pts,,nil = 25 (placement band); 0 = OFF legacy,nil = 25 (placement band); 0 = OFF legacy,store/strategy.go:1174-1180,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+day_plan.zone_rest_max_min,,resting limit older than N min cancelled; nil/<=0 = 30,resting limit older than N min cancelled; nil/<=0 = 30,store/strategy.go:1170-1173,yes (dayPlan array tightened/added),yes (census 108 + htfSeats/plannerModel pins),done
+grid_config.atr_multiplier,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1875,yes (settings.ts grid block),,done
+grid_config.daily_loss_limit_pct,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1883,yes (settings.ts grid block),,done
+grid_config.direction_bias_ratio,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1889,yes (settings.ts grid block),,done
+grid_config.enable_direction_adjust,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1887,yes (settings.ts grid block),,done
+grid_config.grid_count,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1863,yes (settings.ts grid block),,done
+grid_config.lower_price,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1871,yes (settings.ts grid block),,done
+grid_config.max_drawdown_pct,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1879,yes (settings.ts grid block),,done
+grid_config.stop_loss_pct,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1881,yes (settings.ts grid block),,done
+grid_config.total_investment,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1865,yes (settings.ts grid block),,done
+grid_config.upper_price,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1869,yes (settings.ts grid block),,done
+grid_config.use_atr_bounds,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1873,yes (settings.ts grid block),,done
+grid_config.use_maker_only,,,"GridStrategyConfig comment, store/strategy.go:1860-1890",store/strategy.go:1885,yes (settings.ts grid block),,done
+language,,en/zh; determines data-formatting AND prompt language,en/zh; determines data-formatting AND prompt language,store/strategy.go:721-723,yes (prompt array),yes (census 114 + prompt/language pins),done
+regime.htf_veto,,nil = ON (dispatch 1.3): refuse entries vs CONFIRMED HTF tre,nil = ON (dispatch 1.3): refuse entries vs CONFIRMED HTF trend; false = pre-wave,store/strategy.go:764-768,yes (prompt array),yes (census 114 + prompt/language pins),done

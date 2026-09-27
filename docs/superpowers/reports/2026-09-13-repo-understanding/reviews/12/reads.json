@@ -1,0 +1,786 @@
+{
+  "assignment": 12,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "market/api_client.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          160
+        ]
+      ],
+      "sha256": "aed0df619dde2566a466505836b1d8667b8163f5d40c141ffcd2b12041c2dc94",
+      "notes": "Binance futures REST with 30s client and SET_HTTP_CLIENT hook; no status validation; array shape/types and numeric strings trusted beyond length check."
+    },
+    {
+      "path": "market/bar_resolver.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          311
+        ]
+      ],
+      "sha256": "ec6a958bd7a73616bd08d1722a035bd6341b017ce6dbf927d3adf7e58ecd0046",
+      "notes": "Completed-bars source ladder with provenance, injected clock, native daily preference for weekly, own persisted 1m final rung. Aggregation is epoch-floor including 1w; elapsed period is completion, not constituent coverage. Native weekly exclusion says Monday but math yields Thursday UTC."
+    },
+    {
+      "path": "market/data.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          823
+        ]
+      ],
+      "sha256": "35ffe0a4f32144e8ee6406cb79bc96ad861fb99c8710ff7b4b442a5ea4589587",
+      "notes": "Main multi-TF data assembly routes CME to injected NT8 bars, XYZ to Hyperliquid, crypto to CoinAnk; primary mandatory, secondary errors skipped. Legacy GetWithExchange uses futures 5m/1h under 3m/4h semantics and still requests Binance OI/funding. Configured indicators, formatting, normalization and freeze heuristic."
+    },
+    {
+      "path": "market/data_freshness.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          163
+        ]
+      ],
+      "sha256": "fd5731444db4f4e53ef51ac5d3ecc0f10ca1b7b02e65d44e779b9a7e7e7335ce",
+      "notes": "Pure legacy freshness/drift helpers (90s RTH, 5m ETH, >5% within <60s); future stamps stale. No non-test callers found. Runtime entry stale gate is kernel/stale_data.go, not this module."
+    },
+    {
+      "path": "market/data_indicators.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          235
+        ]
+      ],
+      "sha256": "76cc3925520e711876df1346bd817aba7930bd4649da177f720698395d9dd4b3",
+      "notes": "SMA-seeded EMA, MACD line, Wilder RSI/ATR, population BOLL, Donchian and 72/240/500-bar boxes. Exported wrappers expose pure calculations. Except Donchian periods <=0 are not guarded."
+    },
+    {
+      "path": "market/data_klines.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          494
+        ]
+      ],
+      "sha256": "5f954770019ac0aff7d32178e6ac6036ea613cf3bdc85e591781540b3e34148f",
+      "notes": "CoinAnk exchange/interval mapping and Binance fallback; Hyperliquid remaps intervals without reaggregation. Series include forming input and retain legacy fields alongside configured maps; duplicate configured periods append duplicate values. GetBoxData has no CME routing."
+    },
+    {
+      "path": "market/databento_adapter.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          30
+        ]
+      ],
+      "sha256": "5b6669f88bca43489da5a925e257ef0436b3828b6db550a62768775238eeb0aa",
+      "notes": "Historical Databento Bar to Kline conversion copies millisecond open and OHLCV, leaves CloseTime/other volumes zero; nil for no input."
+    },
+    {
+      "path": "market/decimal_safe.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "sha256": "0fcd4c6b7e1c9fdaec63738cc2a0a9af784b36ca1aecc5c047533e3016353753",
+      "notes": "Integer-tick arithmetic; SafeMultiply adds signed ticks, not multiplication. math.Round uses halfway-away rounding despite bankers comment. PositionSize is an optional pure floor helper, not evidence of an active per-trade cap."
+    },
+    {
+      "path": "market/futures_data.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          14
+        ]
+      ],
+      "sha256": "7cc445f976e664d27bb110268ab245c489d5d9d0bbbef00d2ea6d33191e0a844",
+      "notes": "Global startup-injected function seam, count-tail ascending bars; provider ownership is trader/ninjatrader. Seam does not itself guarantee closed bars or freshness."
+    },
+    {
+      "path": "market/futures_symbol.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          196
+        ]
+      ],
+      "sha256": "686034bb8bfeee4aa97ffbcdb65be8f152acdafc02bbe75da617daee2aaa3eea",
+      "notes": "CME recognition and per-root point/tick/month tables; arbitrary .c. accepted, bare matching case-insensitive but Normalize preserves case. Qualified NT8 form accepted by futuresRoot but not IsCMEFuturesSymbol. Energy/metals tick lookup intentionally unknown."
+    },
+    {
+      "path": "market/historical.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          104
+        ]
+      ],
+      "sha256": "70d961dfd863d902132b49960ec8f014111a669387c92ac9e5a5095fd8c1d415",
+      "notes": "Binance-only historical range paginator, 1500 rows, cursor=last.CloseTime+1, status checked; raw row indexing/type assertions not guarded, no cursor progress assertion or CME provider branch."
+    },
+    {
+      "path": "market/timeframe.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          63
+        ]
+      ],
+      "sha256": "f10a3f082871866587f2386607eeabf5021cdc4ad0499681738f499dd93d8b93",
+      "notes": "Historical validator supports subset through 1d; case/space normalized, invalid errors or Must panic; differs from resolver and kernel vocabulary (8h/3d/1w absent)."
+    },
+    {
+      "path": "market/types.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          302
+        ]
+      ],
+      "sha256": "ef779f970213c5a4283a01ce7a78d0716429ab9370177cb5c65e6f51b9ba42cd",
+      "notes": "Shared Kline/Data/series shapes, configured-period optional maps, legacy zero fields, grid enums and default alert/cleanup literals. GridDirection ratio default .7 and unknown neutral."
+    },
+    {
+      "path": "provider/alpaca/kline.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          171
+        ]
+      ],
+      "sha256": "88e14f1faa2649246c6389c21faea44c317e436b7759c185f3e5f5436bafb1e8",
+      "notes": "Stock-only IEX raw bars client with config/explicit keys and 30s timeout; fixed 30d/2y window, returns one page while ignoring next_page_token. Timeframe aliases substitute without aggregation."
+    },
+    {
+      "path": "provider/coinank/base_coin.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          62
+        ]
+      ],
+      "sha256": "fb1c53489ea3e9a91eaf516f82f384d19fcec5bb8a982d6dd7c87464915e7e81",
+      "notes": "Paid coin/symbol discovery wrappers, product/exchange filters; decode envelope twice redundantly, reject Success false."
+    },
+    {
+      "path": "provider/coinank/coinank_api/base_coin.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "sha256": "03473b6f4fb18004058bd7ad9cd3e842fa2007083d46e0bf5703e5513ac62606",
+      "notes": "Free metadata lookup with optional exchangeName/symbol/baseCoin parameters, typed success envelope."
+    },
+    {
+      "path": "provider/coinank/coinank_api/depth_ws.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          108
+        ]
+      ],
+      "sha256": "e60d0011ba6575d69bfb61c10cb9760eadb0fb494de5a051d6f994541aad65b5",
+      "notes": "Depth websocket dial, subscribe/unsubscribe, 1024 buffered read channel; blocked consumer can strand send pump even after conn.Close; no post-dial context selection."
+    },
+    {
+      "path": "provider/coinank/coinank_api/kline.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          79
+        ]
+      ],
+      "sha256": "bd934afd0f78badbcffb72723809c7f61ab449a182721c56448eae5cb76a91dc",
+      "notes": "Free crypto kline GET transport with context and 30s timeout, success envelope; positional 9-column array indexed unchecked, HTTP status ignored."
+    },
+    {
+      "path": "provider/coinank/coinank_api/kline_ws.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          203
+        ]
+      ],
+      "sha256": "73f4dee0955e3a0ae711e3ed3940cf46e8aaeee1caf576c4d3f0043a37c1fff5",
+      "notes": "Raw websocket pump and prefix-based demux into typed 1024 queues. Requires exact serialized prefix/key order and 9 array values; sends can block without cancellation. Numeric parse errors become zero."
+    },
+    {
+      "path": "provider/coinank/coinank_enum/exchange.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          25
+        ]
+      ],
+      "sha256": "4764fb411781d31f74429516556f0b67fcbd84308bc81f1367bcab9b63540244",
+      "notes": "Typed CoinAnk exchange wire names; historic and unsupported runtime brokers can still have constants."
+    },
+    {
+      "path": "provider/coinank/coinank_enum/instrument_agg_sort_by.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          85
+        ]
+      ],
+      "sha256": "1c25752603798e68ea653e0cb3b6af4e1da769aaa25c168607193f88e47f8851",
+      "notes": "Typed ranking sort field literals across price/OI/flow/liquidation windows; no executable validation."
+    },
+    {
+      "path": "provider/coinank/coinank_enum/interval.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "sha256": "a6b48e0079e06147895d4f5c99881288751ad36f174db74eb1528e6a110311b0",
+      "notes": "Provider-specific case-sensitive timeframe constants from seconds through years; 1M month differs from 1m minute."
+    },
+    {
+      "path": "provider/coinank/coinank_enum/product_type.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          6
+        ]
+      ],
+      "sha256": "9732fe717efbb823023ad3c0d0028919cd4dfc2fb1a6b458c4cd159889574258",
+      "notes": "SWAP and SPOT wire product literals."
+    },
+    {
+      "path": "provider/coinank/coinank_enum/side.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          8
+        ]
+      ],
+      "sha256": "624c36dafac4c07f699457e89f55ab8725b3c247a60fa8f47eb0cba44f2c381c",
+      "notes": "to/from historical traversal direction literals."
+    },
+    {
+      "path": "provider/coinank/coinank_enum/sort_type.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          8
+        ]
+      ],
+      "sha256": "aa63816d775e5a4fd9ccbf31c5c96836121b0a0ced537d172a98ebc57e3e5b85",
+      "notes": "asc/desc ranking sort literals."
+    },
+    {
+      "path": "provider/coinank/coinank_enum/url.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          5
+        ]
+      ],
+      "sha256": "30e5833585dd201b8c710ee361c4908af9085843416f1411cf0766ab25d5a779",
+      "notes": "Mutable global/CN paid CoinAnk base URLs."
+    },
+    {
+      "path": "provider/coinank/coinank_http.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          96
+        ]
+      ],
+      "sha256": "353c952f32cc456fd67c23826eb0e58a4ddba8af12e2eb9983cf678ebf579676",
+      "notes": "Paid transport GET/POST with apikey header and context; generic success/page envelopes; shared 30s client, no HTTP status gate or body size bound."
+    },
+    {
+      "path": "provider/coinank/instrument_agg_rank.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          255
+        ]
+      ],
+      "sha256": "7d45d80ef262748ff04f4b837ccb7dbc9bc7a9ecde1fc20f03f0d3dbbace649f",
+      "notes": "Visual screener and OI/long-short/liquidation/price/volume ranks; nested success checks; page>=1, size default10, default openInterest descending."
+    },
+    {
+      "path": "provider/coinank/instruments.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          89
+        ]
+      ],
+      "sha256": "dec5afc7aeb955039d982ad9621b41ef2e9b318cf8b14c63e75b839063abd514",
+      "notes": "Last-price ticker and market-cap typed paid wrappers; rich crypto fields returned after Success check."
+    },
+    {
+      "path": "provider/coinank/kline.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          63
+        ]
+      ],
+      "sha256": "76098265d36b33659e4506c5977cb4674be729f134c36a268512bd9250c996b8",
+      "notes": "Paid kline history with optional start, mandatory end, default10 count; same unchecked 9-column response as free path."
+    },
+    {
+      "path": "provider/coinank/liquidation.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          172
+        ]
+      ],
+      "sha256": "451842118d7904bc320ff315471d04d62ddd30f346b1d8581cb5ed38387c6d7a",
+      "notes": "Exchange aggregates, coin history, symbol history and individual liquidation wrappers; optional order filters; no trading orders placed."
+    },
+    {
+      "path": "provider/coinank/net_positions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          46
+        ]
+      ],
+      "sha256": "263861a54314061ebf5875a87e1cb500eb6dfbb1067e0c4903fa61e3b0a50cb4",
+      "notes": "Net-long/short candle wrapper, default10 size, typed history envelope."
+    },
+    {
+      "path": "provider/coinank/open_interest.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          257
+        ]
+      ],
+      "sha256": "7561804fe3175cdd97637558a26e12dc02794b40437043b80dcd0f15781ceeeb",
+      "notes": "Seven paid OI endpoints for per-exchange/all/series/candles/aggregate/top/market-cap ratios; typed success checks and optional sizes."
+    },
+    {
+      "path": "provider/databento/client.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          154
+        ]
+      ],
+      "sha256": "9b45a41f65deb1bb95eea407c489b19ecb01eaa6a645c63b3e028170c64f400b",
+      "notes": "Historical basic-auth GET client, env/default singleton, mutex key update, shared breaker and retry3 for network/5xx; 4xx returned as APIError after breaker success. Public Timeout not reapplied to internal client."
+    },
+    {
+      "path": "provider/databento/contract_calendar.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          95
+        ]
+      ],
+      "sha256": "2e471dfaeef5ce224e6f9cd53dfe8bcff8aa48f1ca77e54acbab604abd9f26c0",
+      "notes": "Single-digit year/month suffix parser and third Friday UTC index expiry estimate; no root/product validation; invalid DaysUntilExpiry returns999."
+    },
+    {
+      "path": "provider/databento/historical.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          133
+        ]
+      ],
+      "sha256": "b907b1f8e1777eba6e9359a322df59bda54440e432f79ab27cc7605016b90862",
+      "notes": "NDJSON nested hd timestamp/rtype decode, int64 prices/1e9; GetOHLCV always continuous stype and rawBar requires rtype33 despite advertised 1h/1d/contract support."
+    },
+    {
+      "path": "provider/databento/mock_server.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          62
+        ]
+      ],
+      "sha256": "944baf4c13f88083b11ece7b0aafe94a1eb2f46d44b22dfd55924de3572565e0",
+      "notes": "Testing helper in non-test source hosts fixture files at two v0 routes and cleanup closes server; does not validate request query/auth."
+    },
+    {
+      "path": "provider/databento/resolve.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          56
+        ]
+      ],
+      "sha256": "7dedbeeb880af06cbc8bc43b20bc18a3e6ea2ef3588cf8239331c37bc64bf927",
+      "notes": "Today UTC continuous-to-raw request; always requests even for non-continuous symbols despite passthrough comment; parser picks first entry, rejects not_found/empty."
+    },
+    {
+      "path": "provider/hyperliquid/coins.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          223
+        ]
+      ],
+      "sha256": "9128e29807aba1b0611794c54e054dcc9cedf91f3a4f6e67b700f360fe06a2a6",
+      "notes": "Once-created coin provider, meta/contexts join by index, descending volume, 24h cache with copies; refresh outside lock can duplicate concurrent fetches; errors do not serve stale cache."
+    },
+    {
+      "path": "provider/hyperliquid/kline.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          414
+        ]
+      ],
+      "sha256": "6b2992bed5d7d362feb19e038594d7a1a482d1ee2023881a7fb2ae46349e0e48",
+      "notes": "Contextual mainnet/testnet read-only info API; candles/mids/meta, 30s timeout; interval aliases substituted not aggregated; symbol suffix rules case-sensitive and single-step."
+    },
+    {
+      "path": "provider/nofxos/ai500.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          163
+        ]
+      ],
+      "sha256": "852f21e68ebe5a4bf194e1bec0116171968fe5df5abc1351f1effb7a845d3af3",
+      "notes": "AI500 retries3 separated2s, available flag, quadratic score sort, USDT normalization. fetch empty returns[] while available/top zero outputs can be nil."
+    },
+    {
+      "path": "provider/nofxos/claw402.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          113
+        ]
+      ],
+      "sha256": "b8ac20919f9d0174445fc13dd588150f27276ff6e46b792256dbb9670ceb263a",
+      "notes": "Optional paid x402 data transport, wallet key parsed from explicit/env input; endpoint mapping and auth truncation; payment boundary called only when client enabled, never invoked in review."
+    },
+    {
+      "path": "provider/nofxos/client.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          161
+        ]
+      ],
+      "sha256": "2f96b16bfb4a5fe9eb6c5f35ad11314b227a0bb80c5c858aa882cd98416d1096",
+      "notes": "Deprecated-service defaults still present; mutex config and optional Claw402 gateway, direct requests use security.SafeGet with auth in query; Error returns body only, auth parsing substring-based."
+    },
+    {
+      "path": "provider/nofxos/coin.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          216
+        ]
+      ],
+      "sha256": "d8aafd2370ce6ccb1f0d05faafb18f8baf5062f65d1a23fe65b7fee322f3a611",
+      "notes": "Per-symbol/batch quant API and bilingual prompt rendering; success=false accepted if code omitted/zero, batch skips failures; price deltas x100, OI percentages pre-scaled; OI map output order unspecified."
+    },
+    {
+      "path": "provider/nofxos/netflow.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          263
+        ]
+      ],
+      "sha256": "0ed264e42a0fb593a496717d8220c9c835f8d8680a3c68bfcc914b5cc7ff072c",
+      "notes": "Four sequential flow rankings; each failure logged and omitted, returns result,nil even all fail. Bilingual tables and top3 retail summary, FetchedAt request-start."
+    },
+    {
+      "path": "provider/nofxos/oi.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          237
+        ]
+      ],
+      "sha256": "0ed58654d5dd7403eb50190c4425fdeeaab1b44046b34ffbfd9d1291314d19ce",
+      "notes": "Top/low OI ranks and legacy symbol wrappers; both requests may fail yet aggregate returns result,nil. success/code compatibility accepts omitted code zero. Percent fields already percent."
+    },
+    {
+      "path": "provider/nofxos/price.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          182
+        ]
+      ],
+      "sha256": "09277416d63ab04d8734161908e3096ba3de6cffc167a36e6281389e26867a2b",
+      "notes": "Multi-duration ranking fetch with strict Success, map copy then bilingual renderer includes only1h/4h/24h; price ratio x100."
+    },
+    {
+      "path": "provider/nofxos/util.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          31
+        ]
+      ],
+      "sha256": "6ea8b132a2d3a9cefd6ee2f7518c44c3b1f028ff700d802d8732aa51ec531fbe",
+      "notes": "Language enums and signed K/M/B decimal formatting."
+    },
+    {
+      "path": "provider/twelvedata/kline.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          271
+        ]
+      ],
+      "sha256": "332b7323bed9ac70d2471da3c86591a4496cf88f2d9d4a0fca54a21fa0eb1c6b",
+      "notes": "API-key query client for time-series/quotes, 30s contextual requests; API status string checked, HTTP status ignored. ParseBar parses numeric OHLC strictly but assumes UTC for naive datetime and ignores exchange timezone metadata."
+    },
+    {
+      "path": "market/bar_resolver_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          274
+        ]
+      ],
+      "sha256": "f5eb323d39988eab76f1de6532f2262395bce58176fd973bf76e859dd527b44d",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "trader/bar_source_weekly_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          179
+        ]
+      ],
+      "sha256": "a6ef71228a9673d2ef8c2703b6d9fddfff80dbd251b47a83e31b05ddf1474b21",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "trader/ninjatrader/bars_market_bridge.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          103
+        ]
+      ],
+      "sha256": "68f5aa70572c851569f5d89695c42d0e05f286697aa61fa07a318305911cceb4",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "kernel/stale_data.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          181
+        ]
+      ],
+      "sha256": "91e8307531547cce4f53d3932d3bf5ad9795dff567ea1752e3821bbf1b4809f5",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "market/data_f8_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          65
+        ]
+      ],
+      "sha256": "176d14aed2149b70259c309f71df19f20e864e158be2883d5ba510fbe9258b0d",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "market/data_emaperiods_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          89
+        ]
+      ],
+      "sha256": "b595f3a645f1eef09ae649d864a690f8338c947a38378914aea83c607356b86e",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "provider/databento/historical_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          123
+        ]
+      ],
+      "sha256": "dd3a10b8c59394eb8e4b06ed93ee6c54f88e2a34d0df087d85fe1de2eceb9ff3",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "provider/databento/resolve_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          53
+        ]
+      ],
+      "sha256": "a4b4da10ac5e5964c9e53f164d4142a340db284df4e98a1b65f93636f349c3fb",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "market/data_freshness_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          145
+        ]
+      ],
+      "sha256": "ed74e79c7ff039fea416460d7ac3e50e423383b14385caab652a5a082cef8d40",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "kernel/weekly_bias.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          60,
+          153
+        ]
+      ],
+      "sha256": "8641bd63bde530571e26540166143f88f3658910d86c387cf146a585271c42b3",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "kernel/weekly_prompt.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          40,
+          100
+        ]
+      ],
+      "sha256": "a9a5accb2726574df99ddc3435fb58ac85b1ceeb76f472c5d9e1e22e0688346b",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "trader/auto_trader_weekly.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          100,
+          195
+        ],
+        [
+          215,
+          245
+        ]
+      ],
+      "sha256": "8079961c268bd232b5a62c35cafd398bc25c921565c8e366c690397f60edc8cb",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          155
+        ],
+        [
+          2281,
+          2315
+        ]
+      ],
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          34,
+          87
+        ]
+      ],
+      "sha256": "d0b7a8726694d28a06c32fdfc817999d0438743553ec130bab65072b5aa91d1e",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    },
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "sha256": "1b498eed50f406c5c05f33f943ba2b73a47b04e71391a8eee017261de9b83e29",
+      "notes": "Additional dependency/test/rules reading; not included in assigned coverage. Tests read only, not executed."
+    }
+  ],
+  "unread": [],
+  "assigned_files": 49,
+  "assigned_lines": 7579,
+  "named_functions": 216
+}

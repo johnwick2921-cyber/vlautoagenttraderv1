@@ -1,0 +1,9 @@
+{
+  "temporary_helper_path": "/tmp/scenario-economics-cutover/read_gate.py",
+  "restored_to_unmodified_helper": true,
+  "sha256": "7d6c167c3c4d5c9c23cdacbff792ca6f444eef0e8efbe9bb6385ca6dfc9ec543",
+  "order_specific_acceptance_code_present": false,
+  "repository_gate_diff_from_running_baseline": "",
+  "helper_was_tracked_on_branch": false,
+  "override_authority": "owner chat only; gate verdict remains independent"
+}

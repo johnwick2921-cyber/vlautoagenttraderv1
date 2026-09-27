@@ -1,0 +1,171 @@
+{
+  "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+  "version": 5,
+  "doc": {
+    "reasoning": "bias-tree: premium fade short (branch 5 — price beyond dealing-range high 29342.75, longs disallowed in premium) inside the prior day's range. 15m is coiling at 29491-29543 and 5m is grinding into ONH 29543; the nearest draw is that ONH pool. Shorts need a confirmed sweep-reclaim, never a naked fade: S1 waits for a touch above 29543 and then a 5m close back below. If the sweep holds above 29548, S2 is the breakout-retest long toward 29585. S3 is the upper fade if the rally stretches to 29585. No fvg_entry: FRESH FVGs is empty. Day type is balance at the upper edge of an uptrend, so the mix is short-first with one long continuation.",
+    "bias": {
+      "direction": "short",
+      "conviction": "medium",
+      "flip_condition": "2x5m closes above 29548.00 flip to breakout long"
+    },
+    "levels": [
+      {
+        "price": 29541.12,
+        "label": "Demand·1h",
+        "grade": "C",
+        "instruction": "confluence"
+      },
+      {
+        "price": 29548,
+        "label": "SWG-H·15m",
+        "grade": "A",
+        "instruction": "breakout_retest_or_reject",
+        "machine_grade": "A"
+      },
+      {
+        "price": 29585,
+        "label": "SWG-H·15m",
+        "grade": "A",
+        "instruction": "reject",
+        "machine_grade": "A"
+      },
+      {
+        "price": 29532,
+        "label": "OB(bull)·1h",
+        "grade": "C",
+        "instruction": "confluence",
+        "machine_grade": "C"
+      },
+      {
+        "price": 29528.63,
+        "label": "VWAP+1σ",
+        "grade": "A",
+        "instruction": "mean_revert",
+        "machine_grade": "A"
+      },
+      {
+        "price": 29517.5,
+        "label": "SWG-L·5m",
+        "grade": "A",
+        "instruction": "support",
+        "machine_grade": "A"
+      },
+      {
+        "price": 29499.27,
+        "label": "VWAP−1σ",
+        "grade": "A",
+        "instruction": "magnet",
+        "machine_grade": "A"
+      },
+      {
+        "price": 29481.5,
+        "label": "ONL",
+        "grade": "A",
+        "instruction": "liquidity_target",
+        "machine_grade": "A"
+      }
+    ],
+    "scenarios": [
+      {
+        "id": "S1",
+        "trigger": "Price sweeps above ONH 29543.00 and then prints a 5m close back below 29543.00 (wick alone does not qualify).",
+        "condition": "sweep_reclaim",
+        "direction": "short",
+        "target_chain": [
+          29528.63,
+          29517.5,
+          29499.27
+        ],
+        "invalid": "5m close above 29548.00 before the reclaim close; 5m close above 29585.00 kills the whole short plan.",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29543,
+          "side": "above"
+        },
+        "quality": "A",
+        "confirm2": {
+          "rule": "1x5m_close",
+          "ref_price": 29543,
+          "side": "below"
+        }
+      },
+      {
+        "id": "S2",
+        "trigger": "5m close above 29548.00, then a pullback touches 29548.00 from above and holds; enter long at the retest.",
+        "condition": "breakout_retest",
+        "direction": "long",
+        "target_chain": [
+          29585
+        ],
+        "invalid": "5m close back below 29541.12 after the breakout close.",
+        "confirm": {
+          "rule": "1x5m_close",
+          "ref_price": 29548,
+          "side": "above"
+        },
+        "quality": "B",
+        "confirm2": {
+          "rule": "touch",
+          "ref_price": 29548,
+          "side": "above"
+        }
+      },
+      {
+        "id": "S3",
+        "trigger": "Rally stalls at 29585.00 (fresh SWG-H/prior session high) and rejects from first touch.",
+        "condition": "reject",
+        "direction": "short",
+        "target_chain": [
+          29548,
+          29528.63
+        ],
+        "invalid": "5m close above 29585.00 (acceptance above the swing high).",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29585,
+          "side": "below"
+        },
+        "quality": "B",
+        "arm": {
+          "enabled": true,
+          "entry": 29585,
+          "stop": 29603,
+          "target": 29548,
+          "wait_confirm": true
+        }
+      }
+    ],
+    "no_trade": null,
+    "death_condition": "5m close above 29585.00 invalidates the short-first/range plan.",
+    "day_type": "balance",
+    "death": {
+      "price": 29585,
+      "side": "above",
+      "rule": "5m_close"
+    },
+    "flip": {
+      "price": 29548,
+      "side": "above",
+      "rule": "2x5m",
+      "flip_to": "long"
+    },
+    "bias_label": "bias: AI short · tree neutral · regime up",
+    "no_trade_windows": [
+      {
+        "start_min": 1020,
+        "end_min": 1025,
+        "kind": "first_n",
+        "label": "first 5m after the ASIA open (17:00–17:05 CT)",
+        "source": "code-constant"
+      },
+      {
+        "start_min": 720,
+        "end_min": 810,
+        "kind": "lunch",
+        "label": "lunch 12:00–13:30 CT",
+        "source": "code-constant"
+      }
+    ]
+  },
+  "created_at": "2026-09-04 01:32:32.918462967+00:00"
+}

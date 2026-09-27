@@ -132,8 +132,7 @@ func (at *AutoTrader) entryBlockedByRoll(now time.Time) (string, bool) {
 	contract := at.resolvedFrontContract()
 	display, expiry, _, blocked, resolved := rollVerdict(contract, now, rollBlockDays())
 	if !resolved {
-		if at.lastRollWarnContract != contract {
-			at.lastRollWarnContract = contract
+		if at.firstFor(&at.lastRollWarnContract, contract) {
 			at.logWarnf("⚠️ contract-roll gate: front contract unresolved (%q) — gate PASSES (fail-open). The AddOn ACK carries it after (re)subscription.", contract)
 		}
 		return "", false

@@ -11,5 +11,9 @@ import (
 const backendName = "github.com/glebarez/go-sqlite + github.com/glebarez/sqlite (cgofree)"
 
 func gormDialector(dsn string) gorm.Dialector {
-	return glebsqlite.Open(dsn)
+	return glebsqlite.Open(busyTimeoutDSN(dsn, "_pragma=busy_timeout(5000)"))
+}
+
+func dialectorConn(conn gorm.ConnPool) gorm.Dialector {
+	return glebsqlite.Dialector{Conn: conn}
 }

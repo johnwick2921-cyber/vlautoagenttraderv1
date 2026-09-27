@@ -1,0 +1,18 @@
+{
+  "bundle": "/tmp/nofx-repository-audit-source-20260913.bundle",
+  "bytes": 78752411,
+  "sha256": "6e29a3f7d09769fbffcbfc96e9f29e4defb07cbcb4e7059a957ebc79fd030265",
+  "complete_history": true,
+  "prerequisites": [],
+  "repair_revision": "13882f01f72c313f4454bd29a309d5e31b6ec0cd",
+  "docs_snapshot": "9988cd55f9fc81d063ed143ca7c5f8edb4df8eae",
+  "restore_directory": "/tmp/nofx-audit-delivery-restore-20260913",
+  "restore_checks": [
+    "git bundle verify: exit 0",
+    "fresh clone: exit 0",
+    "git fsck --full: exit 0",
+    "detached exact revision checkout: exit 0",
+    "clean restored tree: PASS"
+  ],
+  "scope": "Full tracked source/history through these references. Final publication Markdown is additionally included in delivery ZIP. Not a production database backup or restoration."
+}

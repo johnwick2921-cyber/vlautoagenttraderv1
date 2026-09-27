@@ -1,0 +1,12 @@
+reject_class,n,pct_of_55,first_ct,last_ct
+B3 breakdown_void_reclaimed,21,38.2%,2026-09-01 12:52:48,2026-09-02 21:46:34
+ArmSpecValid family,7,12.7%,2026-09-01 11:59:57,2026-09-04 08:28:32
+TRANSPORT (not a validator),6,10.9%,2026-09-01 12:33:07,2026-09-02 01:15:57
+entry_law confirm-rule not-allowed,5,9.1%,2026-09-01 12:06:32,2026-09-04 08:07:20
+B4-family fade_requires_touch,5,9.1%,2026-09-01 17:15:51,2026-09-02 19:35:38
+B1 BD_MIN_DISP_ATR,3,5.5%,2026-09-03 00:07:05,2026-09-04 07:52:37
+confirm-rule enum invalid,2,3.6%,2026-09-01 17:53:33,2026-09-01 21:05:17
+P0.2-c continuation reachability,2,3.6%,2026-09-04 00:37:17,2026-09-04 08:41:25
+B2 BD_MIN_CLOSES,2,3.6%,2026-09-04 08:09:03,2026-09-04 08:25:34
+B2 BD_MAX_LEVEL_DIST_ATR,1,1.8%,2026-09-02 12:57:32,2026-09-02 12:57:32
+level cap (12),1,1.8%,2026-09-02 13:56:32,2026-09-02 13:56:32

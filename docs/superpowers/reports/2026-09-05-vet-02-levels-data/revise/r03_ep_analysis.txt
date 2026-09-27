@@ -1,0 +1,27 @@
+total 2794
+RTH-L below 31 PDL below 31 shared (day,price,opened) 29
+RTH-L below days ['2026-08-24', '2026-08-26', '2026-08-31', '2026-09-02'] PDL below days ['2026-08-24', '2026-08-31', '2026-09-01', '2026-09-02']
+  RTH-L below 2026-08-24 hold 6 brk 1 amb 3 sessions Counter({'LONDON': 8, 'NY': 2})
+  RTH-L below 2026-08-26 hold 1 brk 1 amb 0 sessions Counter({'ASIA': 2})
+  RTH-L below 2026-08-31 hold 10 brk 4 amb 3 sessions Counter({'NY': 12, 'LONDON': 3, 'ASIA': 2})
+  RTH-L below 2026-09-02 hold 0 brk 2 amb 0 sessions Counter({'LONDON': 2})
+RTH-L level-days: [('2026-08-24', '29220.25'), ('2026-08-26', '29145.5'), ('2026-08-31', '29437.0'), ('2026-09-01', '29354.0'), ('2026-09-02', '29001.75')]
+PDL level-days: [('2026-08-24', '29220.25'), ('2026-08-31', '29437.0'), ('2026-09-01', '29273.5'), ('2026-09-02', '29001.75')]
+PDH level-days: [('2026-08-26', '29420.0'), ('2026-08-27', '29437.25'), ('2026-08-28', '29707.5'), ('2026-09-01', '29543.5'), ('2026-09-03', '29212.5')]
+PDH_cal level-days: [('2026-08-25', '29297.75'), ('2026-08-26', '29420.0'), ('2026-08-27', '29655.75'), ('2026-08-28', '29707.5'), ('2026-09-03', '29255.0')]
+RTH-H level-days: [('2026-08-21', '29470.25'), ('2026-08-25', '29243.75'), ('2026-08-26', '29416.0'), ('2026-08-28', '29704.0'), ('2026-09-01', '29538.0'), ('2026-09-03', '29211.75')]
+PDL_cal episodes: 0
+prior-day  raw n_res=335 p=0.570 (0.517, 0.622) | dedup(day,price,opened) n_res=292 p=0.562 (0.504, 0.617) | raw eps 459 dedup eps 402 | level-days 39
+open       raw n_res=146 p=0.534 (0.453, 0.613) | dedup(day,price,opened) n_res=145 p=0.531 (0.45, 0.61) | raw eps 179 dedup eps 174 | level-days 28
+profile    raw n_res=214 p=0.509 (0.443, 0.576) | dedup(day,price,opened) n_res=214 p=0.509 (0.443, 0.576) | raw eps 300 dedup eps 300 | level-days 23
+VWAPfam    raw n_res=189 p=0.503 (0.432, 0.573) | dedup(day,price,opened) n_res=189 p=0.503 (0.432, 0.573) | raw eps 221 dedup eps 221 | level-days 32
+overnight  raw n_res=107 p=0.439 (0.349, 0.534) | dedup(day,price,opened) n_res=107 p=0.439 (0.349, 0.534) | raw eps 128 dedup eps 128 | level-days 16
+RN         raw n_res=1155 p=0.514 (0.485, 0.543) | dedup(day,price,opened) n_res=1155 p=0.514 (0.485, 0.543) | raw eps 1504 dedup eps 1504 | level-days 157
+NY n_eps 1468 res 1247 p 0.513 amb% 15.1
+ASIA n_eps 720 res 452 p 0.52 amb% 37.2
+LONDON n_eps 606 res 449 p 0.537 amb% 25.9
+RTH-L sessions Counter({'LONDON': 28, 'NY': 20, 'ASIA': 10})
+PDL sessions Counter({'LONDON': 27, 'NY': 22, 'ASIA': 7})
+flip dedup n_res 56 p 0.607 (0.476, 0.724) level-days 14
+classic dedup n_res 58 p 0.569 (0.441, 0.688) level-days 17
+cells n_res>=15: 41 with p>=0.62: [(('RTH-H', 'below'), [17, 9], 0.654), (('ONL', 'above'), [10, 6], 0.625), (('IB-H', 'below'), [10, 6], 0.625), (('VWAP-2σ@0830', 'above'), [10, 5], 0.667), (('PDL', 'below'), [17, 8], 0.68), (('RTH-L', 'below'), [17, 8], 0.68), (('OR-L', 'above'), [19, 11], 0.633), (('VWAP+2σ@0830', 'above'), [11, 6], 0.647)]

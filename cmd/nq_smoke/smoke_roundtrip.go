@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"nofx/safe"
 	"os"
 	"time"
 
@@ -40,14 +41,14 @@ func runRoundtripSmoke() {
 	fillCh := make(chan ntpkg.FillRow, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	go func() {
+	safe.GoNamed("nq-smoke-tailer", func() {
 		_ = tailer.TailFills(ctx, func(f ntpkg.FillRow) {
 			select {
 			case fillCh <- f:
 			default:
 			}
 		})
-	}()
+	})
 
 	startWait := time.Now()
 	select {

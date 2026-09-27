@@ -219,24 +219,6 @@ func normalizeTraderDraftName(value string) string {
 	return strings.Trim(value, "“”\"'：: ")
 }
 
-func choosePreferredOption(options []traderSkillOption) *traderSkillOption {
-	if len(options) == 1 {
-		copy := options[0]
-		return &copy
-	}
-	enabled := make([]traderSkillOption, 0, len(options))
-	for _, option := range options {
-		if option.Enabled {
-			enabled = append(enabled, option)
-		}
-	}
-	if len(enabled) == 1 {
-		copy := enabled[0]
-		return &copy
-	}
-	return nil
-}
-
 func formatOptionList(prefix string, options []traderSkillOption) string {
 	parts := make([]string, 0, len(options))
 	for _, option := range options {
@@ -406,23 +388,6 @@ func (a *Agent) recordSkillInteraction(userID int64, userText, answer string) {
 	}
 	a.history.Add(userID, "user", userText)
 	a.history.Add(userID, "assistant", answer)
-}
-
-func (a *Agent) rerouteRejectedSkillFlow(ctx context.Context, storeUserID string, userID int64, lang, text string) (string, bool) {
-	a.clearSkillSession(userID)
-	if a == nil || a.aiClient == nil {
-		return "", false
-	}
-	if answer, handled, err := a.tryLLMIntentRoute(ctx, storeUserID, userID, lang, text, nil); err == nil && handled {
-		return answer, true
-	}
-	if answer, ok := a.tryDirectAnswer(ctx, userID, lang, text, nil); ok {
-		return answer, true
-	}
-	if answer, err := a.runPlannedAgent(ctx, storeUserID, userID, lang, text, nil); err == nil && strings.TrimSpace(answer) != "" {
-		return answer, true
-	}
-	return "", false
 }
 
 func ensureSkillFields(session *skillSession) {
@@ -861,34 +826,6 @@ type targetResolution struct {
 	Ref          *EntityReference
 	Ambiguous    []traderSkillOption
 	WasMentioned bool
-}
-
-func enabledTraderSkillOptions(options []traderSkillOption) []traderSkillOption {
-	out := make([]traderSkillOption, 0, len(options))
-	for _, o := range options {
-		if o.Enabled {
-			out = append(out, o)
-		}
-	}
-	return out
-}
-
-func resolveSemanticExistingTraderDependency(currentRef *EntityReference, options []traderSkillOption) targetResolution {
-	if currentRef != nil && strings.TrimSpace(currentRef.ID) != "" {
-		for _, opt := range options {
-			if opt.ID == currentRef.ID {
-				return targetResolution{Ref: &EntityReference{ID: opt.ID, Name: opt.Name}}
-			}
-		}
-	}
-	enabled := enabledTraderSkillOptions(options)
-	if len(enabled) == 1 {
-		return targetResolution{Ref: &EntityReference{ID: enabled[0].ID, Name: enabled[0].Name}}
-	}
-	if len(enabled) > 1 {
-		return targetResolution{Ambiguous: enabled}
-	}
-	return targetResolution{}
 }
 
 func (a *Agent) hydrateCreateTraderSlotReferences(storeUserID string, session *skillSession) {

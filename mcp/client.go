@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptrace"
+	"nofx/safe"
 	"os"
 	"strconv"
 	"strings"
@@ -1213,7 +1214,7 @@ func (client *Client) CallWithRequestStreamDeadlines(req *Request, onChunk func(
 	if idle > 0 && idle < postLimit {
 		postLimit = idle // an explicit caller idle stays the tighter bound
 	}
-	go func() {
+	safe.GoNamed("mcp-call-watchdog", func() {
 		mode := "pre"
 		t := time.NewTimer(preLimit)
 		defer t.Stop()
@@ -1279,7 +1280,7 @@ func (client *Client) CallWithRequestStreamDeadlines(req *Request, onChunk func(
 				}
 			}
 		}
-	}()
+	})
 
 	// CLASS 46 D6 — trace the connection from inside the process.
 	//

@@ -1,0 +1,127 @@
+{
+  "ids": [
+    37304,
+    37305,
+    37306,
+    37307,
+    37308,
+    37310,
+    37311,
+    37313,
+    37315,
+    37318,
+    37319,
+    37320,
+    37322
+  ],
+  "n": 13,
+  "cited": [
+    "S1"
+  ],
+  "proposal_rows": [
+    {
+      "id": 37304,
+      "timestamp": "2026-09-04 01:35:06.219368968+00:00",
+      "ai_request_duration_ms": 60074,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37305,
+      "timestamp": "2026-09-04 01:37:51.598175366+00:00",
+      "ai_request_duration_ms": 31852,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37306,
+      "timestamp": "2026-09-04 01:39:40.877842879+00:00",
+      "ai_request_duration_ms": 95399,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37307,
+      "timestamp": "2026-09-04 01:42:27.961590429+00:00",
+      "ai_request_duration_ms": 44451,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37308,
+      "timestamp": "2026-09-04 01:43:53.777649208+00:00",
+      "ai_request_duration_ms": 41086,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37310,
+      "timestamp": "2026-09-04 01:49:04.688046514+00:00",
+      "ai_request_duration_ms": 144482,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37311,
+      "timestamp": "2026-09-04 01:52:05.891964798+00:00",
+      "ai_request_duration_ms": 35594,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37313,
+      "timestamp": "2026-09-04 01:54:28.156955478+00:00",
+      "ai_request_duration_ms": 85895,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37315,
+      "timestamp": "2026-09-04 01:58:56.332391458+00:00",
+      "ai_request_duration_ms": 84566,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37318,
+      "timestamp": "2026-09-04 02:03:22.090366504+00:00",
+      "ai_request_duration_ms": 82148,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37319,
+      "timestamp": "2026-09-04 02:06:44.158256191+00:00",
+      "ai_request_duration_ms": 98968,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37320,
+      "timestamp": "2026-09-04 02:09:03.188727281+00:00",
+      "ai_request_duration_ms": 60890,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    },
+    {
+      "id": 37322,
+      "timestamp": "2026-09-04 02:12:40.9842155+00:00",
+      "ai_request_duration_ms": 123727,
+      "action": "open_short",
+      "cited_scenario": "S1",
+      "strict_refused": true
+    }
+  ]
+}

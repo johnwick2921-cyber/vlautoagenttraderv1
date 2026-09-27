@@ -52,6 +52,7 @@ func TestClass36PinAsiaHalt(t *testing.T) {
 	}
 
 	fired := at.maybeRunSessionReadsAt(now) // the scheduled path (class 32 evaluates it on wall-clock)
+	defer drainReReads(t)                   // CTO M4: join the async re-read before the seam resets
 	if len(fired) != 1 || fired[0].Session != "ASIA" {
 		t.Fatalf("fixture: the 16:30 ASIA read must be scheduled, fired=%+v", fired)
 	}

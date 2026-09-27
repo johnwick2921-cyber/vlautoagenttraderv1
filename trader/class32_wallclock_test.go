@@ -103,6 +103,12 @@ func TestClass32ReadFiresOnceWithFrozenTape(t *testing.T) {
 	if row := waitPlan(t, st, "2026-08-18", "ASIA", "t1"); row == nil {
 		t.Fatal("the first 16:30 tick must fire the ASIA read")
 	}
+	// T2 FOLD (class-169 shape, CTO 2026-09-24): the async ASIA read still holds
+	// the planner claim after waitPlan; drain it BEFORE the loop rewrites testNow
+	// (a rewrite mid-read is a data race on the seam), and defer the same drain
+	// so a failure anywhere cannot leave the goroutine racing the cleanup.
+	drainReReads(t)
+	defer drainReReads(t)
 
 	// 16:31 → 16:50, still frozen, still inside the read window.
 	for _, mm := range []int{31, 33, 36, 40, 50} {

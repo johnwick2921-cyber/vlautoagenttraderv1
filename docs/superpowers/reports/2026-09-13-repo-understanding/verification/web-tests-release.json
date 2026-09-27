@@ -1,0 +1,21 @@
+{
+  "task": "web-tests-release",
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run"
+  ],
+  "cwd": "/tmp/nofx-audit-repairs-20260913/web",
+  "source_revision": "13882f01f72c313f4454bd29a309d5e31b6ec0cd",
+  "end_revision": "13882f01f72c313f4454bd29a309d5e31b6ec0cd",
+  "source_clean_before": true,
+  "source_clean_after": true,
+  "started_utc": "2026-09-13T15:00:13.401175+00:00",
+  "duration_seconds": 6.221,
+  "exit_code": 0,
+  "log": "/tmp/nofx-final-verification/web-tests-release.log",
+  "log_bytes": 57296,
+  "log_sha256": "d4b8cc9b1742bace9d72a3d1b0336291baf4b82e9e666d54d33e8cb6faee7aad",
+  "revision_unchanged": true
+}

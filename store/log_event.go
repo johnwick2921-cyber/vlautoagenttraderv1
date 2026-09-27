@@ -23,7 +23,8 @@ import (
 //   - Enqueue is a single select-default: channel full → the event is DROPPED
 //     and a counter bumped (the tcp_server enqueueBarUpdate posture),
 //   - one lazy single-writer goroutine owns every INSERT (the plan-store
-//     single-writer pattern; SQLite pool is capped at 1 conn),
+//     single-writer pattern; the SQLite pool is 4 conns and WAL serializes
+//     writers on busy_timeout),
 //   - the shipper itself never logs through logrus (recursion-proof by
 //     construction; its own failures only bump droppedWrites).
 //

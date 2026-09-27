@@ -1,0 +1,59 @@
+[
+  {
+    "at": "2026-09-09T18:50:34.393Z",
+    "path": "/agent",
+    "title": "VL Trader - AI Trading System",
+    "brandMatches": [
+      "NOFXi"
+    ],
+    "placeholders": [
+      "Ask NOFXi anything...  ⌘K"
+    ]
+  },
+  {
+    "at": "2026-09-09T18:50:35.125Z",
+    "path": "/traders",
+    "title": "VL Trader - AI Trading System",
+    "brandMatches": [],
+    "placeholders": []
+  },
+  {
+    "at": "2026-09-09T18:50:36.659Z",
+    "path": "/dashboard",
+    "title": "VL Trader - AI Trading System",
+    "brandMatches": [
+      "VL Trader"
+    ],
+    "placeholders": []
+  },
+  {
+    "at": "2026-09-09T18:50:37.441Z",
+    "path": "/strategy",
+    "title": "VL Trader - AI Trading System",
+    "brandMatches": [],
+    "placeholders": []
+  },
+  {
+    "at": "2026-09-09T18:50:38.186Z",
+    "path": "/guide",
+    "title": "VL Trader - AI Trading System",
+    "brandMatches": [
+      "NOFX"
+    ],
+    "placeholders": []
+  },
+  {
+    "at": "2026-09-09T18:50:38.932Z",
+    "path": "/settings",
+    "title": "VL Trader - AI Trading System",
+    "brandMatches": [],
+    "placeholders": []
+  },
+  {
+    "at": "2026-09-09T18:50:39.671Z",
+    "path": "/welcome",
+    "title": "VL Trader - AI Trading System",
+    "brandMatches": [],
+    "placeholders": []
+  }
+]

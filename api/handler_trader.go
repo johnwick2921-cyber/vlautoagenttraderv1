@@ -9,6 +9,7 @@ import (
 
 	"nofx/kernel"
 	"nofx/logger"
+	"nofx/safe"
 	"nofx/store"
 
 	"github.com/gin-gonic/gin"
@@ -28,8 +29,8 @@ type CreateTraderRequest struct {
 	StrategyID          string  `json:"strategy_id"` // Strategy ID (new version)
 	InitialBalance      float64 `json:"initial_balance"`
 	ScanIntervalMinutes int     `json:"scan_interval_minutes"`
-	CadenceMode         string  `json:"cadence_mode"` // P10: "interval" (default) | "bar_close" (legacy); empty keeps existing
-	PositionMode        string  `json:"position_mode"` // Phase 3: "ai_watch" (default) | "bracket_only"; empty keeps default/existing
+	CadenceMode         string  `json:"cadence_mode"`        // P10: "interval" (default) | "bar_close" (legacy); empty keeps existing
+	PositionMode        string  `json:"position_mode"`       // Phase 3: "ai_watch" (default) | "bracket_only"; empty keeps default/existing
 	IsCrossMargin       *bool   `json:"is_cross_margin"`     // Pointer type, nil means use default value true
 	ShowInCompetition   *bool   `json:"show_in_competition"` // Pointer type, nil means use default value true
 	// The following fields are kept for backward compatibility, new version uses strategy config
@@ -51,7 +52,7 @@ type UpdateTraderRequest struct {
 	StrategyID          string  `json:"strategy_id"` // Strategy ID (new version)
 	InitialBalance      float64 `json:"initial_balance"`
 	ScanIntervalMinutes int     `json:"scan_interval_minutes"`
-	CadenceMode         string  `json:"cadence_mode"` // P10: "interval" | "bar_close"; empty keeps existing
+	CadenceMode         string  `json:"cadence_mode"`  // P10: "interval" | "bar_close"; empty keeps existing
 	PositionMode        string  `json:"position_mode"` // Phase 3: "ai_watch" | "bracket_only"; empty keeps existing
 	IsCrossMargin       *bool   `json:"is_cross_margin"`
 	ShowInCompetition   *bool   `json:"show_in_competition"`
@@ -700,8 +701,8 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		IsCrossMargin:        isCrossMargin,
 		ShowInCompetition:    showInCompetition,
 		ScanIntervalMinutes:  scanIntervalMinutes,
-		CadenceMode:          cadenceMode,  // P10
-		PositionMode:         positionMode, // Phase 3
+		CadenceMode:          cadenceMode,              // P10
+		PositionMode:         positionMode,             // Phase 3
 		IsRunning:            existingTrader.IsRunning, // Keep original value
 	}
 
@@ -744,12 +745,12 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 	// If trader was running before, restart it with new config
 	if wasRunning {
 		if reloadedTrader, getErr := s.traderManager.GetTrader(traderID); getErr == nil {
-			go func() {
+			safe.GoNet("trader-restart", traderID, func() {
 				logger.Infof("▶️ Restarting trader %s with new config...", traderID)
 				if runErr := reloadedTrader.Run(); runErr != nil {
 					logger.Infof("❌ Trader %s runtime error: %v", traderID, runErr)
 				}
-			}()
+			})
 		}
 	}
 
@@ -879,12 +880,12 @@ func (s *Server) handleStartTrader(c *gin.Context) {
 	}
 
 	// Start trader
-	go func() {
+	safe.GoNet("trader-start", traderID, func() {
 		logger.Infof("▶️  Starting trader %s (%s)", traderID, trader.GetName())
 		if err := trader.Run(); err != nil {
 			logger.Infof("❌ Trader %s runtime error: %v", trader.GetName(), err)
 		}
-	}()
+	})
 
 	// Update running status in database
 	err = s.store.Trader().UpdateStatus(userID, traderID, true)
@@ -1004,8 +1005,8 @@ func (s *Server) handlePauseTrader(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"message":       "paused",
-		"pause_until":   until.Format(time.RFC3339),
+		"message":        "paused",
+		"pause_until":    until.Format(time.RFC3339),
 		"pause_until_ct": kernel.FormatCT(until),
 	})
 }

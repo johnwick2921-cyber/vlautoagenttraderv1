@@ -30,6 +30,17 @@ import (
 // first death check runs only after 2 full 5m closes post-birth.
 func deathRereadBirthWickMinutes() int { return 10 }
 
+// deathRereadHoldMinutes (FIX-PLANNER 2026-09-26, item 4) is the ONE resolution
+// seam the death-re-read self-backoff reads: nil config/knob = today's value
+// (wake_min_interval_min); an explicit death_reread_retry_min replaces ONLY the
+// death re-read hold. Pinned by TestFpDeathRereadRetryKnobResolves.
+func deathRereadHoldMinutes(cfg *store.DayPlanConfig) int {
+	if cfg == nil {
+		return store.DefaultWakeMinIntervalMin
+	}
+	return cfg.DeathRereadRetryMinutes()
+}
+
 // deathRereadDoneKey keys the once-per-fired-death re-read in system_config.
 // Written with a timestamp ONLY after the read's goroutine has decided success
 // by the STORE (a newer active version exists) — never at launch, exactly like
@@ -121,8 +132,8 @@ func (at *AutoTrader) priorDeathLinePriceImpl(row *store.PlanDB) float64 {
 // assert the request without running a live planner stream). It rides the
 // class-35 death_replan trigger, so a landed fresh version SPENDS one replan
 // budget unit and lands the FlipHoldAnchorReplan anchor.
-var deathRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, prior, priorPlanLevelLines(row), failClosed)
+var deathRereadRun = func(at *AutoTrader, now time.Time, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
+	return at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, store.TriggerDeathReplan, prior, priorPlanLevelLines(at, row), failClosed)
 }
 
 // deathBornWickActive reports whether a death-born plan is inside its birth
@@ -149,6 +160,10 @@ func deathBornWickActive(row *store.PlanDB, dp *store.DayPlanConfig, now time.Ti
 	if priorKillLine <= 0 {
 		return false // the prior line is unknown — never suppress on an unknown line
 	}
+	// WAVE 1a-plan P2 — DELIBERATE base read (named in the PR body):
+	// this guard compares the RAW death price space (the killer's buffered
+	// number is a different space, off by the ATR buffer) — the fold would
+	// compare a different space, so the raw stored doc is the contract.
 	var doc kernel.PlanDoc
 	if json.Unmarshal([]byte(row.Doc), &doc) != nil || doc.DeathStructured == nil {
 		return false
@@ -246,6 +261,11 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 		at.logWarnf("%s", wakeStreamDeferLine(session, dec.Desc, held))
 		return
 	}
+	// W-ONE-BUTTON M2.1 (review F15/N7): the maintenance hold refuses here,
+	// before the launch clock, the wake timestamp and the in-flight claim.
+	if at.refusePlannerClaimWhileHeld(store.MakePlanIDForTrader(at.id, tradeDate, session), "death re-read") {
+		return
+	}
 	// The two LOAD rules a level wake obeys are computed only to SAY that the
 	// exemption applied (never to refuse) — a death re-read is a reaction to a
 	// machine-confirmed kill, like the flip read.
@@ -254,12 +274,16 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 			tradeDate, session, row.Version, exempt)
 	}
 	// Self-backoff only: a previous death LAUNCH for this row that wrote
-	// nothing holds the retry for wake_min_interval_min, measured from that
-	// launch. Shares the launch map with the flip read, keyed per kind.
+	// nothing holds the retry for death_reread_retry_min (default =
+	// wake_min_interval_min, today's value), measured from that launch. Shares
+	// the launch map with the flip read, keyed per kind. FIX-PLANNER item 4:
+	// the knob replaces ONLY this hold — wake_min_interval_min itself is
+	// untouched and still throttles ordinary wakes.
+	retryMin := deathRereadHoldMinutes(cfg)
 	if v, ok := at.flipRereadLaunchAt.Load(inflightKey); ok {
-		if last, isT := v.(time.Time); isT && now.Sub(last) < time.Duration(cfg.WakeMinIntervalMinutes())*time.Minute {
-			at.logWarnf("🗓️ death re-read %s %s v%d — retry held: %.0fm since this row's last death launch that wrote nothing < wake_min_interval_min (%dm); refusals never start this clock.",
-				tradeDate, session, row.Version, now.Sub(last).Minutes(), cfg.WakeMinIntervalMinutes())
+		if last, isT := v.(time.Time); isT && now.Sub(last) < time.Duration(retryMin)*time.Minute {
+			at.logWarnf("🗓️ death re-read %s %s v%d — retry held: %.0fm since this row's last death launch that wrote nothing < death_reread_retry_min (%dm; default = wake_min_interval_min); refusals never start this clock.",
+				tradeDate, session, row.Version, now.Sub(last).Minutes(), retryMin)
 			return
 		}
 	}
@@ -271,20 +295,15 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 	at.lastPlannerWakeAt = now
 
 	oldBias := ""
-	if doc, derr := kernel.ParsePlanDoc(row.Doc); derr == nil {
+	if doc, ok := resolveActivePlanDoc(at.store, row); ok {
 		oldBias = doc.Bias.Direction
-	} else {
-		var raw kernel.PlanDoc
-		if json.Unmarshal([]byte(row.Doc), &raw) == nil {
-			oldBias = raw.Bias.Direction
-		}
 	}
 	prior := deathRereadPriorLine(row.Version, oldBias, killer, priceAtDeath)
 	at.logWarnf("🗓️ death re-read %s %s v%d — waking the planner (W-DEATH-REREAD, budget %d/%d): %s", tradeDate, session, row.Version, budget.Used, budget.Cap, killer)
 	// Non-fatal and async, exactly like the flip read: a read that does not
 	// land a newer active version keeps the dormant plan and clears the
 	// once-key so the dormant branch retries next cycle.
-	go func() {
+	at.goNetted("death-reread", func() {
 		defer deathRereadInFlight.Delete(inflightKey)
 		// The row may have been re-armed between the dormant write and this
 		// goroutine's first instruction. Read it back and skip.
@@ -296,7 +315,7 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 			at.logWarnf("🗓️ death re-read %s %s v%d — SKIPPED before the read: the row is %q, no longer dormant; nothing authored, the once-key stays clear.", tradeDate, session, row.Version, lc)
 			return
 		}
-		if !deathRereadRun(at, session, tradeDate, prior, row, false) {
+		if !deathRereadRun(at, now, session, tradeDate, prior, row, false) {
 			at.logWarnf("🗓️ death re-read %s %s v%d did not complete — the dormant plan stands; the once-key is cleared for a retry next cycle.", tradeDate, session, row.Version)
 			_ = at.store.SetSystemConfig(deathRereadDoneKey(row), "0")
 			return
@@ -326,7 +345,7 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 			at.logInfof("🗓️ plan %s %s v%d SUPERSEDED by the death re-read (new v%d).", tradeDate, session, row.Version, fresh.Version)
 		}
 		at.carryOwnerEditsInto(fresh.PlanID, row.Version, fresh.Version)
-	}()
+	})
 }
 
 // deathRereadKillerDirection renders the break direction for the prompt line

@@ -1,0 +1,13 @@
+{
+  "backed_up_at": "2026-09-08T18:06:03.661513-05:00",
+  "directory": "/home/hoang/nofx-backups/scenario-economics-20260908-180603",
+  "old_pid": 3566770,
+  "old_revision": "f8bc7044cc44d58e84904a0a7761e78b420404af",
+  "binary_path": "/home/hoang/nofx-backups/scenario-economics-20260908-180603/nofx-bin.old.f8bc7044cc44d58e84904a0a7761e78b420404af",
+  "binary_sha256": "e2c2ce8602ca61e52d180309743593b3bf538337693e4f2c61ae83c21d457918",
+  "database_bytes": 752668672,
+  "database_integrity_check": [
+    "ok"
+  ],
+  "release": "f8bc7044"
+}

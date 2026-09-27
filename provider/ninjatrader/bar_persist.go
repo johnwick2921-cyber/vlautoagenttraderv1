@@ -234,10 +234,11 @@ func ClosedBarsOnly(bars []Bar, tf string, nowMs int64) []Bar {
 
 // ClosedCacheTail returns up to `window` of the most-recent CLOSED bars from
 // the cache (sorted ascending by T, oldest first). Live bar_update frames
-// only ever carry the FORMING bar — NT8 does not re-emit the just-closed bar
-// at the minute boundary — so the live persistence path reads the final
-// closed bars from the cache itself (which always holds them) instead of the
-// frame. A window of 8 covers multi-minute gaps between frames.
+// The AddOn re-emits the just-closed bar at the minute boundary
+// (VLBarsSubscriptionManager.cs:539-551) and the cache finalises it, so the
+// live persistence path reads the final closed bars from the cache itself
+// (which always holds them) instead of the frame. A window of 8 covers
+// multi-minute gaps between frames.
 func ClosedCacheTail(get func(symbol, tf string) []Bar, symbol, tf string, nowMs int64, window int) []Bar {
 	dur := timeframeMs(tf)
 	if dur <= 0 {

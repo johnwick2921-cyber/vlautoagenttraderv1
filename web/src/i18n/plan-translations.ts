@@ -417,7 +417,11 @@ export const planStrings = {
     zh: '启用日计划',
     id: 'Aktifkan Rencana Harian',
   },
-  plannerModel: { en: 'Planner model', zh: '规划模型', id: 'Model perencana' },
+  plannerModel: {
+    en: 'Planner model — empty falls back to the strategy primary model (RECON #9)',
+    zh: '规划模型 — 留空则回退到策略主模型 (RECON #9)',
+    id: 'Model perencana — kosong memakai model utama strategi (RECON #9)',
+  },
   planMode: { en: 'Plan mode', zh: '计划模式', id: 'Mode rencana' },
   modeAdvisory: { en: 'ADVISORY', zh: '顾问', id: 'SARAN' },
   modeDirection: { en: 'DIRECTION', zh: '定向', id: 'ARAH' },
@@ -438,9 +442,9 @@ export const planStrings = {
   proximity: { en: 'Proximity', zh: '邻近度', id: 'Kedekatan' },
   maxLevels: { en: 'Max levels', zh: '最大价位数', id: 'Maks level' },
   htfSeats: {
-    en: 'HTF seats (structure-first, S3)',
-    zh: 'HTF 席位 (结构优先, S3)',
-    id: 'Kursi HTF',
+    en: 'HTF seats (structure-first, S3) — unset = default 2 (legacy constant); 0 = no HTF seating',
+    zh: 'HTF 席位 (结构优先, S3) — 未设置 = 默认 2（旧常量）；0 = 不设 HTF 席位',
+    id: 'Kursi HTF — kosong = default 2 (konstanta lama); 0 = tanpa kursi HTF',
   },
   flipReread: {
     en: 'Flip re-read — when the flip condition fires, the plan still goes dormant, then ONE free re-read authors the flipped direction',
@@ -465,6 +469,12 @@ export const planStrings = {
     zh: '双图模式 (SIM) — 确定性：4H 实体枢轴 → H1 收盘突破 → 5m 摆动 + 对向区域。AI 仅作点评。',
     id: 'Picture HTF (SIM) — deterministik: pivot body 4H → tembus close H1 → swing 5m + zona lawan. AI hanya komentar.',
   },
+  // W1 (e): the Picture switch's own label (it used to borrow enableDayPlan).
+  pictureHtfEnable: {
+    en: 'Include Picture HTF setups',
+    zh: '纳入双图（Picture HTF）设置',
+    id: 'Sertakan setup Picture HTF',
+  },
   pictureTickSize: { en: 'Tick size', zh: '最小变动', id: 'Ukuran tick' },
   picturePivotWindow: {
     en: 'Pivot window (bars)',
@@ -477,14 +487,14 @@ export const planStrings = {
     id: 'Lookback swing (bar 5m)',
   },
   pictureEntryWindowSec: {
-    en: 'Entry window (s)',
-    zh: '入场窗口（秒）',
-    id: 'Jendela masuk (detik)',
+    en: 'Entry window (s) — default 360',
+    zh: '入场窗口（秒，默认 360）',
+    id: 'Jendela masuk (detik, default 360)',
   },
   pictureFreshnessSec: {
-    en: 'Freshness limit (s)',
-    zh: '数据新鲜上限（秒）',
-    id: 'Batas kesegaran (detik)',
+    en: 'Freshness limit (s) — default 30',
+    zh: '数据新鲜上限（秒，默认 30）',
+    id: 'Batas kesegaran (detik, default 30)',
   },
   pictureMinRR: {
     en: 'Minimum R:R (blank = inherit risk control)',
@@ -496,6 +506,56 @@ export const planStrings = {
     zh: '双图机会记录',
     id: 'Peluang Picture HTF',
   },
+  // ── W-EXEC-TRUTH W5 — Picture HTF as a Day Plan scenario source ──
+  pictureHtfSourceHint: {
+    en: 'Source selector: Picture HTF setups become Day Plan scenarios (limit at the far edge of a small zone, 1 contract, under the Day Plan master)',
+    zh: '来源选择：双图（Picture HTF）设置成为日计划场景（小区间远端限价单，1 手，受日计划总开关管辖）',
+    id: 'Pemilih sumber: setup Picture HTF menjadi skenario Day Plan (limit di tepi jauh zona kecil, 1 kontrak, di bawah saklar utama Day Plan)',
+  },
+  pictureSourceBadge: {
+    en: '📷 PICTURE',
+    zh: '📷 双图',
+    id: '📷 PICTURE',
+  },
+  pictureSourceTitle: {
+    en: 'machine-authored Day Plan scenario (Picture HTF)',
+    zh: '机器生成的日计划场景（双图 Picture HTF）',
+    id: 'skenario Day Plan buatan mesin (Picture HTF)',
+  },
+  pictureMachineAbsent: {
+    en: 'machine record absent',
+    zh: '缺少机器记录',
+    id: 'catatan mesin tidak ada',
+  },
+  pictureEvidenceUnavailable: {
+    en: 'evidence unavailable',
+    zh: '证据不可读',
+    id: 'bukti tidak tersedia',
+  },
+  pictureEvidenceNotRecorded: {
+    en: 'evidence not recorded',
+    zh: '未记录证据',
+    id: 'bukti tidak tercatat',
+  },
+  pictureWindowUntil: {
+    en: 'window until {t}',
+    zh: '窗口截至 {t}',
+    id: 'jendela sampai {t}',
+  },
+  pictureRouteTitle: {
+    en: 'Picture HTF setups trade as {route} — under the Day Plan master, never a separate order',
+    zh: '双图设置以 {route} 方式交易 — 受日计划总开关管辖，绝不单独下单',
+    id: 'Setup Picture HTF diperdagangkan sebagai {route} — di bawah saklar utama Day Plan, tidak pernah order terpisah',
+  },
+  machinePlanBanner: {
+    en: 'MACHINE-AUTHORED plan — Picture HTF; the first AI plan supersedes it',
+    zh: '机器生成的计划 — 双图 Picture HTF；首个 AI 计划将取代它',
+    id: 'Rencana BUATAN MESIN — Picture HTF; rencana AI pertama menggantikannya',
+  },
+  composedOf: { en: 'composed of', zh: '组成', id: 'tersusun dari' },
+  composedOfBase: { en: 'base', zh: '基础', id: 'dasar' },
+  composedOfOverlays: { en: 'overlays', zh: '叠加', id: 'overlay' },
+  composedOfMachine: { en: 'machine', zh: '机器', id: 'mesin' },
   maxReplans: {
     en: 'Max re-plans',
     zh: '最大重规划数',
@@ -528,9 +588,9 @@ export const planStrings = {
     id: 'Kualitas skenario min',
   },
   oneSetup: {
-    en: 'One setup — arm only the single best level',
-    zh: '单一设置 — 仅对最佳价位挂单',
-    id: 'One setup — pasang hanya level terbaik',
+    en: 'One setup — arm only the single best reject (fade) level',
+    zh: '单一设置 — 仅对最佳拒绝（fade）价位挂单',
+    id: 'One setup — pasang hanya level reject (fade) terbaik',
   },
   oneSetupMinGrade: {
     en: 'One setup min grade',

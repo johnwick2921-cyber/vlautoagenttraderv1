@@ -1,0 +1,2177 @@
+{
+  "captured_utc": "2026-09-05T22:30:13.088904+00:00",
+  "base_revision": "b4376246c2c502ecedd119c6a44a27956ed2f616",
+  "queries": [
+    {
+      "sql": "SELECT id,entry_time,exit_time,plan_id,pnl_corrected,source FROM trader_positions WHERE entry_time >= 1786770000000 ORDER BY id",
+      "rows": [
+        {
+          "id": 521,
+          "entry_time": 1787127723941,
+          "exit_time": 1787132616909,
+          "plan_id": "2026-08-19:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 138.0,
+          "source": "system"
+        },
+        {
+          "id": 522,
+          "entry_time": 1787141851173,
+          "exit_time": 1787142784995,
+          "plan_id": "2026-08-19:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -60.5,
+          "source": "system"
+        },
+        {
+          "id": 523,
+          "entry_time": 1787148412409,
+          "exit_time": 1787148669853,
+          "plan_id": "2026-08-19:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 118.0,
+          "source": "system"
+        },
+        {
+          "id": 524,
+          "entry_time": 1787156295776,
+          "exit_time": 1787160091498,
+          "plan_id": "2026-08-19:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 273.5,
+          "source": "system"
+        },
+        {
+          "id": 525,
+          "entry_time": 1787181724764,
+          "exit_time": 1787183980456,
+          "plan_id": "2026-08-19:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -43.0,
+          "source": "system"
+        },
+        {
+          "id": 526,
+          "entry_time": 1787189302092,
+          "exit_time": 1787192187436,
+          "plan_id": "2026-08-19:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -69.42857199999708,
+          "source": "system"
+        },
+        {
+          "id": 527,
+          "entry_time": 1787197048862,
+          "exit_time": 1787198834030,
+          "plan_id": "2026-08-19:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -88.0,
+          "source": "system"
+        },
+        {
+          "id": 528,
+          "entry_time": 1787214391412,
+          "exit_time": 1787220704886,
+          "plan_id": "2026-08-20:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -97.5,
+          "source": "system"
+        },
+        {
+          "id": 529,
+          "entry_time": 1787221593307,
+          "exit_time": 1787224917648,
+          "plan_id": "2026-08-20:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 168.0,
+          "source": "system"
+        },
+        {
+          "id": 530,
+          "entry_time": 1787231522210,
+          "exit_time": 1787231726009,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": 13.0,
+          "source": "system"
+        },
+        {
+          "id": 531,
+          "entry_time": 1787233297689,
+          "exit_time": 1787233704110,
+          "plan_id": "2026-08-20:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -147.5,
+          "source": "system"
+        },
+        {
+          "id": 532,
+          "entry_time": 1787236917055,
+          "exit_time": 1787249147278,
+          "plan_id": "2026-08-20:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 311.0,
+          "source": "system"
+        },
+        {
+          "id": 533,
+          "entry_time": 1787266758375,
+          "exit_time": 1787271163275,
+          "plan_id": "2026-08-20:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -54.5,
+          "source": "system"
+        },
+        {
+          "id": 534,
+          "entry_time": 1787271748349,
+          "exit_time": 1787276995308,
+          "plan_id": "2026-08-20:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -66.0,
+          "source": "system"
+        },
+        {
+          "id": 535,
+          "entry_time": 1787278123499,
+          "exit_time": 1787278857194,
+          "plan_id": "2026-08-20:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -31.0,
+          "source": "system"
+        },
+        {
+          "id": 536,
+          "entry_time": 1787279779762,
+          "exit_time": 1787286454106,
+          "plan_id": "2026-08-20:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 124.0,
+          "source": "system"
+        },
+        {
+          "id": 537,
+          "entry_time": 1787289910852,
+          "exit_time": 1787294140952,
+          "plan_id": "2026-08-20:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -79.5,
+          "source": "system"
+        },
+        {
+          "id": 538,
+          "entry_time": 1787294426615,
+          "exit_time": 1787294701430,
+          "plan_id": "2026-08-20:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 30.5,
+          "source": "system"
+        },
+        {
+          "id": 539,
+          "entry_time": 1787302449656,
+          "exit_time": 1787306411326,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": -84.5,
+          "source": "system"
+        },
+        {
+          "id": 540,
+          "entry_time": 1787306680461,
+          "exit_time": 1787310076685,
+          "plan_id": "2026-08-21:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -98.0,
+          "source": "system"
+        },
+        {
+          "id": 541,
+          "entry_time": 1787311607785,
+          "exit_time": 1787318022696,
+          "plan_id": "2026-08-21:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -83.0,
+          "source": "system"
+        },
+        {
+          "id": 542,
+          "entry_time": 1787320143292,
+          "exit_time": 1787322462787,
+          "plan_id": "2026-08-21:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 0.0,
+          "source": "system"
+        },
+        {
+          "id": 543,
+          "entry_time": 1787325163217,
+          "exit_time": 1787326470700,
+          "plan_id": "2026-08-21:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -88.5,
+          "source": "system"
+        },
+        {
+          "id": 544,
+          "entry_time": 1787327265787,
+          "exit_time": 1787327509227,
+          "plan_id": "2026-08-21:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -61.5,
+          "source": "system"
+        },
+        {
+          "id": 545,
+          "entry_time": 1787542090280,
+          "exit_time": 1787542345368,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": -29.5,
+          "source": "system"
+        },
+        {
+          "id": 546,
+          "entry_time": 1787573202596,
+          "exit_time": 1787574773287,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": -88.5,
+          "source": "system"
+        },
+        {
+          "id": 547,
+          "entry_time": 1787580585134,
+          "exit_time": 1787581850877,
+          "plan_id": "2026-08-24:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -139.5,
+          "source": "system"
+        },
+        {
+          "id": 548,
+          "entry_time": 1787583313785,
+          "exit_time": 1787585344309,
+          "plan_id": "2026-08-24:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -54.5,
+          "source": "system"
+        },
+        {
+          "id": 549,
+          "entry_time": 1787588810349,
+          "exit_time": 1787594145174,
+          "plan_id": "2026-08-24:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 169.5,
+          "source": "system"
+        },
+        {
+          "id": 550,
+          "entry_time": 1787622214378,
+          "exit_time": 1787625115057,
+          "plan_id": "2026-08-24:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -84.5,
+          "source": "system"
+        },
+        {
+          "id": 551,
+          "entry_time": 1787625786798,
+          "exit_time": 1787627344859,
+          "plan_id": "2026-08-24:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 0.0,
+          "source": "system"
+        },
+        {
+          "id": 552,
+          "entry_time": 1787627825020,
+          "exit_time": 1787627988172,
+          "plan_id": "2026-08-24:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -7.5,
+          "source": "system"
+        },
+        {
+          "id": 553,
+          "entry_time": 1787630586859,
+          "exit_time": 1787630723285,
+          "plan_id": "2026-08-24:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -27.0,
+          "source": "system"
+        },
+        {
+          "id": 554,
+          "entry_time": 1787641758864,
+          "exit_time": 1787646277376,
+          "plan_id": "2026-08-25:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -62.0,
+          "source": "system"
+        },
+        {
+          "id": 555,
+          "entry_time": 1787649559289,
+          "exit_time": 1787651863713,
+          "plan_id": "2026-08-25:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 168.0,
+          "source": "system"
+        },
+        {
+          "id": 556,
+          "entry_time": 1787655848500,
+          "exit_time": 1787656183070,
+          "plan_id": "2026-08-25:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -40.0,
+          "source": "system"
+        },
+        {
+          "id": 557,
+          "entry_time": 1787656476930,
+          "exit_time": 1787661054988,
+          "plan_id": "2026-08-25:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 46.5,
+          "source": "system"
+        },
+        {
+          "id": 558,
+          "entry_time": 1787662601774,
+          "exit_time": 1787663702041,
+          "plan_id": "2026-08-25:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -22.5,
+          "source": "system"
+        },
+        {
+          "id": 559,
+          "entry_time": 1787667281458,
+          "exit_time": 1787668202197,
+          "plan_id": "2026-08-25:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -78.5,
+          "source": "system"
+        },
+        {
+          "id": 560,
+          "entry_time": 1787683989352,
+          "exit_time": 1787686216895,
+          "plan_id": "2026-08-25:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 81.0,
+          "source": "system"
+        },
+        {
+          "id": 561,
+          "entry_time": 1787703104205,
+          "exit_time": 1787703939651,
+          "plan_id": "2026-08-25:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -52.0,
+          "source": "system"
+        },
+        {
+          "id": 562,
+          "entry_time": 1787728926645,
+          "exit_time": 1787742109269,
+          "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -98.5,
+          "source": "system"
+        },
+        {
+          "id": 563,
+          "entry_time": 1787742765384,
+          "exit_time": 1787744284225,
+          "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -49.5,
+          "source": "system"
+        },
+        {
+          "id": 564,
+          "entry_time": 1787822385609,
+          "exit_time": 1787823144273,
+          "plan_id": "2026-08-27:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -69.0,
+          "source": "system"
+        },
+        {
+          "id": 565,
+          "entry_time": 1787827992777,
+          "exit_time": 1787828737791,
+          "plan_id": "2026-08-27:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -62.5,
+          "source": "system"
+        },
+        {
+          "id": 566,
+          "entry_time": 1787848373019,
+          "exit_time": 1787850109019,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": 97.0,
+          "source": "reconcile"
+        },
+        {
+          "id": 567,
+          "entry_time": 1787898124014,
+          "exit_time": 1787900267898,
+          "plan_id": "2026-08-27:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -42.0,
+          "source": "reconcile"
+        },
+        {
+          "id": 568,
+          "entry_time": 1787919586429,
+          "exit_time": 1787919782166,
+          "plan_id": "2026-08-28:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -32.0,
+          "source": "reconcile"
+        },
+        {
+          "id": 569,
+          "entry_time": 1787924668684,
+          "exit_time": 1787924728951,
+          "plan_id": "2026-08-28:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 63.0,
+          "source": "reconcile"
+        },
+        {
+          "id": 570,
+          "entry_time": 1787937021714,
+          "exit_time": 1787942914951,
+          "plan_id": "2026-08-28:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 17.0,
+          "source": "reconcile"
+        },
+        {
+          "id": 571,
+          "entry_time": 1788129513175,
+          "exit_time": 1788131593328,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": -44.5,
+          "source": "reconcile"
+        },
+        {
+          "id": 572,
+          "entry_time": 1788147256663,
+          "exit_time": 1788147976616,
+          "plan_id": "TEST-E7:c15c48a6-a036-4991-b4d0-9c9e0b2295b3",
+          "pnl_corrected": null,
+          "source": "e7_farside_test"
+        },
+        {
+          "id": 573,
+          "entry_time": 1788148336590,
+          "exit_time": 1788148717576,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": 6.0,
+          "source": "e7_farside_test"
+        },
+        {
+          "id": 574,
+          "entry_time": 1788148816545,
+          "exit_time": 1788149079612,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": -1.0,
+          "source": "e7_farside_test"
+        },
+        {
+          "id": 575,
+          "entry_time": 1788188358333,
+          "exit_time": 1788189328351,
+          "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 32.5,
+          "source": "reconcile"
+        },
+        {
+          "id": 576,
+          "entry_time": 1788188401050,
+          "exit_time": 1788188618316,
+          "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": null,
+          "source": "armed_entry"
+        },
+        {
+          "id": 577,
+          "entry_time": 1788197129000,
+          "exit_time": 1788197348939,
+          "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": null,
+          "source": "armed_entry"
+        },
+        {
+          "id": 578,
+          "entry_time": 1788197208950,
+          "exit_time": 1788199848747,
+          "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 92.0,
+          "source": "reconcile"
+        },
+        {
+          "id": 579,
+          "entry_time": 1788199768811,
+          "exit_time": 1788199988735,
+          "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": null,
+          "source": "armed_entry"
+        },
+        {
+          "id": 580,
+          "entry_time": 1788201428615,
+          "exit_time": 1788201499024,
+          "plan_id": "UNRESOLVABLE",
+          "pnl_corrected": 39.5,
+          "source": "reconcile"
+        },
+        {
+          "id": 581,
+          "entry_time": 1788249164041,
+          "exit_time": 1788249993712,
+          "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 190.5,
+          "source": "system"
+        },
+        {
+          "id": 582,
+          "entry_time": 1788258208858,
+          "exit_time": 1788260734279,
+          "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 129.5,
+          "source": "armed_entry"
+        },
+        {
+          "id": 583,
+          "entry_time": 1788262504776,
+          "exit_time": 1788263807259,
+          "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -82.5,
+          "source": "system"
+        },
+        {
+          "id": 584,
+          "entry_time": 1788269807953,
+          "exit_time": 1788269899464,
+          "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": 106.0,
+          "source": "reconcile"
+        },
+        {
+          "id": 585,
+          "entry_time": 1788273068046,
+          "exit_time": 1788273640760,
+          "plan_id": "2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -77.5,
+          "source": "armed_entry"
+        },
+        {
+          "id": 586,
+          "entry_time": 1788287586496,
+          "exit_time": 1788288074189,
+          "plan_id": "2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -54.0,
+          "source": "reconcile"
+        },
+        {
+          "id": 587,
+          "entry_time": 1788326264539,
+          "exit_time": 1788329021861,
+          "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -62.5,
+          "source": "system"
+        },
+        {
+          "id": 588,
+          "entry_time": 1788352865663,
+          "exit_time": 1788353498565,
+          "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -65.0,
+          "source": "system"
+        },
+        {
+          "id": 589,
+          "entry_time": 1788360064833,
+          "exit_time": 1788361167398,
+          "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -155.0,
+          "source": "system"
+        },
+        {
+          "id": 590,
+          "entry_time": 1788363437167,
+          "exit_time": 1788364170319,
+          "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -99.0,
+          "source": "system"
+        },
+        {
+          "id": 591,
+          "entry_time": 1788444314627,
+          "exit_time": 1788445245677,
+          "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "pnl_corrected": -140.0,
+          "source": "reconcile"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT name,sql FROM sqlite_master WHERE type='table' AND name LIKE '%calendar%'",
+      "rows": [
+        {
+          "name": "calendar_slices",
+          "sql": "CREATE TABLE `calendar_slices` (`trade_date` text,`source` text NOT NULL DEFAULT \"\",`events_json` text NOT NULL DEFAULT \"[]\",`created_at` integer,PRIMARY KEY (`trade_date`))"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT count(*) n FROM trade_excursions",
+      "rows": [
+        {
+          "n": 0
+        }
+      ]
+    },
+    {
+      "sql": "SELECT * FROM \"calendar_slices\"",
+      "rows": [
+        {
+          "trade_date": "2026-08-13",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-13T06:00:00Z\",\"currency\":\"GBP\",\"title\":\"GDP m/m\",\"impact\":\"T1\"},{\"time\":\"2026-08-13T06:00:00Z\",\"currency\":\"GBP\",\"title\":\"Prelim GDP q/q\",\"impact\":\"T2\"},{\"time\":\"2026-08-13T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Core PPI m/m\",\"impact\":\"T1\"},{\"time\":\"2026-08-13T12:30:00Z\",\"currency\":\"USD\",\"title\":\"PPI m/m\",\"impact\":\"T1\"},{\"time\":\"2026-08-13T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims\",\"impact\":\"T2\"}]",
+          "created_at": 1786839105819
+        },
+        {
+          "trade_date": "2026-08-12",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-12T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Core CPI m/m\",\"impact\":\"T1\"},{\"time\":\"2026-08-12T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Core CPI y/y\",\"impact\":\"T1\"},{\"time\":\"2026-08-12T12:30:00Z\",\"currency\":\"USD\",\"title\":\"CPI m/m\",\"impact\":\"T1\"},{\"time\":\"2026-08-12T12:30:00Z\",\"currency\":\"USD\",\"title\":\"CPI y/y\",\"impact\":\"T1\"}]",
+          "created_at": 1786839105827
+        },
+        {
+          "trade_date": "2026-08-14",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-14T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Core Retail Sales m/m\",\"impact\":\"T2\"},{\"time\":\"2026-08-14T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Retail Sales m/m\",\"impact\":\"T2\"},{\"time\":\"2026-08-14T14:00:00Z\",\"currency\":\"USD\",\"title\":\"Prelim UoM Consumer Sentiment\",\"impact\":\"T2\"},{\"time\":\"2026-08-14T14:00:00Z\",\"currency\":\"USD\",\"title\":\"Prelim UoM Inflation Expectations\",\"impact\":\"T2\"},{\"time\":\"2026-08-14T19:00:00Z\",\"currency\":\"USD\",\"title\":\"President Trump Speaks\",\"impact\":\"T2\"}]",
+          "created_at": 1786839105819
+        },
+        {
+          "trade_date": "2026-08-20",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-20T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Philly Fed Manufacturing Index\",\"impact\":\"T2\"},{\"time\":\"2026-08-20T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims\",\"impact\":\"T2\"}]",
+          "created_at": 1786855774428
+        },
+        {
+          "trade_date": "2026-08-21",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-21T06:00:00Z\",\"currency\":\"GBP\",\"title\":\"Retail Sales m/m\",\"impact\":\"T2\"},{\"time\":\"2026-08-21T07:15:00Z\",\"currency\":\"EUR\",\"title\":\"French Flash Manufacturing PMI\",\"impact\":\"T2\"},{\"time\":\"2026-08-21T07:15:00Z\",\"currency\":\"EUR\",\"title\":\"French Flash Services PMI\",\"impact\":\"T2\"},{\"time\":\"2026-08-21T07:30:00Z\",\"currency\":\"EUR\",\"title\":\"German Flash Manufacturing PMI\",\"impact\":\"T2\"},{\"time\":\"2026-08-21T07:30:00Z\",\"currency\":\"EUR\",\"title\":\"German Flash Services PMI\",\"impact\":\"T2\"},{\"time\":\"2026-08-21T08:30:00Z\",\"currency\":\"GBP\",\"title\":\"Flash Manufacturing PMI\",\"impact\":\"T2\"},{\"time\":\"2026-08-21T08:30:00Z\",\"currency\":\"GBP\",\"title\":\"Flash Services PMI\",\"impact\":\"T2\"}]",
+          "created_at": 1786855774418
+        },
+        {
+          "trade_date": "2026-08-18",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-18T06:00:00Z\",\"currency\":\"GBP\",\"title\":\"Claimant Count Change\",\"impact\":\"T1\"},{\"time\":\"2026-08-18T06:00:00Z\",\"currency\":\"GBP\",\"title\":\"Average Earnings Index 3m/y\",\"impact\":\"T2\"}]",
+          "created_at": 1786855774418
+        },
+        {
+          "trade_date": "2026-08-19",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-19T06:00:00Z\",\"currency\":\"GBP\",\"title\":\"CPI y/y\",\"impact\":\"T1\"},{\"time\":\"2026-08-19T07:10:00Z\",\"currency\":\"EUR\",\"title\":\"ECB President Lagarde Speaks\",\"impact\":\"T2\"},{\"time\":\"2026-08-19T18:00:00Z\",\"currency\":\"USD\",\"title\":\"FOMC Meeting Minutes\",\"impact\":\"T1\"}]",
+          "created_at": 1786855774418
+        },
+        {
+          "trade_date": "2026-08-27",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-27T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims\",\"impact\":\"T2\"},{\"time\":\"2026-08-27T23:30:00Z\",\"currency\":\"JPY\",\"title\":\"Tokyo Core CPI y/y\",\"impact\":\"T2\"}]",
+          "created_at": 1787460318709
+        },
+        {
+          "trade_date": "2026-08-28",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-28T14:00:00Z\",\"currency\":\"USD\",\"title\":\"Fed Chairman Warsh Speaks\",\"impact\":\"T1\"},{\"time\":\"2026-08-28T14:00:00Z\",\"currency\":\"USD\",\"title\":\"Prelim Benchmark Payrolls Revision\",\"impact\":\"T1\"},{\"time\":\"2026-08-28T14:00:00Z\",\"currency\":\"USD\",\"title\":\"Revised UoM Consumer Sentiment\",\"impact\":\"T2\"},{\"time\":\"2026-08-28T14:00:00Z\",\"currency\":\"USD\",\"title\":\"Revised UoM Inflation Expectations\",\"impact\":\"T2\"}]",
+          "created_at": 1787460318709
+        },
+        {
+          "trade_date": "2026-08-24",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-24T17:00:00Z\",\"currency\":\"USD\",\"title\":\"Treasury Sec Bessent Speaks\",\"impact\":\"T2\"}]",
+          "created_at": 1787587252250
+        },
+        {
+          "trade_date": "2026-08-25",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-25T14:00:00Z\",\"currency\":\"USD\",\"title\":\"CB Consumer Confidence\",\"impact\":\"T2\"}]",
+          "created_at": 1787460318709
+        },
+        {
+          "trade_date": "2026-08-26",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-26T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Core PCE Price Index m/m\",\"impact\":\"T1\"},{\"time\":\"2026-08-26T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Prelim GDP q/q\",\"impact\":\"T1\"},{\"time\":\"2026-08-26T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Prelim GDP Price Index q/q\",\"impact\":\"T2\"}]",
+          "created_at": 1787460318709
+        },
+        {
+          "trade_date": "2026-09-03",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-09-03T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims\",\"impact\":\"T2\"},{\"time\":\"2026-09-03T14:00:00Z\",\"currency\":\"USD\",\"title\":\"ISM Services PMI\",\"impact\":\"T2\"}]",
+          "created_at": 1788100641850
+        },
+        {
+          "trade_date": "2026-09-04",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-09-04T08:50:00Z\",\"currency\":\"GBP\",\"title\":\"BOE Gov Bailey Speaks\",\"impact\":\"T1\"},{\"time\":\"2026-09-04T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Average Hourly Earnings m/m\",\"impact\":\"T1\"},{\"time\":\"2026-09-04T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Non-Farm Employment Change\",\"impact\":\"T1\"},{\"time\":\"2026-09-04T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Rate\",\"impact\":\"T1\"}]",
+          "created_at": 1788100641850
+        },
+        {
+          "trade_date": "2026-08-31",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-08-31T06:29:00Z\",\"currency\":\"EUR\",\"title\":\"German Prelim CPI m/m\",\"impact\":\"T2\"}]",
+          "created_at": 1788100641850
+        },
+        {
+          "trade_date": "2026-09-01",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-09-01T09:00:00Z\",\"currency\":\"EUR\",\"title\":\"Core CPI Flash Estimate y/y\",\"impact\":\"T2\"},{\"time\":\"2026-09-01T09:00:00Z\",\"currency\":\"EUR\",\"title\":\"CPI Flash Estimate y/y\",\"impact\":\"T2\"},{\"time\":\"2026-09-01T14:00:00Z\",\"currency\":\"USD\",\"title\":\"ISM Manufacturing PMI\",\"impact\":\"T1\"},{\"time\":\"2026-09-01T14:00:00Z\",\"currency\":\"USD\",\"title\":\"ISM Manufacturing Prices\",\"impact\":\"T2\"},{\"time\":\"2026-09-01T14:00:00Z\",\"currency\":\"USD\",\"title\":\"JOLTS Job Openings\",\"impact\":\"T2\"}]",
+          "created_at": 1788100641850
+        },
+        {
+          "trade_date": "2026-09-02",
+          "source": "forexfactory",
+          "events_json": "[{\"time\":\"2026-09-02T12:15:00Z\",\"currency\":\"USD\",\"title\":\"ADP Non-Farm Employment Change\",\"impact\":\"T2\"}]",
+          "created_at": 1788100641850
+        },
+        {
+          "trade_date": "2026-09-10",
+          "source": "static",
+          "events_json": "[{\"time\":\"2026-09-10T12:30:00Z\",\"currency\":\"USD\",\"title\":\"PPI m/m (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-10T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims (static fallback)\",\"impact\":\"T2\"}]",
+          "created_at": 1788128093263
+        },
+        {
+          "trade_date": "2026-09-11",
+          "source": "static",
+          "events_json": "[{\"time\":\"2026-09-11T12:30:00Z\",\"currency\":\"USD\",\"title\":\"CPI m/m (static fallback)\",\"impact\":\"T1\"}]",
+          "created_at": 1788128093263
+        },
+        {
+          "trade_date": "2026-09-16",
+          "source": "static",
+          "events_json": "[{\"time\":\"2026-09-16T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Retail Sales m/m (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-16T18:00:00Z\",\"currency\":\"USD\",\"title\":\"FOMC Statement (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-16T18:30:00Z\",\"currency\":\"USD\",\"title\":\"FOMC Press Conference (static fallback)\",\"impact\":\"T1\"}]",
+          "created_at": 1788128093263
+        },
+        {
+          "trade_date": "2026-09-17",
+          "source": "static",
+          "events_json": "[{\"time\":\"2026-09-17T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims (static fallback)\",\"impact\":\"T2\"}]",
+          "created_at": 1788128093263
+        }
+      ]
+    }
+  ],
+  "source": {
+    "kernel/levels_volume.go": [
+      {
+        "line": 159,
+        "text": ""
+      },
+      {
+        "line": 160,
+        "text": "// profileLevels computes POC + 70% value area from a closed 1m series."
+      },
+      {
+        "line": 161,
+        "text": "// prefix labels the rows (\"pd\" for the prior-day profile, \"\" for session)."
+      },
+      {
+        "line": 162,
+        "text": "func profileLevels(bars []market.Kline, dayKey, prefix string) []DetectedLevel {"
+      },
+      {
+        "line": 163,
+        "text": "\tif len(bars) == 0 {"
+      },
+      {
+        "line": 164,
+        "text": "\t\treturn nil"
+      },
+      {
+        "line": 165,
+        "text": "\t}"
+      },
+      {
+        "line": 166,
+        "text": "\tconst binCount = 120"
+      },
+      {
+        "line": 167,
+        "text": "\tvar hi, lo float64"
+      },
+      {
+        "line": 168,
+        "text": "\tfor i, b := range bars {"
+      },
+      {
+        "line": 169,
+        "text": "\t\tif i == 0 || b.High > hi {"
+      },
+      {
+        "line": 170,
+        "text": "\t\t\thi = b.High"
+      },
+      {
+        "line": 171,
+        "text": "\t\t}"
+      },
+      {
+        "line": 172,
+        "text": "\t\tif i == 0 || b.Low < lo {"
+      },
+      {
+        "line": 173,
+        "text": "\t\t\tlo = b.Low"
+      },
+      {
+        "line": 174,
+        "text": "\t\t}"
+      },
+      {
+        "line": 175,
+        "text": "\t}"
+      },
+      {
+        "line": 176,
+        "text": "\tif hi <= lo {"
+      },
+      {
+        "line": 177,
+        "text": "\t\treturn nil"
+      },
+      {
+        "line": 178,
+        "text": "\t}"
+      },
+      {
+        "line": 179,
+        "text": "\tbin := (hi - lo) / binCount"
+      },
+      {
+        "line": 180,
+        "text": "\tif bin <= 0 {"
+      },
+      {
+        "line": 181,
+        "text": "\t\tbin = 0.25"
+      },
+      {
+        "line": 182,
+        "text": "\t}"
+      },
+      {
+        "line": 183,
+        "text": "\tvols := make([]float64, binCount)"
+      },
+      {
+        "line": 184,
+        "text": "\ttotal := 0.0"
+      },
+      {
+        "line": 185,
+        "text": "\tfor _, b := range bars {"
+      },
+      {
+        "line": 186,
+        "text": "\t\tidx := int((b.Close - lo) / bin)"
+      },
+      {
+        "line": 187,
+        "text": "\t\tif idx < 0 {"
+      },
+      {
+        "line": 188,
+        "text": "\t\t\tidx = 0"
+      },
+      {
+        "line": 189,
+        "text": "\t\t}"
+      },
+      {
+        "line": 190,
+        "text": "\t\tif idx >= binCount {"
+      },
+      {
+        "line": 191,
+        "text": "\t\t\tidx = binCount - 1"
+      },
+      {
+        "line": 192,
+        "text": "\t\t}"
+      },
+      {
+        "line": 193,
+        "text": "\t\tvols[idx] += b.Volume"
+      },
+      {
+        "line": 194,
+        "text": "\t\ttotal += b.Volume"
+      },
+      {
+        "line": 195,
+        "text": "\t}"
+      },
+      {
+        "line": 196,
+        "text": "\tif total <= 0 {"
+      },
+      {
+        "line": 197,
+        "text": "\t\treturn nil"
+      },
+      {
+        "line": 198,
+        "text": "\t}"
+      },
+      {
+        "line": 199,
+        "text": "\tpocIdx, pocV := 0, vols[0]"
+      },
+      {
+        "line": 200,
+        "text": "\tfor i, v := range vols {"
+      },
+      {
+        "line": 201,
+        "text": "\t\tif v > pocV {"
+      },
+      {
+        "line": 202,
+        "text": "\t\t\tpocIdx, pocV = i, v"
+      },
+      {
+        "line": 203,
+        "text": "\t\t}"
+      },
+      {
+        "line": 204,
+        "text": "\t}"
+      },
+      {
+        "line": 205,
+        "text": "\tpoc := lo + (float64(pocIdx)+0.5)*bin"
+      },
+      {
+        "line": 206,
+        "text": "\t// 70% value area: walk down/up from the POC bin until \u226570% of volume."
+      },
+      {
+        "line": 207,
+        "text": "\tneed := 0.70 * total"
+      },
+      {
+        "line": 208,
+        "text": "\tacc := pocV"
+      },
+      {
+        "line": 209,
+        "text": "\tloIdx, hiIdx := pocIdx, pocIdx"
+      },
+      {
+        "line": 210,
+        "text": "\tfor acc < need {"
+      },
+      {
+        "line": 211,
+        "text": "\t\tbelow := loIdx - 1"
+      },
+      {
+        "line": 212,
+        "text": "\t\tabove := hiIdx + 1"
+      },
+      {
+        "line": 213,
+        "text": "\t\tup := 0.0"
+      },
+      {
+        "line": 214,
+        "text": "\t\tdown := 0.0"
+      },
+      {
+        "line": 215,
+        "text": "\t\tif above < binCount {"
+      },
+      {
+        "line": 216,
+        "text": "\t\t\tup = vols[above]"
+      },
+      {
+        "line": 217,
+        "text": "\t\t}"
+      },
+      {
+        "line": 218,
+        "text": "\t\tif below >= 0 {"
+      },
+      {
+        "line": 219,
+        "text": "\t\t\tdown = vols[below]"
+      },
+      {
+        "line": 220,
+        "text": "\t\t}"
+      }
+    ],
+    "kernel/regime.go": [
+      {
+        "line": 11,
+        "text": "// P1.6 \u2014 REGIME block (7 auto fields, zero config)."
+      },
+      {
+        "line": 12,
+        "text": "//"
+      },
+      {
+        "line": 13,
+        "text": "// A deterministic, planner-INPUT context summary (never a card readout). Every"
+      },
+      {
+        "line": 14,
+        "text": "// field degrades gracefully: missing data \u2192 \"n/a\"/WARMING rather than a fake"
+      },
+      {
+        "line": 15,
+        "text": "// number. VIX has no feed in this repo (recon) and realized-vol-vs-20d needs a"
+      },
+      {
+        "line": 16,
+        "text": "// warmed baseline, so both report unavailable/warming until wired + warmed."
+      },
+      {
+        "line": 17,
+        "text": ""
+      },
+      {
+        "line": 18,
+        "text": "// RegimeInputs are the (partial) series the caller can supply. Any empty series"
+      },
+      {
+        "line": 19,
+        "text": "// yields an \"n/a\" field \u2014 honest cold-start behavior."
+      },
+      {
+        "line": 20,
+        "text": "type RegimeInputs struct {"
+      },
+      {
+        "line": 21,
+        "text": "\tPrice         float64"
+      },
+      {
+        "line": 22,
+        "text": "\tDailyBars     []market.Kline // EMA200-daily trend, dATR, ATR14 percentile"
+      },
+      {
+        "line": 23,
+        "text": "\tHour1Bars     []market.Kline // 1h trend"
+      },
+      {
+        "line": 24,
+        "text": "\tMin5Bars      []market.Kline // realized vol"
+      },
+      {
+        "line": 25,
+        "text": "\tPriorClose    float64        // prior session close (overnight gap)"
+      },
+      {
+        "line": 26,
+        "text": "\tSessionOpen   float64        // this session's open (overnight gap)"
+      },
+      {
+        "line": 27,
+        "text": "\tVIX           float64        // 0 = unavailable (no feed)"
+      },
+      {
+        "line": 28,
+        "text": "\tRVBaseline20d float64        // 0 = warming (no 20d baseline yet)"
+      },
+      {
+        "line": 29,
+        "text": "}"
+      },
+      {
+        "line": 30,
+        "text": ""
+      },
+      {
+        "line": 31,
+        "text": "// RegimeBlock is the computed regime snapshot."
+      },
+      {
+        "line": 32,
+        "text": "type RegimeBlock struct {"
+      },
+      {
+        "line": 33,
+        "text": "\tTrendDaily       string  `json:\"trend_daily\"` // up | down | flat | n/a"
+      },
+      {
+        "line": 34,
+        "text": "\tTrend1h          string  `json:\"trend_1h\"`    // up | down | flat | n/a"
+      },
+      {
+        "line": 35,
+        "text": "\tATR14            float64 `json:\"atr14\"`       // daily ATR (dATR); 0 = n/a"
+      },
+      {
+        "line": 36,
+        "text": "\tATRRegime        string  `json:\"atr_regime\"`  // LOW | NORMAL | HIGH | EXTREME | n/a"
+      },
+      {
+        "line": 37,
+        "text": "\tATRPercentile    float64 `json:\"atr_pctile\"`  // 0..100 (\u22121 = n/a)"
+      },
+      {
+        "line": 38,
+        "text": "\tRealizedVolPct   float64 `json:\"rv_pct\"`      // recent daily RV%, or recent/baseline%"
+      },
+      {
+        "line": 39,
+        "text": "\tRVWarming        bool    `json:\"rv_warming\"`  // true \u2192 no 20d baseline yet"
+      },
+      {
+        "line": 40,
+        "text": "\tVIXLevel         float64 `json:\"vix_level\"`   // 0 = unavailable"
+      },
+      {
+        "line": 41,
+        "text": "\tVIXRegime        string  `json:\"vix_regime\"`  // <15 | 15-20 | 20-30 | >30 | unavailable"
+      },
+      {
+        "line": 42,
+        "text": "\tExpectedRangePts float64 `json:\"expected_range_pts\"`"
+      },
+      {
+        "line": 43,
+        "text": "\tOvernightGapATR  float64 `json:\"overnight_gap_atr\"` // gap / dATR (0 if unavailable)"
+      },
+      {
+        "line": 44,
+        "text": "\tHasGap           bool    `json:\"has_gap\"`"
+      },
+      {
+        "line": 45,
+        "text": "}"
+      },
+      {
+        "line": 46,
+        "text": ""
+      },
+      {
+        "line": 47,
+        "text": "const regimeTrendEps = 0.0005 // \u00b10.05% dead-band around the MA \u2192 \"flat\""
+      },
+      {
+        "line": 48,
+        "text": ""
+      },
+      {
+        "line": 49,
+        "text": "// ComputeRegime builds the regime block from whatever inputs are present."
+      },
+      {
+        "line": 50,
+        "text": "func ComputeRegime(in RegimeInputs) RegimeBlock {"
+      },
+      {
+        "line": 51,
+        "text": "\tr := RegimeBlock{"
+      },
+      {
+        "line": 52,
+        "text": "\t\tTrendDaily: \"n/a\", Trend1h: \"n/a\", ATRRegime: \"n/a\", ATRPercentile: -1,"
+      },
+      {
+        "line": 53,
+        "text": "\t\tVIXRegime: \"unavailable\","
+      },
+      {
+        "line": 54,
+        "text": "\t}"
+      },
+      {
+        "line": 55,
+        "text": ""
+      },
+      {
+        "line": 56,
+        "text": "\t// trend_state_daily: price vs EMA200 (daily)."
+      },
+      {
+        "line": 57,
+        "text": "\tif in.Price > 0 && len(in.DailyBars) >= 200 {"
+      },
+      {
+        "line": 58,
+        "text": "\t\tif ema := market.ExportCalculateEMA(in.DailyBars, 200); ema > 0 {"
+      },
+      {
+        "line": 59,
+        "text": "\t\t\tr.TrendDaily = trendVsMA(in.Price, ema)"
+      },
+      {
+        "line": 60,
+        "text": "\t\t}"
+      },
+      {
+        "line": 61,
+        "text": "\t}"
+      },
+      {
+        "line": 62,
+        "text": "\t// trend_state_1h: price vs EMA50 (1h)."
+      },
+      {
+        "line": 63,
+        "text": "\tif in.Price > 0 && len(in.Hour1Bars) >= 50 {"
+      },
+      {
+        "line": 64,
+        "text": "\t\tif ema := market.ExportCalculateEMA(in.Hour1Bars, 50); ema > 0 {"
+      },
+      {
+        "line": 65,
+        "text": "\t\t\tr.Trend1h = trendVsMA(in.Price, ema)"
+      },
+      {
+        "line": 66,
+        "text": "\t\t}"
+      },
+      {
+        "line": 67,
+        "text": "\t}"
+      },
+      {
+        "line": 68,
+        "text": ""
+      },
+      {
+        "line": 69,
+        "text": "\t// ATR14 (daily = dATR) + percentile regime."
+      },
+      {
+        "line": 70,
+        "text": "\tif len(in.DailyBars) >= 15 {"
+      },
+      {
+        "line": 71,
+        "text": "\t\tr.ATR14 = market.ExportCalculateATR(in.DailyBars, 14)"
+      },
+      {
+        "line": 72,
+        "text": "\t\tif r.ATR14 > 0 && len(in.DailyBars) >= 30 {"
+      },
+      {
+        "line": 73,
+        "text": "\t\t\tseries := rollingDailyATR(in.DailyBars, 14)"
+      },
+      {
+        "line": 74,
+        "text": "\t\t\tif len(series) >= 10 {"
+      },
+      {
+        "line": 75,
+        "text": "\t\t\t\tr.ATRPercentile = percentileRank(series, r.ATR14)"
+      },
+      {
+        "line": 76,
+        "text": "\t\t\t\tr.ATRRegime = atrBucket(r.ATRPercentile)"
+      },
+      {
+        "line": 77,
+        "text": "\t\t\t}"
+      },
+      {
+        "line": 78,
+        "text": "\t\t}"
+      },
+      {
+        "line": 79,
+        "text": "\t}"
+      },
+      {
+        "line": 80,
+        "text": ""
+      },
+      {
+        "line": 81,
+        "text": "\t// realized_vol_pct (5m RV; vs-20d when a baseline is supplied)."
+      },
+      {
+        "line": 82,
+        "text": "\tif rv, ok := recentDailyVolPct(in.Min5Bars); ok {"
+      },
+      {
+        "line": 83,
+        "text": "\t\tif in.RVBaseline20d > 0 {"
+      },
+      {
+        "line": 84,
+        "text": "\t\t\tr.RealizedVolPct = 100 * rv / in.RVBaseline20d"
+      },
+      {
+        "line": 85,
+        "text": "\t\t\tr.RVWarming = false"
+      },
+      {
+        "line": 86,
+        "text": "\t\t} else {"
+      },
+      {
+        "line": 87,
+        "text": "\t\t\tr.RealizedVolPct = rv"
+      },
+      {
+        "line": 88,
+        "text": "\t\t\tr.RVWarming = true"
+      },
+      {
+        "line": 89,
+        "text": "\t\t}"
+      },
+      {
+        "line": 90,
+        "text": "\t} else {"
+      },
+      {
+        "line": 91,
+        "text": "\t\tr.RVWarming = true"
+      },
+      {
+        "line": 92,
+        "text": "\t}"
+      },
+      {
+        "line": 93,
+        "text": ""
+      },
+      {
+        "line": 94,
+        "text": "\t// VIX (no feed \u2192 unavailable)."
+      },
+      {
+        "line": 95,
+        "text": "\tif in.VIX > 0 {"
+      },
+      {
+        "line": 96,
+        "text": "\t\tr.VIXLevel = in.VIX"
+      },
+      {
+        "line": 97,
+        "text": "\t\tr.VIXRegime = vixBucket(in.VIX)"
+      },
+      {
+        "line": 98,
+        "text": "\t}"
+      },
+      {
+        "line": 99,
+        "text": ""
+      },
+      {
+        "line": 100,
+        "text": "\t// expected_range_pts: VIX-implied when available, else the ATR cross-check."
+      },
+      {
+        "line": 101,
+        "text": "\tswitch {"
+      }
+    ],
+    "trader/auto_trader_session.go": [
+      {
+        "line": 96,
+        "text": ""
+      },
+      {
+        "line": 97,
+        "text": "// sessionGateDecision is the pure session-gate logic: entries only inside an"
+      },
+      {
+        "line": 98,
+        "text": "// ENABLED session window and outside the no-trade sub-windows (first-5m, lunch,"
+      },
+      {
+        "line": 99,
+        "text": "// and W3 red-news T1 blackouts)."
+      },
+      {
+        "line": 100,
+        "text": "func sessionGateDecision(reg kernel.SessionRegistry, now time.Time, t1Windows []kernel.CTWindow, runnable func(*kernel.SessionDef) (bool, string)) (string, bool) {"
+      },
+      {
+        "line": 101,
+        "text": "\tsess, ok := reg.ActiveSession(now)"
+      },
+      {
+        "line": 102,
+        "text": "\tif !ok {"
+      },
+      {
+        "line": 103,
+        "text": "\t\treturn \"outside all session windows (overnight/interim)\", true"
+      },
+      {
+        "line": 104,
+        "text": "\t}"
+      },
+      {
+        "line": 105,
+        "text": "\t// H8 \u2014 enablement is resolved by sessionRunnable (explicit per-session toggle"
+      },
+      {
+        "line": 106,
+        "text": "\t// wins over the registry). The registry's Enabled flag is only the DEFAULT the"
+      },
+      {
+        "line": 107,
+        "text": "\t// resolver consults; it must never VETO a session the resolver already said"
+      },
+      {
+        "line": 108,
+        "text": "\t// runs. When no resolver is supplied (pure callers/tests), the registry flag"
+      },
+      {
+        "line": 109,
+        "text": "\t// is the answer."
+      },
+      {
+        "line": 110,
+        "text": "\tif runnable != nil {"
+      },
+      {
+        "line": 111,
+        "text": "\t\tif ok, why := runnable(sess); !ok {"
+      },
+      {
+        "line": 112,
+        "text": "\t\t\treturn why, true"
+      },
+      {
+        "line": 113,
+        "text": "\t\t}"
+      },
+      {
+        "line": 114,
+        "text": "\t} else if !sess.Enabled {"
+      },
+      {
+        "line": 115,
+        "text": "\t\treturn fmt.Sprintf(\"%s session not enabled\", sess.Name), true"
+      },
+      {
+        "line": 116,
+        "text": "\t}"
+      },
+      {
+        "line": 117,
+        "text": "\tif inSessionFirst5m(sess, now) {"
+      },
+      {
+        "line": 118,
+        "text": "\t\treturn fmt.Sprintf(\"%s first-5m no-trade window\", sess.Name), true"
+      },
+      {
+        "line": 119,
+        "text": "\t}"
+      },
+      {
+        "line": 120,
+        "text": "\tif kernel.InLunchNoTrade(now) {"
+      },
+      {
+        "line": 121,
+        "text": "\t\tls, le := kernel.LunchWindowCT()"
+      },
+      {
+        "line": 122,
+        "text": "\t\treturn fmt.Sprintf(\"lunch no-trade window (%s\u2013%s CT)\", ls, le), true"
+      },
+      {
+        "line": 123,
+        "text": "\t}"
+      },
+      {
+        "line": 124,
+        "text": "\t// W3 \u2014 HARD red-news blackout: no entry within \u00b1T1BlackoutMinutes of a T1 event."
+      },
+      {
+        "line": 125,
+        "text": "\tif label, blocked := kernel.InT1Blackout(ctMinutesNow(now), t1Windows); blocked {"
+      },
+      {
+        "line": 126,
+        "text": "\t\treturn \"\ud83d\udd34 red-news blackout: \" + label, true"
+      },
+      {
+        "line": 127,
+        "text": "\t}"
+      },
+      {
+        "line": 128,
+        "text": "\treturn \"\", false"
+      },
+      {
+        "line": 129,
+        "text": "}"
+      },
+      {
+        "line": 130,
+        "text": ""
+      },
+      {
+        "line": 131,
+        "text": "// inSessionFirst5m reports whether now falls in the first 5 minutes of the"
+      }
+    ],
+    "trader/auto_trader_calendar.go": [
+      {
+        "line": 152,
+        "text": "\t}"
+      },
+      {
+        "line": 153,
+        "text": "\treg := at.sessionRegistry(now) // W8"
+      },
+      {
+        "line": 154,
+        "text": "\tsess, ok := reg.ActiveSession(now)"
+      },
+      {
+        "line": 155,
+        "text": "\tif !ok {"
+      },
+      {
+        "line": 156,
+        "text": "\t\treturn nil"
+      },
+      {
+        "line": 157,
+        "text": "\t}"
+      },
+      {
+        "line": 158,
+        "text": "\treturn at.t1WindowsFor(plannerTradeDateCT(now), sess)"
+      },
+      {
+        "line": 159,
+        "text": "}"
+      },
+      {
+        "line": 160,
+        "text": ""
+      },
+      {
+        "line": 161,
+        "text": "// t1WindowsFor is currentT1Windows for an EXPLICIT session and trade date, so"
+      },
+      {
+        "line": 162,
+        "text": "// the plan-write path can stamp the card with the SAME windows the entry gate"
+      },
+      {
+        "line": 163,
+        "text": "// will enforce (no-trade-band wave, 2026-09-02). A read authors ASIA while NY"
+      },
+      {
+        "line": 164,
+        "text": "// is still the active session, so \"the session at now\" is the wrong key there."
+      },
+      {
+        "line": 165,
+        "text": "func (at *AutoTrader) t1WindowsFor(tradeDate string, sess *kernel.SessionDef) []kernel.CTWindow {"
+      },
+      {
+        "line": 166,
+        "text": "\tif at.store == nil || sess == nil {"
+      },
+      {
+        "line": 167,
+        "text": "\t\treturn nil"
+      },
+      {
+        "line": 168,
+        "text": "\t}"
+      },
+      {
+        "line": 169,
+        "text": "\tslice, err := at.store.Calendar().GetSlice(tradeDate)"
+      },
+      {
+        "line": 170,
+        "text": "\tvar evs []calendar.Event"
+      },
+      {
+        "line": 171,
+        "text": "\tfromStatic := false"
+      },
+      {
+        "line": 172,
+        "text": "\tif err != nil || slice == nil || json.Unmarshal([]byte(slice.EventsJSON), &evs) != nil {"
+      },
+      {
+        "line": 173,
+        "text": "\t\t// P0.6 fail-closed: static T1 fallback + alert instead of silent nil."
+      },
+      {
+        "line": 174,
+        "text": "\t\tevs = calendarStaticLoader()"
+      },
+      {
+        "line": 175,
+        "text": "\t\tfromStatic = true"
+      },
+      {
+        "line": 176,
+        "text": "\t\tif at.lastCalFailClosedAlert != tradeDate {"
+      },
+      {
+        "line": 177,
+        "text": "\t\t\tat.lastCalFailClosedAlert = tradeDate"
+      },
+      {
+        "line": 178,
+        "text": "\t\t\tat.emitAlert(\"P0\", \"calendar-slice-missing\","
+      },
+      {
+        "line": 179,
+        "text": "\t\t\t\tfmt.Sprintf(\"calendar-fail-closed:%s:%s\", tradeDate, sess.Name),"
+      },
+      {
+        "line": 180,
+        "text": "\t\t\t\t\"Calendar slice missing\","
+      },
+      {
+        "line": 181,
+        "text": "\t\t\t\tfmt.Sprintf(\"No stored calendar slice for %s \u2014 session %s is now BLACKED OUT around the static T1 fallback times (fail-closed). Fix the calendar feed; this alert repeats daily until the slice exists.\","
+      },
+      {
+        "line": 182,
+        "text": "\t\t\t\t\ttradeDate, sess.Name))"
+      },
+      {
+        "line": 183,
+        "text": "\t\t}"
+      },
+      {
+        "line": 184,
+        "text": "\t}"
+      },
+      {
+        "line": 185,
+        "text": "\twindows := kernel.T1BlackoutWindows(sessionPlannerEvents(evs, sess.Name))"
+      },
+      {
+        "line": 186,
+        "text": "\tif fromStatic {"
+      },
+      {
+        "line": 187,
+        "text": "\t\tat.logWarnf(\"\ud83d\udcc5 calendar FAIL-CLOSED: no slice for %s \u2014 using the static T1 fallback (%d window(s)) instead of zero protection\","
+      },
+      {
+        "line": 188,
+        "text": "\t\t\ttradeDate, len(windows))"
+      },
+      {
+        "line": 189,
+        "text": "\t}"
+      },
+      {
+        "line": 190,
+        "text": "\t// F6 \u2014 widen the hard no-trade windows by the measured clock drift so the"
+      },
+      {
+        "line": 191,
+        "text": "\t// red-news blackout survives a skewed clock (same decision the authoring"
+      },
+      {
+        "line": 192,
+        "text": "\t// gate uses; the warn line fires once per session-day, not per cycle)."
+      },
+      {
+        "line": 193,
+        "text": "\tif drift, ok := clockHoldDriftFn(at.futuresSymbol()); ok {"
+      },
+      {
+        "line": 194,
+        "text": "\t\tif _, widen := kernel.ClockHoldDecision(drift, true, kernel.ClockWarnMs(), kernel.C2ToleranceMs()); widen > 0 {"
+      },
+      {
+        "line": 195,
+        "text": "\t\t\twindows = kernel.WidenCTWindows(windows, widen)"
+      },
+      {
+        "line": 196,
+        "text": "\t\t\tif at.lastClockWidenLog != tradeDate {"
+      },
+      {
+        "line": 197,
+        "text": "\t\t\t\tat.lastClockWidenLog = tradeDate"
+      },
+      {
+        "line": 198,
+        "text": "\t\t\t\tat.logWarnf(\"\ud83d\udd70 clock-hold: T1 no-trade windows widened by |drift| %dms for %s %s (F6)\", widen, tradeDate, sess.Name)"
+      },
+      {
+        "line": 199,
+        "text": "\t\t\t}"
+      },
+      {
+        "line": 200,
+        "text": "\t\t}"
+      },
+      {
+        "line": 201,
+        "text": "\t}"
+      },
+      {
+        "line": 202,
+        "text": "\treturn windows"
+      },
+      {
+        "line": 203,
+        "text": "}"
+      },
+      {
+        "line": 204,
+        "text": ""
+      },
+      {
+        "line": 205,
+        "text": "// sessionPlannerEvents maps stored calendar.Event \u2192 kernel.PlannerCalendarEvent"
+      },
+      {
+        "line": 206,
+        "text": "// (session-sliced, CT time). Shared by the gate + the planner input + the plan"
+      },
+      {
+        "line": 207,
+        "text": "// no-trade injection so all three agree."
+      },
+      {
+        "line": 208,
+        "text": "func sessionPlannerEvents(evs []calendar.Event, session string) []kernel.PlannerCalendarEvent {"
+      },
+      {
+        "line": 209,
+        "text": "\tloc := kernel.CTLocation()"
+      },
+      {
+        "line": 210,
+        "text": "\tvar out []kernel.PlannerCalendarEvent"
+      },
+      {
+        "line": 211,
+        "text": "\tfor _, e := range calendar.EventsForSession(evs, session) {"
+      },
+      {
+        "line": 212,
+        "text": "\t\tout = append(out, kernel.PlannerCalendarEvent{"
+      },
+      {
+        "line": 213,
+        "text": "\t\t\tTimeCT: e.Time.In(loc).Format(\"15:04\"), Currency: e.Currency,"
+      },
+      {
+        "line": 214,
+        "text": "\t\t\tTitle: e.Title, Impact: string(e.Impact),"
+      },
+      {
+        "line": 215,
+        "text": "\t\t})"
+      },
+      {
+        "line": 216,
+        "text": "\t}"
+      },
+      {
+        "line": 217,
+        "text": "\treturn out"
+      },
+      {
+        "line": 218,
+        "text": "}"
+      }
+    ],
+    "trader/auto_trader_clock.go": [
+      {
+        "line": 663,
+        "text": "// before each T1 blackout window through the end of that window. Same shape as"
+      },
+      {
+        "line": 664,
+        "text": "// enforceEODFlatAt: gated dormant (day_plan), never invents a flatten outside"
+      },
+      {
+        "line": 665,
+        "text": "// an active session, close is retried each cycle while positions remain open"
+      },
+      {
+        "line": 666,
+        "text": "// (GetOpenPositions only returns open ones, so retries are naturally"
+      },
+      {
+        "line": 667,
+        "text": "// idempotent). Windows come from currentT1Windows \u2014 so the fail-closed static"
+      },
+      {
+        "line": 668,
+        "text": "// fallback protects this path too."
+      },
+      {
+        "line": 669,
+        "text": "func (at *AutoTrader) enforceT1ForceFlat() bool {"
+      },
+      {
+        "line": 670,
+        "text": "\treturn at.enforceT1ForceFlatAt(time.Now())"
+      },
+      {
+        "line": 671,
+        "text": "}"
+      },
+      {
+        "line": 672,
+        "text": ""
+      },
+      {
+        "line": 673,
+        "text": "func (at *AutoTrader) enforceT1ForceFlatAt(now time.Time) bool {"
+      },
+      {
+        "line": 674,
+        "text": "\tif !at.dayPlanEnabled() || at.store == nil || at.trader == nil {"
+      },
+      {
+        "line": 675,
+        "text": "\t\treturn false"
+      },
+      {
+        "line": 676,
+        "text": "\t}"
+      },
+      {
+        "line": 677,
+        "text": "\tif _, ok := at.sessionRegistry(now).ActiveSession(now); !ok {"
+      },
+      {
+        "line": 678,
+        "text": "\t\treturn false // no active session \u2014 never flatten from an invented clock"
+      },
+      {
+        "line": 679,
+        "text": "\t}"
+      },
+      {
+        "line": 680,
+        "text": "\twindows := at.currentT1Windows(now)"
+      },
+      {
+        "line": 681,
+        "text": "\tif len(windows) == 0 {"
+      },
+      {
+        "line": 682,
+        "text": "\t\treturn false"
+      },
+      {
+        "line": 683,
+        "text": "\t}"
+      },
+      {
+        "line": 684,
+        "text": "\tdue := t1ForceFlatDue(ctMinutesNow(now), windows, t1ForceFlatLead)"
+      },
+      {
+        "line": 685,
+        "text": "\tif due == \"\" {"
+      },
+      {
+        "line": 686,
+        "text": "\t\treturn false"
+      },
+      {
+        "line": 687,
+        "text": "\t}"
+      },
+      {
+        "line": 688,
+        "text": "\t// NEWS-HYGIENE (2026-08-29) \u2014 cancel FIRST, BEFORE the open-position"
+      },
+      {
+        "line": 689,
+        "text": "\t// check: a FLAT trader with a working armed limit must not let that"
+      },
+      {
+        "line": 690,
+        "text": "\t// limit fill into the print. The pre-wave order only cancelled when a"
+      },
+      {
+        "line": 691,
+        "text": "\t// position existed, so a resting limit survived the whole window."
+      },
+      {
+        "line": 692,
+        "text": "\tn, unacked := at.cancelArmedOrdersSync(\"news_window\")"
+      },
+      {
+        "line": 693,
+        "text": "\tif n > 0 {"
+      },
+      {
+        "line": 694,
+        "text": "\t\tat.logWarnf(\"\ud83d\udd12 T1-FORCE-FLAT: %d armed order(s) cancelled before the red-news window\", n)"
+      },
+      {
+        "line": 695,
+        "text": "\t}"
+      },
+      {
+        "line": 696,
+        "text": "\tif unacked > 0 {"
+      },
+      {
+        "line": 697,
+        "text": "\t\tat.logWarnf(\"\u26a0\ufe0f T1-FORCE-FLAT: %d armed cancel(s) unacked after retry\", unacked)"
+      },
+      {
+        "line": 698,
+        "text": "\t}"
+      },
+      {
+        "line": 699,
+        "text": "\tpositions, err := at.store.Position().GetOpenPositions(at.id)"
+      },
+      {
+        "line": 700,
+        "text": "\tif err != nil || len(positions) == 0 {"
+      },
+      {
+        "line": 701,
+        "text": "\t\treturn n+unacked > 0 // flat \u2014 the arm-cancel above is the whole job"
+      },
+      {
+        "line": 702,
+        "text": "\t}"
+      },
+      {
+        "line": 703,
+        "text": "\tat.logWarnf(\"\ud83d\udcf0 T1-FORCE-FLAT (%s): flattening %d open position(s) \u2014 red-news forced close at T-%dmin (research v5 C.5).\", due, len(positions), t1ForceFlatLead)"
+      },
+      {
+        "line": 704,
+        "text": "\tfor _, p := range positions {"
+      },
+      {
+        "line": 705,
+        "text": "\t\tat.flattenPosition(p, \"\ud83d\udcf0 T1-FORCE-FLAT\")"
+      },
+      {
+        "line": 706,
+        "text": "\t}"
+      },
+      {
+        "line": 707,
+        "text": "\treturn true"
+      },
+      {
+        "line": 708,
+        "text": "}"
+      },
+      {
+        "line": 709,
+        "text": ""
+      },
+      {
+        "line": 710,
+        "text": "// recordExcursionForClosedSymbol (P2.4) processes the just-closed trade for the"
+      },
+      {
+        "line": 711,
+        "text": "// AI-emitted-close path. W5 \u2014 the SAME analytics also fire from the loop poll for"
+      },
+      {
+        "line": 712,
+        "text": "// real exits (NT8 OCO / EOD-flat / manual), so no exit path is missed."
+      }
+    ],
+    "trader/auto_trader_loop.go": [
+      {
+        "line": 305,
+        "text": "\t// P5.6 \u2014 WEEKLY matched-random eval (fixed cadence, never nightly re-peek):"
+      },
+      {
+        "line": 306,
+        "text": "\t// on Sundays, freeze one honesty-gate snapshot per ISO week. Idempotent"
+      },
+      {
+        "line": 307,
+        "text": "\t// (first-writer-wins across traders); gated \u2192 dormant."
+      },
+      {
+        "line": 308,
+        "text": "\tat.maybeRunWeeklyMatchedRandom(time.Now())"
+      },
+      {
+        "line": 309,
+        "text": ""
+      },
+      {
+        "line": 310,
+        "text": "\t// P2.3 \u2014 EOD-FLAT: at/after the session flat time, force-close any open"
+      },
+      {
+        "line": 311,
+        "text": "\t// position via the trader close path (bypasses hold-lock naturally, RECON"
+      },
+      {
+        "line": 312,
+        "text": "\t// #10), then skip the rest of the cycle. Runs BEFORE skip-while-open so a held"
+      },
+      {
+        "line": 313,
+        "text": "\t// trade is FLATTENED at the close, not merely skipped. Gated \u2192 dormant."
+      },
+      {
+        "line": 314,
+        "text": "\tif at.enforceEODFlat() {"
+      },
+      {
+        "line": 315,
+        "text": "\t\treturn nil"
+      },
+      {
+        "line": 316,
+        "text": "\t}"
+      },
+      {
+        "line": 317,
+        "text": ""
+      },
+      {
+        "line": 318,
+        "text": "\t// W3.4 \u2014 T1 FORCE-FLAT (research v5 C.5): from T-2min before each red-news"
+      },
+      {
+        "line": 319,
+        "text": "\t// blackout through the window, force-close open positions (FOMC/NFP must"
+      },
+      {
+        "line": 320,
+        "text": "\t// never ride through the event). Also before skip-while-open; when no"
+      },
+      {
+        "line": 321,
+        "text": "\t// positions remain it no-ops and the cycle continues into the blackout"
+      },
+      {
+        "line": 322,
+        "text": "\t// no-trade gate (which blocks new entries)."
+      },
+      {
+        "line": 323,
+        "text": "\tif at.enforceT1ForceFlat() {"
+      },
+      {
+        "line": 324,
+        "text": "\t\treturn nil"
+      },
+      {
+        "line": 325,
+        "text": "\t}"
+      },
+      {
+        "line": 326,
+        "text": ""
+      },
+      {
+        "line": 327,
+        "text": "\t// PHASE 3.5 \u2014 clock health at each SESSION ROLL (log-only). Detects the"
+      },
+      {
+        "line": 328,
+        "text": "\t// active-session name changing between cycles (incl. \u2192night as \"\"). Hoisted"
+      },
+      {
+        "line": 329,
+        "text": "\t// ABOVE skip-while-open (in-position silence fix 2026-08-19): a session roll"
+      },
+      {
+        "line": 330,
+        "text": "\t// during a held trade must still be observed."
+      },
+      {
+        "line": 331,
+        "text": "\tif at.config.Exchange == \"ninjatrader\" {"
+      },
+      {
+        "line": 332,
+        "text": "\t\tnowRoll := time.Now()"
+      },
+      {
+        "line": 333,
+        "text": "\t\tcur := \"\""
+      },
+      {
+        "line": 334,
+        "text": "\t\tif sess, ok := at.sessionRegistry(nowRoll).ActiveSession(nowRoll); ok {"
+      },
+      {
+        "line": 335,
+        "text": "\t\t\tcur = sess.Name"
+      },
+      {
+        "line": 336,
+        "text": "\t\t}"
+      },
+      {
+        "line": 337,
+        "text": "\t\tif cur != at.lastClockHealthSession {"
+      },
+      {
+        "line": 338,
+        "text": "\t\t\tkernel.LogClockHealth(\"session-roll:\"+orNight(cur), at.futuresSymbol())"
+      },
+      {
+        "line": 339,
+        "text": "\t\t\tat.lastClockHealthSession = cur"
+      },
+      {
+        "line": 340,
+        "text": "\t\t}"
+      },
+      {
+        "line": 341,
+        "text": "\t}"
+      },
+      {
+        "line": 342,
+        "text": ""
+      },
+      {
+        "line": 343,
+        "text": "\t// P2.2 note \u2014 skip-while-open RELOCATED below buildTradingContext +"
+      },
+      {
+        "line": 344,
+        "text": "\t// saveEquitySnapshot (in-position silence fix 2026-08-19). Skipping HERE"
+      },
+      {
+        "line": 345,
+        "text": "\t// froze the equity curve and the decision feed for the whole life of every"
+      },
+      {
+        "line": 346,
+        "text": "\t// position (#521: 1 scan in 82 min; #522: 1 scan in 16 min \u2014 the owner's"
+      },
+      {
+        "line": 347,
+        "text": "\t// \"updates stop while position open\"). Only the AI call may be skipped, and"
+      },
+      {
+        "line": 348,
+        "text": "\t// only AFTER snapshot+broadcast."
+      },
+      {
+        "line": 349,
+        "text": ""
+      },
+      {
+        "line": 350,
+        "text": "\t// Check USDC balance periodically for claw402 users (every 10 cycles)"
+      },
+      {
+        "line": 351,
+        "text": "\tif at.callCount%10 == 0 && store.IsClaw402Config(at.config.AIModel) {"
+      },
+      {
+        "line": 352,
+        "text": "\t\tat.checkClaw402Balance()"
+      },
+      {
+        "line": 353,
+        "text": "\t}"
+      },
+      {
+        "line": 354,
+        "text": ""
+      },
+      {
+        "line": 355,
+        "text": "\t// Create decision record"
+      }
+    ]
+  },
+  "health": {
+    "HTTP": 200,
+    "body": {
+      "revision": "36648655cfe0",
+      "status": "ok",
+      "time": null
+    }
+  }
+}

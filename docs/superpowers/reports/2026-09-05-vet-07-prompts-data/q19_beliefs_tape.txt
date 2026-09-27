@@ -1,0 +1,24 @@
+x
+--- touch_outcomes by level_kind for ONH/ONL/PDH/PDL/RTH-H/RTH-L (prompt says ONH/ONL broken ~94% of days)
+level_kind|n|brk|hold|amb|break_share_excl_amb
+VWAP|199|50|82|67|0.379
+RTH-L|140|82|42|16|0.661
+OR-H|22|9|9|4|0.5
+POC|20|5|9|6|0.357
+OR-L|12|4|4|4|0.5
+RTH-H|12|3|7|2|0.3
+PDH|10|5|4|1|0.556
+PDL|8|0|8|0|0.0
+ONL|4|1|3|0|0.25
+ONH|3|0|3|0|0.0
+x
+--- prior-review claim (a): positions 558, 588 graded down for the killzone
+id|entry_ct|plan_session|adherence_grade|cited_scenario_id|pnl_corrected
+558|2026-08-25 07:56:41|LONDON|B|S1|-22.5
+588|2026-09-02 07:41:05|LONDON|B|S2|-65.0
+x
+--- executor decision-path opens by session-day in the 0B era (since 09-02 07:49 CT)
+source|n|pnl
+armed_entry|5|52.0
+reconcile|7|31.5
+system|6|-273.5

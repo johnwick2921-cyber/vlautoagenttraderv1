@@ -1,0 +1,3 @@
+PASS: 58 unique eligible IDs, all exclusions, sum, W/L/flats, independent SD, closed DD $969, losing streak 7, 12 exit-based CME days, zero $450 trips, strict n0, day/order equivalence, ordered quantiles, Wilson bounds, offline byte-for-byte results.
+Results SHA256 688f55b9680e493d41d86fa3e829d58aca04601817d8b2aa7deb223fee8bc666
+Original rig unchanged SHA256 cc7909b6a1c57e14a309dd936d479493805c51932160f7e5889cf464a3d02716

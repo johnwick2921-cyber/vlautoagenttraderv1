@@ -6,6 +6,7 @@ package safe
 import (
 	"fmt"
 	"nofx/logger"
+	"nofx/telemetry"
 	"runtime/debug"
 )
 
@@ -18,6 +19,9 @@ func Go(fn func(), onPanic ...func(recovered interface{})) {
 			if r := recover(); r != nil {
 				stack := string(debug.Stack())
 				logger.Errorf("🔥 goroutine panic recovered: %v\n%s", r, stack)
+				// panic-net-complete: every recovered goroutine panic also lands
+				// in the telemetry counter, not only in the log.
+				telemetry.RecordError("", "goroutine_panic", fmt.Sprintf("%v", r), telemetry.CostNone)
 
 				for _, cb := range onPanic {
 					func() {

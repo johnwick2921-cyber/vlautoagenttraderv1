@@ -55,7 +55,7 @@ func TestIngestBurst600FpsUnderCapNoDrops(t *testing.T) {
 	s := NewTCPServer(nil)
 	// No drain goroutine — the queue must absorb the whole burst by capacity.
 	for i := 0; i < 3000; i++ {
-		s.enqueueBarUpdate("MNQ", "1m", nil)
+		s.enqueueBarUpdate("MNQ", "1m", "MNQ 12-26", nil)
 	}
 	if got := ingestDropOld.Load() + ingestDropCur.Load() + ingestDropHist.Load(); got != 0 {
 		t.Fatalf("burst under cap dropped %d frame(s) — the 4096 cap must absorb 3000", got)
@@ -82,7 +82,7 @@ func TestIngestBurstOverCapCountsIntrabarOnly(t *testing.T) {
 	cap := 4096
 	sent := 5000
 	for i := 0; i < sent; i++ {
-		s.enqueueBarUpdate("MNQ", "1m", nil)
+		s.enqueueBarUpdate("MNQ", "1m", "MNQ 12-26", nil)
 	}
 	wantOld := int64(sent - cap)
 	if got := ingestDropOld.Load(); got != wantOld {

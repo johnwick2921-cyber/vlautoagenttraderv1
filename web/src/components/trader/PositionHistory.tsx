@@ -350,9 +350,14 @@ function PositionRow({
   const side = position.side || ''
   const isLong = side.toUpperCase() === 'LONG'
   const realizedPnl = effectivePnl(position)
+  // Canon class 40: a NULL pnl_corrected is UNRESOLVED — it must READ
+  // "unresolved", never 0 or a fabricated realized_pnl number.
+  const pnlUnresolved =
+    typeof position.pnl_corrected !== 'number' || isNaN(position.pnl_corrected)
   // unresolved and duplicate rows render "—" (their P&L is unknown / not a
   // real trade). normal rows render the ledger-effective number.
-  const pnlUnknown = kind === 'unresolved' || kind === 'duplicate'
+  const pnlUnknown =
+    !pnlUnresolved && (kind === 'unresolved' || kind === 'duplicate')
   const isProfitable = realizedPnl >= 0
   const sideColor = isLong ? '#0ECB81' : '#F6465D'
   const pnlColor = isProfitable ? '#0ECB81' : '#F6465D'
@@ -474,7 +479,15 @@ function PositionRow({
 
       {/* P&L */}
       <td className="py-3 px-4 text-right">
-        {pnlUnknown ? (
+        {pnlUnresolved ? (
+          <div
+            className="font-mono font-semibold"
+            style={{ color: '#F0B90B' }}
+            title="pnl_corrected is NULL — the real exit P&L is unknown (excluded from every total)"
+          >
+            unresolved
+          </div>
+        ) : pnlUnknown ? (
           <div
             className="font-mono font-semibold"
             style={{ color: '#848E9C' }}
@@ -673,17 +686,28 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
     sortOrder,
   ])
 
-  // The visible total sums ONLY normal rows — so the rows on screen and the
-  // number beneath them always agree (duplicates/"—" rows contribute nothing).
+  // The visible total sums ONLY normal rows with a RESOLVED pnl_corrected —
+  // so the rows on screen and the number beneath them always agree
+  // (duplicates/"—"/"unresolved" rows contribute nothing).
   const visibleTotal = useMemo(() => {
     let sum = 0
     for (const p of filteredAndSortedPositions) {
-      if (classified.kinds.get(p.id) === 'normal') {
-        sum += effectivePnl(p)
-      }
+      if (classified.kinds.get(p.id) !== 'normal') continue
+      if (typeof p.pnl_corrected !== 'number' || isNaN(p.pnl_corrected))
+        continue
+      sum += p.pnl_corrected
     }
     return Math.round(sum * 100) / 100
   }, [filteredAndSortedPositions, classified])
+
+  // Canon class 40: the unresolved count is SHOWN alongside the totals.
+  const unresolvedCount = useMemo(
+    () =>
+      positions.filter(
+        (p) => typeof p.pnl_corrected !== 'number' || isNaN(p.pnl_corrected)
+      ).length,
+    [positions]
+  )
 
   // Day total — the SAME rule the ledger's session-day query uses
   // (unknown/test-seam/duplicate excluded, corrections win, A-2 NULLs out).
@@ -1190,6 +1214,15 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
                 {formatNumber(dayTotal)}
               </span>
             </span>
+            {unresolvedCount > 0 && (
+              <span
+                className="font-mono"
+                style={{ color: '#F0B90B' }}
+                title="pnl_corrected is NULL — these rows read unresolved and are excluded from every total (canon class 40)"
+              >
+                {unresolvedCount} unresolved
+              </span>
+            )}
           </div>
 
           {/* Right: Pagination controls */}

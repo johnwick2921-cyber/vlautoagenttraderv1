@@ -1,0 +1,30 @@
+kind        raw  eps prices hold  brk  amb p_hold         wilson95  amb% class
+VWAP        199  199     15   82   50   67  0.621 [0.536,0.699]  33.7 DYNAMIC/lookahead
+SWG-H        29   29      3    9    6   14  0.600 [0.357,0.802]  48.3 DYNAMIC/lookahead
+SUPPLY       22   22      2    7    7    8  0.500 [0.268,0.732]  36.4 DYNAMIC/lookahead
+OR-H         22   22      2    9    9    4  0.500 [0.290,0.710]  18.2 DYNAMIC/lookahead
+POC          20   20      1    9    5    6  0.643 [0.388,0.837]  30.0 DYNAMIC/lookahead
+DEMAND      139   18      2    8    9    1  0.471 [0.262,0.690]   5.6 DYNAMIC/lookahead
+SWG-L        16   16      3    4    4    8  0.500 [0.215,0.785]  50.0 DYNAMIC/lookahead
+RTH-L       140   14      1    4    8    2  0.333 [0.138,0.609]  14.3 static
+RTH-H        12   12      1    7    3    2  0.700 [0.397,0.892]  16.7 static
+PDC          12   12      1    5    6    1  0.455 [0.213,0.720]   8.3 static
+OR-L         12   12      1    4    4    4  0.500 [0.215,0.785]  33.3 DYNAMIC/lookahead
+OB           11   11      4    5    2    4  0.714 [0.359,0.918]  36.4 DYNAMIC/lookahead
+eVWAP        10   10      2    1    4    5  0.200 [0.036,0.624]  50.0 DYNAMIC/lookahead
+PDH          10   10      1    4    5    1  0.444 [0.189,0.733]  10.0 static
+VWAP±2σ       4    4      3    2    2    0  0.500 [0.150,0.850]   0.0 DYNAMIC/lookahead
+ONL           4    4      1    3    1    0  0.750 [0.301,0.954]   0.0 static
+ONH           3    3      3    3    0    0  1.000 [0.438,1.000]   0.0 static
+PDL           8    2      2    2    0    0  1.000 [0.342,1.000]   0.0 static
+EQL           2    2      1    2    0    0  1.000 [0.342,1.000]   0.0 DYNAMIC/lookahead
+FVG           2    1      1    0    1    0  0.000 [0.000,0.793]   0.0 DYNAMIC/lookahead
+TOTAL       677  423         170  126  127  0.574 [0.517,0.629]  30.0
+STATIC-ONLY pooled: eps=57 hold=28 brk=23 amb=6 p_hold=0.549 [0.414,0.677]
+
+D5b snapshot (research-conformance-data, 09-04 ~08:30 CT): RTH-L 20/63 = 0.3175 (0.21586527168091207, 0.44003763908124804) | dedup today: RTH-L 4/12
+[(29199.25, 8, 140, 14)]
+which day's RTH-L is 29199.25? bars RTH 08:30-15:00 CT low per calendar day:
+('2026-09-01', 29001.75)
+('2026-09-02', 29017.25)
+('2026-09-03', 29199.25)

@@ -1,0 +1,1336 @@
+{
+  "read_at_ct": "2026-09-05T17:46:05.470935-05:00",
+  "excluded": [
+    {
+      "id": 530,
+      "plan_id": "UNRESOLVABLE",
+      "source": "system",
+      "pnl_corrected": 13.0,
+      "entry_time": 1787231522210,
+      "close_reason": "sync"
+    },
+    {
+      "id": 539,
+      "plan_id": "UNRESOLVABLE",
+      "source": "system",
+      "pnl_corrected": -84.5,
+      "entry_time": 1787302449656,
+      "close_reason": "sync"
+    },
+    {
+      "id": 545,
+      "plan_id": "UNRESOLVABLE",
+      "source": "system",
+      "pnl_corrected": -29.5,
+      "entry_time": 1787542090280,
+      "close_reason": "sync"
+    },
+    {
+      "id": 546,
+      "plan_id": "UNRESOLVABLE",
+      "source": "system",
+      "pnl_corrected": -88.5,
+      "entry_time": 1787573202596,
+      "close_reason": "sync"
+    },
+    {
+      "id": 566,
+      "plan_id": "UNRESOLVABLE",
+      "source": "reconcile",
+      "pnl_corrected": 97.0,
+      "entry_time": 1787848373019,
+      "close_reason": "sync"
+    },
+    {
+      "id": 571,
+      "plan_id": "UNRESOLVABLE",
+      "source": "reconcile",
+      "pnl_corrected": -44.5,
+      "entry_time": 1788129513175,
+      "close_reason": "sync"
+    },
+    {
+      "id": 572,
+      "plan_id": "TEST-E7:c15c48a6-a036-4991-b4d0-9c9e0b2295b3",
+      "source": "e7_farside_test",
+      "pnl_corrected": null,
+      "entry_time": 1788147256663,
+      "close_reason": "e7_farside_test"
+    },
+    {
+      "id": 573,
+      "plan_id": "UNRESOLVABLE",
+      "source": "e7_farside_test",
+      "pnl_corrected": 6.0,
+      "entry_time": 1788148336590,
+      "close_reason": "e7_farside_test"
+    },
+    {
+      "id": 574,
+      "plan_id": "UNRESOLVABLE",
+      "source": "e7_farside_test",
+      "pnl_corrected": -1.0,
+      "entry_time": 1788148816545,
+      "close_reason": "e7_farside_test"
+    },
+    {
+      "id": 576,
+      "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "source": "armed_entry",
+      "pnl_corrected": null,
+      "entry_time": 1788188401050,
+      "close_reason": "reconcile_flat"
+    },
+    {
+      "id": 577,
+      "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "source": "armed_entry",
+      "pnl_corrected": null,
+      "entry_time": 1788197129000,
+      "close_reason": "reconcile_flat"
+    },
+    {
+      "id": 579,
+      "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "source": "armed_entry",
+      "pnl_corrected": null,
+      "entry_time": 1788199768811,
+      "close_reason": "unresolved"
+    },
+    {
+      "id": 580,
+      "plan_id": "UNRESOLVABLE",
+      "source": "reconcile",
+      "pnl_corrected": 39.5,
+      "entry_time": 1788201428615,
+      "close_reason": "sync"
+    }
+  ],
+  "performance": {
+    "ids": [
+      521,
+      522,
+      523,
+      524,
+      525,
+      526,
+      527,
+      528,
+      529,
+      531,
+      532,
+      533,
+      534,
+      535,
+      536,
+      537,
+      538,
+      540,
+      541,
+      542,
+      543,
+      544,
+      547,
+      548,
+      549,
+      550,
+      551,
+      552,
+      553,
+      554,
+      555,
+      556,
+      557,
+      558,
+      559,
+      560,
+      561,
+      562,
+      563,
+      564,
+      565,
+      567,
+      568,
+      569,
+      570,
+      575,
+      578,
+      581,
+      582,
+      583,
+      584,
+      585,
+      586,
+      587,
+      588,
+      589,
+      590,
+      591
+    ],
+    "winner_ids": [
+      521,
+      523,
+      524,
+      529,
+      532,
+      536,
+      538,
+      549,
+      555,
+      557,
+      560,
+      569,
+      570,
+      575,
+      578,
+      581,
+      582,
+      584
+    ],
+    "loser_ids": [
+      522,
+      525,
+      526,
+      527,
+      528,
+      531,
+      533,
+      534,
+      535,
+      537,
+      540,
+      541,
+      543,
+      544,
+      547,
+      548,
+      550,
+      552,
+      553,
+      554,
+      556,
+      558,
+      559,
+      561,
+      562,
+      563,
+      564,
+      565,
+      567,
+      568,
+      583,
+      585,
+      586,
+      587,
+      588,
+      589,
+      590,
+      591
+    ],
+    "scratch_ids": [
+      542,
+      551
+    ],
+    "win_rate_ex_scratch": {
+      "k": 18,
+      "n": 56,
+      "pct": 32.14,
+      "wilson95": [
+        21.4,
+        45.18
+      ]
+    },
+    "average_win": 125.47222222222223,
+    "average_loss": -71.70864663157887,
+    "payoff": 1.7497502479284985,
+    "sum": -466.4285719999971,
+    "mean": -8.041871931034432,
+    "all_row_win_rate": {
+      "ids": [
+        521,
+        523,
+        524,
+        529,
+        532,
+        536,
+        538,
+        549,
+        555,
+        557,
+        560,
+        569,
+        570,
+        575,
+        578,
+        581,
+        582,
+        584
+      ],
+      "denominator_ids": [
+        521,
+        522,
+        523,
+        524,
+        525,
+        526,
+        527,
+        528,
+        529,
+        531,
+        532,
+        533,
+        534,
+        535,
+        536,
+        537,
+        538,
+        540,
+        541,
+        542,
+        543,
+        544,
+        547,
+        548,
+        549,
+        550,
+        551,
+        552,
+        553,
+        554,
+        555,
+        556,
+        557,
+        558,
+        559,
+        560,
+        561,
+        562,
+        563,
+        564,
+        565,
+        567,
+        568,
+        569,
+        570,
+        575,
+        578,
+        581,
+        582,
+        583,
+        584,
+        585,
+        586,
+        587,
+        588,
+        589,
+        590,
+        591
+      ],
+      "k": 18,
+      "n": 58,
+      "pct": 31.03448275862069,
+      "wilson95": [
+        20.621934414805676,
+        43.80330684673994
+      ]
+    },
+    "breakeven_nonflat_win_probability_at_observed_payoff": 0.36366939170324347,
+    "payoff_required_at_observed_nonflat_win_frequency": 2.111111111111111,
+    "initial_risk_R_distribution": "UNMEASURABLE: immutable initial broker-accepted stops absent across cohort"
+  },
+  "fill_provenance": {
+    "entry": {
+      "methods": {
+        "trader_fills": [
+          521,
+          522,
+          523,
+          524,
+          525,
+          526,
+          527,
+          528,
+          529,
+          531,
+          532,
+          533,
+          534,
+          535,
+          536,
+          537,
+          538,
+          540,
+          541,
+          542,
+          543,
+          544,
+          547,
+          548,
+          549,
+          550,
+          551,
+          552,
+          553,
+          554,
+          555,
+          556,
+          557,
+          558,
+          559,
+          560,
+          561,
+          562,
+          563,
+          564,
+          565,
+          581,
+          583,
+          587,
+          588,
+          589,
+          590
+        ],
+        "entry_time(materialized,late)": [
+          567,
+          569
+        ],
+        "nt8_log": [
+          568,
+          570,
+          575,
+          578,
+          582,
+          584,
+          585,
+          586,
+          591
+        ]
+      },
+      "missing_bar_ids": [
+        521,
+        522,
+        523
+      ],
+      "outside_ids": [
+        569
+      ]
+    },
+    "exit": {
+      "methods": {
+        "position_exit_time": [
+          521,
+          522,
+          523,
+          524,
+          525,
+          526,
+          527,
+          528,
+          529,
+          531,
+          532,
+          533,
+          534,
+          535,
+          536,
+          537,
+          538,
+          540,
+          541,
+          542,
+          543,
+          544,
+          578
+        ],
+        "fill_price_side_nearest_time": [
+          547,
+          548,
+          549,
+          550,
+          551,
+          552,
+          553,
+          554,
+          555,
+          556,
+          557,
+          558,
+          559,
+          560,
+          561,
+          562,
+          563,
+          564,
+          565,
+          567,
+          568,
+          569,
+          570,
+          575,
+          581,
+          582,
+          583,
+          584,
+          585,
+          586,
+          587,
+          588,
+          589,
+          590,
+          591
+        ]
+      },
+      "missing_bar_ids": [
+        521,
+        522,
+        523
+      ],
+      "outside_ids": [
+        578
+      ]
+    }
+  },
+  "exit_reason_pnl": {
+    "limit": {
+      "ids": [
+        558,
+        560,
+        569
+      ],
+      "n": 3,
+      "pnl_corrected": 121.5,
+      "winner_ids": [
+        560,
+        569
+      ],
+      "flat_ids": []
+    },
+    "manual": {
+      "ids": [
+        526,
+        538,
+        575
+      ],
+      "n": 3,
+      "pnl_corrected": -6.428571999997075,
+      "winner_ids": [
+        538,
+        575
+      ],
+      "flat_ids": []
+    },
+    "sl": {
+      "ids": [
+        522,
+        525,
+        527,
+        528,
+        531,
+        533,
+        534,
+        535,
+        537,
+        540,
+        541,
+        542,
+        543,
+        544,
+        547,
+        548,
+        550,
+        551,
+        552,
+        553,
+        554,
+        556,
+        557,
+        559,
+        561,
+        562,
+        563,
+        564,
+        565,
+        567,
+        568,
+        570,
+        583,
+        585,
+        586,
+        587,
+        588,
+        589,
+        590,
+        591
+      ],
+      "n": 40,
+      "pnl_corrected": -2569.5,
+      "winner_ids": [
+        557,
+        570
+      ],
+      "flat_ids": [
+        542,
+        551
+      ]
+    },
+    "tp": {
+      "ids": [
+        521,
+        523,
+        524,
+        529,
+        532,
+        536,
+        549,
+        555,
+        581,
+        582,
+        584
+      ],
+      "n": 11,
+      "pnl_corrected": 1896.0,
+      "winner_ids": [
+        521,
+        523,
+        524,
+        529,
+        532,
+        536,
+        549,
+        555,
+        581,
+        582,
+        584
+      ],
+      "flat_ids": []
+    },
+    "unknown": {
+      "ids": [
+        578
+      ],
+      "n": 1,
+      "pnl_corrected": 92.0,
+      "winner_ids": [
+        578
+      ],
+      "flat_ids": []
+    }
+  },
+  "funnel": {
+    "plan_versions": 58,
+    "plan_ids": [
+      "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265"
+    ],
+    "scenario_versions": 177,
+    "enabled_versions": 57,
+    "enabled_keys": [
+      [
+        "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S4"
+      ],
+      [
+        "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S4"
+      ],
+      [
+        "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S4"
+      ],
+      [
+        "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ]
+    ],
+    "armed_keys": [
+      [
+        "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ]
+    ],
+    "placed_keys": [
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ]
+    ],
+    "reached_proxy_keys": [
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ]
+    ],
+    "filled_keys": [
+      [
+        "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ]
+    ],
+    "unarmed_keys": [
+      [
+        "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S4"
+      ],
+      [
+        "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S4"
+      ],
+      [
+        "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ],
+      [
+        "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S4"
+      ],
+      [
+        "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S3"
+      ],
+      [
+        "2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S1"
+      ],
+      [
+        "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "S2"
+      ]
+    ],
+    "placed_to_fill": {
+      "ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ]
+      ],
+      "denominator_ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "k": 1,
+      "n": 4,
+      "pct": 25.0,
+      "wilson95": [
+        4.558606264463622,
+        69.93639475573634
+      ]
+    },
+    "armed_to_place": {
+      "ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "denominator_ids": [
+        [
+          "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "k": 4,
+      "n": 7,
+      "pct": 57.14285714285714,
+      "wilson95": [
+        25.04542304090258,
+        84.17830777373732
+      ]
+    },
+    "authored_to_arm": {
+      "ids": [
+        [
+          "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "denominator_ids": [
+        [
+          "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ],
+        [
+          "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S4"
+        ],
+        [
+          "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ],
+        [
+          "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S4"
+        ],
+        [
+          "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ],
+        [
+          "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S4"
+        ],
+        [
+          "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "k": 7,
+      "n": 22,
+      "pct": 31.818181818181817,
+      "wilson95": [
+        16.36038735469248,
+        52.68177721716065
+      ]
+    },
+    "placed_to_reached_proxy": {
+      "ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "denominator_ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "k": 2,
+      "n": 4,
+      "pct": 50.0,
+      "wilson95": [
+        15.003570882017147,
+        84.99642911798286
+      ]
+    },
+    "reached_proxy_to_fill": {
+      "ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ]
+      ],
+      "denominator_ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "k": 1,
+      "n": 2,
+      "pct": 50.0,
+      "wilson95": [
+        9.452865480086615,
+        90.54713451991339
+      ]
+    },
+    "filled_to_win": {
+      "ids": [],
+      "denominator_ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ]
+      ],
+      "k": 0,
+      "n": 1,
+      "pct": 0.0,
+      "wilson95": [
+        0,
+        79.34567085261071
+      ]
+    },
+    "whole_bar_hit_arm_ids": [
+      35,
+      102
+    ],
+    "stop_entry_sent_ids": [
+      38,
+      62,
+      65,
+      67,
+      70,
+      73,
+      75,
+      77,
+      79,
+      81,
+      83,
+      85,
+      87,
+      89,
+      91,
+      93,
+      95,
+      97,
+      99,
+      101,
+      102
+    ],
+    "boundary_inclusive_hits": [
+      {
+        "arm_id": 35,
+        "key": [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        "bar_ids": [
+          440215,
+          440217,
+          440241,
+          440244,
+          440245,
+          440315,
+          440330,
+          440331,
+          440335,
+          440340,
+          440343,
+          440351,
+          440353,
+          440356,
+          440358,
+          440362,
+          440376,
+          440388
+        ]
+      },
+      {
+        "arm_id": 37,
+        "key": [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        "bar_ids": [
+          440791
+        ]
+      },
+      {
+        "arm_id": 102,
+        "key": [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ],
+        "bar_ids": [
+          445398,
+          445402,
+          445403,
+          445406
+        ]
+      }
+    ],
+    "boundary_inclusive_identity_rate": {
+      "ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "denominator_ids": [
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S3"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S1"
+        ],
+        [
+          "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+          "S2"
+        ]
+      ],
+      "k": 3,
+      "n": 4,
+      "pct": 75.0,
+      "wilson95": [
+        30.06360524426366,
+        95.44139373553637
+      ]
+    }
+  },
+  "guard33": {
+    "arm": {
+      "id": 33,
+      "created_at": "2026-09-02 14:10:29.738953457-05:00",
+      "updated_at": "2026-09-02 19:10:29.739748922+00:00",
+      "side": "short",
+      "entry_px": 29166.8,
+      "state_reason": "level accepted through \u2014 marketable, never placed"
+    },
+    "decision_minute_proxy": [
+      {
+        "bar_id": 435638,
+        "open_time_ms": 1788376200000,
+        "o": 29166.25,
+        "h": 29168.5,
+        "l": 29163.25,
+        "c": 29167.5
+      }
+    ]
+  },
+  "plan35": [
+    {
+      "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 2,
+      "created_at": "2026-09-03 13:45:05.993352176+00:00",
+      "session": "NY",
+      "doc": "{\"reasoning\":\"bias-tree: branch 2 \u2014 sweep of PDH + close back inside (bear MEDIUM), reinforced by branch 5 premium (price 99% of the dealing range, shorts only above mid) and the 08:30 expansion bar that swept 29285 OR-H/PDH then flushed 29199.25 through OR-L before recovering. Branch 3's close-vs-PDC long is low-conviction and capped by premium, so I lean short fades unless 29285 is reclaimed. No fvg_entry: the FRESH FVGs list is empty. The 29209.25 Supply\u00b71h is invalidated and kept as confluence only. S1 carries a resting short at 29285 because R:R clears the min-stop gate; S2/S3 stay on the AI path. 09:00 ISM is T2 caution \u2014 no new trade into the print.\",\"bias\":{\"direction\":\"short\",\"conviction\":\"medium\",\"flip_condition\":\"A single 5m close above 29285.00 OR-H flips to long.\"},\"levels\":[{\"price\":29498.5,\"label\":\"OB(bear)\u00b71h\",\"grade\":\"C\",\"instruction\":\"confluence\",\"machine_grade\":\"C\"},{\"price\":29293,\"label\":\"ONH\",\"grade\":\"A\",\"instruction\":\"liquidity_break\",\"machine_grade\":\"A\"},{\"price\":29285,\"label\":\"OR-H\",\"grade\":\"A\",\"instruction\":\"reject\",\"machine_grade\":\"A\"},{\"price\":29255,\"label\":\"PDH\",\"grade\":\"B\",\"instruction\":\"target_only\",\"machine_grade\":\"B\"},{\"price\":29233.08,\"label\":\"VWAP+1\u03c3\",\"grade\":\"A\",\"instruction\":\"mean_revert\",\"machine_grade\":\"A\"},{\"price\":29222.75,\"label\":\"OR-L\",\"grade\":\"A\",\"instruction\":\"liquidity_break\",\"machine_grade\":\"A\"},{\"price\":29209.25,\"label\":\"Supply\u00b71h\",\"grade\":\"C\",\"instruction\":\"confluence\",\"machine_grade\":\"C\"},{\"price\":29144.5,\"label\":\"Demand\u00b71h\",\"grade\":\"C\",\"instruction\":\"react\",\"machine_grade\":\"A\"},{\"price\":29075,\"label\":\"ONL\",\"grade\":\"A\",\"instruction\":\"target\",\"machine_grade\":\"A\"}],\"scenarios\":[{\"id\":\"S1\",\"trigger\":\"A retest of 29285.00 OR-H stalls after the 08:30 failure; short the touch.\",\"condition\":\"reject\",\"direction\":\"short\",\"target_chain\":[29233.08,29222.75,29144.5],\"invalid\":\"A 5m close above 29293.00 ONH voids the fade.\",\"confirm\":{\"rule\":\"touch\",\"ref_price\":29285,\"side\":\"below\"},\"quality\":\"B\",\"arm\":{\"enabled\":true,\"entry\":29285,\"stop\":29340,\"target\":29144.5,\"wait_confirm\":true}},{\"id\":\"S2\",\"trigger\":\"First touch of 29144.50 Demand\u00b71h after a flush toward 29075.00 ONL; long the touch.\",\"condition\":\"reject\",\"direction\":\"long\",\"target_chain\":[29209.25,29233.08,29255],\"invalid\":\"A 5m close below 29075.00 ONL invalidates the demand fade.\",\"confirm\":{\"rule\":\"touch\",\"ref_price\":29144.5,\"side\":\"above\"},\"quality\":\"B\"},{\"id\":\"S3\",\"trigger\":\"A wick through 29293.00 ONH that closes back below 29285.00 on 5m triggers a short sweep-reclaim.\",\"condition\":\"sweep_reclaim\",\"direction\":\"short\",\"target_chain\":[29255,29233.08,29144.5],\"invalid\":\"A 5m close above 29498.50 OB(bear)\u00b71h voids the play.\",\"confirm\":{\"rule\":\"touch\",\"ref_price\":29293,\"side\":\"above\"},\"quality\":\"A\",\"confirm2\":{\"rule\":\"1x5m_close\",\"ref_price\":29285,\"side\":\"below\"}}],\"no_trade\":[\"first 5m (CT)\",\"12:00-13:30 CT lunch\"],\"death_condition\":\"Two 5m closes above 29293.00 ONH kill the short plan.\",\"day_type\":\"balance\",\"death\":{\"price\":29293,\"side\":\"above\",\"rule\":\"2x5m\"},\"flip\":{\"price\":29285,\"side\":\"above\",\"rule\":\"5m_close\",\"flip_to\":\"long\"},\"bias_label\":\"bias: AI short \u00b7 tree neutral \u00b7 regime up\",\"no_trade_windows\":[{\"start_min\":510,\"end_min\":515,\"kind\":\"first_n\",\"label\":\"first 5m after the NY open (08:30\u201308:35 CT)\",\"source\":\"code-constant\"},{\"start_min\":720,\"end_min\":810,\"kind\":\"lunch\",\"label\":\"lunch 12:00\u201313:30 CT\",\"source\":\"code-constant\"}]}"
+    }
+  ],
+  "snapshot_ids": [
+    {
+      "id": 1604,
+      "received_at_ms": 1788536401395,
+      "reason": "state_change",
+      "orders_json": "[{\"order_id\":\"299043a487fc44499e1806077a5f28ab\",\"symbol\":\"MNQ\",\"name\":\"719f4bbb-069a-4c81-8df0-f0d1e112335a\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"0258b4cb048d4971a5aeef0db025d92b\",\"symbol\":\"MNQ\",\"name\":\"c794d0ce-0ca7-4c03-894c-25ddf4468935\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"81b63886467d4620bcb08df09c583c97\",\"symbol\":\"MNQ\",\"name\":\"4646df81-f408-48bc-9834-477105ed801c\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"5b30d833d96f41cba14541b8652024c0\",\"symbol\":\"MNQ\",\"name\":\"c5d4860a-1d7f-4480-bd27-fc6958221dae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"6a8ca44d43fd44cd932f15a84c6cdb6d\",\"symbol\":\"MNQ\",\"name\":\"9fcd8c7c-7d13-4e97-871c-21a49f44c643\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"c39974001a914523a8baac57660deddb\",\"symbol\":\"MNQ\",\"name\":\"9b146ffa-d569-44f9-a6b6-0701073418e9\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"4c4cea3b76b54ae788fc3ec8e3367d45\",\"symbol\":\"MNQ\",\"name\":\"7dd07a19-701e-4afa-9b15-655f65810e9e\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Initialized\"}]"
+    },
+    {
+      "id": 1605,
+      "received_at_ms": 1788536401414,
+      "reason": "state_change",
+      "orders_json": "[{\"order_id\":\"299043a487fc44499e1806077a5f28ab\",\"symbol\":\"MNQ\",\"name\":\"719f4bbb-069a-4c81-8df0-f0d1e112335a\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"0258b4cb048d4971a5aeef0db025d92b\",\"symbol\":\"MNQ\",\"name\":\"c794d0ce-0ca7-4c03-894c-25ddf4468935\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"81b63886467d4620bcb08df09c583c97\",\"symbol\":\"MNQ\",\"name\":\"4646df81-f408-48bc-9834-477105ed801c\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"5b30d833d96f41cba14541b8652024c0\",\"symbol\":\"MNQ\",\"name\":\"c5d4860a-1d7f-4480-bd27-fc6958221dae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"6a8ca44d43fd44cd932f15a84c6cdb6d\",\"symbol\":\"MNQ\",\"name\":\"9fcd8c7c-7d13-4e97-871c-21a49f44c643\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"c39974001a914523a8baac57660deddb\",\"symbol\":\"MNQ\",\"name\":\"9b146ffa-d569-44f9-a6b6-0701073418e9\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"4c4cea3b76b54ae788fc3ec8e3367d45\",\"symbol\":\"MNQ\",\"name\":\"7dd07a19-701e-4afa-9b15-655f65810e9e\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Submitted\"}]"
+    },
+    {
+      "id": 1606,
+      "received_at_ms": 1788536401414,
+      "reason": "state_change",
+      "orders_json": "[{\"order_id\":\"299043a487fc44499e1806077a5f28ab\",\"symbol\":\"MNQ\",\"name\":\"719f4bbb-069a-4c81-8df0-f0d1e112335a\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelPending\"},{\"order_id\":\"0258b4cb048d4971a5aeef0db025d92b\",\"symbol\":\"MNQ\",\"name\":\"c794d0ce-0ca7-4c03-894c-25ddf4468935\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"81b63886467d4620bcb08df09c583c97\",\"symbol\":\"MNQ\",\"name\":\"4646df81-f408-48bc-9834-477105ed801c\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"5b30d833d96f41cba14541b8652024c0\",\"symbol\":\"MNQ\",\"name\":\"c5d4860a-1d7f-4480-bd27-fc6958221dae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"6a8ca44d43fd44cd932f15a84c6cdb6d\",\"symbol\":\"MNQ\",\"name\":\"9fcd8c7c-7d13-4e97-871c-21a49f44c643\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"c39974001a914523a8baac57660deddb\",\"symbol\":\"MNQ\",\"name\":\"9b146ffa-d569-44f9-a6b6-0701073418e9\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"4c4cea3b76b54ae788fc3ec8e3367d45\",\"symbol\":\"MNQ\",\"name\":\"7dd07a19-701e-4afa-9b15-655f65810e9e\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Submitted\"}]"
+    }
+  ],
+  "arm35_geometry": {
+    "arm_id": 35,
+    "position_id": 591,
+    "entry": 29285.0,
+    "accepted_initial_stop": 29355.0,
+    "target": 29144.5,
+    "risk_pts": 70.0,
+    "reward_pts": 140.5,
+    "rr_accepted": 2.007142857142857,
+    "first_target_pts": 51.919999999998254,
+    "first_target_R": 0.7417142857142608,
+    "max_adverse_entry_pts_at_2R": 0.16666666666666666,
+    "rr_one_adverse_tick": 1.99644128113879,
+    "rr_four_adverse_ticks": 1.9647887323943662,
+    "invalidation_5m_bar_id": 440248,
+    "invalidation_close_proxy": 29301.5,
+    "proxy_loss_pts_at_invalidation_close": 16.5,
+    "broker_stop_slippage_pts": 0,
+    "ledger_drift_pts": 3.371527100360254
+  }
+}

@@ -1,0 +1,13 @@
+ct,cycle_log,proposal_seq,action,entry,sl,tp,minsl_rejected,cycle_terminal_record_id,cycle_terminal_risk_check_error,ctf_tp_pts,ctf_usd_at_2per_pt
+2026-09-02 18:48:13,#11,1,open_short,29209.25,29224.25,29179.25,YES,36640,entry_gate: stop 29231.00 too close (25.25 < 450.56 = 1.5xATR5m),30.00,60.00
+2026-09-02 18:48:49,#11,2,open_short,29209.25,29231.00,29149.00,no,36640,entry_gate: stop 29231.00 too close (25.25 < 450.56 = 1.5xATR5m),60.25,120.50
+2026-09-02 18:49:46,#12,1,open_short,29205.25,29223.00,29149.00,YES,36641,entry_gate: stop 29226.50 too close (21.00 < 450.56 = 1.5xATR5m),56.25,112.50
+2026-09-02 18:50:36,#12,2,open_short,29205.25,29226.50,29162.75,no,36641,entry_gate: stop 29226.50 too close (21.00 < 450.56 = 1.5xATR5m),42.50,85.00
+2026-09-02 18:52:04,#13,1,open_short,29206.25,29223.00,29163.00,YES,36642,entry_gate: stop 29230.00 too close (22.00 < 450.56 = 1.5xATR5m),43.25,86.50
+2026-09-02 18:52:33,#13,2,open_short,29206.25,29230.00,29149.00,no,36642,entry_gate: stop 29230.00 too close (22.00 < 450.56 = 1.5xATR5m),57.25,114.50
+2026-09-02 18:55:11,#14,1,open_short,29205.00,29223.25,29168.50,YES,36643,superseded_wait,36.50,73.00
+2026-09-02 18:57:02,#15,1,open_short,29204.50,29223.00,29167.25,YES,36644,schema_parse_failed,37.25,74.50
+2026-09-02 18:57:41,#15,2,open_short,29204.50,29224.75,29163.50,YES,36644,schema_parse_failed,41.00,82.00
+2026-09-02 18:58:38,#15,3,open_short,29204.50,29225.00,29149.00,YES,36644,schema_parse_failed,55.50,111.00
+2026-09-02 18:59:36,#16,1,open_short,29203.00,29223.00,29149.00,YES,36645,entry_gate: R:R 1.42 below floor 2.00 at execution price 29197.0000,54.00,108.00
+2026-09-02 19:00:23,#16,2,open_short,29203.00,29228.00,29153.00,no,36645,entry_gate: R:R 1.42 below floor 2.00 at execution price 29197.0000,50.00,100.00

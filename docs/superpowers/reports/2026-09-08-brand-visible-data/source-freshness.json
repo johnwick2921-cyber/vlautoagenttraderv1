@@ -1,0 +1,138 @@
+[
+  {
+    "path": "README.md",
+    "last_change": "d453bc2e 2026-08-26T19:50:46-05:00 PLANNER CONTRACT WAVE: S/D+FVG playbook (A1-A5) + MPM look-ahead rule (B1) + README §9 UI fixes (C1-C9) (#81)"
+  },
+  {
+    "path": "agent/agent.go",
+    "last_change": "6677b5b0 2026-08-22T18:24:37-05:00 feat(wave4): API auto max — per-model DeepSeek thinking knobs (4.5)"
+  },
+  {
+    "path": "agent/i18n.go",
+    "last_change": "c7cd5aae 2026-04-25T16:18:45+08:00 change v1"
+  },
+  {
+    "path": "agent/onboard.go",
+    "last_change": "9f82938e 2026-06-11T11:32:24-05:00 feat(ai): deepseek-v4-pro is the system-wide DeepSeek default"
+  },
+  {
+    "path": "agent/planner_runtime.go",
+    "last_change": "a6ea66a0 2026-09-01T23:26:29-05:00 fix(pnl-truth): corrected-column law on every prompt-facing P&L surface — the model never reads a fabricated track record"
+  },
+  {
+    "path": "agent/prompt_persona.go",
+    "last_change": "c7cd5aae 2026-04-25T16:18:45+08:00 change v1"
+  },
+  {
+    "path": "agent/scheduler.go",
+    "last_change": "c7cd5aae 2026-04-25T16:18:45+08:00 change v1"
+  },
+  {
+    "path": "agent/skill_domain_context.go",
+    "last_change": "32522207 2026-05-09T14:48:24+08:00 Refine strategy creation flow and diagnostics"
+  },
+  {
+    "path": "docs/i18n/README.md",
+    "last_change": "85794a72 2026-03-15T11:50:08+08:00 feat: add X-Client-ID header for claw402 monitoring"
+  },
+  {
+    "path": "docs/i18n/ja/README.md",
+    "last_change": "6833f478 2026-04-19T18:07:59+08:00 docs(readme): add quick demo video to localized READMEs (#1486)"
+  },
+  {
+    "path": "docs/i18n/ko/README.md",
+    "last_change": "6833f478 2026-04-19T18:07:59+08:00 docs(readme): add quick demo video to localized READMEs (#1486)"
+  },
+  {
+    "path": "docs/i18n/ru/README.md",
+    "last_change": "6833f478 2026-04-19T18:07:59+08:00 docs(readme): add quick demo video to localized READMEs (#1486)"
+  },
+  {
+    "path": "docs/i18n/uk/README.md",
+    "last_change": "6833f478 2026-04-19T18:07:59+08:00 docs(readme): add quick demo video to localized READMEs (#1486)"
+  },
+  {
+    "path": "docs/i18n/vi/README.md",
+    "last_change": "6833f478 2026-04-19T18:07:59+08:00 docs(readme): add quick demo video to localized READMEs (#1486)"
+  },
+  {
+    "path": "docs/i18n/zh-CN/README.md",
+    "last_change": "6833f478 2026-04-19T18:07:59+08:00 docs(readme): add quick demo video to localized READMEs (#1486)"
+  },
+  {
+    "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+    "last_change": "954f11b1 2026-09-08T18:38:16-05:00 fix(research): resolve archive paths before SQLite URI construction"
+  },
+  {
+    "path": "docs/superpowers/SYSTEM-MAP.md",
+    "last_change": "954f11b1 2026-09-08T18:38:16-05:00 fix(research): resolve archive paths before SQLite URI construction"
+  },
+  {
+    "path": "docs/superpowers/reports/2026-09-03-rebrand-census.md",
+    "last_change": "878f9e7f 2026-09-03T21:53:31-05:00 docs: rebrand census 2026-09-03 — every nofx identity mapped (read-only)"
+  },
+  {
+    "path": "main.go",
+    "last_change": "896aeea5 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers"
+  },
+  {
+    "path": "telegram/agent/agent.go",
+    "last_change": "85794a72 2026-03-15T11:50:08+08:00 feat: add X-Client-ID header for claw402 monitoring"
+  },
+  {
+    "path": "telegram/agent/prompt.go",
+    "last_change": "85794a72 2026-03-15T11:50:08+08:00 feat: add X-Client-ID header for claw402 monitoring"
+  },
+  {
+    "path": "telegram/bot.go",
+    "last_change": "9e4d17a6 2026-03-24T01:44:54+08:00 refactor: remove BlockRun provider, retain Claw402 as sole x402 payment provider"
+  },
+  {
+    "path": "web/index.html",
+    "last_change": "68393cf0 2026-08-22T17:19:41-05:00 feat(wave2): clarity quick-wins — rev exposure, no-data honesty, venue badge, grid honesty, duplicate hint, approve button, favicon"
+  },
+  {
+    "path": "web/src/components/agent/ChatInput.tsx",
+    "last_change": "6288d061 2026-05-11T23:51:27+08:00 fix(web): fix UI bugs and unify design tokens"
+  },
+  {
+    "path": "web/src/components/agent/ChatMessages.tsx",
+    "last_change": "6288d061 2026-05-11T23:51:27+08:00 fix(web): fix UI bugs and unify design tokens"
+  },
+  {
+    "path": "web/src/components/agent/WelcomeScreen.tsx",
+    "last_change": "258d3863 2026-05-27T17:12:54-05:00 fix(web): plan 4.7 — AgentChat tickers BTC/ETH/SOL -> MNQ"
+  },
+  {
+    "path": "web/src/components/auth/RegisterPage.tsx",
+    "last_change": "be65bcb3 2026-05-22T18:36:00-05:00 fix(web): finish VL rebrand — remove remaining NOFX text + image refs"
+  },
+  {
+    "path": "web/src/components/common/HeaderBar.tsx",
+    "last_change": "ec6e9c94 2026-08-26T21:48:38-05:00 guide: 5th nav page scaffolding — routes, nav tab, live-component exports, page shell"
+  },
+  {
+    "path": "web/src/constants/branding.ts",
+    "last_change": "0da8ebd8 2026-05-22T18:34:21-05:00 refactor(web): rebrand to VL + remove NOFX landing/community surface"
+  },
+  {
+    "path": "web/src/guide/GuidePage.tsx",
+    "last_change": "09e110b5 2026-09-03T22:39:03-05:00 fix(guide): the drift banner could never have been right, plus the label rules"
+  },
+  {
+    "path": "web/src/guide/content/welcome.ts",
+    "last_change": "c3405721 2026-09-03T23:01:08-05:00 docs(guide): a canon section — the files that ARE the answer, incl. clock-seams.list"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "last_change": "68393cf0 2026-08-22T17:19:41-05:00 feat(wave2): clarity quick-wins — rev exposure, no-data honesty, venue badge, grid honesty, duplicate hint, approve button, favicon"
+  },
+  {
+    "path": "web/src/pages/TraderDashboardPage.tsx",
+    "last_change": "83892c74 2026-09-06T16:23:53-05:00 fix(dashboard): show market and equity together without remounting Planner"
+  },
+  {
+    "path": "web/vite.config.ts",
+    "last_change": "11235e13 2026-08-16T09:55:36-05:00 fix(security): bind the live dev UI to loopback — it was proxying the LAN into :8080"
+  }
+]

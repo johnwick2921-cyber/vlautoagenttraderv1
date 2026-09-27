@@ -280,7 +280,9 @@ func TestScenarioEconomicsBootAndProductionWiring(t *testing.T) {
 		}
 	}
 	// Call-site pins: moving/removing the call may leave the pure tests green.
-	for _, pin := range []struct{ path, call string }{{"levels_volume_boot.go", "logger.Info(ScenarioEconomicsBootLine())"}, {"../trader/auto_trader_planner.go", "kernel.ParsePlanDocCappedWithMinRR(raw, maxLevels, scenarioCap, at.armMinRRFor(nil))"}} {
+	// W3: the write loop parses through ParsePlanDocForAuthoring with the
+	// resolved opts, whose MinRR is still at.armMinRRFor(nil).
+	for _, pin := range []struct{ path, call string }{{"levels_volume_boot.go", "logger.Info(ScenarioEconomicsBootLine())"}, {"../trader/auto_trader_planner.go", "kernel.ParsePlanDocForAuthoring(raw, maxLevels, scenarioCap, at.plannerAuthoringOpts())"}, {"../trader/entry_policy_authoring.go", "at.armMinRRFor(nil)"}} {
 		b, err := os.ReadFile(pin.path)
 		if err != nil {
 			t.Fatal(err)

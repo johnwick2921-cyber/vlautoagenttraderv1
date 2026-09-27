@@ -1,0 +1,56 @@
+{
+  "observed_at": "2026-09-08T23:10:26.163667+00:00",
+  "running_traders_n": 1,
+  "gates": [
+    {
+      "http_status": 200,
+      "response_sha256": "a435908dbdc37f6581e2cf1293a9cd694c14c240b90f394b8d8d5fb6f2df7488",
+      "response": {
+        "trader_id": "8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "ready": false,
+        "legs": [
+          {
+            "n": 1,
+            "name": "db_open_positions",
+            "pass": true,
+            "detail": "0 open row(s)",
+            "source": "sqlite trader_positions"
+          },
+          {
+            "n": 2,
+            "name": "api_positions",
+            "pass": true,
+            "detail": "0 position(s)",
+            "source": "trader.GetPositions"
+          },
+          {
+            "n": 3,
+            "name": "nt8_positions_snapshot",
+            "pass": true,
+            "detail": "count=0",
+            "source": "NT8 positions frame"
+          },
+          {
+            "n": 4,
+            "name": "working_orders",
+            "pass": false,
+            "detail": "1 working order(s) at the broker: a03612d773f74eed8ba3d61be4cb0aef(Working limit @29503.25)",
+            "source": "broker \u2014 NT8 order_snapshot frame (age 19s, build 2026-09-07-h1)"
+          },
+          {
+            "n": 5,
+            "name": "planner_in_flight",
+            "pass": true,
+            "detail": "no planner read claimed",
+            "source": "plannerReadInFlight claim"
+          }
+        ],
+        "note": "class 33: leg 4 reads the armed_orders ledger (NT8 emits no working-order frame, audit F12); a leg that cannot be evaluated FAILS. Boot sweep counter key: arms_boot_swept_class33"
+      }
+    }
+  ],
+  "ready": false,
+  "owner_resting_order_override_requested": true,
+  "proceed_under_owner_override": true,
+  "proceed": true
+}

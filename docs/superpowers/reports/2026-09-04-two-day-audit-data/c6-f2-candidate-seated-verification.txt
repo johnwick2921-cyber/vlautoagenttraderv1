@@ -1,0 +1,83 @@
+C6-F2 ADVERSARIAL RE-VERIFICATION — touch_outcomes.candidate_seated
+Verifier: independent lane. Worktree /home/hoang/nofx-2day04 @ f1c35e05 (dev tip dfbfa660 + audit checkpoint).
+All commands re-run from scratch; peer output NOT trusted.
+
+--- 1. every reference to the field (my own grep, whole tree) ---
+$ cd /home/hoang/nofx-2day04 && grep -rn "CandidateSeated\|candidate_seated" --include=*.go .
+store/touch_outcomes.go:31:     CandidateSeated bool   `gorm:"index"`          <- DECL
+trader/detector_record.go:66:  CandidateSeated: true, ...                      <- ONLY WRITE (literal)
+trader/detector_record_test.go:84: if !got.CandidateSeated {                   <- TEST ASSERT
+$ grep -rln "candidate_seated" . | grep -v '^\./\.git/'
+(none)  -> zero non-Go references: no SQL, no web/, no docs
+=> [A] no READER anywhere. RatesBy()/DetectorReport() group on level_kind|session|ordinal only.
+
+--- 2. the write is inside a seated-only loop ---
+trader/detector_record.go:55  for _, lv := range seated {
+trader/detector_record.go:66      CandidateSeated: true,
+=> [A] the literal-true finding REPRODUCES exactly.
+
+--- 3. what the DESIGN actually assigns the off-policy job to ---
+store/touch_outcomes.go:29-31 (the line the peer cites):
+  "Was the level SEATED in the plan, or only a candidate? The selection
+   question is off-policy and needs the excluded pool too (B2/B3)."
+store/candidate_pool.go:12-17:
+  "This exists because the selection question is OFF-POLICY: asking 'did seating
+   this level help?' requires the levels that were NOT seated ... A table of only
+   the seated levels can answer how the chosen ones performed and can never
+   answer whether the choosing was good."
+docs/superpowers/AUDIT-CHECKLIST.md class 66 (~line 1402-1405):
+  "touch_outcomes writes one row per episode with the scope it was judged under;
+   candidate_pool records every level the constructor produced INCLUDING the cut
+   ones ... because the selection question is off-policy and cannot be answered
+   from the seated levels alone"
+docs/superpowers/reports/2026-09-02-detector-redesign.md sec.7 "Touch-outcome
+  record schema (new table touch_outcomes)": the specified column list contains
+  NO seated/candidate column at all; "kind, grade, family | from the seated level".
+=> [A] the off-policy contract belongs to candidate_pool.Seated, not to this column.
+
+--- 4. candidate_pool.Seated is NOT degenerate ---
+kernel/detector_recorder.go:74-90: Seated=true only when the level is found in the
+seated map; every other level gets Seated=false plus a derived CutReason
+(proximity / max_levels / cluster-collapse-or-grade-floor).
+store/candidate_pool.go:31-33: "Seated: did it reach the plan? The whole point of
+the table is that this is FALSE for most rows."
+detector_record_test.go (block after :84): "D3: the pool carries BOTH candidates,
+and the cut one carries its reason."
+=> [A] the bivalued off-policy instrument exists and works.
+
+--- 5. LIVE STORE (read-only) ---
+$ sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT 'touch_outcomes',COUNT(*) FROM touch_outcomes UNION ALL SELECT 'candidate_pool',COUNT(*) FROM candidate_pool;"
+touch_outcomes|0
+candidate_pool|0
+$ sqlite3 ... "SELECT candidate_seated, COUNT(*) FROM touch_outcomes GROUP BY 1;"
+(no rows)
+Column DOES exist in the deployed schema (`candidate_seated numeric` +
+idx_touch_outcomes_candidate_seated).
+
+--- 6. the production writer has NEVER executed ---
+Running binary PID 594377 booted 2026-09-03 23:12:54 CT. Its own boot line:
+/home/hoang/nofx/data/nofx_2026-09-03.log:29005
+  09-03 23:12:55 [INFO] .../main.go:404 (kernel.DetectorBootLine, READ not literal)
+  "detector: D1' k=3 ... touch_outcomes=0 - candidate_pool=0"
+$ grep -hc "detector recorded" /home/hoang/nofx/data/nofx_2026-09-0[234].log -> 0, 0, 0
+detector_record.go always logs exactly one of three lines when entered
+(:40 no-bars INFO, :45 delta-0 WARN, :104 recorded INFO). Zero of any =>
+[A] recordDetectorOutputs has not been entered in production, ever.
+Wiring commit f1d7cf51 2026-09-03 21:31:57 CT; first boot carrying it 21:48:12 CT.
+$ sqlite3 ... "SELECT COUNT(*),MAX(datetime(created_at,'-5 hours')) FROM planner_read_facts;"
+17 | 2026-09-03 20:24:03      (last plan row: 2026-09-03 ASIA v5 @ 20:32:32 CT)
+$ sqlite3 ... "SELECT COUNT(*) FROM planner_read_facts WHERE created_at >= '2026-09-04 02:48:12';"
+0   (i.e. zero planner reads since the wiring boot; 04:12:54 UTC cut -> 0 as well)
+
+--- 7. prior art ---
+AUDIT-CHECKLIST.md class 69 "Reported wired, called by nobody" already covers the
+enclosing problem (detector_record.go's "THE PRODUCTION CALL PATH" banner with 0
+production call sites from 89aeb8be), and records the fix: wired at
+auto_trader_planner.go:2333 by f1d7cf51. The specific degenerate-column
+observation is not itself in the checklist [A].
+
+CONCLUSION: literal-true fact REPRODUCES; "stated off-policy purpose unmet" and
+the class-A DEFECT rating do NOT. Write-only, unread, constant field whose
+off-policy job is discharged by candidate_pool.Seated. The material fact is that
+BOTH 1B tables are empty and the writer has never run.

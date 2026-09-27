@@ -1,0 +1,19 @@
+id|entry_ct|source|side|plan_session|cited_scenario_id|adherence_grade|pnl_corrected
+571|2026-08-30 17:38:33|reconcile|LONG|||F|-44.5
+575|2026-08-31 09:59:18|reconcile|SHORT|NY|S2|A|32.5
+576|2026-08-31 10:00:01|armed_entry|short|NY|S2|A|
+577|2026-08-31 12:25:29|armed_entry|long|NY|S1|C|
+578|2026-08-31 12:26:48|reconcile|LONG|NY|S1|C|92.0
+579|2026-08-31 13:09:28|armed_entry|short|NY|S3|B|
+580|2026-08-31 13:37:08|reconcile|SHORT|||D|39.5
+581|2026-09-01 02:52:44|system|SHORT|LONDON|S1|A|190.5
+582|2026-09-01 05:23:28|armed_entry|SHORT|LONDON|S2|D|129.5
+583|2026-09-01 06:35:04|system|LONG|LONDON|S2|B|-82.5
+584|2026-09-01 08:36:47|reconcile|SHORT|LONDON|S2|A|106.0
+585|2026-09-01 09:31:08|armed_entry|SHORT|NY|S1|C|-77.5
+586|2026-09-01 13:33:06|reconcile|LONG|NY|S3|A|-54.0
+587|2026-09-02 00:17:44|system|LONG|ASIA|S3|B|-62.5
+588|2026-09-02 07:41:05|system|LONG|LONDON|S2|B|-65.0
+589|2026-09-02 09:41:04|system|LONG|NY|S3|A|-155.0
+590|2026-09-02 10:37:17|system|LONG|NY|S4|A|-99.0
+591|2026-09-03 09:05:14|reconcile|SHORT|NY|S1|A|-140.0

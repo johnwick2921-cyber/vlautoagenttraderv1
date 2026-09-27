@@ -1,0 +1,13 @@
+{
+ "correction": "Westfall-Young max-T (permutation, sign flips), Bonferroni bound per cell",
+ "perms": 2000,
+ "summary": {
+  "best_p_maxT": 0,
+  "cells_net_positive": 16,
+  "cells_with_data": 16,
+  "max_mean": 4.208179465901149,
+  "median_mean": 2.413198128606534,
+  "min_mean": 0.3920171398823426,
+  "min_stat_abs": 5.077088964780523
+ }
+}

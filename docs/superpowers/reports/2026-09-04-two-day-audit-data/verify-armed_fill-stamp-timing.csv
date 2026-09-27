@@ -1,0 +1,4 @@
+pos_id,materialized_ct,materialize_log_line,stamped_ct,stamp_log_line,lag,stamping_caller_inferred
+584,2026-09-01 08:36:47,nofx_2026-09-01.log:14364 reconcile.go:436,2026-09-01 17:24:00,nofx_2026-09-01.log:26389 reconcile.go:543,8h47m13s,RepairArmedLineage (reconcile.go:583) - batch of 3 in same second at a restart
+586,2026-09-01 13:33:06,nofx_2026-09-01.log:20365 reconcile.go:436,2026-09-01 17:24:00,nofx_2026-09-01.log:26388 reconcile.go:543,3h50m54s,RepairArmedLineage (reconcile.go:583) - batch of 3 in same second at a restart
+591,2026-09-03 09:05:14,nofx_2026-09-02.log:84997 reconcile.go:436,2026-09-03 10:28:29,nofx_2026-09-03.log:51 reconcile.go:552,1h23m15s,RepairArmedLineage (reconcile.go:583) - batch of 2 in same second at a restart

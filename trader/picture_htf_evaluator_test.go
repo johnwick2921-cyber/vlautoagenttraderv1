@@ -24,13 +24,28 @@ type pictureHtfTestEnv struct {
 
 func newPictureHtfEnv(t *testing.T, cfg store.PictureHtfConfig) *pictureHtfTestEnv {
 	t.Helper()
-	sc := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PictureHtf: &cfg}}
+	// W4/D21: the evaluator now refuses until it holds PivotWindow+4 COMPLETED
+	// 4H candles. Production defaults PivotWindow to 120, i.e. 124 candles —
+	// these ladders are a dozen candles long on purpose, because they are about
+	// pivot GEOMETRY, not depth. A caller that cares about depth sets the knob
+	// explicitly (see picture_htf_depth_test.go, which drives both sides of the
+	// boundary); everyone else gets a window their ladder can satisfy.
+	if cfg.PivotWindow <= 0 {
+		cfg.PivotWindow = 16
+	}
+	// W-EXEC-TRUTH W0: Picture is admitted only while its trader RUNS and the
+	// Day Plan master is ON (admitEntry — it used to run regardless, D26), so
+	// the harness is a running trader with the master on.
+	sc := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PictureHtf: &cfg, PlanEnabled: true}}
 	sc.RiskControl.MinRiskRewardRatio = 2.5
 	at, st := resetTrader(t, sc)
-	eval := NewPictureHtfEvaluator(at, store.PictureHtfResolved(&cfg))
+	at.isRunningMutex.Lock()
+	at.isRunning = true
+	at.isRunningMutex.Unlock()
+	eval := NewPictureHtfEvaluator(at, pictureTestResolved(&cfg))
 	env := &pictureHtfTestEnv{t: t, at: at, st: st, eval: eval}
 	orig := pictureHtfSubmitSeam
-	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env.submits = append(env.submits, row.OppKey)
 		return nil
 	}
@@ -65,37 +80,69 @@ func tailOf(bars []market.Kline, n int) []market.Kline {
 	return bars[len(bars)-n:]
 }
 
-// pictureBars4H builds the full ladder: an OLD 110 resistance (i=1), a
-// pullback, and the RECENT 101 resistance (i=7) that the H1 pair later
+// pictureLead4H is how many filler candles precede every 4H ladder so the
+// fixtures satisfy W4/D21's depth rule (>= PivotWindow+4 COMPLETED candles)
+// while still leaving the discovery window wide enough to reach the ladder's
+// own pivots — BodyPivots4H cuts to the last PivotWindow candles before it
+// looks for anything.
+const pictureLead4H = 20
+
+// lead4H builds pictureLead4H candles that RISE strictly and stop just below
+// endBody. Strictly rising bodies can never be a pivot: every candidate has a
+// higher body after it (so the resistance test fails) and a lower body before
+// it (so the support test fails). Stopping just below the ladder's first real
+// body keeps the junction unremarkable too — a gap there would make the last
+// filler candle a pivot in its own right and add a level no test asked for.
+func lead4H(endBody float64) [][4]float64 {
+	out := make([][4]float64, 0, pictureLead4H)
+	for i := 0; i < pictureLead4H; i++ {
+		b := endBody - float64(pictureLead4H-1-i)*0.5
+		out = append(out, [4]float64{b, b + 0.4, b - 0.4, b + 0.3})
+	}
+	return out
+}
+
+// mk4HLadder stamps a values table onto the 4H grid with the lead-in candles
+// sitting BEFORE t4h0, so every meaningful candle keeps the timestamp the H1
+// and 5m ladders are aligned to.
+func mk4HLadder(vals [][4]float64) []market.Kline {
+	out := make([]market.Kline, 0, len(vals))
+	for i, v := range vals {
+		out = append(out, mkBar(t4h0+int64(i-pictureLead4H)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
+	}
+	return out
+}
+
+// pictureBars4H builds the full ladder: an OLD 110 resistance (i=3), a
+// pullback, and the RECENT 101 resistance (i=9) that the H1 pair later
 // breaks. No later 4H close exceeds 101, so the 101 level is still ACTIVE
 // (not retired) when the H1 crosses it — and the 110 zone above is the
 // opposing target. This mirrors reality: old high → consolidation →
 // breakout → target the old high.
+//
+// W4/D22: the ladder carries TWO extra leading candles so that both pivots
+// have all four confirming neighbours (i-2, i-1, i+1, i+2). Before this wave
+// the 110 level sat at i=1 and was declared on THREE observed neighbours,
+// because the discovery loop silently skipped the i-2 that does not exist —
+// the fixture encoded the defect. The two added candles are deliberately
+// unremarkable (bodies far below 110) so they add no level of their own.
 func pictureBars4H() []market.Kline {
-	vals := [][4]float64{
+	vals := append(lead4H(107), [][4]float64{
 		{108, 110, 106, 109}, {109, 111, 107, 110}, {107, 108, 105, 106}, {105, 106, 103, 104},
 		{103, 104, 101, 102}, {100, 101, 99, 100.5}, {98.5, 100, 97.5, 99}, {99, 105, 96, 101},
 		{96, 97, 94, 95}, {94, 95, 92, 93}, {93, 94, 91, 92},
-	}
-	out := make([]market.Kline, 0, len(vals))
-	for i, v := range vals {
-		out = append(out, mkBar(t4h0+int64(i)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
-	}
-	return out
+	}...)
+	return mk4HLadder(vals)
 }
 
 // pictureBars4HNoTarget: the same recent 101 resistance but NO old high — the
 // opposing-zone refusal fixture.
 func pictureBars4HNoTarget() []market.Kline {
-	vals := [][4]float64{
+	vals := append(lead4H(97), [][4]float64{
 		{98, 99, 97, 98}, {99, 100, 98, 99.5}, {99, 105, 96, 101},
 		{96, 97, 94, 95}, {94, 95, 92, 93}, {93, 94, 91, 92},
-	}
-	out := make([]market.Kline, 0, len(vals))
-	for i, v := range vals {
-		out = append(out, mkBar(t4h0+int64(i)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
-	}
-	return out
+	}...)
+	return mk4HLadder(vals)
 }
 
 func pictureBarsH1() []market.Kline {
@@ -188,7 +235,10 @@ func TestPictureHtfEvaluatorSubmitsOnceAndAdmits(t *testing.T) {
 }
 
 func TestPictureHtfEvaluatorLateFrameExpires(t *testing.T) {
-	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	// FreshnessSec is EXPLICIT here: this pin tests the expiry mechanism at a
+	// tight knob, not the shipped default (that is pinned in
+	// store/picture_defaults_test.go and the boot-line test).
+	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5, FreshnessSec: 2})
 	env.seedPictureTape()
 	// The freshest 5m frame is 5s old — outside the 2s freshness limit.
 	env.eval.OnBars("MNQ", "5m", tailOf(market.FuturesBarsProvider("MNQ", "5m", 28), 1), env.now.Add(-5*time.Second))
@@ -202,7 +252,9 @@ func TestPictureHtfEvaluatorLateFrameExpires(t *testing.T) {
 }
 
 func TestPictureHtfEvaluatorPastWindowExpires(t *testing.T) {
-	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	// EntryWindowSec is EXPLICIT here: this pin tests the window mechanism at a
+	// tight knob, not the shipped default (pinned separately).
+	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5, EntryWindowSec: 10})
 	env.seedPictureTape()
 	// 30s into the interval — outside the 10s entry window.
 	env.eval.OnBars("MNQ", "5m", tailOf(market.FuturesBarsProvider("MNQ", "5m", 28), 1), env.now)
@@ -282,7 +334,7 @@ func TestPictureHtfEvaluatorCapabilityGateBlocks(t *testing.T) {
 	// The DEFAULT capability seam reads the concrete trader — resetTrader has
 	// none, so capability is NOT proven and the mode must stay unavailable.
 	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PictureHtf: &store.PictureHtfConfig{Enabled: true}}})
-	ev := NewPictureHtfEvaluator(at, store.PictureHtfResolved(&store.PictureHtfConfig{Enabled: true}))
+	ev := NewPictureHtfEvaluator(at, pictureTestResolved(&store.PictureHtfConfig{Enabled: true}))
 	res := ev.Evaluate("MNQ", time.Now())
 	if res.Stage != "watching" || !strings.Contains(res.Reason, "mode unavailable") {
 		t.Fatalf("an unproven AddOn must gate the mode off, got %+v", res)
@@ -293,15 +345,31 @@ func TestPictureHtfEvaluatorIgnoresUnfinalizedBars(t *testing.T) {
 	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	env.seedPictureTape()
 	// Override the 5m ladder: the NEWEST bar is time-complete (CloseTime < now)
-	// but the AddOn never finalized it — it must not count as a completed bar,
-	// so the previous interval's window is past and the evaluation expires.
+	// but the AddOn never finalized it. It is a FORMING candle and must license
+	// nothing.
+	//
+	// W4/D23 changed what "nothing" looks like here, and the new answer is
+	// stricter. This test used to assert "expired", because the window was
+	// measured from the newest COMPLETED 5m candle: dropping the unfinalized
+	// one moved that anchor back five minutes and the window read as past. The
+	// window is now anchored to the H1 close that CONFIRMED the break, so it no
+	// longer moves with whichever candle is newest — and a forming tick no
+	// longer refreshes the freshness stamps at all. So the evaluator reports
+	// that it is still WAITING for completed data, holds no opportunity key,
+	// and writes NO durable refusal a qualifying frame would have to live with.
 	bars5m := pictureBars5M(true)
 	bars5m[len(bars5m)-1].Final = false
 	env.seed(pictureBars4H(), pictureBarsH1(), bars5m)
 	env.eval.OnBars("MNQ", "5m", tailOf(bars5m, 1), env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
-	if res.Stage != "expired" {
-		t.Fatalf("an unfinalized bar must not establish the current interval, got %+v", res)
+	if res.Stage == "confirmed" || res.Stage == "submitted" || res.Stage == pictureHtfSeamDoneStage {
+		t.Fatalf("a forming candle must never license an entry, got %+v", res)
+	}
+	if !strings.Contains(res.Reason, "awaiting the completed 5m close") {
+		t.Fatalf("a forming candle must not refresh freshness — the evaluator must still be awaiting completed data, got %+v", res)
+	}
+	if res.OppKey != "" {
+		t.Fatalf("no opportunity may be keyed off a forming candle, got %q", res.OppKey)
 	}
 	if len(env.submits) != 0 {
 		t.Fatalf("an unfinalized newest bar must never submit")
@@ -362,17 +430,17 @@ func TestPictureHtfH1CloseToNext5mSequenceNativeAlignment(t *testing.T) {
 // support at 94.5 (i=3) the H1 pair later breaks down through. No later 4H
 // close trades below 94.5, so the level is still active at the break; the 90
 // support is the opposing target below.
+// W4/D22, mirrored: the 90 support used to sit at i=1 and was declared on
+// three neighbours. Two unremarkable leading candles (bodies well above 90)
+// move it to i=3 where all four exist; they are anchored BEFORE t4h0 so the
+// H1 and 5m grids are untouched.
 func pictureBars4HShort() []market.Kline {
-	vals := [][4]float64{
+	vals := append(lead4H(92), [][4]float64{
 		{92, 92.5, 90.5, 91}, {91.5, 91.8, 90.2, 90}, {95, 96, 94, 95.5},
 		{95.5, 96.8, 95, 96.5}, {96, 96.5, 94, 94.5}, {95.25, 96.2, 95, 95.5},
 		{95.5, 96.3, 95.2, 95.9}, {95.75, 96.4, 95.4, 96},
-	}
-	out := make([]market.Kline, 0, len(vals))
-	for i, v := range vals {
-		out = append(out, mkBar(t4h0+int64(i)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
-	}
-	return out
+	}...)
+	return mk4HLadder(vals)
 }
 
 func pictureBarsH1Short() []market.Kline {
@@ -405,6 +473,9 @@ func pictureBars5MShort(withSwing bool) []market.Kline {
 // below (90) as the target. The broken level can never become its own target.
 func TestPictureHtfEvaluatorMirroredShortEndToEnd(t *testing.T) {
 	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.0})
+	// W-EXEC-TRUTH W0 (Q7): the floor is max(knob, strategy floor) — this
+	// geometry test sets both to 2.0 (the harness default floor is 2.5).
+	env.at.config.StrategyConfig.RiskControl.MinRiskRewardRatio = 2.0
 	bars4h := pictureBars4HShort()
 	barsH1 := pictureBarsH1Short()
 	bars5m := pictureBars5MShort(true)
@@ -489,9 +560,9 @@ func TestPictureHtfRestartAfterClaimSingleSubmission(t *testing.T) {
 		t.Fatalf("first evaluation must submit once, got %d", len(env.submits))
 	}
 	// Restart: a brand-new evaluator with fresh in-memory state.
-	env2 := &pictureHtfTestEnv{t: t, at: env.at, st: env.st, eval: NewPictureHtfEvaluator(env.at, store.PictureHtfResolved(&store.PictureHtfConfig{Enabled: true, MinRR: 2.5}))}
+	env2 := &pictureHtfTestEnv{t: t, at: env.at, st: env.st, eval: NewPictureHtfEvaluator(env.at, pictureTestResolved(&store.PictureHtfConfig{Enabled: true, MinRR: 2.5}))}
 	orig := pictureHtfSubmitSeam
-	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env2.submits = append(env2.submits, row.OppKey)
 		return nil
 	}
@@ -511,15 +582,22 @@ func TestPictureHtfRestartAfterClaimSingleSubmission(t *testing.T) {
 func TestPictureHtfAmbiguousSendStaysPending(t *testing.T) {
 	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	orig := pictureHtfSubmitSeam
-	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env.submits = append(env.submits, row.OppKey)
+		// The send STARTED (the stamp is written in beforeSend) and then
+		// failed — its fate is unknown, which is what makes it ambiguous
+		// (W-EXEC-TRUTH W0: a failure BEFORE the stamp is provably unsent and
+		// settles refused instead).
+		if err := e.at.store.PictureHtfStampSignal(row.OppKey, row.SignalID, "broker-ambiguous"); err != nil {
+			return err
+		}
 		return fmt.Errorf("send ambiguous — wire refused after the claim")
 	}
 	defer func() { pictureHtfSubmitSeam = orig }()
 	env.seedPictureTape()
 	// Drive the FIRST evaluation through Evaluate (freshest receipt seeded the
 	// same way OnBars would) so its verdict is observable.
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
 	if res.Stage != "submitted" || !strings.Contains(res.Reason, "ambiguous") {
 		t.Fatalf("an ambiguous send must be reported as such, got %+v", res)

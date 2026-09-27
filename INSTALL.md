@@ -36,7 +36,7 @@ cp .env.example .env
 go build -o nofx-bin .
 
 # 4. Build the frontend
-cd web && npm install && npm run build && cd ..
+cd web && npm install && VITE_GUIDE_BUILT_REV=$(git rev-parse HEAD) npm run build && cd ..
 #    (development: `npm run dev` serves :3000 and proxies /api → :8080)
 
 # 5. First run — creates a fresh SQLite DB at data/data.db automatically

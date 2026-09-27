@@ -1,0 +1,24 @@
+# rev: worktree /home/hoang/nofx-2day04 @ 24685b70 ; trader/armed_executor.go identical to dev tip dfbfa660
+#   git diff --stat dfbfa660 HEAD -- trader/armed_executor.go   -> empty
+# 1. only Touch call site (fill branch only)
+grep -rn "\.Touch(" --include=*.go .        -> trader/armed_executor.go:1138 (inside case "filled","partfilled")
+# 2. the OTHER updated_at writer the claim misses
+sed -n '515,575p' trader/armed_executor.go  -> row{... UpdatedAt: now} ; line 572 `_ = ledger.UpsertArm(row)` for an EXISTING non-terminal row
+sed -n '176,196p' store/armed_orders.go     -> UpsertArm non-terminal branch: Updates(map{... "updated_at": row.UpdatedAt ...})
+# 3. ledger rows
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT id,scenario,leg_index,state,state_reason,signal_id,datetime(created_at,'-5 hours'),datetime(updated_at,'-5 hours') FROM armed_orders WHERE id BETWEEN 23 AND 37 ORDER BY id;"
+# 4. ALL stale-cancel log lines (n=3, not 2)
+grep -n "no order_update for" /home/hoang/nofx/data/nofx_2026-09-0*.log
+#   09-02 00:07:07 S1 | 09-02 00:31:48 S1 | 09-02 00:31:48 S3
+# 5. cycles that ran between last re-arm (00:16:32) and the kill (00:31:48): #4..#10, none re-armed
+awk '$1=="09-02" && $2>="00:16:00" && $2<="00:36:00"' /home/hoang/nofx/data/nofx_2026-09-02.log | grep -E "AI decision cycle|arming|WORKING|no order_update"
+# 6. counterexample: arm 37 re-armed every cycle for 16m28s, never stale-killed
+awk '$1=="09-03" && $2>="11:55:00" && $2<="12:20:00"' /home/hoang/nofx/data/nofx_2026-09-03.log | grep -E "cycle #|arming|WORKING|armed"
+# 7. NT8 frame cadence: 12 summary lines in the WHOLE 09-02 log day (event-driven, not periodic)
+grep -c "armed order_update summary" /home/hoang/nofx/data/nofx_2026-09-02.log   -> 12
+# 8. bar gaps (1m MNQ)
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT MIN(l) FROM bars WHERE symbol='MNQ' AND tf='1m' AND open_time_ms>=strftime('%s','2026-09-02 04:51:02')*1000 AND open_time_ms<strftime('%s','2026-09-02 05:07:07')*1000;"  -> 29037.25
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT MIN(l) FROM bars WHERE symbol='MNQ' AND tf='1m' AND open_time_ms>=strftime('%s','2026-09-02 05:16:32')*1000 AND open_time_ms<strftime('%s','2026-09-02 05:31:48')*1000;" -> 29068.75
+# 9. knob: unset in .env AND unset in the live process env
+grep -c ARM_WORKING_STALE_MIN /home/hoang/nofx/.env   -> 0
+tr '\0' '\n' < /proc/594377/environ | grep -E "^ARM_"  -> (no output)

@@ -1291,7 +1291,16 @@ func RenderKeyLevelsBlock(scored []ScoredLevel, price float64) string {
 	// base-prompt line the model quoted while waiting cycle after cycle (0/3
 	// stripped-prompt replays produced an entry). Between levels, a confirmed
 	// momentum/breakout setup stays tradeable.
-	b.WriteString("Anchor: react AT these levels (grade A>B>C); between them, a confirmed momentum/breakout may still be traded.\n")
+	b.WriteString(KeyLevelsAnchorLine + "\n")
 	b.WriteString(RoleLegend)
 	return b.String()
 }
+
+// KeyLevelsAnchorLine is the KEY LEVELS block's anchor sentence (advisory
+// truth). KeyLevelsAnchorStrictLine replaces it in the executor prompt when
+// the active plan renders under plan_mode=strict (W-EXEC-TRUTH W3 §3): the
+// gate refuses the between-levels momentum entry the advisory line offers.
+const (
+	KeyLevelsAnchorLine       = "Anchor: react AT these levels (grade A>B>C); between them, a confirmed momentum/breakout may still be traded."
+	KeyLevelsAnchorStrictLine = "Anchor: react AT these levels (grade A>B>C); plan_mode=strict: nothing between them is traded off-plan — only an armed plan scenario enters."
+)

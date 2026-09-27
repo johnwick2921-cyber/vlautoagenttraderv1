@@ -1,0 +1,39 @@
+id  session  scenario  side   kind   state      reason                                                     created_ct         
+--  -------  --------  -----  -----  ---------  ---------------------------------------------------------  -------------------
+1   TEST-E2  TEST-E2   long          cancelled  test seam cancel                                           2026-08-27 11:31:36
+2   TEST-E2  TEST-E2   long          cancelled  test seam cancel                                           2026-08-27 13:31:15
+3   TEST-E2  TEST-E2   long          cancelled  test seam cancel                                           2026-08-27 13:39:45
+4   TEST-E2  TEST-E2   long          cancelled  test seam cancel                                           2026-08-27 13:42:40
+5   ASIA     S1        short         filled     fill@29621.00                                              2026-08-27 23:52:52
+6   LONDON   S1        short         filled     fill@29642.00                                              2026-08-28 06:37:42
+7   LONDON   S4        short         cancelled  no active plan                                             2026-08-28 07:36:16
+8   LONDON   S2        short         cancelled  cancelled in NT8                                           2026-08-28 08:17:25
+9   NY       S1        long          filled     fill@29700.00                                              2026-08-28 08:35:27
+10  NY       S2        long          filled     fill@29463.25                                              2026-08-28 12:07:01
+11  NY       S3        short         cancelled  session ended (EOD flat)                                   2026-08-28 12:07:01
+12  ASIA     S4        long          cancelled  gate changed: min_sl                                       2026-08-30 17:25:01
+13  ASIA     S3        short  limit  cancelled  e7_incident_kill:manual_cancel_respected                   2026-08-30 19:50:01
+14  ASIA     S2        long   limit  cancelled  e7_incident_kill:manual_cancel_respected                   2026-08-30 23:10:36
+15  TEST-E7  TEST-E7   short         filled     e7_farside_test:                                           2026-08-30 22:32:55
+16  TEST-E7  TEST-E7   short         cancelled  test seam cancel                                           2026-08-31 00:09:35
+17  LONDON   S1        long   limit  cancelled  level accepted through — marketable, never placed          2026-08-31 08:13:51
+18  LONDON   S2        long   limit  cancelled  gate changed: min_sl                                       2026-08-31 08:13:51
+19  NY       S2        long   limit  cancelled  session ended (EOD flat)                                   2026-08-31 14:35:28
+20  NY       S3        short  limit  filled     fill@29459.00                                              2026-08-31 12:00:01
+21  NY       S1        long   limit  filled     fill@29413.00                                              2026-08-31 12:20:01
+22  NY       S3        long          cancelled  no order_update within stale window (reconnect/reconcile)  2026-08-31 12:41:29
+23  LONDON   S1        short  limit  cancelled  gate changed: min_sl                                       2026-09-01 02:55:29
+24  LONDON   S2        short  limit  filled                                                                2026-09-01 07:57:28
+25  LONDON   S3        long   limit  cancelled  level accepted through — marketable, never placed          2026-09-01 05:35:28
+26  NY       S2        short  limit  cancelled  session ended (EOD flat)                                   2026-09-01 13:05:06
+27  NY       S1        short  limit  cancelled  level accepted through — marketable, never placed          2026-09-01 11:27:07
+28  NY       S3        long   limit  filled                                                                2026-09-01 13:31:06
+29  ASIA     S1        long   limit  cancelled  no order_update within stale window (reconnect/reconcile)  2026-09-01 23:21:03
+30  ASIA     S1        long          cancelled  no order_update within stale window (reconnect/reconcile)  2026-09-01 23:49:02
+31  ASIA     S3        long   limit  cancelled  no order_update within stale window (reconnect/reconcile)  2026-09-02 00:16:32
+32  NY       S3        long          cancelled  session ended (EOD flat)                                   2026-09-02 10:30:30
+33  NY       S3        short  limit  cancelled  level accepted through — marketable, never placed          2026-09-02 14:10:29
+34  ASIA     S1        short  limit  cancelled  level accepted through — marketable, never placed          2026-09-02 22:15:01
+35  NY       S1        short  limit  filled                                                                2026-09-03 09:02:54
+36  NY       S2        short  limit  cancelled  level accepted through — marketable, never placed          2026-09-03 09:20:47
+37  NY       S3        short  limit  cancelled  cancelled in NT8                                           2026-09-03 11:58:33

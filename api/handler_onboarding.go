@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"nofx/config"
 	"nofx/logger"
 	"nofx/mcp/payment"
+	"nofx/telemetry"
 	"nofx/wallet"
 
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -40,10 +42,66 @@ type currentBeginnerWalletResponse struct {
 	Claw402Status string `json:"claw402_status"`
 }
 
+// requireOwner (N-1, verify/0926-system) — true only for a NON-machine JWT
+// whose user is the first-created account, the single-user system's owner
+// (registration closes after the first user). Fail closed: nil claims, a
+// machine token, an empty users table, or a store error all refuse.
+func (s *Server) requireOwner(c *gin.Context) bool {
+	cl := authClaimsFrom(c)
+	if cl == nil || cl.UserID == "" || cl.IsMachine() {
+		return false
+	}
+	users, err := s.store.User().GetAll()
+	if err != nil || len(users) == 0 {
+		return false
+	}
+	return users[0].ID == cl.UserID
+}
+
+// apiTradingMode is a seam: production reads config.Get().TradingMode, tests
+// swap it (config.Get on a nil global would Init from the environment).
+var apiTradingMode = func() string {
+	if cfg := config.Get(); cfg != nil {
+		return strings.TrimSpace(cfg.TradingMode)
+	}
+	return ""
+}
+
+// tradingModeIsFutures reports whether this build is running the futures
+// trading mode (N-1: claw402 is crypto-era and refused there).
+func tradingModeIsFutures() bool {
+	return strings.EqualFold(apiTradingMode(), "futures")
+}
+
+// queryUSDCBalanceStr is a seam: production is wallet.QueryUSDCBalanceStr (a
+// 10 s-timeout RPC); tests swap it so the handler stays offline-fast.
+var queryUSDCBalanceStr = wallet.QueryUSDCBalanceStr
+
 func (s *Server) handleBeginnerOnboarding(c *gin.Context) {
 	userID := c.GetString("user_id")
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing user context"})
+		return
+	}
+
+	// N-1 (verify/0926-system, P2): this route runs os.Setenv + writes
+	// CLAW402_* into .env — process-wide, cross-user mutation. Owner-only:
+	// the JWT user must be the FIRST created account (single-user system;
+	// registration closes after the first user) and must not be a machine
+	// token. Fail closed: any doubt → 403.
+	if !s.requireOwner(c) {
+		telemetry.IncGateBlock("", "onboarding_beginner_owner_gate")
+		logger.Warnf("🔒 beginner onboarding refused: non-owner actor user_id=%q", userID)
+		c.JSON(http.StatusForbidden, gin.H{"error": "beginner onboarding is owner-only"})
+		return
+	}
+	// N-1 continued: claw402 is crypto-era. On the futures build the route is
+	// refused outright — configuring it would write a dead path into the
+	// process env and .env.
+	if tradingModeIsFutures() {
+		telemetry.IncGateBlock("", "onboarding_beginner_futures_refused")
+		logger.Warnf("🔒 beginner onboarding refused on futures build: user_id=%q trading_mode=futures", userID)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "claw402 beginner onboarding is crypto-era and is disabled on this futures build"})
 		return
 	}
 
@@ -80,7 +138,7 @@ func (s *Server) handleBeginnerOnboarding(c *gin.Context) {
 		Provider:          "claw402",
 		DefaultModel:      payment.DefaultClaw402Model,
 		ConfiguredModelID: configuredModelID,
-		BalanceUSDC:       wallet.QueryUSDCBalanceStr(address),
+		BalanceUSDC:       queryUSDCBalanceStr(address),
 		EnvSaved:          envSaved,
 		EnvPath:           envPath,
 		ReusedExisting:    reusedExisting,
@@ -127,7 +185,7 @@ func (s *Server) handleCurrentBeginnerWallet(c *gin.Context) {
 		c.JSON(http.StatusOK, currentBeginnerWalletResponse{
 			Found:         true,
 			Address:       address,
-			BalanceUSDC:   wallet.QueryUSDCBalanceStr(address),
+			BalanceUSDC:   queryUSDCBalanceStr(address),
 			Source:        "model",
 			Claw402Status: claw402Status,
 		})
@@ -139,7 +197,7 @@ func (s *Server) handleCurrentBeginnerWallet(c *gin.Context) {
 		c.JSON(http.StatusOK, currentBeginnerWalletResponse{
 			Found:         true,
 			Address:       address,
-			BalanceUSDC:   wallet.QueryUSDCBalanceStr(address),
+			BalanceUSDC:   queryUSDCBalanceStr(address),
 			Source:        "env",
 			Claw402Status: claw402Status,
 		})

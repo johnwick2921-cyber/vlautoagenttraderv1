@@ -37,7 +37,7 @@ export const plays: GuideSection = {
         },
         {
           title: 'hold',
-          body: 'Setup: price holds a level → confirm: time_hold (price holds beyond the ref for ACCEPT_HOLD_MIN = 10 minutes of 1m closes, no close back across) or 1x5m_close as the fallback. Written when the plan expects support/resistance to keep working.',
+          body: 'Setup: price holds a level → confirm: time_hold (price holds beyond the ref for the STORED confirm.hold_min minutes of 1m closes, no close back across — a plan that stores none is counted on the ACCEPT_HOLD_MIN = 10 authoring default and the chip says so) or 1x5m_close as the fallback. Written when the plan expects support/resistance to keep working.',
           tag: 'play 2',
         },
         {
@@ -52,7 +52,7 @@ export const plays: GuideSection = {
         },
         {
           title: 'acceptance',
-          body: 'Setup: closes through a level and holds → confirm: time_hold (10 min of 1m closes) or 1x5m_close. HOUSE RULE: acceptance requires a PRIOR sweep + displacement or the plan skips it (0% win evidence for bare acceptance).',
+          body: 'Setup: closes through a level and holds → confirm: time_hold (confirm.hold_min minutes of 1m closes — minutes stated in the prose must be stored there, else the write is refused; absent in the prose → the 10-minute ACCEPT_HOLD_MIN default) or 1x5m_close. HOUSE RULE: acceptance requires a PRIOR sweep + displacement or the plan skips it (0% win evidence for bare acceptance).',
           tag: 'play 5',
         },
         {
@@ -67,12 +67,12 @@ export const plays: GuideSection = {
         },
         {
           title: 'breakdown_continue',
-          body: 'Setup: price closes BELOW a broken level with displacement ≥ 1.0×ATR5m (BD_MIN_DISP_ATR) and no reclaim close → the waterfall SHORT. BD_MIN_CLOSES = 1: ONE confirming close + displacement is the floor (the double close is gone). Two-leg confirm: leg 1 = the breakdown close, leg 2 = the retest that FAILS to reclaim. entry_mode pullback rests at the broken level (ARM path); immediate is AI-path (market entry on the confirming close through the FULL gate chain — no arm; arms stay pullback-only). Born 2026-08-28: the −347pt NY crash — bias right, but NO plan-legal continuation short existed.',
+          body: "Setup: price closes BELOW a broken level with displacement ≥ 1.0×ATR5m (BD_MIN_DISP_ATR) and no reclaim close → the waterfall SHORT. The STORED confirm.rule governs the count: 1x5m_close = ONE completed 5m close beyond the level, 2x5m_close = TWO — rendered, recorded, desked, armed and write-validated on that count. BD_MIN_CLOSES (1) is only the authoring default for a play that stores no close rule, and is labelled as such. Two-leg confirm: leg 1 = the breakdown close, leg 2 = the retest that FAILS to reclaim. Under the market_in_zone entry policy (W3 — the default for every NEWLY authored plan) BOTH entry modes arm: pullback puts the entry_zone AT the broken level, immediate puts it at the confirming close; the arm chains on leg 1 (wait_confirm) and the limit at the zone's far edge is placed once leg 1 is MET. A legacy plan (written before W3, no policy) keeps the old law: pullback arms, immediate is AI-path only. Born 2026-08-28: the −347pt NY crash — bias right, but NO plan-legal continuation short existed.",
           tag: 'play 8 · −347',
         },
         {
           title: 'breakup_continue',
-          body: 'The LONG mirror: closes ABOVE a broken level with displacement ≥ 1.0×ATR5m, no reclaim → continuation long; BD_MIN_CLOSES = 1, same two-leg confirm. entry_mode pullback = arm at the broken level; immediate = AI-path market entry on the confirming close (full gate chain, no arm). 2x5m_close is legal ONLY on this class — everywhere else it is 2x5m_reserved.',
+          body: 'The LONG mirror: closes ABOVE a broken level with displacement ≥ 1.0×ATR5m, no reclaim → continuation long; the stored 1x5m_close / 2x5m_close is the count (BD_MIN_CLOSES = 1 only when none is stored), same two-leg confirm. entry_mode pullback and immediate BOTH arm under market_in_zone (the zone at the broken level / at the confirming close, chained on leg 1); a legacy plan keeps pullback = arm, immediate = AI-path. 2x5m_close is legal ONLY on this class — everywhere else it is 2x5m_reserved.',
           tag: 'play 8b',
         },
       ],
@@ -80,7 +80,7 @@ export const plays: GuideSection = {
     { kind: 'h', text: 'Arms follow the bias' },
     {
       kind: 'p',
-      text: 'With plan mode on strict the decision path is closed, so a RESTING ORDER IS THE ONLY WAY INTO THE MARKET. A plan whose bias direction carries no armed scenario cannot act on the direction it just argued for — it can take the other side, or nothing. On 2026-09-03 the NY v7 plan was biased long, wrote two long scenarios and one short, and armed only the short: both confirms went true at 11:58 CT and the long had no way to trade.',
+      text: "With plan mode on strict an AI decision never enters by itself: entries execute ONLY through armed plan scenarios (W3 — a decision that CITES a market_in_zone scenario is a nudge that runs that scenario's armed pass, placement only, and is still recorded as refused). A plan whose bias direction carries no armed scenario cannot act on the direction it just argued for — it can take the other side, or nothing. On 2026-09-03 the NY v7 plan was biased long, wrote two long scenarios and one short, and armed only the short: both confirms went true at 11:58 CT and the long had no way to trade.",
     },
     {
       kind: 'p',
@@ -114,15 +114,40 @@ export const plays: GuideSection = {
         ],
         [
           'reclaim',
-          'stop entry',
+          'stop entry (legacy) · limit (market_in_zone)',
           'Only valid once price travels back THROUGH the level: a buy stop above the trigger (sell stop below, short). A limit here would fill on the wrong side of the move.',
         ],
         [
           'acceptance / hold / breakout_retest',
-          'not armable',
-          'These stay AI-path plays. A long plan leaning only on them has no way to arm its own bias.',
+          'limit (market_in_zone) · not armable (legacy)',
+          'W3: under market_in_zone they arm like every other condition — a limit at the far edge of the entry_zone, chained on their confirm (wait_confirm) because a time_hold / close is not a touch; an armed time_hold must hold at least day_plan.min_hold_min (3) minutes. breakout_retest stays SHADOW by default (recorded, never placed) until the owner un-shadows it. A LEGACY plan (no policy) keeps them AI-path plays.',
         ],
       ],
+    },
+    {
+      kind: 'p',
+      text: 'Under market_in_zone (the default for new plans) the table collapses to one answer: EVERY arm is a LIMIT at the FAR edge of its entry_zone, and an authored stop_entry is refused by name. The rows above are the LEGACY (and planned_order) mapping, which plans written before W3 keep byte-for-byte.',
+    },
+    { kind: 'h', text: 'Entry policy — enter AROUND the price (W3)' },
+    {
+      kind: 'p',
+      text: 'day_plan.entry_policy_default is stamped on every arm of a NEWLY authored plan (a stored plan is never re-stamped). market_in_zone (default): the entry is a LIMIT at the FAR edge of the planner\'s own economics.entry_zone — a long buys at the zone HIGH, a short sells at the zone LOW — so it fills at once inside the zone and can never fill beyond it on the adverse side. planned_order: today\'s resting order at the exact entry, legal only on reject, fvg_entry and sweep_reclaim leg 1 (anywhere else the arm stays legacy). legacy: stamp nothing. The planner may write "policy": "planned_order" itself on a reject / fvg_entry / sweep_reclaim leg-1 arm.',
+    },
+    {
+      kind: 'p',
+      text: 'At write, every enabled market_in_zone arm is judged (NOT gated by write_time_feasibility): the zone is present, contains arm.entry, is at most day_plan.zone_max_pts (10) wide, sits on the permitted side of the confirm ref (a touch zone contains the ref ±1 tick; a close / time_hold / 1m_mss zone lies wholly on the confirm side of it), keeps the stop and target OUTSIDE it, and still holds a tick after rounding inward; then the executor\'s own gates judge each at its WORST fill — R:R at the far edge, the stop distance at the near edge (the stop is composed from the near edge). Attempts 1–2 hint the planner ("S2 entry zone: zone_too_wide — …"); the last attempt writes the arm disabled with arm_disabled_reason = the zone code (zone_missing · zone_too_wide · zone_entry_outside · zone_trigger_side · zone_bracket · zone_empty). Where the zone sits against the frozen geometry is logged as a label (🎯 zone at write … provenance=…), never a refusal.',
+    },
+    {
+      kind: 'p',
+      text: 'On the plan card a market_in_zone leg shows one line: "Entry: around <planned entry> (zone <lo>–<hi>) · <status>", the status being one of Waiting for price · Blocked: <reason> · Armed: <verdict> · Placed at <limit> · Filled <price> (n ticks — the fill vs the limit sent, + worse / − better) · Cancel pending: <reason>. A missing number reads n/a, never 0. Legacy and planned_order legs show no line, and no line appears until the executor writes a ledger row — a market_in_zone arm still waiting on wait_confirm shows only the armed chip.',
+    },
+    {
+      kind: 'p',
+      text: "At placement every armed market_in_zone row gets a verdict from the last 1m close against its zone (boundaries inclusive): inside or beyond → the limit is sent at the far edge through the same gates as every arm (hold, admission, one contract, slot); short_of_zone (a long below the zone, a short above it) → nothing is sent and the row stays armed; unknown (no price, a bad zone, or a last 1m bar older than 3 minutes) → nothing at all. Passes run on the 2-minute scan AND on each final 1m bar while the active plan has a market_in_zone arm (at most once a second), and an AI decision that cites the scenario under strict runs the same full pass for that scenario only — every pass goes through the authoring gates and the admitted set. A working zone limit that rests longer than day_plan.zone_rest_max_min (30) minutes is cancelled (\"zone rest expired\"), and a scenario whose zone order reached the broker is not re-armed within the same plan version (a boot sweep still re-arms it; a new version always may). WAVE PLANNER B1 changes the far-zone arm: a row whose zone is farther than day_plan.zone_place_within_pts (25) from the eval price is NOT placed at all — it stays armed-unplaced (no rest clock) and places on a later pass once price comes within the bound (0 turns this OFF, legacy). And with the bound ON a rest-cap expiry requests the cancel (cancel_pending, signal kept) and once the broker book confirms it the row returns to armed-unplaced (re-placeable) instead of being dismantled — a failed cancel send is retried and a fill during the wait attributes to the row. A working zone limit is also cancelled when a new plan version (or an overlay) moves the zone so it no longer contains the limit — logged ✕ armed cancel REQUESTED (zone moved by vN…), counted market_in_zone:zone_moved — and the scenario re-arms at the new zone's far edge once the broker confirms the cancel; an overlay that moves the zone within the same version cancels without a re-arm until the next version. A new plan version that moves a working order's AUTHORED stop or target by 2 ticks or more cancels it (bracket re-spec by vN, counted arm:respec_cancel). So does one that moves a working planned_order or legacy limit's AUTHORED entry by 2 ticks or more (entry re-spec by vN: E a→b, same counter); a market_in_zone limit's entry is judged by its zone instead. Either way the order re-arms under the new version once the broker confirms the cancel; stop drift from live ATR never does this, in any version, and a resting order's bracket or entry is never modified in place. The cancel is sent once and not waited on: its ledger row stays cancel_pending until the broker's book confirms it. Only a NEW version is compared: an overlay that moves a working order's stop, target or entry inside the live version leaves the resting order as placed (a known limit; recording the authored prices at placement is owed). Logs: 🧭 zone verdict (each change, counted per class) · ⏳ … market_in_zone WAITING · ⚠️ … market_in_zone NOT adjudicated · 📌 … market_in_zone placement requested · ⏱ zone rest expired · ⚡ zone fill (slippage vs the limit, + worse) · 🚨 zone fill CONTRADICTION (a fill beyond the far edge) · ⚔️ arm REFUSED … market_in_zone:<code> · 🚦 strict: decision cites S… → armed pass. The planner also prints ONE 🧭 read line per read — session, attempts, each reject's item class (A1–A6, the same classifier the B2 replay table uses), read→publish latency and the final lifecycle (kept_active / active / no_trade) — with counters planner:read and planner:read_reject_<class> recorded from the read's own history, never inferred.",
+    },
+    {
+      kind: 'p',
+      text: 'PRECONDITION — one setup: with one_setup ON (its default when unset) the seam declines every non-reject play (play_not_reject), so under market_in_zone only reject arms can place. Turn one_setup OFF to trade the other conditions under strict; the 🎛 entry law boot line WARNs while both are on.',
     },
     {
       kind: 'p',
@@ -161,7 +186,8 @@ export const plays: GuideSection = {
         'reclaim               → 1x5m_close | 1m_mss · 2x5m_reserved',
         'breakout_retest       → touch at the retest + stop-entry fallback · 1x5m_close legal',
         'acceptance / hold     → time_hold | 1x5m_close · 2x5m_reserved',
-        'breakdown/breakup     → 1 confirming close + displacement (BD_MIN_CLOSES=1)',
+        'breakdown/breakup     → the STORED 1x5m_close|2x5m_close + displacement',
+        '                       (BD_MIN_CLOSES=1 = authoring default only)',
         '                       → 2x5m_close legal ONLY here',
         '',
         '15m confirms are DEAD — confirm_rule_15m_removed (rejected by name).',
@@ -182,9 +208,13 @@ export const plays: GuideSection = {
         '                  leg 1 rests (wait_confirm false) · leg 2 chains (true)',
         '                  leg 2 rule = confirm2.rule ∈ 1m_mss | 1x5m_close',
         '                  top-level entry/stop/target mirror leg 1',
-        'everything else → SINGLE: arm{} with wait_confirm:true and NO legs',
-        '                  (breakdown_continue, breakup_continue, reject, fvg_entry)',
-        'breakout_retest → never arms at all (GAR-F4)',
+        'everything else → SINGLE: arm{} and NO legs',
+        '                  (market_in_zone: every other condition; wait_confirm:true',
+        '                   whenever the confirm is not a touch)',
+        '                  (legacy: breakdown_continue, breakup_continue, reject,',
+        '                   fvg_entry — wait_confirm:true)',
+        'breakout_retest → arms under market_in_zone, SHADOW by default (recorded,',
+        '                  never placed); a legacy plan never arms it (GAR-F4)',
         '',
         'Class 39 (owner ruling 2026-09-01): if the model STILL puts legs on a',
         'non-sweep condition, the machine drops the legs array, re-validates the',
@@ -210,8 +240,11 @@ export const plays: GuideSection = {
         '            beyond it with displacement ≥ MSS_MIN_DISP_ATR × ATR5m (0.5).',
         '            Closed bars only — a wick beyond the swing NEVER counts.',
         '            Renders "1m-MSS: MET/NOT-MET (swing <px> @<t>)".',
-        'time_hold : price holds beyond the ref for ACCEPT_HOLD_MIN (10) minutes',
-        '            of 1m closes with no close back across — for acceptance/hold.',
+        'time_hold : price holds beyond the ref for confirm.hold_min minutes of',
+        '            1m closes with no close back across — for acceptance/hold.',
+        '            hold_min is STORED from the prose ("holds 3 minutes" →',
+        '            hold_min: 3, refused at write if absent or different);',
+        '            none stored → ACCEPT_HOLD_MIN (10), named as the default.',
         'stop_entry: the breakout-retest fallback — a STOP-MARKET entry beyond the',
         '            break candle after RETEST_WAIT_BARS (6) no-retest bars,',
         '            STOP_ENTRY_OFFSET_TICKS (2) beyond. THREE gates, in the order',
@@ -225,7 +258,7 @@ export const plays: GuideSection = {
     { kind: 'h', text: 'Entry-mechanics knobs' },
     {
       kind: 'p',
-      text: "BD_MIN_CLOSES (1) · BD_MIN_DISP_ATR (1.0) · MSS_MIN_DISP_ATR (0.5) · ACCEPT_HOLD_MIN (10) · STOP_ENTRY_OFFSET_TICKS (2) · RETEST_WAIT_BARS (6) · STOP_ENTRY_SEAM (off). Default confirm = 1x5m_close; a sweep_reclaim arm may split into TWO child orders (leg 1 touch + leg 2 chained) — either leg's stop-out cancels the sibling's unfilled order (no doubling into a failed level).",
+      text: "BD_MIN_CLOSES (1) · BD_MIN_DISP_ATR (1.0) · MSS_MIN_DISP_ATR (0.5) · ACCEPT_HOLD_MIN (10) · STOP_ENTRY_OFFSET_TICKS (2) · RETEST_WAIT_BARS (6) · STOP_ENTRY_SEAM (off). BD_MIN_CLOSES and ACCEPT_HOLD_MIN are AUTHORING DEFAULTS: a scenario's stored confirm.rule / confirm.hold_min governs its evaluation, and the env value is read only when nothing valid is stored (the card chip then says \"authoring default\"). Default confirm = 1x5m_close; a sweep_reclaim arm may split into TWO child orders (leg 1 touch + leg 2 chained) — either leg's stop-out cancels the sibling's unfilled order (no doubling into a failed level).",
     },
     { kind: 'h', text: 'THE A-SETUP (the chained play)' },
     {

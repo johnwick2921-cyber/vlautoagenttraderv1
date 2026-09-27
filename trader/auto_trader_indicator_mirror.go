@@ -46,7 +46,7 @@ func (at *AutoTrader) renderIndicatorMirror(symbol string) (string, string) {
 		ATR:  ic.ATRPeriods,
 		BOLL: ic.BOLLPeriods,
 	}
-	mkt, err := market.GetWithTimeframes(symbol, tfs, primary, count, indPeriods)
+	mkt, err := market.GetWithTimeframesVenue(symbol, at.exchange, tfs, primary, count, indPeriods)
 	if err != nil || mkt == nil {
 		return "", hash // bars unavailable (e.g. NT8 down at read time) → no mirror
 	}

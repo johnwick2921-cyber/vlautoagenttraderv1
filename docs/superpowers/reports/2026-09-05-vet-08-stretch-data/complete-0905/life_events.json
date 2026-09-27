@@ -1,0 +1,173 @@
+[
+  {
+    "time_ms": 1788330347000,
+    "date": "2026-09-01",
+    "session": "ASIA",
+    "version": 9,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 3018
+  },
+  {
+    "time_ms": 1788331547000,
+    "date": "2026-09-01",
+    "session": "ASIA",
+    "version": 9,
+    "event": "REARMED",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 3407
+  },
+  {
+    "time_ms": 1788356430000,
+    "date": "2026-09-02",
+    "session": "NY",
+    "version": 1,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 21037
+  },
+  {
+    "time_ms": 1788399436000,
+    "date": "2026-09-02",
+    "session": "ASIA",
+    "version": 8,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 53407
+  },
+  {
+    "time_ms": 1788406501000,
+    "date": "2026-09-02",
+    "session": "ASIA",
+    "version": 13,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 61821
+  },
+  {
+    "time_ms": 1788411901000,
+    "date": "2026-09-02",
+    "session": "ASIA",
+    "version": 13,
+    "event": "REARMED",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 67186
+  },
+  {
+    "time_ms": 1788414301000,
+    "date": "2026-09-02",
+    "session": "ASIA",
+    "version": 15,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 70935
+  },
+  {
+    "time_ms": 1788421200000,
+    "date": "2026-09-03",
+    "session": "LONDON",
+    "version": 1,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 73925
+  },
+  {
+    "time_ms": 1788427855000,
+    "date": "2026-09-03",
+    "session": "LONDON",
+    "version": 1,
+    "event": "REARMED",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 75846
+  },
+  {
+    "time_ms": 1788440454000,
+    "date": "2026-09-03",
+    "session": "LONDON",
+    "version": 1,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 81223
+  },
+  {
+    "time_ms": 1788443101000,
+    "date": "2026-09-03",
+    "session": "NY",
+    "version": 1,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "line": 84012
+  },
+  {
+    "time_ms": 1788455700000,
+    "date": "2026-09-03",
+    "session": "NY",
+    "version": 7,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "line": 5250
+  },
+  {
+    "time_ms": 1788481500000,
+    "date": "2026-09-03",
+    "session": "ASIA",
+    "version": 2,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "line": 17783
+  },
+  {
+    "time_ms": 1788488460000,
+    "date": "2026-09-03",
+    "session": "ASIA",
+    "version": 5,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "line": 22690
+  },
+  {
+    "time_ms": 1788504646000,
+    "date": "2026-09-03",
+    "session": "ASIA",
+    "version": 7,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "line": 32215
+  },
+  {
+    "time_ms": 1788507283000,
+    "date": "2026-09-04",
+    "session": "LONDON",
+    "version": 2,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "line": 33171
+  },
+  {
+    "time_ms": 1788525641000,
+    "date": "2026-09-04",
+    "session": "LONDON",
+    "version": 2,
+    "event": "REARMED",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+    "line": 272
+  },
+  {
+    "time_ms": 1788541142000,
+    "date": "2026-09-04",
+    "session": "NY",
+    "version": 5,
+    "event": "DORMANT",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+    "line": 16574
+  },
+  {
+    "time_ms": 1788541501000,
+    "date": "2026-09-04",
+    "session": "NY",
+    "version": 5,
+    "event": "REARMED",
+    "source": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+    "line": 16784
+  }
+]

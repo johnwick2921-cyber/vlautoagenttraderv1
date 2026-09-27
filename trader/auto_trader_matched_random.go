@@ -32,8 +32,10 @@ func (at *AutoTrader) recordMatchedRandomForClose(p *store.TraderPosition, ex ke
 	if err != nil || row == nil {
 		return
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil || len(doc.Levels) == 0 {
+	// WAVE 1a-plan P2 — the level attribution reads the ONE fold: an owner
+	// overlay adding a level at the entry price must own the attribution.
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok || len(doc.Levels) == 0 {
 		return
 	}
 	// nearest level to the entry → its provenance type

@@ -1,0 +1,19 @@
+{
+  "offline_reproduction": "byte-identical all 14 checked outputs",
+  "sha256": {
+    "trades.csv": "839b6caf62aa6ec2a595601c43985fc5cdda8de9a1e189c9543b7072e783a29f",
+    "trade_stats.csv": "89e5f98e75219b598c1b5b6e748775fe2f2d6ae051e7937aeeb6b6352f8337eb",
+    "touch_keys.csv": "4f925f6b646bc18dd47e17939896596714647ae25925c1df9b7a12f5134dace5",
+    "touch_stats.csv": "7dbc08c96d09f630a7c554730b2b34343061534612c7f1a20f37b566e8fd196f",
+    "planned_arms.csv": "8f01c222cbc6252825fbd44f09252d061d1f7ed4a03ec9c2fd4414a4ee2a6627",
+    "results.txt": "2ce74f826bf8e80ca52b867d2f6506de7601702cfc0db6ed4513b6bbc982d3b5",
+    "summary.json": "e445c4ebeb7ed67faa6a839845c2a6bc44d8b99d9ef5ab5b86f30cc7b8f3adb1",
+    "broker_R.csv": "91a637a933a4740654e887ff08d751247cc361b3191b98171ae13d3a113b120d",
+    "supplement.txt": "440fb9555de2100da36fd600334a9586f09375978b058718eba6d9bfcb02fa10",
+    "floor_path_sensitivity.csv": "89b853bd91f84ab798983fc1bc21934bba27dd7828d790e6a195ed26d678f1c2",
+    "target_obstacles.csv": "0402630fb2c63078af784add9788169a6716c4a5d53fe523bb30c1fd07ed346f",
+    "report.md": "b090981080b738f93957740452717aff7f02176ae43d8a3655130b5bb5241905",
+    "legacy_check.txt": "837c8936901bf7f7f1dd73c4a2e6fa966883efbfbdc0408e284d4f82593fe6e7",
+    "zero_mae_sensitivity.csv": "715691cc57b1ff8e6f4b66782560587917aa9eee89c48412f21d80b8ec015870"
+  }
+}

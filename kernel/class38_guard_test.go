@@ -96,6 +96,14 @@ func TestClass38PromptContractsAllStated(t *testing.T) {
 	if err := ValidatePromptContracts(onPrompt); err != nil {
 		t.Fatalf("a validator restriction is NOT stated in the ON rendering (class 38): %v", err)
 	}
+	// W3: the market_in_zone rendering (the shipped default) is judged too.
+	mizOn := class38MizRendering(true, true)
+	if err := ValidatePromptContracts(class38MizRendering(false, false)); err != nil {
+		t.Fatalf("a validator restriction is NOT stated in the market_in_zone rendering (class 38): %v", err)
+	}
+	if err := ValidatePromptContracts(mizOn); err != nil {
+		t.Fatalf("a validator restriction is NOT stated in the market_in_zone ON rendering (class 38): %v", err)
+	}
 	if len(PromptContracts()) < 10 {
 		t.Errorf("the contract registry has only %d rows — the C5 enumeration found more condition-keyed restrictions than that", len(PromptContracts()))
 	}
@@ -110,9 +118,17 @@ func TestClass38PromptContractsAllStated(t *testing.T) {
 		}
 		// A gate-gated row must actually be RENDERED somewhere (the ON
 		// rendering) — otherwise the gate would make it silently dead.
+		// A3: the planner-contract rows render only in the contract-ON rendering
+		// (OFF is pinned byte-identical pre-A3 by TestW3PlannerPromptLegacyPolicyByteIdentical).
+		contractOnPrompt := plannerOutputContractFor(8, 5, true, true, true,
+			entryPolicyPromptInput{Policy: EntryPolicyDefaultLegacy}, true)
 		if c.Gate != "" {
+			rendered := contractOnPrompt
+			if c.Gate == EntryPolicyPromptMarker {
+				rendered = mizOn // W3: the ENTRY POLICY row renders under market_in_zone
+			}
 			for _, frag := range c.MustAppear {
-				if !strings.Contains(onPrompt, frag) {
+				if !strings.Contains(rendered, frag) {
 					t.Errorf("gated contract %q: fragment %q absent from the ON rendering — the row is dead", c.Rule, frag)
 				}
 			}
@@ -125,12 +141,18 @@ func TestClass38PromptContractsAllStated(t *testing.T) {
 // the contract test could pass vacuously.
 func TestClass38ContractTestFailsWhenPromptDropsARule(t *testing.T) {
 	prompt := plannerOutputContract(8, 5, true, true, false)
-	onPrompt := plannerOutputContract(8, 5, true, true, true) // knob ON
+	// A3: the planner-contract rows render only in the contract-ON rendering
+	// (OFF is pinned byte-identical pre-A3 by TestW3PlannerPromptLegacyPolicyByteIdentical).
+	contractOnPrompt := plannerOutputContractFor(8, 5, true, true, true,
+		entryPolicyPromptInput{Policy: EntryPolicyDefaultLegacy}, true)
 	for _, c := range PromptContracts() {
 		// Gated rows apply only to the rendering that carries their sentence.
+		// A3 gated rows live in the contract-ON rendering (writeFeas ON too).
 		applicable := prompt
-		if c.Gate != "" {
-			applicable = onPrompt
+		if c.Gate == EntryPolicyPromptMarker {
+			applicable = class38MizRendering(true, false) // W3: the ENTRY POLICY row
+		} else if c.Gate != "" {
+			applicable = contractOnPrompt
 		}
 		mutilated := applicable
 		for _, frag := range c.MustAppear {
@@ -145,3 +167,8 @@ func TestClass38ContractTestFailsWhenPromptDropsARule(t *testing.T) {
 		}
 	}
 }
+
+// class38MizRendering is the output contract under the market_in_zone entry
+// policy (W3) — the shipped default's rendering.
+func class38MizRendering(writeFeas, contractOn bool) string {
+	return plannerOutputContractFor(8, 5, true, true, writeFeas, resolvePromptEntryPolicy(EntryPolicyMarketInZone, 0, 0, nil, nil), contractOn)}

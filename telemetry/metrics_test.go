@@ -37,7 +37,6 @@ func TestAllCollectorsRegistered(t *testing.T) {
 	expected := []string{
 		"nofx_decisions_total",
 		"nofx_decision_latency_seconds",
-		"nofx_fill_latency_seconds",
 		"nofx_databento_errors_total",
 		"nofx_risk_gate_trips_total",
 	}
@@ -47,7 +46,7 @@ func TestAllCollectorsRegistered(t *testing.T) {
 	// child has been instantiated.
 	DecisionsTotal.WithLabelValues("test-trader", "HOLD", "queued").Add(0)
 	DecisionLatency.WithLabelValues("test-trader").Observe(0)
-	FillLatency.WithLabelValues("test-exchange").Observe(0)
+
 	DatabentoErrorsTotal.Add(0)
 	RiskGateTrips.WithLabelValues("test-gate").Add(0)
 
@@ -115,28 +114,6 @@ func TestDecisionLatencyObservation(t *testing.T) {
 	}
 }
 
-// TestFillLatencyObservation verifies the futures-friendly bucket histogram.
-func TestFillLatencyObservation(t *testing.T) {
-	FillLatency.WithLabelValues("ninjatrader-test").Observe(0.2)
-	FillLatency.WithLabelValues("ninjatrader-test").Observe(45.0) // slow NT8 CSV bridge
-
-	mfs := gatherFamilies(t)
-	fam := familyByName(mfs, "nofx_fill_latency_seconds")
-	if fam == nil {
-		t.Fatal("nofx_fill_latency_seconds not found")
-	}
-
-	var samples uint64
-	for _, m := range fam.Metric {
-		if labelEquals(m.Label, map[string]string{"exchange": "ninjatrader-test"}) {
-			samples = m.GetHistogram().GetSampleCount()
-			break
-		}
-	}
-	if samples != 2 {
-		t.Errorf("FillLatency{ninjatrader-test} sample count = %d, want 2", samples)
-	}
-}
 
 // TestDatabentoErrorsTotalIncrement verifies the plain counter increments.
 func TestDatabentoErrorsTotalIncrement(t *testing.T) {

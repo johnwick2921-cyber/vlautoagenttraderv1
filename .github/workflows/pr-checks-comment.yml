@@ -231,7 +231,7 @@ jobs:
               comment += '```bash\n';
               comment += 'go fmt ./...      # Format code\n';
               comment += 'go vet ./...      # Check for issues\n';
-              comment += 'go test ./...     # Run tests\n';
+              comment += 'go test -timeout 30m ./...     # Run tests\n';
               comment += '```\n';
             }
 
@@ -346,7 +346,7 @@ jobs:
             comment += 'go fmt ./...\n';
             comment += 'go vet ./...\n';
             comment += 'go build\n';
-            comment += 'go test ./...\n\n';
+            comment += 'go test -timeout 30m ./...\n\n';
             comment += '# Frontend (if applicable)\n';
             comment += 'cd web\n';
             comment += 'npm run build\n';

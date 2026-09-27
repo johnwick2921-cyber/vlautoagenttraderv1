@@ -1,0 +1,9 @@
+--- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions (0.45s)
+    w7_levelstate_test.go:119: touched-and-accepted-through level must be consumed, got consumed=false freshness=A
+--- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions (0.44s)
+    w7_levelstate_test.go:119: touched-and-accepted-through level must be consumed, got consumed=false freshness=A
+--- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions (0.45s)
+    w7_levelstate_test.go:119: touched-and-accepted-through level must be consumed, got consumed=false freshness=A
+FAIL
+FAIL	nofx/trader	1.342s
+FAIL

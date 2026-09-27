@@ -175,11 +175,11 @@ func RenderVoidBreakdownLevels(v []VoidBreakdownLevel, seatedTotal int) string {
 // enforce, from the SAME resolver it uses. On 2026-09-02 all 13 armed stops were
 // widened because the planner was never told this number, and every widening
 // silently cut the planned R:R toward the 2.0 arm gate.
-func RenderStopFloorLine(atr5m, mult float64) string {
+func RenderStopFloorLine(atr5m, mult float64, qualifyReject bool) string {
 	if atr5m <= 0 || mult <= 0 {
 		return ""
 	}
-	return fmt.Sprintf("## Minimum stop distance this cycle\n%.1f pts (%.1f×ATR5m %.2f, resolved). Stops tighter than this are WIDENED by the executor before the R:R gate sees them — author stops AND targets consistent with it, or your R:R will not survive the widening.\n\n",
+	return fmt.Sprintf("## Minimum stop distance this cycle\n%.1f pts (%.1f×ATR5m %.2f, resolved). Stops tighter than this are WIDENED by the executor before the R:R gate sees them"+rejectFloorQual(qualifyReject)+" — author stops AND targets consistent with it, or your R:R will not survive the widening.\n\n",
 		mult*atr5m, mult, atr5m)
 }
 
@@ -212,3 +212,11 @@ func PromptFeedsForwardBootLine(voidLevels int, atr5m, mult float64) string {
 // planDocGapDownMessage is the gap-down refusal text, exported here so the pin
 // can assert the MESSAGE matches the RULE (which tests direction only).
 func planDocGapDownMessage() string { return gapDownDirectionMessage }
+
+// rejectFloorQual returns the A3 REJECT composed-stop qualification when ON.
+func rejectFloorQual(on bool) string {
+	if !on {
+		return ""
+	}
+	return " (reject fades are the exception: the executor COMPOSES their stop from the frozen zone, edge − buffer, and then floors that composed stop the same way)"
+}

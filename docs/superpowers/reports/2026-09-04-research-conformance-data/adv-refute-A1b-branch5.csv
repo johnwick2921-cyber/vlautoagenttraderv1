@@ -1,0 +1,14 @@
+field,peer_reported,verified_at_70af663d,status
+rule,"A1b branch 5: longs ONLY below 50% of dealing range, shorts ONLY above","planner_prompt.go:162 exact text confirmed byte-for-byte",CONFIRMED
+file_line_rule,"kernel/planner_prompt.go:162","kernel/planner_prompt.go:162 (file identical to deployed rev 70af663d; git diff 70af663d -- kernel/planner_prompt.go = empty)",CONFIRMED
+file_line_veto,"kernel/planner_prompt.go:183-189","183 BEYOND-high / 185 BEYOND-low / 187 PREMIUM / 189 DISCOUNT",CONFIRMED
+resolved_value,"dealing range = PDH/PDL, value-area fallback","CODE CONSTANT not resolved config: lo/hi=pdl/pdh at :172-178, VAL/VAH fallback at :174-177, 0.5 threshold hardcoded at :186; zero knob_registry_table.go entries match premium|discount|dealing|bias.tree; NO boot line carries it",CORRECTED-LABELLING
+label,"[I] grounding: none found","[X] research-CONTRADICTED",REFUTED
+grounding_R,"none","2026-08-24-mega-research-25-agents.md:21 (af7d9bc0) 'Premium/discount on the dealing range is the standard HTF bias mechanism' under A2 HTF-bias",REFUTED
+grounding_X,"none","2026-09-02-live-bias-replay.md:46-48 (53498adb) br5 veto APPLIED in replay; :122 BIAS-TREE holdout called n=21 p=0.4762 Wilson[0.2834,0.6763] net t +0.70; COMPOSITE n=62 p=0.5000 Wilson[0.3792,0.6208] t +0.92; D6 needs Wilson-lo>0.50 AND t>2 -> NOT USABLE",REFUTED
+grounding_cite_line,"live-bias-replay.md:148","line 148 is BLANK; the NY veto row is :147, the prose is :149-151, the method statement is :46-48",REFUTED
+effect,"advisory (TreeCallWord reduces to one label word)","CONFIRMED: branch 5 absent from all 19 PromptContracts (prompt_contract.go:39-145); premium/discount appear in NO validator/gate/entry-law file (grep whole tree, non-test); BiasLabel read only by api/handler_plan.go:682 (display)",CONFIRMED
+neutraliser,"same prompt at :619, 19 lines later","planner_prompt.go:619 text confirmed ' — labels only, no MUST on either'; distance is 457 source lines (162->619), ~4 lines in RENDERED output, not 19",CONFIRMED-substance/WRONG-distance
+production_callers,"1 (rendered at kernel/planner_prompt.go:618)","3 call sites / 2 consumers: RenderBiasTree at planner_prompt.go:613 (THE RULE TEXT - peer cited the wrong line); TreeCallWord at planner_prompt.go:618 (label); TreeCallWord at trader/auto_trader_planner.go:1928 (stamps doc.BiasLabel, PERSISTED to plans.doc, served at api/handler_plan.go:682). Entry point BuildPlannerPrompt <- trader/auto_trader_planner.go:907",REFUTED
+verdict_conforms,"NO","NO - CONFIRMED and now MEASURED",CONFIRMED
+live_measurement_T,"(none given)","own tape n=100 of 251 stored plans cite 'branch 5'; 58 cite a side-specific veto; 17 of 58 (29.3%) stamped the FORBIDDEN bias: 12 of 43 premium(no-long) plans stamped bias=long, 5 of 15 discount(no-short) stamped bias=short; nothing rejected any of them",NEW-EVIDENCE

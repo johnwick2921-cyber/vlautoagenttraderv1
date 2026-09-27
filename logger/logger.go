@@ -102,6 +102,10 @@ func Init(cfg *Config) error {
 
 	Log.SetReportCaller(true)
 
+	// P2-2 — age-based prune of data/nofx_*.log behind LOG_RETENTION_DAYS
+	// (default OFF). Never deletes today's or the running boot's file.
+	pruneLogFilesAtInit()
+
 	return nil
 }
 

@@ -2,6 +2,7 @@ package trader
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -117,12 +118,16 @@ func TestAHolyTapeAndAContiguousTapeDifferOnTheRecord(t *testing.T) {
 
 // PIN D4-C — A29. The extracted row builder is the PRODUCTION path, not a copy.
 func TestReadFactRowBuilderIsWired(t *testing.T) {
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatalf("repo root: %v", err)
+	}
 	for fn, wantIn := range map[string]string{
 		"buildReadFactRow(":      "trader/auto_trader_planner.go",
 		"scope.Horizon":          "trader/auto_trader_planner.go",
 		"sc.Horizon = HorizonOf": "kernel/void_scope.go",
 	} {
-		n, where := d2ProdCallSites(t, fn)
+		n, where := d2ProdCallSites(t, root, fn)
 		if n == 0 {
 			t.Errorf("%s: 0 production call sites (A29)", fn)
 			continue

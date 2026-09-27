@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -252,5 +253,55 @@ func TestResolvedPresentWithTraderContext(t *testing.T) {
 	// never quietly converge.
 	if _, present := configResolvedPayload(nil, "NY")["resolved"]; present {
 		t.Fatal("nil cfg must omit resolved")
+	}
+}
+
+// W1 (f) — the page and the ⚙ boot line count the SAME schema: the production
+// MarshalJSON key paths, ai_config.* included. And a counter nothing writes is
+// ABSENT from the summary, never a typed 0 (L7): env_shadows has no writer, so
+// the boot line reads "env-shadows=n/a (not counted)" and the payload omits it.
+func TestConfigResolvedSchemaIsTheMarshalWalkAndEnvShadowsAbsent(t *testing.T) {
+	_, body := resolvedPayload(t) // through handleConfigResolved
+	sum, ok := body["summary"].(map[string]any)
+	if !ok {
+		t.Fatalf("no summary object in payload")
+	}
+	if err := store.SchemaEnumerationErr(); err != nil {
+		t.Fatalf("schema enumeration failed: %v", err)
+	}
+	got, present := sum["schema"].(float64)
+	if !present {
+		t.Fatalf("summary.schema missing although the enumeration succeeded: %v", sum)
+	}
+	if want := len(store.EnumerateSchemaKnobs()); int(got) != want {
+		t.Errorf("summary.schema = %d, the enumeration the boot line reads has %d", int(got), want)
+	}
+	boot := store.KnobRegistryBootLine()
+	if !strings.Contains(boot, "schema="+strconv.Itoa(int(got))+" ") {
+		t.Errorf("page schema=%d disagrees with the boot line: %s", int(got), boot)
+	}
+	// The compatibility structs are in it — a tag walk would stop at 75.
+	compat := false
+	for _, p := range store.EnumerateSchemaKnobs() {
+		if strings.HasPrefix(p, "ai_config.risk_control.") {
+			compat = true
+			break
+		}
+	}
+	if !compat {
+		t.Fatalf("no ai_config.risk_control.* path in the schema the page counts")
+	}
+	if store.KnobStatusSummary().EnvShadows == nil {
+		for _, k := range []string{"env_shadows", "env_shadow_paths"} {
+			if v, present := sum[k]; present {
+				t.Errorf("summary.%s = %v — nothing counts env shadows, so the key must be absent, not a fabricated value", k, v)
+			}
+		}
+		if !strings.Contains(boot, "env-shadows=n/a (not counted)") {
+			t.Errorf("boot line must read env-shadows=n/a while nothing counts them: %s", boot)
+		}
+	}
+	if _, present := sum["schema_error"]; present {
+		t.Errorf("schema_error present on a successful enumeration: %v", sum["schema_error"])
 	}
 }

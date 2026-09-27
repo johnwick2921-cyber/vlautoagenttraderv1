@@ -1,0 +1,64 @@
+You are repairing a rejected plan. Fix ONLY the named defects. Change nothing else.
+Return ONLY the COMPLETE corrected plan JSON document — the whole plan with the named defects fixed and nothing else changed. No prose before or after it. No markdown fences (no ```). No commentary. A fragment (one scenario, a patch, a diff) is NOT acceptable: return the entire document.
+
+## Validator errors (verbatim)
+S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the displacement exists (or set entry_mode=immediate and accept the confirming-close trigger)
+
+## Rejected plan output (verbatim)
+{
+  "reasoning": "bias-tree: inside-day short LOW — price 29503.75 is inside the prior day, below PDC 29597.25 and above the 50% mark (premium), so shorts only. 15m is making lower highs since the 29720 ONH sweep and current tape sits just above ONL 29481.50; the last 5m sweep-down leaves ONL as the nearest liquidity. Regime 1h is up but intraday delivery is down; this plan does not chase the bounce. No fvg_entry: FRESH FVGs empty. One short: a 1x5m close below 29481.50 with displacement, then a pullback to 29481.50 fills the resting sell; stop 29536.10 (54.6 pts = 1.5×ATR5m), target 29199.25 RTH-L. Above 29533.94 plan is dead; above 29553.75 flip long.",
+  "bias": {
+    "direction": "short",
+    "conviction": "low",
+    "flip_condition": "2x5m closes above 29553.75"
+  },
+  "levels": [
+    {"price": 29075.00, "label": "PDL", "grade": "A", "instruction": "target"},
+    {"price": 29199.25, "label": "RTH-L", "grade": "A", "instruction": "target"},
+    {"price": 29481.50, "label": "ONL", "grade": "A", "instruction": "break"},
+    {"price": 29503.38, "label": "OB(bear)·4h", "grade": "C", "instruction": "reference"},
+    {"price": 29533.94, "label": "VWAP−1σ", "grade": "A", "instruction": "fade"},
+    {"price": 29553.75, "label": "OR-L", "grade": "C", "instruction": "target_only"},
+    {"price": 29597.25, "label": "PDC", "grade": "B", "instruction": "target_only"},
+    {"price": 29601.00, "label": "PDH", "grade": "B", "instruction": "target_only"},
+    {"price": 29720.00, "label": "ONH", "grade": "A", "instruction": "target_only"},
+    {"price": 29863.50, "label": "OB(bull)·4h", "grade": "C", "instruction": "reference"}
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "Short breakdown at ONL 29481.50 after a 1x5m close below 29481.50 with displacement; the pullback to 29481.50 fills the resting sell limit.",
+      "condition": "breakdown_continue",
+      "direction": "short",
+      "target_chain": [29199.25, 29075.00],
+      "invalid": "1x5m close back above 29533.94 VWAP−1σ cancels the setup.",
+      "quality": "A",
+      "confirm": {"rule": "1x5m_close", "ref_price": 29481.50, "side": "below"},
+      "breakdown": {"level": 29481.50, "level_label": "ONL", "entry_mode": "pullback"},
+      "arm": {"enabled": true, "entry": 29481.50, "stop": 29536.10, "target": 29199.25, "wait_confirm": true}
+    }
+  ],
+  "death_condition": "Plan is dead on a 5m close above 29533.94 VWAP−1σ.",
+  "death": {"price": 29533.94, "side": "above", "rule": "5m_close"},
+  "flip": {"price": 29553.75, "side": "above", "rule": "2x5m_close", "flip_to": "long"},
+  "day_type": "trend"
+}
+
+## Applicable law (excerpts for the violated rules only)
+Copy the machine table's labels and prices; collapse duplicate seats; targets must sit within the proximity band of price.
+CONFIRM RULES PER CONDITION (the machine rejects any other pairing by name):
+  acceptance → [1x5m_close, time_hold]
+  breakdown_continue → [1x5m_close, 2x5m_close]
+  breakout_retest → [1x5m_close, touch]
+  breakup_continue → [1x5m_close, 2x5m_close]
+  fvg_entry → [touch]
+  hold → [1x5m_close, time_hold]
+  reclaim → [1m_mss, 1x5m_close]
+  reject → [touch]
+  sweep_reclaim → [1m_mss, 1x5m_close, touch]
+A token legal for one condition is ILLEGAL for another: `1x5m_close` exists, but a `reject` fade takes touch ONLY. Pick the rule this scenario's condition permits.
+Valid conditions: [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] (use exactly ONE token from this list; do NOT combine condition names).
+
+## Return format (restated — this is the contract)
+Return ONLY the COMPLETE corrected plan JSON document — the whole plan with the named defects fixed and nothing else changed. No prose before or after it. No markdown fences (no ```). No commentary. A fragment (one scenario, a patch, a diff) is NOT acceptable: return the entire document.
+

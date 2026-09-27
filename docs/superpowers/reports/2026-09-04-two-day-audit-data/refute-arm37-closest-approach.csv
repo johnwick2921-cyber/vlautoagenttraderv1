@@ -1,0 +1,37 @@
+# ADVERSARIAL VERIFICATION — arm 37 (NY S3 short 29543.75, signal 43512e1d) "closest approach 9.50 pts / never traded through while live"
+# All times CT (UTC-5). DB opened read-only: sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"
+# Source rev read: /home/hoang/nofx-2day04 (dev tip, deployed 530009ff / boot 7)
+what,value,evidence
+arm37_created_at_CT,2026-09-03 11:58:33.110688496,"armed_orders.created_at (stored -05:00)"
+arm37_updated_at_raw,2026-09-03 17:15:01.127106542+00:00,"armed_orders.updated_at is stored in UTC (+00:00) — NOT CT"
+arm37_updated_at_CT,2026-09-03 12:15:01,"= 17:15:01Z - 5h. Handout's '17:15' was the UTC field read as CT."
+arm37_state,cancelled,armed_orders.state
+arm37_state_reason,cancelled in NT8,"armed_executor.go:1151 — written from the inbound NT8 frame state=='cancelled'"
+live_window_CT,11:58:33.110 -> 12:15:01.127,"16m28s"
+# ---- THE REFUTATION: the 1m bar that CONTAINS the arm's creation instant ----
+bar_1158_o,29539.25,
+bar_1158_h,29548.00,"4.25 pts THROUGH the 29543.75 short entry"
+bar_1158_l,29530.50,
+bar_1158_c,29532.00,
+bar_1158_v,4972,
+peer_claimed_closest_approach_pts,9.50,"high 29534.25 at 12:00 — reproduces ONLY with window start 11:59:00"
+true_max_high_over_live_window,29548.00,"window = every 1m bar OVERLAPPING 11:58:33..12:15:01"
+true_closest_approach_pts,-4.25,"negative = level exceeded"
+corroboration_3m_1157,29548.00,tf=3m bar 11:57 high
+corroboration_5m_1155,29548.00,tf=5m bar 11:55 high
+corroboration_15m_1145,29548.00,tf=15m bar 11:45 high
+finest_tf_for_MNQ_alltime,1m,"SELECT DISTINCT tf FROM bars WHERE symbol='MNQ' -> 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,1w. NO sub-minute data."
+sub_minute_ordering,CANNOT DISTINGUISH,"whether 29548.00 printed in 11:58:00-11:58:33 (pre-arm) or 11:58:33-11:58:59 (live) is not answerable from the store"
+# ---- what DOES reproduce ----
+peer_query_verbatim_result,2026-09-03 12:51:00|29531.75|29545.75|29531.50|29543.75,"reproduced byte-for-byte"
+peer_tz_math_check,1788455700000 == 1788455700000,"strftime*1000+5*3600000 == (strftime+18000)*1000 — their CT->UTC conversion is CORRECT, no TZ bug"
+first_bar_after_cancel_with_h_ge_entry,2026-09-03 12:51:00,"h=29545.75"
+gap_1215_01_to_1251_00,35m59s,"but 12:51:00 is the bar OPEN; the touch instant is unknown within [12:51:00,12:52:00) => gap is >=35m59s"
+# ---- the cited NT8 ack line is misread ----
+summary_line_1,09-03 12:00:33 frames=1 initialized=1,"data/nofx_2026-09-03.log:4979"
+summary_line_2,09-03 12:15:01 frames=4 accepted=1 working=1 cancelpending=1 submitted=1,"data/nofx_2026-09-03.log:5261 — the ONLY two such lines on 09-03"
+counter_scope,"global,cumulative,untimestamped","armed_executor.go:1078-1105: package-level atomics, Swap(0) on print, throttled 1/60s, printed from onArmedOrderUpdate on frame receipt"
+reconstruction,"12:00:33 batch=[initialized,submitted,accepted,working] (only frame 1 printed); 12:15:01 batch=[cancelpending,cancelled] (frame 1 printed w/ 3 leftovers)","explains frames=4 with 4 distinct states exactly; [B]"
+implication,"3 of the 4 counts on the 12:15:01 line are LEFTOVERS from the 12:00:33 drain — the line carries no timestamps and does not prove the order was working at 12:15",
+placement_price_source,"bars[len(bars)-1].Close","armed_executor.go:862-865 — a BAR CLOSE, not a live tick; limitMarketableWrongSide (line ~946) is judged on it"
+system_own_through_detection,"09-03 12:08:33 and 12:10:33 CT: '🎯 scenario S1 -> ~invalidated @ 29543.75 (price accepted through the level against the trade)'","display-only estimator; fired WHILE arm 37 was live, on the same 29543.75 price"

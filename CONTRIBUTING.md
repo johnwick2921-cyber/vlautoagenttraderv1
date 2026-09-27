@@ -13,7 +13,7 @@ Confirm these are true before you open an editor:
 - You have read the **subsystem `CLAUDE.md`** for the directory you intend to touch (`kernel/`, `market/`, `provider/`, `trader/`, `web/`, plus any deeper `CLAUDE.md`).
 - You have read the **ADRs** relevant to your change. `docs/adr/ADR-001..ADR-007`.
 - You know which **plan** your change belongs to. Pure bug fixes are fine; new features should map to a plan or be small enough to stand alone.
-- You can run the build green locally: `go build ./...` and `cd web && npm run build`.
+- You can run the build green locally: `go build ./...` and `cd web && VITE_GUIDE_BUILT_REV=$(git rev-parse HEAD) npm run build`.
 
 If your change touches the AI prompt, the decision JSON shape, or any "high-cascade type" listed in `CLAUDE.md`, **stop and open a discussion first**.
 
@@ -123,7 +123,7 @@ For multi-task work, dispatch parallel `general-purpose` subagents per ADR-005. 
 
 1. **One subagent per disjoint task block.** Task blocks are disjoint when their file sets do not overlap, or only overlap additively under ownership markers.
 2. **Ownership markers in shared files** — `// Plan N Task M — owned by TX` delimits added regions in files multiple tasks share.
-3. **Convergence verification phase** — serial pass that runs `go build ./...`, `go test ./...`, `cd web && npm run build`, and a `git diff` review against the dispatch brief. No commit until convergence is green.
+3. **Convergence verification phase** — serial pass that runs `go build ./...`, `go test ./...`, `cd web && VITE_GUIDE_BUILT_REV=$(git rev-parse HEAD) npm run build`, and a `git diff` review against the dispatch brief. No commit until convergence is green.
 4. **Plan 1 critical files are read-only inside dispatched work** (see §3 above and ADR-007).
 5. **`general-purpose` subagent type only.** The `feature-dev:code-architect` subagent is read-only — it blocks `Bash`, `Edit`, and `Write`, and will return "I would do X" without producing any diff. This was the failure mode of PR #3 Stage 5E. See ADR-005.
 
@@ -183,7 +183,7 @@ These commands must exit 0 before you push:
 ```bash
 go build ./...
 go test ./...
-cd web && npm run build && cd ..
+cd web && VITE_GUIDE_BUILT_REV=$(git rev-parse HEAD) npm run build && cd ..
 ```
 
 If you touched the AI prompt path, run the goldens explicitly:

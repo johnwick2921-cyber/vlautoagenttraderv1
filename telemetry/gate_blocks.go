@@ -51,13 +51,6 @@ func IncClockSkewObserved(trader string) {
 	IncGateBlock(trader, "clock_skew_observed")
 }
 
-// IncBreakdownGapNoted (F4, waterfall-class wave 2026-08-28) counts executor
-// waits whose reasoning names a valid breakdown thesis the day plan could not
-// express ("no breakdown scenario authored") — the planning gap made visible.
-func IncBreakdownGapNoted(trader string) {
-	IncGateBlock(trader, "no_breakdown_scenario_authored")
-}
-
 // RolloverGateBlocks sets the active session-day to sessionDayMs. On the FIRST call
 // it just adopts the day (no summary). On a later call whose day DIFFERS from the
 // tracked one, it returns a one-line journal summary of the ENDING day's table and

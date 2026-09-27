@@ -1,0 +1,12 @@
+session: cells=3 n>=2:3 exclude0(n>=2):1 descriptive_only:3 passes:0
+    {} n= 16 mean= -34.53 [-60.63, -8.43] NOT ENOUGH DATA
+kind: cells=16 n>=2:10 exclude0(n>=2):5 descriptive_only:16 passes:0
+    {} n= 16 mean= -36.75 [-69.82, -3.68] NOT ENOUGH DATA
+    {} n= 4 mean= -64.5 [-86.09, -42.91] NOT ENOUGH DATA
+    {} n= 4 mean= -63 [-106.4, -19.6] NOT ENOUGH DATA
+    {} n= 2 mean= -70 [-86.66, -53.34] NOT ENOUGH DATA
+    {} n= 5 mean= -43.8 [-74.9, -12.7] NOT ENOUGH DATA
+condition: cells=6 n>=2:5 exclude0(n>=2):2 descriptive_only:5 passes:0
+    {} n= 9 mean= -64.61 [-102.24, -26.98] NOT ENOUGH DATA
+    {} n= 5 mean= -87.3 [-121.86, -52.74] NOT ENOUGH DATA
+path: cells=2 n>=2:2 exclude0(n>=2):0 descriptive_only:1 passes:0

@@ -1,0 +1,95 @@
+path,git log -1 at integrated head
+clock-seams.list,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+cmd/research_export/main.go,896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+docs/superpowers/AUDIT-CHECKLIST.md,95e7b420df0960edc67a91ff2a719fe105f441ae 2026-09-08T16:20:22-05:00 docs(scenario-economics): assign class 92 at integration
+docs/superpowers/SYSTEM-MAP.md,130176180a3e9d90f89efc4107a2e7bad44d9e61 2026-09-08T16:40:20-05:00 Merge remote-tracking branch 'origin/dev' into fix/stage-a-snapshot
+docs/superpowers/reports/2026-09-08-confirmation-truth.md,72bb9de08f7fee83f2b45a5219ec14bd17a30340 2026-09-08T15:23:33-05:00 deploy: verify combined plan-liveness and confirmation boot f8bc7044
+docs/superpowers/reports/2026-09-08-plan-liveness-confirmation-cutover.md,72bb9de08f7fee83f2b45a5219ec14bd17a30340 2026-09-08T15:23:33-05:00 deploy: verify combined plan-liveness and confirmation boot f8bc7044
+docs/superpowers/reports/2026-09-08-plan-liveness.md,72bb9de08f7fee83f2b45a5219ec14bd17a30340 2026-09-08T15:23:33-05:00 deploy: verify combined plan-liveness and confirmation boot f8bc7044
+docs/superpowers/reports/2026-09-08-scenario-economics-data/call-sites.json,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+docs/superpowers/reports/2026-09-08-scenario-economics-data/candidate-build.json,c98ed6f25b69406692a9a844039b723433648eb8 2026-09-08T16:26:46-05:00 docs(scenario-economics): pin Guide and candidate receipt to clean merged build
+docs/superpowers/reports/2026-09-08-scenario-economics-data/census.json,59af58fd54a74f1422296ac651a0c687c2072d33 2026-09-08T15:41:24-05:00 docs(scenario-economics): measure premises and stop on legacy contract conflict
+docs/superpowers/reports/2026-09-08-scenario-economics-data/checklist-census.txt,59af58fd54a74f1422296ac651a0c687c2072d33 2026-09-08T15:41:24-05:00 docs(scenario-economics): measure premises and stop on legacy contract conflict
+docs/superpowers/reports/2026-09-08-scenario-economics-data/implementation-source-freshness.txt,c98ed6f25b69406692a9a844039b723433648eb8 2026-09-08T16:26:46-05:00 docs(scenario-economics): pin Guide and candidate receipt to clean merged build
+docs/superpowers/reports/2026-09-08-scenario-economics-data/kernel-red.txt,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+docs/superpowers/reports/2026-09-08-scenario-economics-data/legacy-read-after.json,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+docs/superpowers/reports/2026-09-08-scenario-economics-data/legacy-read-before.json,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+docs/superpowers/reports/2026-09-08-scenario-economics-data/legacy-read-probe.go.txt,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+docs/superpowers/reports/2026-09-08-scenario-economics-data/measure.py,59af58fd54a74f1422296ac651a0c687c2072d33 2026-09-08T15:41:24-05:00 docs(scenario-economics): measure premises and stop on legacy contract conflict
+docs/superpowers/reports/2026-09-08-scenario-economics-data/mutations.json,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+docs/superpowers/reports/2026-09-08-scenario-economics-data/risk-settings.json,59af58fd54a74f1422296ac651a0c687c2072d33 2026-09-08T15:41:24-05:00 docs(scenario-economics): measure premises and stop on legacy contract conflict
+docs/superpowers/reports/2026-09-08-scenario-economics-data/role-diagnostics.json,59af58fd54a74f1422296ac651a0c687c2072d33 2026-09-08T15:41:24-05:00 docs(scenario-economics): measure premises and stop on legacy contract conflict
+docs/superpowers/reports/2026-09-08-scenario-economics-data/runtime.json,59af58fd54a74f1422296ac651a0c687c2072d33 2026-09-08T15:41:24-05:00 docs(scenario-economics): measure premises and stop on legacy contract conflict
+docs/superpowers/reports/2026-09-08-scenario-economics-data/scenarios.json,59af58fd54a74f1422296ac651a0c687c2072d33 2026-09-08T15:41:24-05:00 docs(scenario-economics): measure premises and stop on legacy contract conflict
+docs/superpowers/reports/2026-09-08-scenario-economics-data/source-freshness.txt,59af58fd54a74f1422296ac651a0c687c2072d33 2026-09-08T15:41:24-05:00 docs(scenario-economics): measure premises and stop on legacy contract conflict
+docs/superpowers/reports/2026-09-08-scenario-economics-data/ui-red.txt,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+docs/superpowers/reports/2026-09-08-scenario-economics.md,c98ed6f25b69406692a9a844039b723433648eb8 2026-09-08T16:26:46-05:00 docs(scenario-economics): pin Guide and candidate receipt to clean merged build
+docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/census.json,250546854b249a89591befb4b05cd64ffd482b08 2026-09-08T15:28:03-05:00 docs(stage-a): verify current record gaps and correct frozen premises
+docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/frozen-planning-log.txt,250546854b249a89591befb4b05cd64ffd482b08 2026-09-08T15:28:03-05:00 docs(stage-a): verify current record gaps and correct frozen premises
+docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/manifest.json,250546854b249a89591befb4b05cd64ffd482b08 2026-09-08T15:28:03-05:00 docs(stage-a): verify current record gaps and correct frozen premises
+docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/nt-symbols.json,250546854b249a89591befb4b05cd64ffd482b08 2026-09-08T15:28:03-05:00 docs(stage-a): verify current record gaps and correct frozen premises
+docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/source-freshness.csv,250546854b249a89591befb4b05cd64ffd482b08 2026-09-08T15:28:03-05:00 docs(stage-a): verify current record gaps and correct frozen premises
+docs/superpowers/reports/2026-09-08-stage-a-snapshot.md,ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+docs/superpowers/research/2026-09-08-trading-policy/README.md,0ec5bd2cb4c678e524cc21033d7622a7783765c1 2026-09-08T08:30:15-05:00 docs(research): publish four-policy trading study with 28 cited sources
+kernel/detector_recorder.go,896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+kernel/levels.go,896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+kernel/levels_assemble.go,896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+kernel/levels_score.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+kernel/levels_volume_boot.go,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/plan_doc.go,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/plan_doc_caps_test.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+kernel/plan_doc_waterfall_gate_test.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+kernel/planner_prompt.go,130176180a3e9d90f89efc4107a2e7bad44d9e61 2026-09-08T16:40:20-05:00 Merge remote-tracking branch 'origin/dev' into fix/stage-a-snapshot
+kernel/research_score.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+kernel/scenario_economics.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+kernel/scenario_economics_test.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+kernel/stage_a_parity_test.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+kernel/stage_a_score_capture_test.go,896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+kernel/testdata/scenario-economics/plan-170.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/scenario-economics/plan-178.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/scenario-economics/plan-180.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/scenario-economics/plan-182.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/scenario-economics/plan-185.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/scenario-economics/plan-187.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/scenario-economics/plan-252.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/scenario-economics/plan-265.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/scenario-economics/plan-270.json,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/testdata/stage_a_score_legacy.json,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+main.go,896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+provider/ninjatrader/research_wire.go,ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+provider/ninjatrader/research_wire_test.go,ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+provider/ninjatrader/tcp_server.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+researchsnapshot/archive.go,896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+researchsnapshot/fact.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+researchsnapshot/plan.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+researchsnapshot/recorder.go,ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+researchsnapshot/recorder_test.go,ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+researchsnapshot/runtime.go,ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+researchsnapshot/wiring_test.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+store/armed_orders.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+store/research_record.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+store/touch_outcomes.go,"455dce5affd69a60e6d3ad21f2524cc3ed20bd31 2026-09-05T21:37:17-05:00 feat(wave-a D1+D3): the touch recorder stops fabricating episodes; the exit cause is recorded, not inferred"
+trader/armed_executor.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+trader/auto_trader_clock.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+trader/auto_trader_levelstate.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+trader/auto_trader_orders.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+trader/auto_trader_planner.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+trader/auto_trader_planner_caps_test.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+trader/auto_trader_planner_read_test.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+trader/class39_writesite_test.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+trader/desk_facts.go,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+trader/detector_record.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+trader/repair_outcome_test.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+trader/research_snapshot.go,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+trader/research_snapshot_test.go,ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+trader/scenario_economics_desk.go,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+trader/scenario_economics_desk_test.go,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+web/src/components/plan/ScenarioEconomics.test.tsx,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+web/src/components/plan/ScenarioEconomics.tsx,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+web/src/components/plan/ScenarioList.tsx,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+web/src/guide/content/expectancy.ts,ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+web/src/guide/content/planCard.ts,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+web/src/guide/content/scenarioEconomics.test.ts,"0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations"
+web/src/guide/researchSnapshot.test.ts,"0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+web/src/guide/types.ts,c98ed6f25b69406692a9a844039b723433648eb8 2026-09-08T16:26:46-05:00 docs(scenario-economics): pin Guide and candidate receipt to clean merged build
+web/src/lib/api/plan.ts,d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns

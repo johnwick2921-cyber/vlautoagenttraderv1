@@ -734,3 +734,85 @@ func TestE8MeanIsAbsentWhenNoRowIsUsable(t *testing.T) {
 		t.Errorf("a cell with no usable rows must say why")
 	}
 }
+
+// TestHistoricalAttributionIgnoresPostExitOverlay (WAVE 1a-plan P2, CTO ruling
+// 2026-09-24) — a position closed at T citing S1 keeps the attribution of the
+// plan row it traded (plans.doc, the base), even when an overlay applied at T+1
+// moves that scenario's condition. loadPositions joins ONLY plans.doc and must
+// never join plan_overlays — folding today's final doc onto yesterday's trade
+// rewrites history. The control half is the honest RED: the SAME position whose
+// doc IS overlay-folded attributes to the NEW condition, so a future fold at the
+// join flips the pin.
+func TestHistoricalAttributionIgnoresPostExitOverlay(t *testing.T) {
+	db := newFixtureDB(t)
+	if err := db.AutoMigrate(&store.PlanOverlayDB{}); err != nil {
+		t.Fatalf("migrate overlay: %v", err)
+	}
+	seedPlan(t, db, "2026-09-01:P", 1, "NY")
+
+	// Position closed at T citing S1 (condition "reject" in the base doc).
+	T := msAt(t, 2026, time.September, 1, 9, 30)
+	if err := db.Create(&store.TraderPosition{
+		TraderID: "t1", Symbol: "MNQ", Side: "SHORT", Quantity: 1,
+		EntryPrice: 29100, ExitPrice: 29090,
+		EntryTime: T, ExitTime: T + 600000,
+		Status: "CLOSED", CloseReason: "target", Source: "system",
+		PnlCorrected: f(10), RealizedPnL: -99999,
+		PlanID: "2026-09-01:P", PlanVersion: 1, PlanSession: "NY",
+		CitedScenarioID: "S1", PlanMatched: true, PlanBand: "armed_fill",
+		CreatedAt: T, UpdatedAt: T,
+	}).Error; err != nil {
+		t.Fatalf("seed position: %v", err)
+	}
+
+	// Overlay applied at T+1 that MOVES S1's condition reject -> acceptance.
+	overlay := &store.PlanOverlayDB{
+		PlanID: "2026-09-01:P", PlanVersion: 1, OverlayVersion: 1,
+		OverlayID: "owner-t1",
+		Patch:     `[{"op":"replace","path":"/scenarios/0/condition","value":"acceptance"}]`,
+		Origin:    "owner",
+	}
+	overlay.CreatedAt = time.UnixMilli(T + 3600000).In(ct(t))
+	if err := db.Create(overlay).Error; err != nil {
+		t.Fatalf("seed overlay: %v", err)
+	}
+
+	tab, err := LoadAndBuildAt(db, time.UnixMilli(T).In(ct(t)))
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	cellN := func(cond string) int {
+		for _, c := range tab.Conditions {
+			if c.Key.Condition == cond {
+				return c.N
+			}
+		}
+		return 0
+	}
+	if n := cellN("reject"); n != 1 {
+		t.Fatalf("PIN: the T+1 overlay must NOT move the closed trade's attribution — reject n=%d, want 1", n)
+	}
+	if n := cellN("acceptance"); n != 0 {
+		t.Fatalf("PIN: acceptance n=%d, want 0 (the overlay must not reach history)", n)
+	}
+
+	// Honest RED control — the pin has teeth: the same position with the FOLDED
+	// doc attributes to acceptance, so a fold at the loadPositions join flips the
+	// pin above.
+	var pl store.PlanDB
+	if err := db.First(&pl, "plan_id = ? AND version = 1", "2026-09-01:P").Error; err != nil {
+		t.Fatalf("load base plan: %v", err)
+	}
+	folded, err := kernel.ApplyPatchStrict([]byte(pl.Doc), overlay.Patch)
+	if err != nil {
+		t.Fatalf("control fold: %v", err)
+	}
+	baseCond, _ := conditionAndLevelKind(posRow{Doc: pl.Doc, CitedScenarioID: "S1"})
+	foldedCond, _ := conditionAndLevelKind(posRow{Doc: string(folded), CitedScenarioID: "S1"})
+	if baseCond != "reject" {
+		t.Fatalf("control: base doc must read as reject, got %q", baseCond)
+	}
+	if foldedCond != "acceptance" {
+		t.Fatalf("control RED: the folded doc must attribute DIFFERENTLY (acceptance), got %q — the pin above would not catch a future fold", foldedCond)
+	}
+}

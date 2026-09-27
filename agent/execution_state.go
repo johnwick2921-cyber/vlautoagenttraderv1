@@ -629,11 +629,6 @@ func summarizeExecutionOverflow(values []Observation) *Observation {
 	}
 }
 
-func appendDynamicSnapshot(state *ExecutionState, obs Observation) {
-	state.DynamicSnapshots = append(state.DynamicSnapshots, obs)
-	state.DynamicSnapshots = normalizeObservationList(state.DynamicSnapshots)
-}
-
 func appendExecutionLog(state *ExecutionState, obs Observation) {
 	state.ExecutionLog = append(state.ExecutionLog, obs)
 	*state = normalizeExecutionState(*state)

@@ -1,0 +1,287 @@
+{
+  "meta": {
+    "asof_ct": "2026-09-05T17:38:15.087919-05:00",
+    "era_ms": 1786770000000,
+    "query_only": 1,
+    "queries": {
+      "positions": "SELECT * FROM trader_positions WHERE entry_time >= 1786770000000 ORDER BY id",
+      "plans": "SELECT rowid AS row_id,plan_id,version,session,trade_date,created_at,doc FROM plans ORDER BY rowid",
+      "touches": "SELECT * FROM touch_outcomes ORDER BY id",
+      "excursions": "SELECT * FROM trade_excursions ORDER BY id",
+      "facts": "SELECT id,trader_id,trade_date,session,plan_id,version,bias_regime,bias_tree,bias_ai,atr5m,stop_floor_pts,created_at FROM planner_read_facts ORDER BY id",
+      "bars": "SELECT rowid AS row_id,* FROM bars WHERE symbol='MNQ' AND tf='1m' AND open_time_ms>=1786338000000 ORDER BY open_time_ms,convention",
+      "arms": "SELECT * FROM armed_orders ORDER BY id",
+      "snapshots": "SELECT COUNT(*) AS n,MIN(received_at_ms) AS first_ms,MAX(received_at_ms) AS last_ms FROM nt8_order_snapshots"
+    },
+    "base_revision": "b4376246c2c502ecedd119c6a44a27956ed2f616"
+  },
+  "eligible_n": 58,
+  "ids": [
+    521,
+    522,
+    523,
+    524,
+    525,
+    526,
+    527,
+    528,
+    529,
+    531,
+    532,
+    533,
+    534,
+    535,
+    536,
+    537,
+    538,
+    540,
+    541,
+    542,
+    543,
+    544,
+    547,
+    548,
+    549,
+    550,
+    551,
+    552,
+    553,
+    554,
+    555,
+    556,
+    557,
+    558,
+    559,
+    560,
+    561,
+    562,
+    563,
+    564,
+    565,
+    567,
+    568,
+    569,
+    570,
+    575,
+    578,
+    581,
+    582,
+    583,
+    584,
+    585,
+    586,
+    587,
+    588,
+    589,
+    590,
+    591
+  ],
+  "excluded": [
+    {
+      "id": 530,
+      "reasons": "sentinel plan",
+      "pnl_corrected": 13.0
+    },
+    {
+      "id": 539,
+      "reasons": "sentinel plan",
+      "pnl_corrected": -84.5
+    },
+    {
+      "id": 545,
+      "reasons": "sentinel plan",
+      "pnl_corrected": -29.5
+    },
+    {
+      "id": 546,
+      "reasons": "sentinel plan",
+      "pnl_corrected": -88.5
+    },
+    {
+      "id": 566,
+      "reasons": "sentinel plan",
+      "pnl_corrected": 97.0
+    },
+    {
+      "id": 571,
+      "reasons": "sentinel plan",
+      "pnl_corrected": -44.5
+    },
+    {
+      "id": 572,
+      "reasons": "test seam; null corrected P&L",
+      "pnl_corrected": null
+    },
+    {
+      "id": 573,
+      "reasons": "test seam; sentinel plan",
+      "pnl_corrected": 6.0
+    },
+    {
+      "id": 574,
+      "reasons": "test seam; sentinel plan",
+      "pnl_corrected": -1.0
+    },
+    {
+      "id": 576,
+      "reasons": "null corrected P&L",
+      "pnl_corrected": null
+    },
+    {
+      "id": 577,
+      "reasons": "null corrected P&L",
+      "pnl_corrected": null
+    },
+    {
+      "id": 579,
+      "reasons": "null corrected P&L",
+      "pnl_corrected": null
+    },
+    {
+      "id": 580,
+      "reasons": "sentinel plan",
+      "pnl_corrected": 39.5
+    }
+  ],
+  "sum_usd": -466.4285719999971,
+  "mean_usd": -8.041871931034432,
+  "avg_win": 125.47222222222223,
+  "avg_loss": -71.70864663157887,
+  "payoff": 1.7497502479284985,
+  "break_even_decided_win": 0.36366939170324347,
+  "win_wilson": [
+    0.32142857142857145,
+    0.21400827887722296,
+    0.4517760584399611
+  ],
+  "mean_naive_normal95": [
+    -35.03709072764657,
+    18.953346865577707
+  ],
+  "cme_days": 12,
+  "trades_per_occupied_day": 4.833333333333333,
+  "day_bootstrap95": [
+    -35.33105869999986,
+    21.328214852966095
+  ],
+  "bootstrap_draws": 20000,
+  "seed": 90501,
+  "strict_ms": 1788451833000,
+  "zeroB_ms": 1788353346000,
+  "trade_excursions_n": 0,
+  "broker_R_ids": [
+    568,
+    570,
+    575,
+    578,
+    582,
+    584,
+    585,
+    586,
+    591
+  ],
+  "R_missing_ids": [
+    521,
+    522,
+    523,
+    524,
+    525,
+    526,
+    527,
+    528,
+    529,
+    531,
+    532,
+    533,
+    534,
+    535,
+    536,
+    537,
+    538,
+    540,
+    541,
+    542,
+    543,
+    544,
+    547,
+    548,
+    549,
+    550,
+    551,
+    552,
+    553,
+    554,
+    555,
+    556,
+    557,
+    558,
+    559,
+    560,
+    561,
+    562,
+    563,
+    564,
+    565,
+    567,
+    569,
+    581,
+    583,
+    587,
+    588,
+    589,
+    590
+  ],
+  "rv_cuts_bps": [
+    16.156173334026573,
+    24.015898074246913
+  ],
+  "rv_n": 54,
+  "rv_missing_ids": [
+    521,
+    522,
+    523,
+    533
+  ],
+  "bar_conflicting_times": [],
+  "touches_raw": 677,
+  "touch_price_time_keys": 423,
+  "touch_kind_time_only_keys": 370,
+  "touch_conflicting_keys": [
+    167,
+    180
+  ],
+  "touch_plan_asof_count": 57,
+  "stored_ordinal_counts": {
+    "1": 471,
+    "2": 36,
+    "3": 31,
+    "4": 24,
+    "5": 20,
+    "6": 17,
+    "7": 15,
+    "8": 14,
+    "9": 12,
+    "10": 12,
+    "11": 9,
+    "12": 8,
+    "13": 4,
+    "14": 3,
+    "15": 1
+  },
+  "planned_arm_n": 132,
+  "planned_rr_p50": 2.3563967611335483,
+  "planned_arm_enabled_n": 132,
+  "planned_arm_level_matches": 119,
+  "planned_arm_chain_matches": 120,
+  "snapshots": [
+    {
+      "n": 5386,
+      "first_ms": 1788490102073,
+      "last_ms": 1788647867908
+    }
+  ],
+  "plan_after_entry_ids": [
+    568
+  ],
+  "hold_max": 219.7104
+}

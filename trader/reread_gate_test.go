@@ -56,7 +56,7 @@ func TestRereadRefusesOutsideAnySession(t *testing.T) {
 // counter — two spends against cap 2 exhaust it, however many rows exist.
 func TestRereadRefusesWhenTheBudgetIsSpent(t *testing.T) {
 	at, st := rereadTrader(t, store.StrategyConfig{
-		DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 2},
+		DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(2)},
 	})
 	if _, err := st.Plan().AppendPlan(&store.PlanDB{
 		PlanID: store.MakePlanID("2026-09-01", "NY"), StrategyID: "trader-1",
@@ -85,7 +85,7 @@ func TestRereadRefusesWhenTheBudgetIsSpent(t *testing.T) {
 // A session already closed out with NO-TRADE must not be re-openable by button.
 func TestRereadRefusesOnANoTradeSession(t *testing.T) {
 	at, st := rereadTrader(t, store.StrategyConfig{
-		DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4},
+		DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)},
 	})
 	if _, err := st.Plan().AppendPlan(&store.PlanDB{
 		PlanID: store.MakePlanID("2026-08-18", "NY"), StrategyID: "trader-1",

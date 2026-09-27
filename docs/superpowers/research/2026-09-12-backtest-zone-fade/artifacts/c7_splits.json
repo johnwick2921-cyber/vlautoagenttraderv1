@@ -1,0 +1,138 @@
+{
+ "families": {
+  "fam1": {
+   "ambiguous": 97,
+   "n": 3230,
+   "n_touches": 3327,
+   "p_hold": 0.7390092879256966,
+   "trade_fill_a": {
+    "group": "",
+    "n_touches": 0,
+    "n_ambiguous_h12": 0,
+    "n_decided_h12": 0,
+    "hold_p": 0,
+    "hold_lo": 0,
+    "hold_hi": 0,
+    "n_trades": 3327,
+    "fill_rate_vs_a": 1,
+    "win_rate_gross": 0.8981064021641119,
+    "win_rate_net": 0.3606853020739405,
+    "avg_r": 0.0251498335685144,
+    "expectancy_pts_net": -1.6273154865648498,
+    "expectancy_usd_net": -3.2546309731296996,
+    "profit_factor_net": 0.43930150923095496,
+    "max_dd_pts_net": 5508.289590458147,
+    "longest_losing_streak": 23,
+    "mae_min": -227,
+    "mae_q1": -3.75,
+    "mae_med": 0,
+    "mae_q3": 0,
+    "mae_max": 0
+   },
+   "wilson": [
+    0.7235861821528768,
+    0.7538645586026891
+   ]
+  },
+  "fam2": {
+   "ambiguous": 169,
+   "n": 5753,
+   "n_touches": 5922,
+   "p_hold": 0.7267512602120633,
+   "trade_fill_a": {
+    "group": "",
+    "n_touches": 0,
+    "n_ambiguous_h12": 0,
+    "n_decided_h12": 0,
+    "hold_p": 0,
+    "hold_lo": 0,
+    "hold_hi": 0,
+    "n_trades": 5922,
+    "fill_rate_vs_a": 1,
+    "win_rate_gross": 0.8993583248902398,
+    "win_rate_net": 0.4766970618034448,
+    "avg_r": 0.048264897667431646,
+    "expectancy_pts_net": -0.7058125238953058,
+    "expectancy_usd_net": -1.4116250477906116,
+    "profit_factor_net": 0.774130188844031,
+    "max_dd_pts_net": 4560.231414530155,
+    "longest_losing_streak": 17,
+    "mae_min": -220.5,
+    "mae_q1": -5.75,
+    "mae_med": 0,
+    "mae_q3": 0,
+    "mae_max": 0
+   },
+   "wilson": [
+    0.7150875634562979,
+    0.7381123411550168
+   ]
+  },
+  "fam3": {
+   "ambiguous": 59,
+   "n": 1994,
+   "n_touches": 2053,
+   "p_hold": 0.7387161484453361,
+   "trade_fill_a": {
+    "group": "",
+    "n_touches": 0,
+    "n_ambiguous_h12": 0,
+    "n_decided_h12": 0,
+    "hold_p": 0,
+    "hold_lo": 0,
+    "hold_hi": 0,
+    "n_trades": 2053,
+    "fill_rate_vs_a": 1,
+    "win_rate_gross": 0.8977106673161227,
+    "win_rate_net": 0.6171456405260595,
+    "avg_r": 0.07678009936318242,
+    "expectancy_pts_net": 0.3280209144337345,
+    "expectancy_usd_net": 0.656041828867469,
+    "profit_factor_net": 1.086038156529351,
+    "max_dd_pts_net": 527.4239390954208,
+    "longest_losing_streak": 13,
+    "mae_min": -164.125,
+    "mae_q1": -8.875,
+    "mae_med": 0,
+    "mae_q3": 0,
+    "mae_max": 0
+   },
+   "wilson": [
+    0.7189869583060889,
+    0.7575273295503441
+   ]
+  }
+ },
+ "multi_source": {
+  "diff_ci": [
+   -0.024813156831909853,
+   0.024226877871188688
+  ],
+  "fam1_n": 3230,
+  "fam3plus_n": 1994,
+  "fam3plus_vs_fam1_diff": -0.00029313948036058246,
+  "round21_threshold_multi_source": "interval includes 0 and upper bound \u003c +4pp — feature does not clear round-21's threshold (no recommendation)"
+ },
+ "zone_vs_line": {
+  "diff": 0.13925587336654555,
+  "diff_ci": [
+   0.12689482104101607,
+   0.15161692569207502
+  ],
+  "line_amb": 15,
+  "line_n": 11005,
+  "line_p": 0.593275783734666,
+  "line_wilson": [
+   0.5840671315101589,
+   0.6024193400844575
+  ],
+  "round21_threshold_zone_vs_line": "interval does not meet round-21's kill condition",
+  "zone_amb": 325,
+  "zone_n": 10977,
+  "zone_p": 0.7325316571012116,
+  "zone_wilson": [
+   0.7241708761292815,
+   0.7407297436587632
+  ]
+ }
+}

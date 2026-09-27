@@ -59,6 +59,12 @@ func (at *AutoTrader) ResumeEntries(source string) {
 		_ = at.store.SetSystemConfig(pauseConfigKey(at.id), "0")
 	}
 	at.pauseStoreMu.Unlock()
+	// W-ONE-BUTTON M2 site 6: the maintenance hold is installation-wide and is
+	// NOT a pause — resume never lifts it, and must not claim it did.
+	if reason, held := MaintenanceHeld(); held {
+		at.logWarnf("▶️ stop_until CLEARED (%s) — but NEW entries stay refused: maintenance hold (%s). They resume when the update completes.", source, reason)
+		return
+	}
 	at.logInfof("▶️ stop_until CLEARED (%s): entries resume.", source)
 }
 
@@ -91,12 +97,16 @@ func (at *AutoTrader) PauseState() (time.Time, bool) {
 
 // entryPaused is the gate predicate: reason + true while the pause holds.
 // The first read at/after the deadline AUTO-RESUMES (clears state + store).
-func (at *AutoTrader) entryPaused() (string, bool) {
+//
+// W-EXEC-TRUTH W0: it takes the caller's clock — the admission gate runs
+// beneath the armed pass's clock seam, and every caller now passes its own now
+// (the wall-clock wrapper had no production caller left and was removed).
+func (at *AutoTrader) entryPausedAt(now time.Time) (string, bool) {
 	ms := at.pauseUntilMs.Load()
 	if ms == 0 {
 		return "", false
 	}
-	if time.Now().UnixMilli() >= ms {
+	if now.UnixMilli() >= ms {
 		// Expiry: only the winner of the CAS clears + logs (loop vs API race).
 		if at.pauseUntilMs.CompareAndSwap(ms, 0) {
 			// E7-v2 fix: a concurrent RE-PAUSE may land between the CAS and the

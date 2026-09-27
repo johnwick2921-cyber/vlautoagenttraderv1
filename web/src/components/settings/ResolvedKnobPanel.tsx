@@ -29,8 +29,12 @@ interface Knob {
   note?: string
 }
 
+// A count the server did not compute is ABSENT, never 0 (L7): schema is absent
+// (with schema_error) if the enumeration failed, and env_shadows /
+// env_shadow_paths are absent while nothing counts env shadows.
 interface Summary {
-  schema: number
+  schema?: number
+  schema_error?: string
   classified: number
   live: number
   ineffective: number
@@ -40,8 +44,8 @@ interface Summary {
   display_only: number
   infra: number
   folded: number
-  env_shadows: number
-  env_shadow_paths: string[]
+  env_shadows?: number
+  env_shadow_paths?: string[]
 }
 
 interface Payload {
@@ -114,10 +118,16 @@ export function ResolvedKnobPanel({
   return (
     <div data-testid="resolved-panel" className="space-y-4">
       <div className="text-xs text-slate-400">
-        schema {s.schema} · classified {s.classified} · live {s.live} ·
-        ineffective {s.ineffective} · candidate {s.candidate_unverified} ·
-        folded {s.folded ?? 0}
-        {s.env_shadows > 0 ? ` · env-shadows ${s.env_shadows}` : ''}
+        schema{' '}
+        {typeof s.schema === 'number'
+          ? s.schema
+          : `n/a (${s.schema_error ?? 'not computed'})`}{' '}
+        · classified {s.classified} · live {s.live} · ineffective{' '}
+        {s.ineffective} · candidate {s.candidate_unverified} · folded{' '}
+        {s.folded ?? 0}
+        {typeof s.env_shadows === 'number'
+          ? ` · env-shadows ${s.env_shadows}`
+          : ' · env-shadows n/a (not counted)'}
       </div>
 
       {/* Rendered only when the server actually resolved something. An absent

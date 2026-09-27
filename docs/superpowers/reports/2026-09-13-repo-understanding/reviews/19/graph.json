@@ -1,0 +1,160 @@
+{
+  "assignment": 19,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_graph": {
+    "as_of": "2026-07-10@7a8adce0",
+    "subset_nodes": 154,
+    "assigned_paths_represented": 39,
+    "incident_edges_exported": 981,
+    "coverage_limit": "Node summaries and selected edges reviewed; 981 exported edges are not a full validated edge review. No CGC reindex."
+  },
+  "current_edges": [
+    {
+      "source": "main.main",
+      "target": "crypto.SetGlobalCryptoService",
+      "evidence": "main.go:60",
+      "explanation": "Crypto service installed before database initialization.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "main.main",
+      "target": "store.NewWithConfig",
+      "evidence": "main.go:84",
+      "explanation": "Application constructor can migrate/default data.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "main.main",
+      "target": "manager.LoadTradersFromStore",
+      "evidence": "main.go:251",
+      "explanation": "At immutable base this precedes integrity assertion.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "main.main",
+      "target": "kernel.AssertBootIntegrity",
+      "evidence": "main.go:289",
+      "explanation": "Root repaired ordering separately; not reflected in base.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "store.New",
+      "target": "Store.initTables/initDefaultData",
+      "evidence": "store/store.go:63",
+      "explanation": "Reporting CLIs using New inherit constructor write attempts.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "telegram.Run",
+      "target": "runBot",
+      "evidence": "telegram/bot.go:24",
+      "explanation": "Reload channel is not passed into running bot loop.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "telegram.runBot",
+      "target": "auth.GenerateJWT",
+      "evidence": "telegram/bot.go:86; telegram/agent/agent.go:72",
+      "explanation": "Token renewal keyed to user identity change, while auth/auth.go:85 sets24h expiry.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "security.SafeHTTPClient.DialContext",
+      "target": "net.LookupIP then net.Dialer.DialContext",
+      "evidence": "security/url_validator.go:169",
+      "explanation": "Validates resolved addresses then dials original hostname; not IP pinned.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "deploy/nofx-lock.sh.acquire",
+      "target": "bounded keeper",
+      "evidence": "deploy/nofx-lock.sh:132",
+      "explanation": "Atomic lock identity session, bounded keeper heartbeat; no process PID ownership.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "deploy/nofx-lock.sh.with-heartbeat",
+      "target": "additional periodic writer",
+      "evidence": "deploy/nofx-lock.sh:428",
+      "explanation": "Secondary writer is distinct from acquire keeper.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "trader decision execution",
+      "target": "telemetry trade event",
+      "evidence": "trader/auto_trader_decision.go:411",
+      "explanation": "Real producer emits event detail; default enable in config.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "trader cycle",
+      "target": "telemetry daily rollover",
+      "evidence": "trader/auto_trader_loop.go:251",
+      "explanation": "Caller uses kernel session clock.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    },
+    {
+      "source": "main.main",
+      "target": "researchsnapshot.Start",
+      "evidence": "main.go:77",
+      "explanation": "Separate record-only archive; no trading gate readback within reviewed package.",
+      "tier": "A",
+      "resolution": "manual source; boundaries noted"
+    }
+  ],
+  "corrections": [
+    {
+      "subject": "telemetry",
+      "historical": "Historical opt-in/installation-only summary",
+      "current": "Default enabled and event-level identifiers/amounts; telemetry/experience.go, config/config.go."
+    },
+    {
+      "subject": "Telegram response",
+      "historical": "Historical truncated API body summary",
+      "current": "io.ReadAll without bounded reader in telegram/agent/apicall.go."
+    },
+    {
+      "subject": "Telegram reload",
+      "historical": "Historical wired hot-reload summary",
+      "current": "runBot cannot consume supervisor reload; telegram/bot.go."
+    },
+    {
+      "subject": "Crypto key availability",
+      "historical": "Historical partial key allowance summary",
+      "current": "NewCryptoService requires RSA and AES; crypto/crypto.go."
+    },
+    {
+      "subject": "Crypto AAD identity",
+      "historical": "Historical validated AAD identity summary",
+      "current": "DecryptPayload parses authenticated AAD but does not validate caller/session/purpose identity."
+    },
+    {
+      "subject": "Crypto storage fallback",
+      "historical": "Ambiguous historical plaintext passthrough claim",
+      "current": "Scan error retains ciphertext; Value error/no global service returns plaintext without error."
+    },
+    {
+      "subject": "Logger config",
+      "historical": "Historical format field summary",
+      "current": "logger/config.go contains no format field."
+    },
+    {
+      "subject": "Data source",
+      "historical": "Stale CoinAnk boot log",
+      "current": "Assigned main.go log conflicts with NT8 architecture; full data-source call path assigned elsewhere."
+    }
+  ],
+  "call_inventory_limit": "functions.json connections are syntactic local calls, not type-resolved graph edges."
+}

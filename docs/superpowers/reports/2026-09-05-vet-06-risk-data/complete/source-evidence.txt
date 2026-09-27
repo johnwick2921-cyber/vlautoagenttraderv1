@@ -1,0 +1,732 @@
+trader/auto_trader_calendar.go:25: func (at *AutoTrader) maybeFetchCalendar(now time.Time) {
+trader/auto_trader_calendar.go:26: 	if !at.dayPlanEnabled() || at.store == nil {
+trader/auto_trader_calendar.go:27: 		return
+trader/auto_trader_calendar.go:28: 	}
+trader/auto_trader_calendar.go:29: 	tradeDate := plannerTradeDateCT(now)
+trader/auto_trader_calendar.go:30: 	// F0.4 (2026-08-24) — a LIVE slice is only "fresh" for 3 hours; after that
+trader/auto_trader_calendar.go:31: 	// we re-fetch (throttled below) so SAME-DAY corrections (speaker
+trader/auto_trader_calendar.go:32: 	// cancellations, impact changes) propagate instead of freezing the morning
+trader/auto_trader_calendar.go:33: 	// snapshot. Past dates stay frozen (replay integrity).
+trader/auto_trader_calendar.go:34: 	const liveFreshness = 3 * time.Hour
+trader/auto_trader_calendar.go:35: 	if slice, _ := at.store.Calendar().GetSlice(tradeDate); slice != nil && slice.Source == string(calendar.SourceLive) {
+trader/auto_trader_calendar.go:36: 		age := now.Sub(time.UnixMilli(slice.CreatedAt))
+trader/auto_trader_calendar.go:37: 		if age < liveFreshness {
+trader/auto_trader_calendar.go:38: 			// skip-fresh — only a LIVE-source slice is fresh (F0.3: a static/none
+trader/auto_trader_calendar.go:39: 			// slice is stale and keeps re-fetching for upgrade, throttled below).
+trader/auto_trader_calendar.go:40: 			// Logged once per trade date, not every 3-min cycle.
+trader/auto_trader_calendar.go:41: 			if at.lastCalSkipDate != tradeDate {
+trader/auto_trader_calendar.go:42: 				at.lastCalSkipDate = tradeDate
+trader/auto_trader_calendar.go:43: 				at.logInfof("📅 calendar: skip-fresh — slice for %s already stored (src %s)", tradeDate, slice.Source)
+trader/auto_trader_calendar.go:44: 			}
+trader/auto_trader_calendar.go:45: 			return
+trader/auto_trader_calendar.go:46: 		}
+trader/auto_trader_calendar.go:47: 		at.logInfof("📅 calendar: live slice for %s is %s old — re-fetching for same-day corrections", tradeDate, age.Truncate(time.Minute))
+trader/auto_trader_calendar.go:48: 	}
+trader/auto_trader_calendar.go:49: 	if !at.lastCalFetch.IsZero() && now.Sub(at.lastCalFetch) < time.Hour {
+trader/auto_trader_calendar.go:50: 		return // throttle outage retries
+trader/auto_trader_calendar.go:65: 		if res.Source == calendar.SourceLive {
+trader/auto_trader_calendar.go:66: 			// live wins over a prior static/none guess (F0.3). A frozen live row
+trader/auto_trader_calendar.go:67: 			// still refreshes when the payload CHANGED (F0.4 — same-day
+trader/auto_trader_calendar.go:68: 			// corrections), but stays byte-identical otherwise (replay integrity).
+trader/auto_trader_calendar.go:69: 			if wrote, up, err := at.store.Calendar().UpsertSliceUpgrade(row); err == nil && wrote {
+trader/auto_trader_calendar.go:70: 				stored++
+trader/auto_trader_calendar.go:71: 				events += len(evs)
+trader/auto_trader_calendar.go:72: 				if up {
+trader/auto_trader_calendar.go:73: 					upgraded++
+trader/auto_trader_calendar.go:74: 				}
+trader/auto_trader_calendar.go:75: 			} else if err == nil {
+trader/auto_trader_calendar.go:76: 				// C10/D2 (2026-08-25) — the past-date freeze: a corrected
+trader/auto_trader_calendar.go:77: 				// payload for a PAST trade-date must NOT overwrite the frozen
+trader/auto_trader_calendar.go:78: 				// replay slice. Only TODAY's slice accepts live corrections.
+trader/auto_trader_calendar.go:79: 				todayCT := now.In(kernel.CTLocation()).Format("2006-01-02")
+trader/auto_trader_calendar.go:80: 				if date != todayCT {
+trader/auto_trader_calendar.go:81: 					continue
+trader/auto_trader_calendar.go:82: 				}
+trader/auto_trader_calendar.go:83: 				if changed, cerr := at.store.Calendar().UpdateLiveSliceIfChanged(row); cerr == nil && changed {
+trader/auto_trader_calendar.go:84: 					at.logInfof("📅 calendar: %s slice corrected by the fresh feed", date)
+trader/auto_trader_calendar.go:85: 				} else if cerr != nil {
+trader/auto_trader_calendar.go:86: 					at.logWarnf("📅 calendar: live-slice refresh for %s failed: %v", date, cerr)
+trader/auto_trader_calendar.go:110: // calendarStaticLoader loads the owner-editable static T1 fallback file (F0.2)
+trader/auto_trader_calendar.go:111: // so blackout coverage never depends on feed availability: on a feed 404/outage
+trader/auto_trader_calendar.go:112: // the static events STORE as source=static rows. Path: env NOFX_CALENDAR_STATIC,
+trader/auto_trader_calendar.go:113: // else ./calendar_static_t1.json (repo-shipped template). Shape: JSON array of
+trader/auto_trader_calendar.go:114: // calendar.Event ({"time": RFC3339-UTC, "currency", "title", "impact":"T1"}).
+trader/auto_trader_calendar.go:115: // Missing/unreadable/invalid file → nil (FetchWeek reports SourceNone + warns).
+trader/auto_trader_calendar.go:116: func calendarStaticLoader() []calendar.Event {
+trader/auto_trader_calendar.go:117: 	path := os.Getenv("NOFX_CALENDAR_STATIC")
+trader/auto_trader_calendar.go:118: 	if path == "" {
+trader/auto_trader_calendar.go:119: 		path = "calendar_static_t1.json"
+trader/auto_trader_calendar.go:120: 	}
+trader/auto_trader_calendar.go:121: 	raw, err := os.ReadFile(path)
+trader/auto_trader_calendar.go:122: 	if err != nil {
+trader/auto_trader_calendar.go:123: 		return nil
+trader/auto_trader_calendar.go:124: 	}
+trader/auto_trader_calendar.go:125: 	var evs []calendar.Event
+trader/auto_trader_calendar.go:126: 	if err := json.Unmarshal(raw, &evs); err != nil {
+trader/auto_trader_calendar.go:127: 		return nil
+trader/auto_trader_calendar.go:128: 	}
+trader/auto_trader_calendar.go:129: 	// NEWS-HYGIENE AMEND (2026-08-30) — the static file may carry NOTE entries
+trader/auto_trader_calendar.go:130: 	// (holidays, contract rolls, quad-witching) as owner annotations. They
+trader/auto_trader_calendar.go:131: 	// never gate and never reach the prompt: drop them here.
+trader/auto_trader_calendar.go:132: 	out := evs[:0]
+trader/auto_trader_calendar.go:133: 	for _, e := range evs {
+trader/auto_trader_calendar.go:134: 		if strings.EqualFold(strings.TrimSpace(string(e.Impact)), "note") || strings.TrimSpace(string(e.Impact)) == "" {
+trader/auto_trader_calendar.go:135: 			continue
+trader/auto_trader_calendar.go:136: 		}
+trader/auto_trader_calendar.go:137: 		out = append(out, e)
+trader/auto_trader_calendar.go:138: 	}
+trader/auto_trader_calendar.go:139: 	return out
+trader/auto_trader_calendar.go:142: // currentT1Windows returns the red-news HARD no-trade windows for the active
+trader/auto_trader_calendar.go:143: // session at `now`.
+trader/auto_trader_calendar.go:144: //
+trader/auto_trader_calendar.go:145: // P0.6 (2026-08-19) — FAIL-CLOSED: a missing/undecodable slice used to return
+trader/auto_trader_calendar.go:146: // nil (entries allowed, blackouts silently gone). Everything else in this
+trader/auto_trader_calendar.go:147: // system fails closed; now this does too — the owner-editable static T1
+trader/auto_trader_calendar.go:148: // fallback supplies the windows and a P0 alert fires (once per session-day).
+trader/auto_trader_calendar.go:149: func (at *AutoTrader) currentT1Windows(now time.Time) []kernel.CTWindow {
+trader/auto_trader_calendar.go:150: 	if at.store == nil {
+trader/auto_trader_calendar.go:151: 		return nil
+trader/auto_trader_calendar.go:152: 	}
+trader/auto_trader_calendar.go:153: 	reg := at.sessionRegistry(now) // W8
+trader/auto_trader_calendar.go:154: 	sess, ok := reg.ActiveSession(now)
+trader/auto_trader_calendar.go:155: 	if !ok {
+trader/auto_trader_calendar.go:156: 		return nil
+trader/auto_trader_calendar.go:157: 	}
+trader/auto_trader_calendar.go:158: 	return at.t1WindowsFor(plannerTradeDateCT(now), sess)
+trader/auto_trader_calendar.go:159: }
+trader/auto_trader_calendar.go:160:
+trader/auto_trader_calendar.go:161: // t1WindowsFor is currentT1Windows for an EXPLICIT session and trade date, so
+trader/auto_trader_calendar.go:162: // the plan-write path can stamp the card with the SAME windows the entry gate
+trader/auto_trader_calendar.go:163: // will enforce (no-trade-band wave, 2026-09-02). A read authors ASIA while NY
+trader/auto_trader_calendar.go:164: // is still the active session, so "the session at now" is the wrong key there.
+trader/auto_trader_calendar.go:165: func (at *AutoTrader) t1WindowsFor(tradeDate string, sess *kernel.SessionDef) []kernel.CTWindow {
+trader/auto_trader_calendar.go:166: 	if at.store == nil || sess == nil {
+trader/auto_trader_calendar.go:167: 		return nil
+trader/auto_trader_calendar.go:168: 	}
+trader/auto_trader_calendar.go:169: 	slice, err := at.store.Calendar().GetSlice(tradeDate)
+trader/auto_trader_calendar.go:170: 	var evs []calendar.Event
+trader/auto_trader_calendar.go:171: 	fromStatic := false
+trader/auto_trader_calendar.go:172: 	if err != nil || slice == nil || json.Unmarshal([]byte(slice.EventsJSON), &evs) != nil {
+trader/auto_trader_calendar.go:173: 		// P0.6 fail-closed: static T1 fallback + alert instead of silent nil.
+trader/auto_trader_calendar.go:174: 		evs = calendarStaticLoader()
+trader/auto_trader_calendar.go:175: 		fromStatic = true
+trader/auto_trader_calendar.go:176: 		if at.lastCalFailClosedAlert != tradeDate {
+trader/auto_trader_calendar.go:177: 			at.lastCalFailClosedAlert = tradeDate
+trader/auto_trader_calendar.go:178: 			at.emitAlert("P0", "calendar-slice-missing",
+trader/auto_trader_calendar.go:179: 				fmt.Sprintf("calendar-fail-closed:%s:%s", tradeDate, sess.Name),
+trader/auto_trader_calendar.go:180: 				"Calendar slice missing",
+trader/auto_trader_calendar.go:181: 				fmt.Sprintf("No stored calendar slice for %s — session %s is now BLACKED OUT around the static T1 fallback times (fail-closed). Fix the calendar feed; this alert repeats daily until the slice exists.",
+trader/auto_trader_calendar.go:182: 					tradeDate, sess.Name))
+trader/auto_trader_calendar.go:183: 		}
+trader/auto_trader_calendar.go:184: 	}
+trader/auto_trader_calendar.go:185: 	windows := kernel.T1BlackoutWindows(sessionPlannerEvents(evs, sess.Name))
+trader/auto_trader_calendar.go:186: 	if fromStatic {
+trader/auto_trader_calendar.go:187: 		at.logWarnf("📅 calendar FAIL-CLOSED: no slice for %s — using the static T1 fallback (%d window(s)) instead of zero protection",
+trader/auto_trader_calendar.go:188: 			tradeDate, len(windows))
+trader/auto_trader_calendar.go:189: 	}
+trader/auto_trader_calendar.go:190: 	// F6 — widen the hard no-trade windows by the measured clock drift so the
+trader/auto_trader_calendar.go:191: 	// red-news blackout survives a skewed clock (same decision the authoring
+trader/auto_trader_calendar.go:192: 	// gate uses; the warn line fires once per session-day, not per cycle).
+trader/auto_trader_calendar.go:193: 	if drift, ok := clockHoldDriftFn(at.futuresSymbol()); ok {
+trader/auto_trader_calendar.go:194: 		if _, widen := kernel.ClockHoldDecision(drift, true, kernel.ClockWarnMs(), kernel.C2ToleranceMs()); widen > 0 {
+trader/auto_trader_calendar.go:195: 			windows = kernel.WidenCTWindows(windows, widen)
+trader/auto_trader_calendar.go:196: 			if at.lastClockWidenLog != tradeDate {
+trader/auto_trader_calendar.go:197: 				at.lastClockWidenLog = tradeDate
+trader/auto_trader_calendar.go:198: 				at.logWarnf("🕰 clock-hold: T1 no-trade windows widened by |drift| %dms for %s %s (F6)", widen, tradeDate, sess.Name)
+trader/auto_trader_calendar.go:199: 			}
+trader/auto_trader_calendar.go:200: 		}
+trader/auto_trader_calendar.go:201: 	}
+trader/auto_trader_calendar.go:202: 	return windows
+trader/auto_trader_calendar.go:203: }
+trader/auto_trader_calendar.go:204:
+trader/auto_trader_calendar.go:205: // sessionPlannerEvents maps stored calendar.Event → kernel.PlannerCalendarEvent
+trader/auto_trader_calendar.go:206: // (session-sliced, CT time). Shared by the gate + the planner input + the plan
+trader/auto_trader_calendar.go:207: // no-trade injection so all three agree.
+trader/auto_trader_calendar.go:208: func sessionPlannerEvents(evs []calendar.Event, session string) []kernel.PlannerCalendarEvent {
+trader/auto_trader_calendar.go:209: 	loc := kernel.CTLocation()
+trader/auto_trader_calendar.go:210: 	var out []kernel.PlannerCalendarEvent
+trader/auto_trader_calendar.go:211: 	for _, e := range calendar.EventsForSession(evs, session) {
+trader/auto_trader_calendar.go:212: 		out = append(out, kernel.PlannerCalendarEvent{
+trader/auto_trader_calendar.go:213: 			TimeCT: e.Time.In(loc).Format("15:04"), Currency: e.Currency,
+trader/auto_trader_calendar.go:214: 			Title: e.Title, Impact: string(e.Impact),
+trader/auto_trader_calendar.go:215: 		})
+trader/auto_trader_calendar.go:216: 	}
+trader/auto_trader_calendar.go:217: 	return out
+kernel/calendar_blackout.go:13: // T1BlackoutMinutes is the half-width (minutes) of the blackout around a red event.
+kernel/calendar_blackout.go:14: const T1BlackoutMinutes = 15
+kernel/calendar_blackout.go:15:
+kernel/calendar_blackout.go:16: // CTWindow is a [start,end] minute-of-day CT window (end may be < start ⇒ wraps).
+kernel/calendar_blackout.go:17: type CTWindow struct {
+kernel/calendar_blackout.go:18: 	Start int
+kernel/calendar_blackout.go:19: 	End   int
+kernel/calendar_blackout.go:20: 	Label string
+kernel/calendar_blackout.go:21: }
+kernel/calendar_blackout.go:22:
+kernel/calendar_blackout.go:23: // T1BlackoutWindows returns the blackout windows for the T1 events in a session's
+kernel/calendar_blackout.go:24: // calendar slice (±T1BlackoutMinutes around each). T2 and non-timed events are
+kernel/calendar_blackout.go:25: // ignored (T2 is caution-only, not a hard block).
+kernel/calendar_blackout.go:26: func T1BlackoutWindows(events []PlannerCalendarEvent) []CTWindow {
+kernel/calendar_blackout.go:27: 	var out []CTWindow
+kernel/calendar_blackout.go:28: 	for _, e := range events {
+kernel/calendar_blackout.go:29: 		if strings.ToUpper(strings.TrimSpace(e.Impact)) != "T1" {
+kernel/calendar_blackout.go:30: 			continue
+kernel/calendar_blackout.go:31: 		}
+kernel/calendar_blackout.go:32: 		m, ok := hhmmToMinK(e.TimeCT)
+kernel/calendar_blackout.go:33: 		if !ok {
+kernel/calendar_blackout.go:34: 			continue
+kernel/calendar_blackout.go:35: 		}
+kernel/calendar_blackout.go:36: 		out = append(out, CTWindow{
+kernel/calendar_blackout.go:37: 			Start: ((m-T1BlackoutMinutes)%1440 + 1440) % 1440,
+kernel/calendar_blackout.go:38: 			End:   ((m+T1BlackoutMinutes)%1440 + 1440) % 1440,
+kernel/calendar_blackout.go:39: 			Label: fmt.Sprintf("%s %s CT ±%dm", strings.TrimSpace(e.Title), e.TimeCT, T1BlackoutMinutes),
+kernel/calendar_blackout.go:40: 		})
+kernel/calendar_blackout.go:41: 	}
+kernel/calendar_blackout.go:94: func WidenCTWindows(windows []CTWindow, driftMs int64) []CTWindow {
+kernel/calendar_blackout.go:95: 	m := driftWidenMinutes(driftMs)
+kernel/calendar_blackout.go:96: 	if m <= 0 {
+kernel/calendar_blackout.go:97: 		return windows
+kernel/calendar_blackout.go:98: 	}
+kernel/calendar_blackout.go:99: 	out := make([]CTWindow, 0, len(windows))
+kernel/calendar_blackout.go:100: 	for _, w := range windows {
+kernel/calendar_blackout.go:101: 		label := w.Label
+kernel/calendar_blackout.go:102: 		if driftIsSkew(driftMs) {
+kernel/calendar_blackout.go:103: 			label = fmt.Sprintf("%s +%dm (clock drift)", w.Label, m)
+kernel/calendar_blackout.go:104: 		}
+kernel/calendar_blackout.go:105: 		out = append(out, CTWindow{
+kernel/calendar_blackout.go:106: 			Start: ((w.Start-m)%1440 + 1440) % 1440,
+kernel/calendar_blackout.go:107: 			End:   (w.End + m) % 1440,
+kernel/calendar_blackout.go:108: 			Label: label,
+kernel/calendar_blackout.go:109: 		})
+calendar/calendar.go:172: // SessionCurrencies returns the currency filter for a session: USD always; +JPY/
+calendar/calendar.go:173: // CNY for Asia; +EUR/GBP for London; NY = USD only.
+calendar/calendar.go:174: func SessionCurrencies(session string) map[string]bool {
+calendar/calendar.go:175: 	m := map[string]bool{"USD": true}
+calendar/calendar.go:176: 	switch strings.ToUpper(session) {
+calendar/calendar.go:177: 	case "ASIA":
+calendar/calendar.go:178: 		m["JPY"], m["CNY"] = true, true
+calendar/calendar.go:179: 	case "LONDON":
+calendar/calendar.go:180: 		m["EUR"], m["GBP"] = true, true
+calendar/calendar.go:181: 	}
+calendar/calendar.go:182: 	return m
+calendar/calendar.go:183: }
+calendar/calendar.go:184:
+calendar/calendar.go:185: // EventsForSession filters a day's events to a session's currency set.
+calendar/calendar.go:186: func EventsForSession(day []Event, session string) []Event {
+calendar/calendar.go:187: 	cur := SessionCurrencies(session)
+calendar/calendar.go:188: 	var out []Event
+calendar/calendar.go:189: 	for _, e := range day {
+calendar/calendar.go:190: 		if cur[e.Currency] {
+calendar/calendar.go:191: 			out = append(out, e)
+calendar/calendar.go:192: 		}
+calendar/calendar.go:193: 	}
+calendar/calendar.go:194: 	return out
+calendar/calendar.go:195: }
+store/calendar.go:103: // UpdateLiveSliceIfChanged refreshes a LIVE (forexfactory) row ONLY when the
+store/calendar.go:104: // fetched payload differs — F0.4 (2026-08-24): same-day calendar corrections
+store/calendar.go:105: // (speaker cancellations, impact changes, time moves) propagate instead of
+store/calendar.go:106: // freezing the morning snapshot. Past dates stay frozen for replay integrity.
+store/calendar.go:107: // Returns (changed, err).
+store/calendar.go:108: func (s *CalendarSliceStore) UpdateLiveSliceIfChanged(p *CalendarSliceDB) (bool, error) {
+store/calendar.go:109: 	if p == nil || p.TradeDate == "" {
+store/calendar.go:110: 		return false, fmt.Errorf("trade_date required")
+store/calendar.go:111: 	}
+store/calendar.go:112: 	var existing CalendarSliceDB
+store/calendar.go:113: 	err := s.db.Where("trade_date = ?", p.TradeDate).First(&existing).Error
+store/calendar.go:114: 	if err == gorm.ErrRecordNotFound {
+store/calendar.go:115: 		return false, nil // nothing to refresh — UpsertSliceUpgrade creates it
+store/calendar.go:116: 	}
+store/calendar.go:117: 	if err != nil {
+store/calendar.go:118: 		return false, err
+store/calendar.go:119: 	}
+store/calendar.go:120: 	if existing.Source != "forexfactory" {
+store/calendar.go:121: 		return false, nil // static/none rows are UpsertSliceUpgrade's job
+store/calendar.go:122: 	}
+store/calendar.go:123: 	if existing.EventsJSON == p.EventsJSON {
+store/calendar.go:124: 		return false, nil // unchanged — nothing to write
+store/calendar.go:125: 	}
+store/calendar.go:126: 	if uerr := s.db.Model(&CalendarSliceDB{}).Where("trade_date = ?", p.TradeDate).Updates(map[string]interface{}{
+store/calendar.go:127: 		"events_json": p.EventsJSON, "created_at": p.CreatedAt,
+store/calendar.go:128: 	}).Error; uerr != nil {
+store/calendar.go:129: 		return false, uerr
+store/calendar.go:130: 	}
+trader/auto_trader_clock.go:643: // t1ForceFlatDue reports whether nowMin (CT minute-of-day) falls inside
+trader/auto_trader_clock.go:644: // [window.Start − lead, window.End] for any T1 window, returning the matching
+trader/auto_trader_clock.go:645: // label ("" = not due). Wrap-aware, same range math as kernel.InT1Blackout.
+trader/auto_trader_clock.go:646: func t1ForceFlatDue(nowMin int, windows []kernel.CTWindow, lead int) string {
+trader/auto_trader_clock.go:647: 	for _, w := range windows {
+trader/auto_trader_clock.go:648: 		start := (w.Start - lead + 1440) % 1440
+trader/auto_trader_clock.go:649: 		in := false
+trader/auto_trader_clock.go:650: 		if w.End >= start {
+trader/auto_trader_clock.go:651: 			in = nowMin >= start && nowMin <= w.End
+trader/auto_trader_clock.go:652: 		} else {
+trader/auto_trader_clock.go:653: 			in = nowMin >= start || nowMin <= w.End
+trader/auto_trader_clock.go:654: 		}
+trader/auto_trader_clock.go:655: 		if in {
+trader/auto_trader_clock.go:656: 			return w.Label
+trader/auto_trader_clock.go:657: 		}
+trader/auto_trader_clock.go:658: 	}
+trader/auto_trader_clock.go:659: 	return ""
+trader/auto_trader_clock.go:660: }
+trader/auto_trader_clock.go:661:
+trader/auto_trader_clock.go:662: // enforceT1ForceFlat closes any open position from t1ForceFlatLead minutes
+trader/auto_trader_clock.go:663: // before each T1 blackout window through the end of that window. Same shape as
+trader/auto_trader_clock.go:664: // enforceEODFlatAt: gated dormant (day_plan), never invents a flatten outside
+trader/auto_trader_clock.go:665: // an active session, close is retried each cycle while positions remain open
+trader/auto_trader_clock.go:666: // (GetOpenPositions only returns open ones, so retries are naturally
+trader/auto_trader_clock.go:667: // idempotent). Windows come from currentT1Windows — so the fail-closed static
+trader/auto_trader_clock.go:668: // fallback protects this path too.
+trader/auto_trader_clock.go:669: func (at *AutoTrader) enforceT1ForceFlat() bool {
+trader/auto_trader_clock.go:670: 	return at.enforceT1ForceFlatAt(time.Now())
+trader/auto_trader_clock.go:671: }
+trader/auto_trader_clock.go:672:
+trader/auto_trader_clock.go:673: func (at *AutoTrader) enforceT1ForceFlatAt(now time.Time) bool {
+trader/auto_trader_clock.go:674: 	if !at.dayPlanEnabled() || at.store == nil || at.trader == nil {
+trader/auto_trader_clock.go:675: 		return false
+trader/auto_trader_clock.go:676: 	}
+trader/auto_trader_clock.go:677: 	if _, ok := at.sessionRegistry(now).ActiveSession(now); !ok {
+trader/auto_trader_clock.go:678: 		return false // no active session — never flatten from an invented clock
+trader/auto_trader_clock.go:679: 	}
+trader/auto_trader_clock.go:680: 	windows := at.currentT1Windows(now)
+trader/auto_trader_clock.go:681: 	if len(windows) == 0 {
+trader/auto_trader_clock.go:682: 		return false
+trader/auto_trader_clock.go:683: 	}
+trader/auto_trader_clock.go:684: 	due := t1ForceFlatDue(ctMinutesNow(now), windows, t1ForceFlatLead)
+trader/auto_trader_clock.go:685: 	if due == "" {
+trader/auto_trader_clock.go:686: 		return false
+trader/auto_trader_clock.go:687: 	}
+trader/auto_trader_clock.go:688: 	// NEWS-HYGIENE (2026-08-29) — cancel FIRST, BEFORE the open-position
+trader/auto_trader_clock.go:689: 	// check: a FLAT trader with a working armed limit must not let that
+trader/auto_trader_clock.go:690: 	// limit fill into the print. The pre-wave order only cancelled when a
+trader/auto_trader_clock.go:691: 	// position existed, so a resting limit survived the whole window.
+trader/auto_trader_clock.go:692: 	n, unacked := at.cancelArmedOrdersSync("news_window")
+trader/auto_trader_clock.go:693: 	if n > 0 {
+trader/auto_trader_clock.go:694: 		at.logWarnf("🔒 T1-FORCE-FLAT: %d armed order(s) cancelled before the red-news window", n)
+trader/auto_trader_clock.go:695: 	}
+trader/auto_trader_clock.go:696: 	if unacked > 0 {
+trader/auto_trader_clock.go:697: 		at.logWarnf("⚠️ T1-FORCE-FLAT: %d armed cancel(s) unacked after retry", unacked)
+trader/auto_trader_clock.go:698: 	}
+trader/auto_trader_clock.go:699: 	positions, err := at.store.Position().GetOpenPositions(at.id)
+trader/auto_trader_clock.go:700: 	if err != nil || len(positions) == 0 {
+trader/auto_trader_clock.go:701: 		return n+unacked > 0 // flat — the arm-cancel above is the whole job
+trader/auto_trader_clock.go:702: 	}
+trader/auto_trader_clock.go:703: 	at.logWarnf("📰 T1-FORCE-FLAT (%s): flattening %d open position(s) — red-news forced close at T-%dmin (research v5 C.5).", due, len(positions), t1ForceFlatLead)
+trader/auto_trader_clock.go:704: 	for _, p := range positions {
+trader/auto_trader_clock.go:705: 		at.flattenPosition(p, "📰 T1-FORCE-FLAT")
+trader/auto_trader_clock.go:706: 	}
+trader/auto_trader_clock.go:707: 	return true
+kernel/risk_limits.go:164: // SCOPE, deliberately: this blocks NEW ENTRIES only. Open positions are NOT
+kernel/risk_limits.go:165: // closed. Closing them stays operator-initiated via POST /api/risk/force-flat,
+kernel/risk_limits.go:166: // per the ForceFlatSignaler contract documented in engine_analysis.go — that
+kernel/risk_limits.go:167: // policy is unchanged by this wave.
+kernel/risk_limits.go:168: //
+kernel/risk_limits.go:169: // Cleared by the CME session-day reset (ResetDailyPnLAt), so a trip lasts the
+kernel/risk_limits.go:170: // session-day and lifts with the daily window.
+kernel/risk_limits.go:171: var (
+kernel/risk_limits.go:172: 	forceFlatMu     sync.RWMutex
+kernel/risk_limits.go:173: 	forceFlatReason = map[string]string{}
+kernel/risk_limits.go:174: )
+kernel/risk_limits.go:175:
+kernel/risk_limits.go:176: // SetDailyForceFlat records that traderID tripped its daily loss limit.
+kernel/risk_limits.go:177: func SetDailyForceFlat(traderID, reason string) {
+kernel/risk_limits.go:178: 	forceFlatMu.Lock()
+kernel/risk_limits.go:179: 	defer forceFlatMu.Unlock()
+kernel/risk_limits.go:180: 	if _, already := forceFlatReason[traderID]; !already {
+kernel/risk_limits.go:181: 		logger.Warnf("🔴 daily force-flat ARMED for trader %s: %s — NEW ENTRIES BLOCKED on both order paths until the daily window resets", traderID, reason)
+kernel/risk_limits.go:182: 	}
+kernel/risk_limits.go:183: 	forceFlatReason[traderID] = reason
+kernel/risk_limits.go:184: }
+kernel/risk_limits.go:185:
+kernel/risk_limits.go:186: // DailyForceFlatReason returns the trip reason for traderID, or "" when the
+kernel/risk_limits.go:187: // daily loss limit has not tripped. "" is the fail-open answer: no evidence of
+kernel/risk_limits.go:188: // a trip is never a refusal.
+kernel/risk_limits.go:189: func DailyForceFlatReason(traderID string) string {
+kernel/risk_limits.go:190: 	forceFlatMu.RLock()
+kernel/risk_limits.go:191: 	defer forceFlatMu.RUnlock()
+kernel/risk_limits.go:192: 	return forceFlatReason[traderID]
+kernel/risk_limits.go:193: }
+kernel/risk_limits.go:194:
+kernel/risk_limits.go:195: // ClearDailyForceFlat lifts the trip for one trader (operator resume).
+kernel/risk_limits.go:196: func ClearDailyForceFlat(traderID string) {
+kernel/risk_limits.go:197: 	forceFlatMu.Lock()
+kernel/risk_limits.go:198: 	defer forceFlatMu.Unlock()
+kernel/risk_limits.go:199: 	delete(forceFlatReason, traderID)
+kernel/risk_limits.go:200: }
+kernel/risk_limits.go:201:
+kernel/risk_limits.go:202: // clearAllDailyForceFlat lifts every trip; called by the daily reset.
+kernel/risk_limits.go:203: func clearAllDailyForceFlat() {
+kernel/risk_limits.go:204: 	forceFlatMu.Lock()
+kernel/risk_limits.go:205: 	defer forceFlatMu.Unlock()
+kernel/risk_limits.go:305: func (g DailyGuardrails) Check() (RiskLimitDecision, error) {
+kernel/risk_limits.go:306: 	if !g.MasterEnabled {
+kernel/risk_limits.go:307: 		return RiskAllow, nil
+kernel/risk_limits.go:308: 	}
+kernel/risk_limits.go:309: 	if g.DailyLossEnabled && g.DailyLossLimitUSD > 0 && g.DailyRealizedPnL <= -g.DailyLossLimitUSD {
+kernel/risk_limits.go:310: 		return RiskForceFlat, fmt.Errorf("daily loss limit hit (realized today=%.2f, limit=-%.2f)", g.DailyRealizedPnL, g.DailyLossLimitUSD)
+kernel/risk_limits.go:311: 	}
+kernel/risk_limits.go:312: 	if g.DailyProfitEnabled && g.DailyProfitTargetUSD > 0 && g.DailyRealizedPnL >= g.DailyProfitTargetUSD {
+kernel/risk_limits.go:313: 		return RiskBlockEntry, fmt.Errorf("daily profit target reached (realized today=%.2f, target=%.2f)", g.DailyRealizedPnL, g.DailyProfitTargetUSD)
+kernel/risk_limits.go:314: 	}
+kernel/risk_limits.go:315: 	if g.MaxDailyTradesEnabled && g.MaxDailyTrades > 0 && g.TradesToday >= g.MaxDailyTrades {
+kernel/risk_limits.go:316: 		return RiskBlockEntry, fmt.Errorf("max daily trades reached (today=%d, max=%d)", g.TradesToday, g.MaxDailyTrades)
+kernel/risk_limits.go:317: 	}
+kernel/risk_limits.go:318: 	return RiskAllow, nil
+kernel/risk_limits.go:319: }
+kernel/risk_limits.go:357: // StageAContractCap (0B, owner ruling 2026-09-02) is the survival-first size
+kernel/risk_limits.go:358: // ceiling: ONE contract until n≥30 closed trades with a positive lower-CI
+kernel/risk_limits.go:359: // expectancy. Kelly and optimal-f are undefined without an edge estimate, so
+kernel/risk_limits.go:360: // size does not move on intuition. It also holds the line under 0B's stop
+kernel/risk_limits.go:361: // floor: 1.0→1.5×ATR5m raises dollar risk per trade by ~50% at constant size,
+kernel/risk_limits.go:362: // which is exactly why size stays at 1.
+kernel/risk_limits.go:363: //
+kernel/risk_limits.go:364: // Before 0B the resolvers disagreed in production: arm-leg capacity resolved to
+kernel/risk_limits.go:365: // 1 (splitLegCapacity, unset max_contracts_per_order) while order sizing
+kernel/risk_limits.go:366: // resolved to 2 (this function's `def` = maxFuturesContracts) — the boot line
+kernel/risk_limits.go:367: // said capacity=1 while a market entry could size 2.
+kernel/risk_limits.go:368: //
+kernel/risk_limits.go:369: // Env STAGE_A_CONTRACT_CAP raises the ceiling for Stage B; 0 or unset = 1.
+kernel/risk_limits.go:370: const StageAContractCapDefault = 1
+kernel/risk_limits.go:371:
+kernel/risk_limits.go:372: // StageAContractCap resolves the Stage-A ceiling (env STAGE_A_CONTRACT_CAP).
+kernel/risk_limits.go:373: func StageAContractCap() int {
+kernel/risk_limits.go:374: 	if v := os.Getenv("STAGE_A_CONTRACT_CAP"); v != "" {
+kernel/risk_limits.go:375: 		if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil && n > 0 {
+kernel/risk_limits.go:376: 			return n
+kernel/risk_limits.go:377: 		}
+kernel/risk_limits.go:378: 	}
+kernel/risk_limits.go:379: 	return StageAContractCapDefault
+kernel/risk_limits.go:380: }
+kernel/risk_limits.go:381:
+kernel/risk_limits.go:382: // ClampStageAContracts applies the Stage-A ceiling to any resolved size.
+kernel/risk_limits.go:383: func ClampStageAContracts(n int) int {
+kernel/risk_limits.go:384: 	if cap := StageAContractCap(); n > cap {
+kernel/risk_limits.go:385: 		return cap
+kernel/risk_limits.go:386: 	}
+kernel/risk_limits.go:387: 	return n
+kernel/engine_analysis.go:183: 			} else if gDecision, gErr := g.Check(); gErr != nil {
+kernel/engine_analysis.go:184: 				logger.Warnf("⚠️ Strategy Studio daily guardrail tripped: %v — skipping decision cycle (HOLD)", gErr)
+kernel/engine_analysis.go:185: 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_daily").Inc()
+kernel/engine_analysis.go:186: 				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_daily")
+kernel/engine_analysis.go:187: 				// WIRING (2026-09-05) — the decision this call has always
+kernel/engine_analysis.go:188: 				// returned used to be discarded (`_, gErr :=`), so a HOLD on the
+kernel/engine_analysis.go:189: 				// decision cycle was the WHOLE effect of a daily-loss trip and a
+kernel/engine_analysis.go:190: 				// resting arm filled straight through it. RiskForceFlat is now
+kernel/engine_analysis.go:191: 				// published; EntryGate reads it and refuses on BOTH order paths.
+kernel/engine_analysis.go:192: 				// Open positions are deliberately NOT closed here — that stays
+kernel/engine_analysis.go:193: 				// operator-initiated via POST /api/risk/force-flat, per the
+kernel/engine_analysis.go:194: 				// ForceFlatSignaler contract below.
+kernel/engine_analysis.go:195: 				if gDecision == RiskForceFlat {
+kernel/engine_analysis.go:196: 					SetDailyForceFlat(ctx.TraderID, gErr.Error())
+kernel/engine_analysis.go:197: 				}
+kernel/engine_analysis.go:198: 				return holdCycle("daily_guardrail"), nil
+store/position_query.go:92: func (s *PositionStore) CountConsecutiveLossesSince(traderID string, sinceMs int64) (int, error) {
+store/position_query.go:93: 	var rows []TraderPosition
+store/position_query.go:94: 	err := s.db.
+store/position_query.go:95: 		// A-2 (2026-08-28): exclude legacy unverified rows from the loss
+store/position_query.go:96: 		// streak too (reconcile_flat + class-27 unresolved + e7 test-seam).
+store/position_query.go:97: 		Where("trader_id = ? AND status = ? AND close_reason NOT IN (?, ?, ?) AND pnl_corrected IS NOT NULL AND exit_time >= ?",
+store/position_query.go:98: 			traderID, "CLOSED", CloseReasonReconcileFlat, CloseReasonUnresolved, CloseReasonTestSeam, sinceMs).
+store/position_query.go:99: 		Order("exit_time DESC").
+store/position_query.go:100: 		Find(&rows).Error
+store/position_query.go:101: 	if err != nil {
+store/position_query.go:102: 		return 0, err
+store/position_query.go:103: 	}
+store/position_query.go:104: 	n := 0
+store/position_query.go:105: 	for _, r := range rows {
+store/position_query.go:106: 		pnl, resolved := r.CorrectedPnL()
+store/position_query.go:107: 		if !resolved {
+store/position_query.go:108: 			continue // UNRESOLVED (defensive — the WHERE excludes these): never counted either way
+store/position_query.go:109: 		}
+store/position_query.go:110: 		if pnl < 0 {
+store/position_query.go:111: 			n++
+store/position_query.go:112: 		} else {
+store/position_query.go:113: 			break // a win / break-even ends the losing streak
+store/position_query.go:114: 		}
+store/position_query.go:125: func (s *PositionStore) GetSessionDayActivity(traderID string, sinceMs int64, account ...string) (realizedPnL float64, entries int, err error) {
+store/position_query.go:126: 	acct := ""
+store/position_query.go:127: 	if len(account) > 0 {
+store/position_query.go:128: 		acct = account[0]
+store/position_query.go:129: 	}
+store/position_query.go:130:
+store/position_query.go:131: 	var pnl struct{ Total float64 }
+store/position_query.go:132: 	pq := s.db.Model(&TraderPosition{}).
+store/position_query.go:133: 		Select("COALESCE(SUM(pnl_corrected), 0) as total"). /* P&L-TRUTH WAVE: strict corrected column; NULL rows are excluded by the WHERE and never coerced */
+store/position_query.go:134: 		// A-2 (2026-08-28): no silent NULLs — legacy unverified rows are
+store/position_query.go:135: 		// excluded from the guardrail P&L too.
+store/position_query.go:136: 		Where("trader_id = ? AND status = ? AND close_reason NOT IN (?, ?, ?) AND pnl_corrected IS NOT NULL AND exit_time >= ?",
+store/position_query.go:137: 			traderID, "CLOSED", CloseReasonReconcileFlat, CloseReasonUnresolved, CloseReasonTestSeam, sinceMs)
+store/position_query.go:138: 	if acct != "" {
+store/position_query.go:139: 		pq = pq.Where("account = ?", acct)
+store/position_query.go:140: 	}
+store/position_query.go:141: 	if err = pq.Scan(&pnl).Error; err != nil {
+store/position_query.go:142: 		return 0, 0, err
+store/position_query.go:143: 	}
+store/position_query.go:144:
+store/position_query.go:145: 	var cnt int64
+store/position_query.go:146: 	cq := s.db.Model(&TraderPosition{}).
+store/position_query.go:147: 		Where("trader_id = ? AND entry_time >= ?", traderID, sinceMs)
+store/position_query.go:148: 	if acct != "" {
+store/position_query.go:149: 		cq = cq.Where("account = ?", acct)
+store/position_query.go:150: 	}
+store/position_query.go:151: 	if err = cq.Count(&cnt).Error; err != nil {
+store/position_query.go:152: 		return 0, 0, err
+store/position_query.go:153: 	}
+trader/entry_gate.go:157: 	// Leg D — DAILY LOSS LIMIT (wiring wave 2026-09-05). Runs BEFORE leg 0:
+trader/entry_gate.go:158: 	// a tripped daily limit outranks every other reason to take or refuse an
+trader/entry_gate.go:159: 	// entry, and its refusal is the one the journal should show.
+trader/entry_gate.go:160: 	//
+trader/entry_gate.go:161: 	// This leg is the half of the daily guardrail that was missing.
+trader/entry_gate.go:162: 	// DailyGuardrails.Check() always returned RiskForceFlat on a daily-loss
+trader/entry_gate.go:163: 	// trip, its only caller discarded the value, and this file contained
+trader/entry_gate.go:164: 	// neither "daily" nor "guardrail" — so the limit stopped the decision cycle
+trader/entry_gate.go:165: 	// and a RESTING ARM FILLED STRAIGHT THROUGH IT.
+trader/entry_gate.go:166: 	//
+trader/entry_gate.go:167: 	// Fail-open per the file's contract: a nil resolver, or an empty reason,
+trader/entry_gate.go:168: 	// is not evidence of a trip and never refuses.
+trader/entry_gate.go:169: 	if in.DailyForceFlat != nil {
+trader/entry_gate.go:170: 		if why := in.DailyForceFlat(); strings.TrimSpace(why) != "" {
+trader/entry_gate.go:171: 			return fmt.Sprintf("entry_gate: refused: daily_force_flat — %s (new entries blocked on the %s path until the daily window resets; open positions are not closed by this leg)", why, in.Path), true
+trader/entry_gate.go:172: 		}
+trader/auto_trader_orders.go:107: // consecutiveLossHalted reports whether new entries are blocked by the D1
+trader/auto_trader_orders.go:108: // consecutive-loss halt: N consecutive LOSING closed trades in the current CME
+trader/auto_trader_orders.go:109: // session-day (0 = OFF; resets on a win/break-even close or a new session). It is
+trader/auto_trader_orders.go:110: // a per-strategy circuit breaker, NOT gated by the guardrails master switch.
+trader/auto_trader_orders.go:111: // Fail-OPEN on a query error — never block a trade because the DB hiccuped.
+trader/auto_trader_orders.go:112: func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
+trader/auto_trader_orders.go:113: 	if at.store == nil || at.config.StrategyConfig == nil {
+trader/auto_trader_orders.go:114: 		return "", false
+trader/auto_trader_orders.go:115: 	}
+trader/auto_trader_orders.go:116: 	n := at.config.StrategyConfig.RiskControl.ConsecutiveLossHalt
+trader/auto_trader_orders.go:117: 	if n <= 0 {
+trader/auto_trader_orders.go:118: 		return "", false // OFF
+trader/auto_trader_orders.go:119: 	}
+trader/auto_trader_orders.go:120: 	sinceMs := kernel.CMESessionDayStart(time.Now()).UnixMilli()
+trader/auto_trader_orders.go:121: 	losses, err := at.store.Position().CountConsecutiveLossesSince(at.id, sinceMs)
+trader/auto_trader_orders.go:122: 	if err != nil {
+trader/auto_trader_orders.go:123: 		at.logWarnf("consecutive-loss halt: count query failed (%v) — allowing entry (fail-open)", err)
+trader/auto_trader_orders.go:124: 		return "", false
+trader/auto_trader_orders.go:125: 	}
+trader/auto_trader_orders.go:126: 	if losses >= n {
+trader/auto_trader_orders.go:127: 		return fmt.Sprintf("%d consecutive losing trades this session (limit %d)", losses, n), true
+trader/auto_trader_orders.go:128: 	}
+trader/auto_trader_orders.go:129: 	return "", false
+trader/auto_trader_orders.go:230: 	// contract's third-Friday expiry, NEW entries are refused (the dated-code
+trader/auto_trader_orders.go:231: 	// T19 gate never fires on bare "MNQ"). Runs AFTER stop_until (a paused
+trader/auto_trader_orders.go:232: 	// refusal must name the pause — E5) and fail-opens when unresolved. Closes
+trader/auto_trader_orders.go:233: 	// and position management are NEVER blocked; existing positions may exit.
+trader/auto_trader_orders.go:234: 	switch decision.Action {
+trader/auto_trader_orders.go:235: 	case "open_long", "open_short":
+trader/auto_trader_orders.go:236: 		if reason, blocked := at.entryBlockedByRoll(time.Now()); blocked {
+trader/auto_trader_orders.go:237: 			at.logWarnf("📅 contract-roll: %s %s REFUSED — %s. Position management continues; the resolver rolls to the next quarterly.", decision.Symbol, decision.Action, reason)
+trader/auto_trader_orders.go:238: 			telemetry.IncGateBlock(at.id, "contract_roll_resolved")
+trader/auto_trader_orders.go:239: 			actionRecord.Success = false
+trader/auto_trader_orders.go:240: 			actionRecord.Error = "contract_roll: " + reason
+trader/auto_trader_orders.go:241: 			return nil
+trader/auto_trader_orders.go:242: 		}
+trader/auto_trader_orders.go:243: 	}
+trader/auto_trader_orders.go:244:
+trader/auto_trader_orders.go:245: 	// D1 — consecutive-loss halt: after N consecutive losing closed trades this CME
+trader/auto_trader_orders.go:246: 	// session-day, block NEW entries until the next session. Closes (open-position
+trader/auto_trader_orders.go:247: 	// management) are NEVER blocked. 0 = OFF.
+trader/auto_trader_orders.go:248: 	switch decision.Action {
+trader/auto_trader_orders.go:249: 	case "open_long", "open_short":
+trader/auto_trader_orders.go:250: 		if reason, halted := at.consecutiveLossHalted(); halted {
+trader/auto_trader_orders.go:251: 			at.logWarnf("🛑 consecutive-loss halt: %s entry REFUSED — %s. No new entries until the next CME session.", decision.Symbol, reason)
+trader/auto_trader_orders.go:252: 			telemetry.IncGateBlock(at.id, "consecutive_loss")
+trader/auto_trader_orders.go:253: 			// W6 — P0 halt alert, deduped to once per CME session-day.
+trader/auto_trader_orders.go:254: 			at.emitAlert("P0", "halt", "halt:"+kernel.CMESessionDayKey(time.Now()),
+trader/auto_trader_orders.go:277: 	// default → closes the overnight/interim window) and outside the no-trade
+trader/auto_trader_orders.go:278: 	// sub-windows (first-5m, lunch). Gated on day_plan → dormant by default.
+trader/auto_trader_orders.go:279: 	switch decision.Action {
+trader/auto_trader_orders.go:280: 	case "open_long", "open_short":
+trader/auto_trader_orders.go:281: 		if reason, blocked := at.sessionEntryBlocked(); blocked {
+trader/auto_trader_orders.go:282: 			at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
+trader/auto_trader_orders.go:283: 			telemetry.IncGateBlock(at.id, "session_gate")
+trader/auto_trader_orders.go:284: 			actionRecord.Success = false
+trader/auto_trader_orders.go:285: 			actionRecord.Error = "session_gate: " + reason
+trader/auto_trader_orders.go:286: 			return nil
+trader/auto_trader_session.go:37: 	if sess, ok := reg.ActiveSession(now); ok {
+trader/auto_trader_session.go:38: 		if runnable, why := at.sessionRunnable(sess); !runnable {
+trader/auto_trader_session.go:39: 			return why, true
+trader/auto_trader_session.go:40: 		}
+trader/auto_trader_session.go:41: 		// W15.B — per-session trade cap (the override was persisted + rendered but
+trader/auto_trader_session.go:42: 		// enforced by NOTHING). Absent → no cap, shipped behavior unchanged.
+trader/auto_trader_session.go:43: 		if why, blocked := at.sessionTradeCapBlocked(sess, now); blocked {
+trader/auto_trader_session.go:44: 			return why, true
+trader/auto_trader_session.go:45: 		}
+trader/auto_trader_session.go:46: 	}
+trader/auto_trader_session.go:47: 	return sessionGateDecision(reg, now, at.currentT1Windows(now), at.sessionRunnable)
+trader/auto_trader_session.go:68: // sessionTradeCapBlocked reports (reason, blocked): whether NEW entries are
+trader/auto_trader_session.go:69: // blocked because this session's own max_trades cap is reached. The count is
+trader/auto_trader_session.go:70: // entries since THIS session instance opened — not since the session-day start,
+trader/auto_trader_session.go:71: // which would make a late session inherit the earlier ones' trades. Scoped to the
+trader/auto_trader_session.go:72: // active NT account, mirroring the daily guardrail. No cap configured → never
+trader/auto_trader_session.go:73: // blocks; a cap of 0 means "no entries this session" and is honored as written.
+trader/auto_trader_session.go:74: func (at *AutoTrader) sessionTradeCapBlocked(sess *kernel.SessionDef, now time.Time) (string, bool) {
+trader/auto_trader_session.go:75: 	if sess == nil || at.store == nil {
+trader/auto_trader_session.go:76: 		return "", false
+trader/auto_trader_session.go:77: 	}
+trader/auto_trader_session.go:78: 	capN, ok := at.dayPlanCfg().MaxTradesFor(sess.Name)
+trader/auto_trader_session.go:79: 	if !ok {
+trader/auto_trader_session.go:80: 		return "", false
+trader/auto_trader_session.go:81: 	}
+trader/auto_trader_session.go:82: 	start, ok := sessionWindowStart(sess, now)
+trader/auto_trader_session.go:83: 	if !ok {
+trader/auto_trader_session.go:84: 		return "", false
+trader/auto_trader_session.go:85: 	}
+trader/auto_trader_session.go:86: 	_, entries, err := at.store.Position().GetSessionDayActivity(at.id, start.UnixMilli(), at.currentAccountName())
+trader/auto_trader_session.go:87: 	if err != nil {
+trader/auto_trader_session.go:88: 		at.logWarnf("⚠️ session trade cap: entry count failed (not blocking): %v", err)
+trader/auto_trader_session.go:89: 		return "", false
+trader/auto_trader_session.go:90: 	}
+trader/auto_trader_session.go:91: 	if entries >= capN {
+trader/auto_trader_session.go:92: 		return fmt.Sprintf("%s trade cap reached (%d/%d this session)", sess.Name, entries, capN), true
+trader/auto_trader_session.go:93: 	}
+trader/auto_trader_session.go:94: 	return "", false
+trader/auto_trader_session.go:95: }
+trader/contract_roll.go:110: // resolvedFrontContract fetches the ACK'd front contract for this trader's
+trader/contract_roll.go:111: // futures root via the TCP trader (empty string when unavailable).
+trader/contract_roll.go:112: func (at *AutoTrader) resolvedFrontContract() string {
+trader/contract_roll.go:113: 	ntTCP, ok := at.trader.(*ntTrader.TCPTrader)
+trader/contract_roll.go:114: 	if !ok {
+trader/contract_roll.go:115: 		return ""
+trader/contract_roll.go:116: 	}
+trader/contract_roll.go:117: 	states := ntTCP.BarsSubscriptionStates()
+trader/contract_roll.go:118: 	st, ok := states[strings.ToUpper(at.futuresSymbol())]
+trader/contract_roll.go:119: 	if !ok {
+trader/contract_roll.go:120: 		return ""
+trader/contract_roll.go:121: 	}
+trader/contract_roll.go:122: 	return st.Contract
+trader/contract_roll.go:123: }
+trader/contract_roll.go:124:
+trader/contract_roll.go:125: // entryBlockedByRoll is the gate predicate for executeDecisionWithRecord.
+trader/contract_roll.go:126: // Fail-open: no/unparseable resolution → WARN once per contract-string change
+trader/contract_roll.go:127: // and PASS (the C# resolver + T19 remain the other layers).
+trader/contract_roll.go:128: func (at *AutoTrader) entryBlockedByRoll(now time.Time) (string, bool) {
+trader/contract_roll.go:129: 	if at.config.Exchange != "ninjatrader" {
+trader/contract_roll.go:130: 		return "", false
+trader/contract_roll.go:131: 	}
+trader/contract_roll.go:132: 	contract := at.resolvedFrontContract()
+trader/contract_roll.go:133: 	display, expiry, _, blocked, resolved := rollVerdict(contract, now, rollBlockDays())
+trader/contract_roll.go:134: 	if !resolved {
+trader/contract_roll.go:135: 		if at.lastRollWarnContract != contract {
+trader/contract_roll.go:136: 			at.lastRollWarnContract = contract
+trader/contract_roll.go:137: 			at.logWarnf("⚠️ contract-roll gate: front contract unresolved (%q) — gate PASSES (fail-open). The AddOn ACK carries it after (re)subscription.", contract)
+trader/contract_roll.go:138: 		}
+trader/contract_roll.go:139: 		return "", false
+trader/contract_roll.go:140: 	}
+ninjascript/VLContractResolver.cs:51:         // Days before the 3rd-Friday expiry at which we roll to the next
+ninjascript/VLContractResolver.cs:52:         // quarterly. Set to 8 so the operator's chart + the AddOn's
+ninjascript/VLContractResolver.cs:53:         // subscription line up well before the actual expiry date and the
+ninjascript/VLContractResolver.cs:54:         // liquidity moves to the next contract.
+ninjascript/VLContractResolver.cs:55:         private const int RollDaysBeforeExpiry = 8;
+ninjascript/VLContractResolver.cs:78:         public static string ResolveFrontMonthContract(string symbol)
+ninjascript/VLContractResolver.cs:79:         {
+ninjascript/VLContractResolver.cs:80:             return ResolveFrontMonthContractAt(symbol, DateTime.UtcNow);
+ninjascript/VLContractResolver.cs:81:         }
+ninjascript/VLContractResolver.cs:128:             // (4) Walk quarterly months {3, 6, 9, 12} of current year, then
+ninjascript/VLContractResolver.cs:129:             // March of next year as the wrap. First quarterly whose roll
+ninjascript/VLContractResolver.cs:130:             // date is >= today.Date wins.
+ninjascript/VLContractResolver.cs:131:             DateTime today = now.Date;
+ninjascript/VLContractResolver.cs:132:             int[] quarterlyMonths = new[] { 3, 6, 9, 12 };
+ninjascript/VLContractResolver.cs:133:             int year = now.Year;
+ninjascript/VLContractResolver.cs:134:             int frontMonth = 0;
+ninjascript/VLContractResolver.cs:135:             int frontYear = 0;
+ninjascript/VLContractResolver.cs:136:
+ninjascript/VLContractResolver.cs:137:             for (int i = 0; i < quarterlyMonths.Length; i++)
+ninjascript/VLContractResolver.cs:138:             {
+ninjascript/VLContractResolver.cs:139:                 int qm = quarterlyMonths[i];
+ninjascript/VLContractResolver.cs:140:                 DateTime expiry = ThirdFridayOf(year, qm);
+ninjascript/VLContractResolver.cs:141:                 DateTime rollDate = expiry.AddDays(-RollDaysBeforeExpiry);
+ninjascript/VLContractResolver.cs:142:                 if (rollDate >= today)
+ninjascript/VLContractResolver.cs:143:                 {
+ninjascript/VLContractResolver.cs:144:                     frontMonth = qm;
+ninjascript/VLContractResolver.cs:145:                     frontYear = year;
+ninjascript/VLContractResolver.cs:146:                     break;
+ninjascript/VLTraderTCPClient.cs:899:             // symbol on the wire stays "MNQ"; contract form only exists
+ninjascript/VLTraderTCPClient.cs:900:             // inside this GetInstrument call.
+ninjascript/VLTraderTCPClient.cs:901:             string contract = VLContractResolver.ResolveFrontMonthContract(symbol);
+ninjascript/VLTraderTCPClient.cs:902:             LogInfo("VLTraderTCPClient: resolved " + symbol + " -> " + contract);
+ninjascript/VLTraderTCPClient.cs:903:             var instrument = Instrument.GetInstrument(contract);
+ninjascript/VLTraderTCPClient.cs:904:             if (instrument == null)
+ninjascript/VLTraderTCPClient.cs:1091:             {
+ninjascript/VLTraderTCPClient.cs:1092:                 string symbol = GetString(p, "symbol");
+ninjascript/VLTraderTCPClient.cs:1093:                 string contract = VLContractResolver.ResolveFrontMonthContract(symbol);
+ninjascript/VLTraderTCPClient.cs:1094:                 var instrument = Instrument.GetInstrument(contract);
+ninjascript/VLTraderTCPClient.cs:1095:                 if (instrument == null)
+ninjascript/VLTraderTCPClient.cs:1096:                 {
+ninjascript/VLTraderTCPClient.cs:1097:                     LogWarn("VLTraderTCPClient: close_position instrument not found " + symbol);
+kernel/regime.go:31: // RegimeBlock is the computed regime snapshot.
+kernel/regime.go:32: type RegimeBlock struct {
+kernel/regime.go:33: 	TrendDaily       string  `json:"trend_daily"` // up | down | flat | n/a
+kernel/regime.go:34: 	Trend1h          string  `json:"trend_1h"`    // up | down | flat | n/a
+kernel/regime.go:35: 	ATR14            float64 `json:"atr14"`       // daily ATR (dATR); 0 = n/a
+kernel/regime.go:36: 	ATRRegime        string  `json:"atr_regime"`  // LOW | NORMAL | HIGH | EXTREME | n/a
+kernel/regime.go:37: 	ATRPercentile    float64 `json:"atr_pctile"`  // 0..100 (−1 = n/a)
+kernel/regime.go:38: 	RealizedVolPct   float64 `json:"rv_pct"`      // recent daily RV%, or recent/baseline%
+kernel/regime.go:39: 	RVWarming        bool    `json:"rv_warming"`  // true → no 20d baseline yet
+kernel/regime.go:40: 	VIXLevel         float64 `json:"vix_level"`   // 0 = unavailable
+kernel/regime.go:41: 	VIXRegime        string  `json:"vix_regime"`  // <15 | 15-20 | 20-30 | >30 | unavailable
+kernel/regime.go:42: 	ExpectedRangePts float64 `json:"expected_range_pts"`
+kernel/regime.go:43: 	OvernightGapATR  float64 `json:"overnight_gap_atr"` // gap / dATR (0 if unavailable)
+kernel/regime.go:44: 	HasGap           bool    `json:"has_gap"`
+kernel/regime.go:45: }
+kernel/regime.go:69: 	// ATR14 (daily = dATR) + percentile regime.
+kernel/regime.go:70: 	if len(in.DailyBars) >= 15 {
+kernel/regime.go:71: 		r.ATR14 = market.ExportCalculateATR(in.DailyBars, 14)
+kernel/regime.go:72: 		if r.ATR14 > 0 && len(in.DailyBars) >= 30 {
+kernel/regime.go:73: 			series := rollingDailyATR(in.DailyBars, 14)
+kernel/regime.go:74: 			if len(series) >= 10 {
+kernel/regime.go:75: 				r.ATRPercentile = percentileRank(series, r.ATR14)
+kernel/regime.go:76: 				r.ATRRegime = atrBucket(r.ATRPercentile)
+kernel/regime.go:77: 			}
+docs/superpowers/AUDIT-CHECKLIST.md:175: 22. **Log-lie counters.** Root cause: a success log reports a WRITE DELTA or
+docs/superpowers/AUDIT-CHECKLIST.md:176:     a derived counter instead of the thing it claims — `maybeFetchCalendar`
+docs/superpowers/AUDIT-CHECKLIST.md:177:     logged "fetched 0 events" on every healthy fetch because frozen
+docs/superpowers/AUDIT-CHECKLIST.md:178:     `forexfactory` slices return `wrote=false` (`store/calendar.go:92-93`)
+docs/superpowers/AUDIT-CHECKLIST.md:179:     and the line counted stored rows, not fetched events (23 false zeros
+docs/superpowers/AUDIT-CHECKLIST.md:180:     08-27→08-29, caught by the 2026-08-29 news-feed forensics). A lying
+docs/superpowers/AUDIT-CHECKLIST.md:181:     success line is worse than silence: it masks healthy state as broken
+docs/superpowers/AUDIT-CHECKLIST.md:182:     and trains operators to ignore the signal. **Probe:** every "fetched N"
+docs/superpowers/AUDIT-CHECKLIST.md:183:     / "processed N" log line must count the OBJECT of the verb, with write
+docs/superpowers/AUDIT-CHECKLIST.md:184:     deltas logged separately; grep log lines against their counter
+docs/superpowers/AUDIT-CHECKLIST.md:185:     definitions. **Law:** counters log what they name. Also: independent
+docs/superpowers/AUDIT-CHECKLIST.md:186:     prompt re-renders (audit re-implementations) MUST enumerate EVERY input
+docs/superpowers/AUDIT-CHECKLIST.md:187:     source — T9's renderer omitted `calendar_slices` and printed a false
+docs/superpowers/AUDIT-CHECKLIST.md:188:     "(no filtered events)" for a populated prompt (same forensics).
+docs/superpowers/AUDIT-CHECKLIST.md:641:     middle); the stop is COMPOSED — beyond the nearest seated level on the
+docs/superpowers/AUDIT-CHECKLIST.md:642:     risk side + clearance, floored at the ATR multiple, widest wins, never
+docs/superpowers/AUDIT-CHECKLIST.md:643:     tighter than authored, `stop_unanchored` + ATR floor in a dead zone and a
+docs/superpowers/AUDIT-CHECKLIST.md:644:     level is NEVER invented; BE and the trail suspended behind
+docs/superpowers/AUDIT-CHECKLIST.md:645:     `EXIT_MECHS_SUSPENDED` with a single wire seam so a fixture proves zero
+docs/superpowers/AUDIT-CHECKLIST.md:646:     move_stop frames; Stage-A size ceiling of 1 contract until n≥30 with a
+docs/superpowers/AUDIT-CHECKLIST.md:647:     positive lower-CI expectancy (the floor raises dollar risk ~50% at
+docs/superpowers/AUDIT-CHECKLIST.md:648:     constant size — which is why size does not move with it). **Law:** a knob
+docs/superpowers/AUDIT-CHECKLIST.md:649:     that decides money carries a citation or a suspension — never a number
+docs/superpowers/AUDIT-CHECKLIST.md:650:     someone once typed.
+calendar_static_t1.json:1: [
+calendar_static_t1.json:2:   {"time": "2026-09-01T14:00:00Z", "currency": "USD", "title": "ISM Manufacturing PMI (static fallback)", "impact": "T1"},
+calendar_static_t1.json:3:   {"time": "2026-09-01T14:00:00Z", "currency": "USD", "title": "JOLTS Job Openings (static fallback)", "impact": "T2"},
+calendar_static_t1.json:4:   {"time": "2026-09-02T12:15:00Z", "currency": "USD", "title": "ADP Non-Farm Employment Change (static fallback)", "impact": "T2"},
+calendar_static_t1.json:5:   {"time": "2026-09-03T14:00:00Z", "currency": "USD", "title": "ISM Services PMI (static fallback)", "impact": "T1"},
+calendar_static_t1.json:6:   {"time": "2026-09-03T12:30:00Z", "currency": "USD", "title": "Unemployment Claims (static fallback)", "impact": "T2"},
+calendar_static_t1.json:7:   {"time": "2026-09-04T12:30:00Z", "currency": "USD", "title": "Non-Farm Payrolls (NFP) (static fallback)", "impact": "T1"},
+calendar_static_t1.json:8:   {"time": "2026-09-07T00:00:00Z", "currency": "USD", "title": "NOTE: Labor Day — CME closed (static)", "impact": "note"},
+calendar_static_t1.json:9:   {"time": "2026-09-10T12:30:00Z", "currency": "USD", "title": "PPI m/m (static fallback)", "impact": "T1"},
+calendar_static_t1.json:10:   {"time": "2026-09-10T12:30:00Z", "currency": "USD", "title": "Unemployment Claims (static fallback)", "impact": "T2"},
+calendar_static_t1.json:11:   {"time": "2026-09-11T12:30:00Z", "currency": "USD", "title": "CPI m/m (static fallback)", "impact": "T1"},
+calendar_static_t1.json:12:   {"time": "2026-09-14T00:00:00Z", "currency": "USD", "title": "NOTE: NQ roll U6→Z6 (static)", "impact": "note"},
+calendar_static_t1.json:13:   {"time": "2026-09-16T12:30:00Z", "currency": "USD", "title": "Retail Sales m/m (static fallback)", "impact": "T1"},
+calendar_static_t1.json:14:   {"time": "2026-09-16T18:00:00Z", "currency": "USD", "title": "FOMC Statement (static fallback)", "impact": "T1"},
+calendar_static_t1.json:15:   {"time": "2026-09-16T18:30:00Z", "currency": "USD", "title": "FOMC Press Conference (static fallback)", "impact": "T1"},
+calendar_static_t1.json:16:   {"time": "2026-09-17T12:30:00Z", "currency": "USD", "title": "Unemployment Claims (static fallback)", "impact": "T2"},
+calendar_static_t1.json:17:   {"time": "2026-09-18T00:00:00Z", "currency": "USD", "title": "NOTE: quad-witching (static)", "impact": "note"}
+calendar_static_t1.json:18: ]
+RUNNING 36648655:kernel/engine_analysis.go:183: 			} else if _, gErr := g.Check(); gErr != nil {
+RUNNING 36648655:kernel/engine_analysis.go:184: 				logger.Warnf("⚠️ Strategy Studio daily guardrail tripped: %v — skipping decision cycle (HOLD)", gErr)
+RUNNING 36648655:kernel/engine_analysis.go:185: 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_daily").Inc()
+RUNNING 36648655:kernel/engine_analysis.go:186: 				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_daily")
+RUNNING 36648655:kernel/engine_analysis.go:187: 				return holdCycle("daily_guardrail"), nil
+RUNNING 36648655:kernel/engine_analysis.go:188: 			} else if boolOrDefault(rc.BlackoutEnabled, false) && InBlackoutWindow(time.Now(), rc.BlackoutStartCT, rc.BlackoutEndCT) {
+RUNNING 36648655:trader/entry_gate.go: DailyForceFlat occurrences=0
+/home/hoang/nofx/data/nofx_2026-09-03.log:3630: 09-03 11:10:33 [INFO] manager/trader_manager.go:632 📊 Loading trader hoang: ScanIntervalMinutes=2 (source=Studio/DB), cadence=interval 2m0s, mode=interval (DB empty → default)
+/home/hoang/nofx/data/nofx_2026-09-03.log:3650: 09-03 11:10:33 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, flat 08:30) | NY 08:30→14:45 CT (last-entry 14:30, flat 14:45)] · stop_until=none · cadence=interval 2m0s · position_mode=ai_watch (source: db) · watcher[min_conf=70 hold=2 warn_consec=2] · trailing=2.0×ATR14 arm=after_breakeven (source: studio) · stale_dodge=on reeval_drift=0.25×ATR14 · post_exit_rescan=on delay=2000ms · guardrails=master=OFF (soft-audit only) · roll=pending AddOn ACK · balance-alert=off

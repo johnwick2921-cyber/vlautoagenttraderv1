@@ -1,0 +1,175 @@
+{
+ "lens": "RESEARCH LABELS + TRADER LOGIC \u2014 every [R]/[T]/[I] belief in 2026-09-05-vet-02-levels.md checked against the named study, the live store (mode=ro), a byte-identical re-run of the author's q11 replay (my copy under ~/nofx-analysis/vet-02-0905/verify-research/, OUT redirected), the code on the worktree HEAD 070ef996 (= 2a66d91c + docs), and /api/expectancy (200); plus the strongest case against each of the 11 recommendations from the report's own evidence.",
+ "checked": 58,
+ "findings": [
+  {
+   "severity": "WRONG",
+   "location": "report:108",
+   "claim": "Pooled by family on the replay: prior-day 0.570 [0.517, 0.622] (n=335) \u2026 The prior-day family is the only one whose lower bound clears the null, by 0.011",
+   "evidence": "q11_replay.py:183 pools PDH_cal/PDL_cal WITH PDH/PDL and RTH-L WITH PDL into 'prior-day'. ep_analysis.py dedup on (day,price,opened_ms): prior-day raw n_res=335 p=0.570 [0.517,0.622] \u2192 dedup n_res=292 p=0.562 [0.504,0.617] (57 duplicate episodes: PDH_cal==PDH on 08-26/08-28, RTH-L==PDL on 08-24/08-31/09-02 \u2014 RTH-L level-days ('08-24',29220.25),('08-31',29437.0),('09-02',29001.75) are PDL's). Every other family dedups to itself (open 146\u2192145, profile/VWAP/overnight/RN unchanged). Lower bound 0.504 < null 0.506.",
+   "correction": "prior-day family, deduplicated: 0.562 [0.504, 0.617], n=292 (39 level-days) \u2014 does NOT clear the 0.506 null; no family does, in either direction."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:110 (also :41, :141, :258)",
+   "claim": "PDL shows the identical pair (0.680 / 0.500; the two kinds share four of five level-days)",
+   "evidence": "ep_analysis.py: ('RTH-L','below') 31 episodes and ('PDL','below') 31 episodes share 29 identical (day,price,opened) keys; both cells have 4 level-days (RTH-L: 08-24, 08-26, 08-31, 09-02; PDL: 08-24, 08-31, 09-01, 09-02). Per-day split of the 25 resolved: 08-31 hold 10 / brk 4, 08-24 6/1, 08-26 1/1, 09-02 0/2 \u2014 two days supply 21 of 25.",
+   "correction": "One cell, not a pair: 17/8 = 0.680 on 4 level-days of which two (08-24, 08-31) supply 21 of the 25 resolutions; PDL-from-below is 29 of the same 31 episodes and is not a second observation. Effective n \u2248 2\u20134 days."
+  },
+  {
+   "severity": "UNSUPPORTED",
+   "location": "report:110, :149, :191 (Rec 4)",
+   "claim": "That is the flip everyone was taught \u2026 On RTH-H the mirror is weaker (from below 0.654 n=26, from above 0.579 n=19) \u2026 The trade I would look at is the retest from below \u2026 pre-register the from-below retest",
+   "evidence": "q11_replay.txt entry-side table: RTH-H from BELOW (the classic resistance test) 17/9 = 0.654 beats RTH-H from ABOVE (the flip) 11/8 = 0.579 \u2014 the mirror is REVERSED, not weaker. ep_analysis.py pooled, deduplicated, over RTH-L/PDL/RTH-H/PDH: flip 34/22 = 0.607 [0.476,0.724] (14 level-days) vs classic 33/25 = 0.569 [0.441,0.688] (17 level-days). Of 41 (kind,entry) cells with n_res \u2265 15, 8 read \u2265 0.62 (VWAP-2\u03c3 above 0.667, RTH-H below 0.654, VWAP+2\u03c3 above 0.647, OR-L above 0.633, ONL above 0.625, IB-H below 0.625, PDL/RTH-L below 0.680): a 0.68 on n=25 is the expected maximum of ~41 draws around 0.5.",
+   "correction": "Record as: 'one of 41 entry-side cells; the RTH-H mirror points the other way (classic 0.654 > flip 0.579); pooled flip 0.607 vs classic 0.569 \u2014 the data does not prefer the flip over its opposite.' Pre-registering is harmless; calling it 'the trade I would look at' is selection."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:112",
+   "claim": "Osler's clustering result is about *where* stops sit, not that they hold [R]",
+   "evidence": "Osler 2000, FRBNY Economic Policy Review 6(2):53-68 'Support for Resistance: Technical Analysis and Intraday Exchange Rates' \u2014 tests exactly whether published S/R levels predict intraday trend interruptions against an arbitrary-level bootstrap and reports 'strong evidence that the levels help to predict intraday trend interruptions' (https://econpapers.repec.org/RePEc:fip:fednep:y:2000:i:jul:p:53-68:n:v.6no.2). Osler 2003, J. Finance 58(5):1791-1819 \u2014 two predictions, both confirmed: trends REVERSE at round-number S/R (take-profit clustering) and gain momentum once crossed (stop-loss clustering) (https://ideas.repec.org/a/bla/jfinan/v58y2003i5p1791-1819.html). The replay's own null is labelled 'random-level (Osler) null' at q11_replay.py:187, i.e. the report borrows Osler's hold-test design while denying Osler tested holding.",
+   "correction": "'Osler 2000 found published S/R levels bounce more often than random levels (FX intraday, 1996\u201398); Osler 2003 found reversals AT round numbers and acceleration THROUGH them. My RN result (0.514 [0.485,0.543], n=1,155, \u00b116-pt band that merges Osler's at/just-beyond regions) is a [T] disagreement with Osler 2003 on MNQ, not a restatement of it.'"
+  },
+  {
+   "severity": "UNLABELLED",
+   "location": "report:164",
+   "claim": "[R] index-futures gap statistics (practitioner and a few academic notes) put fills for small gaps well above half and large gaps well below",
+   "evidence": "No study, author, year or venue is named; the report's own label key (report:4) defines [R] as 'named study'. The only own-tape number is 5/10 (q16), Wilson [0.237, 0.763].",
+   "correction": "Name a study or relabel the sentence [I]; keep the 5/10 [T] with its interval."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:180",
+   "claim": "the one [T]-positive seat rule in the repo (missed-turns 80/75/79 % \u2192 65/60/67 %, grand-audit.md:74)",
+   "evidence": "docs/superpowers/reports/2026-08-28-grand-audit.md:74 is 'C4 min-conf: 60\u201364 band n=3 \u2026' (no missed-turns). grep -rn '80/75/79\\|65/60/67' docs/ returns nothing outside this report. The source is 2026-08-27-level-truth-wave.md:24 'missed-turns baseline 75.0/80.0/82.6% \u2192 60.0/65.0/65.2% with swing seats (8-seat cap)' and :32 (08-28 recompute at 0.3\u00d7ATR: 60.9/59.1/72.7%); 2026-08-28-grand-audit-bcde-verdict.md:70 reads 'missed-turns ~93% unchanged' under k=2\u21923.",
+   "correction": "'missed-turns 75.0/80.0/82.6 % \u2192 60.0/65.0/65.2 % (level-truth-wave.md:24; 08-28 recompute 60.9/59.1/72.7 %, :32; bcde-verdict.md:70 reads ~93 % unchanged at k=3)'."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:215 and :268",
+   "claim": "reject n=31 usable +$586.00 \u2026 2 NULL excluded, ids 567, 587 \u2026 sweep_reclaim n=6 \u2212$207.00 (1 NULL excluded, id 578)",
+   "evidence": "sqlite (mode=ro) trader_positions: id 567 pnl_corrected \u221242.0 (source reconcile), 587 \u221262.5 (system), 578 +92.0 (reconcile) \u2014 all three are INSIDE the usable sums (the +586.0 and \u2212207.0 reproduce only with them). Rows with cited scenario and NULL pnl_corrected: 576 (reject, armed_entry), 579 (reject, armed_entry), 577 (sweep_reclaim, armed_entry); /api/expectancy excluded.unresolved_pnl = 3 agrees. Sums, wins (14) and t-stats (\u22123.37, \u22124.95) re-derived and confirmed.",
+   "correction": "'reject: 2 NULL excluded, ids 576, 579' \u00b7 'sweep_reclaim: 1 NULL excluded, id 577'. Sample-id law: the ids named must be the rows excluded."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:214",
+   "claim": "the same S2 reclaim SHORT @ 29591.02 upserted twenty times, cancelled by gate changed: rr (5), stale-window (8), boot_sweep (7)",
+   "evidence": "SELECT substr(state_reason,1,30), COUNT(*) FROM armed_orders WHERE id BETWEEN 62 AND 102 AND scenario='S2' AND entry_px=29591.02 GROUP BY 1 \u2192 boot_sweep 8 \u00b7 no order_update within stale window 7 \u00b7 gate changed: rr 4 \u00b7 cancelled in NT8 1 (=20; 21 all-time).",
+   "correction": "'boot_sweep (8), stale-window (7), gate changed: rr (4), cancelled in NT8 (1)'."
+  },
+  {
+   "severity": "UNSUPPORTED",
+   "location": "report:198 (Rec 11) and :126",
+   "claim": "Strip the ordinal/consumed term from role assignment; keep it as a display flag. Why: [T] ordinal strata flat on two replays and two granularities",
+   "evidence": "kernel/levels_role.go:111 flips role to target_only ONLY on fresh \u2208 {done, consumed}; no ordinal/3rd-touch term exists in RoleFor (the comment at :106 names one, the code does not implement it). consumed is set at trader/auto_trader_levelstate.go:137 via kernel.ConsumedSince (kernel/plan_lifecycle.go:184-187) = LevelTouchedOn AND NOT LevelStillValidOn \u2014 a rule-TF close-THROUGH (a break), not a touch count; freshness advances only via RecordPlay after a rejection/sweep (:143-147). q05: all 110 consumed rows have times_tested = 1. The replay's ordinal strata (touch 1/2/3+ irrespective of prior outcome) therefore do not test the rule. The test that would \u2014 hold on the first re-touch AFTER a break, from the far side \u2014 is the report's own \u00a72 from-below cell (0.680, n=25), which is the consumed\u2192role-flip doctrine's prediction, not evidence against it.",
+   "correction": "Withdraw the ordinal evidence for Rec 11. State: 'the consumed rule is untested; \u00a72's from-below retest is a weak observation IN FAVOUR of it; there is no ordinal term in RoleFor to strip.'"
+  },
+  {
+   "severity": "MISSING-N",
+   "location": "report:108",
+   "claim": "No session effect: NY 0.513, ASIA 0.520, LONDON 0.537 \u2014 but ASIA's ambiguity is 37.2 % against NY's 15.1 %",
+   "evidence": "q11_replay.txt 'pooled by session': NY 1,468 episodes / 1,247 resolved \u00b7 ASIA 720 / 452 \u00b7 LONDON 606 / 449. None of the six numbers in the sentence carries an n or an interval; the report's own rule (report:4) is 'every rate carries n and a Wilson 95 % interval'.",
+   "correction": "'NY 0.513 [0.485,0.541] n=1,247 \u00b7 ASIA 0.520 [0.474,0.566] n=452 \u00b7 LONDON 0.537 [0.491,0.582] n=449; ambiguous share ASIA 268/720 = 37.2 % vs NY 221/1,468 = 15.1 %'."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:53-54, :74 vs :128, :137",
+   "claim": "ONH n=40 (replay, 0.429) \u2026 ONL n=25 (0.522) \u2026 VWAP\u00b12\u03c3 n=71 (0.56) \u2026 PDL n=43 (0.605) \u2026 EQL n=55 \u2026 eVWAP n=14; \u00a71 'Replay: n' column; PDH(calendar) '21' at :74 but 'n=16' at :128",
+   "evidence": "q11: ONH 40 episodes = 15 hold/20 brk/5 amb \u2192 the 0.429 is on 35; ONL 25 \u2192 23; VWAP\u00b12\u03c3 47+24 = 71 episodes \u2192 34/(34+26) = 0.567 on 60; whereas PDL 'n=43', EQL 'n=55', eVWAP 'n=14' are RESOLVED counts. The Wilson intervals are all correctly computed on resolved counts (spot-recomputed RTH-L 27/43 \u2192 [0.479,0.756]; ONH 15/35 \u2192 [0.280,0.591]; 17/25 \u2192 [0.484,0.828]; EQH 32/45 \u2192 [0.566,0.823]); only the prose 'n' switches convention within single sentences.",
+   "correction": "Quote n as hold+break everywhere (ONH n=35, ONL n=23, VWAP\u00b12\u03c3 n=60, PDH(cal) n=16, PDH n=22) and give ambiguous separately."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:30",
+   "claim": "a fifth of the seats sit more than 100 points from price where they are reached one time in fifteen",
+   "evidence": "q12b distance buckets: 217 of 985 seats (22 %) >100 pts = 141 at 100\u2013200 pts touched 44.7 % + 76 at 200+ pts touched 6.6 % (= 1 in 15). The 1-in-15 rate belongs to 76 seats (7.7 %), not to the fifth.",
+   "correction": "'a fifth of seats sit >100 pts away; those 100\u2013200 pts out are reached 45 % of the time, those beyond 200 pts (8 % of seats) one time in fifteen.'"
+  },
+  {
+   "severity": "UNSUPPORTED",
+   "location": "report:42",
+   "claim": "would put roughly a third more of the map inside the day's reach",
+   "evidence": "No script or output in the -data/ directory computes this. The report's own reach numbers (q12b): touched-in-session 79.2 % overall, 85.0 % for seats <100 pts, 90.3 % for <50 pts \u2014 a \u00b10.5\u00d7dATR (~\u00b1175 pt) cut moves the share by single-digit points, not a third.",
+   "correction": "Drop, or derive: 'seats <175 pts touched X % vs all seats 79 % (q12b, n=\u2026)'. Same defect at :193 'target 90 %' \u2014 the report's own buckets reach 90 % only inside 50 pts."
+  },
+  {
+   "severity": "UNSUPPORTED",
+   "location": "report:142",
+   "claim": "the shape you'd expect if equal lows get run more than equal highs in an up-trending fortnight",
+   "evidence": "bars (1m MNQ, CT days): 08-21 last close 29370.0 \u2192 09-03 29597.25 (+227 net) but 08-28 high 29811.75, 09-02 low 28927.25 \u2014 an ~885-pt band traversed down (08-27\u219209-02) and back up. A [T] claim about the tape with no number.",
+   "correction": "'in a range-bound fortnight (net +227 pts inside an 885-pt band, 08-21\u219209-03)' \u2014 which removes the trend rationale for the EQL/EQH asymmetry."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:147 and :56 (P5)",
+   "claim": "RTH-L is not 'traded as a fade': one arm ever (id 17, cancelled), one cited position (id 531, a reclaim)",
+   "evidence": "Report's own q13_arms_positions_by_kind.txt:193 '7 scen 5 arm-enabled (RTH-L, reject)' and :201 '6 scen 1 arm-enabled (RTH-L, sweep_reclaim)' \u2014 RTH-L is AUTHORED as a fade-long (reject) in 7 scenarios, 5 arm-enabled, and as a sweep-reclaim long in 6; the fade is the plan's play, it merely rarely reached an arm (1) or a fill (0). Arm 17 and position 531 confirmed in store.",
+   "correction": "'authored as a fade (reject) in 7 scenarios, 5 arm-enabled, and sweep_reclaim in 6; one arm ever placed (id 17, cancelled), one cited position (531, reclaim, \u2212147.50) \u2014 the prior review's \"traded backwards\" describes the authoring, not the fills.'"
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:161",
+   "claim": "[T] n=10: ON/RTH range ratio median 1.23 (0.35\u20131.55)",
+   "evidence": "q16 ratios: 0.99, 1.23, 1.49, 1.01, 0.93, 0.35, 1.47, 1.55, 1.25, 0.57 \u2192 sorted 0.35 0.57 0.93 0.99 1.01 | 1.23 1.25 1.47 1.49 1.55; median of 10 = (1.01+1.23)/2 = 1.12; the script printed the upper-median element.",
+   "correction": "median 1.12 (6 of 10 days ratio > 1)."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:35(a)",
+   "claim": "calendar \u2260 session on 5 of 8 measurable days (\u2212182.75, +78.75, +218.5/+37.5, +80.5, +42.5)",
+   "evidence": "q11_replay.txt cal_vs_sess: 08-21 dH \u22121.75, 08-25 \u2212182.75, 08-26 dL +78.75, 08-27 +218.5/+37.5, 08-28 0/0, 09-01 \u22124.75/+80.5, 09-02 0/0, 09-03 +42.5 \u2192 6 of 8 days differ; 5 of 8 by \u226537 pts. (:30 'wrong by 37\u2013218 points on five of eight days' is accurate.)",
+   "correction": "'6 of 8 days differ, 5 of them by 37\u2013218 pts'."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:35(b) and :190",
+   "claim": "ASIA plans for 08-24, 08-25 and 08-27 carry D-2's extremes (q14)",
+   "evidence": "q14_asia_pdh_staleness.txt: 13 rows, 3 read 'D-2', 0 read 'D-1', 10 read 'neither' \u2014 unmentioned. Two of the 'neither' rows (08-23, 08-30 Sunday reads) carry Friday's H/L (29539.75/29220.25 = 08-21; 29437 = 08-28 low), i.e. correct behaviour the join (date(created_ct,'-1 day')) mislabels; 08-20, 08-25-PDH, 09-02 are ring-truncated values (mechanism c). Mechanism (b) is established by code alone (levels_multiday.go:46 todayCal = nowCT date; :232 k < todayCal) [A].",
+   "correction": "Cite the code for (b); if q14 is kept, say '3 of 13 match D-2, 0 match D-1, 10 match neither (2 of them Friday-correct Sunday reads, the rest ring-truncated)'."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:21",
+   "claim": "`2026-08-27-level-system-verify.md` \u2014 indexed at `research/INDEX.md:34`",
+   "evidence": "docs/superpowers/research/INDEX.md:34 is '08-25 | deep-status accounting'; the level-system-verify row is line 44 ('weights off spec; grades not predictive | NONE (documented)').",
+   "correction": "INDEX.md:44."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:118 and :125",
+   "claim": "zone width is not stored (verify report F6) \u2026 Lo/Hi not persisted (verify F6)",
+   "evidence": "2026-08-27-level-system-verify.md:253 'F6 | 8 zones consumed with zero recorded touches (times_tested=0, last_play=0)'; the width statement is :225 'zone Lo/Hi widths are not persisted in plans (single price rows only)'.",
+   "correction": "cite verify.md:225 (not F6)."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:162",
+   "claim": "[R] Zarattini\u2013Aziz (opening-range breakout, 5-min range, stop at the far side, ~intraday hold) is a continuation play",
+   "evidence": "Zarattini & Aziz 2023 (SSRN 4416622): 5-min ORB on QQQ, leverage via TQQQ, 2016\u20132023, entry in the first candle's direction at the open of the second, 10R target, EOD exit. Substance correct; year, asset (an ETF, not futures) and the 10R/EOD design that carries the result are omitted.",
+   "correction": "'[R] Zarattini & Aziz 2023 (QQQ/TQQQ, 2016\u201323, 5-min ORB, 10R target, EOD exit) \u2014 transfer to a 1-contract MNQ scenario is [I]'."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:159",
+   "claim": "[R] auction-market / market-profile literature (Steidlmayer; Dalton) says where volume sat is the information, not the three prices",
+   "evidence": "Steidlmayer (1986) and Dalton (1990) are practitioner books, not studies, and Market Profile is a TPO (time-at-price) construct; 'volume at a level' is the later volume-profile derivative. The [R] key at report:4 is 'named study'.",
+   "correction": "Relabel [I] ('market-profile practice, Steidlmayer/Dalton') or cite a study that tests HVN/LVN reaction rates."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:53, :147 ('the same detector')",
+   "claim": "My own replay of the same detector \u2026 three other measurements of the same detector put RTH-L above 0.6",
+   "evidence": "Same detector, different LEVEL: q11_replay.py:109 defines RTH as 08:30\u201315:00 CT of the prior SESSION day; the engine's RTH-L is the prior CALENDAR day's registry-NY bars, WindowEndCT 14:45 (kernel/session_registry.go:107). On 09-03 the low printed at 08:36 (bars: min l 29199.25 at 08:36 CT) so the two coincide that day; the 0.628 is the trader's RTH-L, not the engine's.",
+   "correction": "'the same detector on my RTH-L definition (08:30\u201315:00, session-day); the engine's is 08:30\u201314:45 calendar-day \u2014 identical on 09-03, unverified on the other four level-days.'"
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:186-198 (RECOMMENDATIONS \u2014 case-against register)",
+   "claim": "Eleven recommendations, each justified by a [T]/[A]/[I] line",
+   "evidence": "Strongest case against each, from the report's own evidence: R1/R2 (fix recorder, real scores for cut rows) \u2014 no case against; AUDIT-CHECKLIST.md:1402-1405 (D1\u2032 class) already legislates 'one row per episode with the scope it was judged under' and cut rows 'with their propensities', so these are class violations, stronger than the report states \u2014 SURVIVE. R3 (session-day PDH) \u2014 the 08-27 calendar 'PDH' 29655.75 was the overnight high, which ONH seats anyway; the replay prefers neither definition (PDH session 0.500 n=22 vs calendar 0.562 n=16) \u2014 SURVIVES on definitional grounds only, which the report should say. R4 \u2014 the retraction survives (14 pre-formation episodes [A], store-confirmed); the flip pre-registration does not (finding on :110). R5 \u2014 'retire nothing on n<30' and 'demote eVWAP at n=14' are the same act: eVWAP's plan-forward 0.786 [0.524,0.924] n=14 is one of only two kinds (with EQH) whose lower bound clears 0.506, and display-only removes it from the only instrument measuring it \u2014 DOES NOT SURVIVE as written; survives if deferred until the fixed instrument reaches n=30. R6 (reachability) \u2014 seated-vs-cut is 12 reads of one day; 'touched' vs distance is a tautology; no trade is shown to have been hurt by a far seat; the executor gates on scenarios, not level rows \u2014 survives only as a seat-economy preference [I]; the [T] on :193 overstates. R7 (ToD \u0394) \u2014 SURVIVES, but it also invalidates the report's own cross-session kind comparisons (:108, :216). R8, R9 \u2014 SURVIVE (R9's [T] n=3 is nothing). R10 (SETT gap target) \u2014 gap fill 5/10 [0.237,0.763], SETT first-touch 0/4 with 5 ambiguous, all-touch 0.545 n=77 null \u2014 [I] only, survives as a labelling choice. R11 \u2014 does not survive (finding on :198).",
+   "correction": "Add the register to the report: R1\u2013R3, R7\u2013R9 stand; R4 stands for the retraction only; R5 and R11 are withdrawn/reframed; R6 and R10 are relabelled [I]."
+  }
+ ],
+ "overall": "The section's verdict survives \u2014 and is stronger than the report states. The three [A] problems reproduce from the store exactly (677 rows = 423 episodes; RTH-L 140 rows = 14 episodes of 29199.25, all opened 22:10 CT 09-02 \u2192 08:36 CT 09-03, the 08:36 bar being the one that printed the low; grades A 1,920/B 152/C 319; the 09-04 NY v6 PDL seat 477.8 pts below VWAP), the replay re-runs byte-identical, /api/expectancy and the position sums agree, and no AUDIT-CHECKLIST class already covers the recorder, the calendar-day PDH or the zero-score cut rows (the D1\u2032 class text at :1402-1405 in fact already legislates what Recs 1\u20132 ask for). What does not survive is every place the report leaned toward a positive result: the prior-day family's 'clears the null' is 57 double-counted episodes (deduplicated 0.562 [0.504, 0.617]); the from-below 'flip' is one of 41 cells, its PDL 'pair' is 29 of the same 31 episodes, two days supply 21 of 25 resolutions, and its RTH-H mirror runs the other way; Rec 11's ordinal evidence does not test the consumed rule (a close-through, levels_role.go:111 \u2190 ConsumedSince) and the report's own favourite cell is that rule's prediction; Rec 5 demotes at n=14 the kind it forbids retiring below n=30. The [R] labelling is disciplined except where it matters most: Osler 2000/2003 are exactly tests that levels hold and round numbers reverse, so the report's round-number null is a [T]-vs-[R] disagreement, not Osler restated; one [R] names no study and one names two practitioner books. Three row-id errors (567/587/578 vs the real NULLs 576/579/577), a wrong reason split on the 20\u00d7 arm, a missed-turns citation whose numbers exist nowhere in docs/, and a mixed n convention are clerical but violate the sample-id and n laws. Net: 'nothing separates from 0.506; fix the instrument; retire nothing; do not flip RTH-L' is correct \u2014 the report should drop its own two flirtations with an edge (prior-day family, from-below retest), withdraw Recs 5 and 11 as written, and relabel Recs 6 and 10 as [I]."
+}

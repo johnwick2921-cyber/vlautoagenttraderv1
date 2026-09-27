@@ -84,3 +84,30 @@ func TestArmStateSQLAndGoAgreeAtStoreCallSites(t *testing.T) {
 		t.Fatalf("trader scope leaked: %v %v", rows, err)
 	}
 }
+
+// CTO M5 — the ONE Picture send-started predicate: working, or place_pending
+// with a submission stamp. Unstamped place_pending never reached the wire.
+func TestPictureSendStarted(t *testing.T) {
+	for _, c := range []struct {
+		stage string
+		stamp int64
+		want  bool
+	}{
+		{"working", 0, true}, {" Working ", 0, true},
+		{"place_pending", 1, true}, {"place_pending", 0, false},
+		{"confirmed", 1, false}, {"filled", 1, false}, {"refused", 1, false}, {"", 1, false},
+	} {
+		if got := PictureSendStarted(PictureHtfOpportunityDB{Stage: c.stage, SubmittedAt: c.stamp}); got != c.want {
+			t.Errorf("stage=%q stamp=%d → %v, want %v", c.stage, c.stamp, got, c.want)
+		}
+	}
+}
+
+// W-EXEC-TRUTH W0 (f) — the ONE cancelled-state predicate.
+func TestIsCancelledArmState(t *testing.T) {
+	for state, want := range map[string]bool{"cancelled": true, " Canceled ": true, "filled": false, "rejected": false, "expired": false, "cancel_pending": false, "": false} {
+		if got := IsCancelledArmState(state); got != want {
+			t.Errorf("%q → %v, want %v", state, got, want)
+		}
+	}
+}

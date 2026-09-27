@@ -104,10 +104,10 @@ func ParseOrderSnapshot(b []byte) (OrderSnapshotPayload, error) {
 		return OrderSnapshotPayload{}, fmt.Errorf("order_snapshot: no account — unaddressable frame")
 	}
 	if p.Orders == nil {
-		// An absent list and an empty list must not collapse into each other:
-		// the AddOn sends [] for an empty book, and a nil here would later read
-		// as "we never got a book".
-		p.Orders = []NT8Order{}
+		// F10 (port of #117 da2f76c9): only an EXPLICIT [] establishes an empty
+		// account book. Missing/null is an unanswered question, not an empty
+		// answer — the caller drops the frame and keeps the previous cache.
+		return OrderSnapshotPayload{}, fmt.Errorf("order_snapshot: orders missing or null — broker book unavailable")
 	}
 	return p, nil
 }
@@ -193,6 +193,26 @@ func (c *OrderSnapshotCache) AgeAt(account string, now time.Time) (time.Duration
 	return now.Sub(s.ReceivedAt), true
 }
 
+// LatestReceivedAny returns the newest book among ALL accounts and its receipt
+// instant — the broker truth the attempted-entry guard needs when a frame's
+// account is empty (legacy) or unknown at guard time.
+func (c *OrderSnapshotCache) LatestReceivedAny() (OrderSnapshotPayload, time.Time, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	var best cachedSnapshot
+	found := false
+	for _, s := range c.byKey {
+		if !found || s.ReceivedAt.After(best.ReceivedAt) {
+			best = s
+			found = true
+		}
+	}
+	if !found {
+		return OrderSnapshotPayload{}, time.Time{}, false
+	}
+	return best.Payload, best.ReceivedAt, true
+}
+
 // OrderSnapshots exposes the cache so the trader layer can read the broker's
 // book for cutover leg 4 and the override guard.
 func (s *TCPServer) OrderSnapshots() *OrderSnapshotCache { return s.orderSnaps }
@@ -211,7 +231,7 @@ func (s *TCPServer) SetOrderSnapshotSink(fn func(OrderSnapshotPayload)) { s.orde
 // running an older compile, and a line that read this constant as if it were
 // the running build would report success for a change that never landed
 // (class 6 — proof is a RECEIVED frame).
-const ExpectedAddonBuild = "2026-09-20-p1"
+const ExpectedAddonBuild = "2026-09-23-m21"
 
 // AddonBuildLine renders the build-id half of the boot line. `received` comes
 // from TCPServer.FarSideBuildID() — a value that arrived on the wire.
@@ -226,7 +246,7 @@ func AddonBuildLine(received, expected string) string {
 		return "nt8 addon: build_id=" + got + " expected=" + expected + " match=yes"
 	}
 	return "nt8 addon: build_id=" + got + " expected=" + expected +
-		" match=NO (NT8 is running an older DLL — recompile the AddOn (F5) and restart NT8)"
+		" match=NO (reload the AddOn (F5) or restart NT8)"
 }
 
 // BuildIDForLog renders a RECEIVED build id for a human: "none" when no frame

@@ -97,28 +97,6 @@ func (a *Agent) strategyTypeForTarget(storeUserID string, target *EntityReferenc
 	return strategyType, true
 }
 
-func (a *Agent) skillVisibleOptionSummary(storeUserID, lang, skillName, action string) string {
-	switch skillName {
-	case "model_management":
-		return a.modelSkillOptionSummary(lang)
-	case "exchange_management":
-		return a.exchangeSkillOptionSummary(lang)
-	case "trader_management":
-		return a.traderSkillOptionSummary(storeUserID, lang)
-	case "strategy_management":
-		return a.strategySkillOptionSummary(storeUserID, lang)
-	default:
-		return ""
-	}
-}
-
-func (a *Agent) modelSkillOptionSummary(lang string) string {
-	if lang == "zh" {
-		return modelProviderChoicePrompt(lang)
-	}
-	return modelProviderChoicePrompt(lang)
-}
-
 func (a *Agent) exchangeSkillOptionSummary(lang string) string {
 	options := enumOptionValues("exchange_management", "exchange_type")
 	if len(options) == 0 {
@@ -186,61 +164,4 @@ func enumOptionValues(skillName, field string) []string {
 		}
 	}
 	return values
-}
-
-func (a *Agent) traderSkillOptionSummary(storeUserID, lang string) string {
-	parts := []string{
-		formatSkillOptionList(lang, "可选模型", "Available models", a.loadEnabledModelOptions(storeUserID)),
-		formatSkillOptionList(lang, "可选交易所", "Available exchanges", a.loadExchangeOptions(storeUserID)),
-		formatSkillOptionList(lang, "可选策略", "Available strategies", a.loadStrategyOptions(storeUserID)),
-	}
-	return strings.Join(filterNonEmptyStrings(parts), "\n")
-}
-
-func (a *Agent) strategySkillOptionSummary(storeUserID, lang string) string {
-	parts := []string{
-		"",
-		formatSkillOptionList(lang, "现有策略", "Existing strategies", a.loadStrategyOptions(storeUserID)),
-	}
-	sourceOptions := []string{"static", "ai500", "oi_top", "oi_low"}
-	if lang == "zh" {
-		parts[0] = "选币来源选项：static、ai500、oi_top、oi_low"
-	} else {
-		parts[0] = "Coin source options: static, ai500, oi_top, oi_low"
-	}
-	_ = sourceOptions
-	return strings.Join(filterNonEmptyStrings(parts), "\n")
-}
-
-func formatSkillOptionList(lang, zhPrefix, enPrefix string, options []traderSkillOption) string {
-	names := make([]string, 0, len(options))
-	for _, option := range options {
-		label := strings.TrimSpace(defaultIfEmpty(option.Name, option.ID))
-		if label == "" {
-			continue
-		}
-		names = append(names, label)
-	}
-	if len(names) == 0 {
-		if lang == "zh" {
-			return zhPrefix + "：暂无"
-		}
-		return enPrefix + ": none"
-	}
-	if lang == "zh" {
-		return zhPrefix + "：" + strings.Join(names, "、")
-	}
-	return enPrefix + ": " + strings.Join(names, ", ")
-}
-
-func filterNonEmptyStrings(items []string) []string {
-	out := make([]string, 0, len(items))
-	for _, item := range items {
-		item = strings.TrimSpace(item)
-		if item == "" {
-			continue
-		}
-		out = append(out, item)
-	}
-	return out
 }

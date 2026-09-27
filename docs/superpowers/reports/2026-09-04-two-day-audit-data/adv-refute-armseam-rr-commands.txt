@@ -1,0 +1,38 @@
+# ADVERSARIAL RE-VERIFICATION — "all 7 arm-seam R:R refusals were authored >=2.0, pushed below by composeArmStop"
+# All commands re-run independently 2026-09-04. Times are CT (log timestamps are already CT; plans.created_at is UTC ISO -> '-5 hours').
+
+# 1. Enumerate every arm REFUSED line in the two-day window. Log files rotate on process start, not on date:
+#    nofx_2026-09-02.log spans 09-02 00:01:06 .. 09-03 10:28:08 ; nofx_2026-09-03.log spans 09-03 10:28:29 .. 09-03 23:57:07
+grep -n "arm REFUSED" /home/hoang/nofx/data/nofx_2026-09-02.log /home/hoang/nofx/data/nofx_2026-09-03.log
+#   -> 7 lines, all R:R class, all in the 09-02 file (last two carry 09-03 timestamps). 09-03 file: 0.
+
+# 2. Prove no OTHER R:R refusal seam fired in the window (entry-gate / class-48 wording):
+grep -ho "R:R [0-9.]* below [a-z ]*" /home/hoang/nofx/data/nofx_2026-09-02.log /home/hoang/nofx/data/nofx_2026-09-03.log | sed 's/[0-9][0-9.]*/N/g' | sort | uniq -c
+#   ->  7 "R:R N below arm min"   (no second seam)
+
+# 3. Composed stop per refusal — the INFO line 🛑 arm stop (file logs only; log_events is WARN/ERROR):
+grep -n "🛑 arm stop" /home/hoang/nofx/data/nofx_2026-09-02.log
+#   The line is deduped on (plan,version,scenario,leg,"%.2f/bound"), so an anchor-bound stop prints ONCE
+#   (R1: 09-02 09:46:30) and the refusal lands later (09:55:01) because arm.wait_confirm gates the leg:
+#   "⚔️ arm S1 leg 1 wait_confirm MET (touch) — arming" immediately precedes the refusal.
+
+# 4. Plan version active at each refusal, from the store (mode=ro), cross-checked by authored-stop equality:
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT plan_id,version,session,lifecycle,datetime(created_at,'-5 hours') ct FROM plans
+   WHERE created_at >= '2026-09-02 05:00' AND created_at < '2026-09-03 15:00' ORDER BY created_at;"
+
+# 5. Arm spec per (plan,version,scenario) + R:R recompute (scratchpad q.py):
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT json_extract(doc,'\$.scenarios[0]') FROM plans WHERE plan_id LIKE '2026-09-02:NY%' AND version=4;"
+
+# 6. Source order (worktree /home/hoang/nofx-2day04 @ dfbfa660):
+#    trader/armed_executor.go:375 composeArmStop(...) -> leg.Stop = comp.Stop   (line 391)
+#    trader/armed_executor.go:415 armGateVerdictFor(sc, leg, ...)
+#    trader/armed_executor.go:1310-1317 R:R computed from leg.Entry/leg.Stop/leg.Target, then
+#    trader/armed_executor.go:1319-1327 min-SL gate: dist < kernel.MinSLATRMult()*atr5m
+#    => the R:R gate DOES see the composed stop, and the min-SL gate is the NEXT gate on the same leg.
+
+# 7. Live knob values are READ from the log lines, not quoted from defaults:
+#    "below arm min 2.00"  = at.armMinRRFor(cfg) as printed          -> ARM_MIN_RR live = 2.00
+#    "(1.5×ATR5m NN.NN)"   = kernel.MinSLATRMult() as printed        -> MIN_SL_ATR_MULT live = 1.5
+#    (contrast 09-01, where the same line printed 1.0×ATR5m)

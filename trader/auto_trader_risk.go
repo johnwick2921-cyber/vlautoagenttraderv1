@@ -18,24 +18,30 @@ const futuresMaxNotionalLeverage = 20.0
 // startDrawdownMonitor starts drawdown monitoring
 func (at *AutoTrader) startDrawdownMonitor() {
 	at.monitorWg.Add(1)
-	go func() {
+	at.goNetted("drawdown-monitor", func() {
 		defer at.monitorWg.Done()
 
 		ticker := time.NewTicker(1 * time.Minute) // Check every minute
 		defer ticker.Stop()
+
+		// Capture the per-Run stop signal once (the ctx lives for exactly one
+		// Run; a restarted trader creates a fresh one).
+		at.stopMonitorMu.Lock()
+		stopDone := at.stopMonitorCtx.Done()
+		at.stopMonitorMu.Unlock()
 
 		logger.Info("📊 Started position drawdown monitoring (check every minute)")
 
 		for {
 			select {
 			case <-ticker.C:
-				at.monitorTick(time.Now())
-			case <-at.stopMonitorCh:
+				at.runBeatSafely("drawdown monitor", func() { at.monitorTick(time.Now()) })
+			case <-stopDone:
 				logger.Info("⏹ Stopped position drawdown monitoring")
 				return
 			}
 		}
-	}()
+	})
 }
 
 // monitorTick is one wall-clock monitor beat (every minute, independent of the
@@ -60,6 +66,10 @@ func (at *AutoTrader) monitorTick(now time.Time) {
 	// beat is wall-clock and runs while a position is held — which is exactly
 	// the window position 592 spent naked with nothing looking.
 	at.reconcileProtectionAt(now, "monitor")
+	// W-EXEC-TRUTH W0 (f) — withdraw resting ENTRIES while a hold asks for it
+	// or a loss limit has tripped. Here, not in the armed pass: that pass does
+	// not run in exactly the windows an update or a halt use.
+	at.withdrawEntriesIfDue(now)
 }
 
 // positionPnLPct computes a position's leveraged P&L percent. Side is normalized:

@@ -87,6 +87,7 @@ func TestP0BAsiaReadFiresAt1630WhileMarketClosed(t *testing.T) {
 	}
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	row := waitPlan(t, st, "2026-08-18", "ASIA", "t1")
 	if row == nil {
@@ -101,6 +102,7 @@ func TestP0BAsiaReadDoesNotFireOutsideItsWindow(t *testing.T) {
 	at, st := asiaClockTrader(t)
 	// 16:29 CT — before ReadCT 16:30. Nothing may fire.
 	at.maybeRunSessionReadsAt(ctTime(t, 2026, 8, 18, 16, 29))
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if row, _ := st.Plan().GetLatestPlanForTraderSession("2026-08-18", "ASIA", "t1"); row != nil {
 		t.Fatalf("16:29 is outside the read window — no plan may be written, got %+v", row)
 	}
@@ -148,6 +150,7 @@ func TestP0BMidnightRollWritesNoSecondPlan(t *testing.T) {
 	// still resolve to 2026-08-18, so the dedupe sees the existing plan and NO
 	// second plan is written.
 	at.maybeRunSessionReadsAt(ctTime(t, 2026, 8, 19, 0, 30))
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	var n int64
 	st.GormDB().Model(&store.PlanDB{}).Where("trade_date = ? AND session = ?", "2026-08-18", "ASIA").Count(&n)

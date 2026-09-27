@@ -1,0 +1,173 @@
+{
+  "observed_at": "2026-09-11T02:27:44.759Z",
+  "status": 200,
+  "body": {
+    "trader_id": "8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "generated_at_ms": 1789093664753,
+    "cadence_ms": 15000,
+    "unknown_count": 4,
+    "stale_count": 0,
+    "lines": [
+      {
+        "n": 1,
+        "key": "mode",
+        "label": "MODE",
+        "text": "SIM · plan_mode=strict · session=ASIA · CME OPEN · 21:27:44 CT · process responding · feed 45s since last bar · link UNKNOWN (no feed_status received) · book 0 working order(s) at the broker (ledger agrees: 0)\n0 armed (authorized, no signal id; informational) · received 21:27:14 CT · age 30s · AddOn build 2026-09-07-h1",
+        "state": "unknown",
+        "source": "strategy config · session registry · bars · NT8 link",
+        "as_of_ms": 1789093664753,
+        "age_ms": 0,
+        "verified": false,
+        "reason": "NT8 link state has not been received"
+      },
+      {
+        "n": 2,
+        "key": "position",
+        "label": "POSITION",
+        "text": "FLAT — no open position",
+        "state": "flat",
+        "source": "trader.GetPositions",
+        "as_of_ms": 1789093664753,
+        "age_ms": 0,
+        "verified": true
+      },
+      {
+        "n": 3,
+        "key": "protection",
+        "label": "PROTECTION",
+        "text": "FLAT — nothing to protect",
+        "state": "flat",
+        "source": "accepted_risk",
+        "as_of_ms": 1789093664753,
+        "age_ms": 0,
+        "verified": true
+      },
+      {
+        "n": 4,
+        "key": "drift",
+        "label": "DRIFT",
+        "text": "FLAT",
+        "state": "flat",
+        "source": "accepted_risk vs armed_orders",
+        "as_of_ms": 1789093664753,
+        "age_ms": 0,
+        "verified": true
+      },
+      {
+        "n": 5,
+        "key": "target",
+        "label": "TARGET",
+        "text": "FLAT",
+        "state": "flat",
+        "source": "accepted_risk",
+        "as_of_ms": 1789093664753,
+        "age_ms": 0,
+        "verified": true
+      },
+      {
+        "n": 6,
+        "key": "day",
+        "label": "DAY",
+        "text": "realized +0.00 USD on 0 trade(s) · daily limit $450 is DECORATIVE — guardrails master OFF and daily_loss_enabled OFF; it enforces nothing until both switches move",
+        "state": "ok",
+        "unit": "USD",
+        "source": "trader_positions.pnl_corrected · strategy guardrails",
+        "as_of_ms": 1789093664753,
+        "age_ms": 0,
+        "verified": true
+      },
+      {
+        "n": 7,
+        "key": "arms",
+        "label": "ARMS",
+        "text": "none resting",
+        "state": "flat",
+        "source": "armed_orders",
+        "as_of_ms": 1789093664753,
+        "age_ms": 0,
+        "verified": true
+      },
+      {
+        "n": 8,
+        "key": "book",
+        "label": "BOOK",
+        "text": "0 working order(s) at the broker (ledger agrees: 0)\n0 armed (authorized, no signal id; informational) · received 21:27:14 CT · age 30s · AddOn build 2026-09-07-h1",
+        "state": "ok",
+        "source": "broker — NT8 order_snapshot frame (age 30s, build 2026-09-07-h1)",
+        "as_of_ms": 1789093634495,
+        "age_ms": 30247,
+        "verified": true
+      },
+      {
+        "n": 9,
+        "key": "feed",
+        "label": "FEED",
+        "text": "last bar 45s ago · link UNKNOWN (no feed_status received) · AddOn build 2026-09-07-h1",
+        "state": "unknown",
+        "source": "bars · NT8 link · AddOn build id",
+        "as_of_ms": 1789093620000,
+        "age_ms": 44753,
+        "verified": false,
+        "reason": "NT8 link state has not been received"
+      },
+      {
+        "n": 10,
+        "key": "planner",
+        "label": "PLANNER",
+        "text": "read IN FLIGHT: 2026-09-10:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 · tradeable UNKNOWN — no active plan",
+        "state": "ok",
+        "source": "plannerReadInFlight claim",
+        "as_of_ms": 1789093664753,
+        "age_ms": 0,
+        "verified": true
+      },
+      {
+        "n": 11,
+        "key": "range",
+        "label": "RANGE",
+        "text": "session 29062.25–29421.25 = 359.00 pts on 265 bar(s) · 10.51× ATR5m (34.16)",
+        "state": "ok",
+        "unit": "pts",
+        "source": "bars (session-day) · ATR5m",
+        "as_of_ms": 1789093620000,
+        "age_ms": 44753,
+        "verified": true
+      },
+      {
+        "n": 12,
+        "key": "lastfill",
+        "label": "LAST FILL",
+        "text": "SELL MNQ 29332.00 qty 1.00 · slippage UNKNOWN (the intended price is not stored beside the fill; the AddOn's slippage_ticks has no consumer)",
+        "state": "ok",
+        "source": "trader_fills",
+        "as_of_ms": 1789038420661,
+        "age_ms": 55244092,
+        "verified": true
+      },
+      {
+        "n": 13,
+        "key": "confirmation",
+        "label": "CONFIRMATION",
+        "text": "UNKNOWN",
+        "state": "unknown",
+        "source": "versioned scenario_meta.confirm (recorded evaluator)",
+        "as_of_ms": 0,
+        "age_ms": 0,
+        "verified": false,
+        "reason": "no active plan or store"
+      },
+      {
+        "n": 14,
+        "key": "scenarios",
+        "label": "SCENARIOS",
+        "text": "UNKNOWN",
+        "state": "unknown",
+        "source": "versioned plan document; authored economics, not broker prices",
+        "as_of_ms": 0,
+        "age_ms": 0,
+        "verified": false,
+        "reason": "no dated active plan"
+      }
+    ]
+  }
+}

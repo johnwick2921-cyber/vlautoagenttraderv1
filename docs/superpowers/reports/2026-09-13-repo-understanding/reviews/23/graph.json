@@ -1,0 +1,106 @@
+{
+  "assignment": 23,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "current_edges": [
+    {
+      "source": "AutoTrader.Run",
+      "target": "AutoTrader.tickOnce",
+      "evidence": "trader/auto_trader.go:974",
+      "note": "single-goroutine ticker/kick executor",
+      "tier": "A"
+    },
+    {
+      "source": "AutoTrader.Stop",
+      "target": "monitorWg.Wait",
+      "evidence": "trader/auto_trader.go:1027",
+      "note": "own loop/monitor joined; broker workers not joined",
+      "tier": "A"
+    },
+    {
+      "source": "TCPTrader.StartPositionReconcile",
+      "target": "unbounded ticker worker",
+      "evidence": "trader/ninjatrader/reconcile.go:89",
+      "note": "no cancellation select",
+      "tier": "A"
+    },
+    {
+      "source": "AutoTrader.DeskStripAt",
+      "target": "AutoTrader.GetPositions",
+      "evidence": "trader/desk_facts.go:253",
+      "note": "via deskPosition; first public-projected position",
+      "tier": "A"
+    },
+    {
+      "source": "AutoTrader.GetPositions",
+      "target": "desk acceptedFor input",
+      "evidence": "trader/auto_trader_decision.go:280",
+      "note": "projection omits signal identifiers and camelCase prices required by downstream",
+      "tier": "A"
+    },
+    {
+      "source": "AutoTrader.monitorTick",
+      "target": "reconcileProtectionAt",
+      "evidence": "trader/auto_trader_risk.go:59",
+      "note": "minute independent of dayplan",
+      "tier": "A"
+    },
+    {
+      "source": "AutoTrader.driveDeadManWatchdog",
+      "target": "reconcileProtectionAt",
+      "evidence": "trader/auto_trader.go:113",
+      "note": "reconnect callback, may overlap monitor",
+      "tier": "A"
+    },
+    {
+      "source": "TCPTrader.positionMap",
+      "target": "reconcileProtectionAt quantity",
+      "evidence": "trader/ninjatrader/tcp_trader.go:1030",
+      "note": "actual positive quantity key matches consumer",
+      "tier": "A"
+    },
+    {
+      "source": "AutoTrader.flattenPosition",
+      "target": "time.AfterFunc",
+      "evidence": "trader/auto_trader_clock.go:674",
+      "note": "no cancel handle or position generation",
+      "tier": "A"
+    },
+    {
+      "source": "AutoTrader.maybeRunShadowAB",
+      "target": "shared client ApplyThinking",
+      "evidence": "trader/rootfix_shadow_ab.go:196",
+      "note": "async no mutual exclusion against livecalls",
+      "tier": "A"
+    },
+    {
+      "source": "storeBarReader",
+      "target": "BarHistory.LastNBarsOn",
+      "evidence": "trader/bars_store_depth.go:93",
+      "note": "current contract required",
+      "tier": "A"
+    },
+    {
+      "source": "pullOne",
+      "target": "BarHistory.ImportBars",
+      "evidence": "trader/historical_import.go:175",
+      "note": "payload converted to requested contract; empty echo allowed",
+      "tier": "A"
+    }
+  ],
+  "historic_review": {
+    "provenance": "July10@7a8adce0",
+    "nodes_read": 51,
+    "assigned_paths_represented": 7,
+    "internal_edges_read": 64,
+    "incident_edges_exported": 417,
+    "unvalidated_external_edges": 353
+  },
+  "corrections": [
+    "runPreLaunchChecks only Claw402 wallet/runway warnings, not generic feed/broker preflight",
+    "GridTraderAdapter.GetOrderBook unsupported nil,nil,nil, no fetch",
+    "recordAndConfirmOrder can persist reference position after pending/error poll exhaustion",
+    "RebuildPositionsFromTrades carries supplied realizedPnL and cannot distinguish zero-PNL close",
+    "Peak cache cleanup caller only emergency successful close; not all closes"
+  ],
+  "limits": "Go inventory calls syntax-only. Current edges manually read. No fresh CGC query or runtime graph."
+}

@@ -1,0 +1,23 @@
+session|full_n|kz
+ASIA|26|1
+LONDON|4|2
+NY|17|8
+'---'
+---
+id|ct|session|attempt|len|r
+117|2026-09-04 07:52:37|LONDON|1|28761|S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (34.7 pts) — not a displacement move, author a normal `reject` play 
+118|2026-09-04 08:07:20|NY|1|28215|scenario[0].confirm2.rule "touch" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-en
+119|2026-09-04 08:09:03|NY|2|7259|S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-ch
+120|2026-09-04 08:11:45|NY|3|6855|S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+121|2026-09-04 08:25:34|LONDON|1|28350|S2 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-ch
+122|2026-09-04 08:28:32|LONDON|2|6195|S2 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+123|2026-09-04 08:41:25|NY|1|29496|gap-up at 29607.75 (> PDH 29601.00): the long scenario's trigger must reference a level ≥ current price (breakout/retest), not a dip back below
+124|2026-09-04 09:37:05|NY|1|29936|S2 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-ch
+125|2026-09-04 09:37:52|NY|2|6365|S2 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+126|2026-09-04 09:43:31|NY|3|31409|S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (40.9 pts) — not a displacement move, author a normal `reject` play 
+127|2026-09-04 10:00:52|NY|1|30121|S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-ch
+128|2026-09-04 10:01:35|NY|2|4729|S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+129|2026-09-04 10:05:36|NY|3|31594|S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (37.3 pts) — not a displacement move, author a normal `reject` play 
+130|2026-09-04 10:30:39|NY|1|30122|S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-ch
+131|2026-09-04 10:31:36|NY|2|4599|S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+132|2026-09-04 10:34:21|NY|3|31595|S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (36.1 pts) — not a displacement move, author a normal `reject` play 

@@ -35,18 +35,6 @@ var (
 		[]string{"trader_id"},
 	)
 
-	// FillLatency tracks time from order submission to fill confirmation.
-	// Buckets span sub-second to minutes to fit both crypto (fast) and
-	// futures via NinjaTrader CSV bridge (slow file-watch tail).
-	FillLatency = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "nofx_fill_latency_seconds",
-			Help:    "Latency from order signal to fill confirmation in seconds.",
-			Buckets: []float64{0.1, 0.5, 1, 2, 5, 10, 30, 60, 120},
-		},
-		[]string{"exchange"},
-	)
-
 	// DatabentoErrorsTotal counts HTTP errors from Databento client
 	// (5xx responses after retries are exhausted, plus network failures).
 	DatabentoErrorsTotal = promauto.NewCounter(

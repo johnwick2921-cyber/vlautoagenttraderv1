@@ -82,7 +82,7 @@ func TestW15TraderAcceptanceMatchesStore(t *testing.T) {
 // resolves them the SAME way the gates do. Behavior must be unchanged.
 func TestW15ReplanAndModeResolution(t *testing.T) {
 	dp := &store.DayPlanConfig{
-		ReplanCap: 4, PlanMode: "direction",
+		ReplanCap: store.IntPtr(4), PlanMode: "direction",
 		Sessions: []store.DayPlanSessionOverride{
 			{Session: "ASIA", ReplanCap: ip(0), PlanMode: sp("strict")},
 		},

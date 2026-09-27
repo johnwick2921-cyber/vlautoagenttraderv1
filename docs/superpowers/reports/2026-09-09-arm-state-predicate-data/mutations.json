@@ -1,0 +1,30 @@
+[
+  {
+    "name": "pending_hidden",
+    "file": "trader/f12_leg4.go",
+    "changed_line": "if store.IsUnplacedArm(row.Status, row.OrderID) || strings.HasPrefix(row.Status, \"PENDING\") {",
+    "exit": 1,
+    "failure": [
+      "        arm_state_contract_test.go:43: pass=true want=false, detail must contain \"unconfirmed\": {N:4 Name:working_orders Pass:true Detail:0 working order(s) at the broker (ledger agrees: 0)"
+    ]
+  },
+  {
+    "name": "broker_ignored",
+    "file": "trader/f12_leg4.go",
+    "changed_line": "working := snap.WorkingOrdersFor(symbol)\n\tif len(ledger) == 0 { return CutoverLeg{N: 4, Name: name, Pass: true, Detail: \"mutation: ignored broker book\"} }",
+    "exit": 1,
+    "failure": [
+      "        arm_state_contract_test.go:43: pass=true want=false, detail must contain \"broker 1 vs ledger 0\": {N:4 Name:working_orders Pass:true Detail:mutation: ignored broker book"
+    ]
+  },
+  {
+    "name": "retyped_list",
+    "file": "scripts/arm_state_guard_mutation.py",
+    "changed_line": "sql = \"SELECT id FROM armed_orders WHERE state IN ('armed','working')\"",
+    "exit": 1,
+    "failure": [
+      "    arm_state_source_guard_test.go:159: scripts/arm_state_guard_mutation.py: SQL state list; use store.NonTerminalArmStateSQL / cmd/arm-state-sql",
+      "    arm_state_source_guard_test.go:159: scripts/arm_state_guard_mutation.py: copied arm state set"
+    ]
+  }
+]

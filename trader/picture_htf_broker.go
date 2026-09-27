@@ -1,11 +1,13 @@
 package trader
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
 
 	ntwire "nofx/provider/ninjatrader"
+	"nofx/safe"
 	"nofx/store"
 	ntTrader "nofx/trader/ninjatrader"
 )
@@ -256,6 +258,13 @@ func pictureHtfApplyTerminal(at *AutoTrader, row store.PictureHtfOpportunityDB, 
 // process-local and disappear on restart. A terminal outcome the machine
 // never received stays UNKNOWN after a restart — this sweep is duplicate
 // PREVENTION, not complete recovery of broker history.
+//
+// NEVER-SENT ROWS ARE NOT OURS (W5 R11): a row still carrying the evaluator's
+// synthetic claim id with no submission stamp (pictureHtfUnsentClaim) is a
+// Day Plan hand-off in flight or interrupted. Nothing was sent, so there is no
+// broker outcome to reconcile and no "outcome unknown" to record — the D17
+// sweep (sweepInterruptedPictureHandOffsAt) owns it. A stamped row under the
+// same prefix (submitted_at > 0) was sent and stays here.
 func pictureHtfReconcilePending(at *AutoTrader) {
 	if at == nil || at.store == nil {
 		return
@@ -265,7 +274,7 @@ func pictureHtfReconcilePending(at *AutoTrader) {
 		return
 	}
 	for _, row := range rows {
-		if row.SignalID == "" {
+		if row.SignalID == "" || pictureHtfUnsentClaim(row) {
 			continue
 		}
 		haveReceipt := false
@@ -321,6 +330,13 @@ func pictureHtfReconcilePending(at *AutoTrader) {
 	}
 }
 
+// pictureHtfUnsentClaim reports a row that was claimed but never sent: the
+// synthetic claim id (store.PictureHtfClaimPrefix) and submitted_at 0 — the
+// same predicate as the D17 sweep's input (PictureHtfHandOffPendingByTrader).
+func pictureHtfUnsentClaim(row store.PictureHtfOpportunityDB) bool {
+	return row.SubmittedAt == 0 && strings.HasPrefix(row.SignalID, store.PictureHtfClaimPrefix)
+}
+
 // pictureRecentFillFor reads the trader's received-fill ring (real execution
 // evidence) for a signal.
 func pictureRecentFillFor(at *AutoTrader, signalID string) (price, quantity float64, ok bool) {
@@ -332,22 +348,40 @@ func pictureRecentFillFor(at *AutoTrader, signalID string) (price, quantity floa
 }
 
 // pictureHtfBrokerConsumers guards the per-trader consumer goroutine
-// (keyed by trader id — a restarted trader replaces its entry).
+// (keyed by trader id — a restarted trader replaces its entry). The stored
+// value is a *pictureHtfConsumerHandle: the handle names the OWNING trader
+// instance and carries the cancel that stops the goroutine (P2-15) — a late
+// Stop from an OLD instance must neither cancel nor evict a NEW instance's
+// consumer, the same CompareAndDelete discipline as unregisterPictureHtf.
 var pictureHtfBrokerConsumers sync.Map
+
+type pictureHtfConsumerHandle struct {
+	at     *AutoTrader
+	cancel context.CancelFunc
+}
+
+// pictureHtfBrokerListen is the consumer's listen seam (P2-15 test hook):
+// production calls OrderUpdatesListen on the concrete TCPTrader; a test may
+// substitute a channel it controls without standing up a TCP server.
+var pictureHtfBrokerListen = func(tcp *ntTrader.TCPTrader) (<-chan ntwire.OrderUpdatePayload, func()) {
+	return tcp.OrderUpdatesListen()
+}
 
 // ensurePictureHtfBrokerConsumer starts the live order_update consumer for
 // the concrete NT8 trader (once per trader; cheap LoadOrStore hit otherwise).
 // The consumer is a coordinated fan-out LISTENER — it can never evict the
 // armed executor's subscription and the armed executor can never evict it.
 // Frames with no matching row are still recorded into the received-history
-// (the reconciliation sweep's recovery source). If the underlying
-// subscription dies, the consumer deletes its registry entry and the next
-// evaluator build re-listens.
+// (the reconciliation sweep's recovery source). The goroutine exits when
+// EITHER the underlying subscription dies (self-heal: the registry entry is
+// deleted and the next evaluator build re-listens) OR the owning trader Stops
+// (P2-15: the cancel is called from AutoTrader.Stop — no leak across
+// restarts while the server subscription lives).
 func (at *AutoTrader) ensurePictureHtfBrokerConsumer() {
 	if at == nil || at.id == "" {
 		return
 	}
-	if _, loaded := pictureHtfBrokerConsumers.LoadOrStore(at.id, struct{}{}); loaded {
+	if _, loaded := pictureHtfBrokerConsumers.Load(at.id); loaded {
 		return
 	}
 	tcp := pictureHtfBroker(at)
@@ -355,16 +389,57 @@ func (at *AutoTrader) ensurePictureHtfBrokerConsumer() {
 		pictureHtfBrokerConsumers.Delete(at.id)
 		return
 	}
-	go func() {
+	ctx, cancel := context.WithCancel(context.Background())
+	h := &pictureHtfConsumerHandle{at: at, cancel: cancel}
+	if _, loaded := pictureHtfBrokerConsumers.LoadOrStore(at.id, h); loaded {
+		cancel() // another registration won the race — this cancel is spare
+		return
+	}
+	// Capture the listen seam NOW: the consumer binds to the implementation
+	// that was live when the trader registered, and never re-reads a var a
+	// test's Cleanup may restore while it starts up.
+	listen := pictureHtfBrokerListen
+	// panic-net-complete: the order-update consumer is LONG-LIVED — a panic
+	// must freeze the owning trader (entries refuse, exits keep working) and
+	// exit cleanly; a new consumer binds on the next evaluator build.
+	safe.GoNet("picture-order-updates-"+at.id, at.id, func() {
+		// CompareAndDelete, never Delete: the trader may have restarted under
+		// the same id; the old consumer must not evict the new one's entry.
+		defer pictureHtfBrokerConsumers.CompareAndDelete(at.id, h)
+		select {
+		case <-ctx.Done():
+			return // trader Stop — P2-15, no leak while the subscription lives
+		default:
+		}
+		ch, _ := listen(tcp)
 		for {
-			ch, _ := tcp.OrderUpdatesListen()
-			for u := range ch {
+			select {
+			case <-ctx.Done():
+				return
+			case u, ok := <-ch:
+				if !ok {
+					// The direct subscription died (server teardown / a direct
+					// re-subscribe). Self-heal on the next evaluator build.
+					return
+				}
 				pictureHtfConsumeOrderUpdate(at, u)
 			}
-			// The direct subscription died (server teardown / a direct
-			// re-subscribe). Self-heal on the next evaluator build.
-			pictureHtfBrokerConsumers.Delete(at.id)
-			return
 		}
-	}()
+	})
+}
+
+// stopPictureHtfBrokerConsumer cancels THIS trader instance's consumer (P2-15).
+// CompareAndDelete on the OWNING handle: a restarted trader's consumer is left
+// untouched. Idempotent; called from AutoTrader.Stop.
+func (at *AutoTrader) stopPictureHtfBrokerConsumer() {
+	if at == nil || at.id == "" {
+		return
+	}
+	if v, ok := pictureHtfBrokerConsumers.Load(at.id); ok {
+		if h, ok := v.(*pictureHtfConsumerHandle); ok && h.at == at {
+			if pictureHtfBrokerConsumers.CompareAndDelete(at.id, h) {
+				h.cancel()
+			}
+		}
+	}
 }

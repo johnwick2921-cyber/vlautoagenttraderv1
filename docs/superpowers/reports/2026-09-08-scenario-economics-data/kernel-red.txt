@@ -1,0 +1,16 @@
+--- FAIL: TestScenarioEconomicsNewAuthoringRefusals (0.00s)
+    --- FAIL: TestScenarioEconomicsNewAuthoringRefusals/C3_actual_off-path (0.00s)
+        scenario_economics_test.go:74: new authoring accepted contradiction/missing contract
+    --- FAIL: TestScenarioEconomicsNewAuthoringRefusals/new_missing_obstacle (0.00s)
+        scenario_economics_test.go:74: new authoring accepted contradiction/missing contract
+    --- FAIL: TestScenarioEconomicsNewAuthoringRefusals/new_missing_whole_contract (0.00s)
+        scenario_economics_test.go:74: new authoring accepted contradiction/missing contract
+    --- FAIL: TestScenarioEconomicsNewAuthoringRefusals/obstacle_beyond_long_target (0.00s)
+        scenario_economics_test.go:74: new authoring accepted contradiction/missing contract
+    --- FAIL: TestScenarioEconomicsNewAuthoringRefusals/wrong_implied_R (0.00s)
+        scenario_economics_test.go:74: new authoring accepted contradiction/missing contract
+--- FAIL: TestScenarioEconomicsSub1AcceptedAndPreserved (0.00s)
+    scenario_economics_test.go:113: accepted economics discarded; cannot render/count first obstacle
+FAIL
+FAIL	nofx/kernel	0.007s
+FAIL

@@ -1,0 +1,8 @@
+{
+  "source_revision": "6b3fddf7",
+  "source_path": "trader/arm_stop_anchor.go",
+  "function": "composeArmStop",
+  "byte_identical": true,
+  "function_bytes": 1941,
+  "sha256": "50d5aae749c4f671b380d6df6ff881be0340c4d7ecdffc686546882ba0133f25"
+}

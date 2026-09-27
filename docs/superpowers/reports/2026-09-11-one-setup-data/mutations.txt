@@ -1,0 +1,102 @@
+=== D1.1 LEVEL — best-level check inverted (same level → declined, other → ok)
+   edit landed:
+     -	case oneSetupSameLevel(ref, best):
+     +	case !oneSetupSameLevel(ref, best):
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE1FilterExactlyOneArms (0.00s)
+     --- FAIL: TestOneSetupE4UnresolvedNeverNearestWins (0.00s)
+=== D1.2 PLAY — condition check dropped (any play reads ok)
+   edit landed:
+     -	if cond == OneSetupPlay {
+     +	if cond != "" {
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE1FilterExactlyOneArms (0.00s)
+=== D1.3 PERMISSION — NULL permits (E3)
+   edit landed:
+     -		v.Permission = "not_evaluated"
+     +		v.Permission = "ok"
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE1FilterExactlyOneArms (0.00s)
+     --- FAIL: TestOneSetupE3NullNeverPermits (0.00s)
+=== D3 TARGET — obstacle substitution removed
+   edit landed:
+     -						leg.Target = tgt
+     +						_ = tgt
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE1SeamExactlyOneArms (0.18s)
+     --- FAIL: TestOneSetupE5ObstacleBelowFloorIsTheExistingRefusal (0.20s)
+=== D4 ORDER — rank order removed (doc order)
+   edit landed:
+     -	for _, sc := range kernel.OneSetupOrder(doc.Scenarios, osCycle.allowed()) {
+     +	for _, sc := range kernel.OneSetupOrder(doc.Scenarios, nil) {
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE6OneArmAtATime (0.20s)
+=== D4 WAITING — the other-slot check removed
+   edit landed:
+     -	if holder, held := oneSetupOtherSlot(rows, at.id, plan.PlanID, sc.ID); held {
+     +	if holder, held := oneSetupOtherSlot(rows, at.id, plan.PlanID, sc.ID); held && false {
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE6OneArmAtATime (0.20s)
+=== D6 BREAK — forming bucket counts as a break
+   edit landed:
+     -	closed, _ := closedConfirmationBuckets(in.Bars, in.OpenedAtMs, in.NowMs, in.BucketMinutes)
+     +	closed := confirmationBuckets(in.Bars, in.OpenedAtMs, in.NowMs+300000, in.BucketMinutes)
+KILLED — a pin caught it.
+     --- FAIL: TestFollowPlanFormingBucketIsNotABreak (0.00s)
+=== D2 CONSULT — the consult removed (declines nothing)
+   edit landed:
+     -			if at.oneSetupConsult(osCycle, plan, sc, li, ledger, now) {
+     +			if at.oneSetupConsult(osCycle, plan, sc, li, ledger, now) && false {
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE1SeamExactlyOneArms (0.25s)
+     --- FAIL: TestOneSetupE3SeamNullPermissionDeclines (0.18s)
+=== E7 STAMP — the episode stamp write removed
+   edit landed:
+     -		if err := ts.StampOneSetup(r.ID, stamp); err != nil {
+     +		if err := error(nil); err != nil && r.ID == 0 {
+BUILD-FAILED — the mutant does not compile, so no pin could have run.
+=== D6 FILL — the through-by-a-tick rule removed (a touch fills)
+   edit landed:
+     -	through := false
+     +	through := true
+SURVIVED — the edit landed, the mutant built, the suite ran, and nothing failed.
+=== E7 STAMP (retry) — the stamp write targets no row (id 0 → writer no-op)
+   edit landed:
+     -		if err := ts.StampOneSetup(r.ID, stamp); err != nil {
+     +		if err := ts.StampOneSetup(0, stamp); err != nil {
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE7DeclinedScenarioEpisodeCarriesThreeVerdicts (0.19s)
+=== D6 FILL (retry) — a touch fills: the through-by-a-tick tests replaced by true
+   edit landed:
+     -		through = rb.High >= in.Level+tick
+     +		through = true
+     -		through = rb.Low <= in.Level-tick
+     +		through = true
+KILLED — a pin caught it.
+     --- FAIL: TestFollowPlanTouchIsNotAFill (0.00s)
+=== D7 NO-WIRE — the recorder's stamp routed to the ledger writer would be caught by text; here: the recorder's state write removed
+   edit landed:
+     -		if err := ts.StampFollowPlan(r.ID, stamp); err != nil {
+     +		if err := ts.StampFollowPlan(0, stamp); err != nil {
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE9RecorderNeverReachesTheWire (0.19s)
+     --- FAIL: TestOneSetupE10LiveBiasUntouched (0.20s)
+=== D7 NO-WIRE — a placer reference routed into the recorder file
+   edit landed:
+     +// mutant: a follow-plan reaching a placer
+     +type followPlacer interface{ PlaceLimitEntry(symbol, side string, qty, entry, stop, target float64, before ...func(string) error) (string, error) }
+     +func followRoute(p followPlacer, level float64) { _, _ = p.PlaceLimitEntry("MNQ", "short", 1, level, level+10, level-20) }
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupE9RecorderNeverReachesTheWire (0.27s)
+=== RETIRE — the retire pass removed from the seam
+   edit landed:
+     -	at.oneSetupRetireDeclined(osCycle, plan, ledger, now)
+     +	_ = osCycle
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced (0.57s)
+=== RETIRE — the declined check inverted (allowed rows retired, declined placed)
+   edit landed:
+     -		if !ok || v.Allowed {
+     +		if !ok || !v.Allowed {
+KILLED — a pin caught it.
+     --- FAIL: TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced (0.55s)

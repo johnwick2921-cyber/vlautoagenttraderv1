@@ -3,9 +3,38 @@
 // against GET /api/health revision and warns on drift.
 import type { ReactNode } from 'react'
 
-// Stamped from the shipped binary at boot time; see deploy/ for the bump step.
-// The guide top banner compares this against GET /api/health revision.
-export const GUIDE_BUILT_REV = 'c5890387433dacfbee114224929cb7d8ca98d3d3'
+// The sha this guide was BUILT for. The top banner compares it against GET
+// /api/health revision, so a guide that disagrees with the running binary says
+// so instead of quietly lying about which behaviour it describes.
+//
+// It is now supplied AT BUILD TIME (VITE_GUIDE_BUILT_REV), not edited into
+// this file by hand. Hand-editing is how it went stale: the bump was a step in
+// a deploy procedure, and a step in a procedure is a step someone skips under
+// pressure — which is exactly when the guide matters most.
+//
+// A PRODUCTION build with the variable missing, or not a 40-hex sha, is
+// refused IN THE BUILD by the `guide-built-rev-is-a-build-input` plugin in
+// vite.config.ts. It cannot be refused here: this file's guard runs at module
+// scope, and Vite does not execute the module while building — an earlier
+// version threw here, the build exited 0, and the throw shipped into the
+// bundle to fire on page load. A guide revision must never take the trading
+// UI down, so at RUNTIME an unusable value degrades to 'unknown' and the
+// banner says it cannot verify the build. A dev build shows 'dev', which the
+// banner renders as "not a release build" and never as a matching revision.
+function resolveGuideBuiltRev(): string {
+  const raw = import.meta.env?.VITE_GUIDE_BUILT_REV
+  if (import.meta.env?.PROD) {
+    // Never throw: the build gate is the enforcement point, and a crash here
+    // would blank the whole UI over a documentation revision. 'unknown' is an
+    // honest unknowable value (A24) — it is never a real-looking sha.
+    return typeof raw === 'string' && /^[0-9a-f]{40}$/.test(raw)
+      ? raw
+      : 'unknown'
+  }
+  return typeof raw === 'string' && /^[0-9a-f]{40}$/.test(raw) ? raw : 'dev'
+}
+
+export const GUIDE_BUILT_REV = resolveGuideBuiltRev()
 
 export interface Card {
   title: string

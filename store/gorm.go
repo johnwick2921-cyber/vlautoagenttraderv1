@@ -51,12 +51,15 @@ func InitGorm(dbPath string) (*gorm.DB, error) {
 	db.Exec("PRAGMA foreign_keys = ON")
 	// WAL (day-plan P0.2 storage requirement): append-only plans/overlays/
 	// decisions writes no longer block card/replay readers, and online
-	// sqlite3.backup() (the C1 timer) works better under WAL. The single-writer
-	// property is preserved by SetMaxOpenConns(1) above plus the plan store's
-	// dedicated writer goroutine (store/plan.go); WAL is safe on the ext4 DB
+	// sqlite3.backup() (the C1 timer) works better under WAL. SQLite WAL
+	// enforces single-writer concurrency at the database level (readers share,
+	// writers serialize on busy_timeout), so the 4-conn pool above is safe and
+	// removes the artificial writer starvation. WAL is safe on the ext4 DB
 	// path and survives WAL↔DELETE rollbacks (SQLite checkpoints on open).
 	db.Exec("PRAGMA journal_mode = WAL")
 	db.Exec("PRAGMA synchronous = FULL")
+	// P1-B: the DSN already carries busy_timeout per connection (sqlitedriver
+	// busyTimeoutDSN); this Exec is the belt-and-braces copy for the first conn.
 	db.Exec("PRAGMA busy_timeout = 5000")
 
 	gormDB = db

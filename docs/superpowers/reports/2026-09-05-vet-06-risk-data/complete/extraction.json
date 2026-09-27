@@ -1,0 +1,193 @@
+{
+  "extraction_utc": "2026-09-05T22:32:34.069143+00:00",
+  "sql": "SELECT id, entry_time, exit_time, created_at, symbol, side, entry_quantity,\nentry_price, exit_price, pnl_corrected, fee, plan_id, plan_session, source,\nclose_reason, mae, mfe FROM trader_positions\nWHERE entry_time >= 1786770000000 AND status='CLOSED'\nAND plan_id IS NOT NULL AND TRIM(plan_id)<>'' AND plan_id<>'UNRESOLVABLE'\nAND COALESCE(source,'')<>'e7_farside_test' AND pnl_corrected IS NOT NULL\nORDER BY entry_time,id",
+  "cut_ms": 1786770000000,
+  "strict_ms": 1788451800000,
+  "query_only": 1,
+  "base": "b4376246c2c502ecedd119c6a44a27956ed2f616",
+  "era_count": 71,
+  "excluded": [
+    {
+      "id": 530,
+      "status": "CLOSED",
+      "source": "system",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": 13.0,
+      "reasons": [
+        "unresolvable"
+      ]
+    },
+    {
+      "id": 539,
+      "status": "CLOSED",
+      "source": "system",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": -84.5,
+      "reasons": [
+        "unresolvable"
+      ]
+    },
+    {
+      "id": 545,
+      "status": "CLOSED",
+      "source": "system",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": -29.5,
+      "reasons": [
+        "unresolvable"
+      ]
+    },
+    {
+      "id": 546,
+      "status": "CLOSED",
+      "source": "system",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": -88.5,
+      "reasons": [
+        "unresolvable"
+      ]
+    },
+    {
+      "id": 566,
+      "status": "CLOSED",
+      "source": "reconcile",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": 97.0,
+      "reasons": [
+        "unresolvable"
+      ]
+    },
+    {
+      "id": 571,
+      "status": "CLOSED",
+      "source": "reconcile",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": -44.5,
+      "reasons": [
+        "unresolvable"
+      ]
+    },
+    {
+      "id": 572,
+      "status": "CLOSED",
+      "source": "e7_farside_test",
+      "plan_id": "TEST-E7:c15c48a6-a036-4991-b4d0-9c9e0b2295b3",
+      "pnl_corrected": null,
+      "reasons": [
+        "test",
+        "null_pnl"
+      ]
+    },
+    {
+      "id": 573,
+      "status": "CLOSED",
+      "source": "e7_farside_test",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": 6.0,
+      "reasons": [
+        "test",
+        "unresolvable"
+      ]
+    },
+    {
+      "id": 574,
+      "status": "CLOSED",
+      "source": "e7_farside_test",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": -1.0,
+      "reasons": [
+        "test",
+        "unresolvable"
+      ]
+    },
+    {
+      "id": 576,
+      "status": "CLOSED",
+      "source": "armed_entry",
+      "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "pnl_corrected": null,
+      "reasons": [
+        "null_pnl"
+      ]
+    },
+    {
+      "id": 577,
+      "status": "CLOSED",
+      "source": "armed_entry",
+      "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "pnl_corrected": null,
+      "reasons": [
+        "null_pnl"
+      ]
+    },
+    {
+      "id": 579,
+      "status": "CLOSED",
+      "source": "armed_entry",
+      "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "pnl_corrected": null,
+      "reasons": [
+        "null_pnl"
+      ]
+    },
+    {
+      "id": 580,
+      "status": "CLOSED",
+      "source": "reconcile",
+      "plan_id": "UNRESOLVABLE",
+      "pnl_corrected": 39.5,
+      "reasons": [
+        "unresolvable"
+      ]
+    }
+  ],
+  "trade_excursions": 0,
+  "position_rows": 587,
+  "bound_strategies": [
+    {
+      "trader_id": "8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "strategy_id": "a5b7662e-7bf7-49bb-9f09-7efa48f95ac8",
+      "scan_minutes": 2,
+      "values": {
+        ".ai_config.risk_control.guardrails_enabled": false,
+        ".ai_config.risk_control.daily_loss_limit_usd": 450,
+        ".ai_config.risk_control.daily_loss_enabled": false,
+        ".ai_config.risk_control.max_daily_trades": 3,
+        ".ai_config.risk_control.max_daily_trades_enabled": false,
+        ".ai_config.risk_control.max_contracts_per_order": 2,
+        ".ai_config.risk_control.max_contracts_enabled": false,
+        ".day_plan.plan_mode": "strict",
+        ".day_plan.eod_flat_ct": "14:45",
+        ".day_plan.sessions[0].max_trades": 10,
+        ".day_plan.sessions[1].max_trades": 7,
+        ".day_plan.sessions[2].max_trades": 10
+      }
+    }
+  ],
+  "calendar_future": [
+    {
+      "trade_date": "2026-09-10",
+      "source": "static",
+      "events_json": "[{\"time\":\"2026-09-10T12:30:00Z\",\"currency\":\"USD\",\"title\":\"PPI m/m (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-10T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims (static fallback)\",\"impact\":\"T2\"}]",
+      "created_at": 1788128093263
+    },
+    {
+      "trade_date": "2026-09-11",
+      "source": "static",
+      "events_json": "[{\"time\":\"2026-09-11T12:30:00Z\",\"currency\":\"USD\",\"title\":\"CPI m/m (static fallback)\",\"impact\":\"T1\"}]",
+      "created_at": 1788128093263
+    },
+    {
+      "trade_date": "2026-09-16",
+      "source": "static",
+      "events_json": "[{\"time\":\"2026-09-16T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Retail Sales m/m (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-16T18:00:00Z\",\"currency\":\"USD\",\"title\":\"FOMC Statement (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-16T18:30:00Z\",\"currency\":\"USD\",\"title\":\"FOMC Press Conference (static fallback)\",\"impact\":\"T1\"}]",
+      "created_at": 1788128093263
+    },
+    {
+      "trade_date": "2026-09-17",
+      "source": "static",
+      "events_json": "[{\"time\":\"2026-09-17T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims (static fallback)\",\"impact\":\"T2\"}]",
+      "created_at": 1788128093263
+    }
+  ]
+}

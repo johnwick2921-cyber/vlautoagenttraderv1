@@ -1,0 +1,1579 @@
+{
+  "basis": "Production source lexical call census; method names can overlap. Real writer installation/caller identity guarded by AST test plus production-hook removal pins. Table research_facts written by Archive.saveAt via Recorder.perform; read by Export and BootLineAt.",
+  "functions": [
+    {
+      "definition": "cmd/research_export/main.go:13",
+      "function": "main",
+      "textual_call_sites": [],
+      "count": 0
+    },
+    {
+      "definition": "cmd/research_export/main.go:23",
+      "function": "run",
+      "textual_call_sites": [
+        "cmd/research_export/main.go:18",
+        "researchsnapshot/recorder.go:41"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "kernel/research_score.go:30",
+      "function": "scoreValue",
+      "textual_call_sites": [
+        "kernel/levels_score.go:241",
+        "kernel/levels_score.go:242",
+        "kernel/levels_score.go:246",
+        "kernel/levels_score.go:453",
+        "kernel/levels_score.go:482",
+        "kernel/levels_score.go:483",
+        "kernel/levels_score.go:502",
+        "kernel/levels_score.go:503",
+        "kernel/levels_score.go:504",
+        "kernel/levels_score.go:505",
+        "kernel/levels_score.go:509",
+        "kernel/levels_score.go:510",
+        "kernel/levels_score.go:511",
+        "kernel/levels_score.go:513",
+        "kernel/levels_score.go:550",
+        "kernel/levels_score.go:552"
+      ],
+      "count": 16
+    },
+    {
+      "definition": "kernel/research_score.go:32",
+      "function": "researchLevels",
+      "textual_call_sites": [
+        "kernel/levels_assemble.go:194",
+        "kernel/levels_score.go:430",
+        "kernel/levels_score.go:645"
+      ],
+      "count": 3
+    },
+    {
+      "definition": "kernel/research_score.go:42",
+      "function": "researchCut",
+      "textual_call_sites": [
+        "kernel/levels_assemble.go:212",
+        "kernel/levels_score.go:82",
+        "kernel/levels_score.go:436",
+        "kernel/levels_score.go:455",
+        "kernel/levels_score.go:489",
+        "kernel/levels_score.go:766",
+        "kernel/research_score.go:53"
+      ],
+      "count": 7
+    },
+    {
+      "definition": "kernel/research_score.go:51",
+      "function": "researchCap",
+      "textual_call_sites": [
+        "kernel/levels_score.go:604",
+        "kernel/levels_score.go:650",
+        "kernel/levels_score.go:675"
+      ],
+      "count": 3
+    },
+    {
+      "definition": "kernel/research_score.go:57",
+      "function": "researchGrade",
+      "textual_call_sites": [
+        "kernel/levels_score.go:539",
+        "kernel/levels_score.go:549"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "kernel/research_score.go:63",
+      "function": "researchComponents",
+      "textual_call_sites": [
+        "kernel/detector_recorder.go:72"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "kernel/research_score.go:76",
+      "function": "researchSeat",
+      "textual_call_sites": [
+        "kernel/levels_score.go:599",
+        "kernel/levels_score.go:600",
+        "kernel/levels_score.go:601",
+        "kernel/levels_score.go:671",
+        "kernel/levels_score.go:672",
+        "kernel/levels_score.go:673"
+      ],
+      "count": 6
+    },
+    {
+      "definition": "kernel/scenario_economics.go:59",
+      "function": "EconomicsFor",
+      "textual_call_sites": [
+        "kernel/scenario_economics.go:96",
+        "kernel/scenario_economics.go:144",
+        "kernel/scenario_economics.go:210",
+        "kernel/scenario_economics.go:260",
+        "trader/scenario_economics_desk.go:20"
+      ],
+      "count": 5
+    },
+    {
+      "definition": "kernel/scenario_economics.go:86",
+      "function": "economicsPrice",
+      "textual_call_sites": [
+        "kernel/scenario_economics.go:71",
+        "kernel/scenario_economics.go:71",
+        "kernel/scenario_economics.go:75",
+        "kernel/scenario_economics.go:79",
+        "kernel/scenario_economics.go:98",
+        "kernel/scenario_economics.go:193",
+        "kernel/scenario_economics.go:193",
+        "kernel/scenario_economics.go:200",
+        "kernel/scenario_economics.go:212",
+        "kernel/scenario_economics.go:212",
+        "kernel/scenario_economics.go:212",
+        "kernel/scenario_economics.go:247"
+      ],
+      "count": 12
+    },
+    {
+      "definition": "kernel/scenario_economics.go:87",
+      "function": "economicsNumber",
+      "textual_call_sites": [
+        "kernel/scenario_economics.go:104",
+        "kernel/scenario_economics.go:110",
+        "kernel/scenario_economics.go:110"
+      ],
+      "count": 3
+    },
+    {
+      "definition": "kernel/scenario_economics.go:95",
+      "function": "EconomicsSummary",
+      "textual_call_sites": [
+        "kernel/scenario_economics.go:319",
+        "trader/scenario_economics_desk.go:19"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "kernel/scenario_economics.go:120",
+      "function": "ScenarioEconomicsCounters",
+      "textual_call_sites": [
+        "kernel/scenario_economics.go:126"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "kernel/scenario_economics.go:125",
+      "function": "ScenarioEconomicsBootLine",
+      "textual_call_sites": [
+        "kernel/levels_volume_boot.go:14",
+        "kernel/scenario_economics.go:319"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "kernel/scenario_economics.go:139",
+      "function": "validateNewScenarioEconomics",
+      "textual_call_sites": [
+        "kernel/plan_doc.go:465"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "kernel/scenario_economics.go:188",
+      "function": "scenarioEconomicsIssues",
+      "textual_call_sites": [
+        "kernel/scenario_economics.go:143"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "kernel/scenario_economics.go:259",
+      "function": "scenarioRoleWarnings",
+      "textual_call_sites": [
+        "kernel/scenario_economics.go:145"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "kernel/scenario_economics.go:313",
+      "function": "logScenarioEconomics",
+      "textual_call_sites": [
+        "kernel/scenario_economics.go:178"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "provider/ninjatrader/research_wire.go:17",
+      "function": "newResearchWire",
+      "textual_call_sites": [
+        "provider/ninjatrader/tcp_server.go:1637"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "provider/ninjatrader/research_wire.go:18",
+      "function": "observe",
+      "textual_call_sites": [
+        "provider/ninjatrader/tcp_server.go:1677",
+        "trader/dead_man_watchdog.go:92"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "provider/ninjatrader/research_wire.go:21",
+      "function": "observeAt",
+      "textual_call_sites": [
+        "provider/ninjatrader/research_wire.go:19"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "provider/ninjatrader/research_wire.go:30",
+      "function": "facts",
+      "textual_call_sites": [
+        "provider/ninjatrader/research_wire.go:28"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "provider/ninjatrader/research_wire.go:189",
+      "function": "recordResearchSignal",
+      "textual_call_sites": [
+        "provider/ninjatrader/tcp_server.go:1067"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "provider/ninjatrader/research_wire.go:192",
+      "function": "recordResearchSignalAt",
+      "textual_call_sites": [
+        "provider/ninjatrader/research_wire.go:190"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/archive.go:25",
+      "function": "Open",
+      "textual_call_sites": [
+        "agent/tools.go:1267",
+        "api/handler_onboarding.go:292",
+        "api/ui_serving.go:85",
+        "cmd/decisive-test/main.go:41",
+        "cmd/decisive-test/main.go:41",
+        "crypto/crypto.go:261",
+        "crypto/crypto.go:343",
+        "docs/superpowers/reports/2026-09-04-research-conformance-data/d10dump/main.go:20",
+        "docs/superpowers/reports/2026-09-04-research-conformance-data/d10dump/main.go:20",
+        "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/replay.go:11",
+        "provider/databento/mock_server.go:51",
+        "provider/ninjatrader/csv_tailer.go:52",
+        "provider/ninjatrader/mock_nt.go:74",
+        "researchsnapshot/archive.go:30",
+        "researchsnapshot/archive.go:65",
+        "researchsnapshot/runtime.go:58",
+        "store/driver.go:173",
+        "store/driver.go:216",
+        "store/gorm.go:23",
+        "store/gorm.go:23",
+        "store/gorm.go:73",
+        "store/gorm.go:73",
+        "trader/trade_excursion_backfill.go:64",
+        "trader/trade_excursion_hook.go:63"
+      ],
+      "count": 24
+    },
+    {
+      "definition": "researchsnapshot/archive.go:63",
+      "function": "OpenReadOnly",
+      "textual_call_sites": [
+        "cmd/research_export/main.go:32"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/archive.go:73",
+      "function": "Close",
+      "textual_call_sites": [
+        "agent/brain.go:96",
+        "agent/brain.go:216",
+        "agent/sentinel.go:152",
+        "agent/stock.go:145",
+        "agent/stock.go:302",
+        "agent/tools.go:1271",
+        "agent/tools.go:3009",
+        "agent/tools.go:3324",
+        "agent/web.go:291",
+        "agent/web.go:354",
+        "api/handler_onboarding.go:297",
+        "api/handler_wallet.go:124",
+        "api/server.go:701",
+        "api/ui_serving.go:87",
+        "calendar/calendar.go:83",
+        "cmd/bars-export/main.go:37",
+        "cmd/bars-export/main.go:84",
+        "cmd/dayplan-arm/main.go:32",
+        "cmd/dayplan-level-repair/main.go:40",
+        "cmd/dayplan-sessions/main.go:62",
+        "cmd/decisive-test/main.go:151",
+        "cmd/detector-report/main.go:38",
+        "cmd/excursions/main.go:33",
+        "cmd/gate-jwt/main.go:55",
+        "cmd/nq_smoke/smoke_tcp.go:24",
+        "cmd/planner_ab/main.go:69",
+        "cmd/planner_ab/main.go:122",
+        "cmd/research_export/main.go:36",
+        "cmd/sandbox-seed/main.go:47",
+        "cmd/sandbox-seed/main.go:48",
+        "kernel/engine.go:803",
+        "logger/logger.go:117",
+        "main.go:96",
+        "market/api_client.go:44",
+        "market/api_client.go:76",
+        "market/api_client.go:141",
+        "market/data.go:370",
+        "market/data.go:415",
+        "market/historical.go:55",
+        "mcp/balance.go:43",
+        "mcp/client.go:707",
+        "mcp/client.go:908",
+        "mcp/client.go:946",
+        "mcp/client.go:1305",
+        "mcp/payment/x402.go:176",
+        "mcp/payment/x402.go:223",
+        "mcp/payment/x402.go:329",
+        "mcp/payment/x402.go:340",
+        "mcp/payment/x402.go:344",
+        "mcp/payment/x402.go:390",
+        "mcp/payment/x402.go:473",
+        "provider/alpaca/kline.go:111",
+        "provider/coinank/coinank_api/depth_ws.go:69",
+        "provider/coinank/coinank_api/depth_ws.go:87",
+        "provider/coinank/coinank_api/kline.go:69",
+        "provider/coinank/coinank_api/kline_ws.go:75",
+        "provider/coinank/coinank_api/kline_ws.go:93",
+        "provider/coinank/coinank_http.go:61",
+        "provider/coinank/coinank_http.go:86",
+        "provider/databento/client.go:122",
+        "provider/databento/client.go:134",
+        "provider/databento/mock_server.go:56",
+        "provider/hyperliquid/coins.go:78",
+        "provider/hyperliquid/kline.go:117",
+        "provider/hyperliquid/kline.go:170",
+        "provider/hyperliquid/kline.go:207",
+        "provider/ninjatrader/csv_tailer.go:59",
+        "provider/ninjatrader/csv_writer.go:57",
+        "provider/ninjatrader/csv_writer.go:61",
+        "provider/ninjatrader/mock_nt.go:78",
+        "provider/ninjatrader/mock_nt.go:143",
+        "provider/ninjatrader/mock_nt.go:153",
+        "provider/ninjatrader/tcp_client_mock.go:81",
+        "provider/ninjatrader/tcp_server.go:1046",
+        "provider/ninjatrader/tcp_server.go:1332",
+        "provider/ninjatrader/tcp_server.go:1659",
+        "provider/ninjatrader/tcp_server.go:2212",
+        "provider/nofxos/client.go:124",
+        "provider/twelvedata/kline.go:125",
+        "provider/twelvedata/kline.go:172",
+        "researchsnapshot/archive.go:41",
+        "researchsnapshot/archive.go:56",
+        "researchsnapshot/archive.go:99",
+        "researchsnapshot/archive.go:192",
+        "researchsnapshot/archive.go:203",
+        "researchsnapshot/archive.go:216",
+        "researchsnapshot/archive.go:228",
+        "researchsnapshot/archive.go:231",
+        "researchsnapshot/runtime.go:65",
+        "researchsnapshot/runtime.go:65",
+        "researchsnapshot/runtime.go:114",
+        "store/driver.go:100",
+        "store/driver.go:184",
+        "store/driver.go:190",
+        "store/driver.go:196",
+        "store/driver.go:202",
+        "store/driver.go:227",
+        "store/store.go:79",
+        "store/store.go:85",
+        "store/store.go:110",
+        "store/store.go:116",
+        "store/store.go:646",
+        "store/store.go:649",
+        "telegram/agent/apicall.go:66",
+        "telemetry/experience.go:158",
+        "telemetry/experience.go:194",
+        "telemetry/experience.go:238",
+        "trader/aster/trader.go:101",
+        "trader/aster/trader.go:393",
+        "trader/aster/trader.go:419",
+        "trader/aster/trader_account.go:110",
+        "trader/aster/trader_account.go:264",
+        "trader/bitget/trader.go:194",
+        "trader/bybit/order_sync.go:79",
+        "trader/bybit/trader.go:102",
+        "trader/bybit/trader_account.go:135",
+        "trader/bybit/trader_orders.go:697",
+        "trader/hyperliquid/trader_account.go:231",
+        "trader/hyperliquid/trader_account.go:322",
+        "trader/hyperliquid/trader_orders.go:453",
+        "trader/hyperliquid/trader_orders.go:546",
+        "trader/hyperliquid/trader_orders.go:687",
+        "trader/hyperliquid/trader_orders.go:851",
+        "trader/hyperliquid/trader_sync.go:75",
+        "trader/indodax/trader.go:132",
+        "trader/indodax/trader.go:169",
+        "trader/kucoin/trader.go:128",
+        "trader/kucoin/trader.go:233",
+        "trader/lighter/account.go:27",
+        "trader/lighter/account.go:306",
+        "trader/lighter/account.go:380",
+        "trader/lighter/orders.go:121",
+        "trader/lighter/orders.go:237",
+        "trader/lighter/trader.go:212",
+        "trader/lighter/trader.go:287",
+        "trader/lighter/trader.go:485",
+        "trader/lighter/trading.go:373",
+        "trader/lighter/trading.go:390",
+        "trader/lighter/trading.go:547",
+        "trader/okx/trader.go:238",
+        "trader/trade_excursion_backfill.go:97",
+        "trader/trade_excursion_hook.go:197",
+        "wallet/usdc.go:67"
+      ],
+      "count": 143
+    },
+    {
+      "definition": "researchsnapshot/archive.go:75",
+      "function": "Save",
+      "textual_call_sites": [
+        "agent/planner_runtime.go:2012",
+        "agent/skill_execution_handlers.go:1601",
+        "agent/skill_execution_handlers.go:1640",
+        "agent/skill_execution_handlers.go:2660",
+        "api/handler_plan.go:1806",
+        "api/handler_telegram.go:58",
+        "api/handler_telegram.go:99",
+        "api/strategy.go:869",
+        "cmd/sandbox-seed/main.go:150",
+        "researchsnapshot/recorder.go:16",
+        "researchsnapshot/recorder.go:111",
+        "store/grid.go:270",
+        "store/grid.go:340",
+        "store/grid.go:382",
+        "store/grid.go:394",
+        "store/level_stats.go:55",
+        "store/telegram_config.go:39",
+        "store/telegram_config.go:73",
+        "store/telegram_config.go:87",
+        "store/telegram_config.go:102",
+        "store/telegram_config.go:150",
+        "trader/auto_trader_decision.go:32"
+      ],
+      "count": 22
+    },
+    {
+      "definition": "researchsnapshot/archive.go:79",
+      "function": "saveAt",
+      "textual_call_sites": [
+        "researchsnapshot/archive.go:76"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/archive.go:167",
+      "function": "Export",
+      "textual_call_sites": [
+        "cmd/research_export/main.go:37"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/archive.go:256",
+      "function": "VerifyBundle",
+      "textual_call_sites": [
+        "cmd/research_export/main.go:41"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/fact.go:45",
+      "function": "NewFact",
+      "textual_call_sites": [
+        "provider/ninjatrader/research_wire.go:66",
+        "provider/ninjatrader/research_wire.go:116",
+        "provider/ninjatrader/research_wire.go:157",
+        "provider/ninjatrader/research_wire.go:206",
+        "researchsnapshot/plan.go:74",
+        "researchsnapshot/plan.go:86",
+        "researchsnapshot/plan.go:127",
+        "researchsnapshot/plan.go:178",
+        "store/research_record.go:18",
+        "trader/research_snapshot.go:30",
+        "trader/research_snapshot.go:89",
+        "trader/research_snapshot.go:107",
+        "trader/research_snapshot.go:114",
+        "trader/research_snapshot.go:144",
+        "trader/research_snapshot.go:194",
+        "trader/research_snapshot.go:239",
+        "trader/research_snapshot.go:262",
+        "trader/research_snapshot.go:275"
+      ],
+      "count": 18
+    },
+    {
+      "definition": "researchsnapshot/fact.go:63",
+      "function": "Set",
+      "textual_call_sites": [
+        "agent/stock.go:139",
+        "agent/stock.go:298",
+        "agent/web.go:153",
+        "agent/web.go:154",
+        "agent/web.go:155",
+        "agent/web.go:156",
+        "agent/web.go:321",
+        "agent/web.go:362",
+        "agent/web.go:369",
+        "api/exchange_account_state.go:144",
+        "api/handler_bars_sse.go:36",
+        "api/handler_bars_sse.go:58",
+        "api/handler_bars_sse.go:59",
+        "api/handler_bars_sse.go:60",
+        "api/handler_bars_sse.go:61",
+        "api/server.go:68",
+        "api/server.go:69",
+        "api/server.go:70",
+        "api/server.go:879",
+        "api/server.go:880",
+        "cmd/decisive-test/main.go:145",
+        "cmd/decisive-test/main.go:146",
+        "cmd/planner_ab/main.go:62",
+        "cmd/planner_ab/main.go:63",
+        "kernel/engine.go:796",
+        "market/historical.go:42",
+        "market/historical.go:43",
+        "market/historical.go:44",
+        "market/historical.go:45",
+        "market/historical.go:46",
+        "mcp/balance.go:37",
+        "mcp/client.go:469",
+        "mcp/client.go:632",
+        "mcp/payment/x402.go:205",
+        "mcp/payment/x402.go:206",
+        "mcp/payment/x402.go:361",
+        "mcp/payment/x402.go:362",
+        "mcp/payment/x402.go:545",
+        "mcp/payment/x402.go:546",
+        "mcp/provider/claude.go:85",
+        "mcp/provider/claude.go:86",
+        "provider/alpaca/kline.go:77",
+        "provider/alpaca/kline.go:78",
+        "provider/alpaca/kline.go:79",
+        "provider/alpaca/kline.go:80",
+        "provider/alpaca/kline.go:91",
+        "provider/alpaca/kline.go:92",
+        "provider/alpaca/kline.go:103",
+        "provider/alpaca/kline.go:104",
+        "provider/coinank/coinank_http.go:80",
+        "provider/databento/client.go:105",
+        "provider/databento/client.go:106",
+        "provider/databento/historical.go:47",
+        "provider/databento/historical.go:48",
+        "provider/databento/historical.go:49",
+        "provider/databento/historical.go:50",
+        "provider/databento/historical.go:51",
+        "provider/databento/historical.go:52",
+        "provider/databento/historical.go:53",
+        "provider/databento/mock_server.go:57",
+        "provider/databento/resolve.go:16",
+        "provider/databento/resolve.go:17",
+        "provider/databento/resolve.go:18",
+        "provider/databento/resolve.go:19",
+        "provider/databento/resolve.go:20",
+        "provider/databento/resolve.go:21",
+        "provider/hyperliquid/coins.go:72",
+        "provider/hyperliquid/kline.go:110",
+        "provider/hyperliquid/kline.go:164",
+        "provider/hyperliquid/kline.go:201",
+        "provider/ninjatrader/research_wire.go:67",
+        "provider/ninjatrader/research_wire.go:68",
+        "provider/ninjatrader/research_wire.go:69",
+        "provider/ninjatrader/research_wire.go:70",
+        "provider/ninjatrader/research_wire.go:72",
+        "provider/ninjatrader/research_wire.go:73",
+        "provider/ninjatrader/research_wire.go:74",
+        "provider/ninjatrader/research_wire.go:75",
+        "provider/ninjatrader/research_wire.go:76",
+        "provider/ninjatrader/research_wire.go:80",
+        "provider/ninjatrader/research_wire.go:85",
+        "provider/ninjatrader/research_wire.go:86",
+        "provider/ninjatrader/research_wire.go:89",
+        "provider/ninjatrader/research_wire.go:100",
+        "provider/ninjatrader/research_wire.go:101",
+        "provider/ninjatrader/research_wire.go:135",
+        "provider/ninjatrader/research_wire.go:138",
+        "provider/ninjatrader/research_wire.go:142",
+        "provider/ninjatrader/research_wire.go:143",
+        "provider/ninjatrader/research_wire.go:160",
+        "provider/ninjatrader/research_wire.go:170",
+        "provider/ninjatrader/research_wire.go:179",
+        "provider/ninjatrader/research_wire.go:181",
+        "provider/ninjatrader/research_wire.go:207",
+        "provider/ninjatrader/research_wire.go:208",
+        "provider/ninjatrader/research_wire.go:209",
+        "provider/ninjatrader/research_wire.go:210",
+        "provider/ninjatrader/research_wire.go:211",
+        "provider/ninjatrader/research_wire.go:212",
+        "provider/ninjatrader/research_wire.go:213",
+        "provider/nofxos/claw402.go:94",
+        "provider/twelvedata/kline.go:107",
+        "provider/twelvedata/kline.go:108",
+        "provider/twelvedata/kline.go:109",
+        "provider/twelvedata/kline.go:110",
+        "provider/twelvedata/kline.go:156",
+        "provider/twelvedata/kline.go:157",
+        "researchsnapshot/plan.go:75",
+        "researchsnapshot/plan.go:76",
+        "researchsnapshot/plan.go:77",
+        "researchsnapshot/plan.go:87",
+        "researchsnapshot/plan.go:88",
+        "researchsnapshot/plan.go:91",
+        "researchsnapshot/plan.go:101",
+        "researchsnapshot/plan.go:128",
+        "researchsnapshot/plan.go:129",
+        "researchsnapshot/plan.go:130",
+        "researchsnapshot/plan.go:131",
+        "researchsnapshot/plan.go:132",
+        "researchsnapshot/plan.go:133",
+        "researchsnapshot/plan.go:134",
+        "researchsnapshot/plan.go:136",
+        "researchsnapshot/plan.go:138",
+        "researchsnapshot/plan.go:141",
+        "researchsnapshot/plan.go:142",
+        "researchsnapshot/plan.go:143",
+        "researchsnapshot/plan.go:146",
+        "researchsnapshot/plan.go:151",
+        "researchsnapshot/plan.go:152",
+        "researchsnapshot/plan.go:154",
+        "researchsnapshot/plan.go:179",
+        "researchsnapshot/plan.go:180",
+        "researchsnapshot/plan.go:181",
+        "store/research_record.go:19",
+        "store/research_record.go:20",
+        "telegram/agent/apicall.go:59",
+        "telegram/agent/apicall.go:60",
+        "telemetry/experience.go:152",
+        "telemetry/experience.go:191",
+        "telemetry/experience.go:235",
+        "trader/aster/trader.go:381",
+        "trader/aster/trader.go:387",
+        "trader/aster/trader.go:405",
+        "trader/bitget/trader.go:179",
+        "trader/bitget/trader.go:180",
+        "trader/bitget/trader.go:181",
+        "trader/bitget/trader.go:182",
+        "trader/bitget/trader.go:183",
+        "trader/bitget/trader.go:184",
+        "trader/bitget/trader.go:187",
+        "trader/bybit/order_sync.go:67",
+        "trader/bybit/order_sync.go:68",
+        "trader/bybit/order_sync.go:69",
+        "trader/bybit/order_sync.go:70",
+        "trader/bybit/order_sync.go:71",
+        "trader/bybit/order_sync.go:72",
+        "trader/bybit/trader.go:81",
+        "trader/bybit/trader_account.go:123",
+        "trader/bybit/trader_account.go:124",
+        "trader/bybit/trader_account.go:125",
+        "trader/bybit/trader_account.go:126",
+        "trader/bybit/trader_account.go:127",
+        "trader/bybit/trader_account.go:128",
+        "trader/hyperliquid/trader_account.go:224",
+        "trader/hyperliquid/trader_account.go:315",
+        "trader/hyperliquid/trader_orders.go:446",
+        "trader/hyperliquid/trader_orders.go:539",
+        "trader/hyperliquid/trader_orders.go:680",
+        "trader/hyperliquid/trader_orders.go:844",
+        "trader/hyperliquid/trader_sync.go:68",
+        "trader/indodax/trader.go:151",
+        "trader/indodax/trader.go:161",
+        "trader/indodax/trader.go:162",
+        "trader/indodax/trader.go:163",
+        "trader/indodax/trader_account.go:26",
+        "trader/indodax/trader_account.go:98",
+        "trader/indodax/trader_account.go:166",
+        "trader/indodax/trader_account.go:167",
+        "trader/indodax/trader_account.go:169",
+        "trader/indodax/trader_account.go:172",
+        "trader/indodax/trader_orders.go:28",
+        "trader/indodax/trader_orders.go:29",
+        "trader/indodax/trader_orders.go:30",
+        "trader/indodax/trader_orders.go:31",
+        "trader/indodax/trader_orders.go:32",
+        "trader/indodax/trader_orders.go:33",
+        "trader/indodax/trader_orders.go:89",
+        "trader/indodax/trader_orders.go:90",
+        "trader/indodax/trader_orders.go:91",
+        "trader/indodax/trader_orders.go:92",
+        "trader/indodax/trader_orders.go:93",
+        "trader/indodax/trader_orders.go:94",
+        "trader/indodax/trader_orders.go:185",
+        "trader/indodax/trader_orders.go:186",
+        "trader/indodax/trader_orders.go:208",
+        "trader/indodax/trader_orders.go:209",
+        "trader/indodax/trader_orders.go:210",
+        "trader/indodax/trader_orders.go:211",
+        "trader/indodax/trader_orders.go:253",
+        "trader/indodax/trader_orders.go:254",
+        "trader/indodax/trader_orders.go:255",
+        "trader/indodax/trader_orders.go:305",
+        "trader/indodax/trader_orders.go:307",
+        "trader/kucoin/trader.go:217",
+        "trader/kucoin/trader.go:218",
+        "trader/kucoin/trader.go:219",
+        "trader/kucoin/trader.go:220",
+        "trader/kucoin/trader.go:221",
+        "trader/kucoin/trader.go:222",
+        "trader/kucoin/trader.go:225",
+        "trader/kucoin/trader.go:226",
+        "trader/kucoin/trader.go:227",
+        "trader/lighter/orders.go:114",
+        "trader/lighter/orders.go:231",
+        "trader/lighter/trading.go:384",
+        "trader/lighter/trading.go:541",
+        "trader/okx/trader.go:226",
+        "trader/okx/trader.go:227",
+        "trader/okx/trader.go:228",
+        "trader/okx/trader.go:229",
+        "trader/okx/trader.go:230",
+        "trader/okx/trader.go:232",
+        "trader/research_snapshot.go:31",
+        "trader/research_snapshot.go:32",
+        "trader/research_snapshot.go:33",
+        "trader/research_snapshot.go:34",
+        "trader/research_snapshot.go:35",
+        "trader/research_snapshot.go:36",
+        "trader/research_snapshot.go:37",
+        "trader/research_snapshot.go:39",
+        "trader/research_snapshot.go:41",
+        "trader/research_snapshot.go:43",
+        "trader/research_snapshot.go:46",
+        "trader/research_snapshot.go:49",
+        "trader/research_snapshot.go:50",
+        "trader/research_snapshot.go:51",
+        "trader/research_snapshot.go:52",
+        "trader/research_snapshot.go:53",
+        "trader/research_snapshot.go:55",
+        "trader/research_snapshot.go:56",
+        "trader/research_snapshot.go:57",
+        "trader/research_snapshot.go:58",
+        "trader/research_snapshot.go:60",
+        "trader/research_snapshot.go:61",
+        "trader/research_snapshot.go:62",
+        "trader/research_snapshot.go:65",
+        "trader/research_snapshot.go:66",
+        "trader/research_snapshot.go:69",
+        "trader/research_snapshot.go:90",
+        "trader/research_snapshot.go:91",
+        "trader/research_snapshot.go:92",
+        "trader/research_snapshot.go:93",
+        "trader/research_snapshot.go:94",
+        "trader/research_snapshot.go:108",
+        "trader/research_snapshot.go:109",
+        "trader/research_snapshot.go:110",
+        "trader/research_snapshot.go:115",
+        "trader/research_snapshot.go:116",
+        "trader/research_snapshot.go:117",
+        "trader/research_snapshot.go:118",
+        "trader/research_snapshot.go:124",
+        "trader/research_snapshot.go:127",
+        "trader/research_snapshot.go:130",
+        "trader/research_snapshot.go:146",
+        "trader/research_snapshot.go:149",
+        "trader/research_snapshot.go:152",
+        "trader/research_snapshot.go:158",
+        "trader/research_snapshot.go:159",
+        "trader/research_snapshot.go:160",
+        "trader/research_snapshot.go:195",
+        "trader/research_snapshot.go:197",
+        "trader/research_snapshot.go:199",
+        "trader/research_snapshot.go:201",
+        "trader/research_snapshot.go:204",
+        "trader/research_snapshot.go:207",
+        "trader/research_snapshot.go:208",
+        "trader/research_snapshot.go:211",
+        "trader/research_snapshot.go:212",
+        "trader/research_snapshot.go:214",
+        "trader/research_snapshot.go:215",
+        "trader/research_snapshot.go:216",
+        "trader/research_snapshot.go:218",
+        "trader/research_snapshot.go:240",
+        "trader/research_snapshot.go:241",
+        "trader/research_snapshot.go:245",
+        "trader/research_snapshot.go:263",
+        "trader/research_snapshot.go:265",
+        "trader/research_snapshot.go:267",
+        "trader/research_snapshot.go:269",
+        "trader/research_snapshot.go:271",
+        "trader/research_snapshot.go:272",
+        "trader/research_snapshot.go:273",
+        "trader/research_snapshot.go:274",
+        "trader/research_snapshot.go:276",
+        "trader/research_snapshot.go:278",
+        "trader/research_snapshot.go:280",
+        "trader/research_snapshot.go:281",
+        "trader/research_snapshot.go:282",
+        "trader/research_snapshot.go:283",
+        "trader/research_snapshot.go:284",
+        "trader/research_snapshot.go:285"
+      ],
+      "count": 301
+    },
+    {
+      "definition": "researchsnapshot/fact.go:84",
+      "function": "Unknown",
+      "textual_call_sites": [
+        "provider/ninjatrader/research_wire.go:91",
+        "provider/ninjatrader/research_wire.go:103",
+        "provider/ninjatrader/research_wire.go:144",
+        "provider/ninjatrader/research_wire.go:147",
+        "provider/ninjatrader/research_wire.go:149",
+        "provider/ninjatrader/research_wire.go:214",
+        "researchsnapshot/plan.go:103",
+        "researchsnapshot/plan.go:104",
+        "researchsnapshot/plan.go:148",
+        "trader/research_snapshot.go:67",
+        "trader/research_snapshot.go:71",
+        "trader/research_snapshot.go:75",
+        "trader/research_snapshot.go:111",
+        "trader/research_snapshot.go:125",
+        "trader/research_snapshot.go:220",
+        "trader/research_snapshot.go:222",
+        "trader/research_snapshot.go:223"
+      ],
+      "count": 17
+    },
+    {
+      "definition": "researchsnapshot/fact.go:89",
+      "function": "validate",
+      "textual_call_sites": [
+        "researchsnapshot/archive.go:101",
+        "trader/testutil/test_suite.go:96",
+        "trader/testutil/test_suite.go:133",
+        "trader/testutil/test_suite.go:172",
+        "trader/testutil/test_suite.go:284",
+        "trader/testutil/test_suite.go:363",
+        "trader/testutil/test_suite.go:412",
+        "trader/testutil/test_suite.go:455",
+        "trader/testutil/test_suite.go:498"
+      ],
+      "count": 9
+    },
+    {
+      "definition": "researchsnapshot/fact.go:106",
+      "function": "Value",
+      "textual_call_sites": [
+        "agent/web.go:32",
+        "agent/web.go:43",
+        "api/server.go:638",
+        "provider/ninjatrader/research_wire.go:62",
+        "provider/ninjatrader/research_wire.go:64",
+        "provider/ninjatrader/research_wire.go:116",
+        "provider/ninjatrader/research_wire.go:120",
+        "provider/ninjatrader/research_wire.go:125",
+        "provider/ninjatrader/research_wire.go:202",
+        "provider/ninjatrader/research_wire.go:204",
+        "researchsnapshot/archive.go:37",
+        "researchsnapshot/archive.go:212",
+        "researchsnapshot/archive.go:241",
+        "researchsnapshot/plan.go:74",
+        "researchsnapshot/plan.go:74",
+        "researchsnapshot/plan.go:74",
+        "researchsnapshot/plan.go:86",
+        "researchsnapshot/plan.go:86",
+        "researchsnapshot/plan.go:86",
+        "researchsnapshot/plan.go:115",
+        "researchsnapshot/plan.go:118",
+        "researchsnapshot/plan.go:120",
+        "researchsnapshot/plan.go:122",
+        "researchsnapshot/plan.go:125",
+        "researchsnapshot/plan.go:127",
+        "researchsnapshot/plan.go:178",
+        "researchsnapshot/plan.go:178",
+        "researchsnapshot/plan.go:178",
+        "researchsnapshot/recorder.go:201",
+        "store/research_record.go:15",
+        "store/research_record.go:18",
+        "store/research_record.go:18",
+        "trader/auto_trader_planner.go:2234",
+        "trader/research_snapshot.go:30",
+        "trader/research_snapshot.go:30",
+        "trader/research_snapshot.go:30",
+        "trader/research_snapshot.go:89",
+        "trader/research_snapshot.go:89",
+        "trader/research_snapshot.go:89",
+        "trader/research_snapshot.go:107",
+        "trader/research_snapshot.go:107",
+        "trader/research_snapshot.go:107",
+        "trader/research_snapshot.go:144",
+        "trader/research_snapshot.go:144",
+        "trader/research_snapshot.go:144",
+        "trader/research_snapshot.go:177",
+        "trader/research_snapshot.go:190",
+        "trader/research_snapshot.go:192",
+        "trader/research_snapshot.go:239",
+        "trader/research_snapshot.go:239",
+        "trader/research_snapshot.go:239",
+        "trader/research_snapshot.go:261",
+        "trader/research_snapshot.go:261"
+      ],
+      "count": 53
+    },
+    {
+      "definition": "researchsnapshot/plan.go:21",
+      "function": "Begin",
+      "textual_call_sites": [
+        "store/store.go:725",
+        "trader/auto_trader_planner.go:1554"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "researchsnapshot/plan.go:24",
+      "function": "BeginAt",
+      "textual_call_sites": [
+        "researchsnapshot/plan.go:22"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/plan.go:38",
+      "function": "Reply",
+      "textual_call_sites": [
+        "trader/auto_trader_planner.go:1556"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/plan.go:41",
+      "function": "ReplyAt",
+      "textual_call_sites": [
+        "researchsnapshot/plan.go:39"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/plan.go:50",
+      "function": "Finish",
+      "textual_call_sites": [
+        "trader/auto_trader_planner.go:1523",
+        "trader/auto_trader_planner.go:1572",
+        "trader/auto_trader_planner.go:1830",
+        "trader/auto_trader_planner.go:1832"
+      ],
+      "count": 4
+    },
+    {
+      "definition": "researchsnapshot/plan.go:53",
+      "function": "FinishAt",
+      "textual_call_sites": [
+        "researchsnapshot/plan.go:51"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/plan.go:61",
+      "function": "Published",
+      "textual_call_sites": [
+        "trader/auto_trader_planner.go:1996"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/plan.go:64",
+      "function": "PublishedAt",
+      "textual_call_sites": [
+        "researchsnapshot/plan.go:62"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/plan.go:110",
+      "function": "emit",
+      "textual_call_sites": [
+        "agent/sentinel.go:196",
+        "agent/sentinel.go:210",
+        "researchsnapshot/plan.go:36",
+        "researchsnapshot/plan.go:48",
+        "researchsnapshot/plan.go:58",
+        "researchsnapshot/plan.go:69",
+        "researchsnapshot/runtime.go:46",
+        "researchsnapshot/runtime.go:60"
+      ],
+      "count": 8
+    },
+    {
+      "definition": "researchsnapshot/plan.go:161",
+      "function": "clock",
+      "textual_call_sites": [
+        "researchsnapshot/plan.go:22",
+        "researchsnapshot/plan.go:39",
+        "researchsnapshot/plan.go:51",
+        "researchsnapshot/plan.go:62",
+        "researchsnapshot/plan.go:169",
+        "researchsnapshot/recorder.go:50",
+        "researchsnapshot/recorder.go:56",
+        "researchsnapshot/recorder.go:71",
+        "trader/invalidation_resolver.go:34"
+      ],
+      "count": 9
+    },
+    {
+      "definition": "researchsnapshot/plan.go:168",
+      "function": "RequestConfig",
+      "textual_call_sites": [
+        "trader/auto_trader_planner.go:989"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/plan.go:171",
+      "function": "RequestConfigAt",
+      "textual_call_sites": [
+        "researchsnapshot/plan.go:169"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:36",
+      "function": "NewRecorder",
+      "textual_call_sites": [
+        "researchsnapshot/runtime.go:63"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:45",
+      "function": "Offer",
+      "textual_call_sites": [
+        "researchsnapshot/runtime.go:32"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:49",
+      "function": "offerWithClock",
+      "textual_call_sites": [
+        "researchsnapshot/recorder.go:46"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:84",
+      "function": "drop",
+      "textual_call_sites": [
+        "researchsnapshot/recorder.go:53",
+        "researchsnapshot/recorder.go:67",
+        "researchsnapshot/recorder.go:72",
+        "researchsnapshot/recorder.go:79",
+        "researchsnapshot/recorder.go:102",
+        "researchsnapshot/recorder.go:112",
+        "researchsnapshot/recorder.go:147",
+        "researchsnapshot/runtime.go:28",
+        "researchsnapshot/runtime.go:144"
+      ],
+      "count": 9
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:92",
+      "function": "log",
+      "textual_call_sites": [
+        "agent/agent.go:116",
+        "agent/agent.go:121",
+        "agent/agent.go:124",
+        "agent/agent.go:129",
+        "agent/agent.go:143",
+        "agent/agent.go:153",
+        "agent/agent.go:186",
+        "agent/agent.go:192",
+        "agent/agent.go:208",
+        "agent/agent.go:213",
+        "agent/memory.go:344",
+        "agent/memory.go:368",
+        "agent/memory.go:372",
+        "agent/memory.go:428",
+        "agent/memory.go:481",
+        "agent/planner_runtime.go:2629",
+        "agent/planner_runtime.go:3812",
+        "agent/skill_execution_handlers.go:2931",
+        "agent/tools.go:1851",
+        "agent/tools.go:1923",
+        "agent/tools.go:2306",
+        "researchsnapshot/recorder.go:116",
+        "researchsnapshot/recorder.go:139",
+        "researchsnapshot/recorder.go:150",
+        "researchsnapshot/recorder.go:211",
+        "researchsnapshot/runtime.go:40",
+        "trader/watchdog_fire_wire.go:37"
+      ],
+      "count": 27
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:99",
+      "function": "perform",
+      "textual_call_sites": [
+        "researchsnapshot/recorder.go:136"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:120",
+      "function": "stringValue",
+      "textual_call_sites": [
+        "researchsnapshot/recorder.go:116"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:127",
+      "function": "run",
+      "textual_call_sites": [
+        "cmd/research_export/main.go:18",
+        "researchsnapshot/recorder.go:41"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:160",
+      "function": "Flush",
+      "textual_call_sites": [
+        "agent/web.go:194",
+        "api/handler_bars_sse.go:73",
+        "api/handler_bars_sse.go:101",
+        "cmd/bars-export/main.go:83",
+        "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/replay.go:14",
+        "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/replay.go:15",
+        "researchsnapshot/recorder.go:180"
+      ],
+      "count": 7
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:175",
+      "function": "Dropped",
+      "textual_call_sites": [
+        "researchsnapshot/recorder.go:139",
+        "researchsnapshot/recorder.go:150",
+        "researchsnapshot/recorder.go:211",
+        "researchsnapshot/runtime.go:78"
+      ],
+      "count": 4
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:176",
+      "function": "Close",
+      "textual_call_sites": [
+        "agent/brain.go:96",
+        "agent/brain.go:216",
+        "agent/sentinel.go:152",
+        "agent/stock.go:145",
+        "agent/stock.go:302",
+        "agent/tools.go:1271",
+        "agent/tools.go:3009",
+        "agent/tools.go:3324",
+        "agent/web.go:291",
+        "agent/web.go:354",
+        "api/handler_onboarding.go:297",
+        "api/handler_wallet.go:124",
+        "api/server.go:701",
+        "api/ui_serving.go:87",
+        "calendar/calendar.go:83",
+        "cmd/bars-export/main.go:37",
+        "cmd/bars-export/main.go:84",
+        "cmd/dayplan-arm/main.go:32",
+        "cmd/dayplan-level-repair/main.go:40",
+        "cmd/dayplan-sessions/main.go:62",
+        "cmd/decisive-test/main.go:151",
+        "cmd/detector-report/main.go:38",
+        "cmd/excursions/main.go:33",
+        "cmd/gate-jwt/main.go:55",
+        "cmd/nq_smoke/smoke_tcp.go:24",
+        "cmd/planner_ab/main.go:69",
+        "cmd/planner_ab/main.go:122",
+        "cmd/research_export/main.go:36",
+        "cmd/sandbox-seed/main.go:47",
+        "cmd/sandbox-seed/main.go:48",
+        "kernel/engine.go:803",
+        "logger/logger.go:117",
+        "main.go:96",
+        "market/api_client.go:44",
+        "market/api_client.go:76",
+        "market/api_client.go:141",
+        "market/data.go:370",
+        "market/data.go:415",
+        "market/historical.go:55",
+        "mcp/balance.go:43",
+        "mcp/client.go:707",
+        "mcp/client.go:908",
+        "mcp/client.go:946",
+        "mcp/client.go:1305",
+        "mcp/payment/x402.go:176",
+        "mcp/payment/x402.go:223",
+        "mcp/payment/x402.go:329",
+        "mcp/payment/x402.go:340",
+        "mcp/payment/x402.go:344",
+        "mcp/payment/x402.go:390",
+        "mcp/payment/x402.go:473",
+        "provider/alpaca/kline.go:111",
+        "provider/coinank/coinank_api/depth_ws.go:69",
+        "provider/coinank/coinank_api/depth_ws.go:87",
+        "provider/coinank/coinank_api/kline.go:69",
+        "provider/coinank/coinank_api/kline_ws.go:75",
+        "provider/coinank/coinank_api/kline_ws.go:93",
+        "provider/coinank/coinank_http.go:61",
+        "provider/coinank/coinank_http.go:86",
+        "provider/databento/client.go:122",
+        "provider/databento/client.go:134",
+        "provider/databento/mock_server.go:56",
+        "provider/hyperliquid/coins.go:78",
+        "provider/hyperliquid/kline.go:117",
+        "provider/hyperliquid/kline.go:170",
+        "provider/hyperliquid/kline.go:207",
+        "provider/ninjatrader/csv_tailer.go:59",
+        "provider/ninjatrader/csv_writer.go:57",
+        "provider/ninjatrader/csv_writer.go:61",
+        "provider/ninjatrader/mock_nt.go:78",
+        "provider/ninjatrader/mock_nt.go:143",
+        "provider/ninjatrader/mock_nt.go:153",
+        "provider/ninjatrader/tcp_client_mock.go:81",
+        "provider/ninjatrader/tcp_server.go:1046",
+        "provider/ninjatrader/tcp_server.go:1332",
+        "provider/ninjatrader/tcp_server.go:1659",
+        "provider/ninjatrader/tcp_server.go:2212",
+        "provider/nofxos/client.go:124",
+        "provider/twelvedata/kline.go:125",
+        "provider/twelvedata/kline.go:172",
+        "researchsnapshot/archive.go:41",
+        "researchsnapshot/archive.go:56",
+        "researchsnapshot/archive.go:99",
+        "researchsnapshot/archive.go:192",
+        "researchsnapshot/archive.go:203",
+        "researchsnapshot/archive.go:216",
+        "researchsnapshot/archive.go:228",
+        "researchsnapshot/archive.go:231",
+        "researchsnapshot/runtime.go:65",
+        "researchsnapshot/runtime.go:65",
+        "researchsnapshot/runtime.go:114",
+        "store/driver.go:100",
+        "store/driver.go:184",
+        "store/driver.go:190",
+        "store/driver.go:196",
+        "store/driver.go:202",
+        "store/driver.go:227",
+        "store/store.go:79",
+        "store/store.go:85",
+        "store/store.go:110",
+        "store/store.go:116",
+        "store/store.go:646",
+        "store/store.go:649",
+        "telegram/agent/apicall.go:66",
+        "telemetry/experience.go:158",
+        "telemetry/experience.go:194",
+        "telemetry/experience.go:238",
+        "trader/aster/trader.go:101",
+        "trader/aster/trader.go:393",
+        "trader/aster/trader.go:419",
+        "trader/aster/trader_account.go:110",
+        "trader/aster/trader_account.go:264",
+        "trader/bitget/trader.go:194",
+        "trader/bybit/order_sync.go:79",
+        "trader/bybit/trader.go:102",
+        "trader/bybit/trader_account.go:135",
+        "trader/bybit/trader_orders.go:697",
+        "trader/hyperliquid/trader_account.go:231",
+        "trader/hyperliquid/trader_account.go:322",
+        "trader/hyperliquid/trader_orders.go:453",
+        "trader/hyperliquid/trader_orders.go:546",
+        "trader/hyperliquid/trader_orders.go:687",
+        "trader/hyperliquid/trader_orders.go:851",
+        "trader/hyperliquid/trader_sync.go:75",
+        "trader/indodax/trader.go:132",
+        "trader/indodax/trader.go:169",
+        "trader/kucoin/trader.go:128",
+        "trader/kucoin/trader.go:233",
+        "trader/lighter/account.go:27",
+        "trader/lighter/account.go:306",
+        "trader/lighter/account.go:380",
+        "trader/lighter/orders.go:121",
+        "trader/lighter/orders.go:237",
+        "trader/lighter/trader.go:212",
+        "trader/lighter/trader.go:287",
+        "trader/lighter/trader.go:485",
+        "trader/lighter/trading.go:373",
+        "trader/lighter/trading.go:390",
+        "trader/lighter/trading.go:547",
+        "trader/okx/trader.go:238",
+        "trader/trade_excursion_backfill.go:97",
+        "trader/trade_excursion_hook.go:197",
+        "wallet/usdc.go:67"
+      ],
+      "count": 143
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:186",
+      "function": "LatencyP50MS",
+      "textual_call_sites": [
+        "researchsnapshot/runtime.go:79"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/recorder.go:207",
+      "function": "flushNotices",
+      "textual_call_sites": [
+        "researchsnapshot/recorder.go:133"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/runtime.go:15",
+      "function": "Install",
+      "textual_call_sites": [
+        "researchsnapshot/runtime.go:64",
+        "researchsnapshot/runtime.go:65"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "researchsnapshot/runtime.go:18",
+      "function": "Active",
+      "textual_call_sites": [
+        "researchsnapshot/runtime.go:22",
+        "researchsnapshot/runtime.go:131",
+        "researchsnapshot/runtime.go:143"
+      ],
+      "count": 3
+    },
+    {
+      "definition": "researchsnapshot/runtime.go:21",
+      "function": "Record",
+      "textual_call_sites": [
+        "provider/ninjatrader/research_wire.go:28",
+        "provider/ninjatrader/research_wire.go:201",
+        "researchsnapshot/plan.go:73",
+        "researchsnapshot/plan.go:117",
+        "researchsnapshot/plan.go:177",
+        "store/research_record.go:17",
+        "trader/auto_trader_loop.go:611",
+        "trader/research_snapshot.go:22",
+        "trader/research_snapshot.go:88",
+        "trader/research_snapshot.go:106",
+        "trader/research_snapshot.go:143",
+        "trader/research_snapshot.go:189",
+        "trader/research_snapshot.go:238",
+        "trader/research_snapshot.go:260",
+        "trader/watchdog_fire_wire.go:32"
+      ],
+      "count": 15
+    },
+    {
+      "definition": "researchsnapshot/runtime.go:35",
+      "function": "Start",
+      "textual_call_sites": [
+        "agent/agent.go:381",
+        "agent/agent.go:391",
+        "cmd/nq_smoke/smoke_tcp.go:30",
+        "cmd/nq_smoke/smoke_tcp.go:37",
+        "main.go:76",
+        "main.go:529",
+        "main.go:533",
+        "main.go:539",
+        "trader/ninjatrader/transport.go:54"
+      ],
+      "count": 9
+    },
+    {
+      "definition": "researchsnapshot/runtime.go:68",
+      "function": "BootLineAt",
+      "textual_call_sites": [
+        "researchsnapshot/runtime.go:133",
+        "researchsnapshot/runtime.go:136"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "researchsnapshot/runtime.go:127",
+      "function": "CurrentBootLine",
+      "textual_call_sites": [
+        "main.go:296"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/runtime.go:130",
+      "function": "CurrentBootLineAt",
+      "textual_call_sites": [
+        "researchsnapshot/runtime.go:128"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "researchsnapshot/runtime.go:141",
+      "function": "Contain",
+      "textual_call_sites": [
+        "provider/ninjatrader/research_wire.go:22",
+        "provider/ninjatrader/research_wire.go:193",
+        "researchsnapshot/plan.go:25",
+        "researchsnapshot/plan.go:42",
+        "researchsnapshot/plan.go:54",
+        "researchsnapshot/plan.go:65",
+        "researchsnapshot/plan.go:111",
+        "researchsnapshot/plan.go:172",
+        "store/research_record.go:12",
+        "trader/research_snapshot.go:21",
+        "trader/research_snapshot.go:87",
+        "trader/research_snapshot.go:105",
+        "trader/research_snapshot.go:142",
+        "trader/research_snapshot.go:166",
+        "trader/research_snapshot.go:237",
+        "trader/research_snapshot.go:254"
+      ],
+      "count": 16
+    },
+    {
+      "definition": "store/research_record.go:8",
+      "function": "recordResearchPlacementTimeout",
+      "textual_call_sites": [
+        "store/armed_orders.go:648"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "store/research_record.go:11",
+      "function": "recordResearchPlacementTimeoutAt",
+      "textual_call_sites": [
+        "store/research_record.go:9"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:17",
+      "function": "recordResearchCandidates",
+      "textual_call_sites": [
+        "trader/auto_trader_planner.go:2467"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:20",
+      "function": "recordResearchCandidatesAt",
+      "textual_call_sites": [
+        "trader/research_snapshot.go:18"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:83",
+      "function": "recordResearchInput",
+      "textual_call_sites": [
+        "trader/auto_trader_planner.go:974"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:86",
+      "function": "recordResearchInputAt",
+      "textual_call_sites": [
+        "trader/research_snapshot.go:84"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:101",
+      "function": "recordResearchPermissions",
+      "textual_call_sites": [
+        "trader/auto_trader_levelstate.go:262"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:104",
+      "function": "recordResearchPermissionsAt",
+      "textual_call_sites": [
+        "trader/research_snapshot.go:102"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:138",
+      "function": "recordResearchGate",
+      "textual_call_sites": [
+        "trader/armed_executor.go:559",
+        "trader/auto_trader_orders.go:334"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "trader/research_snapshot.go:141",
+      "function": "recordResearchGateAt",
+      "textual_call_sites": [
+        "trader/research_snapshot.go:139"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:165",
+      "function": "recordResearchOutcomeAt",
+      "textual_call_sites": [
+        "trader/auto_trader_clock.go:739"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:228",
+      "function": "researchCandidateID",
+      "textual_call_sites": [
+        "trader/research_snapshot.go:31",
+        "trader/research_snapshot.go:240"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "trader/research_snapshot.go:233",
+      "function": "recordResearchEpisodes",
+      "textual_call_sites": [
+        "trader/detector_record.go:76"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:236",
+      "function": "recordResearchEpisodesAt",
+      "textual_call_sites": [
+        "trader/research_snapshot.go:234"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/research_snapshot.go:250",
+      "function": "recordResearchPlacement",
+      "textual_call_sites": [
+        "trader/armed_executor.go:1070",
+        "trader/armed_executor.go:1371"
+      ],
+      "count": 2
+    },
+    {
+      "definition": "trader/research_snapshot.go:253",
+      "function": "recordResearchPlacementAt",
+      "textual_call_sites": [
+        "trader/research_snapshot.go:251"
+      ],
+      "count": 1
+    },
+    {
+      "definition": "trader/scenario_economics_desk.go:10",
+      "function": "deskScenarioEconomics",
+      "textual_call_sites": [
+        "trader/desk_facts.go:151"
+      ],
+      "count": 1
+    }
+  ]
+}

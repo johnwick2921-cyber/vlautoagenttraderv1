@@ -1,0 +1,4 @@
+rule,trip_pct,kept_per_day,forfeited_per_day,net_effect_per_day,B
+daily_loss_450,0.0,-41.082164333200254,0.0,0.0,10000
+max_daily_trades_3,58.56,-57.538178619200295,16.37605,-16.37605,10000
+both,58.99,-55.73189290680028,17.09955,-17.09955,10000
