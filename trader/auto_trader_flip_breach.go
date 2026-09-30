@@ -93,6 +93,22 @@ var (
 	flipWakeDeferNote sync.Map // key → reason ("breach" | "stale")
 )
 
+// resetFlipOnceForTest clears the once-per-version note memories. TEST-ONLY: the
+// dedupes are process-wide by design, and `go test -count=N` reuses the binary —
+// the fixture plan ids (fixed dates) would otherwise stay noted across
+// iterations and silence every later run's lines (the -count=5 flake DS-108
+// reproduced: describeActivePlanDeath printed nothing and the capture stayed
+// empty). Three memories key the once-per-version lines: flipWindowNoted,
+// flipWakeDeferNote (this file) and linesBeyondPriceNoted
+// (auto_trader_planner.go — the flip_line_beyond_price line).
+func resetFlipOnceForTest() {
+	flipWindowNoted.Range(func(k, _ any) bool { flipWindowNoted.Delete(k); return true })
+	flipWakeDeferNote.Range(func(k, _ any) bool { flipWakeDeferNote.Delete(k); return true })
+	linesBeyondPriceMu.Lock()
+	linesBeyondPriceNoted = map[string]bool{}
+	linesBeyondPriceMu.Unlock()
+}
+
 func flipOnceKey(at *AutoTrader, row *store.PlanDB) string {
 	return fmt.Sprintf("%s|%s|%d", at.id, row.PlanID, row.Version)
 }

@@ -622,9 +622,9 @@ func TestSSHSIGRefusesMalformedEnvelopes(t *testing.T) {
 		"END glued to the base64": {func() []byte {
 			return []byte(strings.Replace(string(real), "\n"+armorEnd, armorEnd, 1))
 		}(), ErrSigFormat},
-		"text after armor":  {append(append([]byte(nil), real...), []byte("junk\n")...), ErrSigFormat},
-		"empty":             {nil, ErrSigFormat},
-		"oversized":         {bytes.Repeat([]byte("A"), MaxSignatureBytes+1), ErrSigFormat},
+		"text after armor": {append(append([]byte(nil), real...), []byte("junk\n")...), ErrSigFormat},
+		"empty":            {nil, ErrSigFormat},
+		"oversized":        {bytes.Repeat([]byte("A"), MaxSignatureBytes+1), ErrSigFormat},
 	} {
 		t.Run(name, func(t *testing.T) {
 			v, err := VerifySSHSIG(f.msg, c.armored, f.signers)

@@ -25,24 +25,34 @@ func repoFile(t *testing.T, rel string) string {
 	return string(b)
 }
 
-// The trigger is the whole safety story: a release is cut from a TAG that a
-// human approved, never from a push to a branch.
-func TestReleaseWorkflowTriggersOnTagAndNeverOnPushToDev(t *testing.T) {
+// PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7) — this repo is NEVER a release
+// source. No partner CI run may ever create a release or tag in
+// johnwick2921-cyber/nofx. The only permitted trigger is a manual
+// workflow_dispatch, and BOTH jobs carry `if: ${{ false }}` so even a manual
+// dispatch cannot run them. This test asserts exactly that: the workflow has
+// NO trigger that can fire.
+func TestReleaseWorkflowHasNoTriggerThatCanFire(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
-	if !strings.Contains(y, "tags:") || !strings.Contains(y, "v*") {
-		t.Fatalf("release.yml must trigger on a v* TAG")
+	if !strings.Contains(y, "workflow_dispatch:") {
+		t.Fatalf("release.yml must keep workflow_dispatch as its ONLY trigger key")
 	}
-	for _, forbidden := range []string{"branches:", "- dev", "pull_request:"} {
+	for _, forbidden := range []string{"push:", "tags:", "branches:", "pull_request:", "schedule:", "workflow_call:", "workflow_run:", "repository_dispatch:"} {
 		if strings.Contains(y, forbidden) {
-			t.Fatalf("release.yml must NEVER trigger on %q — a release is cut from an approved tag", forbidden)
+			t.Fatalf("release.yml must have NO trigger that can fire — found %q", forbidden)
 		}
 	}
-	if !strings.Contains(y, "environment:") || !strings.Contains(y, "release") {
-		t.Fatalf("release.yml must run in the protected 'release' Environment (owner = required reviewer)")
+	// Both jobs must be permanently disabled; count the `if: ${{ false }}`
+	// occurrences and the job declarations to make sure every job carries one.
+	jobCount := len(regexp.MustCompile(`(?m)^  [a-z]+:$`).FindAllString(y, -1))
+	ifCount := strings.Count(y, "if: ${{ false }}")
+	if jobCount == 0 || ifCount < jobCount {
+		t.Fatalf("every job must carry `if: ${{ false }}`: %d jobs, %d if-guards", jobCount, ifCount)
 	}
 }
 
-// The binary must be provably built from clean, tagged source.
+// The binary must be provably built from clean, tagged source — the inert
+// body is kept byte-identical to the source tree so these guarantees remain
+// pinned even though the workflow can never run.
 func TestReleaseWorkflowEnforcesCleanVcsStampAndTheGuideRev(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	if !strings.Contains(y, "vcs.modified") {
@@ -53,18 +63,35 @@ func TestReleaseWorkflowEnforcesCleanVcsStampAndTheGuideRev(t *testing.T) {
 	}
 }
 
-// The artifact repository is an OPEN OWNER DECISION. The fail-closed default is
-// THIS repo; the partner repo must never be reachable by accident.
-func TestReleaseWorkflowDefaultsToThisRepoAndNeverThePartner(t *testing.T) {
+// The artifact repository must be the partner's own base, and the nofx repo
+// name must never appear anywhere in the workflow.
+func TestReleaseWorkflowPublishesOnlyUnderThePartnerRepoAndNeverNofx(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	if !strings.Contains(y, "RELEASE_REPO") {
 		t.Fatalf("the artifact target must be ONE variable, RELEASE_REPO, so the owner changes it in one line")
 	}
-	if !strings.Contains(y, "johnwick2921-cyber/nofx") {
-		t.Fatalf("RELEASE_REPO must DEFAULT to this repo")
+	if strings.Contains(y, "johnwick2921-cyber/nofx") {
+		t.Fatalf("the nofx repo must NEVER appear in the partner release workflow")
 	}
-	if strings.Contains(y, "vlautoagenttraderv1") {
-		t.Fatalf("the partner repo must never appear in the release workflow")
+	if !strings.Contains(y, "vlautoagenttraderv1") {
+		t.Fatalf("RELEASE_REPO must name the partner's own github.repository base")
+	}
+}
+
+// PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7, checker fold): the install script's
+// REPO_URL default must name the partner repo — partner machines build the
+// updater from the partner repo, never from nofx. The CHECKER MUTANT report
+// (DS-102/DS-105) proved a mutant restoring the nofx default turned NO test
+// red (updater_worker_install_test.go always overrides
+// NOFX_UPDATER_BUILD_REPO, and nothing read REPO_URL). This test reads the
+// production script directly, so the mutant turns it RED.
+func TestInstallUpdaterWorkerRepoUrlDefaultsToThePartnerRepo(t *testing.T) {
+	s := repoFile(t, "deploy/install-updater-worker.sh")
+	if !strings.Contains(s, "https://github.com/johnwick2921-cyber/vlautoagenttraderv1") {
+		t.Fatalf("install-updater-worker.sh REPO_URL default must name the partner repo (vlautoagenttraderv1)")
+	}
+	if strings.Contains(s, "johnwick2921-cyber/nofx") {
+		t.Fatalf("install-updater-worker.sh must NEVER name the nofx repo as the REPO_URL default")
 	}
 }
 

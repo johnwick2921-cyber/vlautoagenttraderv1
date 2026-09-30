@@ -47,6 +47,7 @@ export const updatesStrings = {
   retry: { en: 'Retry', zh: '重试', id: 'Coba lagi' },
   upToDate: { en: 'Up to date', zh: '已是最新', id: 'Sudah terbaru' },
   blocked: { en: 'Blocked', zh: '已阻止', id: 'Diblokir' },
+  check: { en: 'Check', zh: '检查', id: 'Periksa' },
   installUnderReview: {
     en: 'install authorization under review',
     zh: '安装授权审核中',
@@ -56,6 +57,22 @@ export const updatesStrings = {
     en: 'updater worker not running',
     zh: '更新器工作进程未运行',
     id: 'pekerja updater tidak berjalan',
+  },
+  // authorization paste box (UPDATER-USABLE-V1)
+  authzLabel: {
+    en: 'Authorization — paste the one line "updater-bootstrap authorize <release_id>" prints (valid 5 minutes, single use)',
+    zh: '授权 — 粘贴 "updater-bootstrap authorize <release_id>" 打印的那一行（有效期 5 分钟，仅限一次）',
+    id: 'Otorisasi — tempel satu baris yang dicetak "updater-bootstrap authorize <release_id>" (berlaku 5 menit, sekali pakai)',
+  },
+  installAccepted: {
+    en: 'Install accepted',
+    zh: '安装已接受',
+    id: 'Pemasangan diterima',
+  },
+  openOn8080: {
+    en: 'open http://localhost:8080 to install — this page is served from port {port}, which the bot refuses for Updates (open the bot directly)',
+    zh: '请打开 http://localhost:8080 进行安装 — 本页面来自端口 {port}，机器人会拒绝该来源的更新请求（请直接打开机器人）',
+    id: 'buka http://localhost:8080 untuk memasang — halaman ini dilayani dari port {port}, yang ditolak bot untuk Pembaruan (buka bot langsung)',
   },
 
   // hold / gate

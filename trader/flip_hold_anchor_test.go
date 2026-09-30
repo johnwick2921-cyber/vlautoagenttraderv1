@@ -41,6 +41,10 @@ func flipHoldTrader(t *testing.T) (*AutoTrader, *store.Store, time.Time) {
 	t.Setenv("FLIP_MIN_HOLD_MIN", "")
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}}}
 	at, st := resetTrader(t, cfg)
+	// FLAKE HUNT 2026-09-26: the once-per-version note memory is process-wide;
+	// under -count=N the fixed fixture plan ids would stay noted across
+	// iterations and the describe lines would never print again.
+	resetFlipOnceForTest()
 	// 14:35:30 UTC = 09:35:30 CT, 30s past a 5m boundary so the 09:30 bucket is
 	// the newest CLOSED bucket (fresh for the G7 gate).
 	now := time.Date(2026, 8, 18, 14, 35, 30, 0, time.UTC)

@@ -48,7 +48,7 @@ func TestShortReadWarnIsDedupedAndCounted(t *testing.T) {
 	for i := 0; i < 280; i++ {
 		read(start.Add(time.Duration(i) * time.Second))
 	}
-	if n := bhCountLines(get(), "bar horizon"); n != 1 {
+	if n := bhCountLines(bhFilter(get(), "bar_horizon_warn_test.go"), "bar horizon"); n != 1 {
 		t.Fatalf("%d emitted lines inside the five-minute window, want 1", n)
 	}
 	if got := telemetry.BarHorizonCounts()["short"] - base; got != 280 {
@@ -57,7 +57,7 @@ func TestShortReadWarnIsDedupedAndCounted(t *testing.T) {
 
 	// Past the re-arm window the key speaks again, and it says how many it ate.
 	read(start.Add(6 * time.Minute))
-	lines := get()
+	lines := bhFilter(get(), "bar_horizon_warn_test.go")
 	if n := bhCountLines(lines, "bar horizon"); n != 2 {
 		t.Fatalf("after the window re-armed: %d emitted lines, want 2: %v", n, lines)
 	}
@@ -76,11 +76,11 @@ func TestShortReadWarnIsDedupedAndCounted(t *testing.T) {
 		read(start.Add(6*time.Minute + time.Duration(i)*time.Second))
 	}
 	read(start.Add(24 * time.Hour))
-	lines = get()
+	lines = bhFilter(get(), "bar_horizon_warn_test.go")
 	if n := bhCountLines(lines, "bar horizon"); n != 3 {
 		t.Fatalf("after the session-day rollover: %d emitted lines, want 3: %v", n, lines)
 	}
-	if bhCountLines(lines, "suppressed=5") != 0 {
+	if n := bhCountRe(lines, suppressedFiveRe); n != 0 {
 		t.Fatalf("the CME session-day rollover did not clear the suppression state: %v", lines)
 	}
 }
@@ -101,13 +101,13 @@ func TestEmptyArmIsGracedUntilBackfillOrTimeout(t *testing.T) {
 	armBarHorizonGrace(boot)
 
 	barsFromCache(cache, "MNQ", "1m", 2000, boot.Add(1*time.Minute))
-	if n := bhCountLines(get(), "bar horizon"); n != 0 {
-		t.Fatalf("EMPTY warned %d times inside the boot grace, want 0: %v", n, get())
+	if n := bhCountLines(bhFilter(get(), "bar_horizon_warn_test.go"), "bar horizon"); n != 0 {
+		t.Fatalf("EMPTY warned %d times inside the boot grace, want 0: %v", n, bhFilter(get(), "bar_horizon_warn_test.go"))
 	}
 
 	// The fallback timer, with the hook never firing.
 	barsFromCache(cache, "MNQ", "1m", 2000, boot.Add(barHorizonBootGrace+time.Minute))
-	lines := get()
+	lines := bhFilter(get(), "bar_horizon_warn_test.go")
 	if bhCountLines(lines, "bar horizon", "EMPTY") != 1 {
 		t.Fatalf("after the grace fallback: want 1 EMPTY warn, got %v", lines)
 	}

@@ -32,6 +32,16 @@ import (
 const ninjascriptGlob = "ninjascript/*.cs"
 
 func (w *Worker) decideNT8(ctx context.Context, j updaterjob.Job) updaterjob.NT8Decision {
+	// UPDATER-NT8-CLOSED: when the drain passed in the nt8_absent path, the
+	// decision is made WITHOUT an ack (NT8 is closed; none can exist). But
+	// the verdict is revoked the moment an AddOn connects — if the gate is no
+	// longer absent-eligible here, the normal decision (which reads the ack)
+	// applies again, never grandfathered.
+	if j.DrainPath == drainPathNT8Absent {
+		if b, _ := w.absentGate(ctx, j); b == "" {
+			return w.decideNT8Absent(j)
+		}
+	}
 	d := updaterjob.NT8Decision{Decision: updaterjob.NT8Updated}
 	reasons := []string{}
 	why := func(format string, a ...any) { reasons = append(reasons, fmt.Sprintf(format, a...)) }
@@ -80,6 +90,49 @@ func (w *Worker) decideNT8(ctx context.Context, j updaterjob.Job) updaterjob.NT8
 		return d
 	}
 	d.Reason = clipText(strings.Join(reasons, "; "))
+	return d
+}
+
+// decideNT8Absent (UPDATER-NT8-CLOSED item 3): NT8 is closed — no ack is
+// read, none is waited for. The decision rests on the signed manifest vs the
+// install's ninjascript/*.cs hashed by content:
+//
+//   - C# unchanged → nt8_skipped, as today;
+//   - C# differs → STILL nt8_skipped (the Go side completes), with F5Owed
+//     recorded — "AddOn F5 owed at next NT8 start". The job does NOT park:
+//     NT8 is closed, there is nobody to F5 now.
+//   - a read failure → F5Owed too (fail closed: assume the F5 is needed).
+func (w *Worker) decideNT8Absent(j updaterjob.Job) updaterjob.NT8Decision {
+	d := updaterjob.NT8Decision{Decision: updaterjob.NT8Skipped, Absent: true}
+	reasons := []string{}
+	why := func(format string, a ...any) { reasons = append(reasons, fmt.Sprintf(format, a...)) }
+
+	f, err := w.facts(j)
+	if err != nil {
+		why("the release could not be re-verified: %v", err)
+	} else {
+		d.ManifestBuildID = f.AddonBuildID
+		rel := csFromArtifacts(f.Artifacts)
+		inst, ierr := csOfTree(w.cfg.Target.InstallDir)
+		switch {
+		case ierr != nil:
+			why("the install's %s could not be hashed: %v", ninjascriptGlob, ierr)
+		case len(rel) == 0:
+			why("the release lists no %s — the AddOn source cannot be proven unchanged", ninjascriptGlob)
+		default:
+			same := equalSets(rel, inst)
+			d.CSUnchanged = &same
+			if !same {
+				why("the release's %s differs from the install's (%s)", ninjascriptGlob, csDiff(rel, inst))
+			}
+		}
+	}
+	if len(reasons) == 0 {
+		return d
+	}
+	// fail closed: with the C# state unprovable or differing, the F5 is owed
+	d.F5Owed = true
+	d.Reason = "AddOn F5 owed at next NT8 start: " + clipText(strings.Join(reasons, "; "))
 	return d
 }
 

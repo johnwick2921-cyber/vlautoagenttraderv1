@@ -115,6 +115,17 @@ func fixtureTagRepo(t *testing.T, tags ...string) (dir string, shas map[string]s
 	if err := os.WriteFile(filepath.Join(stubDir, "db-compat.sh"), []byte("#!/usr/bin/env bash\nexit 0\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	// The step now calls deploy/release/resolve-rollback-old.sh. Copy the REAL
+	// script into the fixture (UPDATER-USABLE-V1): a hand-written stub would
+	// let the parity test drift from production — this test is the production
+	// call site of the step body.
+	real, err := os.ReadFile(filepath.Join("..", "deploy", "release", "resolve-rollback-old.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(stubDir, "resolve-rollback-old.sh"), real, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	return dir, shas
 }
 

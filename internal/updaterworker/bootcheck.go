@@ -57,14 +57,14 @@ const (
 // expect this sha is not this install's line).
 func bootOKRe(rev12 string, pid int) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(bootShape, "INFO") +
-		regexp.QuoteMeta(bootOKPrefix+rev12+" · pid "+strconv.Itoa(pid)+" · built ")+`\S+`+
+		regexp.QuoteMeta(bootOKPrefix+rev12+" · pid "+strconv.Itoa(pid)+" · built ") + `\S+` +
 		regexp.QuoteMeta(" · expected "+rev12+" ·"))
 }
 
 // bootRefusedRe is the app's OWN REFUSED boot line by shape and pid.
 func bootRefusedRe(pid int) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(bootShape, "ERRO") +
-		regexp.QuoteMeta(bootRefused+" — rev ")+`\S+ · pid `+strconv.Itoa(pid)+` `)
+		regexp.QuoteMeta(bootRefused+" — rev ") + `\S+ · pid ` + strconv.Itoa(pid) + ` `)
 }
 
 // isBootOKLine: the app's OWN OK boot line, by shape and pid.

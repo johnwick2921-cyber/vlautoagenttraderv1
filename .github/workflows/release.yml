@@ -15,28 +15,20 @@
 #     fail-closed to THIS repo. The partner repo must never be a target.
 name: release
 
+# PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7): this repo is NEVER a release source.
+# No partner CI run may ever create a release or tag in the upstream nofx repo.
+# The only permitted trigger is a manual workflow_dispatch, and both jobs carry
+# `if: ${{ false }}` so even a manual dispatch cannot run them. Partner images
+# publish only under the partner's own github.repository base.
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'existing tag to release'
-        required: true
-      rollback_from:
-        description: 'optional 40-hex sha of the last released commit to prove rollback against (default: previous v* tag)'
-        required: false
-        default: ''
 
 permissions:
-  contents: write
+  contents: read
 
 env:
-  # OPEN OWNER DECISION (plan §Owner decisions 4). Fail-closed default: this
-  # repo. Changeable by the owner in ONE line. Never the partner mirror —
-  # deploy/release_contract_test.go fails if that name appears here.
-  RELEASE_REPO: johnwick2921-cyber/nofx
+  # Partner base. Publication happens only under this repo's own name.
+  RELEASE_REPO: johnwick2921-cyber/vlautoagenttraderv1
 
 jobs:
   # A rollback pair is advertised tested ONLY when this job has actually done
@@ -46,6 +38,7 @@ jobs:
   # broker, and the verdict is read off the DATABASE rather than the process
   # (with no NT8 a binary is not expected to stay up).
   dbcompat:
+    if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     runs-on: ubuntu-latest
     outputs:
       rollback_pairs: ${{ steps.pairs.outputs.json }}
@@ -69,11 +62,18 @@ jobs:
           TAG="${TAG:-${GITHUB_REF_NAME:-}}"
           NEW="$(git rev-parse "refs/tags/${TAG}^{}" 2>/dev/null || true)"
           printf '%s' "$NEW" | grep -Eqx '[0-9a-f]{40}' || NEW=""
-          OLD="${ROLLBACK_FROM:-}"
-          printf '%s' "$OLD" | grep -Eqx '[0-9a-f]{40}' || OLD=""
-          if [ -z "$OLD" ]; then
-            OLD="$(git for-each-ref --sort=-v:refname --format='%(refname:short) %(objectname)' 'refs/tags/v*' | awk -v cur="$TAG" -v new="$NEW" '$1 != cur && $2 != new { print $2; exit }')"
+          # The OLD is DERIVED, never authored (deploy/release/
+          # resolve-rollback-old.sh): the running RELEASE passed as
+          # rollback_from, else the highest-version v* tag that is an
+          # ANCESTOR of the new tag and not from the ancient v1.0 line
+          # (v1.0.* / v1.0-*).
+          # Unprovable ⇒ empty ⇒ [] — an uncomputed pair is absent, never
+          # fabricated (canon 49/53).
+          OLD=""
+          if [ -n "$NEW" ]; then
+            OLD="$(bash deploy/release/resolve-rollback-old.sh "$NEW" "${TAG:-}" "${ROLLBACK_FROM:-}" || true)"
           fi
+          printf '%s' "$OLD" | grep -Eqx '[0-9a-f]{40}' || OLD=""
           if [ -z "$NEW" ] || [ -z "$OLD" ]; then
             echo '[]'
             echo 'json=[]' >> "$GITHUB_OUTPUT"
@@ -85,6 +85,7 @@ jobs:
 
   release:
     needs: [dbcompat]
+    if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     runs-on: ubuntu-latest
     # The protected Environment carries the owner as a REQUIRED REVIEWER and
     # holds the signing key. No approval, no release, no signature.
@@ -156,6 +157,26 @@ jobs:
           set -euo pipefail
           cd web && npm run build
           grep -rq "${{ steps.src.outputs.sha }}" dist/assets/*.js || { echo "REFUSED: built dist does not carry the guide rev"; exit 1; }
+
+      - name: Build the updater binaries (shipped beside the bot)
+        run: |
+          set -euo pipefail
+          # Built OUTSIDE the checkout, then copied in. A binary written into
+          # the tree is an untracked file, so the NEXT build reads
+          # vcs.modified=true — the first release run (v2026.09.27.1,
+          # 2026-09-27) refused exactly that on nofx-updater-bootstrap.
+          # Pinned by TestReleaseWorkflowGoBuildsWriteOutsideTheTree.
+          OUT="$RUNNER_TEMP/updater-bin"
+          mkdir -p "$OUT"
+          go build -trimpath -o "$OUT/nofx-updater" ./cmd/nofx-updater
+          go build -trimpath -o "$OUT/nofx-updater-bootstrap" ./cmd/updater-bootstrap
+          for b in "$OUT/nofx-updater" "$OUT/nofx-updater-bootstrap"; do
+            go version -m "$b" > /tmp/updater-vcs.txt
+            grep -q 'vcs.modified=false' /tmp/updater-vcs.txt || { echo "REFUSED: $b is not a clean build"; exit 1; }
+            grep -q "vcs.revision=${{ steps.src.outputs.sha }}" /tmp/updater-vcs.txt || { echo "REFUSED: $b does not carry the tag's revision"; exit 1; }
+          done
+          mkdir -p updater
+          cp "$OUT/nofx-updater" "$OUT/nofx-updater-bootstrap" updater/
 
       - name: Stage ONLY the allow-list
         run: bash deploy/release/package.sh "$PWD" /tmp/stage "${{ steps.src.outputs.sha }}"

@@ -5,13 +5,14 @@
 // cannot know prints n/a. An absent job is "no update job", never an empty
 // timeline. Every blocker is shown with the server's exact text.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Download, Loader2, RefreshCw, ShieldAlert } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { up } from '../i18n/updates-translations'
 import { GUIDE_BUILT_REV } from '../guide/types'
 import {
   INSTALL_AUTHZ_UNDER_REVIEW,
+  parseInstallAuthorization,
   updatesApi,
   type HealthStatus,
   type InstallationGate,
@@ -58,14 +59,6 @@ function Panel({
   )
 }
 
-type UpdateButtonState =
-  | 'update-now'
-  | 'checking'
-  | 'installing'
-  | 'retry'
-  | 'up-to-date'
-  | 'blocked'
-
 export default function UpdatesPage() {
   const { language } = useLanguage()
 
@@ -80,6 +73,11 @@ export default function UpdatesPage() {
   const [installError, setInstallError] = useState<string | null>(null)
   const [notEnrolled, setNotEnrolled] = useState(false)
   const [job, setJob] = useState<UpdateJobView | null>(null)
+
+  // UPDATER-USABLE-V1: the paste box + the install action.
+  const [authzText, setAuthzText] = useState('')
+  const [installing, setInstalling] = useState(false)
+  const [installJobId, setInstallJobId] = useState<string | null>(null)
 
   // Panel E — the resolved PivotWindow (W1 effective settings), or null.
   const [pivotWindow, setPivotWindow] = useState<number | null>(null)
@@ -245,42 +243,71 @@ export default function UpdatesPage() {
     }
   }, [])
 
-  // ── Panel B button state, driven ONLY by the API ──────────────────────────
-  let buttonState: UpdateButtonState = 'update-now'
-  if (checking) buttonState = 'checking'
-  else if (status?.install_enabled === false) buttonState = 'blocked'
-  else if (status?.worker_listening === false) buttonState = 'blocked'
-  else if (check?.checked) buttonState = 'up-to-date'
-  else if (installError) buttonState = 'retry'
+  // ── Panel B: two buttons, driven ONLY by the API + the pasted authz ───────
+  // The paste box parses the ONE line `updater-bootstrap authorize` prints.
+  // Shape is checked in the browser (expires_at must be a JSON number) but
+  // the MAC is the SERVER's to verify — the parsed body goes verbatim, never
+  // retyped, so no other encoding can alias the MAC's decimal text.
+  const authz = useMemo(
+    () => (authzText.trim() ? parseInstallAuthorization(authzText) : null),
+    [authzText]
+  )
 
-  const buttonLabel = {
-    'update-now': up('updateNow', language),
-    checking: up('checking', language),
-    installing: up('installing', language),
-    retry: up('retry', language),
-    'up-to-date': up('upToDate', language),
-    blocked: up('blocked', language),
-  }[buttonState]
+  // Check asks the bot whether an update exists (it never installs).
+  const checkLabel = checking
+    ? up('checking', language)
+    : check?.checked
+      ? up('upToDate', language)
+      : up('check', language)
 
   const doCheck = useCallback(async () => {
     setChecking(true)
-    setInstallError(null)
     const c = await updatesApi.check()
     setCheck(c)
     setChecking(false)
   }, [])
 
-  // The install action exists but is unreachable while M3's adversarial review
-  // is open (INSTALL_AUTHZ_UNDER_REVIEW ships ON): the disabled button carries
-  // the exact text and no install POST can fire. #206's ruling: BOTH
-  // install_enabled (configuration) AND worker_listening (measured) must be
-  // true, and the exact reason is shown when the worker is not running.
+  // The install control's enabled state comes from the SERVER
+  // (install_enabled AND worker_listening, both measured) AND the review
+  // constant — no other source (#206's ruling).
   const workerDown =
     status?.install_enabled === true && status?.worker_listening === false
   const installDisabled =
     INSTALL_AUTHZ_UNDER_REVIEW ||
     status?.install_enabled !== true ||
     status?.worker_listening !== true
+
+  const installLabel = installing
+    ? up('installing', language)
+    : installDisabled
+      ? up('blocked', language)
+      : up('updateNow', language)
+
+  const doInstall = useCallback(async () => {
+    // The belt: the disabled button cannot be clicked, and the constant
+    // gates the call itself too, so no install POST can ever fire while
+    // the review is open (pinned by UpdatesPage.authzReview.test.tsx).
+    if (INSTALL_AUTHZ_UNDER_REVIEW || installing) return
+    if (!authz || !authz.ok) return
+    setInstalling(true)
+    setInstallError(null)
+    const res = await updatesApi.install(authz.body)
+    // The authorization is single use and is spent on ANY attempt — success
+    // or refusal — so the box empties either way (a retried code answers
+    // 409; a fresh one must be pasted).
+    setAuthzText('')
+    if (res.ok && res.job_id) {
+      // 202 {job_id}: the Job panel now polls this id (the same remembered-id
+      // poll as a hold-named one) and the receipt downloads beside it.
+      setLastJobID(res.job_id)
+      setInstallJobId(res.job_id)
+    } else {
+      // 400/403/409/422/503: the SERVER's own text, shown verbatim, never a
+      // fabricated reason.
+      setInstallError(res.error || 'install refused')
+    }
+    setInstalling(false)
+  }, [authz, installing])
 
   const askReloadHistory = useCallback(() => {
     setHistoryReply(null)
@@ -329,6 +356,16 @@ export default function UpdatesPage() {
   const ack = maintenance?.addon_ack ?? null
   const completedBarsN = pivotWindow !== null ? pivotWindow + 4 : null
 
+  // UPDATER-NT8-CLOSED item 5: the install surface is loopback :8080 only.
+  // A page opened from a non-8080 origin (the :3000 dev server) can never
+  // pass the origin gate — the page says so plainly instead of a bare
+  // cross-origin 403. The origin check itself is UNCHANGED: this is a hint,
+  // never a bypass.
+  const non8080Origin =
+    typeof window !== 'undefined' &&
+    window.location.port !== '' &&
+    window.location.port !== '8080'
+
   return (
     <div className="space-y-5" data-testid="updates-page">
       {notEnrolled && (
@@ -355,18 +392,68 @@ export default function UpdatesPage() {
 
       {/* Panel B — Update */}
       <Panel title={up('updatePanel', language)}>
+        {non8080Origin && (
+          <p
+            className="mb-2 text-xs text-amber-400"
+            data-testid="non-8080-origin"
+          >
+            {up('openOn8080', language, { port: window.location.port })}
+          </p>
+        )}
         <div className="flex items-center gap-3">
           <button
             type="button"
-            disabled={checking || installDisabled}
+            disabled={checking}
             onClick={doCheck}
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-zinc-700 text-zinc-100 disabled:opacity-50"
+            data-testid="check-button"
+          >
+            {checking && <Loader2 size={15} className="animate-spin" />}
+            {checkLabel}
+          </button>
+          <button
+            type="button"
+            disabled={installDisabled || !authz?.ok || installing}
+            onClick={doInstall}
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-nofx-gold text-black disabled:opacity-50"
             data-testid="update-button"
           >
-            {checking && <Loader2 size={15} className="animate-spin" />}
-            {buttonLabel}
+            {installing && <Loader2 size={15} className="animate-spin" />}
+            {installLabel}
           </button>
         </div>
+        <label
+          htmlFor="updates-authz"
+          className="mt-3 block text-xs text-zinc-400"
+        >
+          {up('authzLabel', language)}
+        </label>
+        <textarea
+          id="updates-authz"
+          data-testid="authz-paste"
+          value={authzText}
+          onChange={(e) => setAuthzText(e.target.value)}
+          rows={2}
+          spellCheck={false}
+          className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-mono text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+          placeholder='{"release_id":"…","job_id":"…","expires_at":…,"hmac":"…"}'
+        />
+        {authz?.ok === false && (
+          <p
+            className="mt-1 text-xs text-amber-400"
+            data-testid="authz-parse-error"
+          >
+            {authz.error}
+          </p>
+        )}
+        {installJobId && (
+          <p
+            className="mt-2 text-xs text-emerald-400"
+            data-testid="install-accepted"
+          >
+            {up('installAccepted', language)}: {installJobId}
+          </p>
+        )}
         {INSTALL_AUTHZ_UNDER_REVIEW && (
           <p className="mt-2 text-xs text-amber-400 flex items-center gap-1.5">
             <ShieldAlert size={13} />

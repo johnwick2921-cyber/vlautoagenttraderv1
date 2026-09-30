@@ -42,6 +42,11 @@ type ConnectionRecord struct {
 	HelloMonoMs  int64                  `json:"hello_mono_ms,omitempty"`
 	Ack          *MaintenanceAckPayload `json:"maintenance_ack"`
 	AckMonoMs    int64                  `json:"ack_mono_ms,omitempty"`
+	// DisconnectedMonoMs is when THIS connection closed, on the monotonic
+	// clock (UPDATER-NT8-CLOSED: the nt8_absent verdict is measured from
+	// this stamp, never inferred from a stale ack). Zero = never connected
+	// or still connected.
+	DisconnectedMonoMs int64 `json:"disconnected_mono_ms,omitempty"`
 	// What this connection was last TOLD (so a release goes only to a
 	// connection that was held, and a resend keeps the census fresh).
 	SentHeld   bool   `json:"sent_held"`
@@ -214,6 +219,16 @@ func (r ConnectionRecord) AckAge() (time.Duration, bool) {
 		return 0, false
 	}
 	return time.Duration(monoMs(time.Now())-r.AckMonoMs) * time.Millisecond, true
+}
+
+// DisconnectedAt is when THIS connection closed, on the process's monotonic
+// clock (wireMonoBase). ok=false when the record has no disconnect stamp
+// (never connected, or still connected).
+func (r ConnectionRecord) DisconnectedAt() (time.Time, bool) {
+	if r.DisconnectedMonoMs <= 0 {
+		return time.Time{}, false
+	}
+	return wireMonoBase.Add(time.Duration(r.DisconnectedMonoMs) * time.Millisecond), true
 }
 
 // MaintenanceAckMaxAge is the oldest ack the installation gate accepts: three

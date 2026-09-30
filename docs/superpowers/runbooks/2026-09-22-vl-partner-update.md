@@ -52,3 +52,34 @@ commit history, not a merge or reset to the unrelated nofx history.
 
 Neither partner machine was accessed or deployed by preparation of this branch.
 The owner performs the partner-repository push under the standing repo rule.
+
+---
+
+## Boot 5 / 6 / 7 update steps (PARTNER-SYNC-BOOT7, 2026-09-30)
+
+The boot-7 sync (`sync/vl-4d538206-20260930`) carries the nofx tree at
+`4d5382069643` (booted 01:00:43 CT 2026-09-28) — three boots ahead of the
+boot-4 tree this runbook was written for. Boots 5, 6 and 7 add: the updater
+installs with NT8 closed (`trader/installation_gate_nt8absent_test.go`), the
+flat-live allowance's predecessors, the one-button release-build fixes, and
+every W-EXEC-TRUTH fold since boot 4.
+
+Same procedure as steps 1–8 above, with these deltas:
+
+1. **Build at the commit-of-build proof sha.** The sync PR's body names the
+   partner build commit (the tree-sync commit, not the stamp tip). Build from
+   a clean clone at THAT sha; `go version -m` must show
+   `vcs.revision=<that sha>` and `vcs.modified=false`.
+2. **AddOn.** The boot-7 tree's `VLTraderTCPClient.cs` is build
+   `2026-09-23-m21`. If a machine's NT8 runs an older AddOn build, copy the
+   file + F5 + full NT8 restart (the HARD RULE: copy, compile, full restart —
+   no hot reload).
+3. **One-order check** at the next market open: a single SIM order round-trip,
+   and report the boot line (machine, sha, time) to the CTO.
+4. **Updater worker is OPTIONAL** for partners and is NOT installed by this
+   sync. If a partner later chooses it, it builds from the partner repo
+   (`install-updater-worker.sh` defaults `REPO_URL` to
+   `johnwick2921-cyber/vlautoagenttraderv1`).
+5. **No release capability.** The partner workflow has no trigger that can
+   fire; no partner CI run can create a release or tag in
+   `johnwick2921-cyber/nofx`.

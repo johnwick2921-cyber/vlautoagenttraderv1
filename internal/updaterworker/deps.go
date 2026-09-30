@@ -196,11 +196,22 @@ type AckView struct {
 
 // GateView mirrors trader.InstallationGate (GET /api/installation-gate).
 type GateView struct {
-	Ready   bool      `json:"ready"`
-	JobID   string    `json:"job_id"`
-	Legs    []GateLeg `json:"legs"`
-	Traders []string  `json:"traders"`
-	Note    string    `json:"note"`
+	Ready     bool           `json:"ready"`
+	JobID     string         `json:"job_id"`
+	Legs      []GateLeg      `json:"legs"`
+	Traders   []string       `json:"traders"`
+	Note      string         `json:"note"`
+	NT8Absent *NT8AbsentView `json:"nt8_absent"`
+}
+
+// NT8AbsentView mirrors trader.NT8AbsentView (UPDATER-NT8-CLOSED): the
+// nt8_absent verdict. Legs are ABSENT when not eligible — an uncomputed leg
+// list is absent, never [] (canon 49/53).
+type NT8AbsentView struct {
+	Eligible      bool      `json:"eligible"`
+	Ready         bool      `json:"ready"`
+	LinkDownSince string    `json:"link_down_since"`
+	Legs          []GateLeg `json:"legs"`
 }
 
 // GateLeg mirrors trader.InstallationGateLeg.

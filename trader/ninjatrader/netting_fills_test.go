@@ -58,6 +58,10 @@ func TestTakeNettingExitRejectsSameSideAndStale(t *testing.T) {
 // stream: a LONG row @29413 orphan-closes while the ring holds the netting
 // SELL @29459 → the row must close with exit 29459 and pnl +92.00.
 func TestReconcileReconstructsNettingExitReplayToday(t *testing.T) {
+	// FLAKE HUNT 2026-09-26: the parked-price cache is process-wide — a previous
+	// test's parked close (29310) would otherwise be consumed here instead of
+	// this test's own ring fill.
+	resetPricedCloseCacheForTest()
 	st, err := store.New(filepath.Join(t.TempDir(), "netting.db"))
 	if err != nil {
 		t.Fatalf("store.New: %v", err)

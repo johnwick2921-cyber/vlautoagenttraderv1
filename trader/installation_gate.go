@@ -57,15 +57,40 @@ type InstallationGate struct {
 	Legs    []InstallationGateLeg `json:"legs"`
 	Traders []string              `json:"traders"` // every trader id the gate covered
 	Note    string                `json:"note"`
+	// NT8Absent is the nt8_absent verdict (UPDATER-NT8-CLOSED): present when
+	// an NT8 TCP trader exists to measure the link; eligible when the link
+	// has been down ≥ nt8AbsentMinLinkDown continuously, measured from the
+	// server's per-connection record (never inferred from a stale ack).
+	// Ready only when eligible AND every ledger leg passes on its own
+	// evidence. Legs stay ABSENT (not []) when not eligible — an uncomputed
+	// leg list is absent, never fabricated (canon 49/53).
+	NT8Absent *NT8AbsentView `json:"nt8_absent,omitempty"`
 }
+
+// NT8AbsentView is the nt8_absent verdict.
+type NT8AbsentView struct {
+	Eligible      bool                  `json:"eligible"`
+	Ready         bool                  `json:"ready"`
+	LinkDownSince string                `json:"link_down_since,omitempty"` // RFC3339 of the disconnect stamp; absent when unknown
+	Legs          []InstallationGateLeg `json:"legs,omitempty"`            // computed ONLY when eligible; absent otherwise
+}
+
+// nt8AbsentMinLinkDown is the continuous link-down the absent path requires
+// (UPDATER-NT8-CLOSED item 1a): the AddOn must have been disconnected for at
+// least this long, measured from the server's per-connection record. Shorter
+// than this and the verdict is not eligible — a link that just dropped is not
+// proof NT8 is closed, it is proof the link dropped.
+const nt8AbsentMinLinkDown = 60 * time.Second
 
 // installationWire is what the gate reads from the NT8 wire.
 type installationWire struct {
-	Rec       ntwire.ConnectionRecord
-	Connected bool
-	Queued    int
-	HasAck    bool
-	AckAge    time.Duration
+	Rec                ntwire.ConnectionRecord
+	Connected          bool
+	Queued             int
+	HasAck             bool
+	AckAge             time.Duration
+	DisconnectedAt     time.Time
+	HaveDisconnectedAt bool
 }
 
 // installationWireView reads the wire through the first NT8 TCP trader (all of
@@ -81,7 +106,11 @@ var installationWireView = func(nts []*AutoTrader) (installationWire, bool) {
 			continue
 		}
 		age, has := rec.AckAge()
-		return installationWire{Rec: rec, Connected: connected, Queued: queued, HasAck: has, AckAge: age}, true
+		wire := installationWire{Rec: rec, Connected: connected, Queued: queued, HasAck: has, AckAge: age}
+		if dat, ok := rec.DisconnectedAt(); ok {
+			wire.DisconnectedAt, wire.HaveDisconnectedAt = dat, true
+		}
+		return wire, true
 	}
 	return installationWire{}, false
 }
@@ -149,7 +178,7 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 	// hold
 	st0, configured := maintenanceState()
 	holdJob := ""
-	leg("hold", "the installation hold file (store.ReadMaintenanceHold)", func() (bool, string) {
+	holdLeg := func() (bool, string) {
 		switch {
 		case !configured:
 			return false, "maintenance data dir not configured — the hold cannot be read"
@@ -164,11 +193,12 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 		holdJob = st0.Hold.JobID
 		g.JobID = holdJob
 		return true, maintenanceReason(st0)
-	})
+	}
+	leg("hold", "the installation hold file (store.ReadMaintenanceHold)", holdLeg)
 
 	// go_drained + in_flight_sends
 	inFlight := MaintenanceInFlight()
-	leg("go_drained", "EntryBarrier (trader/maintenance_gate.go)", func() (bool, string) {
+	drainedLeg := func() (bool, string) {
 		if !maintenanceBarrier.Held() {
 			return false, "entry barrier not engaged"
 		}
@@ -176,23 +206,26 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			return false, fmt.Sprintf("%d entry send(s) still hold a permit", inFlight)
 		}
 		return true, "barrier engaged, 0 permits held"
-	})
-	leg("in_flight_sends", "EntryBarrier in-flight counter", func() (bool, string) {
+	}
+	leg("go_drained", "EntryBarrier (trader/maintenance_gate.go)", drainedLeg)
+	inFlightLeg := func() (bool, string) {
 		return inFlight == 0, fmt.Sprintf("in_flight_sends=%d", inFlight)
-	})
+	}
+	leg("in_flight_sends", "EntryBarrier in-flight counter", inFlightLeg)
 
 	// wire-read legs
 	wire, haveWire := installationWireView(nts)
 	noWire := "no NT8 TCP trader loaded — the AddOn cannot be asked (fail-closed)"
-	leg("queued_signals", "TCPServer reconnect queue", func() (bool, string) {
+	queuedLeg := func() (bool, string) {
 		if !haveWire {
 			return false, noWire
 		}
 		return wire.Queued == 0, fmt.Sprintf("queued_signals=%d", wire.Queued)
-	})
+	}
+	leg("queued_signals", "TCPServer reconnect queue", queuedLeg)
 
 	// planner_in_flight — the union
-	leg("planner_in_flight", "plannerReadInFlight ∪ weeklyReadClaim ∪ flipRereadInFlight ∪ deathRereadInFlight", func() (bool, string) {
+	plannerLeg := func() (bool, string) {
 		var held []string
 		for _, m := range []struct {
 			name string
@@ -211,7 +244,8 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			return false, "IN FLIGHT: " + strings.Join(held, ", ")
 		}
 		return true, "no planner-class read claimed, any trader"
-	})
+	}
+	leg("planner_in_flight", "plannerReadInFlight ∪ weeklyReadClaim ∪ flipRereadInFlight ∪ deathRereadInFlight", plannerLeg)
 
 	// traders_nt8
 	leg("traders_nt8", "TraderManager ∪ pictureHtfTraders", func() (bool, string) {
@@ -359,7 +393,7 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 	})
 
 	// ledger_exposure — every trader id
-	leg("ledger_exposure", "armed_orders + picture_htf_opportunities, all trader ids (canonical arm-state predicates)", func() (bool, string) {
+	ledgerLeg := func() (bool, string) {
 		if st == nil || st.ArmedOrders() == nil {
 			return false, "store unavailable — ledger cannot be read"
 		}
@@ -388,7 +422,83 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			return false, "placed/unresolved: " + strings.Join(exposed, ", ") + "; " + info
 		}
 		return true, "no placed or unresolved row; " + info
-	})
+	}
+	leg("ledger_exposure", "armed_orders + picture_htf_opportunities, all trader ids (canonical arm-state predicates)", ledgerLeg)
+
+	// sim_accounts — the absent path's SIM proof (UPDATER-NT8-CLOSED item 1d).
+	// With NT8 closed there is no AddOn census, so the gate reads the SAME
+	// predicate every order path runs: each bound account must be
+	// SIM-tradeable via isAccountTradeable (the hard live/funded-account
+	// block) — exported as IsAccountTradeable, NEVER weakened. Any unknown
+	// (no bound account, a non-NT8 trader, an account the server cannot
+	// vouch for) fails.
+	simAccountsLeg := func() (bool, string) {
+		registry := map[string]bool{}
+		for _, id := range registryOnly {
+			registry[id] = true
+		}
+		var bad []string
+		checked := 0
+		for _, id := range ids {
+			at := all[id]
+			nt, ok := at.trader.(*ntTrader.TCPTrader)
+			if !ok {
+				if registry[id] {
+					continue // registry-only, not NT8: cannot reach NT8 (informational in traders_nt8)
+				}
+				bad = append(bad, fmt.Sprintf("%s: not an NT8 TCP trader (%T) — its account cannot be vouched for", id, at.trader))
+				continue
+			}
+			name := at.currentAccountName()
+			checked++
+			if name == "" {
+				bad = append(bad, fmt.Sprintf("%s: bound to no account", id))
+				continue
+			}
+			if !nt.IsAccountTradeable(name) {
+				bad = append(bad, fmt.Sprintf("%s: bound account %s is not SIM-tradeable", id, name))
+			}
+		}
+		if len(bad) > 0 {
+			return false, strings.Join(bad, "; ")
+		}
+		if checked == 0 {
+			return false, "no NT8 trader bound to an account — nothing to vouch for (fail-closed)"
+		}
+		return true, fmt.Sprintf("%d bound account(s) SIM-tradeable", checked)
+	}
+
+	// db_open_positions — the DB's own record of exposure, per NT8 trader
+	// (UPDATER-NT8-CLOSED P1): the SAME store read CutoverGateStatus leg 1
+	// uses (store.Position().GetOpenPositions). With NT8 absent the broker
+	// legs cannot run, so this leg IS the position evidence. Fail-closed on
+	// any read error or unknown; each open row is NAMED (id, trader,
+	// symbol, side).
+	dbOpenLeg := func() (bool, string) {
+		if st == nil || st.Position() == nil {
+			return false, "position store unavailable — leg cannot be evaluated"
+		}
+		var exposed []string
+		total, traders := 0, 0
+		for _, id := range ids {
+			if _, ok := all[id].trader.(*ntTrader.TCPTrader); !ok {
+				continue
+			}
+			traders++
+			rows, err := st.Position().GetOpenPositions(id)
+			if err != nil {
+				return false, fmt.Sprintf("query failed for %s: %v", id, err)
+			}
+			total += len(rows)
+			for _, r := range rows {
+				exposed = append(exposed, fmt.Sprintf("open#%d %s %s %s", r.ID, r.TraderID, r.Symbol, r.Side))
+			}
+		}
+		if len(exposed) > 0 {
+			return false, "OPEN: " + strings.Join(exposed, ", ")
+		}
+		return true, fmt.Sprintf("0 open rows across %d NT8 trader(s)", traders)
+	}
 
 	// trader_cutover:<id> — each NT8 trader's legs 1, 2, 4
 	for _, at := range nts {
@@ -413,6 +523,56 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			}
 			return true, "passed: " + strings.Join(passed, ", ")
 		})
+	}
+
+	// ── nt8_absent (UPDATER-NT8-CLOSED, owner ruling 22:1x CT 09-27) ─────────
+	// NT8 closed = nothing can trade (every account is NT8 SIM and Sim101
+	// executes INSIDE NT8) = the safest moment to update. The absent verdict
+	// is measured, never inferred: the link must be down ≥ nt8AbsentMinLinkDown
+	// CONTINUOUSLY, from the server's per-connection disconnect stamp (a new
+	// accept clears the stamp, so a reconnect revokes the verdict — never
+	// grandfathered). Every ledger leg must pass on its OWN evidence; the
+	// ack/census legs cannot exist here (the AddOn cannot answer) and are not
+	// required. A leg that cannot be evaluated fails.
+	if haveWire {
+		absent := NT8AbsentView{}
+		if !wire.Connected && wire.HaveDisconnectedAt {
+			absent.LinkDownSince = wire.DisconnectedAt.UTC().Format(time.RFC3339Nano)
+			absent.Eligible = time.Since(wire.DisconnectedAt) >= nt8AbsentMinLinkDown
+		}
+		if absent.Eligible {
+			absentLegs := []struct {
+				name   string
+				source string
+				fn     func() (bool, string)
+			}{
+				{"hold", "the installation hold file (store.ReadMaintenanceHold)", holdLeg},
+				{"go_drained", "EntryBarrier (trader/maintenance_gate.go)", drainedLeg},
+				{"in_flight_sends", "EntryBarrier in-flight counter", inFlightLeg},
+				{"queued_signals", "TCPServer reconnect queue", queuedLeg},
+				{"planner_in_flight", "plannerReadInFlight ∪ weeklyReadClaim ∪ flipRereadInFlight ∪ deathRereadInFlight", plannerLeg},
+				{"ledger_exposure", "armed_orders + picture_htf_opportunities, all trader ids (canonical arm-state predicates)", ledgerLeg},
+				{"sim_accounts", "each bound trading account via IsAccountTradeable (the SIM-only order predicate, never weakened)", simAccountsLeg},
+				{"db_open_positions", "sqlite trader_positions — the SAME read as CutoverGateStatus leg 1, per NT8 trader", dbOpenLeg},
+			}
+			absent.Ready = true
+			for _, al := range absentLegs {
+				l := InstallationGateLeg{Name: al.name, Source: al.source}
+				func() {
+					defer func() {
+						if r := recover(); r != nil {
+							l.Pass, l.Detail = false, fmt.Sprintf("leg panicked: %v — fail-closed", r)
+						}
+					}()
+					l.Pass, l.Detail = al.fn()
+				}()
+				if !l.Pass {
+					absent.Ready = false
+				}
+				absent.Legs = append(absent.Legs, l)
+			}
+		}
+		g.NT8Absent = &absent
 	}
 
 	g.Ready = len(g.Legs) > 0
