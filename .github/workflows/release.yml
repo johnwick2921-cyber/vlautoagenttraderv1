@@ -16,7 +16,7 @@
 name: release
 
 # PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7): this repo is NEVER a release source.
-# No partner CI run may ever create a release or tag in johnwick2921-cyber/nofx.
+# No partner CI run may ever create a release or tag in the upstream nofx repo.
 # The only permitted trigger is a manual workflow_dispatch, and both jobs carry
 # `if: ${{ false }}` so even a manual dispatch cannot run them. Partner images
 # publish only under the partner's own github.repository base.
