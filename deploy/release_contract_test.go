@@ -78,6 +78,23 @@ func TestReleaseWorkflowPublishesOnlyUnderThePartnerRepoAndNeverNofx(t *testing.
 	}
 }
 
+// PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7, checker fold): the install script's
+// REPO_URL default must name the partner repo — partner machines build the
+// updater from the partner repo, never from nofx. The CHECKER MUTANT report
+// (DS-102/DS-105) proved a mutant restoring the nofx default turned NO test
+// red (updater_worker_install_test.go always overrides
+// NOFX_UPDATER_BUILD_REPO, and nothing read REPO_URL). This test reads the
+// production script directly, so the mutant turns it RED.
+func TestInstallUpdaterWorkerRepoUrlDefaultsToThePartnerRepo(t *testing.T) {
+	s := repoFile(t, "deploy/install-updater-worker.sh")
+	if !strings.Contains(s, "https://github.com/johnwick2921-cyber/vlautoagenttraderv1") {
+		t.Fatalf("install-updater-worker.sh REPO_URL default must name the partner repo (vlautoagenttraderv1)")
+	}
+	if strings.Contains(s, "johnwick2921-cyber/nofx") {
+		t.Fatalf("install-updater-worker.sh must NEVER name the nofx repo as the REPO_URL default")
+	}
+}
+
 // --- executable proofs: the scripts must REFUSE, not warn ---
 
 func runScript(t *testing.T, script string, args ...string) (string, error) {
