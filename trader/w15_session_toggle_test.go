@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func dpWith(sessions []store.DayPlanSessionOverride, enabledSubset []string) *AutoTrader {

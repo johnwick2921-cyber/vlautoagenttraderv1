@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-09-02 — LIVE intraday bias replay: the plan-stamping bias reconstructed and tested out-of-sample
 
 **Dispatch:** the live intraday bias — "4H-dominant hierarchy (kernel bias tree + regime)" — gets the identical test as the bias calibration (2deab3c8, P7/D6). READ-ONLY on the engine · no lock · no live calls.
-**Tree:** worktree `~/nofx-biastest`, branch `docs/live-bias-replay-0902`, base `bb8b5419` (dev HEAD at start). Scripts: `~/nofx-analysis/live-bias-replay/`. Bars source: the `bars` table (SQLite, read-only). CSVs: `docs/superpowers/reports/2026-09-02-live-bias-replay-csvs/`.
+**Tree:** worktree `~/vl-biastest`, branch `docs/live-bias-replay-0902`, base `bb8b5419` (dev HEAD at start). Scripts: `~/vl-analysis/live-bias-replay/`. Bars source: the `bars` table (SQLite, read-only). CSVs: `docs/superpowers/reports/2026-09-02-live-bias-replay-csvs/`.
 
 ---
 
@@ -167,4 +168,4 @@ inventory this week: time.
 
 `exports/2026-09-02-live-bias-replay-csvs/calls.csv` — all 252 session-plan rows
 (day, session, period, price, PDH/PDL/PDC, EMA200/EMA50, tree/regime/composite, open/close, realized sign,
-window return). Script: `~/nofx-analysis/live-bias-replay/replay.py` (stdlib only, read-only `bars` table).
+window return). Script: `~/vl-analysis/live-bias-replay/replay.py` (stdlib only, read-only `bars` table).

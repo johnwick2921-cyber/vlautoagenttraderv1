@@ -1,6 +1,6 @@
 boot block 09-04 13:25:47-13:26:47 total lines: 301
 of which emoji-led (owner-facing boot lines):
-nofx/main.go:187 ⚠️ AI params at UNSET defaults (nobody chose these explicitly): [AI_TEMPERATURE AI_TOP_P AI_RETRY_BACKOFF_SECONDS AI_TASKSTATE_SU
+vl/main.go:187 ⚠️ AI params at UNSET defaults (nobody chose these explicitly): [AI_TEMPERATURE AI_TOP_P AI_RETRY_BACKOFF_SECONDS AI_TASKSTATE_SU
 manager/trader_manager.go:717 🔄 Auto-starting trader (was running before shutdown)...
 manager/trader_manager.go:727 ✅ Trader auto-started successfully
 trader/auto_trader.go:43 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, 

@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // P2 — THE CLOCK. Bar-close cadence + the skip-while-open gate. Both are GATED on

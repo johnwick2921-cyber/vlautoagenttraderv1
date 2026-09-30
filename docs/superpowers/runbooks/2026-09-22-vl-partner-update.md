@@ -83,3 +83,25 @@ Same procedure as steps 1–8 above, with these deltas:
 5. **No release capability.** The partner workflow has no trigger that can
    fire; no partner CI run can create a release or tag in
    `johnwick2921-cyber/nofx`.
+
+## VL rename (R2) — the rename boot, applied to a partner machine
+
+Prepared on the `sync/vl-rename-prep` branch; the source tree is the nofx
+integrator head at the commit-of-build. `deploy/RELEASE` carries the nofx boot
+sha (placeholder `c0c9a7f86` — replace with the REAL booted sha once the R2 boot
+is VERIFIED and this sync re-runs).
+
+1. **Build at the commit-of-build** — `go build -o vl-bin .`, web built with
+   `VITE_GUIDE_BUILT_REV=<sha>`, exactly like the owner machine.
+2. **The rename migration, partner path (Z24):**
+   - `deploy/migrate-to-vl.sh --session <session> --sha <sha> --release-dir <dir> --dry-run`
+     — read the output; any REFUSED line = stop and fix.
+   - `deploy/migrate-to-vl.sh --session <session> --sha <sha> --release-dir <dir> --no-updater`
+     — the partner machines never ran the updater worker.
+3. **NT8 AddOn** — copy `ninjascript/VLTraderTCPClient.cs` into the NT8
+   `bin/Custom/AddOns/` folder, F5-compile inside NT8, then a FULL NT8 restart
+   (AddOns never hot-reload). The hello line must name build id
+   `2026-09-30-m22` (`grep -i hello ~/vl/data/vl_$(date +%F).log`).
+4. **One-order check at the next open** — a single SIM order round-trip on MNQ
+   before any further partner work; report the boot line (machine, sha, time) and
+   the order id to the CTO.

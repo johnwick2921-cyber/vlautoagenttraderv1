@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── S1 — THE STRUCTURE TABLE AT THE PLANNER READ (2026-09-16) ──────────────

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 
 	"github.com/gin-gonic/gin"
 )

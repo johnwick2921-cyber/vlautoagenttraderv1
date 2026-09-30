@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Pre-Sunday Micro-Wave — F1–F5 (BUILD & PROVE, NO DEPLOY)
 
 - Branch: `fix/pre-sunday` (off `dev` `dbcb61ac`) · Date: 2026-08-28
@@ -41,7 +42,7 @@ Owner ruling: immediate-mode is approved **for the AI-proposed path only**; arms
 
 ## CANON ADDITION — MAIN-TREE LOCK LAW (per P2 S8)
 
-Recorded in `CLAUDE.md` (untracked local) + repo memory: porcelain-clean gate before any dispatch touches `~/nofx` · non-deploy work only via `git worktree add` + `git worktree lock` · `~/nofx-main.lock` marker (owner/PID/expiry) acquired first · `git reset` on dev FORBIDDEN outside the deploy-owning dispatch.
+Recorded in `CLAUDE.md` (untracked local) + repo memory: porcelain-clean gate before any dispatch touches `~/vl` · non-deploy work only via `git worktree add` + `git worktree lock` · `~/vl-main.lock` marker (owner/PID/expiry) acquired first · `git reset` on dev FORBIDDEN outside the deploy-owning dispatch.
 
 ## Gates
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"nofx/logger"
+	"vl/logger"
 )
 
 type APIErrorResponse struct {

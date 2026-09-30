@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"nofx/branding"
-	"nofx/kernel"
+	"vl/branding"
+	"vl/kernel"
 	"os"
 	"sort"
 	"strconv"
@@ -22,11 +22,11 @@ import (
 
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 
-	"nofx/manager"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
-	"nofx/wallet"
+	"vl/manager"
+	"vl/market"
+	"vl/mcp"
+	"vl/store"
+	"vl/wallet"
 )
 
 type Agent struct {

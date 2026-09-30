@@ -9,5 +9,5 @@ KILLED — a pin caught it.
      --- FAIL: TestStructuralStopF5FirstTargetIsNeverSkipped (0.00s)
      --- FAIL: TestStructuralStopF4F5Refuses23For4WithoutMoving (0.13s)
      FAIL
-     FAIL	nofx/trader	0.845s
+     FAIL	vl/trader	0.845s
      FAIL

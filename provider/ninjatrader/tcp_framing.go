@@ -115,7 +115,7 @@ const ProtocolVersion = 3
 // HelloPayload identifies the peer + its protocol generation.
 type HelloPayload struct {
 	ProtocolVersion int    `json:"protocol_version"`
-	Source          string `json:"source"` // "vltrader-addon" | "nofx-go"
+	Source          string `json:"source"` // "vltrader-addon" | "vl-go"
 	// BuildID (F12) is the AddOn's VL_BUILD_ID, carried on the handshake so the
 	// running DLL is identifiable from the FIRST received frame rather than
 	// only after a snapshot arrives. omitempty keeps the wire byte-identical
@@ -149,8 +149,11 @@ type HelloPayload struct {
 // can see, WITHOUT NAMES (the repo is public; the census is counts and flags
 // only). The installation gate fails on: no ack for the current connection, an
 // ack for another job, a census the AddOn could not enumerate (CensusError, or
-// a nil list), any connected non-SIM connection, or any position / working
-// order on ANY account (CTO ruling Q1).
+// a nil list), any unsettled (transitional) connection, or any position /
+// working order on ANY account (CTO ruling Q1). A connected non-SIM (live)
+// connection alone does NOT fail: when every account is flat the update may
+// proceed (owner ruling 2026-09-28 — the updater never disconnects anything;
+// TRADING stays SIM-only, see isAccountTradeable).
 const (
 	FrameMaintenance    FrameType = "maintenance"
 	FrameMaintenanceAck FrameType = "maintenance_ack"

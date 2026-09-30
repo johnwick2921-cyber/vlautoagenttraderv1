@@ -2,7 +2,7 @@ package updaterworker
 
 // releaseroot.go — W-ONE-BUTTON M4 (3b-B, unit U4F): the ONE check of the
 // release root (NOFX_RELEASE_DIR, read through installpath's one resolver)
-// against the installation. `nofx-updater fetch` materializes under it and the
+// against the installation. `vl-updater fetch` materializes under it and the
 // re-proof adapter refuses a verdict that is not under it, so both call this
 // and nothing else.
 //
@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"nofx/internal/installpath"
+	"vl/internal/installpath"
 )
 
 // ErrReleaseRoot is every refusal of the release root.

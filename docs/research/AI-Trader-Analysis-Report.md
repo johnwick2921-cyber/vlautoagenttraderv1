@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # AI-Trader: 自主交易代理实时金融市场基准测试系统深度研究报告
 
 **项目名称:** AI-Trader: Benchmarking Autonomous Agents in Real-Time Financial Markets
@@ -2516,6 +2517,6 @@ KNOWN_ISSUES = [
 
 ---
 
-**报告作者:** NOFX Research Team
+**报告作者:** VL Research Team
 **版权声明:** 本报告仅供学术研究参考
 

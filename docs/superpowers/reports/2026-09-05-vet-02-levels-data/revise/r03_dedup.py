@@ -3,7 +3,7 @@ def wilson(h,n,z=1.96):
     if n==0: return (float('nan'),float('nan'))
     p=h/n; den=1+z*z/n; cen=(p+z*z/(2*n))/den; half=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den
     return (round(cen-half,3), round(cen+half,3))
-eps=list(csv.DictReader(open('/home/hoang/nofx-analysis/vet-02-0905/q11_episodes.csv')))
+eps=list(csv.DictReader(open('/home/hoang/vl-analysis/vet-02-0905/q11_episodes.csv')))
 print("total episodes", len(eps))
 key=lambda e:(e['day'],e['price'],e['opened'])
 def fam(k):

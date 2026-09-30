@@ -1,6 +1,6 @@
-# Contributing to nofx
+# Contributing to vl
 
-This is the operational contract for shipping changes to `nofx`, the NQ futures trading bot. Read it once. The rules in here are not aesthetic — they are the procedural floor that keeps a live-validated trading bot live-validated across PRs.
+This is the operational contract for shipping changes to `vl`, the NQ futures trading bot. Read it once. The rules in here are not aesthetic — they are the procedural floor that keeps a live-validated trading bot live-validated across PRs.
 
 For architectural context, read `docs/ONBOARDING.md` first. For decision rationale, read `docs/adr/ADR-001` through `ADR-007`.
 

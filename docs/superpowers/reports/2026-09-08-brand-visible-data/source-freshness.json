@@ -69,7 +69,7 @@
   },
   {
     "path": "docs/superpowers/reports/2026-09-03-rebrand-census.md",
-    "last_change": "878f9e7f 2026-09-03T21:53:31-05:00 docs: rebrand census 2026-09-03 — every nofx identity mapped (read-only)"
+    "last_change": "878f9e7f 2026-09-03T21:53:31-05:00 docs: rebrand census 2026-09-03 — every vl identity mapped (read-only)"
   },
   {
     "path": "main.go",
@@ -105,7 +105,7 @@
   },
   {
     "path": "web/src/components/auth/RegisterPage.tsx",
-    "last_change": "be65bcb3 2026-05-22T18:36:00-05:00 fix(web): finish VL rebrand — remove remaining NOFX text + image refs"
+    "last_change": "be65bcb3 2026-05-22T18:36:00-05:00 fix(web): finish VL rebrand — remove remaining VL text + image refs"
   },
   {
     "path": "web/src/components/common/HeaderBar.tsx",
@@ -113,7 +113,7 @@
   },
   {
     "path": "web/src/constants/branding.ts",
-    "last_change": "0da8ebd8 2026-05-22T18:34:21-05:00 refactor(web): rebrand to VL + remove NOFX landing/community surface"
+    "last_change": "0da8ebd8 2026-05-22T18:34:21-05:00 refactor(web): rebrand to VL + remove VL landing/community surface"
   },
   {
     "path": "web/src/guide/GuidePage.tsx",

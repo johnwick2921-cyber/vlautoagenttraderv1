@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // test-srctree-race (2) — a file that VANISHES between the census walk and the

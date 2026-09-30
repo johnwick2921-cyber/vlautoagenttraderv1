@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Download, Loader2, RefreshCw, ShieldAlert } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { up } from '../i18n/updates-translations'
+import { storageMigrationLine } from '../lib/storageMigration'
 import { GUIDE_BUILT_REV } from '../guide/types'
 import {
   INSTALL_AUTHZ_UNDER_REVIEW,
@@ -157,7 +158,7 @@ export default function UpdatesPage() {
 
   // The receipt download (OQ-7): the route sits behind the M3 gate, so a bare
   // navigation 403s — the receipt is fetched through the API client (which
-  // sends X-NOFX-Update) and saved as a file. A refusal shows the server's
+  // sends X-VL-Update) and saved as a file. A refusal shows the server's
   // own text, never a fabricated one.
   const [receiptBusy, setReceiptBusy] = useState(false)
   const [receiptError, setReceiptError] = useState<string | null>(null)
@@ -244,7 +245,7 @@ export default function UpdatesPage() {
   }, [])
 
   // ── Panel B: two buttons, driven ONLY by the API + the pasted authz ───────
-  // The paste box parses the ONE line `updater-bootstrap authorize` prints.
+  // The paste box parses the ONE line `vl-updater-bootstrap authorize` prints.
   // Shape is checked in the browser (expires_at must be a JSON number) but
   // the MAC is the SERVER's to verify — the parsed body goes verbatim, never
   // retyped, so no other encoding can alias the MAC's decimal text.
@@ -373,6 +374,9 @@ export default function UpdatesPage() {
           {up('pollingStopped', language)}
         </div>
       )}
+      <p className="text-xs text-zinc-500">
+        {storageMigrationLine(window.localStorage, window.location.origin)}
+      </p>
       {/* Panel A — Running now */}
       <Panel title={up('runningNow', language)}>
         <Row
@@ -415,7 +419,7 @@ export default function UpdatesPage() {
             type="button"
             disabled={installDisabled || !authz?.ok || installing}
             onClick={doInstall}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-nofx-gold text-black disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-vl-neo-gold text-black disabled:opacity-50"
             data-testid="update-button"
           >
             {installing && <Loader2 size={15} className="animate-spin" />}
@@ -579,7 +583,7 @@ export default function UpdatesPage() {
                   type="button"
                   onClick={downloadReceipt}
                   disabled={receiptBusy}
-                  className="inline-flex items-center gap-1.5 text-xs text-nofx-gold hover:underline disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 text-xs text-vl-neo-gold hover:underline disabled:opacity-60"
                   data-testid="receipt-link"
                 >
                   {receiptBusy ? (
@@ -652,7 +656,7 @@ export default function UpdatesPage() {
                     type="button"
                     onClick={confirmReloadHistory}
                     disabled={historyReloading}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium bg-nofx-gold text-black disabled:opacity-50"
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium bg-vl-neo-gold text-black disabled:opacity-50"
                     data-testid="confirm-backfill"
                   >
                     {historyReloading

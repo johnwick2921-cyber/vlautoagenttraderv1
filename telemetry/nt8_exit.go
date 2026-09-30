@@ -14,7 +14,7 @@ import (
 // RetryPendingNT8Exits — this is the never-dropped net, not a loss).
 var NT8ExitBusyParksTotal = promauto.NewCounter(
 	prometheus.CounterOpts{
-		Name: "nofx_nt8_exit_busy_parks_total",
+		Name: "vl_nt8_exit_busy_parks_total",
 		Help: "NT8 exit receipts parked (priced + persisted) after ApplyNT8Exit busy retries exhausted.",
 	},
 )
@@ -24,7 +24,7 @@ var NT8ExitBusyParksTotal = promauto.NewCounter(
 // only net until the next frame).
 var NT8ExitBusyParkPersistFailuresTotal = promauto.NewCounter(
 	prometheus.CounterOpts{
-		Name: "nofx_nt8_exit_busy_park_persist_failures_total",
+		Name: "vl_nt8_exit_busy_park_persist_failures_total",
 		Help: "NT8 exit receipts whose post-busy small persist write failed.",
 	},
 )

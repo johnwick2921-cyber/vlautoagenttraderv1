@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // Exercise the production ledger renderer before the production broker gate.

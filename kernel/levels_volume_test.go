@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // mkBars builds a 1m bar series starting at `start`, one bar per minute, with

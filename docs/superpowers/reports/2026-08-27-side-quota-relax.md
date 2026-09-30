@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # P0-VALIDATOR AUDIT-THEN-RELAX — side-quota (≥3 per side) (2026-08-27)
 
 Branch `fix/side-quota-relax` · base: running `e49c82e5` (feat/planner-playbook HEAD; note: `origin/dev` is still `b02461cf` and PR #81 is unmerged — the branch was cut from the RUNNING rev so the cutover rebuild matches the deployed tree).
@@ -65,7 +66,7 @@ The quota constant: `kernel/levels_score.go:720-722` — `const MinSideLevels = 
 
 ### 1.4 History — has this rule bitten before?
 
-Grep of every `data/nofx_*.log` (2026-08-16 → 08-26) for the rule's error strings and every `FAIL-CLOSED` line:
+Grep of every `data/vl_*.log` (2026-08-16 → 08-26) for the rule's error strings and every `FAIL-CLOSED` line:
 
 - **Side-quota fail-closes: exactly ONE, all time** — tonight, 2026-08-26 18:01:15 ASIA ("only 2 levels above price 29614.00"). It was the first.
 - All-time fail-close inventory (13 `planner_fail_closed` plan rows): 08-17 ASIA no-JSON · 08-18 ASIA ×3 scenarios-count-0 · 08-23 ASIA ×3 quality-"C"-enum (fixed b2753f2d) · 08-24 LONDON quality-C · 08-24 ASIA duplicates-2.13pt · 08-25 ASIA ×2 context-deadline (timeout, fixed by env) · **08-26 ASIA side-quota (tonight)**.

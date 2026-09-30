@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // Pack B — VOLUME FAMILY detectors (owner override 2026-08-26, research

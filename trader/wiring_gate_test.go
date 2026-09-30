@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // ── A29 STANDING GATE — "reported wired, called by nobody" ───────────────────

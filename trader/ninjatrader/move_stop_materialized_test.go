@@ -10,8 +10,8 @@ import (
 
 	"context"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // GAR-F1 (grand-audit response, 2026-08-28) — move_stop for MATERIALIZED
@@ -207,7 +207,7 @@ func TestMoveStopStillFailsWithoutAnyIdentity(t *testing.T) {
 
 // F3 GAP (2026-09-03) — fill_quantity must be stamped on the RECONCILE path.
 //
-// Found via nofx-89's 2026-09-01 audit: 584 of 586 armed fills carried
+// Found via vl-89's 2026-09-01 audit: 584 of 586 armed fills carried
 // ";stamp_pending", because the fill frame lands before the position row is
 // materialized and stampArmedFillLineage returns early on that path. Stamping
 // only at fill time covered 2 of 586. Armed row 35 today took the same path and

@@ -1,6 +1,6 @@
 from pathlib import Path
 import json,csv,re,hashlib,subprocess,gzip
-r=Path('/home/hoang/nofx-vet-09-complete');d=r/'docs/superpowers/reports';out=r.parent/'nofx-analysis/vet-09-complete-0905'
+r=Path('/home/hoang/vl-vet-09-complete');d=r/'docs/superpowers/reports';out=r.parent/'vl-analysis/vet-09-complete-0905'
 paths=['2026-09-05-vet-01-way-it-trades-complete-data/trades.csv','2026-09-05-vet-03-decisions-data/complete/population58.csv','2026-09-05-vet-06-risk-data/complete/trade_sample.csv','2026-09-05-vet-07-prompts-complete-data/eligible-positions.csv','2026-09-05-vet-08-stretch-data/complete-0905/era.csv','2026-09-05-vet-10-ideas-data/complete/population.csv']
 exclude={530,539,545,546,566,571,580,572,573,574,576,577,579};canonical=None;checks=[]
 for name in paths:

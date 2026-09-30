@@ -1,15 +1,15 @@
 package api
 
 import (
-	"nofx/kernel"
+	"vl/kernel"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"nofx/logger"
-	"nofx/store"
+	"vl/logger"
+	"vl/store"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """q16: descriptive tape facts for Q5 — hour-of-day |dClose| (the detector's delta is session-wide), RTH gap fill, ON-range vs RTH-range, opening drive."""
 import collections, math
-exec(open('/home/hoang/nofx-analysis/vet-02-0905/q11_replay.py').read().split("# group bars by session day")[0])
+exec(open('/home/hoang/vl-analysis/vet-02-0905/q11_replay.py').read().split("# group bars by session day")[0])
 by_sd=collections.OrderedDict()
 for b in bars: by_sd.setdefault(sess_day(b['t']),[]).append(b)
 sdays=[d for d,bs in by_sd.items() if len(bs)>=1300]

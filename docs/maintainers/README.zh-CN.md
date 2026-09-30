@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 📚 维护者文档
 
 **语言：** [English](README.md) | [中文](README.zh-CN.md)
 
-此目录包含 NOFX 项目维护者和想要了解我们流程的贡献者的文档。
+此目录包含 VL 项目维护者和想要了解我们流程的贡献者的文档。
 
 ---
 
@@ -42,7 +43,7 @@
 
 ## 📞 问题？
 
-- **公开问题：** 使用 [GitHub Discussions](https://github.com/NoFxAiOS/nofx/discussions)
+- **公开问题：** 使用 [GitHub Discussions](upstream github link (removed in the VL rename))
 - **维护者问题：** 使用维护者频道
 - **迁移问题：** 查看[迁移公告](../community/MIGRATION_ANNOUNCEMENT.zh-CN.md)
 

@@ -3,7 +3,7 @@ package kernel
 import (
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // P1.3 — naked-POC detector + provider seam.

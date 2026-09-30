@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // ── pins for the rules the adversarial verifier found unpinned (D5) ────────

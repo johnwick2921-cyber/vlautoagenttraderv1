@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/config"
-	"nofx/internal/updateauth"
-	"nofx/internal/updaterbootstrap"
-	"nofx/store"
+	"vl/config"
+	"vl/internal/updateauth"
+	"vl/internal/updaterbootstrap"
+	"vl/store"
 )
 
 // PR #200 fold F3 at the production call sites: the bot resolves its data

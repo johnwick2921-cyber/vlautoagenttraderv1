@@ -3,7 +3,7 @@
 // A31: this writes a LABEL onto a row that already exists. It refuses nothing,
 // cancels nothing and changes no order.
 //
-// PINNED BY PATH, NOT BY NAME (class 113, nofx-8e 2026-09-10). The predicate
+// PINNED BY PATH, NOT BY NAME (class 113, vl-8e 2026-09-10). The predicate
 // kernel.FadePermissionAt is pure and that purity is checkable — but purity of
 // the predicate says nothing about THIS writer, and the writer is where a
 // wall-clock read actually hurts: reading time.Now() here would stamp "now"

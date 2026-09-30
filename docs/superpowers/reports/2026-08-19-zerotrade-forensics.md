@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 5-DAY ZERO-TRADE FORENSIC POSTMORTEM — the drought was a layer cake: K2 truncation under everything, K1 clock-kill on every survivor, a 41-hour K10 wall, a 4-hour credit outage, and six K5 refusals at the end. Zero unexplained proposals.
 
 READ-ONLY run 2026-08-19 01:09–01:5x CT. No code, config, env, deploy, or restart was touched. Every timestamp below is America/Chicago (CT).

@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # WAVE B — the stop entry reaches the broker with a trigger, and the guard that judges it is the stop-side one
 
 **Branch:** `fix/wave-b-stop-entry` · **base:** `a45cf551` (= `origin/dev` tip at accept) · **claim:** `cb23d9eb`
-**Session:** waveb-stopentry-0905 · **worktree:** `/home/hoang/nofx-waveb`
-**Status: MERGED TO DEV. GO HALF LIVE. C# HALF STAGED, NOT YET COMPILED.** The Go binary shipped in `f516da7c` — booted 2026-09-05 23:53:44 CT by the Wave A lane (`nofx-6b`) under an owner ruling that collapsed both waves into ONE boot; this lane stood down from its own F1 and handed over the head. F2 ran at 00:04 CT 2026-09-06: the corrected AddOn source is deployed and verified byte-identical, but NT8 is in its maintenance window and could not start, so **nothing has compiled and the C# half is NOT live**. `STOP_ENTRY_SEAM=off` throughout, by owner ruling.
+**Session:** waveb-stopentry-0905 · **worktree:** `/home/hoang/vl-waveb`
+**Status: MERGED TO DEV. GO HALF LIVE. C# HALF STAGED, NOT YET COMPILED.** The Go binary shipped in `f516da7c` — booted 2026-09-05 23:53:44 CT by the Wave A lane (`vl-6b`) under an owner ruling that collapsed both waves into ONE boot; this lane stood down from its own F1 and handed over the head. F2 ran at 00:04 CT 2026-09-06: the corrected AddOn source is deployed and verified byte-identical, but NT8 is in its maintenance window and could not start, so **nothing has compiled and the C# half is NOT live**. `STOP_ENTRY_SEAM=off` throughout, by owner ruling.
 
 **THIS REPORT COVERS TWO PASSES.** The build (`48e340c0` … `98c28dcd`) and the REPAIR after four adversarial reviews (`291a299c` … the report commit). The repair found **two BLOCKERs the build missed**, both live, both outside what the build had been looking at; they are class 77 and they are the reason this document has a VERIFICATION RECORD at the end naming every finding and its disposition.
 
@@ -285,7 +286,7 @@ ninjascript/VLTraderTCPClient.cs:964 (dev)   var entryAction = side == "long" ? 
 1. A LONG stop entry was built at `entry − offset` — a BUY stop **below** the level it exists to break above — and the new stop-side guard then adjudicated that mis-signed trigger with long semantics. Depending on where price sat it either placed a buy stop on the wrong side of the authored level, or **cancelled an arm that should have rested**. And the destructive half runs at `:945` (dev), **ahead of the D5 build refusal**, so the Go binary alone — old AddOn still loaded, no order ever attempted — could permanently cancel long stop-entry arms.
 2. `PlaceStopEntry`/`PlaceLimitEntry` copy the side into the frame verbatim (`tcp_trader.go:457`, `:529` — `Side: side`, no fold; the sibling market path at `:388` even carries the comment `// lowercase per spec L4390`), and the AddOn's ternary answers **SellShort to every side it does not recognise**. `"LONG" != "long"`, so **a LONG entry — limit OR stop — would have been submitted to NinjaTrader as a live SELL.**
 
-**Why nobody had seen it, and the reason is the trap.** Census, read-only, `sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"`:
+**Why nobody had seen it, and the reason is the trap.** Census, read-only, `sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro"`:
 
 ```
 side |kind       |n |first CT             |last CT
@@ -452,7 +453,7 @@ Re-run in full at the REPAIR head:
 |---|---|---|
 | build | `go build ./...` | rc=0 |
 | vet | `go vet ./...` | rc=0 |
-| Go suite | `go test ./...` | **`grep -c '^FAIL'` = 0 · `grep -c '^ok'` = 28** · `ok nofx/trader 54.440s` · `ok nofx/trader/ninjatrader 8.603s` · `ok nofx/provider/ninjatrader 18.617s` · `ok nofx/store 23.598s` · `ok nofx/kernel 1.770s` |
+| Go suite | `go test ./...` | **`grep -c '^FAIL'` = 0 · `grep -c '^ok'` = 28** · `ok vl/trader 54.440s` · `ok vl/trader/ninjatrader 8.603s` · `ok vl/provider/ninjatrader 18.617s` · `ok vl/store 23.598s` · `ok vl/kernel 1.770s` |
 | goldens | `go run ./cmd/nq_smoke prompt` | `OK prompt: system=1530 bytes, user=504 bytes` rc=0 |
 | goldens | `go run ./cmd/nq_smoke roundtrip` | `OK roundtrip: signal->fill in 400.893174ms (direction=LONG entry=21500.00)` rc=0 |
 | goldens | `git diff --name-only origin/dev...HEAD -- kernel/testdata` | **0 files** |
@@ -479,8 +480,8 @@ non-terminal arms **0**; broker book empty across the last ten `nt8_order_snapsh
 
 | file | md5 | build it HOLDS |
 |---|---|---|
-| `~/nofx-backups/nt8-addon/VLTraderTCPClient.2026-09-03-f12.cs` | `b7d6700220f8cbd21ca73d4892400065` | 2026-09-03-f12 |
-| `~/nofx-backups/nt8-addon/NinjaTrader.Custom.2026-09-03-f12.dll` | `7c2789ff35d96beb73dd740a29b913f1` | 2026-09-03-f12 |
+| `~/vl-backups/nt8-addon/VLTraderTCPClient.2026-09-03-f12.cs` | `b7d6700220f8cbd21ca73d4892400065` | 2026-09-03-f12 |
+| `~/vl-backups/nt8-addon/NinjaTrader.Custom.2026-09-03-f12.dll` | `7c2789ff35d96beb73dd740a29b913f1` | 2026-09-03-f12 |
 
 **What was actually done, and it is only the first half of F2:**
 
@@ -538,7 +539,7 @@ Read-only, re-measured in the repair pass: **only `2026-09-03-f12` has ever been
 ## A15 — LIVE-SURFACE TRUTH
 
 - **Nothing is deployed.** The running binary is rev `36648655`, booted 2026-09-04 13:25:47 CT. It has **none** of this. Today is Saturday 2026-09-05, CME closed, engine idle.
-- **`STOP_ENTRY_SEAM=on` in `/home/hoang/nofx/.env`.** This is a LIVE path, not a dormant one — that is how 21 malformed orders reached a broker.
+- **`STOP_ENTRY_SEAM=on` in `/home/hoang/vl/.env`.** This is a LIVE path, not a dormant one — that is how 21 malformed orders reached a broker.
 - **The cutover state is clean.** No working stop entry exists anywhere. The only non-terminal rows are ids 92/94/96/98 (`superseded`) and **104, 105** (`armed`), all `kind='limit'`, none carrying a `signal_id` — so nothing is resting at the broker.
 - **After a Go-side deploy but before the NT8 recompile — EXACTLY WHAT THE OWNER WILL STILL SEE WRONG.** This is the honest list, not the reassuring one:
   1. **Every stop entry is REFUSED**, counted as `stop_entry:addon_build`, and logged `📌 armed <S> stop-entry REFUSED [guard=far_side_build verdict=rest] …`. Correct and intended, but it means **zero stop entries trade** until the F5. If the owner reads "refused" as a bug, it is not.
@@ -608,7 +609,7 @@ md5sum ~/nt8-addon-backups/2026-09-03-f12/* | tee ~/nt8-addon-backups/2026-09-03
 4. **The capability's own acceptance proof was the bug.** The 2026-08-31 E7 far-side proof order went out as `Limit price=28700 Stop price=0` and was recorded as a PASS, because the criterion was "it rests and cancels" and a zero-trigger stop rests perfectly.
 5. **Up to NINE stop entries rested concurrently for a SINGLE arm slot** (`nt8_order_snapshots` 1604-1606 and 1664, `order_count=9`, 8 Accepted + 1 Initialized, none cancel-pending). Between 10:22 and 10:40 the re-arm loop placed 8 new orders with no cancels. Harmless only because all nine were inert. **With D1 fixed and this cancel path unchanged, one arm could take nine positions on an account capped at `maxFuturesContracts=2.0`** whose one-open-position rule is enforced Go-side at arm time and cannot reach orders already resting at the broker. The cancel path is outside this wave's footprint (A31) — **this needs an owner ruling before the seam runs again on a live session.**
 6. **A row whose `kind` contradicts its `condition`.** Id 38 carries `kind='stop_entry'` with `condition='sweep_reclaim'`, but `ArmKindFor("sweep_reclaim")` returns `ArmKindLimit` — consistent with `UpsertArm` updating `condition` in place while leaving `kind` stale. `kind` and `condition` can disagree on a real row.
-7. **`TestStopEntryKnobDefaults` (`trader/split_entry_test.go:267`) reads the AMBIENT environment** with no `t.Setenv`, asserting `STOP_ENTRY_SEAM` defaults off. It passes in a clean shell and would FAIL in one that has sourced `/home/hoang/nofx/.env`. All runs in this report were from a shell that has **not** sourced `.env`. Outside the footprint; not touched.
+7. **`TestStopEntryKnobDefaults` (`trader/split_entry_test.go:267`) reads the AMBIENT environment** with no `t.Setenv`, asserting `STOP_ENTRY_SEAM` defaults off. It passes in a clean shell and would FAIL in one that has sourced `/home/hoang/vl/.env`. All runs in this report were from a shell that has **not** sourced `.env`. Outside the footprint; not touched.
 8. **Guide drift already on dev, unrelated to this wave.** `plays.ts` lists `STOP_ENTRY_SEAM (off)` in the *defaults* line while `.env` has it **on** and every boot line since 09-01 reads `stop_entry_seam=ON`. It is defensible as a default list, but it reads as the live value on the very path this wave fixes. **Left alone — it needs a ruling**, and rewriting a defaults list into resolved values is a different change.
 9. **AUDIT-CHECKLIST class 75's contract test did not exist — and the first pass then shipped six stale refs, proving the point.** `grep -rln 'SYSTEM-MAP' --include=*.go .` returned nothing at the first pass. **[repair] It returns `trader/wave_b_replay_test.go` now**, for the delimited region this wave owns (E11). The rest of the map is still unenforced and the class-75 discipline elsewhere in this PR must not be reported as machine-verified.
 
@@ -666,8 +667,8 @@ Lenses: **S** = scope/footprint · **G** = guard logic & unknown-safety · **W**
 | 18 | G | MINOR | The destructive THROUGH branch fires on a price with no freshness check | **REFUTED AS IN-SCOPE — recorded** | The reviewer states it themselves: "Same shape as the pre-existing limit branch, so not new." A staleness gate needs a bar timestamp threaded into the branch and a knob to govern it, which is a change to WHEN arms may be placed — A31 scope, not this wave. Recorded as an open item; nothing built. |
 | 19 | W | MINOR | GUIDE CONTENT LAW asks for the `GUIDE_BUILT_REV` bump in the same PR | **REFUTED — the current state is correct** | `GUIDE_BUILT_REV` must equal the **deployed** rev. This wave is not deployed; setting it to a sha that never ships makes the banner lie in the other direction. Boot-5 rule: bump it and rebuild `web/dist` **in the main tree, before the boot**, not in the marker. The Guide's *content* is updated here, which is the substantive half. Carried on the cutover checklist (A15). |
 | 20 | W, T | MINOR | The A29 pin is a literal source-substring match — brittle and semantically blind | **ACCEPTED — the CLAIM is withdrawn, the pin is retained as a tripwire** | The guarantee now rests on E10 (executed). The report's first pass over-claimed that the D4 boot line's `unknown=` field "renders CANCELS if the verdict ever stops being no-op" — **that was false**, `StopEntryBootLine` probes the pure function and cannot observe the caller. Withdrawn in the D4 and E8 sections. |
-| 21 | S | SURPRISE | A second process was running `go test` inside this worktree at 22:01:34 | **REFUTED as still-live — recorded** | `ps aux | grep -E 'nofx-waveb\|go test'` at 22:2x CT: no such process. The worktree list shows `nofx-waveb` held only by `fix/wave-b-stop-entry`. Most likely a reviewer's own read-only run overlapping the review window. No writes reached the branch: `git status --porcelain` was empty at every checkpoint and `git ls-remote` matched HEAD throughout. |
-| 22 | S | (assessment) | "NO SCOPE VIOLATION FOUND — and no deploy happened" | **CONFIRMED INDEPENDENTLY** | Re-verified by me, not taken on trust: main tree HEAD `b2d3826e`, porcelain **clean**; `deploy/RELEASE` = `36648655`; `nofx-bin` still Sep 4 13:25 with PID 1137991 from that boot; Documents AddOns `.cs` still Sep 3 21:11 / `f12` / md5 `b7d670…`; `~/nofx-main.lock.d` **does not exist**; no binary in the worktree. Nothing was copied, killed, swapped or restarted (A3). |
+| 21 | S | SURPRISE | A second process was running `go test` inside this worktree at 22:01:34 | **REFUTED as still-live — recorded** | `ps aux | grep -E 'vl-waveb\|go test'` at 22:2x CT: no such process. The worktree list shows `vl-waveb` held only by `fix/wave-b-stop-entry`. Most likely a reviewer's own read-only run overlapping the review window. No writes reached the branch: `git status --porcelain` was empty at every checkpoint and `git ls-remote` matched HEAD throughout. |
+| 22 | S | (assessment) | "NO SCOPE VIOLATION FOUND — and no deploy happened" | **CONFIRMED INDEPENDENTLY** | Re-verified by me, not taken on trust: main tree HEAD `b2d3826e`, porcelain **clean**; `deploy/RELEASE` = `36648655`; `vl-bin` still Sep 4 13:25 with PID 1137991 from that boot; Documents AddOns `.cs` still Sep 3 21:11 / `f12` / md5 `b7d670…`; `~/vl-main.lock.d` **does not exist**; no binary in the worktree. Nothing was copied, killed, swapped or restarted (A3). |
 
 **Counts: 22 findings adjudicated — 16 ACCEPTED-FIXED, 2 CONFIRMED-NOT-FIXED (footprint, both recorded and one escalated), 3 REFUTED, 1 CONFIRMED-INDEPENDENTLY.**
 

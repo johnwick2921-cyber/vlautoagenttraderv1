@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // THE CLOCK IS FIXED, NOT time.Now(). The recorder reaches no time-banded rule

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import pathlib,json,sqlite3,re,collections,math
 p=pathlib.Path(__file__).resolve().parent
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('pragma query_only=ON');c.execute('BEGIN')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('pragma query_only=ON');c.execute('BEGIN')
 rows=lambda q:[dict(r) for r in c.execute(q)]
 plans={(r['plan_id'],r['version']):json.loads(r['doc']) for r in rows('select plan_id,version,doc from plans')}
 def ref(s):

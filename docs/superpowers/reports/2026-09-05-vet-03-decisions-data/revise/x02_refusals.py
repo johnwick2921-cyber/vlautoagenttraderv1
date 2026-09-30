@@ -1,5 +1,5 @@
 import csv,collections,sqlite3
-P="/home/hoang/nofx-vet-03/docs/superpowers/reports/2026-09-04-two-day-audit-data/refusals.csv"
+P="/home/hoang/vl-vet-03/docs/superpowers/reports/2026-09-04-two-day-audit-data/refusals.csv"
 rows=list(csv.DictReader(open(P)))
 print("rows",len(rows))
 by=collections.defaultdict(list)
@@ -10,7 +10,7 @@ for leg,rs in sorted(by.items()):
     print(f"{leg}: n={len(rs)} cf_session_flat={s:+.2f}")
 print("TOTAL",f"{tot:+.2f}")
 # min_sl validateDecision: did the same cycle end in a taken open_*?
-db=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True)
+db=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True)
 ms=[r for r in rows if r['leg'].startswith('min_sl (validateDecision')]
 print("\nmin_sl validateDecision n=",len(ms))
 taken=[];nott=[]

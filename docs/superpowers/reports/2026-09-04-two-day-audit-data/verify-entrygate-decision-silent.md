@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # ADVERSARIAL VERIFY — "decision-path EntryGate refusal emits NO log line"
 
 Verdict: **CONFIRMED** (one cited evidence command misquoted; finding unaffected).
@@ -8,7 +9,7 @@ Verifier ran everything independently. All times CT (UTC-5).
 NOTE: SQLite `LIKE` treats `_` as a single-char wildcard, so `LIKE 'entry_gate%'`
 is loose. Re-run with GLOB (literal `_`) — same answer, 19:
 
-    sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+    sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
       "SELECT COUNT(*) FROM decision_records WHERE risk_check_error GLOB 'entry_gate:*';"
     -> 19          (all-time == in-window; nothing before 2026-09-02)
 
@@ -31,14 +32,14 @@ are `_`-wildcard artifacts.
 
 ## 2. File logs — 0 lines, and NOT a coverage gap [A]
 
-    grep -F -c "entry-gate" /home/hoang/nofx/data/nofx_2026-09-0{2,3}.log   -> 0 / 0
+    grep -F -c "entry-gate" /home/hoang/vl/data/vl_2026-09-0{2,3}.log   -> 0 / 0
     grep -F -c "entry_gate" ... -> 0 / 0
     grep -c "🚦" ...            -> 0 / 0
     grep -c "plan_mode=strict" -> 0 / 0 ; grep -c "below floor" -> 0 / 0
 
 Coverage proof — every one of the 19 refusal SECONDS has log lines in the file
 (14-45 lines each), so the zero is a real absence, not a dead logger:
-    for t in "09-03 20:35:06" ...; do grep -c "^$t" nofx_2026-09-03.log; done
+    for t in "09-03 20:35:06" ...; do grep -c "^$t" vl_2026-09-03.log; done
 Files are contiguous: 09-02 log = 09-02 00:01:06 -> 09-03 10:28:08;
 09-03 log = 09-03 10:28:29 -> 09-03 23:55:15.
 

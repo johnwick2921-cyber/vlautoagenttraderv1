@@ -6,7 +6,7 @@
 // It is DRY-RUN by default. Procedure:
 //
 //  1. STOP the bot (or accept that a running PRE-fix binary will re-burn).
-//  2. sqlite3 data/data.db ".backup ~/nofx-backups/<name>/level-repair.db"
+//  2. sqlite3 data/data.db ".backup ~/vl-backups/<name>/level-repair.db"
 //  3. go run ./cmd/dayplan-level-repair -db data/data.db        (preview)
 //  4. go run ./cmd/dayplan-level-repair -db data/data.db -confirm
 //  5. start the NEW binary (P1c windowed consumption) — the next cycle
@@ -23,7 +23,7 @@ import (
 	"os"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func main() {

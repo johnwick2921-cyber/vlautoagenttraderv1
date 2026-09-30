@@ -1,8 +1,9 @@
-# 📖 NoFx Prompt 编写指南
+names rewritten to vl on 2026-09-30 (VL rename)
+# 📖 VL Prompt 编写指南
 
 **版本**: v1.0
 **更新日期**: 2025-01-09
-**适用系统版本**: NoFx v0.x+
+**适用系统版本**: VL v0.x+
 
 ---
 
@@ -96,7 +97,7 @@ Prompt 是你给 AI 交易员的"工作指令"，决定了 AI 如何分析市场
 
 ### Prompt 的工作原理
 
-NoFx 每3分钟会构建一个包含市场数据的消息发送给 AI：
+VL 每3分钟会构建一个包含市场数据的消息发送给 AI：
 
 ```mermaid
 graph LR
@@ -1246,7 +1247,7 @@ reasoning 字段保持简短（10-20字），用关键词概括决策理由
 **步骤1: 查看实际输出**
 ```bash
 # 查看系统日志，找到实际发送给 AI 的 Prompt
-docker logs nofx-trader | grep "User Prompt"
+docker logs vl-trader | grep "User Prompt"
 ```
 
 **步骤2: 确认字段存在**
@@ -1392,7 +1393,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 **排查步骤**:
 1. 查看日志中的 AI 原始输出
    ```bash
-   docker logs nofx-trader | tail -100
+   docker logs vl-trader | tail -100
    ```
 2. 检查是否使用了 XML 标签 `<reasoning>` 和 `<decision>`
 3. 检查 JSON 格式是否正确
@@ -1417,7 +1418,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 **排查步骤**:
 1. 查看具体的验证错误信息
    ```bash
-   docker logs nofx-trader | grep "验证失败"
+   docker logs vl-trader | grep "验证失败"
    ```
 2. 检查是否违反硬约束
 
@@ -1446,7 +1447,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 **排查步骤**:
 1. 查看 AI 的思维链分析（reasoning）
    ```bash
-   docker logs nofx-trader | grep -A 20 "<reasoning>"
+   docker logs vl-trader | grep -A 20 "<reasoning>"
    ```
 2. 检查 Prompt 是否有歧义
 3. 检查市场数据是否符合你的开仓条件
@@ -1482,7 +1483,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 
 ### 官方资源
 
-- **GitHub Issues**: https://github.com/NoFxAiOS/nofx/issues
+- **GitHub Issues**: upstream github link (removed in the VL rename)
 - **官方文档**: 查看项目 README
 - **社区讨论**: GitHub Discussions
 
@@ -1525,4 +1526,4 @@ Prompt 内容：
 
 **文档版本**: v1.0
 **最后更新**: 2025-01-09
-**维护者**: Nofx Team CoderMageFox
+**维护者**: VL Team CoderMageFox

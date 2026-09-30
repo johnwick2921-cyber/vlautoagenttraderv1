@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # E7 RESEND-LOOP INCIDENT — CLOSEOUT + F1 root cause
 
 2026-08-30 · branch `fix/clock-hold` (rides fix/move-seams) · incident window
@@ -56,7 +57,7 @@ Before/after (23:14:24 CT):
 BEFORE: plans ASIA v2 = active (owner_reset) · non-terminal arms: id=13 S3 armed 29414.21, id=14 S2 working 29371.5 (signal 58f77728)
 AFTER:  plans ASIA v2 = no_trade (e7_incident_kill:manual_cancel_respected) · non-terminal arms = 0 · ARMED_TEST_SEAM=off
 ```
-DB backed up first: `~/nofx-backups/e7-kill/data.db.pre-e7-kill` (605 MB,
+DB backed up first: `~/vl-backups/e7-kill/data.db.pre-e7-kill` (605 MB,
 VACUUM INTO).
 
 ## C. Ledger hygiene

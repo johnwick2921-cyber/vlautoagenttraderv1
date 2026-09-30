@@ -1,6 +1,6 @@
 #!/bin/bash
 # q08: 09-04 arm churn, 09-03 silence gaps, level_stats/touch_episodes shape, decision cadence gaps era-wide
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "--- 09-04 NY S2 SHORT arm rows: count, distinct reasons, first/last"
 sqlite3 "$DB" "select count(*), min(id), max(id), min(datetime(strftime('%s',created_at),'unixepoch','-5 hours')), max(datetime(strftime('%s',created_at),'unixepoch','-5 hours')) from armed_orders where plan_id like '2026-09-04:NY:%' and scenario='S2'"
 sqlite3 "$DB" "select state, substr(state_reason,1,50), count(*) from armed_orders where plan_id like '2026-09-04:NY:%' and scenario='S2' group by 1,2 order by 3 desc"

@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // F4 — the outcome counters persist across a restart and the classes are

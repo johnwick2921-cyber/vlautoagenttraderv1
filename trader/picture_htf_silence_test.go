@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // DEFAULTS-SANE step 4: every silent decision point is counted, so the log

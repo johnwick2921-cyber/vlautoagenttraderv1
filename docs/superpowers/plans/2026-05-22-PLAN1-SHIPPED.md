@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Plan 1 — Shipped 2026-05-22
 
 ## Validated end-to-end via NT Playback
@@ -72,14 +73,14 @@ Three CTO-locked decisions preserved:
 
 Incidental fixes during merge:
 - main.go duplicate-import (telemetry) removed
-- main.go duplicate nofxiAgent setup block removed
+- main.go duplicate vliAgent setup block removed
 - 42 incoming agent/*_test.go tests gated with
   `t.Skip("TODO: adapt to fork's agent API — see PR #3 merge 2026-05-25...")`
   across 7 files (tests target upstream's agent API, not our customizations)
 
 Post-merge verification:
 - go build ./... → exit 0
-- Playwright DOM: Task 11 (nav clean) PASS; Task 16 (no bare NOFX on
+- Playwright DOM: Task 11 (nav clean) PASS; Task 16 (no bare VL on
   /agent or home) PASS; Task 14 ModelConfigModal DOM auth-gated, verified
   via static-bundle scan (BlockRun present, wallet UI absent)
 - All 10 Plan 1 critical files byte-stable on main (V1 subagent verify)

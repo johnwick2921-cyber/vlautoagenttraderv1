@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SYSTEM VERIFIED — 41 remaining, 0 blocking
 
-Read-only audit of `/home/hoang/nofx` @ `5472f316`, Sunday 2026-08-16 (market closed). 22 agents (13 hardcode/pipeline + 9 matrix/checklist) plus my own verification of every claim I report. **Seven fixes shipped** — six trivial+safe, one a regression this audit found in my own W15.C change. Everything else is listed with a size. **Nothing found is blocking for Monday's SIM open**, but items 1–4 and 9 change what the bot actually does and should be decided before you enable more sessions.
+Read-only audit of `/home/hoang/vl` @ `5472f316`, Sunday 2026-08-16 (market closed). 22 agents (13 hardcode/pipeline + 9 matrix/checklist) plus my own verification of every claim I report. **Seven fixes shipped** — six trivial+safe, one a regression this audit found in my own W15.C change. Everything else is listed with a size. **Nothing found is blocking for Monday's SIM open**, but items 1–4 and 9 change what the bot actually does and should be decided before you enable more sessions.
 
 Evidence tiers: **[A]** = I read the exact line or ran it and saw output · **[B]** = strong inference · **[C]** = speculation. Every finding below is [A] unless marked.
 
@@ -46,7 +47,7 @@ The root disease, confirmed: a value compiled in where config should rule. **9 S
 | H8 | `!sess.Enabled` ×7 sites | `auto_trader_session.go:108`, `planner.go:528,566`, `handler_plan.go:143/475/555/711/1122` | `sessions[].enable` | **YES** | SHADOWS-CONFIG |
 | H9 | bars `"1d"/"1h"/"5m"` | `trader/auto_trader_planner.go:421-424` | `planner_timeframes` | **YES** (see below) | SHADOWS-CONFIG |
 
-**Runtime proofs** (an agent built a probe module with `replace nofx =>` and ran the real kernel functions):
+**Runtime proofs** (an agent built a probe module with `replace vl =>` and ran the real kernel functions):
 - `ProximityFilterATR=3.0`, price 21000, dATR 100 → a PDH at 2.0×dATR was **DROPPED**; only the 0.5× level seated. `ScoreLevels` has no proximity parameter at all, so the configured value is *structurally incapable* of reaching it. H2 is the upstream twin: round-number levels beyond 1.5× are never even generated, so fixing H1 alone only half-honours the setting.
 - `MaxLevels=12` + a 9-level doc → `too many levels: 9 (max 8)`. `ScenarioCap=5` + 4 scenarios → `scenarios count 4 invalid (1..3)`. Both **reject the whole plan** → fail-closed NO-TRADE. The upper half of both documented ranges is unreachable, and choosing it degrades to no plan. (`auto_trader_planner.go:315` does read `scenarioCap()`, but post-parse — it can only truncate below 3, never raise above.)
 
@@ -122,7 +123,7 @@ Three agents verdicted the rest (day-plan block: 19 LIVE / 2 BROKEN / 5 DISPLAY-
 
 ## PART 4 · RESEARCH-DEFAULTS AUDIT
 
-Spec = `docs/VL-DAYPLAN-FULL-SPEC.md` (lines 60-74 field table, line 21 risk defaults). `docs/NOFX-MASTER-TRADING-SPEC.md` **does not exist** in the repo. LIVE = strategy `a5b7662e` (trader `hoang`, Sim101) — the day-plan strategy.
+Spec = `docs/VL-DAYPLAN-FULL-SPEC.md` (lines 60-74 field table, line 21 risk defaults). `docs/VL-MASTER-TRADING-SPEC.md` **does not exist** in the repo. LIVE = strategy `a5b7662e` (trader `hoang`, Sim101) — the day-plan strategy.
 
 | Setting | Researched | Code default | LIVE VALUE | Verdict |
 |---|---|---|---|---|
@@ -188,7 +189,7 @@ The spec calls these *"hard gates (R:R≥3, conf≥65, guardrails, armor) always
 
 **5.7 FAIL-CLOSED — FINDING.** `currentT1Windows` (`auto_trader_calendar.go:104-123`) returns `nil` — i.e. **no blackout, entries allowed** — on four silent paths: nil store, no active session, **`err != nil || slice == nil`**, and malformed EventsJSON. No alert, no log. So "the calendar feed failed" and "there are no red events today" are indistinguishable and both permit trading. Live state: `calendar_slices` holds 2026-08-18…21 and 08-12…14 but **no row for Monday 2026-08-17**. Second fail-open: `kernel/engine_position.go:148` skips the R:R gate entirely when there is no entry reference (documented, argues other gates cover it).
 
-**5.8 DATA HYGIENE — FINDING.** Demo rows remain in the live DB: **2 plans** (`trigger_reason='demo_seed'`, `model_id='demo-seed (no API call)'`), **3 alerts** (`event_id LIKE 'demo:%'`, including a **P0** "DEMO — planner fail-closed"), **1 overlay** + **1 plan_qa** row on `2026-08-16:NY`, and **1 fabricated closed trade** (`source='demo_seed'`, +$224.50, adherence **A**). It is counted in your stats: **$4,271.25 shown → $4,046.75 real (5.3% of displayed P&L is fabricated)**, plus one fake win and an "A" grade feeding the learning loop. The sandbox seeder is correctly fenced (`cmd/sandbox-seed/main.go:33` refuses any path containing `data.db` or lacking `sandbox`); the contamination came from the guarded `trader/demo_seed_test.go` (untracked, `NOFX_DEMO_SEED=1`). Backups are current and restorable (`~/nofx-backups/auto/daily/`, newest 2026-08-16 05:00; timer armed for 17:30; linger on).
+**5.8 DATA HYGIENE — FINDING.** Demo rows remain in the live DB: **2 plans** (`trigger_reason='demo_seed'`, `model_id='demo-seed (no API call)'`), **3 alerts** (`event_id LIKE 'demo:%'`, including a **P0** "DEMO — planner fail-closed"), **1 overlay** + **1 plan_qa** row on `2026-08-16:NY`, and **1 fabricated closed trade** (`source='demo_seed'`, +$224.50, adherence **A**). It is counted in your stats: **$4,271.25 shown → $4,046.75 real (5.3% of displayed P&L is fabricated)**, plus one fake win and an "A" grade feeding the learning loop. The sandbox seeder is correctly fenced (`cmd/sandbox-seed/main.go:33` refuses any path containing `data.db` or lacking `sandbox`); the contamination came from the guarded `trader/demo_seed_test.go` (untracked, `VL_DEMO_SEED=1`). Backups are current and restorable (`~/vl-backups/auto/daily/`, newest 2026-08-16 05:00; timer armed for 17:30; linger on).
 
 > **The documented cleanup command in `2026-08-16-demo-plan-seed.md` is WRONG — do not run it as written.** It does `DELETE FROM plans WHERE trade_date IN ('2026-08-16','2026-08-15')`, which destroys the **two real 2026-08-15 plans** (`planner_fail_closed` v1 + `NY_scheduled_read` v2, authored by deepseek-v4-pro) — the only genuine plan history you have. It also deletes the two real 08-15 alerts and **misses `plan_qa` entirely**. Corrected command in the handoff below.
 
@@ -200,7 +201,7 @@ GET  http://<lan-ip>:3000/api/traders        → 200   (same API, via the proxy)
 POST http://<lan-ip>:3000/api/reset-password → 410   (P0 gating still in force)
 ```
 
-Most routes 401; `/api/traders` returns `[]` unauthenticated, so nothing is known to have leaked — the defect is that the control was bypassable at all. **Fixed** (`a84d6ae2`) to `127.0.0.1`; safe because WSL2 runs `networkingMode=mirrored` and the sandbox UI has bound loopback throughout. Takes effect next dev-server start. Otherwise: `.env` is untracked; no key-shaped strings in tracked source beyond test fixtures; the one key in `web/dist` is `cm_568c67eae410d912c54c`, the **known-dead public NofxOS default** (`provider/nofxos/client.go:19`, returns HTTP 402), not your secret.
+Most routes 401; `/api/traders` returns `[]` unauthenticated, so nothing is known to have leaked — the defect is that the control was bypassable at all. **Fixed** (`a84d6ae2`) to `127.0.0.1`; safe because WSL2 runs `networkingMode=mirrored` and the sandbox UI has bound loopback throughout. Takes effect next dev-server start. Otherwise: `.env` is untracked; no key-shaped strings in tracked source beyond test fixtures; the one key in `web/dist` is `cm_568c67eae410d912c54c`, the **known-dead public VLOS default** (`provider/vlos/client.go:19`, returns HTTP 402), not your secret.
 
 **5.3 EXIT INTEGRITY — FINDING.** The hold-lock gate itself is correct and tested (`go test ./trader/ -run TestHoldLock` → 4/4 PASS, including the suppression log). Three gaps:
 - **Hold-lock is OFF on both live traders.** `hold_discipline_enabled` is absent from both strategies' `risk_control` (verified in the live DB), so `holdLockSuppressesClose` returns false immediately — the AI *can* close a protected position by opinion today. This is the same class as your deliberate guardrails-master-OFF: a decision awaiting you, not a code defect. *(An agent called this BLOCKING; I downgraded it — the feature works, it is simply not switched on, and switching it on is a one-field config change.)*
@@ -246,7 +247,7 @@ Also found here and **fixed** (`f7fa2d3c`): every gate sets `Success=false` + a 
 
 ## EXIT BAR
 
-`go build` ✅ · `go vet` ✅ · `go test ./...` ✅ · **`go test -race ./...` ✅ clean** · `tsc --noEmit` ✅ · `npm run build` ✅ · vitest **177/178** (the one failure — `RegistrationDisabled` "NoFx Logo" alt text — and the `e2e/gate.spec.ts` collection error are **pre-existing and untouched**, confirmed against the files I changed) · **goldens byte-identical** (`git diff kernel/testdata/` empty) · Playwright green with screenshot · config-truth run on every field touched.
+`go build` ✅ · `go vet` ✅ · `go test ./...` ✅ · **`go test -race ./...` ✅ clean** · `tsc --noEmit` ✅ · `npm run build` ✅ · vitest **177/178** (the one failure — `RegistrationDisabled` "VL Logo" alt text — and the `e2e/gate.spec.ts` collection error are **pre-existing and untouched**, confirmed against the files I changed) · **goldens byte-identical** (`git diff kernel/testdata/` empty) · Playwright green with screenshot · config-truth run on every field touched.
 
 **Adversarial self-review** (run against my own findings): two challenged, one overturned. (a) *"ASIA fires a duplicate read"* → **WRONG**, `IsCMEOpen` blocks 16:55 entirely; corrected to "the designed read never fires". (b) *"the gates get conf=50/RR=1.0"* → **HOLDS**: `GetConfig()` returns a pointer, `ClampLimits()` mutates in place at :247, `GetRiskControlConfig()` reads the same struct at :296. Also disproved before reporting: the digest's date/window mix (correct by design) and the `quantity=0` row (demo data, not a TP-path bug).
 
@@ -315,11 +316,11 @@ Six commits. **No change to the decision, sizing, or order-routing path.**
 | `f7fa2d3c` | gate-refused entries no longer recorded as successful | record/display only |
 
 ```bash
-cd /home/hoang/nofx && git pull
-go build -o nofx-bin . && echo BUILD OK
+cd /home/hoang/vl && git pull
+go build -o vl-bin . && echo BUILD OK
 git rev-parse HEAD > /tmp/rel && { grep '^#' deploy/RELEASE; cat /tmp/rel; } > deploy/RELEASE.new && mv deploy/RELEASE.new deploy/RELEASE   # MANDATORY re-arm
-sudo systemctl restart nofx
-journalctl -u nofx --since '2 min ago' | grep 'BOOT INTEGRITY'    # must read expected == rev
+sudo systemctl restart vl
+journalctl -u vl --since '2 min ago' | grep 'BOOT INTEGRITY'    # must read expected == rev
 cd web && npm run build && cd ..
 # restart the dev UI so the loopback bind takes effect, then hard-reload the browser
 ```
@@ -327,8 +328,8 @@ cd web && npm run build && cd ..
 **Corrected demo cleanup** (replaces the wrong one in `2026-08-16-demo-plan-seed.md`; back up first):
 
 ```bash
-cp ~/nofx/data/data.db ~/nofx-backups/pre-demo-cleanup-$(date +%F).db
-cd /home/hoang/nofx && sqlite3 data/data.db "
+cp ~/vl/data/data.db ~/vl-backups/pre-demo-cleanup-$(date +%F).db
+cd /home/hoang/vl && sqlite3 data/data.db "
 DELETE FROM plans            WHERE trigger_reason = 'demo_seed';
 DELETE FROM plan_overlays    WHERE plan_id = '2026-08-16:NY';
 DELETE FROM plan_qa          WHERE plan_id = '2026-08-16:NY';

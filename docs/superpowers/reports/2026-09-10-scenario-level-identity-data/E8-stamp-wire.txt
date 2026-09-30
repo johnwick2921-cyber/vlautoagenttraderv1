@@ -36,5 +36,5 @@ test rc: 1
     --- FAIL: TestIdentityE1AuthoringToEpisodeAndE3WarnProduction/unresolved (0.14s)
         scenario_level_identity_test.go:52: WARN not recorded: {Named:0 Unnamed:0 Unresolved:0 HeuristicDisagreed:0}
 FAIL
-FAIL	nofx/trader	0.435s
+FAIL	vl/trader	0.435s
 FAIL

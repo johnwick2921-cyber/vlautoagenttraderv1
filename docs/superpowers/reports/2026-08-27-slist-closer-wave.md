@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # S-LIST CLOSER WAVE — 3 fixes built + proven, NOTHING deployed (2026-08-27)
 
-**Branch `fix/slist-closer` off `origin/dev` (cf4b182c) · worktree `~/nofx-slist` · deployed rev UNTOUCHED at c21ad24a**
+**Branch `fix/slist-closer` off `origin/dev` (cf4b182c) · worktree `~/vl-slist` · deployed rev UNTOUCHED at c21ad24a**
 HARD RULE honored: zero deploys, zero restarts, zero config/env writes to the live bot. The running process was never signaled; `data/data.db` was only READ (the nightly proof ran against a sqlite `.backup` copy inside the worktree, since deleted).
 
 ---

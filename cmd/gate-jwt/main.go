@@ -9,7 +9,7 @@
 // /api/reset-account), the Telegram-config routes (/api/telegram*) and
 // /api/updates*. Every other protected route answers it as before.
 //
-// RUN IT FROM THE REPO ROOT (/home/hoang/nofx). godotenv.Load() reads .env
+// RUN IT FROM THE REPO ROOT (/home/hoang/vl). godotenv.Load() reads .env
 // relative to the WORKING DIRECTORY, and .env is not tracked, so running this
 // from a worktree or any other directory silently falls back to the default
 // JWT secret and mints a perfectly well-formed token the server answers 401 to.
@@ -39,9 +39,9 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"nofx/auth"
-	"nofx/config"
-	"nofx/store"
+	"vl/auth"
+	"vl/config"
+	"vl/store"
 )
 
 func main() {

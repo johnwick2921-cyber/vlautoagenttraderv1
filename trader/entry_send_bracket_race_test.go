@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── W1b FOLD-10 — ONE ENTRY-SEND SECTION SPANS SET-BRACKET → OPEN ──────────

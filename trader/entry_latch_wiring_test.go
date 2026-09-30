@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0 (b) — the latch's PRODUCTION evidence and wiring ───────

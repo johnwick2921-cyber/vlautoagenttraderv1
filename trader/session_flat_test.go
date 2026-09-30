@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	"vl/kernel"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // flatFixture builds the EOD scene with independent control over whether a

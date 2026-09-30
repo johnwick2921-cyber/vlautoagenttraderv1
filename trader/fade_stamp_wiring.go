@@ -8,8 +8,8 @@ package trader
 import (
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // stampFadePermissionAtOpen evaluates the label with the clock set to the

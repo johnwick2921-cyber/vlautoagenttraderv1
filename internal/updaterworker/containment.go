@@ -1,7 +1,7 @@
 package updaterworker
 
 // containment.go — W-ONE-BUTTON M4 (3b-B, unit U4G, U4F verify note 5): the
-// ONE path-containment check of internal/updaterworker and cmd/nofx-updater.
+// ONE path-containment check of internal/updaterworker and cmd/vl-updater.
 // Every "is P inside D?" question in their non-test code asks PathWithin and
 // nothing else; TestContainmentCensusOneHelper (an AST scan) refuses any other
 // filepath.Rel result compared to ".." or given to strings.HasPrefix, and any

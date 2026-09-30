@@ -105,7 +105,7 @@
       "boll_periods": [
         20
       ],
-      "nofxos_api_key": "<redacted>",
+      "vlos_api_key": "<redacted>",
       "enable_quant_data": false,
       "enable_quant_oi": false,
       "enable_quant_netflow": false,

@@ -1,7 +1,7 @@
 """Supplementary source and selected read-only store evidence at b4376246."""
 from pathlib import Path
 import sqlite3,json,subprocess,datetime
-root=Path('/home/hoang/nofx-vet-05-complete')
+root=Path('/home/hoang/vl-vet-05-complete')
 print('Source base b4376246; captured',datetime.datetime.now(datetime.timezone.utc).isoformat())
 spans={'trader/armed_executor.go':[(380,432),(1345,1410)],'kernel/min_sl.go':[(18,50)],'trader/auto_trader_clock.go':[(454,522),(736,768)],'trader/exit_mechs_suspend.go':[(10,66)],'trader/f12_leg4.go':[(193,210)],'kernel/session_registry.go':[(78,114)],'store/strategy.go':[(1005,1040)],'ninjascript/VLTraderTCPClient.cs':[(1338,1357),(1587,1607),(2351,2377)],'trader/ninjatrader/tcp_trader.go':[(232,245)],'trader/trade_excursion_hook.go':[(35,85)]}
 for file,rr in spans.items():
@@ -11,7 +11,7 @@ for file,rr in spans.items():
 for base in ['2a66d91c','36648655']:
  args=['git','diff','--name-only',base,'b4376246','--','trader/armed_executor.go','ninjascript/VLTraderTCPClient.cs','provider/ninjatrader/tcp_framing.go','trader/ninjatrader','store/armed_orders.go']
  r=subprocess.run(args,cwd=root,text=True,capture_output=True,check=True);print('COMPARE',base,'to b4376246 selected execution paths:',r.stdout.strip() or 'NO DIFFERENCES')
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('pragma query_only=ON')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('pragma query_only=ON')
 rows=lambda q,a=():[dict(r) for r in c.execute(q,a)]
 print('exit-bar query',json.dumps(rows("select rowid as bar_id,open_time_ms,o,h,l,c from bars where symbol='MNQ' and tf='1m' and open_time_ms=1788445200000")))
 print('exit fill433',json.dumps(rows('select id,exchange_trade_id,side,price,created_at from trader_fills where id=433')))

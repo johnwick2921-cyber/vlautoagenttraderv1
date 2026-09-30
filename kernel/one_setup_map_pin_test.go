@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── ONE SETUP E0 — THE MAP STAYS WHOLE ───────────────────────────────────────

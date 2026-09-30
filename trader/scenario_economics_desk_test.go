@@ -2,7 +2,7 @@ package trader
 
 import (
 	"encoding/json"
-	"nofx/kernel"
+	"vl/kernel"
 	"os"
 	"strings"
 	"testing"

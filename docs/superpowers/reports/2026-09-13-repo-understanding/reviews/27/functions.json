@@ -200,7 +200,7 @@
   },
   {
     "path": "web/src/components/strategy/CoinSourceEditor.tsx",
-    "name": "NofxOSBadge",
+    "name": "VLOSBadge",
     "start_line": 193,
     "end_line": 197,
     "purpose": "Render static provider badge.",
@@ -220,7 +220,7 @@
     "connections": [
       "Syntax-only lexical references (nested callbacks included, not type resolved): blur, filter, isNaN, map, onCommit, parse, parseInt, return, s.trim, setDraft, split, value.join"
     ],
-    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
+    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
     "grouped_callbacks": [
       {
         "start_line": 77,
@@ -254,7 +254,7 @@
     "connections": [
       "Syntax-only lexical references (nested callbacks included, not type resolved): filter, isNaN, map, parseInt, s.trim, split"
     ],
-    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
+    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
     "grouped_callbacks": [
       {
         "start_line": 77,
@@ -276,7 +276,7 @@
     "connections": [
       "Syntax-only lexical references (nested callbacks included, not type resolved): onCommit, parse, setDraft"
     ],
-    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
+    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
     "grouped_callbacks": [],
     "evidence": "A full source read; runtime consequences not reproduced."
   },
@@ -285,11 +285,11 @@
     "name": "IndicatorEditor",
     "start_line": 110,
     "end_line": 1301,
-    "purpose": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
+    "purpose": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
     "connections": [
       "Syntax-only lexical references (nested callbacks included, not type resolved): Data, Indicators, MaxTimeframes, String, allTimeframes.filter, allTimeframes.map, allTimeframes.some, availableTimeframes.filter, block, capabilityValues.includes, category, categoryTfs.map, current.indexOf, current.push, current.splice, document.body.appendChild, document.createElement, e.stopPropagation, ensureRawKlines, feed, feeds, filter, futures, gradient, instrument, list, map, mount, onChange, parseInt, return, rgba, selectedTimeframes.includes, setPrimaryTimeframe, setTimeout, toast.remove, toggleTimeframe, ts, useSWR, wired"
     ],
-    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
+    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
     "grouped_callbacks": [
       {
         "start_line": 133,
@@ -471,7 +471,7 @@
     "connections": [
       "Syntax-only lexical references (nested callbacks included, not type resolved): MaxTimeframes, block, current.indexOf, current.push, current.splice, document.body.appendChild, document.createElement, onChange, setTimeout, toast.remove"
     ],
-    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
+    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
     "grouped_callbacks": [
       {
         "start_line": 187,
@@ -489,7 +489,7 @@
     "connections": [
       "Syntax-only lexical references (nested callbacks included, not type resolved): onChange"
     ],
-    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
+    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
     "grouped_callbacks": [],
     "evidence": "A full source read; runtime consequences not reproduced."
   },
@@ -502,7 +502,7 @@
     "connections": [
       "Syntax-only lexical references (nested callbacks included, not type resolved): onChange"
     ],
-    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
+    "invariants_or_risks": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly.",
     "grouped_callbacks": [],
     "evidence": "A full source read; runtime consequences not reproduced."
   },

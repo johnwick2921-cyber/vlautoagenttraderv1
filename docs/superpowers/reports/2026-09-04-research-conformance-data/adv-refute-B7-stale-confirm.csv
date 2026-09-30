@@ -1,10 +1,10 @@
 metric,value,n,source,note
-resolved_stale_confirm_atr,2.0,,"boot 8 line 'S-wave: stale_confirm=2.0xATR5m' + kernel/plan_confirm.go:124-131 resolver","STALE_CONFIRM_ATR absent from /proc/878451/environ AND from /home/hoang/nofx/.env -> resolver returns 2.0"
+resolved_stale_confirm_atr,2.0,,"boot 8 line 'S-wave: stale_confirm=2.0xATR5m' + kernel/plan_confirm.go:124-131 resolver","STALE_CONFIRM_ATR absent from /proc/878451/environ AND from /home/hoang/vl/.env -> resolver returns 2.0"
 research_stale_confirm_atr,2.0,,"docs/superpowers/reports/2026-08-26-s-fix-wave.md:42,48","'stale-MET count under the new rule (2.0xATR5m)' - shipped value IS the researched value"
 research_stale_rate_structure_covered,0.539,293,"2026-08-26-s-fix-wave.md:44","158/293 = 54% (n the peer omitted)"
 research_stale_rate_bars_covered,0.462,1434,"2026-08-26-s-fix-wave.md:45","663/1434 = 46% (n the peer omitted)"
 research_prior_unit_rate,0.013,2908,"2026-08-26-s-fix-wave.md:48","38/2908 under the deleted 1.0xdATR unit"
-peer_evidence_log_hits,0,4,"grep 'stale — written' /home/hoang/nofx/data/nofx_2026-09-0[1-4].log","TRUE but VOID: block header 'Machine-computed confirmations' is ALSO 0/4 logs - the prompt is never written to nofx_*.log"
+peer_evidence_log_hits,0,4,"grep 'stale — written' /home/hoang/vl/data/vl_2026-09-0[1-4].log","TRUE but VOID: block header 'Machine-computed confirmations' is ALSO 0/4 logs - the prompt is never written to vl_*.log"
 measured_fires_since_0826,983,2468,"decision_records.system_prompt LIKE '%stale — written%' vs '%Machine-computed confirmations%'","39.8% of confirm-block prompts carried the annotation"
 measured_fires_0901_to_0904,308,1147,"decision_records, datetime(timestamp,'-5 hours')","26.9% in the exact window the peer measured as zero"
 measured_fires_0901,99,301,decision_records,CT day

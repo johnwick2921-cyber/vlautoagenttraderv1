@@ -3,9 +3,9 @@ package coinank_api
 import (
 	"context"
 	"encoding/json"
-	"nofx/provider/coinank"
-	"nofx/provider/coinank/coinank_enum"
-	"nofx/safe"
+	"vl/provider/coinank"
+	"vl/provider/coinank/coinank_enum"
+	"vl/safe"
 	"strconv"
 	"strings"
 

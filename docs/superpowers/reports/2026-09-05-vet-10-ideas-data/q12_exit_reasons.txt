@@ -1,4 +1,4 @@
-/home/hoang/nofx-analysis/vet-10-0905/q12_exit_reasons.py:20: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+/home/hoang/vl-analysis/vet-10-0905/q12_exit_reasons.py:20: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
   xt=datetime.datetime.utcfromtimestamp(r['exit_time']/1000)-datetime.timedelta(hours=5)
 close-sync lines parsed: 66
 matched 64 unmatched [578]

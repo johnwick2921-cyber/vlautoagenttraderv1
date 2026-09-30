@@ -3,7 +3,7 @@ package expectancy
 import (
 	"strings"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // levelKinds is the canonicalizer's vocabulary. It holds the kernel constants

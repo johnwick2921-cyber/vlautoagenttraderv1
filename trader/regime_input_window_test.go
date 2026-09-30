@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 	"path/filepath"
 )
 

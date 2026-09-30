@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // P2-18 RED→GREEN — an UNSET NT_TRANSPORT must not fall back silently: the

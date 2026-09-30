@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Placement truth: 98f4ec6e cutover and remaining feed-clock census
 
 Owner GO received 2026-09-08. Lane: `placement-truth-96604090/root[unlisted]`, continuation of `fix/placement-truth-0907`. Evidence grades follow the canon: **A** directly observed source/output/frame; **B** inference; **C** unproven hypothesis. Clock classification is stated separately, so an evidence grade cannot masquerade as a clock choice.
@@ -24,7 +25,7 @@ Owner GO received 2026-09-08. Lane: `placement-truth-96604090/root[unlisted]`, c
 
 ## Ordered cutover evidence
 
-[A] Main was clean on `dev` at `171bebee`, then fast-forwarded under this lane's lock to `9c2ab980`. The full `go test ./...` suite passed at that merged HEAD. The approved code revision was rebuilt from clean clone `/tmp/nofx-placement-build/nofx`, with `vcs.revision=98f4ec6e499eb7dafb31e192460cb774c9a425df`, `vcs.modified=false`, SHA-256 `316ed32ba10031d26bbc7d6df5d6d3d6bd3db3e4678fd1f406c6bb94eb086c4b`. GUIDE uses the full revision extracted from that binary before building dist. Validation logs are under `/tmp/placement-cutover-98f4/`.
+[A] Main was clean on `dev` at `171bebee`, then fast-forwarded under this lane's lock to `9c2ab980`. The full `go test ./...` suite passed at that merged HEAD. The approved code revision was rebuilt from clean clone `/tmp/vl-placement-build/vl`, with `vcs.revision=98f4ec6e499eb7dafb31e192460cb774c9a425df`, `vcs.modified=false`, SHA-256 `316ed32ba10031d26bbc7d6df5d6d3d6bd3db3e4678fd1f406c6bb94eb086c4b`. GUIDE uses the full revision extracted from that binary before building dist. Validation logs are under `/tmp/placement-cutover-98f4/`.
 
 [A] Initial independent gate, `2026-09-08T00:08:12.688878-05:00`, HTTP 200, `ready=true`:
 
@@ -79,4 +80,4 @@ Four protective-order proofs remain event-dependent: entry's own OCO; filled ent
 
 [A] Preparation correction: the first dist staging path was an untracked sibling of `web/dist`; the pre-swap clean-tree assertion stopped that attempt. The owned staging directory was moved to `/tmp/placement-cutover-98f4/dist.next`, main was verified clean, and the gate was re-read before any binary rename. Backup dist is outside the main tree.
 
-[A] Binary backup: `/home/hoang/nofx/nofx-bin.old.317388e7.placement-98f4ec6e`. Dist backup: `/tmp/placement-cutover-98f4/dist.old.317388e7`. Independent keeper log: `/tmp/placement-cutover-98f4/keeper.log`; received-frame watcher: `/tmp/placement-cutover-98f4/watch.jsonl`; full machine receipt: `/tmp/placement-cutover-98f4/verify.json`. The lock stays held with fresh heartbeats through the owner handoff; postboot verification and the postboot marker push must precede release.
+[A] Binary backup: `/home/hoang/vl/vl-bin.old.317388e7.placement-98f4ec6e`. Dist backup: `/tmp/placement-cutover-98f4/dist.old.317388e7`. Independent keeper log: `/tmp/placement-cutover-98f4/keeper.log`; received-frame watcher: `/tmp/placement-cutover-98f4/watch.jsonl`; full machine receipt: `/tmp/placement-cutover-98f4/verify.json`. The lock stays held with fresh heartbeats through the owner handoff; postboot verification and the postboot marker push must precede release.

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // fvgBars builds a quiet 1m series then a gap pattern at the tail.

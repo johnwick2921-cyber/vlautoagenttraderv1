@@ -3,12 +3,12 @@ package trader
 import (
 	"fmt"
 	"math"
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
-	"nofx/telemetry"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
+	"vl/telemetry"
+	ntTrader "vl/trader/ninjatrader"
 	"time"
 )
 

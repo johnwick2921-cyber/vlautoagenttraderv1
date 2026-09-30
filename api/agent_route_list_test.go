@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/telegram/agent"
+	"vl/telegram/agent"
 )
 
 // agentHiddenProbes: every path the agent's route list must not contain,

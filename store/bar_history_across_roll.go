@@ -64,7 +64,7 @@ func priorSourceRank(src string) int {
 // and anything the current contract holds before that is an import (the
 // 09-07..09-14 12-26 file) at a time when the FRONT month was the prior
 // contract. Admitting it would draw one bar of the next contract's price
-// space in the middle of the prior series (nofx-93, 2026-09-16). A hole in
+// space in the middle of the prior series (vl-93, 2026-09-16). A hole in
 // the prior series stays a hole. W-BARS-CONTRACT-KEY (2026-09-18): the key now
 // includes the contract, so such rows land at EVERY minute (no longer only in
 // holes); the exclusion of `current` here and the time split in

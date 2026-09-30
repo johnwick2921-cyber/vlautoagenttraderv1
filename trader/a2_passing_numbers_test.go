@@ -23,9 +23,9 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/levelidentity"
-	"nofx/store"
+	"vl/kernel"
+	"vl/levelidentity"
+	"vl/store"
 )
 
 func fp(v float64) *float64 { return &v }

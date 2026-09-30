@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // G7 (regime wave, 2026-08-21) — the flip/death evaluator may never judge a

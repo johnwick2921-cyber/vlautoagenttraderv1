@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
-	"nofx/telegram/agent"
+	"vl/internal/updateauth"
+	"vl/telegram/agent"
 )
 
 // credCall drives one ordinary (non-/updates) request through the production

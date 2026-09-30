@@ -1,5 +1,5 @@
 import sqlite3, csv, re, math, datetime
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True); c=con.cursor(); c.execute('PRAGMA query_only=ON')
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True); c=con.cursor(); c.execute('PRAGMA query_only=ON')
 def wilson(k,n,z=1.96):
     if n==0: return (0,0)
     p=k/n; d=1+z*z/n; ctr=(p+z*z/(2*n))/d; h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d

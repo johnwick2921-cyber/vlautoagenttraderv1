@@ -1,7 +1,7 @@
 package trader
 
 import (
-	"nofx/store"
+	"vl/store"
 )
 
 // DeathRereadBootLine (W-DEATH-REREAD, 2026-09-18) renders the resolved knob at

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Day-Plan Design — Pre-Build Integration Recon (READ-ONLY)
 
-**Date:** 2026-08-14 · **Repo:** /home/hoang/nofx · **HEAD:** `3624a2a4` (branch `main`)
+**Date:** 2026-08-14 · **Repo:** /home/hoang/vl · **HEAD:** `3624a2a4` (branch `main`)
 **Method:** 12 parallel read-only investigators, one per anchor; every claim carries a fresh `file:line` read at HEAD. Evidence tiers: **[A]** saw the exact line · **[B]** inferred from strong evidence · **[C]** speculation.
 **Scope:** verify the day-plan design's 12 integration assumptions against real code. No code changes; this report file is the only write.
 
@@ -89,7 +90,7 @@
 - **Design:** `/api/plan/*` mirrors the risk block (one `handler_plan_*.go` + register at ~`server.go:422`). **Note:** no owner-scoping in the risk family (GetTrader resolves any loaded trader by id) — if `/api/plan/*` must be owner-scoped, that guard is net-new.
 
 ### 12 — Per-strategy planner-model — MISSING [A] · build M (S if scored as just the selector)
-- Trader→model is **1:1**: `Trader.AIModelID` (`store/trader.go:25`) → one `Provider` → one `mcpClient` (`auto_trader.go:389-427,584`); `StrategyConfig` has **no** model field (`strategy.go:682-712`); the live decision uses the single client (`auto_trader_loop.go:193`). No day-plan sub-task exists (`grep day.?plan` = 0 in the trading path; `agent/planner_runtime.go` is the NOFXi chat planner, separate).
+- Trader→model is **1:1**: `Trader.AIModelID` (`store/trader.go:25`) → one `Provider` → one `mcpClient` (`auto_trader.go:389-427,584`); `StrategyConfig` has **no** model field (`strategy.go:682-712`); the live decision uses the single client (`auto_trader_loop.go:193`). No day-plan sub-task exists (`grep day.?plan` = 0 in the trading path; `agent/planner_runtime.go` is the VLi chat planner, separate).
 - **Primitives EXIST:** the multi-model list (`store/ai_model.go:80-236`, multiple rows/provider, `GetByID`, `PickProviderModel`) + `NewAIClientByProvider` (`mcp/registry.go:14`). **Build:** add `planner_ai_model_id` (traders col or StrategyConfig JSON) + resolve it in `addTraderFromStore` + build a **second** `mcp.AIClient` (factor out `auto_trader.go:389-433`) + thread into the day-plan call + FE picker (list endpoint exists). Empty→fall back to primary (PromptVariant pattern). **M**; marginal cost of just the selector ≈ S.
 
 ---

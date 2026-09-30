@@ -9,7 +9,7 @@ package ninjatrader
 import (
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 func TestGetOrderStatus_SignalIDCorrelation(t *testing.T) {

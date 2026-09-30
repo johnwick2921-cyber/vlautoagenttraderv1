@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // htfKlines builds `n` 1h bars (OpenTime step = 1h), all closed before `now`.

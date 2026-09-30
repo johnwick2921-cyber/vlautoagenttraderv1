@@ -3,8 +3,8 @@ package store
 import (
 	"errors"
 	"fmt"
-	"nofx/logger"
-	"nofx/safe"
+	"vl/logger"
+	"vl/safe"
 	"strings"
 	"sync"
 	"time"

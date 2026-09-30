@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
-	"nofx/internal/updaterwire"
-	"nofx/internal/updaterwire/wireserver"
+	"vl/internal/updaterjob"
+	"vl/internal/updaterwire"
+	"vl/internal/updaterwire/wireserver"
 )
 
 // writeTestJob writes a job the way the worker's install verb does

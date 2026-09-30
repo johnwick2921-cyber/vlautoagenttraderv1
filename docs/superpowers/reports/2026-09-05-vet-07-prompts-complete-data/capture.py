@@ -1,6 +1,6 @@
 import sqlite3,json,csv,re,math,hashlib,datetime,zoneinfo,pathlib,urllib.request,urllib.error,base64,hmac,time,os
-W=pathlib.Path('/home/hoang/nofx-vet-07-complete'); D=W/'docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data'; CT=zoneinfo.ZoneInfo('America/Chicago')
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True); c.row_factory=sqlite3.Row;c.execute('pragma query_only=on');c.execute('begin')
+W=pathlib.Path('/home/hoang/vl-vet-07-complete'); D=W/'docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data'; CT=zoneinfo.ZoneInfo('America/Chicago')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True); c.row_factory=sqlite3.Row;c.execute('pragma query_only=on');c.execute('begin')
 def rows(q,args=()):return [dict(r) for r in c.execute(q,args)]
 def save(n,x): (D/n).write_text(json.dumps(x,indent=2,ensure_ascii=False)+'\n')
 def csvout(n,rs):
@@ -48,12 +48,12 @@ for path in ('/api/health','/api/config/resolved'):
  except urllib.error.HTTPError as ex:meta[path]=ex.code
 if meta['/api/config/resolved']==401:
  secret=None
- for line in pathlib.Path('/home/hoang/nofx/.env').read_text().splitlines():
+ for line in pathlib.Path('/home/hoang/vl/.env').read_text().splitlines():
   if line.startswith('JWT_SECRET='):secret=line.split('=',1)[1].strip().strip('\"\'')
  if secret:
   u=c.execute('select id,email from users where id=?',(t['user_id'],)).fetchone();now=int(time.time())
   b64=lambda b:base64.urlsafe_b64encode(b).rstrip(b'=')
-  msg=b64(b'{"alg":"HS256","typ":"JWT"}')+b'.'+b64(json.dumps({'user_id':u['id'],'email':u['email'],'iss':'nofxAI','iat':now,'nbf':now,'exp':now+300},separators=(',',':')).encode())
+  msg=b64(b'{"alg":"HS256","typ":"JWT"}')+b'.'+b64(json.dumps({'user_id':u['id'],'email':u['email'],'iss':'vlAI','iat':now,'nbf':now,'exp':now+300},separators=(',',':')).encode())
   tok=(msg+b'.'+b64(hmac.new(secret.encode(),msg,hashlib.sha256).digest())).decode()
   req=urllib.request.Request('http://127.0.0.1:8080/api/config/resolved?trader_id='+t['id']+'&session=NY',headers={'Authorization':'Bearer '+tok})
   try:

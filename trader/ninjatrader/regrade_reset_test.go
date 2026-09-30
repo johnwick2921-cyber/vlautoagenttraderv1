@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // REGRADE RESET (owner ruling 2026-09-03) — the reset keys on "lineage was just

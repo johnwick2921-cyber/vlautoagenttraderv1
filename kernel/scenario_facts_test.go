@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 const fiveMinMs = 5 * 60 * 1000

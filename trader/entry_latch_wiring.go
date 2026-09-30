@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0 (b) — the entry latch's production evidence ────────────

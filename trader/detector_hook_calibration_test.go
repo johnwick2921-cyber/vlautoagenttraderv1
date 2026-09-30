@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // THE HOOK'S OWN CALIBRATION (owner ruling 2026-09-03).

@@ -1,5 +1,5 @@
 import sqlite3, json, math, datetime
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True); c=con.cursor()
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True); c=con.cursor()
 def wilson(k,n,z=1.96):
     if n==0: return "n/a"
     p=k/n; d=1+z*z/n; ctr=(p+z*z/(2*n))/d; h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d

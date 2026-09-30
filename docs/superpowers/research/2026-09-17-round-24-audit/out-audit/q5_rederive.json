@@ -1,8 +1,8 @@
 {
  "shas": {
-  "/home/hoang/nofx-93r24/docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/out-r24/episodes.jsonl": "529b41059b81cbdda0d13b5c0c1cad344732224aa3e53719cc5334aeff3bcda1",
-  "/home/hoang/nofx-93r24/docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/out-r24/zones.jsonl": "37df53ab742675e28b0aa8d80dd76e9d2631281320fadfd337971feaaf5ac17f",
-  "/home/hoang/nofx-r101/docs/superpowers/research/2026-09-16-round-23/out-s4/era-trends.jsonl": "63a55eaea29e627505b36e52ca1a5b9995da306b6dbaf37950cab839efef7b1a"
+  "/home/hoang/vl-93r24/docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/out-r24/episodes.jsonl": "529b41059b81cbdda0d13b5c0c1cad344732224aa3e53719cc5334aeff3bcda1",
+  "/home/hoang/vl-93r24/docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/out-r24/zones.jsonl": "37df53ab742675e28b0aa8d80dd76e9d2631281320fadfd337971feaaf5ac17f",
+  "/home/hoang/vl-r101/docs/superpowers/research/2026-09-16-round-23/out-s4/era-trends.jsonl": "63a55eaea29e627505b36e52ca1a5b9995da306b6dbaf37950cab839efef7b1a"
  },
  "cells": {
   "('ref', '2025', 'D-with/4h-against', 'long')": {

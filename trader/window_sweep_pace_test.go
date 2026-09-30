@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── W1b FOLD-12 — the window sweep paces its cancel to a cancel_pending row ──

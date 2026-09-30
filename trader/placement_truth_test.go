@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	nttrader "nofx/trader/ninjatrader"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 func TestFourPlacementPathsWaitForEntryReceipt(t *testing.T) {

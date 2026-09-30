@@ -92,17 +92,17 @@
       "text": "2026-09-04 12:23:00:423|2|16|Error downloading A.P.E.X. announcements: The remote name could not be resolved: 'api.apexinvesting.com'"
     },
     {
-      "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+      "path": "/home/hoang/vl/data/vl_2026-09-03.log",
       "line": 3658,
       "text": "09-03 11:10:33 [INFO] cc2/main.go:243 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev f478ed880dc9 \u00b7 built 2026-09-03T16:07:06Z \u00b7 expected f478ed880dc9 \u00b7 goldens PASS"
     },
     {
-      "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+      "path": "/home/hoang/vl/data/vl_2026-09-03.log",
       "line": 5465,
       "text": "09-03 14:18:26 [INFO] cc2/main.go:243 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev f478ed880dc9 \u00b7 built 2026-09-03T16:07:06Z \u00b7 expected f478ed880dc9 \u00b7 goldens PASS"
     },
     {
-      "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+      "path": "/home/hoang/vl/data/vl_2026-09-03.log",
       "line": 6308,
       "text": "09-03 15:06:45 [WARN] ninjatrader/bar_persist.go:304 bars: ingest drop summary: intrabar_dropped=0 current_dropped=0 historical_dropped=0 peak_depth=1/4096 (1-line/min; intra-bar drops self-heal on the next tick \u2014 closed bars are NEVER dropped on this path)"
     }

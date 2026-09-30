@@ -1,11 +1,12 @@
-# Round 24 — IS A HIGHER-TIMEFRAME ZONE AN ENTRY? (lane 93 / nofx-dd)
+names rewritten to vl on 2026-09-30 (VL rename)
+# Round 24 — IS A HIGHER-TIMEFRAME ZONE AN ENTRY? (lane 93 / vl-dd)
 
 Branch `docs/round-24-htf-zone-entry` (claim `ea76c250`, scripts `4c3c54b4`). Dispatch: CTO
-nofx-4c 2026-09-17 08:31 CT (owner question 02:10 CT). Cells only; no recommendation beyond
+vl-4c 2026-09-17 08:31 CT (owner question 02:10 CT). Cells only; no recommendation beyond
 the cells. Evidence tiers: every number below is **[A]** (computed by the named script at the
 named commit on the sha-pinned inputs) unless marked otherwise. Anything not in the MANIFEST is
 NOT MEASURED. Research dir: `docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/` (scripts, harness
-copy, `run_harness.sh`, `manifest.py`; outputs in `out-r24/`, gitignored, on `~/nofx-93r24`).
+copy, `run_harness.sh`, `manifest.py`; outputs in `out-r24/`, gitignored, on `~/vl-93r24`).
 
 ## 0. The finding that comes before any cell — the HTF zone universe is DENSE
 
@@ -30,7 +31,7 @@ and its polarity is its own. `all` and `noconflict` are context.
 ## 1. Definitions (exact; shared by every script through `r24lib.DEFINITIONS`)
 
 - **Population.** The Round 23 S4 pass re-evaluated with the SAME kernel base (`git archive
-  d15db077`), SAME DB copy (`nofx-r101/data/db.copy.db`, sha256 998a15ee…), SAME 3,093 reads and
+  d15db077`), SAME DB copy (`vl-r101/data/db.copy.db`, sha256 998a15ee…), SAME 3,093 reads and
   the SAME D1′ instrument — so the level universe is identical by construction (4,471,482 episodes,
   Round 23's count exactly). The writer adds `price/lo/hi/label/polarity/delta/read_at_ms/contract`
   per episode and writes `zones.jsonl` = every HTF zone in each read's raw universe, touched or

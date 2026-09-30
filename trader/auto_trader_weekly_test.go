@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func TestWeeklyReadVerdictBootBackfillIdempotent(t *testing.T) {

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DAY-PLAN CAMPAIGN — P2 · THE CLOCK (+ ★ RESTART 1 handoff)
 
-**Date:** 2026-08-14 · **Repo:** /home/hoang/nofx · **Branch:** main
+**Date:** 2026-08-14 · **Repo:** /home/hoang/vl · **Branch:** main
 **Range:** `3bcd1132` (P1 head) → `b0151d98` · 5 feature commits
 **Contract:** [docs/VL-DAYPLAN-FULL-SPEC.md](../../VL-DAYPLAN-FULL-SPEC.md)
 
@@ -61,27 +62,27 @@ on restart (no loss), but flat is cleanest. The bot is systemd-managed, so use
 old binary predates the day_plan codec, so it must NOT be running during the arm.
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 
 # 1. Rebuild the new binary (has all of P0–P2).
-go build -o nofx-bin .
+go build -o vl-bin .
 
 # 2. Stop the bot (clean stopped window; prevents auto-relaunch during the arm).
-sudo systemctl stop nofx
+sudo systemctl stop vl
 
 # 3. Back up the DB (before the arm write + the additive schema migration).
-mkdir -p ~/nofx-backups/dayplan-restart1
-cp data/data.db ~/nofx-backups/dayplan-restart1/data.db.$(date +%Y%m%d-%H%M%S)
+mkdir -p ~/vl-backups/dayplan-restart1
+cp data/data.db ~/vl-backups/dayplan-restart1/data.db.$(date +%Y%m%d-%H%M%S)
 
 # 4. ARM day_plan on the AI strategies (bot STOPPED). Preview, then confirm.
 go run ./cmd/dayplan-arm              # dry-run: lists what would be armed
 go run ./cmd/dayplan-arm --confirm    # writes plan_enabled=true + last_entry 13:00 + eod_flat 14:45
 
 # 5. Start the new binary (reads the armed config; KEY LEVELS lights up next cycle).
-sudo systemctl start nofx
+sudo systemctl start vl
 ```
 
-### VERIFY (5 lines — `journalctl -u nofx --since "$(date +%H:%M -d '-5 min')"`)
+### VERIFY (5 lines — `journalctl -u vl --since "$(date +%H:%M -d '-5 min')"`)
 1. **Cadence:** decision cycles fire on 5m bar closes, not the old scan interval
    (idle ticks between closes; a cycle right after each 5m bar).
 2. **Skip-gate:** while holding, a `🧘 skip-while-open` line appears (no AI decision
@@ -92,10 +93,10 @@ sudo systemctl start nofx
 4. **KEY LEVELS live:** the latest `decision_records.system_prompt` contains
    `KEY LEVELS (map` (`sqlite3 data/data.db "SELECT substr(system_prompt,1,0) ...`
    or grep the assembled prompt in the log).
-5. **Clean boot:** `journalctl -u nofx --since <start> | grep -iE "error|panic|🚨"`
+5. **Clean boot:** `journalctl -u vl --since <start> | grep -iE "error|panic|🚨"`
    is empty; `hello handshake OK protocol_version=3` present.
 
-**Rollback:** `sudo systemctl stop nofx` → restore `~/nofx-backups/dayplan-restart1/`
+**Rollback:** `sudo systemctl stop vl` → restore `~/vl-backups/dayplan-restart1/`
 → rebuild the prior commit → start. (day_plan is additive; disabling it =
 `plan_enabled:false` or restoring the pre-arm config — everything returns to the
 scan-timer default.)

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── D1 PINS (wave BARS HORIZON, 2026-09-09) ─────────────────────────────────

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // P2 — stopUntil PRODUCER (ledger-close dispatch 2026-08-19).

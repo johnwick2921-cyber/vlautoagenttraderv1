@@ -27,12 +27,12 @@ import (
 	"testing"
 	"time"
 
-	"nofx/api"
-	"nofx/auth"
-	"nofx/internal/updateauth"
-	"nofx/manager"
-	"nofx/store"
-	"nofx/trader"
+	"vl/api"
+	"vl/auth"
+	"vl/internal/updateauth"
+	"vl/manager"
+	"vl/store"
+	"vl/trader"
 )
 
 const (

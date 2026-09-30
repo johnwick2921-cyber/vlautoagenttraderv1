@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Telegram Bot Agent Redesign (OpenClaw-Inspired)
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task.
@@ -48,7 +49,7 @@ No special code for this scenario. LLM figured it out from the API docs.
 | `telegram/agent/manager.go` | **CREATE** — per-chat serialization |
 | `telegram/agent/agent_test.go` | **CREATE** — tests |
 
-`telegram/service/nofx.go` and `telegram/session/memory.go` are **unchanged**.
+`telegram/service/vl.go` and `telegram/session/memory.go` are **unchanged**.
 
 ---
 
@@ -118,7 +119,7 @@ func GetAPIDocs() string {
 **Step 2: Build**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build ./api/...
+cd /Users/yida/gopro/open-vl && go build ./api/...
 ```
 
 Expected: clean build.
@@ -284,7 +285,7 @@ import "fmt"
 // BuildAgentPrompt constructs the full system prompt with live API documentation injected.
 // apiDocs is the output of api.GetAPIDocs() — reflects all currently registered routes.
 func BuildAgentPrompt(apiDocs string) string {
-	return fmt.Sprintf(`You are the NOFX quantitative trading system AI assistant.
+	return fmt.Sprintf(`You are the VL quantitative trading system AI assistant.
 You can have natural conversations with the user and call the API to operate the system.
 
 ## Tool
@@ -299,7 +300,7 @@ Call format (append at end of reply):
 - body: request body as JSON object (use {} for GET requests)
 - query parameters go in the path, e.g. /api/positions?trader_id=xxx
 
-## NOFX API Documentation
+## VL API Documentation
 
 All requests are pre-authenticated. Focus on paths and parameters.
 
@@ -345,12 +346,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"nofx/logger"
+	"vl/logger"
 	"strings"
 	"time"
 )
 
-// apiCallTool executes HTTP requests against the NOFX API server.
+// apiCallTool executes HTTP requests against the VL API server.
 // This is the only tool available to the agent.
 type apiCallTool struct {
 	baseURL string
@@ -469,10 +470,10 @@ package agent
 
 import (
 	"fmt"
-	"nofx/auth"
-	"nofx/logger"
-	"nofx/mcp"
-	"nofx/telegram/session"
+	"vl/auth"
+	"vl/logger"
+	"vl/mcp"
+	"vl/telegram/session"
 	"strings"
 )
 
@@ -608,7 +609,7 @@ git commit -m "feat(telegram/agent): add OpenClaw-style agent loop"
 package agent
 
 import (
-	"nofx/mcp"
+	"vl/mcp"
 	"sync"
 )
 
@@ -706,7 +707,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 type mockLLM struct {
@@ -900,7 +901,7 @@ Replace file content:
 package session
 
 import (
-	"nofx/mcp"
+	"vl/mcp"
 	"sync"
 	"time"
 )
@@ -986,13 +987,13 @@ go func(chatID int64, text string) {
 
 ```go
 import (
-    "nofx/config"
-    "nofx/logger"
-    "nofx/manager"
-    "nofx/mcp"
-    "nofx/store"
-    "nofx/api"
-    "nofx/telegram/agent"
+    "vl/config"
+    "vl/logger"
+    "vl/manager"
+    "vl/mcp"
+    "vl/store"
+    "vl/api"
+    "vl/telegram/agent"
     "os"
     tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

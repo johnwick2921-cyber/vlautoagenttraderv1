@@ -10,7 +10,7 @@ import zoneinfo
 OUT = pathlib.Path(__file__).parent
 CT = zoneinfo.ZoneInfo('America/Chicago')
 ERA = int(dt.datetime(2026, 8, 15, tzinfo=CT).timestamp() * 1000)
-c = sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+c = sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 c.row_factory = sqlite3.Row
 c.execute('PRAGMA query_only=ON')
 c.execute('BEGIN')

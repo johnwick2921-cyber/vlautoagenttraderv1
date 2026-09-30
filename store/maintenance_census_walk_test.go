@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // ── W-ONE-BUTTON M3 fold M5 (red-team 4 #1) — the census walk is root-only ──
@@ -36,12 +36,12 @@ func censusWrite(t *testing.T, root, rel, body string) {
 func TestHoldWriterCensusSeesNestedSkipNamedDirs(t *testing.T) {
 	base := func() string {
 		root := t.TempDir()
-		censusWrite(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+		censusWrite(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 		censusWrite(t, root, "store/maintenance_hold.go", "package store\n\nfunc WriteMaintenanceHold(d string, h any) error { return nil }\nfunc ClearMaintenanceHold(d string) error { return nil }\n")
-		censusWrite(t, root, "internal/holdcli/holdcli.go", "package holdcli\n\nimport \"nofx/store\"\n\nfunc Set(d string) error { return store.WriteMaintenanceHold(d, nil) }\n")
+		censusWrite(t, root, "internal/holdcli/holdcli.go", "package holdcli\n\nimport \"vl/store\"\n\nfunc Set(d string) error { return store.WriteMaintenanceHold(d, nil) }\n")
 		return root
 	}
-	const writer = "import \"nofx/store\"\n\nfunc Lift() error { return store.ClearMaintenanceHold(\"d\") }\n"
+	const writer = "import \"vl/store\"\n\nfunc Lift() error { return store.ClearMaintenanceHold(\"d\") }\n"
 	// positive control: the same writer in api/ is caught
 	root := base()
 	censusWrite(t, root, "api/lift.go", "package api\n\n"+writer)
@@ -73,13 +73,13 @@ func TestHoldWriterCensusSeesNestedSkipNamedDirs(t *testing.T) {
 func TestWorkerImportGuardSeesNestedSkipNamedDirs(t *testing.T) {
 	base := func() string {
 		root := t.TempDir()
-		censusWrite(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+		censusWrite(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 		censusWrite(t, root, "internal/updaterwire/dial.go", "package updaterwire\n")
-		censusWrite(t, root, "internal/updaterwire/wireserver/server.go", "package wireserver\n\nimport _ \"nofx/internal/updaterwire\"\n")
+		censusWrite(t, root, "internal/updaterwire/wireserver/server.go", "package wireserver\n\nimport _ \"vl/internal/updaterwire\"\n")
 		censusWrite(t, root, "internal/updaterworker/hold.go", "package updaterworker\n")
-		censusWrite(t, root, "api/server.go", "package api\n\nimport _ \"nofx/internal/updaterwire\"\n")
+		censusWrite(t, root, "api/server.go", "package api\n\nimport _ \"vl/internal/updaterwire\"\n")
 		censusWrite(t, root, "trader/t.go", "package trader\n")
-		censusWrite(t, root, "main.go", "package main\n\nimport _ \"nofx/api\"\n\nfunc main() {}\n")
+		censusWrite(t, root, "main.go", "package main\n\nimport _ \"vl/api\"\n\nfunc main() {}\n")
 		return root
 	}
 	for _, dir := range censuswalk.NestedProbeDirs() {
@@ -88,18 +88,18 @@ func TestWorkerImportGuardSeesNestedSkipNamedDirs(t *testing.T) {
 		}
 		t.Run(dir, func(t *testing.T) {
 			root := base()
-			censusWrite(t, root, dir+"/w.go", "package "+censuswalk.PackageName(dir)+"\n\nimport _ \"nofx/internal/updaterwire/wireserver\"\n")
-			censusWrite(t, root, "api/uses.go", "package api\n\nimport _ \"nofx/"+dir+"\"\n")
+			censusWrite(t, root, dir+"/w.go", "package "+censuswalk.PackageName(dir)+"\n\nimport _ \"vl/internal/updaterwire/wireserver\"\n")
+			censusWrite(t, root, "api/uses.go", "package api\n\nimport _ \"vl/"+dir+"\"\n")
 			linked, err := censuswalk.ListPackages(root, true, ".")
 			if err != nil {
 				t.Fatal(err)
 			}
 			truth := false
 			for _, p := range linked {
-				truth = truth || p.ImportPath == "nofx/internal/updaterwire/wireserver"
+				truth = truth || p.ImportPath == "vl/internal/updaterwire/wireserver"
 			}
 			if !truth {
-				t.Fatalf("ground truth: the app binary does not link wireserver through nofx/%s — probe broken (%v)", dir, linked)
+				t.Fatalf("ground truth: the app binary does not link wireserver through vl/%s — probe broken (%v)", dir, linked)
 			}
 			off, _, err := workerImportOffenders(root)
 			if err != nil {
@@ -107,18 +107,18 @@ func TestWorkerImportGuardSeesNestedSkipNamedDirs(t *testing.T) {
 			}
 			hit := false
 			for _, o := range off {
-				hit = hit || (strings.HasPrefix(o, "api: ") && strings.Contains(o, "nofx/"+dir+" → nofx/internal/updaterwire/wireserver"))
+				hit = hit || (strings.HasPrefix(o, "api: ") && strings.Contains(o, "vl/"+dir+" → vl/internal/updaterwire/wireserver"))
 			}
 			if !hit {
-				t.Fatalf("`go list -deps` links nofx/internal/updaterwire/wireserver via nofx/%s, but the import guard reports %v", dir, off)
+				t.Fatalf("`go list -deps` links vl/internal/updaterwire/wireserver via vl/%s, but the import guard reports %v", dir, off)
 			}
 			// and the toolchain-answered guard says the same
 			toff, _, err := toolchainWorkerLinkOffenders(root)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(toff) != 1 || !strings.HasPrefix(toff[0], "nofx/internal/updaterwire/wireserver: linked by the trading app") {
-				t.Fatalf("toolchain guard via nofx/%s: %v", dir, toff)
+			if len(toff) != 1 || !strings.HasPrefix(toff[0], "vl/internal/updaterwire/wireserver: linked by the trading app") {
+				t.Fatalf("toolchain guard via vl/%s: %v", dir, toff)
 			}
 		})
 	}
@@ -129,16 +129,16 @@ func TestWorkerImportGuardSeesNestedSkipNamedDirs(t *testing.T) {
 // and negative controls for toolchainWorkerLinkOffenders itself.
 func TestToolchainWorkerLinkGuardControls(t *testing.T) {
 	root := t.TempDir()
-	censusWrite(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	censusWrite(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	censusWrite(t, root, "internal/updaterwire/dial.go", "package updaterwire\n")
-	censusWrite(t, root, "internal/updaterwire/wireserver/server.go", "package wireserver\n\nimport _ \"nofx/internal/updaterwire\"\n")
-	censusWrite(t, root, "api/server.go", "package api\n\nimport _ \"nofx/internal/updaterwire\"\n")
-	censusWrite(t, root, "main.go", "package main\n\nimport _ \"nofx/api\"\n\nfunc main() {}\n")
-	censusWrite(t, root, "cmd/nofx-updater/main.go", "package main\n\nimport _ \"nofx/internal/updaterwire/wireserver\"\n\nfunc main() {}\n")
+	censusWrite(t, root, "internal/updaterwire/wireserver/server.go", "package wireserver\n\nimport _ \"vl/internal/updaterwire\"\n")
+	censusWrite(t, root, "api/server.go", "package api\n\nimport _ \"vl/internal/updaterwire\"\n")
+	censusWrite(t, root, "main.go", "package main\n\nimport _ \"vl/api\"\n\nfunc main() {}\n")
+	censusWrite(t, root, "cmd/vl-updater/main.go", "package main\n\nimport _ \"vl/internal/updaterwire/wireserver\"\n\nfunc main() {}\n")
 	if off, pats, err := toolchainWorkerLinkOffenders(root); err != nil || len(off) != 0 || strings.Join(pats, " ") != ". ./api/..." {
 		t.Fatalf("clean synthetic module: offenders=%v patterns=%v err=%v", off, pats, err)
 	}
-	censusWrite(t, root, "api/worker.go", "package api\n\nimport _ \"nofx/internal/updaterwire/wireserver\"\n")
+	censusWrite(t, root, "api/worker.go", "package api\n\nimport _ \"vl/internal/updaterwire/wireserver\"\n")
 	if off, _, err := toolchainWorkerLinkOffenders(root); err != nil || len(off) != 1 {
 		t.Fatalf("direct api import of wireserver: offenders=%v err=%v (want exactly one)", off, err)
 	}

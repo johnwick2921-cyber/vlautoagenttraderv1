@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-31 — Planner Latency Autopsy (read-only)
 
-No code, config, or deploys touched. Evidence = journalctl (systemd `nofx`),
+No code, config, or deploys touched. Evidence = journalctl (systemd `vl`),
 read-only DB, source reads. Report branch `docs/planner-latency-autopsy`.
 
 ## TL;DR verdict

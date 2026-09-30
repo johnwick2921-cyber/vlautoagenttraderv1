@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"nofx/config"
-	"nofx/logger"
-	"nofx/mcp/payment"
-	"nofx/telemetry"
-	"nofx/wallet"
+	"vl/config"
+	"vl/logger"
+	"vl/mcp/payment"
+	"vl/telemetry"
+	"vl/wallet"
 
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"

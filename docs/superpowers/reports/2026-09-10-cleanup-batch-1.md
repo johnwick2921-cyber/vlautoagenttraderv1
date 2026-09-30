@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLEANUP BATCH 1 — everything recorded this week that does not move a trade
 
-**Lane** `cleanup-batch-1-2bdef526/nofx-59[3f0200]` · **branch** `fix/cleanup-batch-1` ·
+**Lane** `cleanup-batch-1-2bdef526/vl-59[3f0200]` · **branch** `fix/cleanup-batch-1` ·
 **claimed** 2026-09-10 17:04:30 CT · **running rev at accept** `adae3bb4` (verified from
 `/api/health`, `/proc/2560377/exe` and the binary's own stamp).
 
@@ -29,7 +30,7 @@ sized or exited differs.
 
 **B4 — `git diff -w --stat` can never read zero.** The dispatch asked for that as proof
 the gofmt diff is whitespace-only. It is not achievable: gofmt also **reorders imports**
-(`nofx/safe` moved into alphabetical position in `stock.go`) and **expands single-line
+(`vl/safe` moved into alphabetical position in `stock.go`) and **expands single-line
 `if` bodies onto three lines**. Both are semantics-preserving; neither is whitespace, and
 `-w` still shows them. The correct proof is that **`gofmt(before)` is byte-identical to
 after**, run per file — **10 of 10 IDENTICAL**, which additionally proves no hand edit rode
@@ -56,7 +57,7 @@ merge and 104's fixture fix to `split_entry_test.go`. Rebasing onto `0975ef11` f
 test and reduced the diff to this lane's own 16 files, 76 deletions, every one explicable
 (gofmt line restructuring, two replaced comment lines, four replaced struct/schema lines).
 
-**This is the failure nofx-6d warned me about by name, four hours earlier**, and I still
+**This is the failure vl-6d warned me about by name, four hours earlier**, and I still
 walked into it: I read the deletion count once at merge time rather than **before every
 push**, and I had pushed three times. The discipline only works at the cadence it specifies.
 
@@ -160,7 +161,7 @@ It is the general case of class 89 and the mirror of class 105 — 105 is prose
 drifting from code, 114 is a *check* drifting from what it checks. Both stay
 invisible because the artifact keeps producing a believable answer.
 
-**Class 100 hit this wave TWICE in one hour**, despite nofx-6d warning me by name
+**Class 100 hit this wave TWICE in one hour**, despite vl-6d warning me by name
 four hours earlier. First: dev moved 20 commits under a base of `580e88b3`, and
 the branch showed 459 deletions in `kernel/levels_every_tf_test.go` — that was the
 split-arm red, not 104's fixture. Second: dev gained class 113 in the minute

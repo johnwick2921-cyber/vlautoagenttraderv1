@@ -1,4 +1,4 @@
-# NOFX — Install from a fresh clone (any machine)
+# VL — Install from a fresh clone (any machine)
 
 Nothing in this repo is machine-specific: no hardcoded usernames, home paths,
 computer names, distro names, or node paths. Everything machine-dependent is
@@ -19,7 +19,7 @@ either in your local `.env` (never committed) or auto-detected at install time.
 
 ```bash
 # 1. Clone and enter
-git clone <repo-url> nofx && cd nofx
+git clone <repo-url> vl && cd vl
 
 # 2. Config — copy the template and fill it in
 cp .env.example .env
@@ -33,14 +33,14 @@ cp .env.example .env
 #    or pre-seed exchange/AI keys per .env.example comments.
 
 # 3. Build the backend
-go build -o nofx-bin .
+go build -o vl-bin .
 
 # 4. Build the frontend
 cd web && npm install && VITE_GUIDE_BUILT_REV=$(git rev-parse HEAD) npm run build && cd ..
 #    (development: `npm run dev` serves :3000 and proxies /api → :8080)
 
 # 5. First run — creates a fresh SQLite DB at data/data.db automatically
-./nofx-bin
+./vl-bin
 ```
 
 ## NinjaTrader 8 AddOn (Windows side — required for live bars + execution)

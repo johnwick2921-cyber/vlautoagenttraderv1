@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 type skillSession struct {

@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/telemetry"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W1b E13 — THE FORCE-FLAT WINDOWS REFUSE ON EVERY TRIGGER ────────────────

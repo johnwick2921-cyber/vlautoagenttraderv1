@@ -13,7 +13,7 @@ package api
 //   - the web client puts exactly these bytes on the wire for the typed body
 //     and for a pasted authorize line (web/src/lib/api/updates.header.test.ts,
 //     real httpClient + capturing axios adapter);
-//   - `updater-bootstrap authorize` prints exactly these bytes, modulo its two
+//   - `vl-updater-bootstrap authorize` prints exactly these bytes, modulo its two
 //     random values (internal/updaterbootstrap, the real Run entry);
 //   - here: the production parser and the production router take them past
 //     the parse, and refuse the quoted form with 400.
@@ -35,8 +35,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
-	"nofx/logger"
+	"vl/internal/updateauth"
+	"vl/logger"
 )
 
 const webInstallBodyFixture = "web/src/lib/api/testdata/updates-install-body.wire.txt"
@@ -118,7 +118,7 @@ func wireKind(v json.RawMessage) string {
 
 // TestWebInstallBodyFixtureIsTheGrantAuthorizePrints: the fixture is a
 // valid install body, expires_at is a bare JSON number in it, and the
-// serializer `updater-bootstrap authorize` prints with (json.Marshal of
+// serializer `vl-updater-bootstrap authorize` prints with (json.Marshal of
 // updateauth.Grant, internal/updaterbootstrap/bootstrap.go authorize)
 // reproduces it byte for byte — so what the page is pasted and what the web
 // client sends are the same bytes.

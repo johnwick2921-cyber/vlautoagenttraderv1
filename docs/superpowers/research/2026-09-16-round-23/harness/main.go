@@ -17,7 +17,7 @@ import (
 	"os"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 func main() {

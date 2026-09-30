@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-31 — Lead-Time Cutover + Weekly "none" Render Fix
 
 One wave, one cutover (10:39:29 CT, rev `2bc58ed9a4ac`).
@@ -6,7 +7,7 @@ One wave, one cutover (10:39:29 CT, rev `2bc58ed9a4ac`).
 
 | Item | Result |
 |---|---|
-| A1 times | ASIA **16:55→16:30** · LONDON **01:55→01:30** · NY **08:25→08:00** CT. Source = BOTH: code default `kernel/session_registry.go:90/99/108` AND the persisted `system_config` row (`key='session_registry'`) — the live system loads the DB row, so it was updated at cutover (backup `~/nofx-backups/lead-time/data.db.pre-readtimes`, idempotent WHERE-scoped). Windows/flats UNCHANGED. |
+| A1 times | ASIA **16:55→16:30** · LONDON **01:55→01:30** · NY **08:25→08:00** CT. Source = BOTH: code default `kernel/session_registry.go:90/99/108` AND the persisted `system_config` row (`key='session_registry'`) — the live system loads the DB row, so it was updated at cutover (backup `~/vl-backups/lead-time/data.db.pre-readtimes`, idempotent WHERE-scoped). Windows/flats UNCHANGED. |
 | A2 Sunday collision | Weekly read fires Sunday 16:30 (`kernel/weekly_knobs.go` `WeeklyReadSpec`). Chosen sequencing (mechanically simplest, no timers): the ASIA read **defers until this week's weekly doc lands** — `sundayAsiaDeferred` (`trader/auto_trader_planner.go`), pure + fixture-tested; the per-cycle retry fires ASIA right after the weekly write. Weekdays defer nothing. |
 | A3 staleness | No plan-age staleness gate exists anywhere (grep-proven: zero `planAge`/`stalePlan`-class gates). A plan authored at open−30 is treated identically at open; trade-time staleness belongs to the executor guards (F3 fast-market drift re-read, stale_reeval) — untouched. |
 | A4 boot line | `🗓 session reads (owner ruling 2026-08-31, open−30): ASIA 16:30 · LONDON 01:30 · NY 08:00 CT — windows/flats unchanged; Sunday weekly 16:30 → ASIA follows` (boot 10:39:29). |
@@ -34,4 +35,4 @@ New/updated: `trader/read_times_lead_test.go` (registry times, IsReadTime, Sunda
 
 ## Cutover
 
-Flat-gate: DB OPEN 0 · orders NT 0 · armed NT 0 · API `[]` · NT8 snapshot count=0. RELEASE + GUIDE_BUILT_REV = `2bc58ed9`. Boot checklist: `🔐 BOOT INTEGRITY OK — rev 2bc58ed9a4ac · goldens PASS` · new session-reads boot line · entry-law/armed seams unchanged. Rollback: `nofx-bin.prev.boot` = `5bf48951` (RELEASE revert + swap + kill -9).
+Flat-gate: DB OPEN 0 · orders NT 0 · armed NT 0 · API `[]` · NT8 snapshot count=0. RELEASE + GUIDE_BUILT_REV = `2bc58ed9`. Boot checklist: `🔐 BOOT INTEGRITY OK — rev 2bc58ed9a4ac · goldens PASS` · new session-reads boot line · entry-law/armed seams unchanged. Rollback: `vl-bin.prev.boot` = `5bf48951` (RELEASE revert + swap + kill -9).

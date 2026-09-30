@@ -1,6 +1,6 @@
 """Read-only final audit. Run in original scratch directory. No application writes."""
 import sqlite3,json,csv,math,datetime,pathlib
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True)
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True)
 c.row_factory=sqlite3.Row
 c.execute('PRAGMA query_only=ON')
 c.execute('PRAGMA query_only=ON')

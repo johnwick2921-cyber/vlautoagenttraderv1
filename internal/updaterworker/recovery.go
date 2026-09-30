@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // ── recovery_needed: the job-specific manual steps (C16 as ruled) ──────────
@@ -130,7 +130,7 @@ func RecoveryText(j updaterjob.Job, t Target) string {
 		p("     %s", restartLine)
 		step++
 		p("%d. Prove the boot: the data log must show the OK line for %s, and health must serve it:", step, short)
-		p(`     grep -a "BOOT INTEGRITY OK — rev %s ·" %s/nofx_$(date +%%F).log`, short, t.LogDir)
+		p(`     grep -a "BOOT INTEGRITY OK — rev %s ·" %s/{vl,nofx}_$(date +%%F).log`, short, t.LogDir) // R5 removes the vl log
 		p("     curl -s http://127.0.0.1:%d/api/health    (revision must be %s)", t.Port, short)
 	}
 	if j.BackupPath != "" {
@@ -144,13 +144,15 @@ func RecoveryText(j updaterjob.Job, t Target) string {
 		p("     maintenance-hold --install-dir %s clear --job %s", t.InstallDir, j.JobID)
 	}
 	p("")
-	p("Then restart nofx-updater (the restart is the acknowledgement; install stays refused until then).")
+	p("Then restart vl-updater (the restart is the acknowledgement; install stays refused until then).")
 	return b.String()
 }
 
 // restartLine restarts the unit by its MainPID and refuses a pid below 2 (a
 // stopped unit reports 0; kill -9 0 would signal the whole process group).
-const restartLine = `pid=$(systemctl show -p MainPID --value nofx); if [ "$pid" -gt 1 ] 2>/dev/null; then kill -9 "$pid"; else echo "nofx is not running (MainPID '$pid'); start it: sudo systemctl start nofx"; fi`
+// The unit is vl, falling back to nofx while the rename is in flight (R5
+// removes the fallback).
+const restartLine = `pid=$(systemctl show -p MainPID --value vl); if [ "$pid" -le 1 ] 2>/dev/null; then pid=$(systemctl show -p MainPID --value nofx); fi; if [ "$pid" -gt 1 ] 2>/dev/null; then kill -9 "$pid"; else echo "vl is not running (MainPID '$pid'); start it: sudo systemctl start vl"; fi` // R5 removes the vl unit
 
 type reach int
 

@@ -3,7 +3,7 @@ package agent
 import (
 	"context"
 	"log/slog"
-	"nofx/mcp"
+	"vl/mcp"
 	"strings"
 	"sync"
 	"testing"

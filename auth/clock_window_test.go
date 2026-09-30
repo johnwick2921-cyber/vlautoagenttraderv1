@@ -13,7 +13,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // M3 verifier defect 4 — CTO ruling 1790243040753: ValidateJWT refuses a

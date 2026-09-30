@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 0C — Shadow Demotion: fvg_entry + breakout_retest
 
 Date: 2026-08-31 CT · Wave: 0C-shadow-demotion · Branch: `0c-shadow-demotion` (merged → `dev`)
 **STATUS: SHIPPED — cutover 2026-08-31 17:34:21 CT, owner GO.**
 Live rev now: `7004a7f1f7266a3d8c354afc7ee27f05b5fda2a4` (PID 1466535).
-Rollback kept: `nofx-bin.prev.boot` = previous live `98a9b4cfb479197f55047b31f6cdacc1b565ec85` (PID 1391022).
+Rollback kept: `vl-bin.prev.boot` = previous live `98a9b4cfb479197f55047b31f6cdacc1b565ec85` (PID 1391022).
 
 ## What shipped
 
@@ -82,8 +83,8 @@ override, the resolved map recomputes at next boot; the boot line prints it.)
 
 ## Cutover runbook (used)
 
-1. Swap: `mv nofx-bin nofx-bin.prev.boot` → `cp ~/nofx-staged/nofx-0c-bin
-   nofx-bin` (stamp verified on the deployed file:
+1. Swap: `mv vl-bin vl-bin.prev.boot` → `cp ~/vl-staged/vl-0c-bin
+   vl-bin` (stamp verified on the deployed file:
    `vcs.revision=7004a7f1f7266a3d8c354afc7ee27f05b5fda2a4`, `modified=false`).
 2. `kill -9 1391022` → systemd relaunch → boot checklist quoted above.
 3. Post-boot flat-gate re-quote (quoted above).
@@ -97,10 +98,10 @@ override, the resolved map recomputes at next boot; the boot line prints it.)
 ## Rollback
 
 ```
-mv nofx-bin.prev.boot nofx-bin && <revert deploy/RELEASE> && kill -9 <PID>
+mv vl-bin.prev.boot vl-bin && <revert deploy/RELEASE> && kill -9 <PID>
 ```
 
-`nofx-bin.prev.boot` holds `98a9b4cfb479197f55047b31f6cdacc1b565ec85` — the
+`vl-bin.prev.boot` holds `98a9b4cfb479197f55047b31f6cdacc1b565ec85` — the
 pre-cutover live rev — so a single `mv` back + `kill -9` restores exactly
 the pre-0C state.
 

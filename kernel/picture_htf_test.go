@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // Fixture helpers: synthetic 4H / H1 / 5m bars around a pivot at index 2.

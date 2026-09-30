@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // The derivation returns exactly the calendar's shortened days — no more, no

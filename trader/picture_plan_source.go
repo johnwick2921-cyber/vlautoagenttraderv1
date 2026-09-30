@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W5 — PICTURE AS A DAY PLAN SCENARIO SOURCE (builder A).

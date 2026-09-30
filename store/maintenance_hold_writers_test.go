@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // ── W-ONE-BUTTON M2 site 6 — nothing in the trading API writes the hold ────
@@ -77,7 +77,7 @@ func TestOnlyTheOperatorCLIWritesTheMaintenanceHold(t *testing.T) {
 // handler, the wire — offends; and even the admitted file may not name
 // "hold.json" (that literal stays in the store).
 func TestHoldWriterCensusAdmitsTheWorkerOnlyByName(t *testing.T) {
-	const worker = "package updaterworker\n\nimport \"nofx/store\"\n\n" +
+	const worker = "package updaterworker\n\nimport \"vl/store\"\n\n" +
 		"func HoldForJob(d string) error {\n\t_ = store.MaintenanceHoldPath(d)\n\treturn store.WriteMaintenanceHold(d, store.MaintenanceHold{})\n}\n\n" +
 		"func ReleaseJob(d string) error { return store.ClearMaintenanceHold(d) }\n"
 	write := func(root, rel, body string) {
@@ -92,11 +92,11 @@ func TestHoldWriterCensusAdmitsTheWorkerOnlyByName(t *testing.T) {
 	}
 	base := func() string {
 		root := t.TempDir()
-		write(root, "go.mod", "module nofx\n\ngo 1.25\n")
+		write(root, "go.mod", "module vl\n\ngo 1.25\n")
 		write(root, "store/maintenance_hold.go", "package store\n\nconst holdFile = \"hold.json\"\n\n"+
 			"func MaintenanceHoldPath(d string) string { return d + \"/\" + holdFile }\n\n"+
 			"func WriteMaintenanceHold(d string, h any) error { return nil }\n")
-		write(root, "internal/holdcli/holdcli.go", "package holdcli\n\nimport \"nofx/store\"\n\nfunc Set(d string) error { return store.WriteMaintenanceHold(d, nil) }\n")
+		write(root, "internal/holdcli/holdcli.go", "package holdcli\n\nimport \"vl/store\"\n\nfunc Set(d string) error { return store.WriteMaintenanceHold(d, nil) }\n")
 		write(root, "internal/updaterworker/hold.go", worker)
 		write(root, "api/handler_updates.go", "package api\n")
 		return root
@@ -110,9 +110,9 @@ func TestHoldWriterCensusAdmitsTheWorkerOnlyByName(t *testing.T) {
 	for name, c := range map[string]struct{ rel, body, want string }{
 		"other file in the worker package": {"internal/updaterworker/other.go", strings.Replace(worker, "HoldForJob", "H2", 1), "internal/updaterworker/other.go: WriteMaintenanceHold"},
 		"same base name, deeper path":      {"internal/updaterworker/sub/hold.go", worker, "internal/updaterworker/sub/hold.go: WriteMaintenanceHold"},
-		"the worker binary's main":         {"cmd/nofx-updater/main.go", "package main\n\nimport \"nofx/store\"\n\nfunc main() { store.ClearMaintenanceHold(\"d\") }\n", "cmd/nofx-updater/main.go: ClearMaintenanceHold"},
-		"the app's update handler":         {"api/handler_updates.go", "package api\n\nimport \"nofx/store\"\n\nfunc clear() { store.ForceClearMaintenanceHold(\"d\") }\n", "api/handler_updates.go: ForceClearMaintenanceHold"},
-		"the wire resolving the hold path": {"internal/updaterwire/dial.go", "package updaterwire\n\nimport \"nofx/store\"\n\nvar p = store.MaintenanceHoldPath(\"d\")\n", "internal/updaterwire/dial.go: references MaintenanceHoldPath"},
+		"the worker binary's main":         {"cmd/vl-updater/main.go", "package main\n\nimport \"vl/store\"\n\nfunc main() { store.ClearMaintenanceHold(\"d\") }\n", "cmd/vl-updater/main.go: ClearMaintenanceHold"},
+		"the app's update handler":         {"api/handler_updates.go", "package api\n\nimport \"vl/store\"\n\nfunc clear() { store.ForceClearMaintenanceHold(\"d\") }\n", "api/handler_updates.go: ForceClearMaintenanceHold"},
+		"the wire resolving the hold path": {"internal/updaterwire/dial.go", "package updaterwire\n\nimport \"vl/store\"\n\nvar p = store.MaintenanceHoldPath(\"d\")\n", "internal/updaterwire/dial.go: references MaintenanceHoldPath"},
 		"admitted file naming hold.json":   {"internal/updaterworker/hold.go", worker + "\nvar raw = \"updater/hold.json\"\n", "internal/updaterworker/hold.go: names the hold file"},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -222,9 +222,9 @@ func TestHoldWriterAdmissionsArePinned(t *testing.T) {
 
 // ── W-ONE-BUTTON M3 — the trading app never links the worker side ─────────
 //
-// The app DIALS the updater worker (nofx/internal/updaterwire); only the
-// worker binary may LISTEN (nofx/internal/updaterwire/wireserver) or hold
-// the worker's hold writer (nofx/internal/updaterworker, M4). If api/,
+// The app DIALS the updater worker (vl/internal/updaterwire); only the
+// worker binary may LISTEN (vl/internal/updaterwire/wireserver) or hold
+// the worker's hold writer (vl/internal/updaterworker, M4). If api/,
 // trader/, kernel/, agent/, telegram/, store/ or the root main package could
 // reach either — directly or through any chain of module packages — an
 // app-side bug could serve forged worker verbs or write the hold. (store/ is
@@ -233,17 +233,17 @@ func TestHoldWriterAdmissionsArePinned(t *testing.T) {
 // file counts), which can only over-report.
 //
 // M3 fold M4 (red-team 4 #2(b)): the attended CLI's package
-// nofx/internal/updaterbootstrap is forbidden too — its Run reaches
+// vl/internal/updaterbootstrap is forbidden too — its Run reaches
 // updateauth.Authorize → ComputeMAC, the one door that mints an install MAC,
 // and nothing on the app side may mint (CTO ruling Q1(a)). Only its own
-// binary, cmd/updater-bootstrap, links it.
+// binary, cmd/vl-updater-bootstrap, links it.
 var (
 	tradingAppDirs          = []string{"api", "trader", "kernel", "agent", "telegram", "store"}
-	forbiddenWorkerPackages = []string{"nofx/internal/updaterwire/wireserver", "nofx/internal/updaterworker", "nofx/internal/updaterbootstrap",
+	forbiddenWorkerPackages = []string{"vl/internal/updaterwire/wireserver", "vl/internal/updaterworker", "vl/internal/updaterbootstrap",
 		// M4 3b-B U5b (f), OQ-8/C2 (CTO 1790259689740): the kill/restart
 		// library — only the worker binary links it
 		// (TestWorkerImportGuardRefusesTheActivationLibrary).
-		"nofx/internal/activation"}
+		"vl/internal/activation"}
 )
 
 func TestTradingAppNeverLinksTheUpdaterWorkerSide(t *testing.T) {
@@ -261,7 +261,7 @@ func TestTradingAppNeverLinksTheUpdaterWorkerSide(t *testing.T) {
 	for _, g := range guarded {
 		seen[g] = true
 	}
-	for _, want := range append([]string{"nofx"}, prefixed("nofx/", tradingAppDirs)...) {
+	for _, want := range append([]string{"vl"}, prefixed("vl/", tradingAppDirs)...) {
 		if !seen[want] {
 			t.Fatalf("guarded root %s was not walked (walked %d packages: %v) — the guard is not covering the app", want, len(guarded), guarded)
 		}
@@ -287,28 +287,28 @@ func TestWorkerImportGuardCatchesDirectAndTransitiveImports(t *testing.T) {
 	}
 	base := func() string {
 		root := t.TempDir()
-		write(root, "go.mod", "module nofx\n\ngo 1.25\n")
+		write(root, "go.mod", "module vl\n\ngo 1.25\n")
 		write(root, "internal/updaterwire/dial.go", "package updaterwire\n")
-		write(root, "internal/updaterwire/wireserver/server.go", "package wireserver\nimport _ \"nofx/internal/updaterwire\"\n")
+		write(root, "internal/updaterwire/wireserver/server.go", "package wireserver\nimport _ \"vl/internal/updaterwire\"\n")
 		write(root, "internal/updaterworker/hold.go", "package updaterworker\n")
 		write(root, "internal/helper/h.go", "package helper\n")
-		write(root, "api/server.go", "package api\nimport _ \"nofx/internal/updaterwire\"\nimport _ \"nofx/internal/helper\"\n")
+		write(root, "api/server.go", "package api\nimport _ \"vl/internal/updaterwire\"\nimport _ \"vl/internal/helper\"\n")
 		write(root, "trader/t.go", "package trader\n")
-		write(root, "main.go", "package main\nimport _ \"nofx/api\"\n")
-		write(root, "cmd/updater-worker/main.go", "package main\nimport _ \"nofx/internal/updaterwire/wireserver\"\nimport _ \"nofx/internal/updaterworker\"\n")
+		write(root, "main.go", "package main\nimport _ \"vl/api\"\n")
+		write(root, "cmd/updater-worker/main.go", "package main\nimport _ \"vl/internal/updaterwire/wireserver\"\nimport _ \"vl/internal/updaterworker\"\n")
 		return root
 	}
 	// positive control: the app dials, the worker binary listens — clean
 	root := base()
-	if off, guarded, err := workerImportOffenders(root); err != nil || len(off) != 0 || strings.Join(guarded, ",") != "nofx,nofx/api,nofx/trader" {
-		t.Fatalf("clean synthetic module: offenders=%v guarded=%v err=%v (want none; guarded nofx, nofx/api, nofx/trader)", off, guarded, err)
+	if off, guarded, err := workerImportOffenders(root); err != nil || len(off) != 0 || strings.Join(guarded, ",") != "vl,vl/api,vl/trader" {
+		t.Fatalf("clean synthetic module: offenders=%v guarded=%v err=%v (want none; guarded vl, vl/api, vl/trader)", off, guarded, err)
 	}
 	for name, c := range map[string]struct{ rel, body, want string }{
-		"direct api":        {"api/worker.go", "package api\nimport _ \"nofx/internal/updaterwire/wireserver\"\n", "api"},
-		"transitive helper": {"internal/helper/h.go", "package helper\nimport _ \"nofx/internal/updaterworker\"\n", "api"},
-		"trader":            {"trader/w.go", "package trader\nimport w \"nofx/internal/updaterworker\"\nvar _ = w.X\n", "trader"},
-		"root main":         {"main_worker.go", "package main\nimport _ \"nofx/internal/updaterwire/wireserver\"\n", "(root main)"},
-		"store":             {"store/s.go", "package store\nimport _ \"nofx/internal/updaterworker\"\n", "store"},
+		"direct api":        {"api/worker.go", "package api\nimport _ \"vl/internal/updaterwire/wireserver\"\n", "api"},
+		"transitive helper": {"internal/helper/h.go", "package helper\nimport _ \"vl/internal/updaterworker\"\n", "api"},
+		"trader":            {"trader/w.go", "package trader\nimport w \"vl/internal/updaterworker\"\nvar _ = w.X\n", "trader"},
+		"root main":         {"main_worker.go", "package main\nimport _ \"vl/internal/updaterwire/wireserver\"\n", "(root main)"},
+		"store":             {"store/s.go", "package store\nimport _ \"vl/internal/updaterworker\"\n", "store"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := base()
@@ -328,7 +328,7 @@ func TestWorkerImportGuardCatchesDirectAndTransitiveImports(t *testing.T) {
 	}
 	// a _test.go file linking the worker is not production linkage
 	root = base()
-	write(root, "api/worker_test.go", "package api\nimport _ \"nofx/internal/updaterwire/wireserver\"\n")
+	write(root, "api/worker_test.go", "package api\nimport _ \"vl/internal/updaterwire/wireserver\"\n")
 	if off, _, _ := workerImportOffenders(root); len(off) != 0 {
 		t.Fatalf("a test-only import must not count as production linkage: %v", off)
 	}
@@ -572,19 +572,19 @@ func TestOnlyTheOperatorCLISetsWithdrawEntries(t *testing.T) {
 // (positive control), and each way of setting the field elsewhere — including
 // in the worker's census-ADMITTED hold writer — is caught.
 func TestWithdrawSetterCensusCatchesEveryForm(t *testing.T) {
-	const worker = "package updaterworker\n\nimport \"nofx/store\"\n\n" +
+	const worker = "package updaterworker\n\nimport \"vl/store\"\n\n" +
 		"func holdFor(j string) store.MaintenanceHold {\n\treturn store.MaintenanceHold{Held: true, JobID: j, Owner: \"updater\"}\n}\n\n" +
 		"func ours(st store.MaintenanceHoldState, j string) bool {\n\treturn st.Hold.JobID == j && !st.Hold.WithdrawEntries\n}\n"
 	base := func() string {
 		root := t.TempDir()
-		censusWrite(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+		censusWrite(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 		censusWrite(t, root, "store/maintenance_hold.go", "package store\n\ntype MaintenanceHold struct {\n\tHeld bool `json:\"held\"`\n\tJobID string `json:\"job_id\"`\n\tOwner string `json:\"owner,omitempty\"`\n\tWithdrawEntries bool `json:\"withdraw_entries,omitempty\"`\n}\n\ntype MaintenanceHoldState struct{ Hold MaintenanceHold }\n")
-		censusWrite(t, root, "internal/holdcli/holdcli.go", "package holdcli\n\nimport (\n\t\"fmt\"\n\t\"nofx/store\"\n)\n\nfunc Set(w bool) store.MaintenanceHold {\n\th := store.MaintenanceHold{Held: true, WithdrawEntries: w}\n\tfmt.Printf(\"withdraw_entries=%v\\n\", h.WithdrawEntries)\n\th.WithdrawEntries = w\n\treturn h\n}\n")
+		censusWrite(t, root, "internal/holdcli/holdcli.go", "package holdcli\n\nimport (\n\t\"fmt\"\n\t\"vl/store\"\n)\n\nfunc Set(w bool) store.MaintenanceHold {\n\th := store.MaintenanceHold{Held: true, WithdrawEntries: w}\n\tfmt.Printf(\"withdraw_entries=%v\\n\", h.WithdrawEntries)\n\th.WithdrawEntries = w\n\treturn h\n}\n")
 		censusWrite(t, root, "internal/updaterworker/hold.go", worker)
-		censusWrite(t, root, "trader/withdraw.go", "package trader\n\nimport \"nofx/store\"\n\nfunc wants(st store.MaintenanceHoldState) bool { return st.Hold.Held && st.Hold.WithdrawEntries }\n")
+		censusWrite(t, root, "trader/withdraw.go", "package trader\n\nimport \"vl/store\"\n\nfunc wants(st store.MaintenanceHoldState) bool { return st.Hold.Held && st.Hold.WithdrawEntries }\n")
 		// keyed literals — type elided, through an alias, pointer elements —
 		// that never name the field are clean (the go/types leg's control)
-		censusWrite(t, root, "internal/updaterworker/list.go", "package updaterworker\n\nimport \"nofx/store\"\n\ntype L = store.MaintenanceHold\n\nvar (\n\tsl = []store.MaintenanceHold{{Held: true, JobID: \"j\"}}\n\tpl = []*L{{Held: true}}\n\tml = map[string]L{\"a\": {JobID: \"j\"}}\n\tal = L{Owner: \"updater\"}\n\tel = []store.MaintenanceHold{{}}\n)\n")
+		censusWrite(t, root, "internal/updaterworker/list.go", "package updaterworker\n\nimport \"vl/store\"\n\ntype L = store.MaintenanceHold\n\nvar (\n\tsl = []store.MaintenanceHold{{Held: true, JobID: \"j\"}}\n\tpl = []*L{{Held: true}}\n\tml = map[string]L{\"a\": {JobID: \"j\"}}\n\tal = L{Owner: \"updater\"}\n\tel = []store.MaintenanceHold{{}}\n)\n")
 		return root
 	}
 	root := base()
@@ -593,26 +593,26 @@ func TestWithdrawSetterCensusCatchesEveryForm(t *testing.T) {
 	}
 	for name, c := range map[string]struct{ rel, body, want string }{
 		"the admitted hold writer setting it in its literal": {"internal/updaterworker/hold.go", strings.Replace(worker, `Owner: "updater"}`, `Owner: "updater", WithdrawEntries: true}`, 1), "internal/updaterworker/hold.go: composite literal sets WithdrawEntries"},
-		"an assignment in the worker":                        {"internal/updaterworker/set.go", "package updaterworker\n\nimport \"nofx/store\"\n\nfunc f(h *store.MaintenanceHold) { h.WithdrawEntries = true }\n", "internal/updaterworker/set.go: assigns WithdrawEntries"},
-		"an op-assignment":                                   {"internal/updaterworker/set.go", "package updaterworker\n\nimport \"nofx/store\"\n\nfunc f(h *store.MaintenanceHold, b bool) { h.WithdrawEntries = h.WithdrawEntries || b }\n", "internal/updaterworker/set.go: assigns WithdrawEntries"},
-		"the field's address taken":                          {"cmd/nofx-updater/main.go", "package main\n\nimport \"nofx/store\"\n\nfunc main() { var h store.MaintenanceHold; p := &h.WithdrawEntries; *p = true }\n", "cmd/nofx-updater/main.go: takes the address of WithdrawEntries"},
-		"a positional literal":                               {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"nofx/store\"\n\nvar h = store.MaintenanceHold{true, \"j\", \"updater\", true}\n", "internal/updaterworker/pos.go: positional MaintenanceHold literal"},
-		"raw JSON naming the key":                            {"cmd/nofx-updater/main.go", "package main\n\nconst raw = `{\"held\":true,\"withdraw_entries\":true}`\n\nfunc main() {}\n", "cmd/nofx-updater/main.go: names withdraw_entries"},
+		"an assignment in the worker":                        {"internal/updaterworker/set.go", "package updaterworker\n\nimport \"vl/store\"\n\nfunc f(h *store.MaintenanceHold) { h.WithdrawEntries = true }\n", "internal/updaterworker/set.go: assigns WithdrawEntries"},
+		"an op-assignment":                                   {"internal/updaterworker/set.go", "package updaterworker\n\nimport \"vl/store\"\n\nfunc f(h *store.MaintenanceHold, b bool) { h.WithdrawEntries = h.WithdrawEntries || b }\n", "internal/updaterworker/set.go: assigns WithdrawEntries"},
+		"the field's address taken":                          {"cmd/vl-updater/main.go", "package main\n\nimport \"vl/store\"\n\nfunc main() { var h store.MaintenanceHold; p := &h.WithdrawEntries; *p = true }\n", "cmd/vl-updater/main.go: takes the address of WithdrawEntries"},
+		"a positional literal":                               {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"vl/store\"\n\nvar h = store.MaintenanceHold{true, \"j\", \"updater\", true}\n", "internal/updaterworker/pos.go: positional MaintenanceHold literal"},
+		"raw JSON naming the key":                            {"cmd/vl-updater/main.go", "package main\n\nconst raw = `{\"held\":true,\"withdraw_entries\":true}`\n\nfunc main() {}\n", "cmd/vl-updater/main.go: names withdraw_entries"},
 		"a map literal keyed withdraw_entries":               {"api/handler_updates.go", "package api\n\nvar m = map[string]any{\"withdraw_entries\": true}\n", "api/handler_updates.go: composite literal sets withdraw_entries"},
 		// U5b verifier D2 — the forms a syntactic walk cannot type (go/types leg)
-		"a keyless literal, type elided, in a slice":             {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"nofx/store\"\n\nvar hs = []store.MaintenanceHold{{true, \"j\", \"updater\", true}}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
-		"a keyless literal, type elided, in a map":               {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"nofx/store\"\n\nvar m = map[string]store.MaintenanceHold{\"a\": {true, \"j\", \"updater\", true}}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
-		"a keyless literal, type elided, pointer elements":       {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"nofx/store\"\n\nvar hs = []*store.MaintenanceHold{{true, \"j\", \"updater\", true}}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
-		"a positional literal through a type alias":              {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"nofx/store\"\n\ntype H = store.MaintenanceHold\n\nvar h = H{true, \"j\", \"updater\", true}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
-		"a positional literal through another package's alias":   {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"nofx/trader/holdalias\"\n\nvar h = holdalias.H{true, \"j\", \"updater\", true}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
-		"a positional literal of an identical struct, converted": {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"nofx/store\"\n\ntype twin struct {\n\tHeld bool\n\tJobID, Owner string\n\tWithdrawEntries bool\n}\n\nvar h = store.MaintenanceHold(twin{true, \"j\", \"updater\", true})\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
-		"reflect naming the field":                               {"internal/updaterworker/refl.go", "package updaterworker\n\nimport (\n\t\"reflect\"\n\n\t\"nofx/store\"\n)\n\nfunc f(h *store.MaintenanceHold) { reflect.ValueOf(h).Elem().FieldByName(\"WithdrawEntries\").SetBool(true) }\n", "internal/updaterworker/refl.go: names WithdrawEntries in a string literal"},
-		"a keyless literal in a file outside the host build":     {"internal/updaterworker/pos_other.go", "//go:build plan9\n\npackage updaterworker\n\nimport \"nofx/store\"\n\nvar hs = []store.MaintenanceHold{{true, \"j\", \"updater\", true}}\n", "internal/updaterworker/pos_other.go: keyless MaintenanceHold literal"},
+		"a keyless literal, type elided, in a slice":             {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"vl/store\"\n\nvar hs = []store.MaintenanceHold{{true, \"j\", \"updater\", true}}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
+		"a keyless literal, type elided, in a map":               {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"vl/store\"\n\nvar m = map[string]store.MaintenanceHold{\"a\": {true, \"j\", \"updater\", true}}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
+		"a keyless literal, type elided, pointer elements":       {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"vl/store\"\n\nvar hs = []*store.MaintenanceHold{{true, \"j\", \"updater\", true}}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
+		"a positional literal through a type alias":              {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"vl/store\"\n\ntype H = store.MaintenanceHold\n\nvar h = H{true, \"j\", \"updater\", true}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
+		"a positional literal through another package's alias":   {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"vl/trader/holdalias\"\n\nvar h = holdalias.H{true, \"j\", \"updater\", true}\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
+		"a positional literal of an identical struct, converted": {"internal/updaterworker/pos.go", "package updaterworker\n\nimport \"vl/store\"\n\ntype twin struct {\n\tHeld bool\n\tJobID, Owner string\n\tWithdrawEntries bool\n}\n\nvar h = store.MaintenanceHold(twin{true, \"j\", \"updater\", true})\n", "internal/updaterworker/pos.go: keyless MaintenanceHold literal"},
+		"reflect naming the field":                               {"internal/updaterworker/refl.go", "package updaterworker\n\nimport (\n\t\"reflect\"\n\n\t\"vl/store\"\n)\n\nfunc f(h *store.MaintenanceHold) { reflect.ValueOf(h).Elem().FieldByName(\"WithdrawEntries\").SetBool(true) }\n", "internal/updaterworker/refl.go: names WithdrawEntries in a string literal"},
+		"a keyless literal in a file outside the host build":     {"internal/updaterworker/pos_other.go", "//go:build plan9\n\npackage updaterworker\n\nimport \"vl/store\"\n\nvar hs = []store.MaintenanceHold{{true, \"j\", \"updater\", true}}\n", "internal/updaterworker/pos_other.go: keyless MaintenanceHold literal"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := base()
-			if strings.Contains(c.body, "nofx/trader/holdalias") {
-				censusWrite(t, root, "trader/holdalias/alias.go", "package holdalias\n\nimport \"nofx/store\"\n\ntype H = store.MaintenanceHold\n")
+			if strings.Contains(c.body, "vl/trader/holdalias") {
+				censusWrite(t, root, "trader/holdalias/alias.go", "package holdalias\n\nimport \"vl/store\"\n\ntype H = store.MaintenanceHold\n")
 			}
 			censusWrite(t, root, c.rel, c.body)
 			off, _, err := withdrawSetterOffenders(root)
@@ -639,9 +639,9 @@ func TestWithdrawSetterCensusCatchesEveryForm(t *testing.T) {
 // never a silent pass.
 func TestWithdrawTypedLegFailsClosed(t *testing.T) {
 	root := t.TempDir()
-	censusWrite(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	censusWrite(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	censusWrite(t, root, "store/maintenance_hold.go", "package store\n\ntype MaintenanceHold struct {\n\tHeld bool `json:\"held\"`\n\tWithdrawEntries bool `json:\"withdraw_entries,omitempty\"`\n}\n")
-	censusWrite(t, root, "internal/updaterworker/bad.go", "package updaterworker\n\nimport \"nofx/store\"\n\nvar hs = []store.MaintenanceHold{{true, true}}\n\nvar broken int = \"not an int\"\n")
+	censusWrite(t, root, "internal/updaterworker/bad.go", "package updaterworker\n\nimport \"vl/store\"\n\nvar hs = []store.MaintenanceHold{{true, true}}\n\nvar broken int = \"not an int\"\n")
 	off, _, err := withdrawSetterOffenders(root)
 	if err != nil {
 		t.Fatal(err)
@@ -673,7 +673,7 @@ func TestWithdrawSetterAdmissionsArePinned(t *testing.T) {
 		}
 	}
 	for f := range withdrawSetterFiles {
-		if strings.HasPrefix(f, "internal/updaterworker/") || strings.HasPrefix(f, "cmd/nofx-updater/") || strings.HasPrefix(f, "internal/updaterjob/") || strings.HasPrefix(f, "api/") {
+		if strings.HasPrefix(f, "internal/updaterworker/") || strings.HasPrefix(f, "cmd/vl-updater/") || strings.HasPrefix(f, "internal/updaterjob/") || strings.HasPrefix(f, "api/") {
 			t.Fatalf("%s must never be admitted to set withdraw_entries — the updater never cancels orders", f)
 		}
 	}

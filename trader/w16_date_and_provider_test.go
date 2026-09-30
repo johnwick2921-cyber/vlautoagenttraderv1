@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // CTO-VERIFY 5.5 / P-B — TWO DATE NOTIONS COEXIST.

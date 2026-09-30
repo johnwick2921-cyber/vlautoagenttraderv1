@@ -1,4 +1,4 @@
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "== RTH-L touches by CT day and session =="
 sqlite3 "$DB" "select date(opened_at_ms/1000,'unixepoch','-5 hours') d, session, count(*), sum(outcome in ('hold','break')) res, sum(outcome='break') brk from touch_outcomes where level_kind='RTH-L' group by 1,2 order by 1;"
 echo "== all touch_outcomes by CT day =="

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // runPromptSmoke builds the futures system and user prompts with sample data

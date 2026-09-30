@@ -23,10 +23,10 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
-	"nofx/store/sqlitedriver" // the ONE sqlite registration site (DS-102 fold, CTO 1790305899255)
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
+	"vl/store/sqlitedriver" // the ONE sqlite registration site (DS-102 fold, CTO 1790305899255)
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ENTRY-MECHANICS E8 (2026-08-30) — shadow A/B counterfactual fixtures.

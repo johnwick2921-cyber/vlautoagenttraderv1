@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/discipline"
+	"vl/discipline"
 )
 
 // W16/R5 — a post-fill DB write failure must FREEZE the trader.

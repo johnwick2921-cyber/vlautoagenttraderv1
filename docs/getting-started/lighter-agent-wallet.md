@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Lighter Agent Wallet Setup Guide
 
 This guide explains how to create and configure an Agent Wallet for secure trading on Lighter.
@@ -40,11 +41,11 @@ After creation, save these immediately:
 
 ⚠️ **Important**: The private key is only shown once! Save it securely.
 
-## Step 4: Configure in NOFX
+## Step 4: Configure in VL
 
-Add your agent wallet through the NOFX web interface:
+Add your agent wallet through the VL web interface:
 
-1. Open NOFX dashboard (http://localhost:3000)
+1. Open VL dashboard (http://localhost:3000)
 2. Go to **Exchange Configuration**
 3. Enable **Lighter**
 4. Enter:

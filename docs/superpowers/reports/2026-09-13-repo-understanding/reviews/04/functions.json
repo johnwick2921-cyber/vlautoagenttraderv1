@@ -366,7 +366,7 @@
     "end_line": 104,
     "purpose": "Define enum routing, supported skill/actions, target/field policies and no-false-promise guidance as prompt text.",
     "connections": [
-      "Syntactic call read in function: prependNOFXiAdvisorPreamble"
+      "Syntactic call read in function: prependVLiAdvisorPreamble"
     ],
     "invariants_or_risks": [
       "Static source reading only; caller authorization and production state must not be inferred from schema/prompt text."
@@ -504,7 +504,7 @@
       "Syntactic call read in function: activeToLegacySkillSession",
       "Syntactic call read in function: allowedFieldSpecsForSkillSession",
       "Syntactic call read in function: formatActiveSessionLocalHistory",
-      "Syntactic call read in function: prependNOFXiAdvisorPreamble",
+      "Syntactic call read in function: prependVLiAdvisorPreamble",
       "Syntactic call read in function: withPlannerStageTimeout",
       "Syntactic call read in function: cancel",
       "Syntactic call read in function: a.aiClient.CallWithRequest",
@@ -758,7 +758,7 @@
       "Syntactic call read in function: a.currentPendingHintText",
       "Syntactic call read in function: buildSkillDomainPrimerForSession",
       "Syntactic call read in function: activeSessionSpecificRules",
-      "Syntactic call read in function: prependNOFXiAdvisorPreamble",
+      "Syntactic call read in function: prependVLiAdvisorPreamble",
       "Syntactic call read in function: defaultIfEmpty",
       "Syntactic call read in function: withPlannerStageTimeout",
       "Syntactic call read in function: cancel",
@@ -3169,7 +3169,7 @@
     "name": "latestBackendLogFilePath",
     "start_line": 1239,
     "end_line": 1246,
-    "purpose": "Select lexicographically last relative data/nofx_*.log path.",
+    "purpose": "Select lexicographically last relative data/vl_*.log path.",
     "connections": [
       "Syntactic call read in function: filepath.Glob",
       "Syntactic call read in function: filepath.Join",

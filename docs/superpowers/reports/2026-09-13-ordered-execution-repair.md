@@ -1,10 +1,11 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Ordered execution evidence: source repair and limits
 
 Source checkpoint: `9b379c8c2ec53968cdabb1ef5071a6e3a8eddc51`, following atomic receipts in a982cc74 and pending/first-snapshot correction c20d0a82. This is offline source/test evidence. No running service, owner account/configuration or installed AddOn was changed.
 
 ## Reproduction and correction
 
-[A] An actual entry callback materialized one contract at100; a cumulative two-contract entry at105 was already queued. The old close consumer independently applied one exit at120, closing the row with P&L40. The cycle later drained the queued entry and left no residual row. Expected receive-order accounting was one residual contract at105 and realized P&L30. Before: `/tmp/nofx-combined-review/deeper-ordering-repro-a982cc74.log` and its preserved test/overlay.
+[A] An actual entry callback materialized one contract at100; a cumulative two-contract entry at105 was already queued. The old close consumer independently applied one exit at120, closing the row with P&L40. The cycle later drained the queued entry and left no residual row. Expected receive-order accounting was one residual contract at105 and realized P&L30. Before: `/tmp/vl-combined-review/deeper-ordering-repro-a982cc74.log` and its preserved test/overlay.
 
 [A source/tests] A single exact account/symbol owner now receives OrderUpdate, Fill and PositionClose directly from TCP readLoop, before advisory fanout can reorder them. Echo/pending-operation checks stay at the transport boundary. Internal handled flags are excluded from JSON; untrusted input cannot assert prior handling. Existing normal, synchronous cancellation, fill-cache and close consumers skip already applied advisory events. Registration occurs only after successful trader construction; replacement and cleanup compare actual owner identity. Ordinary Stop retains observation.
 
@@ -17,7 +18,7 @@ Source checkpoint: `9b379c8c2ec53968cdabb1ef5071a6e3a8eddc51`, following atomic 
 
 The second path records newly observed cumulative exposure from the same immutable order after its earlier residual reached zero. It does not submit or authorize another order. Known prior notional, greater cumulative quantity, exact account/symbol/entry identity and absence of competing open exposure are required in the conditional database update. Equal/older replay cannot reopen the row. Earlier realized P&L and exit receipts remain, while final corrected P&L becomes NULL during the continuing exposure. Both examples finish at80USD total realized P&L after a final one-contract manual exit at130, using MNQ2USD/point.
 
-[A] Full raw replay, marked advisory replay, foreign account, obsolete-owner cleanup, unrelated bracket lineage and fill-cache resurrection are tested. The cache rejects equal/older cumulative fills for an exact fully exited entry. A callback sends a real FrameSignal back over the loopback TCP connection to test reentrant outbound progress. Focused race evidence: `/tmp/nofx-combined-review/ordered-final-06.log`; independent source/test review: `/tmp/nofx-ordered-execution-independent-review.md`. Final full combined verification is recorded separately.
+[A] Full raw replay, marked advisory replay, foreign account, obsolete-owner cleanup, unrelated bracket lineage and fill-cache resurrection are tested. The cache rejects equal/older cumulative fills for an exact fully exited entry. A callback sends a real FrameSignal back over the loopback TCP connection to test reentrant outbound progress. Focused race evidence: `/tmp/vl-combined-review/ordered-final-06.log`; independent source/test review: `/tmp/vl-ordered-execution-independent-review.md`. Final full combined verification is recorded separately.
 
 ## Explicit limits
 

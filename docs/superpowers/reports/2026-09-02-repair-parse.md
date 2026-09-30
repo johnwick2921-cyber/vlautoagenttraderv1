@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Repair-parse — the default retry was judged against a vocabulary it was never shown
 
 **Dispatch:** REPAIR-PARSE, lane 1. Owner hoang, 2026-09-02. Base: dev `4175e0b6` (after lane 2).
@@ -131,7 +132,7 @@ The window was 95 seconds wide and it was taken.
 | Arms | `armed_orders` non-terminal **0**; zero `📌 armed` / `→ WORKING` lines since the NY plan |
 | Build | clean clone of dev @ `0465a10b`, `vcs.revision=0465a10bfa4b865a8406a1d684501ec4673febc7`, `vcs.modified=false` |
 | A19 | RELEASE written 08:10:1x, BEFORE the swap; marker committed only after the boot below; **RELEASE file and marker commit both in the main tree** (the 07:32 lesson) |
-| Swap | 08:10:25 `status=9/KILL`; `nofx-bin.prev.boot` = 4175e0b6 |
+| Swap | 08:10:25 `status=9/KILL`; `vl-bin.prev.boot` = 4175e0b6 |
 | **Boot 08:10:30** | `🔐 BOOT INTEGRITY OK — rev 0465a10bfa4b · built 2026-09-02T12:58:10Z · expected 0465a10bfa4b · goldens PASS` — PID 2932498, ONE process, **0 `[ERRO]`**, 0 TradingRefused |
 | Plan survived | `2026-09-02 NY v1 active` still latest after the restart |
 
@@ -174,7 +175,7 @@ rate over the first 10 repairs against the 8/28 baseline. And the first Studio s
 ## 8. Rollback
 
 ```
-cp nofx-bin.prev.boot nofx-bin && echo 4175e0b62de785ac5528a0d3f8a8c2618cd3a6d8 > deploy/RELEASE && kill -9 <MainPID>
+cp vl-bin.prev.boot vl-bin && echo 4175e0b62de785ac5528a0d3f8a8c2618cd3a6d8 > deploy/RELEASE && kill -9 <MainPID>
 ```
 
 ---

@@ -22,7 +22,7 @@ from r24lib import *
 
 QA = os.path.join(R23, "qa.jsonl")
 TR = os.path.join(R23, "trends.jsonl")
-DB = "/home/hoang/nofx-r101/data/db.copy.db"
+DB = "/home/hoang/vl-r101/data/db.copy.db"
 TF_MS = {"1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000}
 OUTF = os.path.join(OUT, "q3_cells.json")
 os.makedirs(OUT, exist_ok=True)

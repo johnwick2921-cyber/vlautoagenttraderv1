@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W5 (builder C2) — PICTURE'S OWN SEND PATH IS RETIRED ───────

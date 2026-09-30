@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W16/R6 — one planner call per (trade_date, session) at a time.

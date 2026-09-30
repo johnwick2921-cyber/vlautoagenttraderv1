@@ -22,7 +22,7 @@ import (
 )
 
 // historyReplayMaxPerBoot bounds the AUTOMATIC re-request to ONE per symbol
-// per process (nofx-93's objection 2, 2026-09-16). A time floor turned a TRUE
+// per process (vl-93's objection 2, 2026-09-16). A time floor turned a TRUE
 // break into a loop: mismatch → drop (which under guard (ii) includes the
 // store-backed rows) → post-drop rehydrate restores them as historical →
 // re-request → NT8's replay lands on the wrong scale again and, historical

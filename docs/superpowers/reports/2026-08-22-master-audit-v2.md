@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # MASTER AUDIT V2 — FULL-SYSTEM VERIFICATION · CAMPAIGN CLOSER (2026-08-22)
 
 ## 0 — Sequencing gate status (×4) + self-check result
@@ -101,7 +102,7 @@ market closed, all gates additive, SIM hard-lock intact (Part H).
 | #59's M-class strays | OPEN (parked per fail-register report:70) | dead wires · MAE/MFE chart · grid writer |
 | E3 live-prompt quote | OPEN, deferred to Sunday soak | wave report §5 |
 | Save-button UX | **CLOSED** | E1 `4e32cd5a`: save honesty, "saved <time> CT" |
-| journald conf | **CLOSED/APPLIED** | `/etc/systemd/journald.conf.d/nofx.conf`: persistent, 2G, burst 200000; 746 WARNs retained in the 08-21 flood window |
+| journald conf | **CLOSED/APPLIED** | `/etc/systemd/journald.conf.d/vl.conf`: persistent, 2G, burst 200000; 746 WARNs retained in the 08-21 flood window |
 | rebrand L3 table | OPEN (cosmetic) | old names in IndicatorEditor/CoinSourceEditor/FAQ |
 | favicon gap | OPEN (cosmetic) | no favicon in `web/index.html`/public |
 | calibration queue (6 items + C-ATR1) | OPEN (standing ruling) | report §5 |
@@ -122,7 +123,7 @@ market closed, all gates additive, SIM hard-lock intact (Part H).
 
 **§F Guards&Gates** — PASS (code three-way), 1 UNVERIFIED (live trace). Gate order: `engine_position.go` :190 minConf → :200 G1 → :213 G4 → :223 G6 → sizing; matches `gate-order.md` AND `PIPELINE-MAP.md` exactly. Refusal messages per gate present (quoted lines for htf_veto/transition/loss-streak in code). Fail-open map: entry-gate inputs missing → WARN + pass; fail-closed stays planner no-plan + G7 stale-flip-skip (both verified in code). Master-independence: armor family + G6 independent of master switch. Per-session values at boot: ledger line quoted. **Live gate trace: UNVERIFIED — no blocking market cycle has run since deploy (weekend); Sunday soak captures it.**
 
-**§G Ops&Deploy** — PASS. Deploy order honored (RELEASE written after build, boot quoted). Running binary rev 108dbaf0 vs HEAD 586362f7 = **1 docs-only commit ahead** (accounted; `vcs.modified=true`). Boot block complete (6 regime lines + sessions line). systemd inventory: `nofx.service` active running · user timers `nofx-backup` · `nofx-clock-guard` · `e4-soak` all active. journald applied (above). One-agent compliance: last commit 586362f7 by the single owner agent. Feed alarm: present.
+**§G Ops&Deploy** — PASS. Deploy order honored (RELEASE written after build, boot quoted). Running binary rev 108dbaf0 vs HEAD 586362f7 = **1 docs-only commit ahead** (accounted; `vcs.modified=true`). Boot block complete (6 regime lines + sessions line). systemd inventory: `vl.service` active running · user timers `vl-backup` · `vl-clock-guard` · `e4-soak` all active. journald applied (above). One-agent compliance: last commit 586362f7 by the single owner agent. Feed alarm: present.
 
 **§H Security&SIM** — PASS. LFE: `tcp_trader.go:215-248` live/funded account **never tradeable** (fail-safe false). Owner endpoints JWT-authed incl. Studio regime fields. Secrets in 24h journal: 0. Sim101 hard-lock verified (the only tradeable path).
 
@@ -194,7 +195,7 @@ Matrix stands final. Audit-of-audit corrections verified landed in the report fi
 **F1** — 08-21 ledger from DB alone, two ways: calls `LIKE '2026-08-21%'` = **628** == `BETWEEN` = **628**; proposals (open_ actions in decision_json) = **16**; outcomes (positions entered) = **8**. Chain 628 ≥ 16 ≥ 8, both counting methods agree.
 
 **F2 artifacts**:
-1. **Boot block** (verbatim): `Aug 21 23:01:32 nofx-bin[27647] 🔐 BOOT INTEGRITY OK — rev 108dbaf09daa +dirty · built 2026-08-22T03:57:11Z · expected 108dbaf09daa · goldens PASS` + 6 `🛡️ regime ledger` lines (htf_veto=ON·1h · transition=ON·45min · flip-hold=30min · loss_streak=4·60min · TFs=[5m 15m 1h] k=2 0.25×ATR 1.5×ATR · flip-eval cap=90000ms).
+1. **Boot block** (verbatim): `Aug 21 23:01:32 vl-bin[27647] 🔐 BOOT INTEGRITY OK — rev 108dbaf09daa +dirty · built 2026-08-22T03:57:11Z · expected 108dbaf09daa · goldens PASS` + 6 `🛡️ regime ledger` lines (htf_veto=ON·1h · transition=ON·45min · flip-hold=30min · loss_streak=4·60min · TFs=[5m 15m 1h] k=2 0.25×ATR 1.5×ATR · flip-eval cap=90000ms).
 2. **Live cycle trace with gates in order**: N/A pre-soak — no blocking cycle has run since deploy; the chain itself is pinned at `engine_position.go:190/200/213/223` and matches both docs (Part B §F).
 3. **Wire-liveness now**: no NT8 frames since Friday close (expected weekend); `/api/health` 200 `{"status":"ok"}`; cycles running (cycle #257, 12:29 CT, idle).
 4. **Newest stored real prompt** (trimmed): record 31465 (08-21 10:50 CT): `Time: 2026-08-21 10:50 CT | Period: #786 … Account: Equity 52625.00 | Balance 52653.50 … Positions 1 ## Recent Completed Trades 1. MNQ shor…` (pre-C-ATR1 deploy; post-deploy market prompts do not exist yet — Sunday).

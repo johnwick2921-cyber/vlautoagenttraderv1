@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"nofx/trader"
+	"vl/trader"
 
 	"github.com/gin-gonic/gin"
 )

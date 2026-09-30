@@ -13,10 +13,10 @@ import (
 	"sort"
 	"time"
 
-	_ "nofx/store/sqlitedriver" // the ONE sqlite registration site (DS-102 fold, CTO 1790305899255)
+	_ "vl/store/sqlitedriver" // the ONE sqlite registration site (DS-102 fold, CTO 1790305899255)
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // tfMillis maps a timeframe label to its bar width in milliseconds.

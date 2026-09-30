@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/installpath"
-	"nofx/internal/updaterjob"
+	"vl/internal/installpath"
+	"vl/internal/updaterjob"
 )
 
 // reproofInstall is a temp installation (its .env names no DB_PATH) whose
@@ -60,7 +60,7 @@ func setReleaseRoot(t *testing.T, root string) {
 }
 
 // PIN (U4N item A): the production Reverifier — the constructor
-// cmd/nofx-updater's newReverifier calls — re-proves a release the REAL fetch
+// cmd/vl-updater's newReverifier calls — re-proves a release the REAL fetch
 // verified: Verdict is updaterjob.ReadVerdict's file, field for field; Rehash
 // re-hashes every artifact; Reverify re-verifies the SSHSIG against the
 // INSTALL's deploy/release_allowed_signers and returns the signed manifest's

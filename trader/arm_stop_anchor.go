@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── 0B (2026-09-02) — STOP ANCHORED TO SEATED STRUCTURE ──────────────────────

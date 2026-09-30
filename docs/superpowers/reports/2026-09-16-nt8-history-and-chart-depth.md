@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 101 — 5m CHART DEPTH + NT8 HISTORY AT SUBSCRIBE + CHART ACROSS THE ROLL
 
 **Branch** `fix/nt8-history-and-chart-depth` · base dev `8f5f26ee` · running rev `3ce4281a4b6b`
@@ -78,7 +79,7 @@ for the life of the process. Same event on MNQ 1m: 1832 dropped.
 - **C8** ✗ as stated — the AddOn **does** log the count (`emitted bars_historical <key> bars=<n>`) and the resolve (`resolved MNQ -> MNQ ##-## => MNQ 12-26 (rolling->MNQ 12-26)`). D3(a) is unnecessary.
 
 Position 606 reads CLOSED, not OPEN as dispatched. The running binary's log paths carry
-`nofx-deploy-r4/main.go` — built in a directory not named `nofx` (class 75).
+`vl-deploy-r4/main.go` — built in a directory not named `vl` (class 75).
 
 ## WHAT THIS MEANS FOR THE FIX (proposal, not started)
 
@@ -133,7 +134,7 @@ A31 grep against the do-not-touch list: none. Class 100 deletions vs dev: none.
 
 The CTO relayed the ruling first; I held (3a)/(3b) for the owner's own words per the dispatch's
 "GO comes from the owner in his chat". They came. Built to the CTO's amendment-2 spec, then
-**revised twice on nofx-93's review of `4099cc69` (both objections SUSTAINED by the CTO)**.
+**revised twice on vl-93's review of `4099cc69` (both objections SUSTAINED by the CTO)**.
 
 | | what | files | pinned by |
 |---|---|---|---|
@@ -150,7 +151,7 @@ boot line prints the refused COUNT; (iv) the contract is the current one (`LastN
 key disposes and recreates the `BarsRequest` → a full `barsBack` replay; deployed AddOn md5 ==
 repo. **No AddOn change.**
 
-### nofx-93 objection 1 — guard (iii) was a boot-line literal with no code behind it (SUSTAINED, class 82 + new class 128)
+### vl-93 objection 1 — guard (iii) was a boot-line literal with no code behind it (SUSTAINED, class 82 + new class 128)
 
 At `4099cc69` the per-tf line printed `import=excluded-by-reader`. It was false: `LastNBarsOn`'s
 filter is `COALESCE(source,'') NOT IN ('mixed','off-scale')` (`store/bar_history.go:481/:538`)
@@ -176,7 +177,7 @@ of the 09-26 series — the only place production's 426 can be — the display r
 "prior" literal: the reader now takes `current` and excludes it. A hole in the prior series
 stays a hole. E3 re-pointed to 2,995 (3,000 slots, 5 holes). API E3 unchanged and green.
 
-### nofx-93 objection 2 — a 5-minute re-request floor loops on a TRUE break (SUSTAINED)
+### vl-93 objection 2 — a 5-minute re-request floor loops on a TRUE break (SUSTAINED)
 
 `mergeSeedKeepingLive` keeps the existing bar only when it is `live`/`mixed`; historical over
 historical, the INCOMING wins. So on a real break: drop (guard (ii) rows included) → post-drop
@@ -219,9 +220,9 @@ production caller counted: `IncScaleBreakDrop` 1, `ScaleBreakCounts` 1, `OnScale
 **E6** at the merged head `8f5f26ee`, 11:42 CDT (outside 12:00–13:30): **SUITE 32 ok / 0 FAIL**;
 **E6 (second, for (3a)/(3b) + the 93 fixes)** at the merged head `9e200002`, 13:30:53–13:35:56 CDT
 (outside 12:00–13:30): **SUITE 32 ok / 0 FAIL / 0 panic**. Clean-clone binary at that head:
-`vcs.revision=9e200002…`, `vcs.modified=false`, dir `nofx`, md5 `ac4de9293299faaea8d0b92dd4085461`.
+`vcs.revision=9e200002…`, `vcs.modified=false`, dir `vl`, md5 `ac4de9293299faaea8d0b92dd4085461`.
 Gate on a fresh read 13:22:01 CDT: ready=true, legs 1–5 PASS. Rollback file census (A13): the
-existing `nofx-bin.old.3ce4281a` HOLDS `83b76c51` — renamed to its true name before the live
+existing `vl-bin.old.3ce4281a` HOLDS `83b76c51` — renamed to its true name before the live
 `3ce4281a` takes that name.
 lock suite 101/0. One pre-existing pin re-pointed: `TestKlinesNinjaTraderStoreDepthContractFiltered`
 asserted the 09-14 rule the 09-16 ruling reverses; it now pins the ruling and, with the flag
@@ -243,8 +244,8 @@ off, the 09-14 behaviour exactly.
    says so honestly. With rule 1 they are harmless; they are still wasted requests.
 5. **"1H EMPTY at boot while 1536 emitted"** — the horizon line at 22:15:1x likely preceded
    the drain. Noted, unverified; did not fall out of the fixtures.
-6. **The running binary's log paths say `nofx-deploy-r4/main.go`** — built in a directory
-   not named `nofx` (class 75). This build is from a clean clone named `nofx`.
+6. **The running binary's log paths say `vl-deploy-r4/main.go`** — built in a directory
+   not named `vl` (class 75). This build is from a clean clone named `vl`.
 8. **THE SECOND DOOR — the planner's 1m tape reads imports TODAY [A].** `trader/bars_store_depth.go:81/106/121/219`
    feed the planner's and the weekly reader's 1m splice through `LastNBarsOn` with
    `n = plannerCandleTapeBars = 12000` (`auto_trader_planner.go:2957`, `auto_trader_weekly.go:494`).
@@ -258,7 +259,7 @@ off, the 09-14 behaviour exactly.
    — 2,000 seeded + ~667 live > 2,500 — the same arithmetic as the live "1832 dropped". A
    non-defect that reads like one.
 
-## STORE CENSUS AT THE GATE — nofx-93, read-only, against 10f424b0 semantics
+## STORE CENSUS AT THE GATE — vl-93, read-only, against 10f424b0 semantics
 
 Accepted and reproduced. What matters for this PR and the next:
 
@@ -283,7 +284,7 @@ Accepted and reproduced. What matters for this PR and the next:
   subscribe) is **LEFT**: a diagnostic line is not worth a rebuild of a binary already parked
   green at a gate blocked on the main tree; it is one fixture and one line for 104.
 
-  **The two refs the fix starts from — nofx-93, path owner, verbatim, at 10f424b0 (read-only;
+  **The two refs the fix starts from — vl-93, path owner, verbatim, at 10f424b0 (read-only;
   assignment is the owner's):**
 
   1. `trader/ninjatrader/bar_persist_wire.go:57-60` `barRowsForPersist` — `feedSrc :=
@@ -316,14 +317,14 @@ Accepted and reproduced. What matters for this PR and the next:
 - (3c)/(3d): `weeklyBias.ts:122` (to L5); the regime fallback arm now serves from the 1m tail
   (condition (b)) — its before/after boot line is quoted at the boot.
 - The Guide paragraph for `web/src/guide/content/status.ts` — sent to L5 as text.
-- Store-count re-run at the gate — nofx-93's offer, accepted.
+- Store-count re-run at the gate — vl-93's offer, accepted.
 
 ## F3 · THE BOOT — 9e200002, 2026-09-16 14:33:08 CT (owner-run swap, mid-session by the owner's explicit "go" ×2 in 101's chat + GO to the CTO 13:44 CT)
 
-Tree recovered by the owner first (A2b cleared: `~/nofx` at `50cd0fdd == origin/dev`, porcelain 0;
+Tree recovered by the owner first (A2b cleared: `~/vl` at `50cd0fdd == origin/dev`, porcelain 0;
 staged WIP preserved on `wip/class45-staged-20260916`; CLAUDE.md 421 lines). Swap + kill were
-OWNER-RUN via `~/nofx-backups/cutover-101-9e200002.sh` — both agent classifiers deny the deploy
-path. PID 1834811 → **2704230**. Every line below read from `data/nofx_2026-09-16.log` [A].
+OWNER-RUN via `~/vl-backups/cutover-101-9e200002.sh` — both agent classifiers deny the deploy
+path. PID 1834811 → **2704230**. Every line below read from `data/vl_2026-09-16.log` [A].
 
 - `🔐 BOOT INTEGRITY OK — rev 9e200002d6a2 · built 2026-09-16T17:35:50Z · expected 9e200002d6a2 · goldens PASS`
 - `🧯 nt8 history at subscribe: MNQ 1m=2000/2000 3m=2000/2000 5m=2000/2000 15m=2000/2000 30m=2000/2000 1h=n/a/2000 … 1w=n/a/2000` — NT8 delivered the window on every subscribed intraday tf (the dispatch's premise, refuted in §THE FINDING, now on a boot line).
@@ -334,13 +335,13 @@ path. PID 1834811 → **2704230**. Every line below read from `data/nofx_2026-09
 - `/api/klines?symbol=MNQ&interval=5m&limit=5000&exchange=ninjatrader` → **5,000 klines, `MNQ 09-26`=2,995 + `MNQ 12-26`=2,005**, monotonic, 08-21 08:45 → 09-16 14:35 CT; the roll step **`09-26 29617.00 → 12-26 29918.50`, Δ +301.50 at 09-07 04:40 CT** (`FirstLiveOn` = the first live 12-26 row, [O] never adjusted).
 - Condition (c) `📈 regime input window @14:33:12 CT: BEFORE window=7 · baseline=0.965453 · 2000 5m rows via 5m-ring (pre-wave) · AFTER window=7 · baseline=0.965453 · 2000 5m rows via 5m-ring-fallback · Δ+0 day(s)` — unchanged, as the RULEBOOK says it must be.
 - `🖥 ui: served-by=go-static build=2026-09-13T06:02:55Z STALE` — expected; L5 owes the dist (A15 §2).
-- A13: `nofx-bin.old.3ce4281a` now HOLDS 3ce4281a; the file that held 83b76c51 is `nofx-bin.old.83b76c51`.
+- A13: `vl-bin.old.3ce4281a` now HOLDS 3ce4281a; the file that held 83b76c51 is `vl-bin.old.83b76c51`.
 - Still 0 at 14:35 CT: **MNQ 1h / 4h / 1d horizons** (NT8 answered `n/a` for every HTF at subscribe) — the AddOn HTF starvation (acceptance-gate F-2, 2026-08-15), not this wave; re-read owed when NT8's HTF replay lands.
 - `🚨 CLOCK EARLY-WARNING |drift| 47.5s` (WSL2 time-sync) and `guardrail_would_trip realized today=-2136.00` — pre-existing, logged, not this wave.
 
-Marker: this commit, from `~/nofx` (the SAME tree that booted), `deploy/RELEASE=9e200002` written before the kill (A19).
+Marker: this commit, from `~/vl` (the SAME tree that booted), `deploy/RELEASE=9e200002` written before the kill (A19).
 `GUIDE_BUILT_REV` is NOT bumped here: `web/` is L5's under this dispatch's do-not-touch list; the Guide paragraph went to L5 via the CTO.
 
 ## ROLLBACK
 
-Go half: `mv nofx-bin nofx-bin.failed.<rev> && mv nofx-bin.old.<prev-rev> nofx-bin && echo <prev> > deploy/RELEASE && kill -9 $(pgrep -x nofx-bin)`. No AddOn half. No migration (Kline.Contract is wire-only; no DB column). `NOFX_CHART_ACROSS_ROLL=off` disables D2 without a rebuild.
+Go half: `mv vl-bin vl-bin.failed.<rev> && mv vl-bin.old.<prev-rev> vl-bin && echo <prev> > deploy/RELEASE && kill -9 $(pgrep -x vl-bin)`. No AddOn half. No migration (Kline.Contract is wire-only; no DB column). `VL_CHART_ACROSS_ROLL=off` disables D2 without a rebuild.

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // ── VOID PARITY (2026-09-02) — THE PROMPT MUST LIST WHAT THE VALIDATOR REJECTS ─

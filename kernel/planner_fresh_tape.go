@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // A6 bounds — the fresh tape carried by attempt N+1 after a born-dead /

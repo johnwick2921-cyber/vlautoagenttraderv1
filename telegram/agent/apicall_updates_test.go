@@ -34,8 +34,8 @@ func TestAgentAPICallNeverSendsTheUpdateHeader(t *testing.T) {
 	// names the header and a path that tries to smuggle one.
 	for _, req := range []*apiRequest{
 		{Method: "GET", Path: "/api/updates"},
-		{Method: "POST", Path: "/api/updates/install", Body: map[string]any{"X-NOFX-Update": "1", "release_id": "v1"}},
-		{Method: "POST", Path: "/api/updates/check?X-NOFX-Update=1"},
+		{Method: "POST", Path: "/api/updates/install", Body: map[string]any{"X-VL-Update": "1", "release_id": "v1"}},
+		{Method: "POST", Path: "/api/updates/check?X-VL-Update=1"},
 		{Method: "GET", Path: "api/updates/jobs/0123456789abcdef"},
 	} {
 		tool.execute(req)
@@ -49,7 +49,7 @@ func TestAgentAPICallNeverSendsTheUpdateHeader(t *testing.T) {
 		if h.Get("Authorization") != "Bearer bot-token-placeholder" {
 			t.Fatalf("request %d: positive control: the tool's own Authorization header is missing", i)
 		}
-		if v := h.Values("X-Nofx-Update"); len(v) != 0 {
+		if v := h.Values("X-Vl-Update"); len(v) != 0 {
 			t.Fatalf("request %d carried the update header %q", i, v)
 		}
 		if o := h.Get("Origin"); o != "" {

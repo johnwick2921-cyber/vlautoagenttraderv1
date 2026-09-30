@@ -483,7 +483,7 @@
       "notes": "Contextual mainnet/testnet read-only info API; candles/mids/meta, 30s timeout; interval aliases substituted not aggregated; symbol suffix rules case-sensitive and single-step."
     },
     {
-      "path": "provider/nofxos/ai500.go",
+      "path": "provider/vlos/ai500.go",
       "mode": "full/manual",
       "ranges": [
         [
@@ -495,7 +495,7 @@
       "notes": "AI500 retries3 separated2s, available flag, quadratic score sort, USDT normalization. fetch empty returns[] while available/top zero outputs can be nil."
     },
     {
-      "path": "provider/nofxos/claw402.go",
+      "path": "provider/vlos/claw402.go",
       "mode": "full/manual",
       "ranges": [
         [
@@ -507,7 +507,7 @@
       "notes": "Optional paid x402 data transport, wallet key parsed from explicit/env input; endpoint mapping and auth truncation; payment boundary called only when client enabled, never invoked in review."
     },
     {
-      "path": "provider/nofxos/client.go",
+      "path": "provider/vlos/client.go",
       "mode": "full/manual",
       "ranges": [
         [
@@ -519,7 +519,7 @@
       "notes": "Deprecated-service defaults still present; mutex config and optional Claw402 gateway, direct requests use security.SafeGet with auth in query; Error returns body only, auth parsing substring-based."
     },
     {
-      "path": "provider/nofxos/coin.go",
+      "path": "provider/vlos/coin.go",
       "mode": "full/manual",
       "ranges": [
         [
@@ -531,7 +531,7 @@
       "notes": "Per-symbol/batch quant API and bilingual prompt rendering; success=false accepted if code omitted/zero, batch skips failures; price deltas x100, OI percentages pre-scaled; OI map output order unspecified."
     },
     {
-      "path": "provider/nofxos/netflow.go",
+      "path": "provider/vlos/netflow.go",
       "mode": "full/manual",
       "ranges": [
         [
@@ -543,7 +543,7 @@
       "notes": "Four sequential flow rankings; each failure logged and omitted, returns result,nil even all fail. Bilingual tables and top3 retail summary, FetchedAt request-start."
     },
     {
-      "path": "provider/nofxos/oi.go",
+      "path": "provider/vlos/oi.go",
       "mode": "full/manual",
       "ranges": [
         [
@@ -555,7 +555,7 @@
       "notes": "Top/low OI ranks and legacy symbol wrappers; both requests may fail yet aggregate returns result,nil. success/code compatibility accepts omitted code zero. Percent fields already percent."
     },
     {
-      "path": "provider/nofxos/price.go",
+      "path": "provider/vlos/price.go",
       "mode": "full/manual",
       "ranges": [
         [
@@ -567,7 +567,7 @@
       "notes": "Multi-duration ranking fetch with strict Success, map copy then bilingual renderer includes only1h/4h/24h; price ratio x100."
     },
     {
-      "path": "provider/nofxos/util.go",
+      "path": "provider/vlos/util.go",
       "mode": "full/manual",
       "ranges": [
         [

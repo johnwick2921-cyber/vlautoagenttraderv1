@@ -1,4 +1,4 @@
-PARTNER SYNC — PUSH STOPPED (B2), 2026-09-04, session nofx-c6
+PARTNER SYNC — PUSH STOPPED (B2), 2026-09-04, session vl-c6
 ================================================================
 our  origin/dev            = b2d3826e0f9db87f93d7a059ed0bf8af0ce04ef9
 partner origin/main        = f6ae7597fb3bc9caeaaedb25ce8c3c48bca72247

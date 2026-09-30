@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // S1-wave A3 (2026-08-29) — the write-site stamp map must cover the FULL

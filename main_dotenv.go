@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	"nofx/logger"
+	"vl/logger"
 )
 
 // loadDotEnv loads path into the process environment and reports the

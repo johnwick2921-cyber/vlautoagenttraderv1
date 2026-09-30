@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/mcp"
-	"nofx/store"
+	"vl/mcp"
+	"vl/store"
 )
 
 // brainDecision is the routing contract between the first-pass LLM and the executor.
@@ -479,7 +479,7 @@ Rules:
 - Do not silently fill missing fields when the user has not authorized it. But if the user explicitly says things like "你帮我定 / 你推荐 / 按稳健高频设计 / 其他你定", that is authorization for the Agent to design the remaining fields. In that case you must produce a recommended config_patch based on the current strategy template and field limits, and explain which values came from the user versus which values are Agent recommendations.
 - The product editor template is the source of truth. Use only fields from the selected product template.
 - If the user switches strategy type, set extracted_data.strategy_type to the new type and discard fields from the previous type. Keep only shared fields such as name/description/publish settings.
-- In NOFXi product schema, AI500/OI Top/OI Low/static coin-source requests are ai_trading, not grid_trading.
+- In the VL product schema, static / Hyperliquid coin-source requests are ai_trading, not grid_trading.
 - Strategy creation is chat-executable. Do not tell the user to click a web/app button, open a page, or manually create it elsewhere.
 - Do not claim the strategy was created and do not promise future execution ("马上创建", "正在创建", "稍后通知"). This step only repairs state or asks for missing information.
 - When the current user message is a confirmation, prefer route="ready" whenever the structured template can be repaired. If it cannot be repaired, route="ask_user" with only the missing fields; never reply that you are about to create it.
@@ -903,8 +903,8 @@ func activeSessionSpecificRules(session skillSession) string {
 	case "create", "update_config":
 		return strings.Join([]string{
 			"- For strategy_management:create/update_config, the selected product editor template is the only schema. Write values only through extracted_data.config_patch, using the current type branch only: ai_trading => strategy_type + ai_config + publish_config; grid_trading => strategy_type + grid_config + publish_config.",
-			"- For strategy_management:create/update_config, config_patch values must be product schema raw values, not user-facing labels. Examples: source_type=\"ai500\" not \"AI500\"; strategy_type=\"ai_trading\" not \"AI 策略\"; selected_timeframes=[\"1m\",\"5m\",\"15m\"] not a JSON string.",
-			"- For strategy_management:create, AI500/OI Top/OI Low/static coin-source requests imply strategy_type=\"ai_trading\". Do not leave strategy type ambiguous in that case.",
+			"- For strategy_management:create/update_config, config_patch values must be product schema raw values, not user-facing labels. Examples: source_type=\"static\" not \"静态币种\"; strategy_type=\"ai_trading\" not \"AI 策略\"; selected_timeframes=[\"1m\",\"5m\",\"15m\"] not a JSON string.",
+			"- For strategy_management:create, static / Hyperliquid coin-source requests imply strategy_type=\"ai_trading\". Do not leave strategy type ambiguous in that case.",
 			"- For strategy_management:create/update_config, judge the user's natural-language intent. Explicit values, corrections, constraints, preferences, or requests to recommend/design must become config_patch for every determinable current-template field; pure questions/greetings/acknowledgements must not invent config_patch.",
 			"- For strategy_management:create, the Relevant disclosed resources include product_default_template and current_missing_template_fields. Treat product_default_template as the product editor's default template and field shape.",
 			"- For strategy_management:create, do not ask for or present fields listed in product_default_template.non_fields. They are not part of the selected product editor template.",
@@ -1156,9 +1156,6 @@ func strategyProductDefaultTemplateResource(lang, strategyType string) map[strin
 					"source_type":    cfg.CoinSource.SourceType,
 					"static_coins":   cfg.CoinSource.StaticCoins,
 					"excluded_coins": cfg.CoinSource.ExcludedCoins,
-					"ai500_limit":    cfg.CoinSource.AI500Limit,
-					"oi_top_limit":   cfg.CoinSource.OITopLimit,
-					"oi_low_limit":   cfg.CoinSource.OILowLimit,
 				},
 				"indicators": map[string]any{
 					"klines": map[string]any{

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Grand-Audit Response Wave — BUILT & PROVEN (NO DEPLOY)
 
-- **Branch:** `fix/grand-audit-response` off dev `e44a66a8` · worktree `~/nofx-gar`
+- **Branch:** `fix/grand-audit-response` off dev `e44a66a8` · worktree `~/vl-gar`
 - **Scope:** F1–F6 from the 2026-08-28 grand-audit verdict page. Built, fixture-proven, full regression green. **STOPPED for owner "go cutover" — nothing deployed.**
 - **Owner clicks (after cutover):** `proximity_filter_atr → 0.3` · `min_confidence → 65` (Sep-9 re-check scheduled).
 

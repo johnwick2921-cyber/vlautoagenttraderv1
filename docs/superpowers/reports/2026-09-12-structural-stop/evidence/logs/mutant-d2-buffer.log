@@ -10,5 +10,5 @@ KILLED — a pin caught it.
      --- FAIL: TestStructuralStopF4F5Refuses23For4WithoutMoving (0.18s)
      --- FAIL: TestStructuralStopF6NetGainBeforeRR (0.14s)
      FAIL
-     FAIL	nofx/trader	0.866s
+     FAIL	vl/trader	0.866s
      FAIL

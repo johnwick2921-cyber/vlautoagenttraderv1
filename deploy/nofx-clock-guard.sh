@@ -22,7 +22,10 @@
 # bot reads at boot for the P1.4 integrity block.
 set -euo pipefail
 
-STATE="${NOFX_CLOCK_STATE:-/home/hoang/nofx/data/clock-guard-state.json}"
+# Install-root rule: $HOME/vl when present, else $HOME/nofx — never a
+# hardcoded /home/hoang. R5 removes the NOFX twin.
+DEFAULT_STATE="$HOME/vl/data/clock-guard-state.json"; [ -d "$HOME/vl" ] || DEFAULT_STATE="$HOME/nofx/data/clock-guard-state.json"
+STATE="${VL_CLOCK_STATE:-${NOFX_CLOCK_STATE:-$DEFAULT_STATE}}"
 WARN_S="${CLOCK_GUARD_WARN_S:-30}"
 
 now_s=$(date +%s)

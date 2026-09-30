@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SANDBOX PREVIEW — hands-on testing with zero risk to live
 
 **LINE 1 — SANDBOX LIVE ON :3001.** Own DB, own ports, no NT8 wire, no order path,
@@ -6,7 +7,7 @@ canned AI replies. Live bot never touched. Commit `a6f39d7b`.
 ## Isolation receipts [A]
 | Guarantee | Receipt |
 |---|---|
-| Live bot untouched | `nofx-bin` **PID 170** before *and* after (started 01:22:07, still :8080 + :36974) |
+| Live bot untouched | `vl-bin` **PID 170** before *and* after (started 01:22:07, still :8080 + :36974) |
 | Live DB never written | `data/data.db` mtime still **2026-08-14 23:06:11**; `grep data/data.db .sandbox/api.log` → **0 hits** |
 | Separate DB | sandbox opens only `data/sandbox.db` (a `sqlite3 .backup` copy, then scrubbed) |
 | Separate ports | API **127.0.0.1:8081** · UI **127.0.0.1:3001** · NT8 listener **127.0.0.1:36985** (never 36974) |
@@ -47,6 +48,6 @@ and `data/data.db` has not been written since Aug 14 — every sandbox write wen
 - Known cosmetic gap (pre-existing, from the design audit): scenario status dots all
   read ARMED because the backend never emits `scenario_status`; the sandbox shows the
   same behavior as live rather than faking it.
-- ⚠️ Separately: your `sudo systemctl restart nofx` for W13 did **not** take — the
+- ⚠️ Separately: your `sudo systemctl restart vl` for W13 did **not** take — the
   binary was rebuilt 06:59 but PID 170 has run since 01:22, so the live bot is still
   on pre-W13 code. Re-run the restart when convenient.

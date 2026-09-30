@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterwire"
 )
 
 // PIN (M4 3b-B U2): the attended resume verb crosses the PRODUCTION path end

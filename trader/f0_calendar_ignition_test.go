@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/calendar"
-	"nofx/store"
+	"vl/calendar"
+	"vl/store"
 )
 
 // f0Trader builds a minimal day-plan-enabled NT8 AutoTrader over a temp store.

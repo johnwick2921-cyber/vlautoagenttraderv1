@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // ── W1b FOLD-3 — the entry carries its OWN bracket; the maps learn it only

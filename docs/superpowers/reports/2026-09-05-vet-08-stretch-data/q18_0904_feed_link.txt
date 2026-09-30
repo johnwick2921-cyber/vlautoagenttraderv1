@@ -50,15 +50,15 @@
 09-04 13:25:47 [INFO] kernel/levels_volume_boot.go:42 📜 prompt/validator contract: 19 restrictions, all stated in prompt (class 38 guard)
 09-04 13:25:47 [INFO] kernel/levels_volume_boot.go:46 ⚖ arm normalizer: legs on non-sweep → single arm + WARN (class 39); sweep_reclaim contract unchanged; counter arms_normalized_class39 recorded in system_config
 09-04 13:25:47 [INFO] kernel/levels_volume_boot.go:49 🛡 cutover safety (class 33): flat gate legs=5 (db_open_positions · api_positions · nt8_positions_snapshot · working_orders · planner_in_flight) via GET /api/cutover-gate; leg4 reads the arm
-09-04 13:25:47 [INFO] nofx/main.go:323 📜 scenario schema: 9 conditions [acceptance, breakdown_continue, breakout_retest, breakup_continue, fvg_entry, hold, reclaim, reject, sweep_reclaim]
-09-04 13:25:47 [INFO] nofx/main.go:330 🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: <S>_scheduled_read, level_event, structure_mss (incl. fast-market), owner_reset, dormant/rearm + fail-closed marker
-09-04 13:25:47 [INFO] nofx/main.go:335 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
-09-04 13:25:47 [INFO] nofx/main.go:340 ⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce, fast-market≥1.5×ATR exempt) cross-session=on stale-arm-expiry=on (class 47) — cutoffs govern LEVEL_EVENT/structure_mss wakes ONLY; scheduled reads, death
-09-04 13:25:47 [INFO] nofx/main.go:343 🛡 arm gate: invalidation-wired=on · armed-under surfaces=on — the evaluator's own ≈invalidated verdict REFUSES an arm (same function as the display path; unresolved = pass + a line), and a position state
-09-04 13:25:47 [INFO] nofx/main.go:426 🧾 P&L surfaces: 12 aggregators strict-corrected, 0 raw (corrected-column guard; unresolved rows counted + excluded, never coerced)
-09-04 13:25:47 [INFO] nofx/main.go:428 🔗 attribution: stamp-at-materialization=on · armed_under_version=on · unresolvable=9 (sentinel "UNRESOLVABLE") · pre-era=516 (history — never a plan to find) · unstamped-closed=0 (day-plan era; >0 is a 
-09-04 13:25:47 [INFO] nofx/main.go:430 🎯 arms: bias-coherent=warn · stop-entry=on(reclaim) · far-arm counter=on(3.0×ATR5m) · ledger append-only=on
-09-04 13:25:47 [INFO] nofx/main.go:473 📌 Tip: Use Ctrl+C to stop the system
+09-04 13:25:47 [INFO] vl/main.go:323 📜 scenario schema: 9 conditions [acceptance, breakdown_continue, breakout_retest, breakup_continue, fvg_entry, hold, reclaim, reject, sweep_reclaim]
+09-04 13:25:47 [INFO] vl/main.go:330 🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: <S>_scheduled_read, level_event, structure_mss (incl. fast-market), owner_reset, dormant/rearm + fail-closed marker
+09-04 13:25:47 [INFO] vl/main.go:335 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
+09-04 13:25:47 [INFO] vl/main.go:340 ⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce, fast-market≥1.5×ATR exempt) cross-session=on stale-arm-expiry=on (class 47) — cutoffs govern LEVEL_EVENT/structure_mss wakes ONLY; scheduled reads, death
+09-04 13:25:47 [INFO] vl/main.go:343 🛡 arm gate: invalidation-wired=on · armed-under surfaces=on — the evaluator's own ≈invalidated verdict REFUSES an arm (same function as the display path; unresolved = pass + a line), and a position state
+09-04 13:25:47 [INFO] vl/main.go:426 🧾 P&L surfaces: 12 aggregators strict-corrected, 0 raw (corrected-column guard; unresolved rows counted + excluded, never coerced)
+09-04 13:25:47 [INFO] vl/main.go:428 🔗 attribution: stamp-at-materialization=on · armed_under_version=on · unresolvable=9 (sentinel "UNRESOLVABLE") · pre-era=516 (history — never a plan to find) · unstamped-closed=0 (day-plan era; >0 is a 
+09-04 13:25:47 [INFO] vl/main.go:430 🎯 arms: bias-coherent=warn · stop-entry=on(reclaim) · far-arm counter=on(3.0×ATR5m) · ledger append-only=on
+09-04 13:25:47 [INFO] vl/main.go:473 📌 Tip: Use Ctrl+C to stop the system
 09-04 13:25:47 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🚨 dead-man watchdog: NT8 TCP link DOWN — NEW entries BLOCKED until a clean reconciliation. Open positi
 09-04 13:25:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛑 min-sl guard: atr_mult=1.5 level_clearance=2tick(s)
 09-04 13:25:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🧬 plan lifecycle: hysteresis=buffer0.5×ATR14 confirm=2close(s) · flip/death→dormant+auto-rearm (vers

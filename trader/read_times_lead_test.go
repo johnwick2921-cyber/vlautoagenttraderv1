@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // Lead-time wave (owner ruling 2026-08-31): session reads move to open−30 —

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // CLASS 35 (2026-09-01) — counters RECORD events; they do not infer them.

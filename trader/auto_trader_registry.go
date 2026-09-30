@@ -3,8 +3,8 @@ package trader
 import (
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W8 — ADMIN SESSION-REGISTRY loader (the audit's dead wire: every gate called

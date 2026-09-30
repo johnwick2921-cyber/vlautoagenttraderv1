@@ -38,5 +38,5 @@ test rc: 1
     --- FAIL: TestIdentityE1AuthoringToEpisodeAndE3WarnProduction/unresolved (0.13s)
         scenario_level_identity_test.go:37: WARN refused authoring: v0 identity_refused mutation: identity refused
 FAIL
-FAIL	nofx/trader	0.586s
+FAIL	vl/trader	0.586s
 FAIL

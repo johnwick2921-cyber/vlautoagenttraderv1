@@ -1,73 +1,73 @@
-?   	nofx	[no test files]
-ok  	nofx/agent	(cached)
-ok  	nofx/api	(cached)
-?   	nofx/auth	[no test files]
-ok  	nofx/branding	0.361s
-ok  	nofx/calendar	(cached)
-?   	nofx/cmd/arm-state-sql	[no test files]
-?   	nofx/cmd/bars-export	[no test files]
-?   	nofx/cmd/dayplan-arm	[no test files]
-?   	nofx/cmd/dayplan-level-repair	[no test files]
-?   	nofx/cmd/dayplan-sessions	[no test files]
-?   	nofx/cmd/decisive-test	[no test files]
-?   	nofx/cmd/detector-report	[no test files]
-?   	nofx/cmd/excursions	[no test files]
-?   	nofx/cmd/gate-jwt	[no test files]
-?   	nofx/cmd/levelstats-backfill	[no test files]
-?   	nofx/cmd/nq_smoke	[no test files]
-?   	nofx/cmd/planner_ab	[no test files]
-?   	nofx/cmd/research_export	[no test files]
-?   	nofx/cmd/sandbox-seed	[no test files]
-?   	nofx/config	[no test files]
-?   	nofx/crypto	[no test files]
-ok  	nofx/deploy	(cached)
-ok  	nofx/discipline	(cached)
-?   	nofx/docs/superpowers/reports/2026-09-04-research-conformance-data/d10dump	[no test files]
-?   	nofx/docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905	[no test files]
-ok  	nofx/docs/superpowers/reports/2026-09-12-structural-stop/harness	(cached)
-?   	nofx/docs/superpowers/research/2026-09-12-backtest-structure-fade/harness	[no test files]
-?   	nofx/docs/superpowers/research/2026-09-12-backtest-zone-fade/harness	[no test files]
-ok  	nofx/expectancy	(cached)
-?   	nofx/hook	[no test files]
-ok  	nofx/internal/retry	(cached)
-ok  	nofx/kernel	2.255s
-?   	nofx/levelidentity	[no test files]
-ok  	nofx/logger	0.019s
-?   	nofx/manager	[no test files]
-ok  	nofx/market	(cached)
-ok  	nofx/mcp	(cached)
-?   	nofx/mcp/payment	[no test files]
-ok  	nofx/mcp/provider	(cached)
-?   	nofx/provider/alpaca	[no test files]
-?   	nofx/provider/coinank	[no test files]
-ok  	nofx/provider/coinank/coinank_api	(cached)
-?   	nofx/provider/coinank/coinank_enum	[no test files]
-ok  	nofx/provider/databento	(cached)
-ok  	nofx/provider/hyperliquid	(cached)
-ok  	nofx/provider/ninjatrader	18.611s
-?   	nofx/provider/nofxos	[no test files]
-?   	nofx/provider/twelvedata	[no test files]
-ok  	nofx/researchsnapshot	0.223s
-?   	nofx/safe	[no test files]
-?   	nofx/security	[no test files]
-ok  	nofx/store	33.021s
-?   	nofx/telegram	[no test files]
-ok  	nofx/telegram/agent	(cached)
-?   	nofx/telegram/session	[no test files]
-ok  	nofx/telemetry	(cached)
-ok  	nofx/trader	117.197s
-ok  	nofx/trader/aster	(cached)
-ok  	nofx/trader/binance	(cached)
-?   	nofx/trader/bitget	[no test files]
-?   	nofx/trader/bybit	[no test files]
-ok  	nofx/trader/gate	(cached)
-ok  	nofx/trader/hyperliquid	(cached)
-ok  	nofx/trader/indodax	(cached)
-ok  	nofx/trader/kucoin	(cached)
-ok  	nofx/trader/lighter	(cached)
-ok  	nofx/trader/ninjatrader	10.780s
-ok  	nofx/trader/okx	(cached)
-?   	nofx/trader/testutil	[no test files]
-?   	nofx/trader/types	[no test files]
-?   	nofx/wallet	[no test files]
-?   	nofx/web/node_modules/flatted/golang/pkg/flatted	[no test files]
+?   	vl	[no test files]
+ok  	vl/agent	(cached)
+ok  	vl/api	(cached)
+?   	vl/auth	[no test files]
+ok  	vl/branding	0.361s
+ok  	vl/calendar	(cached)
+?   	vl/cmd/arm-state-sql	[no test files]
+?   	vl/cmd/bars-export	[no test files]
+?   	vl/cmd/dayplan-arm	[no test files]
+?   	vl/cmd/dayplan-level-repair	[no test files]
+?   	vl/cmd/dayplan-sessions	[no test files]
+?   	vl/cmd/decisive-test	[no test files]
+?   	vl/cmd/detector-report	[no test files]
+?   	vl/cmd/excursions	[no test files]
+?   	vl/cmd/gate-jwt	[no test files]
+?   	vl/cmd/levelstats-backfill	[no test files]
+?   	vl/cmd/nq_smoke	[no test files]
+?   	vl/cmd/planner_ab	[no test files]
+?   	vl/cmd/research_export	[no test files]
+?   	vl/cmd/sandbox-seed	[no test files]
+?   	vl/config	[no test files]
+?   	vl/crypto	[no test files]
+ok  	vl/deploy	(cached)
+ok  	vl/discipline	(cached)
+?   	vl/docs/superpowers/reports/2026-09-04-research-conformance-data/d10dump	[no test files]
+?   	vl/docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905	[no test files]
+ok  	vl/docs/superpowers/reports/2026-09-12-structural-stop/harness	(cached)
+?   	vl/docs/superpowers/research/2026-09-12-backtest-structure-fade/harness	[no test files]
+?   	vl/docs/superpowers/research/2026-09-12-backtest-zone-fade/harness	[no test files]
+ok  	vl/expectancy	(cached)
+?   	vl/hook	[no test files]
+ok  	vl/internal/retry	(cached)
+ok  	vl/kernel	2.255s
+?   	vl/levelidentity	[no test files]
+ok  	vl/logger	0.019s
+?   	vl/manager	[no test files]
+ok  	vl/market	(cached)
+ok  	vl/mcp	(cached)
+?   	vl/mcp/payment	[no test files]
+ok  	vl/mcp/provider	(cached)
+?   	vl/provider/alpaca	[no test files]
+?   	vl/provider/coinank	[no test files]
+ok  	vl/provider/coinank/coinank_api	(cached)
+?   	vl/provider/coinank/coinank_enum	[no test files]
+ok  	vl/provider/databento	(cached)
+ok  	vl/provider/hyperliquid	(cached)
+ok  	vl/provider/ninjatrader	18.611s
+?   	vl/provider/vlos	[no test files]
+?   	vl/provider/twelvedata	[no test files]
+ok  	vl/researchsnapshot	0.223s
+?   	vl/safe	[no test files]
+?   	vl/security	[no test files]
+ok  	vl/store	33.021s
+?   	vl/telegram	[no test files]
+ok  	vl/telegram/agent	(cached)
+?   	vl/telegram/session	[no test files]
+ok  	vl/telemetry	(cached)
+ok  	vl/trader	117.197s
+ok  	vl/trader/aster	(cached)
+ok  	vl/trader/binance	(cached)
+?   	vl/trader/bitget	[no test files]
+?   	vl/trader/bybit	[no test files]
+ok  	vl/trader/gate	(cached)
+ok  	vl/trader/hyperliquid	(cached)
+ok  	vl/trader/indodax	(cached)
+ok  	vl/trader/kucoin	(cached)
+ok  	vl/trader/lighter	(cached)
+ok  	vl/trader/ninjatrader	10.780s
+ok  	vl/trader/okx	(cached)
+?   	vl/trader/testutil	[no test files]
+?   	vl/trader/types	[no test files]
+?   	vl/wallet	[no test files]
+?   	vl/web/node_modules/flatted/golang/pkg/flatted	[no test files]

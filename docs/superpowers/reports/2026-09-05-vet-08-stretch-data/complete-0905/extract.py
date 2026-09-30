@@ -13,7 +13,7 @@ def write(name,rows):
  if not rows:return
  with (ROOT/name).open('w') as f:
   w=csv.DictWriter(f,lineterminator="\n",fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('pragma query_only=on');c.execute('begin')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('pragma query_only=on');c.execute('begin')
 def q(s,p=()):return [dict(r) for r in c.execute(s,p)]
 a,z=ms('2026-09-02'),ms('2026-09-05')
 pos=q('select id,plan_id,plan_version,cited_scenario_id,plan_trade_date,plan_session,source,side,entry_quantity,entry_time,exit_time,entry_price,exit_price,pnl_corrected,close_reason,mae,mfe from trader_positions where entry_time>=1786770000000 order by id')

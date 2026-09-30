@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // P1 — PROMPT-GOLDEN SELF-CHECK (boot integrity, the Knight-Capital control).

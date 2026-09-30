@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 7 SHADOWS-CONFIG confirmed (H8 is live-harmful), 1 TRUE-CONSTANT, 1 safe — replan_cap: RESOLVED, config=4 wins
 
 Read-only root-cause investigation of the 9 SHADOWS-CONFIG sites (H1–H9) from the CTO final-verification report. **Nothing fixed in this pass.** Every verdict carries file:line receipts and a three-way runtime proof (engine effective value · DB stored value · UI displayed value).
@@ -7,7 +8,7 @@ Read-only root-cause investigation of the 9 SHADOWS-CONFIG sites (H1–H9) from 
 - `read_file` / `search_files` — walked `kernel/`, `trader/`, `store/`, `api/`, `web/src/` source.
 - `git show <rev>:<path>` + `git diff 8e7b816a..HEAD` — pinned the **running binary** (`deploy/RELEASE = 8e7b816a`, bot PID 599604) against HEAD (`184fe200`).
 - `sqlite3 -readonly "file:data/data.db?mode=ro"` — read live `strategies`, `plans`, `system_config` (no writes).
-- `journalctl --no-pager --since/--until` (bounded) + `data/nofx_2026-08-16.log` — death-loop runtime receipts.
+- `journalctl --no-pager --since/--until` (bounded) + `data/vl_2026-08-16.log` — death-loop runtime receipts.
 - **Not used:** subagents (direct reads were cheaper and had to stay precise), Playwright (the three-way UI side is a resolved API value in `handler_plan.go` + plan rows; no rendering claim required), MCP tools (none relevant).
 
 ## Deployment state (read this first — it changes what "live" means)
@@ -15,8 +16,8 @@ Read-only root-cause investigation of the 9 SHADOWS-CONFIG sites (H1–H9) from 
 | Field | Value | Receipt |
 |---|---|---|
 | HEAD | `184fe200` | `git rev-parse HEAD` |
-| **Running binary** | `8e7b816a` (7 commits behind HEAD) | `pgrep -af nofx-bin` → `599604 …/nofx-bin`; `deploy/RELEASE` first line |
-| Bot state | `active`, PID 599604 | `systemctl is-active nofx` |
+| **Running binary** | `8e7b816a` (7 commits behind HEAD) | `pgrep -af vl-bin` → `599604 …/vl-bin`; `deploy/RELEASE` first line |
+| Bot state | `active`, PID 599604 | `systemctl is-active vl` |
 | Live DB | `data/data.db` (WAL; `data.db-wal` non-empty at read time) | `ls -la data/` |
 
 The source files carrying H1, H2, H3, H4, H5, H7, H8 are **byte-identical between the running binary and HEAD** (`git diff --stat 8e7b816a HEAD` touches only `kernel/engine_analysis.go` — item-6 reasoning backfill — and `trader/auto_trader_planner.go` among the H-sites). So the line numbers below are what is executing on the bot right now, except where I mark a HEAD-only refinement.
@@ -29,7 +30,7 @@ The source files carrying H1, H2, H3, H4, H5, H7, H8 are **byte-identical betwee
 
 1. **The literal is gone from production code.** `8b24c85e` ("the executor prompt quotes the real re-plan cap, not a literal 2") is **in the running binary** (`git merge-base --is-ancestor 8b24c85e 8e7b816a` → yes). The old `trader/auto_trader_planner.go` line `replansLeft := 2 - (row.Version - 1)` now reads `store.ReplansLeftFor(row.Version, storedReplanCap(st, row.StrategyID, sess.Name))` (`trader/auto_trader_planner.go:869`), and `storedReplanCap` (`:822-840`) resolves from the LIVE stored strategy config via `ReplanCapFor` (`store/strategy.go:957-966`) — per-session override → strategy level → default 2.
 
-2. **Engine effective value = 4.** Runtime log (`data/nofx_2026-08-16.log`) shows the enforcer re-reading the cap MID-SESSION and flipping:
+2. **Engine effective value = 4.** Runtime log (`data/vl_2026-08-16.log`) shows the enforcer re-reading the cap MID-SESSION and flipping:
    ```
    17:17:53 … ASIA v1 DIED — re-planning (cap 2/session).
    17:20:58 … ASIA v2 DIED — re-planning (cap 2/session).

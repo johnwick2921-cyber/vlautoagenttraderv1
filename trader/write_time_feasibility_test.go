@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // W-WRITE-TIME-FEASIBILITY (2026-09-18) — call-site tests.

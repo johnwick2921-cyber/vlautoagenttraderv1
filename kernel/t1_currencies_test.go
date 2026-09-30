@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W-T1-CURRENCIES (2026-09-18) — a T1 blackout that never asked which currency

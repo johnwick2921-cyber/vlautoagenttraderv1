@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # F6 CLOCK-HOLD — chrony regression diagnosis + machine-side protection
 
 2026-08-30 · branch `fix/clock-hold` · rides fix/move-seams · NO deploy (parked).
@@ -14,7 +15,7 @@ by the 18:13 boot. Two mechanisms handcuffed the OS-side fix:
    `/etc/chrony/chrony.conf` was therefore inert from the start.
 2. **The cron belt-and-suspenders called a binary that does not exist.**
    `fix-wsl2-clock.sh` v1 installed `*/10 * * * * /sbin/hwclock -s --utc` —
-   `hwclock` is absent in this WSL2 rootfs (verified by nofx-clock-guard.sh),
+   `hwclock` is absent in this WSL2 rootfs (verified by vl-clock-guard.sh),
    so every 10-min correction silently failed.
 
 Net: nothing could correct the clock; drift accumulated between hypervisor

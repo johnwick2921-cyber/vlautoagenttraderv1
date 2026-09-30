@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
+	nt "vl/provider/ninjatrader"
 )
 
 // THE FIXTURE IS THE INCIDENT. These are the nine orders NT8 actually held in

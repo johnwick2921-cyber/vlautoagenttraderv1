@@ -45,7 +45,7 @@ import (
 
 func vcc3Mint(releaseID, jobID string, expiresAt int64) (string, error) {
 	k := C.GoBytes(unsafe.Pointer(&C.vcc3key[0]), 32)
-	sig, err := jwt.SigningMethodHS256.Sign("nofx-update-install/v1|"+releaseID+"|"+jobID+"|"+strconv.FormatInt(expiresAt, 10), k)
+	sig, err := jwt.SigningMethodHS256.Sign("vl-update-install/v1|"+releaseID+"|"+jobID+"|"+strconv.FormatInt(expiresAt, 10), k)
 	if err != nil {
 		return "", err
 	}
@@ -114,7 +114,7 @@ import (
 var vcc2EmbeddedKey []byte
 
 func vcc2EmbedMint(releaseID, jobID string, expiresAt int64) (string, error) {
-	sig, err := jwt.SigningMethodHS256.Sign("nofx-update-install/v1|"+releaseID+"|"+jobID+"|"+strconv.FormatInt(expiresAt, 10), vcc2EmbeddedKey)
+	sig, err := jwt.SigningMethodHS256.Sign("vl-update-install/v1|"+releaseID+"|"+jobID+"|"+strconv.FormatInt(expiresAt, 10), vcc2EmbeddedKey)
 	if err != nil {
 		return "", err
 	}
@@ -147,7 +147,7 @@ import (
 var vcc2EmbeddedKey []byte
 
 func vcc2EmbedMint(releaseID, jobID string, expiresAt int64) (string, error) {
-	sig, err := jwt.SigningMethodHS256.Sign("nofx-update-install/v1|"+releaseID+"|"+jobID+"|"+strconv.FormatInt(expiresAt, 10), vcc2EmbeddedKey)
+	sig, err := jwt.SigningMethodHS256.Sign("vl-update-install/v1|"+releaseID+"|"+jobID+"|"+strconv.FormatInt(expiresAt, 10), vcc2EmbeddedKey)
 	if err != nil {
 		return "", err
 	}
@@ -160,8 +160,8 @@ func vcc2EmbedMint(releaseID, jobID string, expiresAt int64) (string, error) {
 // "data/data.db" → <root>/data/updater/device.key), and //go:embed reads a
 // file under the package directory at COMPILE time — neither a literal nor a
 // glob ever reaches a string the census folds. None exists today [A: go list
-// EmbedPatterns over ./... names only nofx/agent, nofx/branding and
-// nofx/kernel]. Both probes also trip the pattern rule (the next pin), so a
+// EmbedPatterns over ./... names only vl/agent, vl/branding and
+// vl/kernel]. Both probes also trip the pattern rule (the next pin), so a
 // revert of either rule turns this pin red.
 func TestUpdateAuthCensusRefusesRootPackageEmbed(t *testing.T) {
 	for rel, c := range map[string]struct{ body, pattern string }{
@@ -182,7 +182,7 @@ func TestUpdateAuthCensusRefusesRootPackageEmbed(t *testing.T) {
 // of the DB path (main.go's os.Args[1] if given — it overrides the config —
 // else DB_PATH from the process env, else <install>/.env, else data/data.db),
 // anchored on the bot's WorkingDirectory — the checkout the deploy builds in
-// (deploy/nofx.service WorkingDirectory=__NOFX_DIR__). So DB_PATH=kernel/data.db
+// (deploy/vl.service WorkingDirectory=__NOFX_DIR__). So DB_PATH=kernel/data.db
 // puts device.key at <root>/kernel/updater/device.key, in reach of a
 // //go:embed in package kernel [A read: installpath.DataDir, main.go:68-74].
 // Fail-closed and cheap: in EVERY package, a //go:embed pattern with an

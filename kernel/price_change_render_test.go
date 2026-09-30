@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/hook"
-	"nofx/market"
-	"nofx/store"
+	"vl/hook"
+	"vl/market"
+	"vl/store"
 )
 
 // W1 (presence-aware values) — the 1h/4h price change reaches the prompts as

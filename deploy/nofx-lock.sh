@@ -59,16 +59,17 @@
 # ALIVE that no succession path can reach.
 set -uo pipefail
 
-LOCK_DIR="${NOFX_LOCK_DIR:-$HOME/nofx-main.lock.d}"
-LEGACY_LOCK="${NOFX_LEGACY_LOCK:-$HOME/nofx-main.lock}"
-HEARTBEAT_STALE_SECONDS="${NOFX_LOCK_STALE_SECONDS:-300}"   # 5 min
-HEARTBEAT_EVERY_SECONDS="${NOFX_LOCK_BEAT_SECONDS:-120}"     # 2 min
+# Every env is the shell twin VL_ → NOFX_ → default. R5 removes the NOFX twins.
+LOCK_DIR="${VL_LOCK_DIR:-${NOFX_LOCK_DIR:-$HOME/vl-main.lock.d}}"
+LEGACY_LOCK="${VL_LEGACY_LOCK:-${NOFX_LEGACY_LOCK:-$HOME/vl-main.lock}}"
+HEARTBEAT_STALE_SECONDS="${VL_LOCK_STALE_SECONDS:-${NOFX_LOCK_STALE_SECONDS:-300}}"   # 5 min
+HEARTBEAT_EVERY_SECONDS="${VL_LOCK_BEAT_SECONDS:-${NOFX_LOCK_BEAT_SECONDS:-120}}"     # 2 min
 # How long a lock directory may exist with NO meta before it is ABANDONED rather
 # than merely being born. `acquire` fills meta ~7ms after mkdir (measured, n=10:
 # min 6.92ms, mean 7.35ms, max 7.71ms), so 30s is ~4000x the observed window —
 # wide enough that a loaded machine cannot cross it, narrow enough that a lock
 # orphaned mid-creation clears within the minute.
-INCOMPLETE_ABANDON_SECONDS="${NOFX_LOCK_INCOMPLETE_SECONDS:-30}"
+INCOMPLETE_ABANDON_SECONDS="${VL_LOCK_INCOMPLETE_SECONDS:-${NOFX_LOCK_INCOMPLETE_SECONDS:-30}}" # R5 removes the NOFX twin
 
 _now()      { date -Is; }
 _epoch()    { date +%s; }

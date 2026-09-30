@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/trader/types"
+	"vl/trader/types"
 )
 
 // Test credentials - set via environment variables

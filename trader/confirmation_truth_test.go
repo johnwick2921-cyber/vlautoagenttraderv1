@@ -2,9 +2,9 @@ package trader
 
 import (
 	"encoding/json"
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 	"strings"
 	"testing"
 	"time"

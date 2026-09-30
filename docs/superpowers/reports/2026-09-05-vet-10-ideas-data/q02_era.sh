@@ -1,6 +1,6 @@
 #!/bin/bash
 # q02: trader_positions era premise re-measure (entry_time is epoch ms)
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 E="strftime('%s','2026-08-15')*1000"
 echo "--- all-time / era counts"
 sqlite3 "$DB" "select count(*) all_time, sum(entry_time>=$E) era, sum(entry_time>=$E and pnl_corrected is not null) era_pnl_nn, sum(entry_time>=$E and plan_id is not null) era_plan, sum(entry_time>=$E and cited_scenario_id is not null and cited_scenario_id<>'') era_cited, sum(pnl_corrected is null) alltime_pnl_null, sum(entry_time>=$E and mae is not null) era_mae_nn, sum(entry_time>=$E and mfe is not null) era_mfe_nn, sum(entry_time>=$E and mae is not null and mae<>0) era_mae_nonzero from trader_positions"

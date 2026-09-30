@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/auth"
-	"nofx/manager"
-	"nofx/store"
+	"vl/auth"
+	"vl/manager"
+	"vl/store"
 )
 
 // ── W1 SETTINGS TRUTH — save → store → reload through the REAL handlers ─────

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // The operator CLI drives the SAME store functions the gates read.

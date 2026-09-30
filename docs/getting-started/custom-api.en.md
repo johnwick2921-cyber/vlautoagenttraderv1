@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Custom AI API Usage Guide
 
 ## Features
 
-NOFX now supports using any OpenAI-compatible API format, including:
+VL now supports using any OpenAI-compatible API format, including:
 - OpenAI official API (gpt-4o, gpt-4-turbo, etc.)
 - OpenRouter (access to multiple models)
 - Locally deployed models (Ollama, LM Studio, etc.)

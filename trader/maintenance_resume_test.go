@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // ── W-ONE-BUTTON M2 site 6 — Resume does not lift the hold ─────────────────

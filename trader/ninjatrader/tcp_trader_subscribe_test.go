@@ -3,7 +3,7 @@ package ninjatrader
 import (
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // TestNewTCPTrader_DrivesBarsSubscribeSymbol verifies Phase 2: the bar

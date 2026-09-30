@@ -56,8 +56,8 @@ test-coverage:
 # Build backend binary
 build:
 	@echo "🔨 Building backend..."
-	go build -o nofx
-	@echo "✅ Backend built: ./nofx"
+	go build -o vl
+	@echo "✅ Backend built: ./vl"
 
 # Build frontend (VITE_GUIDE_BUILT_REV required — the vite gate refuses a
 # production build without it; dev builds carry the tree sha, canon 250/PR B [12])
@@ -98,7 +98,7 @@ lint:
 
 clean:
 	@echo "🧹 Cleaning..."
-	rm -f nofx
+	rm -f vl
 	rm -f coverage.out coverage.html
 	rm -rf web/dist
 	go clean -testcache

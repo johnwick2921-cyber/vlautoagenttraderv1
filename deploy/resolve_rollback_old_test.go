@@ -18,9 +18,9 @@ import (
 func TestReleaseWorkflowBuildsAndShipsTheUpdaterBinaries(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	for _, want := range []string{
-		"go build -trimpath -o \"$OUT/nofx-updater\" ./cmd/nofx-updater",
-		"go build -trimpath -o \"$OUT/nofx-updater-bootstrap\" ./cmd/updater-bootstrap",
-		"cp \"$OUT/nofx-updater\" \"$OUT/nofx-updater-bootstrap\" updater/",
+		"go build -trimpath -o \"$OUT/vl-updater\" ./cmd/vl-updater",
+		"go build -trimpath -o \"$OUT/vl-updater-bootstrap\" ./cmd/vl-updater-bootstrap",
+		"cp \"$OUT/vl-updater\" \"$OUT/vl-updater-bootstrap\" updater/",
 		"vcs.modified=false",
 		"resolve-rollback-old.sh",
 		"v1.0-*",
@@ -32,7 +32,7 @@ func TestReleaseWorkflowBuildsAndShipsTheUpdaterBinaries(t *testing.T) {
 	// The build must precede the staging, or the binaries would not ship.
 	// (The copy INTO updater/ is what ships them; the build writes outside
 	// the tree — see TestReleaseWorkflowGoBuildsWriteOutsideTheTree.)
-	cp := `cp "$OUT/nofx-updater" "$OUT/nofx-updater-bootstrap" updater/`
+	cp := `cp "$OUT/vl-updater" "$OUT/vl-updater-bootstrap" updater/`
 	if strings.Index(y, cp) == -1 ||
 		strings.Index(y, cp) > strings.Index(y, "Stage ONLY the allow-list") {
 		t.Fatalf("the updater build step must come before the staging step")

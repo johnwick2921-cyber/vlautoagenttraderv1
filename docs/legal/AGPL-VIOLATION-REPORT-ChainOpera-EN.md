@@ -1,8 +1,9 @@
-# AGPL Violation Evidence Report: ChainOpera Plagiarized NOFX
+names rewritten to vl on 2026-09-30 (VL rename)
+# AGPL Violation Evidence Report: ChainOpera Plagiarized VL
 
 **Report Date**: December 20, 2025
-**Reporting Party**: NOFX Open Source Community
-**Project URL**: https://github.com/NoFxAiOS/nofx
+**Reporting Party**: VL Open Source Community
+**Project URL**: upstream github link (removed in the VL rename)
 **Accused Party**: ChainOpera (COAI)
 **License Involved**: GNU Affero General Public License v3.0 (AGPL-3.0)
 
@@ -10,7 +11,7 @@
 
 ## 1. Executive Summary
 
-ChainOpera used the `equity-history-batch` API interface design from the NOFX project, which is protected under AGPL-3.0, on their website `trading-test.chainopera.ai`, but refused to release their source code, violating the AGPL-3.0 license terms.
+ChainOpera used the `equity-history-batch` API interface design from the VL project, which is protected under AGPL-3.0, on their website `trading-test.chainopera.ai`, but refused to release their source code, violating the AGPL-3.0 license terms.
 
 ChainOpera claims the interface was "rewritten in Python." This report will prove from both legal and technical perspectives that: **even a rewrite still constitutes an AGPL violation**.
 
@@ -55,14 +56,14 @@ under AGPL-3.0 since its creation.
 
 | Project | API Path | HTTP Method |
 |---------|----------|-------------|
-| **NOFX** | `/api/equity-history-batch` | POST |
+| **VL** | `/api/equity-history-batch` | POST |
 | **ChainOpera** | `/api/equity-history-batch` | POST |
 
 **Similarity: 100%**
 
 ### 3.2 Response Structure Comparison
 
-**NOFX Original Code** (`api/server.go` lines 2725-2729):
+**VL Original Code** (`api/server.go` lines 2725-2729):
 
 ```go
 result["histories"] = histories
@@ -86,7 +87,7 @@ if len(errors) > 0 {
 
 **Comparison Results**:
 
-| Field | NOFX | ChainOpera | Similarity |
+| Field | VL | ChainOpera | Similarity |
 |-------|------|------------|------------|
 | `histories` | ✓ | ✓ | 100% |
 | `errors` | ✓ | ✓ | 100% |
@@ -94,7 +95,7 @@ if len(errors) > 0 {
 
 ### 3.3 History Data Fields Comparison
 
-**NOFX Original Code** (`api/server.go` lines 2676-2682):
+**VL Original Code** (`api/server.go` lines 2676-2682):
 
 ```go
 history = append(history, map[string]interface{}{
@@ -119,7 +120,7 @@ history = append(history, map[string]interface{}{
 
 **Comparison Results**:
 
-| NOFX Field | ChainOpera Field | Similarity |
+| VL Field | ChainOpera Field | Similarity |
 |------------|------------------|------------|
 | `timestamp` | `timestamp` | 100% |
 | `balance` | `balance` | 100% |
@@ -128,7 +129,7 @@ history = append(history, map[string]interface{}{
 
 ### 3.4 Originality Evidence
 
-`equity-history-batch` is an **original design** by NOFX:
+`equity-history-batch` is an **original design** by VL:
 
 1. **Interface Naming**: `equity-history-batch` is a self-created compound term, not an industry standard
 2. **Batch Query Design**: Supporting multiple trader_id queries simultaneously is a unique design for performance optimization
@@ -185,10 +186,10 @@ ChainOpera has not responded to the following core questions:
 
 | # | Question | ChainOpera Response |
 |---|----------|---------------------|
-| 1 | Why is the API path identical to NOFX? | ❌ No response |
+| 1 | Why is the API path identical to VL? | ❌ No response |
 | 2 | Why is the response structure `{histories, errors, count}` identical? | ❌ No response |
 | 3 | Why are field names `timestamp, balance, total_pnl` identical? | ❌ No response |
-| 4 | If independently developed, why is it highly consistent with NOFX? | ❌ No response |
+| 4 | If independently developed, why is it highly consistent with VL? | ❌ No response |
 | 5 | Are you willing to release source code per AGPL-3.0? | ❌ No response |
 
 ---
@@ -199,8 +200,8 @@ Anyone can verify the authenticity of the evidence with the following commands:
 
 ```bash
 # Clone the repository
-git clone https://github.com/NoFxAiOS/nofx.git
-cd nofx
+git clone upstream github link (removed in the VL rename)
+cd vl
 
 # Verify AGPL license effective date
 git show e88f84215831d1682e05141eb0c27216dcbd6d47 --format="%H %ai %s" --no-patch
@@ -228,7 +229,7 @@ git show 5af5c0b51773737f166eacea646e3960cee29f59:api/server.go | grep -A 50 "ha
 
 | Violation | Description |
 |-----------|-------------|
-| Using AGPL code | Used NOFX's API design |
+| Using AGPL code | Used VL's API design |
 | Providing network service | Operating publicly at `trading-test.chainopera.ai` |
 | Not releasing source code | No source code access provided |
 | Not declaring license | Did not declare use of AGPL code |
@@ -247,14 +248,14 @@ git show 5af5c0b51773737f166eacea646e3960cee29f59:api/server.go | grep -A 50 "ha
 
 | Evidence Item | Content | Analysis |
 |---------------|---------|----------|
-| **Website Description** | "The future standard for AI Trading - an open community-driven agentic trading OS" | Highly consistent with NOFX's slogan |
-| **Login Page** | Displays "NoFx Logo" | Direct use of NOFX brand assets |
+| **Website Description** | "The future standard for AI Trading - an open community-driven agentic trading OS" | Highly consistent with VL's slogan |
+| **Login Page** | Displays "VL Logo" | Direct use of VL brand assets |
 
 ### 8.3 Brand Infringement Evidence
 
-ChainOpera's website `trading-test.chainopera.ai` Login page HTML contains **"NoFx Logo"** text, proving:
+ChainOpera's website `trading-test.chainopera.ai` Login page HTML contains **"VL Logo"** text, proving:
 
-1. ChainOpera directly used NOFX's frontend code
+1. ChainOpera directly used VL's frontend code
 2. They didn't even modify brand-related text identifiers
 3. This is not "independent development" or "Python rewrite" - it's direct copying
 
@@ -269,7 +270,7 @@ ChainOpera's website `trading-test.chainopera.ai` Login page HTML contains **"No
 | 3 | Source Code | api/server.go lines 2542-2732 | Git repository |
 | 4 | Website Screenshot | ChainOpera API response | Blockchain timestamping |
 | 5 | Network Request | trading-test.chainopera.ai request logs | Notarization recommended |
-| 6 | Google Search | "NoFx Logo" brand infringement evidence | Screenshot + Time.is timestamp |
+| 6 | Google Search | "VL Logo" brand infringement evidence | Screenshot + Time.is timestamp |
 
 ---
 
@@ -288,9 +289,9 @@ ChainOpera's website `trading-test.chainopera.ai` Login page HTML contains **"No
    - Release their complete source code in compliance with AGPL-3.0; OR
    - Cease using the related functionality and take down the service
 
-5. **Based on the infringement that has already occurred, the NOFX community reserves the right to pursue the following legal remedies**:
-   - **Injunctive Relief**: Immediately cease using NOFX's AGPL-protected code
-   - **Public Acknowledgment**: Publicly disclose on ChainOpera's official channels that they used NOFX code
+5. **Based on the infringement that has already occurred, the VL community reserves the right to pursue the following legal remedies**:
+   - **Injunctive Relief**: Immediately cease using VL's AGPL-protected code
+   - **Public Acknowledgment**: Publicly disclose on ChainOpera's official channels that they used VL code
    - **Compensatory Damages**: Compensation for actual losses or disgorgement of profits obtained through infringement
    - **Statutory Damages**: Statutory damages under applicable jurisdiction
    - **Legal Costs**: Including but not limited to notarization fees, attorney fees, and litigation costs
@@ -306,12 +307,12 @@ ChainOpera's website `trading-test.chainopera.ai` Login page HTML contains **"No
 
 For any questions, please contact:
 
-- **GitHub Issues**: https://github.com/NoFxAiOS/nofx/issues
+- **GitHub Issues**: upstream github link (removed in the VL rename)
 - **Email**: contact@vergex.trade
 
 ---
 
-**Disclaimer**: This report only states facts and legal analysis. The NOFX community reserves the right to pursue legal action for infringement.
+**Disclaimer**: This report only states facts and legal analysis. The VL community reserves the right to pursue legal action for infringement.
 
 ---
 

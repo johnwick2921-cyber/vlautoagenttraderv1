@@ -1,6 +1,7 @@
-# 👥 NOFX Community
+names rewritten to vl on 2026-09-30 (VL rename)
+# 👥 VL Community
 
-Welcome to the NOFX community! This section contains everything you need to contribute and participate.
+Welcome to the VL community! This section contains everything you need to contribute and participate.
 
 ---
 
@@ -28,14 +29,14 @@ We're introducing a new PR management system to improve code quality and make co
    - [Security Policy](../../SECURITY.md) - Report vulnerabilities
 
 2. **Find Something to Work On**
-   - Browse [GitHub Issues](https://github.com/NoFxAiOS/nofx/issues)
+   - Browse [GitHub Issues](upstream github link (removed in the VL rename))
    - Look for `good first issue` label
    - Check out [bounty tasks](#-bounty-program)
 
 3. **Join the Community**
-   - 💬 [Telegram Developer Community](https://t.me/nofx_dev_community)
-   - 🐦 [Twitter @nofx_official](https://x.com/nofx_official)
-   - 🐙 [GitHub Discussions](https://github.com/NoFxAiOS/nofx/discussions)
+   - 💬 [Telegram Developer Community](upstream telegram link (removed in the VL rename))
+   - 🐦 [Twitter upstream x link (removed in the VL rename)](upstream x link (removed in the VL rename))
+   - 🐙 [GitHub Discussions](upstream github link (removed in the VL rename))
 
 ---
 
@@ -43,7 +44,7 @@ We're introducing a new PR management system to improve code quality and make co
 
 ### Active Bounties
 
-NOFX offers bounties for valuable contributions:
+VL offers bounties for valuable contributions:
 
 | Category | Reward Range | Examples |
 |----------|--------------|----------|
@@ -138,9 +139,9 @@ NOFX offers bounties for valuable contributions:
 
 | Platform | Purpose | Link |
 |----------|---------|------|
-| 💬 Telegram | Real-time chat, questions | [Join](https://t.me/nofx_dev_community) |
-| 🐙 GitHub | Issues, PRs, discussions | [Visit](https://github.com/NoFxAiOS/nofx) |
-| 🐦 Twitter | Announcements, updates | [@nofx_official](https://x.com/nofx_official) |
+| 💬 Telegram | Real-time chat, questions | [Join](upstream telegram link (removed in the VL rename)) |
+| 🐙 GitHub | Issues, PRs, discussions | [Visit](upstream github link (removed in the VL rename)) |
+| 🐦 Twitter | Announcements, updates | [upstream x link (removed in the VL rename)](upstream x link (removed in the VL rename)) |
 
 ### Core Team
 
@@ -167,7 +168,7 @@ NOFX offers bounties for valuable contributions:
 **Want to organize an event?**
 - Contact core team on Telegram
 - Propose in GitHub Discussions
-- Tweet and tag @nofx_official
+- Tweet and tag upstream x link (removed in the VL rename)
 
 ---
 
@@ -175,7 +176,7 @@ NOFX offers bounties for valuable contributions:
 
 ### For Contributors
 
-**Understanding NOFX:**
+**Understanding VL:**
 - [System Architecture](../architecture/README.md) *(coming soon)*
 - [API Reference](../architecture/api-reference.md) *(coming soon)*
 - [Database Schema](../architecture/database-schema.md) *(coming soon)*
@@ -228,10 +229,10 @@ NOFX offers bounties for valuable contributions:
 
 | Metric | Count |
 |--------|-------|
-| GitHub Stars | Check [repo](https://github.com/NoFxAiOS/nofx) |
+| GitHub Stars | Check [repo](upstream github link (removed in the VL rename)) |
 | Contributors | 21+ |
-| Open Issues | Check [issues](https://github.com/NoFxAiOS/nofx/issues) |
-| Merged PRs | Check [pulls](https://github.com/NoFxAiOS/nofx/pulls?q=is%3Apr+is%3Amerged) |
+| Open Issues | Check [issues](upstream github link (removed in the VL rename)) |
+| Merged PRs | Check [pulls](upstream github link (removed in the VL rename)?q=is%3Apr+is%3Amerged) |
 
 ---
 
@@ -240,7 +241,7 @@ NOFX offers bounties for valuable contributions:
 - **Want to contribute code?** → [Contributing Guide](../../CONTRIBUTING.md)
 - **Want to claim bounty?** → [Bounty Guide](bounty-guide.md)
 - **Found a security issue?** → [Security Policy](../../SECURITY.md)
-- **Have questions?** → [Telegram Community](https://t.me/nofx_dev_community)
+- **Have questions?** → [Telegram Community](upstream telegram link (removed in the VL rename))
 - **Verify official accounts?** → [Official Accounts & Anti-Impersonation](OFFICIAL_ACCOUNTS.md)
 
 ---

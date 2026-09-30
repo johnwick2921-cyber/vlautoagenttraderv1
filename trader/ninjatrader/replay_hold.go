@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"nofx/logger"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	"vl/logger"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // replayHold keeps a replay's rows OUT of the store until the ring has judged

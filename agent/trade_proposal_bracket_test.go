@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 // ── W1b E9 repair (verifier defect 6) — no proposal the door must refuse ───

@@ -3,20 +3,20 @@ remaining 27 min of NY; 31 FEED DOWN lines 14:28:39-14:58:28; every cycle skippe
 frame yet'; wake path ran (evaluateWallClockSessionReads at top of tickOnce, auto_trader_clock.go:88-100)
 against an empty bar cache."
 VERDICT: PLAUSIBLE — headline reproduces exactly; three sub-claims are wrong.
-All times CT. Source rev read: /home/hoang/nofx-2day04 (dev tip dfbfa660).
+All times CT. Source rev read: /home/hoang/vl-2day04 (dev tip dfbfa660).
 
 --- C1. 31 FEED DOWN lines, 14:28:39 -> 14:58:28 : CONFIRMED [A]
-$ awk '$1=="09-03" && $2>="14:00:00" && $2<="15:00:00"' /home/hoang/nofx/data/nofx_2026-09-03.log | grep -c "FEED DOWN"
+$ awk '$1=="09-03" && $2>="14:00:00" && $2<="15:00:00"' /home/hoang/vl/data/vl_2026-09-03.log | grep -c "FEED DOWN"
 31
 first 14:28:39 "10m0s"  last 14:58:28 "40m0s"
 
 --- C2. only 17 of the 31 are INSIDE NY (ledger boot line: NY 08:30->14:45 CT, last-entry 14:30)
-$ awk '$1=="09-03" && $2>="14:00:00" && $2<"14:45:00"' nofx_2026-09-03.log | grep -c "FEED DOWN"  -> 17
-$ awk '$1=="09-03" && $2>="14:45:00" && $2<="15:00:00" ' nofx_2026-09-03.log | grep -c "FEED DOWN" -> 14
+$ awk '$1=="09-03" && $2>="14:00:00" && $2<"14:45:00"' vl_2026-09-03.log | grep -c "FEED DOWN"  -> 17
+$ awk '$1=="09-03" && $2>="14:45:00" && $2<="15:00:00" ' vl_2026-09-03.log | grep -c "FEED DOWN" -> 14
 entry-eligible remainder after boot 14:18:26 was ~12 min (to last-entry 14:30), not 27.
 
 --- C3. no bar really did arrive 14:18:26-14:58:28 : CONFIRMED [A] (via the persist counter, not the alarm)
-$ grep "bars: persisting" nofx_2026-09-03.log | sed -E 's/^(09-03 [0-9:]+).*rows=([0-9]+) \(backfilled ([0-9]+)\).*/\2 \1 bf=\3/' | awk '!seen[$1]++'
+$ grep "bars: persisting" vl_2026-09-03.log | sed -E 's/^(09-03 [0-9:]+).*rows=([0-9]+) \(backfilled ([0-9]+)\).*/\2 \1 bf=\3/' | awk '!seen[$1]++'
 74752 09-03 10:28:29 bf=0
 74898 09-03 11:10:33 bf=0
 75140 09-03 14:18:24 bf=0      <- frozen from 14:18:24 through 15:03:33 (last tick before growth)
@@ -48,13 +48,13 @@ new process resets at.startTime -> boot grace restarts -> alarm silent. Feed sti
 14:59:03 clock-health [boot] nt8_last_bar=none ; rows still 75140 until 15:06:48.
 
 --- C6. "every decision cycle skipped 'no balance frame yet'" : CONFIRMED EXACTLY [A]
-$ awk '$1=="09-03" && $2>="14:18:00" && $2<="14:59:00"' nofx_2026-09-03.log | grep -c "AI decision cycle #"     -> 21
+$ awk '$1=="09-03" && $2>="14:18:00" && $2<="14:59:00"' vl_2026-09-03.log | grep -c "AI decision cycle #"     -> 21
 $ ... | grep -c "skipping decision cycle"                                                                        -> 21
 $ ... | grep "skipping decision cycle" | grep -v "no balance frame yet"                                          -> (empty)
 cycles #1 (14:18:27) .. #21 (14:58:28).
 
 --- C7. call-site citation is WRONG [A]
-$ grep -rn "evaluateWallClockSessionReads" --include=*.go /home/hoang/nofx-2day04
+$ grep -rn "evaluateWallClockSessionReads" --include=*.go /home/hoang/vl-2day04
   auto_trader_clock.go:98  <- func DEFINITION (doc comment 89-97, body 98-111)
   auto_trader_clock.go:894 <- the actual CALL SITE, inside tickOnce (func at :878)
 "88-100" points at the definition. "at the top of tickOnce" is substantively TRUE (:894, after the
@@ -62,7 +62,7 @@ isGrid early-return at :879-884 and a comment block) - the coordinates are wrong
 
 --- C8. "against an empty bar cache" : WRONG for the primary TF [A/B]
 active strategy "MNQ SIM Default": primary_timeframe = "5m"
-$ sqlite3 file:/home/hoang/nofx/data/data.db?mode=ro "SELECT name,config FROM strategies WHERE is_active=1;" | tr ',' '\n' | grep timeframe
+$ sqlite3 file:/home/hoang/vl/data/data.db?mode=ro "SELECT name,config FROM strategies WHERE is_active=1;" | tr ',' '\n' | grep timeframe
 boot ladder 14:18:27 AND after-backfill 14:23:24 both read:
   5m (3068) - 15m (1025) - 1h (259) - 4h (69) - 1d (13) - 1w (3) - 1m UNAVAILABLE
 => only the 1m series (what feedNewestBarAge reads) was empty [A]. The 5m primary series held 3068
@@ -73,7 +73,7 @@ primaryTimeframe(), i.e. 5m - not empty.
 scheduled reads (levels_volume_boot.go:25, boot 14:18:26): ASIA 16:30 - LONDON 01:30 - NY 08:00 CT.
 None falls in 14:18-14:58, so maybeRunSessionReadsAt returns empty and evaluateWallClockSessionReads
 returns at `if len(fired) == 0 { return }` (auto_trader_clock.go:101-103) BEFORE touching any bars.
-$ awk '$1=="09-03" && $2>="14:18:00" && $2<="14:59:00"' nofx_2026-09-03.log | grep -iE "session read|plan authored" -> 0 session-read lines
+$ awk '$1=="09-03" && $2>="14:18:00" && $2<="14:59:00"' vl_2026-09-03.log | grep -iE "session read|plan authored" -> 0 session-read lines
 Only wake-path line that fired: 14:18:26 "WEEKLY READ skip-fresh" (evaluateWallClockWeeklyRead, bar-independent).
 
 --- NEW DEFECT surfaced by this verification (peer missed it)

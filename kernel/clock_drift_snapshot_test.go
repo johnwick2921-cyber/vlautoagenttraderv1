@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // A9 (T5, fail-register wave) — a legal slow AI call is NOT clock drift: the

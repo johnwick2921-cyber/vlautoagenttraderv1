@@ -914,7 +914,7 @@
       "dual_level": false
     },
     {
-      "path": "nofxos_api_key",
+      "path": "vlos_api_key",
       "status": "live",
       "ui_label": "live",
       "consumers": [

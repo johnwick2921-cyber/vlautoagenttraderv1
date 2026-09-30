@@ -1,5 +1,5 @@
 import json,pathlib,subprocess,math
-root=pathlib.Path('/home/hoang/nofx-analysis/vet-04-complete-0905');d=pathlib.Path('docs/superpowers/reports/2026-09-05-vet-04-monitoring-data');r=pathlib.Path('docs/superpowers/reports/2026-09-05-vet-04-monitoring.md');s=r.read_text();o=json.loads((d/'q51_complete.json').read_text());e=json.loads((d/'q50_eod_verified.json').read_text());h=json.loads((d/'q52_receipts.json').read_text())
+root=pathlib.Path('/home/hoang/vl-analysis/vet-04-complete-0905');d=pathlib.Path('docs/superpowers/reports/2026-09-05-vet-04-monitoring-data');r=pathlib.Path('docs/superpowers/reports/2026-09-05-vet-04-monitoring.md');s=r.read_text();o=json.loads((d/'q51_complete.json').read_text());e=json.loads((d/'q50_eod_verified.json').read_text());h=json.loads((d/'q52_receipts.json').read_text())
 assert all('## Q'+str(i)+' —' in s for i in range(1,6))
 assert all('### 1.'+str(i)+' ' in s for i in range(1,11))
 assert 'Requirement coverage' in s and 'Implementation category' in s

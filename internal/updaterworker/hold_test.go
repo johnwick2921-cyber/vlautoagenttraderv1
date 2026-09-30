@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
-	"nofx/store"
+	"vl/internal/updaterjob"
+	"vl/store"
 )
 
 // PIN (dispatch §4(6), behavioural): the worker's hold — read as RAW BYTES the

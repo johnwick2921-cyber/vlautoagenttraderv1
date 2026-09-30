@@ -3,7 +3,7 @@ package binance
 import (
 	"context"
 	"math"
-	"nofx/store"
+	"vl/store"
 	"os"
 	"sort"
 	"strings"

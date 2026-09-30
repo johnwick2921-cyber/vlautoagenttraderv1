@@ -52,4 +52,4 @@
 09-12 19:26:52 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🎯 stop/target composition {"trader_id":"trader-1","plan_id":"2026-09-12:ASIA:trader-1","version":1,"scenario":"S1","leg":1,"time_ms":1789259212077,"symbol":"MNQ","side":"long","entry":29010,"stop":29009.5,"target":29012,"zone_lo":29009.75,"zone_hi":29010,"target_lo":29012,"target_hi":29016,"zone_names":["PDL"],"target_names":["ONH"],"buffer":0.25,"buffer_source":"day_plan.structural_stop.buffer_points","calibration":"owner_override[I]","percentile":95,"stop_source":"zone_edge","risk_points":0.5,"gain_points":2,"net_gain_points":0,"loss_usd":5,"quantity":0,"reason":"net_nonpositive","detail":"gain=2.0000 cost=2.0000 net=0.0000"}
 --- PASS: TestStructuralStopF6NetGainBeforeRR (0.13s)
 PASS
-ok  	nofx/trader	0.697s
+ok  	vl/trader	0.697s

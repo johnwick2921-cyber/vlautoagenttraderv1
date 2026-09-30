@@ -23,8 +23,8 @@ check('198 expanded correct-side leg geometries',len(u['effective_legs'])==198 a
 check('49 real session-days; 280 defined comparison pairs',len(t['session_days'])==49 and len(t['similarity_pairs'])==280)
 for f in p.glob('*.py'):ast.parse(f.read_text())
 checks.append({'check':'Python artifact syntax (AST parse, no trading imports)','result':'PASS'})
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);private=[x[0] for tab in ['trader_positions','nt8_order_snapshots'] for x in c.execute('SELECT DISTINCT account FROM '+tab) if x[0]]
-for line in pathlib.Path('/home/hoang/nofx/.env').read_text().splitlines():
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);private=[x[0] for tab in ['trader_positions','nt8_order_snapshots'] for x in c.execute('SELECT DISTINCT account FROM '+tab) if x[0]]
+for line in pathlib.Path('/home/hoang/vl/.env').read_text().splitlines():
  k,sep,v=line.partition('=');v=v.strip().strip('"').strip("'")
  if sep and re.search('SECRET|PASSWORD|TOKEN|API_KEY',k) and len(v)>=12:private.append(v)
 files=[f for f in p.iterdir() if f.is_file()]+[p.parent/'2026-09-08-the-strategy.md']

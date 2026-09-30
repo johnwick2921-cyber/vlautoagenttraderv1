@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
-	nttrader "nofx/trader/ninjatrader"
+	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 // ── W1b FOLD-3 — A REFUSED SEND NEVER LEAVES ITS BRACKET IN THE MAPS ────────

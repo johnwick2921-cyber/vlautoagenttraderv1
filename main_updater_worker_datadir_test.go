@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"nofx/config"
-	"nofx/internal/holdcli"
-	"nofx/internal/updaterwire"
-	"nofx/internal/updaterworker"
-	"nofx/store"
+	"vl/config"
+	"vl/internal/holdcli"
+	"vl/internal/updaterwire"
+	"vl/internal/updaterworker"
+	"vl/store"
 )
 
 // PIN (M4 3b-B U4, C15 as ruled): the worker acts on the data dir the BOT

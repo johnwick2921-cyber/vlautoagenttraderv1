@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // WAVE A / D1 — THE TOUCH RECORDER'S THREE CONTAMINATIONS, PINNED.

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // NEWS-HYGIENE (2026-08-29) — the synthetic-T1 fixture. The gate contract under

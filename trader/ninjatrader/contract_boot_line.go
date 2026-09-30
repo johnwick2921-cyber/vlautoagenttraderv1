@@ -2,13 +2,13 @@ package ninjatrader
 
 import (
 	"fmt"
-	"nofx/kernel"
+	"vl/kernel"
 	"sort"
 	"strings"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ContractBootLine is the ROLL WAVE's boot line (D6). Every field is READ
@@ -74,8 +74,8 @@ func SourceBootLine(symbol string, census map[string]int64, mismatches []ntwire.
 	if hold == "" {
 		hold = "replay-hold: n/a"
 	}
-	return fmt.Sprintf("📼 bar source: %s live=%d historical=%d mixed=%d off-scale=%d null=%d · replay-never-overwrites-live=on · unverified-replay-held=on · %s · scale-mismatch threshold=%.2f%% AND %.0fx median body [I] · mismatches this process: %s",
-		symbol, census[store.BarSourceLive], census[store.BarSourceHistorical], census[store.BarSourceMixed], census[store.BarSourceOffScale], census[""], hold, pct*100, ntwire.ScaleMismatchRangeMult, mm)
+	return fmt.Sprintf("📼 bar source: %s live=%d historical=%d mixed=%d off-scale=%d null=%d · replay-never-overwrites-live=on · unverified-replay-held=on · %s · scale-mismatch threshold=%.2f%%[env:%s] AND %.0fx[env:%s] median body [I] · mismatches this process: %s",
+		symbol, census[store.BarSourceLive], census[store.BarSourceHistorical], census[store.BarSourceMixed], census[store.BarSourceOffScale], census[""], hold, pct*100, ntwire.ScaleMismatchPctSource(), ntwire.ScaleMismatchRangeMult, ntwire.ScaleMismatchRangeMultSource(), mm)
 }
 
 // contractBootLineFor assembles the line from live sources. Called after the

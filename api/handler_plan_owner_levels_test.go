@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/kernel"
-	"nofx/manager"
-	"nofx/store"
+	"vl/auth"
+	"vl/kernel"
+	"vl/manager"
+	"vl/store"
 )
 
 const (

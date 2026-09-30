@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/calendar"
-	"nofx/kernel"
-	"nofx/store"
+	"vl/calendar"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W3 — red-news end-to-end (no network): a fixture FF feed with a High (T1) USD

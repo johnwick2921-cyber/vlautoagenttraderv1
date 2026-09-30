@@ -1,5 +1,5 @@
 
- RUN  v4.1.11 /tmp/nofx-stage-a-snapshot/web
+ RUN  v4.1.11 /tmp/vl-stage-a-snapshot/web
 
 
  Test Files  1 passed (1)

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/config"
-	"nofx/internal/holdcli"
-	"nofx/store"
+	"vl/config"
+	"vl/internal/holdcli"
+	"vl/store"
 )
 
 // MUST-2 (CTO review of cb513079) — the production call-site proof: with a

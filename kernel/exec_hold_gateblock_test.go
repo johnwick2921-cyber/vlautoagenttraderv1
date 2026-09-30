@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // TestExecHoldPathsCountGateBlocks pins P2-7 at the PRODUCTION call site:
@@ -16,9 +16,8 @@ import (
 func TestExecHoldPathsCountGateBlocks(t *testing.T) {
 	trader := "p27-holder"
 	ctx := &Context{
-		TraderID:    trader,
-		Account:     AccountInfo{TotalEquity: 60000},
-		OITopDataMap: map[string]*OITopData{},
+		TraderID: trader,
+		Account:  AccountInfo{TotalEquity: 60000},
 	}
 	engine := &StrategyEngine{config: &store.StrategyConfig{
 		RiskControl: store.RiskControlConfig{MaxPositions: 1},

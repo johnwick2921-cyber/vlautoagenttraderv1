@@ -33,8 +33,8 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // Effective-value words that are not values.
@@ -313,9 +313,9 @@ func compactJSON(v json.RawMessage) string {
 
 // ── REDACTION ────────────────────────────────────────────────────────────────
 //
-// An explicit set: the NofxOS key, external data-source headers and URLs (a URL
-// commonly carries a key in its query string), and any leaf whose name reads as
-// a credential. Redacted rows never carry the stored value or an effective one.
+// An explicit set: external data-source headers and URLs (a URL commonly carries
+// a key in its query string), and any leaf whose name reads as a credential.
+// Redacted rows never carry the stored value or an effective one.
 
 var secretLeafRe = regexp.MustCompile(`(?i)(api_?key|secret|token|password|passphrase|private_?key|credential)`)
 
@@ -327,7 +327,7 @@ func isSecretPath(path string) bool {
 	if i := strings.LastIndex(path, "."); i >= 0 {
 		leaf = path[i+1:]
 	}
-	return leaf == "nofxos_api_key" || secretLeafRe.MatchString(leaf)
+	return secretLeafRe.MatchString(leaf)
 }
 
 // ── STORED-VALUE PRESENCE ────────────────────────────────────────────────────

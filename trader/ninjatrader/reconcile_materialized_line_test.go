@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // ── W1b FOLD-6 — the 🧩 MATERIALIZED line says what the position WAS ─────────

@@ -50,5 +50,5 @@
     structural_stop_seam_test.go:93: missing durable geometry/refusal record: n=0 err=<nil>
 --- FAIL: TestStructuralStopF6NetGainBeforeRR (0.17s)
 FAIL
-FAIL	nofx/trader	0.614s
+FAIL	vl/trader	0.614s
 FAIL

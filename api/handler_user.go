@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"nofx/auth"
-	"nofx/logger"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/auth"
+	"vl/logger"
+	"vl/store"
+	"vl/telemetry"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -52,12 +52,12 @@ var currentPasswordFailSleep = time.Sleep
 // the SAME bcrypt cost against a dummy hash, and both paths plus the IP get a
 // failure limiter with backoff.
 const (
-	loginFailWindow        = 5 * time.Minute
-	loginBlockAfterFails   = 5
+	loginFailWindow          = 5 * time.Minute
+	loginBlockAfterFails     = 5
 	loginLongBlockAfterFails = 10
-	loginBlockShort        = time.Minute
-	loginBlockLong         = 15 * time.Minute
-	loginLimiterMaxKeys    = 4096
+	loginBlockShort          = time.Minute
+	loginBlockLong           = 15 * time.Minute
+	loginLimiterMaxKeys      = 4096
 )
 
 // loginCheckPassword is a seam: production is auth.CheckPassword (the test
@@ -565,9 +565,6 @@ func (s *Server) createDefaultStrategies(userID string, lang string) error {
 				c.RiskControl.MaxPositions = 5
 				c.RiskControl.AltcoinMaxPositionValueRatio = 2.0
 				c.RiskControl.MinConfidence = 70
-				c.CoinSource.AI500Limit = 5
-				c.CoinSource.UseOITop = true
-				c.CoinSource.OITopLimit = 5
 				c.Indicators.Klines.SelectedTimeframes = []string{"3m", "15m", "1h"}
 				c.Indicators.Klines.PrimaryTimeframe = "3m"
 			},

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"nofx/kernel"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/telemetry"
 )
 
 // P3.1 — SESSION GATES. Wire the P0 registry to live entry gating: entries are

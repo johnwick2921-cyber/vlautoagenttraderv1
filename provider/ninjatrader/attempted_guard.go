@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"nofx/telemetry"
+	"vl/telemetry"
 )
 
 // FIX-DOUBLE-ENTRY (CTO ruling, 2026-09-26): an attempted entry frame — one

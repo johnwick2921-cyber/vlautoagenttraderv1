@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # THE DESK STRIP — one endpoint, one row per fact, every number dated
 
 **Branch:** `fix/desk-strip` · **session:** `desk-strip-554049f5` ·
@@ -265,10 +266,10 @@ rather than as an unpinned edit to a just-booted binary.
 ## 7 · ROLLBACK
 
 ```
-git -C ~/nofx checkout dev && git -C ~/nofx reset --hard <prior-dev-sha>
-mv ~/nofx/nofx-bin.old.ea3f33fe ~/nofx/nofx-bin      # named for the rev it HOLDS
-echo ea3f33fe > ~/nofx/deploy/RELEASE
-kill -9 $(pgrep -f nofx-bin)
+git -C ~/vl checkout dev && git -C ~/vl reset --hard <prior-dev-sha>
+mv ~/vl/vl-bin.old.ea3f33fe ~/vl/vl-bin      # named for the rev it HOLDS
+echo ea3f33fe > ~/vl/deploy/RELEASE
+kill -9 $(pgrep -f vl-bin)
 ```
 
 No data migration to reverse: this wave writes nothing. `web/dist` must be

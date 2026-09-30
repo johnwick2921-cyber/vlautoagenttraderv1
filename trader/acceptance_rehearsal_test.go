@@ -11,7 +11,7 @@ package trader
 // is IsCMEOpen-gated, so no real row can ever carry this date); the gate
 // session then marks it lifecycle='expired' after the UI verification.
 //
-// GUARDED: skips unless NOFX_REHEARSAL=1. Costs ONE paid model call
+// GUARDED: skips unless VL_REHEARSAL=1. Costs ONE paid model call
 // (owner-approved in the gate dispatch). Never touches orders, NT8, or any
 // account — the planner read path has no execution surface.
 //
@@ -38,11 +38,11 @@ import (
 	"testing"
 	"time"
 
-	"nofx/crypto"
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
+	"vl/crypto"
+	"vl/kernel"
+	"vl/market"
+	"vl/mcp"
+	"vl/store"
 )
 
 const (
@@ -112,24 +112,24 @@ func writeArtifact(t *testing.T, dir, name, content string) {
 // header before running: it spends ONE paid model call and writes the flagged
 // plan row to the live DB.
 func TestAcceptanceRehearsal(t *testing.T) {
-	if os.Getenv("NOFX_REHEARSAL") != "1" {
-		t.Skip("rehearsal harness is armed only with NOFX_REHEARSAL=1 (paid call + live-db plan row)")
+	if os.Getenv("VL_REHEARSAL") != "1" {
+		t.Skip("rehearsal harness is armed only with VL_REHEARSAL=1 (paid call + live-db plan row)")
 	}
-	dbPath := os.Getenv("NOFX_REHEARSAL_DB")
+	dbPath := os.Getenv("VL_REHEARSAL_DB")
 	if dbPath == "" {
 		dbPath = filepath.Join("..", "data", "data.db")
 	}
-	outDir := os.Getenv("NOFX_REHEARSAL_OUT")
+	outDir := os.Getenv("VL_REHEARSAL_OUT")
 	if outDir == "" {
-		t.Fatal("NOFX_REHEARSAL_OUT must point at the artifacts directory")
+		t.Fatal("VL_REHEARSAL_OUT must point at the artifacts directory")
 	}
-	baseURL := os.Getenv("NOFX_REHEARSAL_BASE")
+	baseURL := os.Getenv("VL_REHEARSAL_BASE")
 	if baseURL == "" {
 		baseURL = "http://127.0.0.1:8080"
 	}
-	traderID := os.Getenv("NOFX_REHEARSAL_TRADER")
+	traderID := os.Getenv("VL_REHEARSAL_TRADER")
 	if traderID == "" {
-		t.Fatal("NOFX_REHEARSAL_TRADER must be the live trader id")
+		t.Fatal("VL_REHEARSAL_TRADER must be the live trader id")
 	}
 
 	// ── crypto service FIRST: crypto.EncryptedString.Scan only decrypts when the

@@ -20,7 +20,7 @@ import (
 	"sort"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ---- Constants (single source of truth) ------------------------------------

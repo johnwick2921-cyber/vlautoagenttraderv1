@@ -28,7 +28,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // tfTestNow is this file's single clock: 2026-09-10 13:30 CT, a Thursday inside

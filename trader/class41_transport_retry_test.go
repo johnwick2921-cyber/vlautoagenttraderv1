@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // CLASS 41 M0 pin (transport-resets dispatch, 2026-09-02): a TRANSPORT or

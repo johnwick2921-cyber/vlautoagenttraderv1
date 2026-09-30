@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	_ "github.com/lib/pq"     // PostgreSQL driver
-	"nofx/store/sqlitedriver" // the ONE sqlite registration site
+	"vl/store/sqlitedriver" // the ONE sqlite registration site
 )
 
 // DBType represents database type
@@ -81,7 +81,7 @@ func NewDBDriverFromEnv() (*DBDriver, error) {
 			Port:     port,
 			User:     getEnv("DB_USER", "postgres"),
 			Password: os.Getenv("DB_PASSWORD"),
-			DBName:   getEnv("DB_NAME", "nofx"),
+			DBName:   getEnv("DB_NAME", "vl"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		})
 

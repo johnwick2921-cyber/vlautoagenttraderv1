@@ -4,7 +4,7 @@
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd -P)"
 BIN="${R24_HARNESS:-$HERE/../../../../../.r24harness}"
-DB=/home/hoang/nofx-r101/data/db.copy.db
+DB=/home/hoang/vl-r101/data/db.copy.db
 OUT="$HERE/out-r24"
 mkdir -p "$OUT"
 rm -f "$OUT/harness.done"

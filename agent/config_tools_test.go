@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func newTestAgentWithStore(t *testing.T) *Agent {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // S2 — TIMEFRAME-AWARE FRESHNESS (2026-09-16, structure-first planner wave).

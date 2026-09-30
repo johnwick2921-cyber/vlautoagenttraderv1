@@ -7,10 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"nofx/config"
-	"nofx/crypto"
-	"nofx/logger"
-	"nofx/store"
+	"vl/config"
+	"vl/crypto"
+	"vl/logger"
+	"vl/store"
 
 	"github.com/gin-gonic/gin"
 )
@@ -319,7 +319,7 @@ func (s *Server) handleUpdateExchangeConfigs(c *gin.Context) {
 
 	// SECURITY (P0 S5): this used to be `logger.Infof(... "%+v", req.Exchanges)`,
 	// which wrote PLAINTEXT exchange API keys, secret keys, passphrases and wallet
-	// private keys into data/nofx_*.log (mode 0644, retained indefinitely). Every
+	// private keys into data/vl_*.log (mode 0644, retained indefinitely). Every
 	// secret-bearing field is masked; non-secret fields stay readable for support.
 	safe := make([]string, 0, len(req.Exchanges))
 	for exchangeID, e := range req.Exchanges {

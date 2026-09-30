@@ -35,7 +35,7 @@ export const welcome: GuideSection = {
         '  │ TCP (bars / account / positions / orders)',
         'C# AddOn (NinjaTrader AddOns folder)  ← compile + NT8 restart to change',
         '  │ framed messages (ninjascript/vltrader_tcp_PROTOCOL.md)',
-        'Go bot (nofx-bin) ─── BarCache + bars table (SQLite data/data.db = "memory")',
+        'Go bot (vl-bin) ─── BarCache + bars table (SQLite data/data.db = "memory")',
         '  ├─ PLANNER: DeepSeek → 1 day-plan per session (advisory JSON)',
         '  ├─ EXECUTOR: every ~2 min → DeepSeek decision → risk gates → Sim101',
         '  └─ WATCHER: in-position advisory only (zero order authority)',

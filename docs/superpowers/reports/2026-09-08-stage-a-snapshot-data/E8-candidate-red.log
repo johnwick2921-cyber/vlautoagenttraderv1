@@ -8,5 +8,5 @@ trader/auto_trader_planner.go:2461: recordResearchCandidates(in.ResearchSnapshot
 --- FAIL: TestStageACandidateProductionAssembly (0.35s)
     research_snapshot_test.go:119: production assembly lost candidate hook: id="ef320785-85e9-4d19-8542-93a08710a789" counts=map[candidate:0 exec:0 market:0 plan:0 scenario:0]
 FAIL
-FAIL	nofx/trader	0.361s
+FAIL	vl/trader	0.361s
 FAIL

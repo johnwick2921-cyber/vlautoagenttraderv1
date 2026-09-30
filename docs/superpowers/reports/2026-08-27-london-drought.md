@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Trade-Drought Investigation — LONDON tail + NY, 2026-08-26 (report filed 08-27)
 
 Read-only dispatch. All times America/Chicago (CT). PnL = pnl_corrected (both
-morning trades have NULL corrections → corrected == realized). Bot: `nofx-bin`
+morning trades have NULL corrections → corrected == realized). Bot: `vl-bin`
 PID 2586603, boot 20:05:10 CT, rev `717acd34e52b` (bias-tree fix), goldens PASS.
 `deploy/RELEASE` = `717acd34e5` matches.
 

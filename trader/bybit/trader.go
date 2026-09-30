@@ -6,7 +6,7 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"nofx/logger"
+	"vl/logger"
 	"strconv"
 	"strings"
 	"sync"

@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 📊 Project Management Guide
 
 **Language:** [English](PROJECT_MANAGEMENT.md) | [中文](PROJECT_MANAGEMENT.zh-CN.md)
 
-This guide explains how we manage the NOFX project, track progress, and prioritize work.
+This guide explains how we manage the VL project, track progress, and prioritize work.
 
 ---
 
@@ -12,7 +13,7 @@ This guide explains how we manage the NOFX project, track progress, and prioriti
 
 We use **GitHub Projects (Beta)** with these boards:
 
-#### 1. **NOFX Development Board**
+#### 1. **VL Development Board**
 
 **Columns:**
 ```
@@ -316,10 +317,10 @@ We use GitHub Actions for automation:
 
 ### External (Community)
 
-- **Telegram:** [@nofx_dev_community](https://t.me/nofx_dev_community)
+- **Telegram:** [@upstream telegram link (removed in the VL rename)](upstream telegram link (removed in the VL rename))
 - **GitHub Issues:** Bug reports, feature requests
 - **GitHub Discussions:** General questions, ideas
-- **Twitter:** [@nofx_official](https://x.com/nofx_official) - Announcements
+- **Twitter:** [upstream x link (removed in the VL rename)](upstream x link (removed in the VL rename)) - Announcements
 
 ---
 

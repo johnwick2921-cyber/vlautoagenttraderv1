@@ -1,12 +1,12 @@
 import sqlite3, json, math, csv, statistics as st, collections
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 c=sqlite3.connect(DB, uri=True)
 def wilson(k,n,z=1.96):
     p=k/n; d=1+z*z/n; ctr=(p+z*z/(2*n))/d; h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d; return (ctr-h, ctr+h)
 def W(lbl,k,n):
     lo,hi=wilson(k,n); print(f"  {lbl}: {k}/{n} = {100*k/n:.1f}% [{100*lo:.1f}%, {100*hi:.1f}%]")
 print("### B1 min-SL validateDecision refusals (audit refusals.csv) — was the same cycle's final decision a taken open_*?")
-rows=list(csv.DictReader(open('/home/hoang/nofx-vet-03/docs/superpowers/reports/2026-09-04-two-day-audit-data/refusals.csv')))
+rows=list(csv.DictReader(open('/home/hoang/vl-vet-03/docs/superpowers/reports/2026-09-04-two-day-audit-data/refusals.csv')))
 ms=[r for r in rows if r['leg'].startswith('min_sl (validateDecision')]
 print("  min_sl validateDecision rows:", len(ms))
 taken=[]; notaken=[]; nocycle=[]

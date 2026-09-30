@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL Day-Plan — ACCEPTANCE GATE v2 (re-run, 2026-08-15 evening CT)
 
 **LINE 1: CONDITIONAL GO FOR MONDAY — the plan pipeline is PROVEN END-TO-END on the deployed
@@ -19,9 +20,9 @@ how much of the map the planner sees, and about who can reach the box.
 | Check | Evidence |
 |---|---|
 | Heartbeat + reports show W1–W12 + F0 | `DAYPLAN-IN-PROGRESS.md` + memory ledger; W11 `cbf12870`, W11b `a7bdae50`, W12 `298d75b0`, F0.1–F0.4 `2985e50f`/`3d91e574`/`5578966a`/`c886b359` + reports `2026-08-16-w11-indicator-mirror.md`, `-math-audit.md`, `-f0-calendar-ignition.md` |
-| Running binary PROVABLY HEAD | `go version -m ./nofx-bin` → `vcs.revision=298d75b07335…`, **`vcs.modified=false`**; PID 1223827 `lstart=Sat Aug 15 19:08:45`, binary mtime 19:08:45, `/proc/PID/exe` resolves to it |
+| Running binary PROVABLY HEAD | `go version -m ./vl-bin` → `vcs.revision=298d75b07335…`, **`vcs.modified=false`**; PID 1223827 `lstart=Sat Aug 15 19:08:45`, binary mtime 19:08:45, `/proc/PID/exe` resolves to it |
 | Zero MODIFIED tracked files | `git status --porcelain \| grep -v '^??'` → empty at gate start |
-| Untracked stash | `~/nofx-untracked-stash-20260816/` present as described |
+| Untracked stash | `~/vl-untracked-stash-20260816/` present as described |
 | ONE session | no concurrent writer observed during the gate (contrast with the v1 gate, which aborted on exactly that) |
 
 Mid-gate, another session committed `b9c05e36` (docs-only). `git diff --stat 298d75b0..b9c05e36 -- kernel/ trader/ market/` is **empty**, so every code claim below still describes the deployed binary. [A]
@@ -33,7 +34,7 @@ Mid-gate, another session committed `b9c05e36` (docs-only). `git diff --stat 298
 **Executed 19:51:03 CT on the deployed binary against live stored data — the closed-market
 path, Monday's hardest case. ONE paid DeepSeek call. Result: the pipeline WORKS.**
 
-Harness: `trader/acceptance_rehearsal_test.go` (env-guarded `NOFX_REHEARSAL=1`). It hydrates
+Harness: `trader/acceptance_rehearsal_test.go` (env-guarded `VL_REHEARSAL=1`). It hydrates
 the real trader exactly as `manager.addTraderFromStore` does, serves bars from the deployed
 binary's own BarCache over its `/api/klines`, and calls the **production** functions
 (`assemblePlannerInput` → `BuildPlannerPrompt` → `runPlannerReadCore` → `AppendPlan`).
@@ -54,7 +55,7 @@ Artifacts (committed alongside this report under `2026-08-16-acceptance-gate-v2-
 scheduled read is `IsCMEOpen`-gated, so no production read can ever occupy that key), then
 `UPDATE plans SET lifecycle='expired' WHERE trade_date='2026-08-15' AND session='NY'`.
 Both rows (v1, v2) now read `expired`. Monday's key `2026-08-17:NY` is untouched. Live DB
-backed up online first → `~/nofx-backups/acceptance-gate-20260816/data.db` (443 MB,
+backed up online first → `~/vl-backups/acceptance-gate-20260816/data.db` (443 MB,
 `PRAGMA integrity_check=ok`).
 
 ### The rehearsal earned its keep — it caught a real defect in its own first run
@@ -371,6 +372,6 @@ red-news chain closes itself when the feed rolls Sunday (F-3); digests start wri
 - Harnesses (committed): `trader/acceptance_rehearsal_test.go`, `trader/acceptance_scheduler_test.go`
 - E2E suite (committed, ready): `web/e2e/{gate.spec.ts,fixtures.ts,playwright.config.ts}`
 - Token helper for the owner: `cmd/gate-jwt/main.go`
-- DB backup: `~/nofx-backups/acceptance-gate-20260816/data.db`
+- DB backup: `~/vl-backups/acceptance-gate-20260816/data.db`
 - Live DB writes made by this gate: 2 (the rehearsal plan rows, then expired) + 1 owner level
   (seeded, then deleted). Nothing else. No restarts, no NT8 changes, no order paths touched.

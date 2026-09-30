@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Quarterly contract roll (CME equity futures: MNQ/NQ/MES/ES/…)
 
 **The roll is whatever NT8's front month says. Nothing else.** Not a date
@@ -34,7 +35,7 @@ raises one P0 with both names.
 
 ## What you confirm before any entry on roll week
 
-In the bot log (`journalctl -u nofx`) — **all three must name the same
+In the bot log (`journalctl -u vl`) — **all three must name the same
 contract, and it must be the one NT8's Control Center shows:**
 
 - `📐 NT8 instrument_info MNQ (MNQ MM-yy)`

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-17 — COMBINED FIX TRAIN (P1–P7 + latency half) — RESOLVED
 
 **Verdict: SHIPPED.** 9 commits, 020e407a. Every P-item from the dispatch is either fixed end-to-end or proven to be a deploy gap with the chain complete at HEAD. Build/vet/test/-race green; no goldens touched; FE 243/244 tests green (1 pre-existing auth failure + 1 pre-existing e2e suite, both untouched by this session).
@@ -18,7 +19,7 @@
 
 - **`2ddf3a58` (JSON recovery) — COMPLETE on its half.** Recovery of prose-embedded single-object decisions (`kernel/engine_analysis.go:756-777`), prose-only → error so `callWithSchemaRetry` re-asks, P1 `decision-unparseable` alert per miss (`trader/auto_trader_loop.go:405-413`), 4 tests. The LATENCY half was missing and is now `2b4162f6`: the futures decision client is capped at `decisionCallTimeout=180s` (leaves ≥120s of a 5m bar); `runCycle` captures the decision bar's close before the call and, if a NEWER primary bar closed in-flight, the decision is DISCARDED (named guardrail skip + gate-block counter + P1 `decision-stale-bar` alert). **Expected new failure rate: ≤~0.3% of cycles still lose a decision (was 70/5660 = 1.24%)** — the prose-object recovery saves most misses instantly, the JSON-only retry re-asks cheaply, the timeout converts the 182s-class tail into fast retries, and every residual loss is alerted and visible. Label: estimate from the owner's 14-day sample, not a measured rate.
 - **`570c6c32` (H8) — COMPLETE.** Every deciding site now routes through `sessionRunnable`: read scheduler (`auto_trader_planner.go:172`), entry gate (`auto_trader_session.go:38,47,108-120`), executor provider (`auto_trader_planner.go:857`), digests (`:781`), re-read (`auto_trader_reread.go:45`), `RunnableSessions` (`planconfig.go:241`). Proven by `TestW15SessionRunnable` + `w16_date_and_provider_test` (enable=true → read fires AND gate allows AND executor receives; enable=false → none). **Owner action after deploy: ASIA/LONDON are live-enabled in strategy `a5b7662e` — with H8 fixed they now become REAL sessions (entries included), not just LLM spend. Turn them off or keep them deliberately.**
-- **P5 (alert ✕ / clear) — ROOT CAUSE: a DEPLOY GAP, not a code bug.** The chain is complete at HEAD: store soft-delete (`store/alert.go` DismissForTrader/DismissAckedForTrader, `dismissed` columns filter List/UnackedCount), handlers (`api/handler_plan.go:710-790`), routes (`api/server.go:487-490`), FE (`AlertCenter.tsx` dismiss/clearRead + mutate), tests green (store/api/vitest W21+P4.4). The RUNNING binary predates ITEM 5: `strings nofx-bin` has `/plan/alerts` + `/plan/alert-ack` but NOT `/plan/alert-dismiss` or `/plan/alert-clear-read`, and the live `day_plan_alerts` table has no `dismissed` columns — so the ✕ and clear POSTs 404'd. The deploy handoff below closes it (AutoMigrate adds the columns at first boot). No code change was needed or made.
+- **P5 (alert ✕ / clear) — ROOT CAUSE: a DEPLOY GAP, not a code bug.** The chain is complete at HEAD: store soft-delete (`store/alert.go` DismissForTrader/DismissAckedForTrader, `dismissed` columns filter List/UnackedCount), handlers (`api/handler_plan.go:710-790`), routes (`api/server.go:487-490`), FE (`AlertCenter.tsx` dismiss/clearRead + mutate), tests green (store/api/vitest W21+P4.4). The RUNNING binary predates ITEM 5: `strings vl-bin` has `/plan/alerts` + `/plan/alert-ack` but NOT `/plan/alert-dismiss` or `/plan/alert-clear-read`, and the live `day_plan_alerts` table has no `dismissed` columns — so the ✕ and clear POSTs 404'd. The deploy handoff below closes it (AutoMigrate adds the columns at first boot). No code change was needed or made.
 
 ## Per-priority receipts
 
@@ -41,7 +42,7 @@
 ## Deploy handoff (owner, at a flat/safe window)
 
 1. `git pull` (done: pushed to origin, HEAD `020e407a`).
-2. Binary built: `go build -o nofx-bin .` (done) · `git rev-parse HEAD > deploy/RELEASE` (done → `020e407a7f74ebbf509fbeaa6bfb6020f6453fab`).
-3. `sudo systemctl restart nofx` — or `kill -9 <PID 599604>` and let `Restart=on-failure` relaunch the new binary.
+2. Binary built: `go build -o vl-bin .` (done) · `git rev-parse HEAD > deploy/RELEASE` (done → `020e407a7f74ebbf509fbeaa6bfb6020f6453fab`).
+3. `sudo systemctl restart vl` — or `kill -9 <PID 599604>` and let `Restart=on-failure` relaunch the new binary.
 4. `cd web && npm run build` (done) + hard reload.
 5. Verify after restart: the version mismatch assertion clears; `/plan/alerts` rows gain `dismissed` columns; ✕ and Clear-read now work; decide ASIA/LONDON enablement (they are REAL sessions now).

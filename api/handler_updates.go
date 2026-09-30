@@ -6,17 +6,17 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
-	"nofx/auth"
-	"nofx/config"
-	"nofx/internal/updateauth"
-	"nofx/internal/updaterjob"
-	"nofx/internal/updaterwire"
-	"nofx/logger"
-	"nofx/trader"
+	"vl/auth"
+	"vl/config"
+	"vl/internal/envcompat"
+	"vl/internal/updateauth"
+	"vl/internal/updaterjob"
+	"vl/internal/updaterwire"
+	"vl/logger"
+	"vl/trader"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
@@ -47,11 +47,11 @@ import (
 // OFF state) every route refuses and nothing else in the app changes.
 //
 // Install = the gate (identity factor: JWT of the enrolled admin) AND an
-// HMAC-SHA256 over nofx-update-install/v1|admin_user_id|release_id|job_id|
+// HMAC-SHA256 over vl-update-install/v1|admin_user_id|release_id|job_id|
 // expires_at under device.key (possession factor; updateauth.Message is the
 // one layout).
 // Nothing on the API side can mint a MAC (CTO ruling Q1(a)): the
-// owner runs the attended `updater-bootstrap authorize <release_id>` on the
+// owner runs the attended `vl-updater-bootstrap authorize <release_id>` on the
 // box and pastes its {job_id, expires_at, hmac}.
 
 // updatesAdminIDKey carries the enrolled admin's user_id from the gate to the
@@ -62,7 +62,11 @@ const updatesAdminIDKey = "updates_admin_user_id"
 // with the exact value "1". It is NOT in the CORS Access-Control-Allow-Headers
 // list, so a cross-origin page can never get a browser to send it (the
 // preflight fails) — pinned by TestUpdatePreflightNeverAllowsTheUpdateHeader.
-const UpdateHeader = "X-NOFX-Update"
+const UpdateHeader = "X-VL-Update"
+
+// LegacyUpdateHeader is the pre-rename name, accepted until R5 (transition
+// table entry (d)); R5 removes this const and the dual-accept test.
+const LegacyUpdateHeader = "X-NOFX-Update"
 
 // maxUpdateInstallBody caps the install body (a Grant is ~200 bytes).
 const maxUpdateInstallBody = 4096
@@ -123,7 +127,7 @@ func updateVerifierName(v updateauth.Verifier) string {
 // dialled (a worker is started by hand, attended — not dialling at boot is
 // not knowing yet, so n/a, never "down").
 func (s *Server) configureUpdater() {
-	if os.Getenv(updaterKnobEnv) != "1" {
+	if v, _ := envcompat.Env("UPDATER"); v != "1" { // R5 removes: VL_/NOFX_ prefix is envcompat's business
 		return
 	}
 	s.updaterOn = true
@@ -229,7 +233,7 @@ func (s *Server) registerUpdateRoutes(api *gin.RouterGroup) {
 // a fabricated 0.
 var updatesRefusedTotal = promauto.NewCounterVec(
 	prometheus.CounterOpts{
-		Name: "nofx_updates_refused_total",
+		Name: "vl_updates_refused_total",
 		Help: "Refusals by the /api/updates gate and install handler, by route pattern and closed refusal category.",
 	},
 	[]string{"route", "category"},
@@ -270,7 +274,7 @@ var updatesRefusalCategories = map[string]string{
 	"install: MAC mismatch":                "install_mac",
 	"password changed since enrollment (re-enroll with --replace)":                                  "password_changed",
 	"install: expired under the seen-store lock, or at/below its clock floor (clock stepped back?)": "install_expired_under_lock",
-	"install: job-id store refused":                                                                    "job_store_refused",
+	"install: job-id store refused":                                                                 "job_store_refused",
 }
 
 // updatesRefusalCategory maps a refusal reason onto its closed category.
@@ -307,7 +311,7 @@ func (s *Server) updatesForbid(c *gin.Context, why string) {
 	// /api/updates/jobs/BOOT%20INTEGRITY%20REFUSED once printed a WARN that
 	// verifyBootLine read as a refused boot and rolled back a good install).
 	if _, seen := s.updatesWarned.LoadOrStore(key, struct{}{}); !seen {
-		logger.Warnf("🔒 [updates] refused %s %.96q: %s — first %s refusal on %s this process; repeats log at DEBUG, all count in nofx_updates_refused_total", c.Request.Method, route, why, cat, route)
+		logger.Warnf("🔒 [updates] refused %s %.96q: %s — first %s refusal on %s this process; repeats log at DEBUG, all count in vl_updates_refused_total", c.Request.Method, route, why, cat, route)
 	} else {
 		logger.Debugf("🔒 [updates] refused %s %.96q: %s (repeat, counted as %s on %s)", c.Request.Method, route, why, cat, route)
 	}
@@ -315,7 +319,7 @@ func (s *Server) updatesForbid(c *gin.Context, why string) {
 }
 
 // updatesGate is the whole identity gate. It returns the refusal category
-// ("" = admitted). Order: transport checks (no I/O — the X-NOFX-Update
+// ("" = admitted). Order: transport checks (no I/O — the X-VL-Update
 // header among them), then the JWT, then the enrollment files, then the
 // users store. A header-less request is refused before any token-derived
 // work (PR #200 F8: TestUpdatesHeaderIsJudgedBeforeTheToken).
@@ -404,8 +408,11 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 	if h := forwardingHeader(r.Header); h != "" {
 		return "forwarded request (" + h + ")"
 	}
-	// CSRF: the custom header, exactly one value, exactly "1".
-	if v := r.Header.Values(UpdateHeader); len(v) != 1 || v[0] != "1" {
+	// CSRF: the custom header, exactly one value in total across
+	// both names, exactly "1". The legacy name stays accepted until R5
+	// (transition entry (d)).
+	vs := append(append([]string{}, r.Header.Values(UpdateHeader)...), r.Header.Values(LegacyUpdateHeader)...)
+	if len(vs) != 1 || vs[0] != "1" {
 		return "update header missing or wrong"
 	}
 	// Origin absent or same-origin (the server speaks plain http).
@@ -473,7 +480,7 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 	// H1/H2 belt: the enrollment is bound to the password the row had at
 	// enrollment. Any change since — the owner's own, or one forced through a
 	// machine/stolen/retired token — un-enrolls until the owner re-runs the
-	// attended `updater-bootstrap enroll --replace` on the box.
+	// attended `vl-updater-bootstrap enroll --replace` on the box.
 	if !admin.PasswordStillBound(key, u.PasswordHash) {
 		return "password changed since enrollment (re-enroll with --replace)"
 	}
@@ -602,7 +609,7 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 		}
 		logger.Errorf("🔒 [updates] install: job-id store refused: %v", err)
 		// #206 review fold: this refusal goes through updatesForbid too — the
-		// guide says every refusal increments nofx_updates_refused_total, and
+		// guide says every refusal increments vl_updates_refused_total, and
 		// the raw 403 used to skip the counter silently.
 		s.updatesForbid(c, "install: job-id store refused")
 		return

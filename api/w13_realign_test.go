@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 
 	"github.com/gin-gonic/gin"
 )

@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // TestGetCandidateCoins_EmptySourceTypeDefaultsToStatic verifies the additive

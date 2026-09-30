@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // pictureHtfTestEnv drives the evaluator through the PRODUCTION call site

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-29 · Zone-Math Total Verification (last 3 complete sessions)
 
-> READ-ONLY independent verification. Worktree `nofx-zm` @ `4763a664`; Python3 + stdlib `sqlite3` only, no Go engine code executed; DB opened `mode=ro` — nothing written. Every rule reimplemented from the spec sources listed in §R12. Evidence tiers [A]/[B]/[C].
+> READ-ONLY independent verification. Worktree `vl-zm` @ `4763a664`; Python3 + stdlib `sqlite3` only, no Go engine code executed; DB opened `mode=ro` — nothing written. Every rule reimplemented from the spec sources listed in §R12. Evidence tiers [A]/[B]/[C].
 
 **Universe:** 2026-08-28 NY v7 · 2026-08-28 LONDON v6 · 2026-08-27 NY v5 (latest active plan per session). Data: `bars` table = 15,646 rows total = MNQ 1m 10,023 + ES 1m 5,623 [A]; MNQ 1m all `open_time_ms%60000==0` [A]; persisted window 08-19 15:00 → 08-28 20:59 UTC [A].
 

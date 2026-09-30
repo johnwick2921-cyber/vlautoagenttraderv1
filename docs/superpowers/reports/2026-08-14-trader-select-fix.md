@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Dashboard Fix — Trader Selection Must Persist (no more snap-back to last-created)
 
-**Date:** 2026-08-14 · **Repo:** /home/hoang/nofx · **HEAD at start:** `9fd32410` (≥ 3624a2a4) · **FE-only, additive** — no kernel/trader/risk logic touched; running `nofx-bin` (rev `3624a2a4`) untouched.
+**Date:** 2026-08-14 · **Repo:** /home/hoang/vl · **HEAD at start:** `9fd32410` (≥ 3624a2a4) · **FE-only, additive** — no kernel/trader/risk logic touched; running `vl-bin` (rev `3624a2a4`) untouched.
 
 ## Root cause [A]
 Two defects in the dashboard selection logic, both in `web/src/router/AppRoutes.tsx`:
@@ -28,7 +29,7 @@ What "View" set / where selection lived (pre-fix): View → `?trader=<id>` (URL 
 - `e3276a7d` — feat(web): active-trader marker in the traders list (badge + i18n)
 
 ## Deploy status — HOT, no Go restart
-The Go binary does **not** serve/embed the frontend (verified: zero `go:embed`/`StaticFS`/`web/dist` references in `main.go`/`api/server.go`; web/CLAUDE.md confirms nginx-or-Vite serves the FE). The **Vite dev server is running** (`:3000 LISTENING`, PID 390/391) and is the live surface — so this change ships **hot via HMR**. No Go rebuild/restart is required; the running `nofx-bin` (rev `3624a2a4`) is untouched.
+The Go binary does **not** serve/embed the frontend (verified: zero `go:embed`/`StaticFS`/`web/dist` references in `main.go`/`api/server.go`; web/CLAUDE.md confirms nginx-or-Vite serves the FE). The **Vite dev server is running** (`:3000 LISTENING`, PID 390/391) and is the live surface — so this change ships **hot via HMR**. No Go rebuild/restart is required; the running `vl-bin` (rev `3624a2a4`) is untouched.
 
 **Owner action:** hard-reload the dashboard tab — **Ctrl+Shift+R** (`Cmd+Shift+R` on Mac) — to clear any stale Vite HMR module cache (web/CLAUDE.md gotcha) and pick up the new modules. Nothing else. (If a production/nginx surface is later used, it serves `web/dist/`, so a `cd web && npm run build` regenerates it — still no Go restart.)
 

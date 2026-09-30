@@ -3,7 +3,7 @@ package researchsnapshot
 import (
 	"context"
 	"fmt"
-	"nofx/safe"
+	"vl/safe"
 	"os"
 	"runtime/debug"
 	"strings"

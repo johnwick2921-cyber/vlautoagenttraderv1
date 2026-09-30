@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // P2 (ledger-close 2026-08-19) — the stop_until pause: producer, persistence,

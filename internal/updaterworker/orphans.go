@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterwire"
 )
 
 // ── D8b (CTO 1790279155144 (4), 1790280128238): the interrupted fetch ──────

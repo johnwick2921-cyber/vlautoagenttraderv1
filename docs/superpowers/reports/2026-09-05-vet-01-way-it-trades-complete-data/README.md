@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 1 complete evidence — 2026-09-05
 
 This directory is the active evidence for the rewritten Section 1 report at base b4376246. The previous `2026-09-05-vet-01-way-it-trades-data` folder is historical and superseded; its 65-row primary population and inferred-risk outputs must not be used as current conclusions.
@@ -6,7 +7,7 @@ All current calculations use entry_time >=1786770000000 and exclude test source,
 
 ## Reproduce without production access
 
-Copy this directory into the authorized scratch location `/home/hoang/nofx-analysis/vet-01-complete-0905` and run there:
+Copy this directory into the authorized scratch location `/home/hoang/vl-analysis/vet-01-complete-0905` and run there:
 
 ```sh
 python3 audit.py

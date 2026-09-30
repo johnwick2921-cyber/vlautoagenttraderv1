@@ -1,9 +1,9 @@
 
-> nofx-web@1.0.0 test
+> vl-web@1.0.0 test
 > vitest run --run src/guide/GuidePage.test.tsx
 
 
- RUN  v4.1.11 /tmp/structural-stop-release-build/nofx/web
+ RUN  v4.1.11 /tmp/structural-stop-release-build/vl/web
 
 
  Test Files  1 passed (1)

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func (a *Agent) skillVisibleFieldSummary(storeUserID, lang, skillName, action string) string {

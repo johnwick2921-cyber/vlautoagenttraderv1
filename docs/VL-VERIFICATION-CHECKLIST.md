@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL SYSTEM — DEFINITIVE VERIFICATION CHECKLIST
 *Every item, how to verify it, what "done" looks like. No guessing.*
 *v1 · 2026-08-16 · check items off as they pass*
@@ -23,14 +24,14 @@ The rule that ends guessing: **a system is finished when every SECTION A and B r
 
 | # | What | How to verify | Done looks like |
 |---|---|---|---|
-| A1 | Running binary = intended code | `journalctl -u nofx --since "5 min ago" \| grep "BOOT INTEGRITY"` | `expected <sha> == rev <sha> · goldens PASS` |
+| A1 | Running binary = intended code | `journalctl -u vl --since "5 min ago" \| grep "BOOT INTEGRITY"` | `expected <sha> == rev <sha> · goldens PASS` |
 | A2 | RELEASE armed after every deploy | `cat deploy/RELEASE` then `git rev-parse HEAD` | The two strings match |
-| A3 | One process, no ghosts | `pgrep -fa nofx-bin` | Exactly one PID |
+| A3 | One process, no ghosts | `pgrep -fa vl-bin` | Exactly one PID |
 | A4 | Frontend bundle current | Hard-reload (Ctrl+Shift+R), check a recently-added control exists | The newest feature is visible |
-| A5 | Wire protocol handshake | `journalctl -u nofx --since "5 min ago" \| grep hello` | `protocol_version=3 source=vltrader-addon` |
+| A5 | Wire protocol handshake | `journalctl -u vl --since "5 min ago" \| grep hello` | `protocol_version=3 source=vltrader-addon` |
 | A6 | Clock synced | `timedatectl` | `System clock synchronized: yes` · `NTP service: active` |
 | A7 | Disk headroom | `df -h /` and `journalctl --disk-usage` | Free space comfortable; journal ≤ 2G cap |
-| A8 | Backup fresh + restorable | `ls -lht ~/nofx-backups/auto/daily/ \| head -3` | A backup from today; RESTORE.md exists |
+| A8 | Backup fresh + restorable | `ls -lht ~/vl-backups/auto/daily/ \| head -3` | A backup from today; RESTORE.md exists |
 | A9 | Rollback rehearsed | Read the documented rollback steps once; confirm they include the RELEASE re-arm | You could do it under stress without thinking |
 
 ---

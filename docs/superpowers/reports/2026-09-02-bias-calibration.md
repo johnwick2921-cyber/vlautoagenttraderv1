@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-09-02 — Bias calibration: three evidence-backed signals vs the shipped weekly-structure bias, pre-registered, out-of-sample
 
 **Dispatch:** BIAS CALIBRATION — round-9 signals on 8 years of NT8 daily bars. READ-ONLY on the engine · no lock · no live calls.
-**Tree:** worktree `~/nofx-biascal`, branch `docs/bias-calibration-0902`, base `61b11d5f` (dev HEAD at start). Scripts: `~/nofx-analysis/bias-calibration/`. Bars source: the `bars` table (SQLite, read-only), NT8-native rows persisted by the bar-source wave (completed bars only — the persister writes `ClosedBarsOnly`). CSVs: `docs/superpowers/reports/2026-09-02-bias-calibration-csvs/`.
+**Tree:** worktree `~/vl-biascal`, branch `docs/bias-calibration-0902`, base `61b11d5f` (dev HEAD at start). Scripts: `~/vl-analysis/bias-calibration/`. Bars source: the `bars` table (SQLite, read-only), NT8-native rows persisted by the bar-source wave (completed bars only — the persister writes `ClosedBarsOnly`). CSVs: `docs/superpowers/reports/2026-09-02-bias-calibration-csvs/`.
 **Evidence tiers:** [A] directly verified · [B] inferred · [C] speculation.
 
 ---
@@ -9,7 +10,7 @@
 ## PRE-REGISTRATION HEADER (fixed 2026-09-02 19:20 CT, BEFORE any signal computation)
 
 ### P1 — Data inventory (measured, not looked-at-for-results)
-Query: `SELECT tf, symbol, COUNT(*), MIN(open_time_ms), MAX(open_time_ms) FROM bars WHERE tf IN (...) GROUP BY tf, symbol` against `~/nofx/data/data.db` (read-only), 2026-09-02 19:18 CT.
+Query: `SELECT tf, symbol, COUNT(*), MIN(open_time_ms), MAX(open_time_ms) FROM bars WHERE tf IN (...) GROUP BY tf, symbol` against `~/vl/data/data.db` (read-only), 2026-09-02 19:18 CT.
 
 | TF | MNQ range (UTC) | n MNQ | ES range (UTC) | n ES |
 |---|---|---|---|---|
@@ -61,7 +62,7 @@ All bars from the `bars` table only (no resolver call, no live system, no engine
 
 ## RESULTS (filled after P1–P8 were frozen)
 
-All numbers from `~/nofx-analysis/bias-calibration/calibrate.py` (stdlib Python, read-only `bars` table). Queries logged in `run.log`. Binomial one-sided p-values are the normal approximation with continuity correction (exact tails overflow float at n≈700 — stated). S1 momentum computed on **log** close-to-close returns per pre-reg; S2/S3 on arithmetic ratios per pre-reg. Friction = 1 pt per side charged on |Δpos| (2-pt round trip). `hit` = fraction of periods where predicted sign == realized sign; neutral control weeks count as non-hits (called-only rows reported separately).
+All numbers from `~/vl-analysis/bias-calibration/calibrate.py` (stdlib Python, read-only `bars` table). Queries logged in `run.log`. Binomial one-sided p-values are the normal approximation with continuity correction (exact tails overflow float at n≈700 — stated). S1 momentum computed on **log** close-to-close returns per pre-reg; S2/S3 on arithmetic ratios per pre-reg. Friction = 1 pt per side charged on |Δpos| (2-pt round trip). `hit` = fraction of periods where predicted sign == realized sign; neutral control weeks count as non-hits (called-only rows reported separately).
 
 ### D2 per signal — exploration vs holdout
 
@@ -132,7 +133,7 @@ None of the three signals clears the pre-registered bar, and the incumbent — t
 
 ## Method / artifacts
 
-- Script: `~/nofx-analysis/bias-calibration/calibrate.py` (stdlib only, deterministic, no seeds).
+- Script: `~/vl-analysis/bias-calibration/calibrate.py` (stdlib only, deterministic, no seeds).
 - CSVs (every observation): `docs/superpowers/reports/2026-09-02-bias-calibration-csvs/` — `s1_{MNQ,ES}_look{21,63,252}.csv`, `s2_15m.csv`, `s2_30m.csv`, `s3_15m.csv`, `control_{MNQ,ES}_weekly.csv`.
 - Pre-registration pinned at commit `43498e24` (this branch) BEFORE any computation; results computed afterward with no definition changes (one mechanical fix: 30m RTH-close stamp; S1 log returns per pre-reg).
 

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ── THE DESK STRIP (2026-09-06) ──────────────────────────────────────────────

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // NO-TRADE BAND (2026-09-02) — the WRITE SITE. The card can only be honest if

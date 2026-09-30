@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 0A-2 Sync-Row Audit + Test-Row Quarantine & Ledger-Surface Honesty — 2026-08-31
 
 **Rev:** `98a9b4cfb479197f55047b31f6cdacc1b565ec85` (Go, boot 15:36:04 CT, PID 1391022, goldens PASS)
 **FE:** committed + `npm run build` (served by the frontend host; no boot needed)
-**Rollback kept:** `nofx-bin.prev.boot` = `a0c7ff0b118769cabfb39c03d965637190461768`
-**DB backups:** `~/nofx-backups/class27-backfill/data.db.pre-backfill-151037` · `~/nofx-backups/0a2/data.db.pre-0a2-153344`
+**Rollback kept:** `vl-bin.prev.boot` = `a0c7ff0b118769cabfb39c03d965637190461768`
+**DB backups:** `~/vl-backups/class27-backfill/data.db.pre-backfill-151037` · `~/vl-backups/0a2/data.db.pre-0a2-153344`
 
 ---
 

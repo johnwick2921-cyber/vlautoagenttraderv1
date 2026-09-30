@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W3 — T1 red-news HARD blackout windows.

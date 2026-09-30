@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/censuswalk"
-	"nofx/market"
+	"vl/internal/censuswalk"
+	"vl/market"
 )
 
 // W-EXEC-TRUTH W2 — the confirm resolver, pinned at the production call sites:

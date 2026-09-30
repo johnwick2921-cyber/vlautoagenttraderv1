@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # P0-ADJ — Breakeven "Not Firing" Audit (hotfix/breakeven-dead)
 
 **Date:** 2026-08-19 · **Branch:** `hotfix/breakeven-dead` (off #51's merge base `49dd83c9`)
@@ -23,7 +24,7 @@ The owner's observation ("stop has not moved to BE") was correct **at the time i
 
 ### The live firing, verbatim
 
-Go (complete file log `data/nofx_2026-08-19.log` — journald suppressed this line, see §Root-cause-of-the-false-alarm):
+Go (complete file log `data/vl_2026-08-19.log` — journald suppressed this line, see §Root-cause-of-the-false-alarm):
 
 ```
 08-19 11:36:24 [INFO] trader/auto_trader.go:179 🎯 auto-breakeven: MNQ SHORT +51.2 pts in profit → stop moved to breakeven (entry 29650.75)
@@ -89,7 +90,7 @@ Each signal_id appears exactly once — the `breakevenDone` idempotence held liv
 
 Two compounding observability gaps — the same pair that produced the phantom-position false alarm:
 
-1. **journald flood suppression.** The TCP frame flood (~58k INFO frames/min) trips journald's rate limit — 5k–25k messages dropped per 30s window today [A]. The 🎯 auto-breakeven line was among the suppressed; `journalctl` looked silent while `data/nofx_2026-08-19.log` (complete) had it. Owner fix already queued: `sudo bash deploy/install-journald.sh` (§9 of the ledger-close report).
+1. **journald flood suppression.** The TCP frame flood (~58k INFO frames/min) trips journald's rate limit — 5k–25k messages dropped per 30s window today [A]. The 🎯 auto-breakeven line was among the suppressed; `journalctl` looked silent while `data/vl_2026-08-19.log` (complete) had it. Owner fix already queued: `sudo bash deploy/install-journald.sh` (§9 of the ledger-close report).
 2. **INFO level → not in `log_events`.** The P6 DB log sink captures WARN+ only, so breakeven fires are invisible to the dashboard/DB even though they're the single most owner-relevant in-trade event.
 
 **Recommended follow-up (owner call, 1 commit + flat-window deploy):** promote the auto-breakeven fire/fail lines to WARN (or write an in-app alert row) so every fire lands in `log_events`/alerts regardless of journald. Not done in this dispatch: verdict is no-defect, the change would touch a live path, and deploy is blocked anyway (position open — flat-window rule). Dispatch 2.1's log spec is otherwise already satisfied (fired line exists; ACK is NT8-logged; `breakeven_armed` line would ride along with the same follow-up).

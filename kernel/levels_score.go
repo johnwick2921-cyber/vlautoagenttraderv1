@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // P1.5 — CONFLUENCE SCORER → graded TOP-8.

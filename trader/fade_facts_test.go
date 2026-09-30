@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W2 E1 — THE 09-03 REPLAY, THROUGH THE FACTS BUILDER ─────────────────────

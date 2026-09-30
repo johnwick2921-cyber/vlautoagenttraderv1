@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 func TestCreateTraderSkillCollectsMissingFieldsAndCreatesTrader(t *testing.T) {

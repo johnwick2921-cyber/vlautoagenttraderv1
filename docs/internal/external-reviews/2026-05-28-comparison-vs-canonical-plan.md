@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Comparison — External Architecture Report vs Canonical Plan (2026-05-28)
 
 > **Companion to:** [`2026-05-28-end-to-end-architecture.md`](2026-05-28-end-to-end-architecture.md)
@@ -22,7 +23,7 @@ The report's TL;DR opens with "the futures/NT8 adaptation described in the brief
 
 | Branch | Tip SHA | What's there |
 |---|---|---|
-| `origin/dev` (GitHub default) | `ab5873e2de261fe9327bb760686b5de0e2c4f3fb` | Upstream crypto NOFX — matches the report's observation |
+| `origin/dev` (GitHub default) | `ab5873e2de261fe9327bb760686b5de0e2c4f3fb` | Upstream crypto VL — matches the report's observation |
 | `origin/main` | `6c3333a6a698d64e8a4108fbb0f34ac3663592bd` | **All the futures work** — `ninjascript/`, `provider/ninjatrader/tcp_server.go`, `kernel/engine_prompt_futures.go`, ADR-007, 25 v1.0-* tags, the canonical plan with the 2026-05-28 NT8 pivot |
 
 Default-branch settings on GitHub are persistent and have not been updated since the upstream fork. The operator's day-to-day trunk is `main`. **Anyone re-running the external probe should target `origin/main`, not the GitHub-declared default.** This single fact converts almost every "INFERRED" item in the report's §12 to "confirmed."
@@ -81,7 +82,7 @@ The actual `kernel/engine_position.go` validActions map contains **6** entries: 
 The report (§1) correctly notes:
 > "CHANGELOG.md last-updated 2025-11-01… none of which mention NT8, Databento, v1.5.x TCP fixes, Plan 4.4, ADR-007, or N11"
 
-True. **But** this is because the operator's change log is the **canonical plan doc + git tags**, not `CHANGELOG.md`. The latter is a vestige from the upstream NOFX repo. The 25 `v1.0-plan*` and `v1.0-task*` tags on origin (visible via `git tag -l`) ARE the version log for the futures work; the plan doc's Ship Log section reproduces them. CHANGELOG.md being stale is a known cosmetic issue (it should either be updated or marked superseded by the plan doc), not evidence the futures work is absent.
+True. **But** this is because the operator's change log is the **canonical plan doc + git tags**, not `CHANGELOG.md`. The latter is a vestige from the upstream VL repo. The 25 `v1.0-plan*` and `v1.0-task*` tags on origin (visible via `git tag -l`) ARE the version log for the futures work; the plan doc's Ship Log section reproduces them. CHANGELOG.md being stale is a known cosmetic issue (it should either be updated or marked superseded by the plan doc), not evidence the futures work is absent.
 
 ### W5 — FuturesChart.tsx and `/api/klines/stream` SSE endpoint described as if shipped
 

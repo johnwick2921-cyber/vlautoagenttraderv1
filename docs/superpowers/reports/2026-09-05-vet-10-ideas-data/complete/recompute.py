@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Docs-only Section 10 extract. Production connection is mode=ro + query_only.
-Run: python3 recompute.py --db /home/hoang/nofx/data/data.db --out SCRATCH
+Run: python3 recompute.py --db /home/hoang/vl/data/data.db --out SCRATCH
 Offline: python3 recompute.py --sample population.csv --out SCRATCH
 """
 import argparse,csv,datetime as dt,hashlib,json,math,pathlib,random,sqlite3

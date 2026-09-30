@@ -15,7 +15,7 @@
       ],
       "sha256": "dfdccb6b6ce84439340aabcc32432314ebef29819c8e4ecf7dc01633371badb2",
       "notes": "All repair claims read; focused regressions distinguished from failed earlier suites, final combined suite pending and runtime unverified.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "docs/superpowers/SYSTEM-MAP.md",
@@ -28,7 +28,7 @@
       ],
       "sha256": "46b5a393228da411ae719e1ad73d9a64488edc23faff9b5b21f1743a0abb35dd",
       "notes": "Full606 lines recovered using overlapping bounded reads; old appended permission narrative contradicts current OneSetup consumer.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "trader/structural_geometry.go",
@@ -41,7 +41,7 @@
       ],
       "sha256": "fd9a254e526a955749671943b951d6bd42a838013ce185ba31a850e50c4ed739",
       "notes": "Full resolver/composer/target selection/persistence/refusal retirement read; geometry is admission input, not authorization.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "store/structural_geometry.go",
@@ -54,10 +54,10 @@
       ],
       "sha256": "2403f07b7aaa8ff321f2a0cb48d6bcfd5557e92b42a206f7a158e7fef76dbdd2",
       "notes": "Full policy/default provenance, transactional record/counter persistence, exact-prefix reads.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
-      "path": "deploy/nofx-db-backup.sh",
+      "path": "deploy/vl-db-backup.sh",
       "mode": "full/manual",
       "ranges": [
         [
@@ -67,7 +67,7 @@
       ],
       "sha256": "2f762c1f41fcef933583e570a73acaab6ef4751add3ef6a577939e1d43e99757",
       "notes": "Full online backup, quick_check, gzip/promotion/prune; no cleanup trap despite comment.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "main_boot_order_test.go",
@@ -80,7 +80,7 @@
       ],
       "sha256": "d6c7126529de2936ca8a3e227e664ececf5aea963a636e7d8025fe028a7511f2",
       "notes": "AST production call order check; lexical order does not prove runtime path execution.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "kernel/structural_prompt_contract_test.go",
@@ -93,7 +93,7 @@
       ],
       "sha256": "9ca020324bd051627d710a4ec54edcd6ac38288c5e7888f1913a21acaa449f0c",
       "notes": "Prompt contract and warning tests; not live AI compliance evidence.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "trader/protection_shape_regression_test.go",
@@ -106,7 +106,7 @@
       ],
       "sha256": "49f44374ae286be07ae9806c358e8f74314cada5d7da3c2388f86bc59fcc0189",
       "notes": "Synthetic shape adjudication matrix; no NT8 runtime evidence.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "docs/superpowers/reports/2026-09-13-structural-stop-daily-loss-evidence/backup.json",
@@ -119,7 +119,7 @@
       ],
       "sha256": "3d727484f5e47c205ea292d631925e090e2e8948b2ddafacd5bfc2de82e380e8",
       "notes": "Receipt read only; no backup file rehash/restore or live trading verification.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "docs/superpowers/reports/2026-09-13-structural-stop-daily-loss-evidence/postboot-proof-status.json",
@@ -132,7 +132,7 @@
       ],
       "sha256": "afe13f512e840e058b4aee1971aecf90e9a56dcce04d5f4ab3606412e51ed80f",
       "notes": "Receipt read only; no backup file rehash/restore or live trading verification.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "docs/superpowers/reports/2026-09-13-repo-understanding/README.md",
@@ -145,7 +145,7 @@
       ],
       "sha256": "29d8a8ad3de5e8370d457a605b91d894175974143d7378257f3bcc40bb736573",
       "notes": "Baseline artifact read in full; counts/revision are interim snapshots, not current completed coverage.",
-      "source_root": "/tmp/nofx-repo-understanding-20260913"
+      "source_root": "/tmp/vl-repo-understanding-20260913"
     },
     {
       "path": "docs/superpowers/reports/2026-09-13-repo-understanding/CHECKPOINT.md",
@@ -158,7 +158,7 @@
       ],
       "sha256": "2ba0cc99652b79177650c587efddd3eace9bdb5ed14369586886e99d2e99b36a",
       "notes": "Baseline artifact read in full; counts/revision are interim snapshots, not current completed coverage.",
-      "source_root": "/tmp/nofx-repo-understanding-20260913"
+      "source_root": "/tmp/vl-repo-understanding-20260913"
     },
     {
       "path": "docs/superpowers/reports/2026-09-13-repo-understanding/coverage-validation.json",
@@ -171,7 +171,7 @@
       ],
       "sha256": "a32c68cc3f474c803fb8eb688c557fb1b6bbc7eb1ff8d9371216203ac3a6a200",
       "notes": "Baseline artifact read in full; counts/revision are interim snapshots, not current completed coverage.",
-      "source_root": "/tmp/nofx-repo-understanding-20260913"
+      "source_root": "/tmp/vl-repo-understanding-20260913"
     },
     {
       "path": "docs/superpowers/reports/2026-09-13-repo-understanding/CTO-TRADING-LOGIC.md",
@@ -184,7 +184,7 @@
       ],
       "sha256": "7ad357bddf16b7316abea8d2eebba0224e511cde8c84d2d9ccb5fcc7a4ad9497",
       "notes": "Baseline artifact read in full; counts/revision are interim snapshots, not current completed coverage.",
-      "source_root": "/tmp/nofx-repo-understanding-20260913"
+      "source_root": "/tmp/vl-repo-understanding-20260913"
     },
     {
       "path": "trader/armed_executor.go",
@@ -213,7 +213,7 @@
       ],
       "sha256": "3299257439458e701d7c5e98f0a36dfa687a99b5a1e283431fe376a99704ab9c",
       "notes": "Production geometry admission, eligible row set, stop/limit placement asymmetry, fill materialization. Also reviewed baseline-to-repair diff; not full file.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "trader/entry_gate.go",
@@ -226,7 +226,7 @@
       ],
       "sha256": "b8577eb8d04986edce6093247aaf66f8a5570b110755076e5760b4fc4e0690c6",
       "notes": "Canonical daily,strict,bias,scenario,invalidation,shadow,RR,ATR/open-position chain; some missing facts intentionally fail open.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "trader/ninjatrader/tcp_trader.go",
@@ -239,7 +239,7 @@
       ],
       "sha256": "b19b6268ef01695dc18a6566f4558490f6f8f85b3fe816cb7c27e59db74971dd",
       "notes": "Limit/stop adapters boot refusal then bound SIM; persist registration before socket send. Also repair diff reviewed.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "ninjascript/VLTraderTCPClient.cs",
@@ -252,7 +252,7 @@
       ],
       "sha256": "78565bce3703fea028a82217117d64fd29e9c69e6c0e879e87df27c63bbb472e",
       "notes": "Bracket cleanup drops bookkeeping even on cancellation exception; close uses symbol account map and active fallback.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "web/src/lib/api/plan.ts",
@@ -269,7 +269,7 @@
       ],
       "sha256": "d715502ed20409107f56ccd5016a77132eefa65c9d2574b7834f6d403bc0e019",
       "notes": "PlanToday lacks explicit plan_id/overlay_version; postOverlay sends no expected revision.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     },
     {
       "path": "kernel/planner_prompt.go",
@@ -282,7 +282,7 @@
       ],
       "sha256": "c630ce2897384eb3d0269a92c1f8d92df634e4b26ddde352e7398d3a3fe4fa2f",
       "notes": "Current prompt explicitly exempts structural fades from legacy ATR and says no-trade valid.",
-      "source_root": "/tmp/nofx-understanding-surfaces-20260913"
+      "source_root": "/tmp/vl-understanding-surfaces-20260913"
     }
   ],
   "unread": [],

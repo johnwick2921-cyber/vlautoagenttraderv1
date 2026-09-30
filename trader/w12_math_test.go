@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W12 — auto-breakeven trigger basis: points = (mark−entry) for LONG, (entry−mark)

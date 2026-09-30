@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"nofx/internal/installpath"
+	"vl/internal/installpath"
 )
 
 // resolveMaintenanceDataDir is main's half of the ONE resolver (MUST-2): the

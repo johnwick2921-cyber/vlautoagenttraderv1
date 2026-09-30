@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	nt "nofx/provider/ninjatrader"
+	nt "vl/provider/ninjatrader"
 )
 
 func px(v float64) *float64 { return &v }

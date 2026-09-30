@@ -10,8 +10,8 @@
 package trader
 
 import (
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // scenarioAnchorFor reduces a scenario to the one price a level can be compared

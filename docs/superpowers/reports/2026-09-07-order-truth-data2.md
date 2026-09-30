@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # ORDER-TRUTH — DATA-2
 
 Implementation `ae9bd136d1d20df072d4a5d95c30e0beb08eb749`, branch `fix/order-truth-data2-0907`, after the separate LABEL wave `d79cc7acb76b79e7564b8c541091216c3122311a`. This is tested source, not a claim of deployment. No execution, placement, cancellation, account binding or database schema behavior changes.
@@ -18,17 +19,17 @@ Spec freshness: `738ea9b72925f0061a3f16a2cb5818f4ab86d153 | 2026-09-07T21:21:45-
 
 [A] At 21:44:16.879 CT, trace.20260907.00001.txt:20 says exactly `UserDataDir='C:\Users\hoang\Documents\NinjaTrader 8\'`. The loaded source is therefore its bin/Custom/AddOns/VLTraderTCPClient.cs. Line 55 declares `2026-09-05-g2`, MD5 `34efc3f85d0a775247f6c2f2ea576224`, 140520 bytes.
 
-[A] h1 is present at `/home/hoang/nofx-oco/ninjascript/VLTraderTCPClient.cs` (fix/bracket-oco-separation worktree) and byte-identically at `/home/hoang/nofx/ninjascript/VLTraderTCPClient.cs`. Both line 55 declarations are `2026-09-07-h1`; MD5 `d0a604d79163f36557af89edc9f40777`, 157510 bytes. The older lane scratchpad file HEAD_VLTraderTCPClient.cs is actually g2 and is not the source to copy. Today's NT8 native log/trace search found no compile errors; the recompiled DLL embeds g2.
+[A] h1 is present at `/home/hoang/vl-oco/ninjascript/VLTraderTCPClient.cs` (fix/bracket-oco-separation worktree) and byte-identically at `/home/hoang/vl/ninjascript/VLTraderTCPClient.cs`. Both line 55 declarations are `2026-09-07-h1`; MD5 `d0a604d79163f36557af89edc9f40777`, 157510 bytes. The older lane scratchpad file HEAD_VLTraderTCPClient.cs is actually g2 and is not the source to copy. Today's NT8 native log/trace search found no compile errors; the recompiled DLL embeds g2.
 
 Owner was given this ONE WSL command, not executed by this agent. It creates a fresh build-named backup of both g2 source and current g2 DLL before replacing the loaded source. Full F5 compilation and NT8 restart remain owner actions.
 
 ```bash
 (
   nt8_custom='/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom' &&
-  nt8_backup=$(mktemp -d /home/hoang/nofx-backups/nt8-addon/2026-09-05-g2.XXXXXX) &&
+  nt8_backup=$(mktemp -d /home/hoang/vl-backups/nt8-addon/2026-09-05-g2.XXXXXX) &&
   cp -p "$nt8_custom/AddOns/VLTraderTCPClient.cs" "$nt8_backup/VLTraderTCPClient.2026-09-05-g2.cs" &&
   cp -p "$nt8_custom/NinjaTrader.Custom.dll" "$nt8_backup/NinjaTrader.Custom.2026-09-05-g2.dll" &&
-  cp -p /home/hoang/nofx-oco/ninjascript/VLTraderTCPClient.cs "$nt8_custom/AddOns/VLTraderTCPClient.cs"
+  cp -p /home/hoang/vl-oco/ninjascript/VLTraderTCPClient.cs "$nt8_custom/AddOns/VLTraderTCPClient.cs"
 )
 ```
 

@@ -45,9 +45,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/store/sqlitedriver"
+	"vl/kernel"
+	"vl/logger"
+	"vl/store/sqlitedriver"
 )
 
 func main() {

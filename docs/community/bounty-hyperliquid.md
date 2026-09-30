@@ -1,10 +1,11 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 🚀 [BOUNTY] Integrate Hyperliquid Exchange Support
 
 ## 💰 Bounty Reward
 **To be discussed** - Open to proposals from contributors
 
 ## 📋 Overview
-We're looking for contributors to add Hyperliquid exchange support to NOFX AI Trading System. Currently supports Binance Futures, seeking to expand to Hyperliquid perpetual contracts.
+We're looking for contributors to add Hyperliquid exchange support to VL AI Trading System. Currently supports Binance Futures, seeking to expand to Hyperliquid perpetual contracts.
 
 ## 🎯 Task Requirements
 
@@ -58,7 +59,7 @@ We're looking for contributors to add Hyperliquid exchange support to NOFX AI Tr
 - API Documentation: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api
 - SDK Examples: https://github.com/hyperliquid-dex
 
-**NOFX Architecture:**
+**VL Architecture:**
 - See `trader/binance_futures.go` as reference implementation
 - Main trading logic: `trader/auto_trader.go`
 - Configuration: `config.json` structure
@@ -128,7 +129,7 @@ type ExchangeClient interface {
 ## 🤝 Support & Questions
 
 - Ask questions in this issue's comments
-- Join our Telegram: [NOFX Developer Community](https://t.me/nofx_dev_community)
+- Join our Telegram: [VL Developer Community](upstream telegram link (removed in the VL rename))
 - Reference existing code: `trader/binance_futures.go`
 
 ## ⚠️ Important Notes

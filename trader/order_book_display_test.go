@@ -1,8 +1,8 @@
 package trader
 
 import (
-	nt "nofx/provider/ninjatrader"
-	nttrader "nofx/trader/ninjatrader"
+	nt "vl/provider/ninjatrader"
+	nttrader "vl/trader/ninjatrader"
 	"testing"
 	"time"
 )

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Provenance validator × W3's merged label — one small wave (2026-09-11)
 
-**Branch** `fix/provenance-merged-label` · lane `provenance-2bdef526/nofx-59[3f0200]` · claim `4f6a1e15` · base dev `f5034570` · read-only findings first, one-line fix second.
+**Branch** `fix/provenance-merged-label` · lane `provenance-2bdef526/vl-59[3f0200]` · claim `4f6a1e15` · base dev `f5034570` · read-only findings first, one-line fix second.
 
 ## The check and the render, quoted
 
@@ -44,4 +45,4 @@ Revert the one line; the pins go RED again.
 
 ## Cutover — booted 08:58:4x CT 2026-09-11, PID 3366586
 
-Owner GO (mid-session, book empty — no resting arm to sweep). Lock `provenance-2bdef526/nofx-59[3f0200]`; gate read three times, legs 1–5 green, no read in flight. Clean clone `~/build-prov/nofx` at `802fb00b` → `vcs.modified=false`, md5 `bf71fabd7336ec2ecc183d22f048bb83`; `701637eb`: RELEASE 802fb00b + GUIDE_BUILT_REV; main tree `--ff-only`; dist rebuilt; A13 backup `nofx-bin.old.dd1e2f0f` (verified to hold dd1e2f0f); `mv` → VERIFY → the owner ran `kill -9 3338065`. Boot integrity: `/api/health` `802fb00b09e5`; `/proc/3366586/exe` `802fb00b…` modified=false, md5 `bf71fabd…` == the build. Sweep: `boot sweep cancelled 0 pre-boot arm(s)`. Five references agree. The next planner read with a merged structural label on a table row is the live proof (attempt 1 accepted without the provenance repair round).
+Owner GO (mid-session, book empty — no resting arm to sweep). Lock `provenance-2bdef526/vl-59[3f0200]`; gate read three times, legs 1–5 green, no read in flight. Clean clone `~/build-prov/vl` at `802fb00b` → `vcs.modified=false`, md5 `bf71fabd7336ec2ecc183d22f048bb83`; `701637eb`: RELEASE 802fb00b + GUIDE_BUILT_REV; main tree `--ff-only`; dist rebuilt; A13 backup `vl-bin.old.dd1e2f0f` (verified to hold dd1e2f0f); `mv` → VERIFY → the owner ran `kill -9 3338065`. Boot integrity: `/api/health` `802fb00b09e5`; `/proc/3366586/exe` `802fb00b…` modified=false, md5 `bf71fabd…` == the build. Sweep: `boot sweep cancelled 0 pre-boot arm(s)`. Five references agree. The next planner read with a merged structural label on a table row is the live proof (attempt 1 accepted without the provenance repair round).

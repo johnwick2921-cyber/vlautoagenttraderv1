@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // TestSignalAccountWire locks the P5.4 wire rule: an UNBOUND trader's signal
@@ -57,6 +57,23 @@ func TestPlaceEntry_UnboundRefuses(t *testing.T) {
 	bound := NewTCPTrader(s, "MNQ", "Sim101")
 	if _, err := bound.OpenLong("MNQ", 1, 1); err == nil || strings.Contains(err.Error(), "no bound account") {
 		t.Fatalf("bound OpenLong must clear the empty-account gate; got err=%v", err)
+	}
+}
+
+// TestPlaceEntry_NonSIMBoundAccountStillRefuses pins the SIM-only law AFTER
+// UPDATER-FLAT-LIVE-OK: a FLAT non-SIM connection may pass the installation
+// census now, but its account is STILL untradeable — the order path's refusal
+// is unchanged, and the exported gate predicate agrees with it.
+func TestPlaceEntry_NonSIMBoundAccountStillRefuses(t *testing.T) {
+	s := ntwire.NewTCPServer(nil)
+	s.SetAccountsList([]ntwire.AccountInfo{{Name: "Live123", IsSim: false}}, "Live123")
+
+	tr := NewTCPTrader(s, "MNQ", "Live123")
+	if tr.IsAccountTradeable("Live123") {
+		t.Fatal("IsAccountTradeable must be false for a non-SIM account, whatever the census says")
+	}
+	if _, err := tr.OpenWithBracket("MNQ", "long", 1, 0, 0); err == nil || !strings.Contains(err.Error(), "not tradeable") {
+		t.Fatalf("a NON-SIM bound account must refuse the entry after the census ruling: err=%v", err)
 	}
 }
 

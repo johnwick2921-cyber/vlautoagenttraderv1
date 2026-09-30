@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W6 — emitAlert is the single production producer for the alert bus (the audit's

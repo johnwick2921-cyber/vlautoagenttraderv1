@@ -15,7 +15,7 @@ func TestEstimateTokens_DefaultConfig(t *testing.T) {
 
 	// Breakdown should sum approximately to total (before 15% margin)
 	subtotal := est.Breakdown.SystemPrompt + est.Breakdown.MarketData +
-		est.Breakdown.RankingData + est.Breakdown.QuantData + est.Breakdown.FixedOverhead
+		est.Breakdown.FixedOverhead
 	expectedTotal := subtotal * 115 / 100
 	if est.Total != expectedTotal {
 		t.Errorf("total %d != breakdown subtotal %d * 1.15 = %d", est.Total, subtotal, expectedTotal)
@@ -104,9 +104,9 @@ func TestGetEffectiveCoinCount(t *testing.T) {
 		t.Errorf("static coin count = %d, want 2", got)
 	}
 
-	config.CoinSource.SourceType = "ai500"
-	config.CoinSource.AI500Limit = 5
+	config.CoinSource.SourceType = "hyper_main"
+	config.CoinSource.HyperMainLimit = 5
 	if got := config.getEffectiveCoinCount(); got != 5 {
-		t.Errorf("ai500 coin count = %d, want 5", got)
+		t.Errorf("hyper_main coin count = %d, want 5", got)
 	}
 }

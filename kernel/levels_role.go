@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ADDENDUM (1) — ROLE GRAMMAR (same wave as Pack B, 2026-08-26).

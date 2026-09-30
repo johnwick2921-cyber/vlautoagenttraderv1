@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W-ONE-BUTTON M2.1: hardening after the M2 adversarial review
 
 **Lane:** Claude-101 · **Branch:** `feat/one-button-m2.1-hardening` · **Base:** the M2 head `18a157cf`. M2 itself later merged as #182 (`0e490e44`), and M2.1 has merged `origin/dev` since; no rebase. **Dispatch:** CTO rulings `1790139907454`, `1790140189916`, `1790141392189` (+ correction `1790141420995`), `1790142485221`.
@@ -49,6 +50,6 @@ Every item was built RED first, or the behaviour was already correct and only th
 
 ## What was NOT done
 
-- No merge, no deploy, no restart, no lock taken. `/home/hoang/nofx` untouched.
+- No merge, no deploy, no restart, no lock taken. `/home/hoang/vl` untouched.
 - The C# is not copied to AddOns, not compiled in NT8, and NT8 is not restarted; that is the owner's F5 step after M2.1 merges.
 - GUIDE_BUILT_REV not bumped. No live DB writes.

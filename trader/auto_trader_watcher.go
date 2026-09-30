@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // Phase 3 — IN-POSITION WATCHER (final-bundle 2026-08-19). Owner ruling:

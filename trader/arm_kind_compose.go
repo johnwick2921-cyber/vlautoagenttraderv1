@@ -13,7 +13,7 @@ package trader
 import (
 	"fmt"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // armLegKindFor returns the entry type for one arm leg, or a REFUSAL reason.

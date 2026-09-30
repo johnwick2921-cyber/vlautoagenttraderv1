@@ -3,8 +3,8 @@ package ninjatrader
 import (
 	"errors"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // W117 slice A (F2) — the owning trader's durable execution consumers ride the

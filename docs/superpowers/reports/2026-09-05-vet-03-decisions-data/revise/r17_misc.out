@@ -10,8 +10,8 @@
 .audit/knob_registry_store_knob_registry_table_.md
 .audit/the_entry_gate_trader_entry_gate_go_disp.md
 deploy/RELEASE
-deploy/nofx-claim-test.sh
-deploy/nofx-claim.sh
+deploy/vl-claim-test.sh
+deploy/vl-claim.sh
 kernel/arm_kind.go
 kernel/armable_contract_derive_test.go
 kernel/levels_volume_boot.go
@@ -33,16 +33,16 @@ YES
 YES
 36648655 2026-09-04 13:22:30 -0500 Merge remote-tracking branch 'origin/dev' into dev
 15340faa 2026-09-04 13:22:07 -0500 Merge commit 'feba0ce5' into deploy/merge-claim
-0f87a2ca 2026-09-04 12:42:09 -0500 claim: mock plan card states the resolved plan_mode — nofx-47, 2026-09-04T12:42:09-05:00
+0f87a2ca 2026-09-04 12:42:09 -0500 claim: mock plan card states the resolved plan_mode — vl-47, 2026-09-04T12:42:09-05:00
 ebe07d5f 2026-09-04 10:49:56 -0500 merge fix/reaper-reads-snapshot (boot 9, owner ruling): the stale-working reaper reads the broker's book, never order_update silence
 24641ff6 2026-09-04 10:49:56 -0500 merge fix/prompt-floor-bootline-literals (boot 9): D5 regression fix — a live row wins the UpsertArm lookup; shadowed author derives kind
 3b8d6cd6 2026-09-04 10:15:43 -0500 fix(D5 regression): a live row wins the lookup — stop minting a placement per cycle
 789b31aa 2026-09-04 10:12:53 -0500 fix(step0): a claim must name its session — the checker that makes it a rule
-5bcb5455 2026-09-04 10:12:53 -0500 claim: claim-identity enforcement + worktree prune — nofx-b3, 2026-09-04T10:10:00-05:00
+5bcb5455 2026-09-04 10:12:53 -0500 claim: claim-identity enforcement + worktree prune — vl-b3, 2026-09-04T10:10:00-05:00
 af53e95f 2026-09-04 10:07:47 -0500 merge fix/prompt-floor-bootline-literals (boot 9, 2026-09-04): prompt stop-floor reads MinSLATRMult · volume-wave boot line read not typed · D32 decision-path refusal logged · D-25 armable set derived in prompt AND contract
 e54d0ad7 2026-09-04 09:51:48 -0500 fix(reaper): the unnameable-row guard, transient broker states, and the report
 51916172 2026-09-04 09:48:03 -0500 fix(reaper): read the broker's book, not order_update silence
-0c2b0c9e 2026-09-04 09:44:08 -0500 claim: reaper reads the broker snapshot, not order_update silence — nofx-47, 2026-09-04T09:44:08-05:00
+0c2b0c9e 2026-09-04 09:44:08 -0500 claim: reaper reads the broker snapshot, not order_update silence — vl-47, 2026-09-04T09:44:08-05:00
 ### E2 config_resolved shape
 <class 'dict'> ['knobs', 'summary']
 <class 'list'> {'path': 'acceptance_rule', 'status': 'candidate-unverified', 'ui_label': 'no known reader — pending verification', 'consumers': [], 'dual_level': False, 'note': 'no consumer found by a FIELD grep on 2026-09-03 (grep -rn ".<Field>\\b" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change.'}
@@ -94,5 +94,5 @@ docs/superpowers/reports/2026-09-05-vet-03-decisions-data/q01_store_premises.out
 ### E4 secret scan of revise dir
 clean
 ### E5 09-04 arm refusals line for 09:02:09 and 02:00:46
-ugrep: warning: data/nofx_2026-09-03.log: No such file or directory
-ugrep: warning: data/nofx_2026-09-04.log: No such file or directory
+ugrep: warning: data/vl_2026-09-03.log: No such file or directory
+ugrep: warning: data/vl_2026-09-04.log: No such file or directory

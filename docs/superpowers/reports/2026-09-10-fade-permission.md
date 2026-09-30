@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W2 — FADE PERMISSION: is the book allowed to fade right now?
 
 **Branch** `fix/fade-permission` · **base at accept** dev `580e88b3` · rebased onto
 `29eda2b3` (103's W-TF) and `4e9289f7` · **running rev verified** `adae3bb41b31`
-from BOTH `/api/health` and `/proc/2560377/exe` (sha256 identical to `nofx-bin`).
+from BOTH `/api/health` and `/proc/2560377/exe` (sha256 identical to `vl-bin`).
 **Scope (A31)** RECORD and SHOW. No gate, arm, order, scenario, level, exit or
 cadence changed. `trader/fade_no_refusal_test.go` fails if the arm path can read
 the label.
@@ -203,14 +204,14 @@ green in isolation. The split-arm fixture is **green** at this head.
 
 ## ROLLBACK
 
-`mv nofx-bin nofx-bin.failed.<rev> && mv nofx-bin.old.<prev> nofx-bin && echo <prev> > deploy/RELEASE && kill -9 $(pgrep -x nofx-bin)`. The columns are additive and NULL; nothing reads them to act.
+`mv vl-bin vl-bin.failed.<rev> && mv vl-bin.old.<prev> vl-bin && echo <prev> > deploy/RELEASE && kill -9 $(pgrep -x vl-bin)`. The columns are additive and NULL; nothing reads them to act.
 
 ---
 
 ## F · CUTOVER + PROOF — booted 18:47:07 CDT, marker `4dc0fae1`
 
 `🔐 BOOT INTEGRITY OK — rev 4fc670aa4508 · expected 4fc670aa · goldens PASS`.
-Clean clone in a dir named `nofx`, **`vcs.modified=false`**. Five references +
+Clean clone in a dir named `vl`, **`vcs.modified=false`**. Five references +
 `/proc/exe` all `4fc670aa4508`. Leg 5 went in flight between gate and swap;
 waited out (1004s), re-read five-for-five, then the kill.
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // ── SETTINGS INTEGRITY R1/R2/R3 (owner rulings 2026-09-03) ───────────────────

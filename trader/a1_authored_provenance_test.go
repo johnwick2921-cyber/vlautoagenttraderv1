@@ -28,8 +28,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func TestA1AuthoredEntryZoneAdmitsNullWidthMapLines(t *testing.T) {

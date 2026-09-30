@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── S1 STRUCTURE LAYER — pins ───────────────────────────────────────────────

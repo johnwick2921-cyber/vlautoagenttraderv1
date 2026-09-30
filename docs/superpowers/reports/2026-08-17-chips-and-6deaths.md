@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # The six deaths were ONE mechanism fed a poisoned input — and the chips were dead because the card has TWO chip rows and I wired only one
 
 ## ITEM 1 — why the chips were still dead
@@ -53,10 +54,10 @@ The bar cache is clean: the captured Sunday-reopen window has **zero** flat bars
 ## Deploy
 
 ```bash
-cd /home/hoang/nofx && git pull
-go build -o nofx-bin . && echo BUILD OK
+cd /home/hoang/vl && git pull
+go build -o vl-bin . && echo BUILD OK
 git rev-parse HEAD > deploy/RELEASE     # MANDATORY — else the boot assertion refuses trading
-sudo systemctl restart nofx
+sudo systemctl restart vl
 cd web && npm run build && cd ..        # then HARD reload (Ctrl+Shift+R)
 ```
 

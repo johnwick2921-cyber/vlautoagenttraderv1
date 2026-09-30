@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/telemetry"
+	ntwire "vl/provider/ninjatrader"
+	"vl/telemetry"
 )
 
 // W1b E12(b) — THE B3 DEDUPE SLOT IS RECORDED ONLY BY A REAL SEND.

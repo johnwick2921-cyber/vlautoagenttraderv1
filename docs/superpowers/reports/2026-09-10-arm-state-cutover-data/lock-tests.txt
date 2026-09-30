@@ -38,8 +38,8 @@
   ok   lock dir is gone
 == with-heartbeat keeps a long job fresh, and stops when it ends ==
   ok   with-heartbeat beat at least once
-cat: /tmp/tmp.Hew3HpC11L/nofx-main.lock.d/heartbeat: No such file or directory
-cat: /tmp/tmp.Hew3HpC11L/nofx-main.lock.d/heartbeat: No such file or directory
+cat: /tmp/tmp.Hew3HpC11L/vl-main.lock.d/heartbeat: No such file or directory
+cat: /tmp/tmp.Hew3HpC11L/vl-main.lock.d/heartbeat: No such file or directory
   ok   beater does not outlive its command
 == reclaim: REFUSED on a fresh heartbeat ==
   ok   reclaim rc on fresh is nonzero
@@ -110,7 +110,7 @@ cat: /tmp/tmp.Hew3HpC11L/nofx-main.lock.d/heartbeat: No such file or directory
   ok   and the naive whole-line split is the wrong number
 == release NEVER signals a group it did not create ==
   ok   a keeper.pid naming someone else's group is not signalled
-deploy/nofx-lock-test.sh: line 412: 2315428 Killed                  setsid bash -c 'sleep 30' > /dev/null 2>&1
+deploy/vl-lock-test.sh: line 412: 2315428 Killed                  setsid bash -c 'sleep 30' > /dev/null 2>&1
 == a keeper.pid that is not a number is inert ==
   FAIL release of a lock with a corrupt keeper.pid still succeeds
      want [0] got [1]

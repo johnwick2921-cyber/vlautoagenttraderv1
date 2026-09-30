@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"nofx/internal/installpath"
+	"vl/internal/installpath"
 )
 
 // The worker socket's name. This file is the ONLY place the literal may

@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/trader/types"
+	"vl/trader/types"
 )
 
 // recordingTrader extends MockTrader to record which close method was invoked,

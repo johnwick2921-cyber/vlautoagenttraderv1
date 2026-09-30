@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import pathlib,sqlite3,json,hashlib,subprocess,datetime
 from zoneinfo import ZoneInfo
-ROOT=pathlib.Path('/home/hoang/nofx-vet-06-complete'); OUT=pathlib.Path(__file__).resolve().parent
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);con.execute('PRAGMA query_only=ON');con.execute('BEGIN');con.row_factory=sqlite3.Row
+ROOT=pathlib.Path('/home/hoang/vl-vet-06-complete'); OUT=pathlib.Path(__file__).resolve().parent
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);con.execute('PRAGMA query_only=ON');con.execute('BEGIN');con.row_factory=sqlite3.Row
 r={'calendar_count':con.execute('select count(*) from calendar_slices').fetchone()[0], 'calendar_recent':[dict(z) for z in con.execute("SELECT * FROM calendar_slices WHERE trade_date>='2026-09-03' ORDER BY trade_date")], 'static_files':[]}
-for p in [ROOT/'calendar_static_t1.json',pathlib.Path('/home/hoang/nofx/calendar_static_t1.json')]:
+for p in [ROOT/'calendar_static_t1.json',pathlib.Path('/home/hoang/vl/calendar_static_t1.json')]:
  data=p.read_bytes(); ev=json.loads(data);r['static_files'].append(dict(path=str(p),sha256=hashlib.sha256(data).hexdigest(),events=len(ev),t1=sum(e['impact']=='T1' for e in ev),notes=sum(e['impact']=='note' for e in ev)))
 # Current guard's close-reason filter is deliberately different from research plan eligibility.
 q="""SELECT id,entry_time,exit_time,pnl_corrected,plan_id,close_reason FROM trader_positions WHERE status='CLOSED' AND close_reason NOT IN ('reconcile_flat','unresolved','e7_farside_test') AND pnl_corrected IS NOT NULL AND entry_time>=1786770000000 ORDER BY exit_time,id"""
@@ -23,7 +23,7 @@ for path in ['kernel/engine_analysis.go','trader/entry_gate.go']:
  text=subprocess.check_output(['git','show','36648655:'+path],cwd=ROOT,text=True).splitlines()
  if path.endswith('engine_analysis.go'):lines.extend(f'RUNNING 36648655:{path}:{i}: {text[i-1]}' for i in range(183,189))
  else:lines.append('RUNNING 36648655:'+path+': DailyForceFlat occurrences='+str(sum('DailyForceFlat' in s for s in text)))
-log=pathlib.Path('/home/hoang/nofx/data/nofx_2026-09-03.log')
+log=pathlib.Path('/home/hoang/vl/data/vl_2026-09-03.log')
 for i,s in enumerate(log.read_text(errors='replace').splitlines(),1):
  if s.startswith('09-03 11:10:33') and ('ledger boot:' in s or 'ScanIntervalMinutes=2' in s):lines.append(f'{log}:{i}: {s}')
 (OUT/'source-evidence.txt').write_text('\n'.join(line.rstrip() for line in lines)+'\n')

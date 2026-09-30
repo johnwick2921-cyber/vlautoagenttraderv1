@@ -417,7 +417,7 @@
       "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
     },
     {
-      "path": "/home/hoang/nofx/AGENTS.md",
+      "path": "/home/hoang/vl/AGENTS.md",
       "mode": "full/manual",
       "ranges": [
         [

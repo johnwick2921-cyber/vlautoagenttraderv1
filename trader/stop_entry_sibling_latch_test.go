@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	nttrader "nofx/trader/ninjatrader"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 // W-EXEC-TRUTH W0 (defect 6) — A STOP ENTRY THAT NEVER REACHED THE WIRE DOES

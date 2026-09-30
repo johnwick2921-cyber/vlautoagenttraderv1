@@ -6,8 +6,8 @@ import (
 )
 
 // PIN (D4, in-process half): THIS test binary links the whole worker set —
-// nofx/store (the hold, modernc via store/sqlitedriver) and, through
-// library_activation.go, nofx/internal/activation. It got here, so no second
+// vl/store (the hold, modernc via store/sqlitedriver) and, through
+// library_activation.go, vl/internal/activation. It got here, so no second
 // "sqlite" registration panicked at init; and the registry it built has
 // "sqlite" exactly once and no duplicate name at all. (A duplicate never
 // reaches this line — database/sql panics in init — which is why the naming

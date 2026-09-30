@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/store"
+	"vl/kernel"
+	"vl/logger"
+	"vl/store"
 )
 
 // ── CLEANUP BATCH 2, B3 — installActivePlanProvider HAS A CLOCK SEAM, AND ITS

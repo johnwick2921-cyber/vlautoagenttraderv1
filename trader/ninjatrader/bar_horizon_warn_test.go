@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/censuswalk"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/internal/censuswalk"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // PIN 5 — the warn is DEDUPED and every detection is COUNTED.
@@ -256,7 +256,7 @@ func TestRehydrateSelectsEveryPair(t *testing.T) {
 	}
 }
 
-// GUARD (ii) — RING-SIDE, from nofx-93's census: a store row is REPLAY-GRADE to
+// GUARD (ii) — RING-SIDE, from vl-93's census: a store row is REPLAY-GRADE to
 // this process whatever its stamp says. The store carries 09-26 rows stamped
 // `live` by the migration and 12-26 rows stamped `live` by a closed-bar
 // catch-up delivered as bar_update after a subscribe (1d rows from 09-02 at
@@ -293,7 +293,7 @@ func TestPostDropRefillExcludesHistoricalRows(t *testing.T) {
 	}
 }
 
-// GUARD (iii) IS REAL CODE, AT THE DOOR, ON BOTH PATHS — nofx-93 objection 1
+// GUARD (iii) IS REAL CODE, AT THE DOOR, ON BOTH PATHS — vl-93 objection 1
 // (2026-09-16). The reader LastNBarsOn hands imports to its callers (its filter
 // is mixed+off-scale only — pinned in store TestCurrentContractReaderReturns
 // ImportsUnfiltered); the first cut of this wave printed

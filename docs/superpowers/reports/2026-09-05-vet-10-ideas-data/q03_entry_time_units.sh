@@ -1,6 +1,6 @@
 #!/bin/bash
 # q03: why 71 not 227 — entry_time unit / magnitude distribution
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "--- length(entry_time) histogram"
 sqlite3 "$DB" "select length(cast(entry_time as text)) L, typeof(entry_time) T, count(*), min(entry_time), max(entry_time) from trader_positions group by 1,2"
 echo "--- rows by month (ms assumption)"

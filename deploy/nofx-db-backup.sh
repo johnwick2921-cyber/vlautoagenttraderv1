@@ -26,17 +26,21 @@
 # run by hand any time. Exits non-zero (and keeps nothing partial) on any failure.
 set -euo pipefail
 
-DB="${NOFX_DB:-/home/hoang/nofx/data/data.db}"
-DB_RESEARCH="${NOFX_DB_RESEARCH:-/home/hoang/nofx/data/data.db.research.db}"
-ROOT="${NOFX_BACKUP_DIR:-$HOME/nofx-backups/auto}"
-KEEP_DAILY="${NOFX_KEEP_DAILY:-14}"
-KEEP_WEEKLY="${NOFX_KEEP_WEEKLY:-8}"
+# Every var is the shell twin VL_ → NOFX_ → default; the DB and ROOT defaults
+# use the install-root rule ($HOME/vl when present, else $HOME/nofx — never a
+# hardcoded /home/hoang). R5 removes the NOFX twins.
+INSTALL_ROOT="$HOME/vl"; [ -d "$INSTALL_ROOT" ] || INSTALL_ROOT="$HOME/nofx"
+DB="${VL_DB:-${NOFX_DB:-$INSTALL_ROOT/data/data.db}}"
+DB_RESEARCH="${VL_DB_RESEARCH:-${NOFX_DB_RESEARCH:-$INSTALL_ROOT/data/data.db.research.db}}"
+ROOT="${VL_BACKUP_DIR:-${NOFX_BACKUP_DIR:-$HOME/vl-backups/auto}}"
+KEEP_DAILY="${VL_KEEP_DAILY:-${NOFX_KEEP_DAILY:-14}}"          # R5 removes the NOFX twin
+KEEP_WEEKLY="${VL_KEEP_WEEKLY:-${NOFX_KEEP_WEEKLY:-8}}"        # R5 removes
 # Research is OPT-IN and its retention is deliberately SHORT when opted in
 # (CTO ruling 2026-09-26): a 213 GB research snapshot is a disk, not a record.
-BACKUP_RESEARCH="${NOFX_BACKUP_RESEARCH:-0}"
-KEEP_RESEARCH_DAILY="${NOFX_KEEP_RESEARCH_DAILY:-1}"
-KEEP_RESEARCH_WEEKLY="${NOFX_KEEP_RESEARCH_WEEKLY:-1}"
-MIN_FREE_GB="${NOFX_BACKUP_MIN_FREE_GB:-50}"
+BACKUP_RESEARCH="${VL_BACKUP_RESEARCH:-${NOFX_BACKUP_RESEARCH:-0}}"                # R5 removes
+KEEP_RESEARCH_DAILY="${VL_KEEP_RESEARCH_DAILY:-${NOFX_KEEP_RESEARCH_DAILY:-1}}"   # R5 removes
+KEEP_RESEARCH_WEEKLY="${VL_KEEP_RESEARCH_WEEKLY:-${NOFX_KEEP_RESEARCH_WEEKLY:-1}}" # R5 removes
+MIN_FREE_GB="${VL_BACKUP_MIN_FREE_GB:-${NOFX_BACKUP_MIN_FREE_GB:-50}}"             # R5 removes
 
 DAILY_DIR="$ROOT/daily"
 WEEKLY_DIR="$ROOT/weekly"
@@ -135,7 +139,9 @@ fi
 backup_one "$DB" "nofx"
 promote_weekly "nofx" "$DAILY_DIR/nofx-${ts}.db.gz"
 prune "$DAILY_DIR" "$KEEP_DAILY" "nofx"
+prune "$DAILY_DIR" "$KEEP_DAILY" "vl"     # R5 removes the nofx prune above
 prune "$WEEKLY_DIR" "$KEEP_WEEKLY" "nofx"
+prune "$WEEKLY_DIR" "$KEEP_WEEKLY" "vl"   # R5 removes the nofx prune above
 
 if [[ "$BACKUP_RESEARCH" == "1" ]]; then
   if [[ -f "$DB_RESEARCH" ]]; then

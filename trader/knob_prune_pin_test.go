@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W-KNOB-PRUNE (2026-09-18) — BYTE-IDENTICAL PINS AT THE SHIPPED DEFAULTS ──

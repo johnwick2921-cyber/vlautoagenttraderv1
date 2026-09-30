@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # WHY NO TRADES — decisive test + full-session autopsy (2026-08-18)
 
 **LINE 1:** **0 of 3** wait cycles become entry proposals with the plan block stripped — the dominant reason is the BASE prompt's level-only discipline ("react AT levels", "no trade inside sideways zone"), NOT the gates and NOT the day plan alone.
@@ -12,4 +13,4 @@
 **Plan lifecycle.** v1 08:28 CT scheduled · v2 09:54 CT `owner_reset` (hence "re-plans left 4") · no death today · last-entry 13:00 / flat 14:45 not yet reached.
 **What changed (committed aeaf7076 + 7e152559, NOT deployed — market open).** 3 wording changes: plan header now "preferred: follow it · a valid off-plan setup may still be traded (cite off-plan)"; anchor line now "…between them, a confirmed momentum/breakout may still be traded"; consumed label now "flipped — tradeable both directions". Goldens regenerated deliberately: futures_mnq_plan.golden (2 lines), futures_mnq_keylevels.golden (1 line). Plus a reusable `cmd/decisive-test` harness (read-only, 3 real calls).
 **Exit bar.** build/vet/test/-race green · FE untouched (no tsc/vitest impact).
-**Deploy (yours, after 14:45 CT):** git pull → go build -o nofx-bin . → git rev-parse HEAD > deploy/RELEASE → restart → no FE change. If waits persist, next levers: your personalized-strategy line and the Entry-Standards block.
+**Deploy (yours, after 14:45 CT):** git pull → go build -o vl-bin . → git rev-parse HEAD > deploy/RELEASE → restart → no FE change. If waits persist, next levers: your personalized-strategy line and the Entry-Standards block.

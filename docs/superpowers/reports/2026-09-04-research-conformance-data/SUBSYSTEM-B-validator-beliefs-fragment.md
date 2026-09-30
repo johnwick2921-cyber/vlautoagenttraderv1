@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SUBSYSTEM B — VALIDATOR BELIEFS (census B1–B10) + D2 deliverable
 
-Read-only lane, worktree `/home/hoang/nofx-conform` (HEAD `fb50903f`, base `492d2067`).
+Read-only lane, worktree `/home/hoang/vl-conform` (HEAD `fb50903f`, base `492d2067`).
 Running binary: rev `70af663d`, PID 878451, boot 2026-09-04 08:30:11 CT.
 Resolved values quoted from the process's own boot block in
-`/home/hoang/nofx/data/nofx_2026-09-04.log` (08:30:11), never from a file default.
+`/home/hoang/vl/data/vl_2026-09-04.log` (08:30:11), never from a file default.
 `/api/config/resolved` and `/api/risk/gate-blocks` both return
 `{"error":"Missing Authorization header"}` from this session — not used.
 

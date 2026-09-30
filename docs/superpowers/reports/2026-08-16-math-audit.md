@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W12 — Math Correctness Audit
 
 **LINE 1 — ALL MATH TRUE.** 14/14 formulas computationally CORRECT (independent
@@ -59,6 +60,6 @@ session-template mismatch, NOT a formula error.
 
 ## Deploy (owner, CME-closed window, before Mon 08:00 CT)
 ```
-cd /home/hoang/nofx && git pull && go build -o nofx-bin . && echo BUILD OK && sudo systemctl restart nofx
+cd /home/hoang/vl && git pull && go build -o vl-bin . && echo BUILD OK && sudo systemctl restart vl
 ```
 No `.cs` touched → no NT8 F5. W12 is test-additive (zero production math changed).

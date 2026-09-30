@@ -5,7 +5,7 @@ take the FIRST episode's outcome (and all episodes). Aggregate by grade, machine
 Also: seat utilisation = share of seated levels that were touched at all before the session-day end.
 Also: candidate_pool (09-04) seated vs cut -> forward outcome from read_at."""
 import sqlite3, json, math, collections, re, datetime
-exec(open('/home/hoang/nofx-analysis/vet-02-0905/q11_replay.py').read().split("# group bars by session day")[0])  # reuse loaders + detect()
+exec(open('/home/hoang/vl-analysis/vet-02-0905/q11_replay.py').read().split("# group bars by session day")[0])  # reuse loaders + detect()
 by_sd=collections.OrderedDict()
 for b in bars: by_sd.setdefault(sess_day(b['t']),[]).append(b)
 sdays=sorted(by_sd)

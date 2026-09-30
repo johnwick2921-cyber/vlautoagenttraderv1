@@ -2,67 +2,67 @@
   {
     "path": "agent/agent.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "agent/i18n.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "agent/onboard.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "agent/planner_runtime.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "agent/prompt_persona.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "agent/scheduler.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "agent/skill_domain_context.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "main.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "telegram/agent/agent.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "telegram/agent/prompt.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {
     "path": "telegram/bot.go",
     "added_imports": [
-      "nofx/branding"
+      "vl/branding"
     ]
   },
   {

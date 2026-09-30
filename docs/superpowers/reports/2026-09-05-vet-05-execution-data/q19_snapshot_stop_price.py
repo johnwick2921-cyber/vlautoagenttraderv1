@@ -1,5 +1,5 @@
 import sqlite3, json
-c = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+c = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 rows = c.execute("""SELECT id, datetime(received_at_ms/1000,'unixepoch','-5 hours') ct, reason, orders_json
  FROM nt8_order_snapshots WHERE working_count>0 AND date(received_at_ms/1000,'unixepoch','-5 hours') BETWEEN '2026-09-03' AND '2026-09-04' ORDER BY id""").fetchall()
 seen = {}

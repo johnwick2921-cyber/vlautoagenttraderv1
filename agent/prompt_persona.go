@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"nofx/branding"
+	"vl/branding"
 	"strings"
 )
 

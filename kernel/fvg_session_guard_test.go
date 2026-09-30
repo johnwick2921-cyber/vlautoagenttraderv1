@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // A6 (mega-research 2026-08-26) — FVG session-boundary guard: a 3-candle

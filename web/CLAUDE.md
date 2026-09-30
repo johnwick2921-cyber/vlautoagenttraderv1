@@ -16,7 +16,7 @@ React 18 + TypeScript + Vite + TailwindCSS. SWR for data fetching. Lucide-react 
 1. `pages/SettingsPage.tsx` — **Config** (AI models + exchanges + telegram + account)
 2. `pages/TraderDashboardPage.tsx` — **Dashboard** (positions, decisions, P&L, charts)
 3. `pages/StrategyStudioPage.tsx` — **Strategy** editor (coin source + indicators + risk + prompt)
-4. `pages/AgentChatPage.tsx` — **AgentBeta** (NOFXi chat with tool-use)
+4. `pages/AgentChatPage.tsx` — **AgentBeta** (VL chat with tool-use)
 
 ## Removed pages
 

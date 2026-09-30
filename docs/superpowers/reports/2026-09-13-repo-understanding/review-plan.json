@@ -2701,7 +2701,7 @@
           "category": "market-and-other-data-providers"
         },
         {
-          "path": "provider/nofxos/ai500.go",
+          "path": "provider/vlos/ai500.go",
           "bytes": 4393,
           "lines": 163,
           "sha256": "852f21e68ebe5a4bf194e1bec0116171968fe5df5abc1351f1effb7a845d3af3",
@@ -2710,7 +2710,7 @@
           "category": "market-and-other-data-providers"
         },
         {
-          "path": "provider/nofxos/claw402.go",
+          "path": "provider/vlos/claw402.go",
           "bytes": 3084,
           "lines": 113,
           "sha256": "b8ac20919f9d0174445fc13dd588150f27276ff6e46b792256dbb9670ceb263a",
@@ -2719,7 +2719,7 @@
           "category": "market-and-other-data-providers"
         },
         {
-          "path": "provider/nofxos/client.go",
+          "path": "provider/vlos/client.go",
           "bytes": 3386,
           "lines": 161,
           "sha256": "2f96b16bfb4a5fe9eb6c5f35ad11314b227a0bb80c5c858aa882cd98416d1096",
@@ -2728,7 +2728,7 @@
           "category": "market-and-other-data-providers"
         },
         {
-          "path": "provider/nofxos/coin.go",
+          "path": "provider/vlos/coin.go",
           "bytes": 6631,
           "lines": 216,
           "sha256": "d8aafd2370ce6ccb1f0d05faafb18f8baf5062f65d1a23fe65b7fee322f3a611",
@@ -2737,7 +2737,7 @@
           "category": "market-and-other-data-providers"
         },
         {
-          "path": "provider/nofxos/netflow.go",
+          "path": "provider/vlos/netflow.go",
           "bytes": 8492,
           "lines": 263,
           "sha256": "0ed264e42a0fb593a496717d8220c9c835f8d8680a3c68bfcc914b5cc7ff072c",
@@ -2746,7 +2746,7 @@
           "category": "market-and-other-data-providers"
         },
         {
-          "path": "provider/nofxos/oi.go",
+          "path": "provider/vlos/oi.go",
           "bytes": 7783,
           "lines": 237,
           "sha256": "0ed58654d5dd7403eb50190c4425fdeeaab1b44046b34ffbfd9d1291314d19ce",
@@ -2755,7 +2755,7 @@
           "category": "market-and-other-data-providers"
         },
         {
-          "path": "provider/nofxos/price.go",
+          "path": "provider/vlos/price.go",
           "bytes": 5700,
           "lines": 182,
           "sha256": "09277416d63ab04d8734161908e3096ba3de6cffc167a36e6281389e26867a2b",
@@ -2764,7 +2764,7 @@
           "category": "market-and-other-data-providers"
         },
         {
-          "path": "provider/nofxos/util.go",
+          "path": "provider/vlos/util.go",
           "bytes": 625,
           "lines": 31,
           "sha256": "6ea8b132a2d3a9cefd6ee2f7518c44c3b1f028ff700d802d8732aa51ec531fbe",
@@ -6381,7 +6381,7 @@
           "category": "runtime-operations-and-support"
         },
         {
-          "path": "deploy/nofx-claim-test.sh",
+          "path": "deploy/vl-claim-test.sh",
           "bytes": 3129,
           "lines": 56,
           "sha256": "dec3fc974200cb1b1999290c03345a41ac7ad7102261fb17520711b734152796",
@@ -6390,7 +6390,7 @@
           "category": "runtime-operations-and-support"
         },
         {
-          "path": "deploy/nofx-claim.sh",
+          "path": "deploy/vl-claim.sh",
           "bytes": 4836,
           "lines": 106,
           "sha256": "d110a108cb7d1d6f3e92a48a1cca0ef8ab59ec4df320ec519898ead08e7bc236",
@@ -6399,7 +6399,7 @@
           "category": "runtime-operations-and-support"
         },
         {
-          "path": "deploy/nofx-clock-guard.sh",
+          "path": "deploy/vl-clock-guard.sh",
           "bytes": 3912,
           "lines": 80,
           "sha256": "42a442c8e1c78c9b00c53fbe870c6c02a9d75987474da662ec14a7951b4c6db3",
@@ -6408,7 +6408,7 @@
           "category": "runtime-operations-and-support"
         },
         {
-          "path": "deploy/nofx-db-backup.sh",
+          "path": "deploy/vl-db-backup.sh",
           "bytes": 2771,
           "lines": 79,
           "sha256": "2f762c1f41fcef933583e570a73acaab6ef4751add3ef6a577939e1d43e99757",
@@ -6417,7 +6417,7 @@
           "category": "runtime-operations-and-support"
         },
         {
-          "path": "deploy/nofx-lock-test.sh",
+          "path": "deploy/vl-lock-test.sh",
           "bytes": 25836,
           "lines": 493,
           "sha256": "d2d46f6bc0664c0159089234b1a4b5d2a96089096aa5e0db1c8a2773f17086ec",
@@ -6426,7 +6426,7 @@
           "category": "runtime-operations-and-support"
         },
         {
-          "path": "deploy/nofx-lock.sh",
+          "path": "deploy/vl-lock.sh",
           "bytes": 27410,
           "lines": 525,
           "sha256": "46fcbf76478c43943fb7607bd2929fe3629371ae5b8571ec9da8e1fa6e96c6ab",

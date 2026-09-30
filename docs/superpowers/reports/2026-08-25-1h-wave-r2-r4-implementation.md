@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 1H WAVE + R2 GRADING + R4 QUALITY KNOB — IMPLEMENTATION REPORT (2026-08-25/26)
 
 PR: https://github.com/johnwick2921-cyber/nofx/pull/75 · Branch: `feat/1h-wave-grading`

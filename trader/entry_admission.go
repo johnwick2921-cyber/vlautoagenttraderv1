@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"nofx/discipline"
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
-	"nofx/telemetry"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/discipline"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
+	"vl/telemetry"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0 (a) — ONE ADMISSION GATE ────────────────────────────────

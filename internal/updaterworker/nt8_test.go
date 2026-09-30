@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // atBackupDone drives a rig to backup_done/done (held, drained, gated, backed
@@ -110,7 +110,7 @@ func TestNT8DecisionReadsTheAckNeverAFileDate(t *testing.T) {
 		if j.State != c.state || j.NT8 == nil || j.NT8.Decision != c.dec {
 			t.Fatalf("persisted %s with decision %+v, want %s/%s", j.State, j.NT8, c.state, c.dec)
 		}
-		if c.state == updaterjob.StateNT8Updated && !strings.Contains(j.Blocker, "nofx-updater resume "+boxJobID) {
+		if c.state == updaterjob.StateNT8Updated && !strings.Contains(j.Blocker, "vl-updater resume "+boxJobID) {
 			t.Fatalf("the park names no attended resume: blocker %q", j.Blocker)
 		}
 	}
@@ -146,7 +146,7 @@ func TestBootVerifyRefusesARefusedBootLine(t *testing.T) {
 	spoofRefusedWarn := `09-24 10:00:07 [WARN] api/handler_other.go:77 request note="x [ERRO] clone-build/main.go:1 🔐 BOOT INTEGRITY REFUSED"` + "\n"
 	spoofRefusedErro := `09-24 10:00:07 [ERRO] api/handler_other.go:77 echo: /main.go: 🔐 BOOT INTEGRITY REFUSED` + "\n"
 	// The same shapes the substring matcher accepted before the anchor fold.
-	spoofOK := `09-24 10:00:07 [WARN] api/handler_updates.go:298 🔒 [updates] refused GET "/api/updates/jobs/BOOT INTEGRITY OK — rev ` + sha[:12] + ` ·": update header missing or wrong — first update_header refusal on /api/updates/jobs/:id this process; repeats log at DEBUG, all count in nofx_updates_refused_total` + "\n"
+	spoofOK := `09-24 10:00:07 [WARN] api/handler_updates.go:298 🔒 [updates] refused GET "/api/updates/jobs/BOOT INTEGRITY OK — rev ` + sha[:12] + ` ·": update header missing or wrong — first update_header refusal on /api/updates/jobs/:id this process; repeats log at DEBUG, all count in vl_updates_refused_total` + "\n"
 	for _, c := range []struct {
 		name, before, after string
 		wantErr             string

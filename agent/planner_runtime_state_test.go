@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 func TestIsConfigOrTraderIntent(t *testing.T) {

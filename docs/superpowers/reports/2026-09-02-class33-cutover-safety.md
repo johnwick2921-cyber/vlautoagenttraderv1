@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Class 33 — cutover safety: in-flight leg · real leg 4 · boot-time arm sweep
 
 **Dispatch:** CLASS 33, owner hoang, 2026-09-02. One wave, one cutover.
-**Base:** dev `f28a6250` (live rev d5a6e138, class 41). **Worktree:** `../nofx-class33` (locked).
+**Base:** dev `f28a6250` (live rev d5a6e138, class 41). **Worktree:** `../vl-class33` (locked).
 **Evidence tiers:** [A] verified directly · [B] inferred from strong evidence · [C] speculation.
 
 ## 1. The three defects
@@ -62,7 +63,7 @@ E1 quoted **failing** on the pre-fix tree, then passing:
 --- FAIL: TestClass33PinLeg4Stub (0.00s)
 ```
 
-After the fix: `ok nofx/trader/ninjatrader`.
+After the fix: `ok vl/trader/ninjatrader`.
 
 | Test | Covers |
 |---|---|
@@ -100,14 +101,14 @@ from the same five sources; every cutover after this one quotes the endpoint.
 this boot lands before it. **In-flight (A6):** no planner chain open.
 
 **Build:** clean clone `--no-local` of dev @ 8a756bba → `vcs.revision=8a756bba4a21ab455beafac75bf6415e71de2fb9`,
-`vcs.modified=false`. Staged as `nofx-bin.next`. Rollback slot: `nofx-bin.prev.boot` (d5a6e138).
+`vcs.modified=false`. Staged as `vl-bin.next`. Rollback slot: `vl-bin.prev.boot` (d5a6e138).
 
 **Swap (A26 — the classifier denies `kill -9` to the agent; the OWNER runs this):**
 
 ```
-cd /home/hoang/nofx
+cd /home/hoang/vl
 echo 8a756bba4a21ab455beafac75bf6415e71de2fb9 > deploy/RELEASE
-cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.d5a6e138 && mv nofx-bin.next nofx-bin
+cp vl-bin vl-bin.prev.boot && mv vl-bin vl-bin.old.d5a6e138 && mv vl-bin.next vl-bin
 kill -9 1744258
 ```
 
@@ -138,7 +139,7 @@ _(boot checklist appended after the passed boot; marker committed only then — 
 ## 6. Rollback
 
 ```
-cp nofx-bin.prev.boot nofx-bin && echo d5a6e138da851f2ee9ceba22424363bba0f219eb > deploy/RELEASE && kill -9 <MainPID>
+cp vl-bin.prev.boot vl-bin && echo d5a6e138da851f2ee9ceba22424363bba0f219eb > deploy/RELEASE && kill -9 <MainPID>
 ```
 
 ### 4.1 Boot record (owner GO 06:57 CT 2026-09-02)
@@ -148,7 +149,7 @@ leg 5 `0` stream calls since 06:40, tree porcelain-clean, running PID 1744258. R
 BEFORE the swap; marker committed only after the boot below (A19).
 
 Old process exited 06:57:44 (`status=9/KILL`); service started 06:57:49; boot 06:57:50, **PID
-2065518, exactly one nofx-bin process, 0 `[ERRO]` lines, 0 TradingRefused**:
+2065518, exactly one vl-bin process, 0 `[ERRO]` lines, 0 TradingRefused**:
 
 ```
 🔐 BOOT INTEGRITY OK — rev 8a756bba4a21 · built 2026-09-02T11:50:23Z · expected 8a756bba4a21 · goldens PASS

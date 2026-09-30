@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // Bar persistence hook (2026-08-26) — the unblock for replay/calibration.

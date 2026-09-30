@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // ── W-EXEC-TRUTH W0 (G1 + a) — the armed path at its send point ────────────

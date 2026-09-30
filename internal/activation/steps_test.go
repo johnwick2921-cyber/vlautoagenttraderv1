@@ -370,7 +370,7 @@ func TestWatchAcceptsTheShortRevBootLineTheBotWrites(t *testing.T) {
 }
 
 // LOGS ARE NAMED BY BOOT DATE, NOT CALENDAR DATE: on the live box at 08:04 on
-// 09-24 the active file was nofx_2026-09-23.log.
+// 09-24 the active file was vl_2026-09-23.log.
 func TestNewestLogPathIgnoresTheCalendarAndPicksTheActiveFile(t *testing.T) {
 	dir := t.TempDir()
 	stale := filepath.Join(dir, "nofx_2026-09-24.log") // today's DATE, but older

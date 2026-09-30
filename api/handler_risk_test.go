@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/discipline"
-	"nofx/kernel"
+	"vl/discipline"
+	"vl/kernel"
 
 	"github.com/gin-gonic/gin"
 )

@@ -39,7 +39,7 @@ c.commit(); c.close()`, path).CombinedOutput()
 	}
 }
 
-// runScript runs deploy/nofx-db-backup.sh in a fresh temp dir containing a real
+// runScript runs deploy/vl-db-backup.sh in a fresh temp dir containing a real
 // main DB and a real research DB, with a PATH shim whose `df` prints the
 // fakeAvailBytes count as the backup volume's free space. It returns the
 // backup root so callers can inspect what the run actually wrote.
@@ -188,5 +188,46 @@ func TestBackupRefusesWhenPostBackupFreeBelowFloor(t *testing.T) {
 	}
 	if files := listBackupFiles(t, root); len(files) != 0 {
 		t.Fatalf("refused run still wrote files: %v", files)
+	}
+}
+
+// D1-FOLD (DS-105): the prune handles BOTH prefixes — an old vl-*.db.gz and an
+// old vl-*.db.gz beyond the retention window are both removed, while today's
+// fresh backup survives. Dropping the vl prune line must fail THIS test.
+func TestBackupPrunesOldVlAndNofxBackups(t *testing.T) {
+	root, _, stderr, rc := runBackupScript(t, 1<<40, nil)
+	if rc != 0 {
+		t.Fatalf("run rc=%d stderr=%q", rc, stderr)
+	}
+	daily := filepath.Join(root, "daily")
+	if _, err := os.Stat(daily); err != nil {
+		t.Fatalf("no daily dir after the run: %v", err)
+	}
+	// Seed TWO ancient files of each prefix: with KEEP_DAILY=1 the oldest of
+	// each prefix must go; the newest of each prefix is retained (correct
+	// retention, not a blanket delete).
+	for _, name := range []string{"vl-2020-01-01_000000.db.gz", "vl-2019-01-01_000000.db.gz",
+		"nofx-2020-01-01_000000.db.gz", "nofx-2019-01-01_000000.db.gz"} {
+		if err := os.WriteFile(filepath.Join(daily, name), []byte("gz"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, _, stderr2, rc2 := runBackupScript(t, 1<<40, map[string]string{"NOFX_BACKUP_DIR": root, "NOFX_KEEP_DAILY": "1"}); rc2 != 0 {
+		t.Fatalf("second run rc=%d stderr=%q", rc2, stderr2)
+	}
+	for _, gone := range []string{"vl-2019-01-01_000000.db.gz", "nofx-2019-01-01_000000.db.gz"} {
+		if _, err := os.Stat(filepath.Join(daily, gone)); err == nil {
+			t.Fatalf("the prune kept the ancient %s", gone)
+		}
+	}
+	files := listBackupFiles(t, root)
+	fresh := 0
+	for _, f := range files {
+		if strings.HasSuffix(f, ".db.gz") {
+			fresh++
+		}
+	}
+	if fresh == 0 {
+		t.Fatalf("the fresh backup must survive the prune: %v", files)
 	}
 }

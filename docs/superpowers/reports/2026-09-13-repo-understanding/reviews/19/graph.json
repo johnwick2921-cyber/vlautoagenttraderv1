@@ -74,17 +74,17 @@
       "resolution": "manual source; boundaries noted"
     },
     {
-      "source": "deploy/nofx-lock.sh.acquire",
+      "source": "deploy/vl-lock.sh.acquire",
       "target": "bounded keeper",
-      "evidence": "deploy/nofx-lock.sh:132",
+      "evidence": "deploy/vl-lock.sh:132",
       "explanation": "Atomic lock identity session, bounded keeper heartbeat; no process PID ownership.",
       "tier": "A",
       "resolution": "manual source; boundaries noted"
     },
     {
-      "source": "deploy/nofx-lock.sh.with-heartbeat",
+      "source": "deploy/vl-lock.sh.with-heartbeat",
       "target": "additional periodic writer",
-      "evidence": "deploy/nofx-lock.sh:428",
+      "evidence": "deploy/vl-lock.sh:428",
       "explanation": "Secondary writer is distinct from acquire keeper.",
       "tier": "A",
       "resolution": "manual source; boundaries noted"

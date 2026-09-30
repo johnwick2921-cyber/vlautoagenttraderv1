@@ -2,7 +2,7 @@
   "command": [
     "/tmp/stage-a-research-export",
     "-db",
-    "/home/hoang/nofx/data/data.db.research.db",
+    "/home/hoang/vl/data/data.db.research.db",
     "-from",
     "2026-09-09T18:08:08Z",
     "-to",

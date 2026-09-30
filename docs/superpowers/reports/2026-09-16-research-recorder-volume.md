@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # RESEARCH-SNAPSHOT RECORDER VOLUME — dispatch 103 (DS-103, 2026-09-16)
 
 Branch `fix/research-recorder-volume`, base origin/dev 054e97e5. Footprint:
@@ -38,7 +39,7 @@ docs, this report. logger/provider/trader/store/api/web untouched.
 
 ## Measurement (required)
 
-One-hour slice of the live log `data/nofx_2026-09-16.log`, 15:00–16:00 CT
+One-hour slice of the live log `data/vl_2026-09-16.log`, 15:00–16:00 CT
 (read-only):
 
 - BEFORE: **324,807** "research snapshot written:" lines/hour — **88.8%** of the

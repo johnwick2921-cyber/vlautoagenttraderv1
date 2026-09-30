@@ -7,12 +7,12 @@ import (
 
 	"gorm.io/gorm"
 
-	"nofx/logger"
-	"nofx/market"
-	storepkg "nofx/store"
+	"vl/logger"
+	"vl/market"
+	storepkg "vl/store"
 
 	"github.com/gin-gonic/gin"
-	"nofx/kernel"
+	"vl/kernel"
 	"time"
 )
 

@@ -16,8 +16,9 @@ docker-compose.yml
 *~
 
 # Build artifacts
-nofx
-nofx_test
+/vl
+/vl-bin*
+/vl-updater*
 *.exe
 *.dll
 *.so

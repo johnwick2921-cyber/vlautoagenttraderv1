@@ -16,7 +16,7 @@ const fiveMin = int64(5 * 60_000)
 // importHoles are the 09-26 slots the fixture leaves EMPTY so the 12-26 imports
 // can occupy them. The bars PK is (symbol, tf, open_time_ms) — no contract —
 // so an import at a time a 09-26 row holds is SKIPPED by ImportBars, in the
-// fixture and in production alike (nofx-93's objection 1, 2026-09-16: the
+// fixture and in production alike (vl-93's objection 1, 2026-09-16: the
 // first cut of this fixture put its 5 imports on occupied slots, ImportBars
 // skipped all 5, and E4's "500, imports excluded" measured an empty set). The
 // 426 real 12-26 import rows therefore sit at times NO 09-26 row holds.
@@ -102,7 +102,7 @@ func TestPriorContractsFillBehindTheCurrentContract(t *testing.T) {
 // `source NOT IN (mixed, off-scale)` (store/bar_history.go), so the 5 import
 // rows come back with the 500 live ones. Guard (iii) — keeping imports out of
 // the ring — therefore lives at the rehydrate DOOR (trader/ninjatrader
-// rehydrateRowsFor), not in this reader (nofx-93 objection 1 + CTO ruling,
+// rehydrateRowsFor), not in this reader (vl-93 objection 1 + CTO ruling,
 // 2026-09-16: do not change the shared reader in this PR; the planner's 1m
 // splice through trader/bars_store_depth.go reads it too and excluding there
 // changes today's planner input — the owner's call).

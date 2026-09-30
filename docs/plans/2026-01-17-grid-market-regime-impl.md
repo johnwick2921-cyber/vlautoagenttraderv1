@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Grid Market Regime Detection Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
@@ -61,7 +62,7 @@ func TestCalculateDonchian_PartialPeriod(t *testing.T) {
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./market/... -run TestCalculateDonchian`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./market/... -run TestCalculateDonchian`
 Expected: FAIL with "undefined: calculateDonchian"
 
 **Step 3: Write minimal implementation**
@@ -104,7 +105,7 @@ func ExportCalculateDonchian(klines []Kline, period int) (float64, float64) {
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./market/... -run TestCalculateDonchian`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./market/... -run TestCalculateDonchian`
 Expected: PASS
 
 **Step 5: Commit**
@@ -218,7 +219,7 @@ func TestGetBoxData(t *testing.T) {
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./market/... -run TestGetBoxData`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./market/... -run TestGetBoxData`
 Expected: FAIL with "undefined: calculateBoxData"
 
 **Step 3: Write minimal implementation**
@@ -279,7 +280,7 @@ func GetBoxData(symbol string) (*BoxData, error) {
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./market/... -run TestGetBoxData`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./market/... -run TestGetBoxData`
 Expected: PASS
 
 **Step 5: Commit**
@@ -382,7 +383,7 @@ Create `trader/grid_regime_test.go`:
 package trader
 
 import (
-	"nofx/market"
+	"vl/market"
 	"testing"
 )
 
@@ -412,7 +413,7 @@ func TestClassifyRegimeLevel(t *testing.T) {
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./trader/... -run TestClassifyRegimeLevel`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./trader/... -run TestClassifyRegimeLevel`
 Expected: FAIL with "undefined: classifyRegimeLevel"
 
 **Step 3: Write minimal implementation**
@@ -422,7 +423,7 @@ Create `trader/grid_regime.go`:
 ```go
 package trader
 
-import "nofx/market"
+import "vl/market"
 
 // classifyRegimeLevel determines the regime level based on market indicators
 // bollingerWidth: Bollinger band width as percentage
@@ -482,7 +483,7 @@ func getRegimePositionLimit(level market.RegimeLevel, config *store.GridStrategy
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./trader/... -run TestClassifyRegimeLevel`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./trader/... -run TestClassifyRegimeLevel`
 Expected: PASS
 
 **Step 5: Commit**
@@ -547,7 +548,7 @@ func TestDetectBoxBreakout(t *testing.T) {
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./trader/... -run TestDetectBoxBreakout`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./trader/... -run TestDetectBoxBreakout`
 Expected: FAIL with "undefined: detectBoxBreakout"
 
 **Step 3: Write minimal implementation**
@@ -590,7 +591,7 @@ func detectBoxBreakout(box *market.BoxData) (market.BreakoutLevel, string) {
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./trader/... -run TestDetectBoxBreakout`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./trader/... -run TestDetectBoxBreakout`
 Expected: PASS
 
 **Step 5: Commit**
@@ -649,7 +650,7 @@ func TestBreakoutConfirmation(t *testing.T) {
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./trader/... -run TestBreakoutConfirmation`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./trader/... -run TestBreakoutConfirmation`
 Expected: FAIL with "undefined: BreakoutState"
 
 **Step 3: Write minimal implementation**
@@ -694,7 +695,7 @@ func confirmBreakout(state *BreakoutState, currentLevel market.BreakoutLevel, di
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./trader/... -run TestBreakoutConfirmation`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./trader/... -run TestBreakoutConfirmation`
 Expected: PASS
 
 **Step 5: Commit**
@@ -741,7 +742,7 @@ func TestGetBreakoutAction(t *testing.T) {
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./trader/... -run TestGetBreakoutAction`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./trader/... -run TestGetBreakoutAction`
 Expected: FAIL with "undefined: BreakoutAction"
 
 **Step 3: Write minimal implementation**
@@ -776,7 +777,7 @@ func getBreakoutAction(level market.BreakoutLevel) BreakoutAction {
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/yida/gopro/open-nofx && go test -v ./trader/... -run TestGetBreakoutAction`
+Run: `cd /Users/yida/gopro/open-vl && go test -v ./trader/... -run TestGetBreakoutAction`
 Expected: PASS
 
 **Step 5: Commit**
@@ -1567,7 +1568,7 @@ git commit -m "feat(kernel): add box indicators to AI prompt"
 The GORM AutoMigrate will handle adding new columns. Verify by running:
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go run . migrate
+cd /Users/yida/gopro/open-vl && go run . migrate
 ```
 
 **Step 2: Commit**
@@ -1584,13 +1585,13 @@ git commit -m "chore(store): ensure new grid fields are migrated"
 **Step 1: Run backend tests**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go test -v ./...
+cd /Users/yida/gopro/open-vl && go test -v ./...
 ```
 
 **Step 2: Run frontend tests (if available)**
 
 ```bash
-cd /Users/yida/gopro/open-nofx/web && npm test
+cd /Users/yida/gopro/open-vl/web && npm test
 ```
 
 **Step 3: Fix any failing tests and commit**
@@ -1607,7 +1608,7 @@ git commit -m "test: fix tests for grid regime implementation"
 **Step 1: Start the server**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go run .
+cd /Users/yida/gopro/open-vl && go run .
 ```
 
 **Step 2: Verify API endpoint**

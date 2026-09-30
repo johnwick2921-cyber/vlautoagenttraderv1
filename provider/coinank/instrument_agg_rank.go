@@ -3,7 +3,7 @@ package coinank
 import (
 	"context"
 	"encoding/json"
-	"nofx/provider/coinank/coinank_enum"
+	"vl/provider/coinank/coinank_enum"
 	"strconv"
 )
 

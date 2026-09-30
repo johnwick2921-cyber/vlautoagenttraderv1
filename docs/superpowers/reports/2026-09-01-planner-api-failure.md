@@ -1,12 +1,13 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-09-01 — Planner API failure: root cause + fix (class 37)
 
 **Dispatch:** PLANNER API FAILURE — ROOT CAUSE INVESTIGATION + FIX (owner hoang, 2026-09-01).
 **Phase 1 verdict:** CONFIRMED. **Phase 2:** shipped on branch `fix/planner-stream-total-deadline`
-(worktree `~/nofx-planner-api`), merged to dev at `bc9ea126`; **CUT OVER 21:19:49 CT on the owner's "GO 37"** (rev `e42a0b43`, PID 1994488)
+(worktree `~/vl-planner-api`), merged to dev at `bc9ea126`; **CUT OVER 21:19:49 CT on the owner's "GO 37"** (rev `e42a0b43`, PID 1994488)
 — see CUTOVER section. Behavioural proof still owed (A20). Section "Phase 2" below carries file:lines, tests, build, rollback.
 All times CT (R8). Evidence tiers: **[A]** directly verified · **[B]** inferred · **[C]** speculation.
 Evidence classes: [RUNTIME] journal/log lines · [DB] `data/data.db` read-only queries ·
-[CODE] file:line · [CONFIG] `.env` / boot line. Window: `journalctl -u nofx --since 2026-08-29 00:00`
+[CODE] file:line · [CONFIG] `.env` / boot line. Window: `journalctl -u vl --since 2026-08-29 00:00`
 (08-29 carried 0 AI calls — Saturday, CME closed; first AI call 08-30 09:41 CT).
 
 ## TL;DR
@@ -54,7 +55,7 @@ is empty in all 9 strategies rows, so the planner uses the trader's primary clie
 
 ## B2 — Failure table (last 72 h; every `ai_call … ok=false`)
 
-Source: `journalctl -u nofx --since "2026-08-29 00:00" | grep "ai_call .*ok=false"` (14 lines) joined
+Source: `journalctl -u vl --since "2026-08-29 00:00" | grep "ai_call .*ok=false"` (14 lines) joined
 to the `🧠 planner call (…) completed in`, `📊 AI call complete (stream)`, `📐 planner attempt`,
 `⚠️ … retrying` lines and to `plans` / `planner_rejected_prompts` rows. Trigger class comes from the
 plan row the read wrote (none written = wake/re-plan that kept the prior plan). Provider row for every
@@ -187,10 +188,10 @@ read as "the API keeps failing".
 ## Phase 2 — FIX (class 37), shipped to branch, PARKED before cutover
 
 Gate check: B7 = CONFIRMED; the fix is a split of one deadline plus observability (14 files, +639/−30,
-no prompt/validator/schedule change). Lock: `~/nofx-main.lock` acquired (owner hoang/claude, pid 1906840
-alive, expiry 21:35 CT, task planner-api-failure-0901); worktree `~/nofx-planner-api` on branch
+no prompt/validator/schedule change). Lock: `~/vl-main.lock` acquired (owner hoang/claude, pid 1906840
+alive, expiry 21:35 CT, task planner-api-failure-0901); worktree `~/vl-planner-api` on branch
 `fix/planner-stream-total-deadline` (locked), base `origin/dev` = `795f67f7`. **The main tree was never
-edited** (porcelain clean throughout; only the ignored `nofx-bin.next` was staged).
+edited** (porcelain clean throughout; only the ignored `vl-bin.next` was staged).
 
 ### Commits on the branch
 
@@ -265,36 +266,36 @@ with a hijack-and-close server — deterministic, and a reminder that the idle t
 ### Build, stage, rollback (A4/A13) [A]
 
 ```
-git clone --no-local ~/nofx-planner-api <scratch>/clone-75130d59 && git checkout 75130d593c2ae2a98abe4500c62f859111475bef
-go build -o nofx-bin .
-go version -m nofx-bin:
+git clone --no-local ~/vl-planner-api <scratch>/clone-75130d59 && git checkout 75130d593c2ae2a98abe4500c62f859111475bef
+go build -o vl-bin .
+go version -m vl-bin:
 	build	vcs.revision=75130d593c2ae2a98abe4500c62f859111475bef
 	build	vcs.time=2026-09-01T22:53:33Z
 	build	vcs.modified=false
 sha256 8473a5f255c50980c491ddfa5159d278bda16183a3e62661404b1a4cb745e119  (70,899,768 bytes)
-cp → /home/hoang/nofx/nofx-bin.next        # staged 2026-09-01 ~18:00 CT; no nofx-bin.next existed (class 35's was consumed at 17:23:54)
+cp → /home/hoang/vl/vl-bin.next        # staged 2026-09-01 ~18:00 CT; no vl-bin.next existed (class 35's was consumed at 17:23:54)
 ```
 Frontend: `npm run build` in the worktree → `✓ built in 4.90s` (guide content compiles). The served
-`web/dist` in `~/nofx` is untracked and must be rebuilt at cutover (`cd ~/nofx/web && npm run build`) or the
+`web/dist` in `~/vl` is untracked and must be rebuilt at cutover (`cd ~/vl/web && npm run build`) or the
 guide keeps the old text while the drift banner shows.
 
-Running binary (unchanged by this dispatch): `/home/hoang/nofx/nofx-bin` = `ec6632f9` (class 35, PID
+Running binary (unchanged by this dispatch): `/home/hoang/vl/vl-bin` = `ec6632f9` (class 35, PID
 1908258, boot 17:24:00 CT). Between `ec6632f9` and `75130d59`: `4d88b46e`, `795f67f7` (docs only),
 `638af5ed` (docs), `75130d59` (this fix) — one non-docs commit.
 
 **Cutover (owner GO only; flat window outside 16:45-17:10 CT; no planner read in flight; no live arms):**
 ```
 # A5 flat-gate quadruple + A6 in-flight, quoted fresh:
-sqlite3 -readonly ~/nofx/data/data.db "SELECT COUNT(*) FROM trader_positions WHERE status='OPEN'"      # expect 0
+sqlite3 -readonly ~/vl/data/data.db "SELECT COUNT(*) FROM trader_positions WHERE status='OPEN'"      # expect 0
 curl -s -H "Authorization: Bearer $JWT" 'http://127.0.0.1:8080/api/positions?trader_id=<id>&account=Sim101'   # expect []
-journalctl -u nofx --since -5min | grep 'positions snapshot'                                                 # expect count=0
+journalctl -u vl --since -5min | grep 'positions snapshot'                                                 # expect count=0
 curl -s -H "Authorization: Bearer $JWT" 'http://127.0.0.1:8080/api/open-orders?trader_id=<id>&account=Sim101&symbol=MNQ'   # expect []
 curl -s -H "Authorization: Bearer $JWT" 'http://127.0.0.1:8080/api/plan/today?trader_id=<id>&symbol=MNQ' | grep -o 'replan_in_flight[^,]*'   # expect false
-journalctl -u nofx --since -20min | grep -E 'planner model:|planner call \('                                 # last 'planner model' must be followed by its 'planner call' line (no read in flight)
-# swap — one boot, one marker (RELEASE already = 75130d59 on the branch; merge first so ~/nofx/deploy/RELEASE matches):
-cd ~/nofx && git merge --ff-only fix/planner-stream-total-deadline   # or merge the PR, then git pull --ff-only
-cd ~/nofx/web && npm run build
-cd ~/nofx && cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.ec6632f9 && mv nofx-bin.next nofx-bin && kill -9 $(systemctl show -p MainPID --value nofx)
+journalctl -u vl --since -20min | grep -E 'planner model:|planner call \('                                 # last 'planner model' must be followed by its 'planner call' line (no read in flight)
+# swap — one boot, one marker (RELEASE already = 75130d59 on the branch; merge first so ~/vl/deploy/RELEASE matches):
+cd ~/vl && git merge --ff-only fix/planner-stream-total-deadline   # or merge the PR, then git pull --ff-only
+cd ~/vl/web && npm run build
+cd ~/vl && cp vl-bin vl-bin.prev.boot && mv vl-bin vl-bin.old.ec6632f9 && mv vl-bin.next vl-bin && kill -9 $(systemctl show -p MainPID --value vl)
 # within 90 s expect:
 #   🔐 BOOT INTEGRITY OK — rev 75130d59 · expected 75130d59 · goldens PASS
 #   🧠 AI params in force: … timeout=600s (HTTP ceiling; non-stream paths) planner_stream_idle=30s planner_stream_total=1200s …
@@ -303,8 +304,8 @@ cd ~/nofx && cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.ec6632f9
 ```
 **Rollback (exact):**
 ```
-cd ~/nofx && mv nofx-bin nofx-bin.bad.75130d59 && cp nofx-bin.prev.boot nofx-bin && printf 'ec6632f9de41060b52398f41f9ffbbf840814c40' > deploy/RELEASE && kill -9 $(systemctl show -p MainPID --value nofx) && git checkout -- deploy/RELEASE web/src/guide/types.ts
-# soft rollback of the VALUE only (keeps the new class logging): echo 'AI_PLAN_TOTAL_DEADLINE_SECS=600' >> ~/nofx/.env && kill -9 $(systemctl show -p MainPID --value nofx)
+cd ~/vl && mv vl-bin vl-bin.bad.75130d59 && cp vl-bin.prev.boot vl-bin && printf 'ec6632f9de41060b52398f41f9ffbbf840814c40' > deploy/RELEASE && kill -9 $(systemctl show -p MainPID --value vl) && git checkout -- deploy/RELEASE web/src/guide/types.ts
+# soft rollback of the VALUE only (keeps the new class logging): echo 'AI_PLAN_TOTAL_DEADLINE_SECS=600' >> ~/vl/.env && kill -9 $(systemctl show -p MainPID --value vl)
 ```
 
 ### Proof (D) — the true proof has NOT yet occurred
@@ -339,14 +340,14 @@ crosses a real `http.Client.Timeout` on a real TCP stream and passes only on the
 
 ```
 # failure lines (14) and their neighbours
-journalctl -u nofx --since "2026-08-29 00:00" --no-pager -o short-iso | grep -E "ai_call |planner call \(|planner attempt|AI API (stream|call) failed|📊 AI call complete|Request URL \(stream|🧩 planner|📐 planner|🗓️|prompt render"
+journalctl -u vl --since "2026-08-29 00:00" --no-pager -o short-iso | grep -E "ai_call |planner call \(|planner attempt|AI API (stream|call) failed|📊 AI call complete|Request URL \(stream|🧩 planner|📐 planner|🗓️|prompt render"
 # counts by model/outcome and by URL
-journalctl -u nofx --since "2026-08-29 00:00" --no-pager | grep -o "ai_call model=[^ ]* .*ok=[a-z]*" | sed -E 's/duration_ms=[0-9]+ //; s/finish_reason=[^ ]+ //' | awk '{print $1,$2,$NF}' | sort | uniq -c
-journalctl -u nofx --since "2026-08-29 00:00" --no-pager | grep -o "Request URL[^:]*: https://[^ ]*" | sort | uniq -c
+journalctl -u vl --since "2026-08-29 00:00" --no-pager | grep -o "ai_call model=[^ ]* .*ok=[a-z]*" | sed -E 's/duration_ms=[0-9]+ //; s/finish_reason=[^ ]+ //' | awk '{print $1,$2,$NF}' | sort | uniq -c
+journalctl -u vl --since "2026-08-29 00:00" --no-pager | grep -o "Request URL[^:]*: https://[^ ]*" | sort | uniq -c
 # non-200 / auth / rate-limit / DNS / TLS / idle sweep (0 hits)
-journalctl -u nofx --since "2026-08-29 00:00" --no-pager | grep -E "MCP|ai_call|planner" | grep -iE "status [45][0-9][0-9]|HTTP [45][0-9][0-9]|rate.?limit|429|context canceled|idle timeout|no such host|tls:|handshake|401|403|unauthorized|invalid api key"
+journalctl -u vl --since "2026-08-29 00:00" --no-pager | grep -E "MCP|ai_call|planner" | grep -iE "status [45][0-9][0-9]|HTTP [45][0-9][0-9]|rate.?limit|429|context canceled|idle timeout|no such host|tls:|handshake|401|403|unauthorized|invalid api key"
 # boots / revs
-journalctl -u nofx --since "2026-08-29 00:00" --no-pager -o short-iso | grep -E "BOOT INTEGRITY|AI params in force|Request URL \(stream"
+journalctl -u vl --since "2026-08-29 00:00" --no-pager -o short-iso | grep -E "BOOT INTEGRITY|AI params in force|Request URL \(stream"
 # DB (read-only)
 sqlite3 -readonly data/data.db "SELECT id,user_id,name,provider,enabled,custom_api_url,custom_model_name,thinking_mode,reasoning_effort,length(api_key),created_at,updated_at FROM ai_models"
 sqlite3 -readonly data/data.db "SELECT id,name,ai_model_id,exchange_id,strategy_id,is_running FROM traders"
@@ -366,16 +367,16 @@ python3 scratch/parse_attempts2.py journal_wide_72h.txt      # Appendix A; awk o
 **Owner questions answered (mid-dispatch, ~17:58 CT).** (1) The main-tree lock was taken 17:35 CT when I
 moved into Phase 2 on the dispatch's evidence gate (B7 CONFIRMED + small fix), **not on owner approval** —
 released 17:59:06 CT; re-acquired for ~1 s at 18:00:19 CT only to check/unstage my own binary (see below),
-released again. Phase 1 itself ran lock-free and read-only. Nothing in `~/nofx` was edited by this dispatch
+released again. Phase 1 itself ran lock-free and read-only. Nothing in `~/vl` was edited by this dispatch
 at any point (porcelain clean before/after; the only file I ever created there was the ignored
-`nofx-bin.next`, since replaced by class 36's). (2) Phase-1 report raw URL, pinned to the Phase-1 commit:
+`vl-bin.next`, since replaced by class 36's). (2) Phase-1 report raw URL, pinned to the Phase-1 commit:
 `https://raw.githubusercontent.com/johnwick2921-cyber/nofx/638af5ed/docs/superpowers/reports/2026-09-01-planner-api-failure.md`
 → HTTP 200 (51,940 bytes); branch-tip raw URL → HTTP 200.
 
 **Concurrency surprise (A23, reported, not acted on beyond my own branch).** While this dispatch ran, class
 36 (`17efeea9` + marker `7089d271` + reports `b2c2ff92`, `a1a6e255`) landed on `dev`, and at 17:59 CT the
-class-36 dispatch staged ITS binary as `~/nofx/nofx-bin.next` (sha `d2f724a9…`) — i.e. my earlier staged
-file (sha `8473a5f2…`) was already gone when I went to remove it; nothing of mine remains in `~/nofx`.
+class-36 dispatch staged ITS binary as `~/vl/vl-bin.next` (sha `d2f724a9…`) — i.e. my earlier staged
+file (sha `8473a5f2…`) was already gone when I went to remove it; nothing of mine remains in `~/vl`.
 PR #87 became CONFLICTING (`deploy/RELEASE`, `AUDIT-CHECKLIST.md` — both appended after class 35 —,
 `web/src/guide/types.ts`). Resolution, on my branch only: merged `origin/dev` in (`e42a0b43`; checklist
 keeps **36 then 37**, my "(36 is held by…)" note removed), rebuilt, re-marked.
@@ -384,7 +385,7 @@ keeps **36 then 37**, my "(36 is held by…)" note removed), rebuilt, re-marked.
 ```
 vcs.revision=e42a0b43b4bead2c5d2207958d8a0bde2d65be11 · vcs.time=2026-09-01T23:00:31Z · vcs.modified=false
 sha256 75746bb7c0b1c35ebd7bf15dd54edbb97f76094869df1a296b1ef93259728913  (70,905,488 bytes)
-parked at ~/nofx-planner-api/nofx-bin.next   ← the WORKTREE, not ~/nofx (class 36's stage is untouched)
+parked at ~/vl-planner-api/vl-bin.next   ← the WORKTREE, not ~/vl (class 36's stage is untouched)
 marker 3c3f5465: deploy/RELEASE + GUIDE_BUILT_REV = e42a0b43…
 ```
 Tests on the merge: `go test ./mcp ./kernel ./trader -count=1` ok · full suite `go test ./... -count=1`:
@@ -395,14 +396,14 @@ Commit URLs (HTTP 200): `75130d59…` (fix), `225bc367` (first marker), `dad0777
 
 **Sequencing for the owner (ONE BOOT, ONE MARKER — two valid orders):**
 - **(a) class 36 first, class 37 later:** cut over class 36 from its own stage per its report; afterwards
-  merge PR #87 into dev (`git merge --ff-only fix/planner-stream-total-deadline` in `~/nofx` — the branch
-  already contains dev), `cp ~/nofx-planner-api/nofx-bin.next ~/nofx/nofx-bin.next`, then the §Phase 2
-  cutover block with `nofx-bin.old.17efeea9` and the rollback's RELEASE = `17efeea9…`.
+  merge PR #87 into dev (`git merge --ff-only fix/planner-stream-total-deadline` in `~/vl` — the branch
+  already contains dev), `cp ~/vl-planner-api/vl-bin.next ~/vl/vl-bin.next`, then the §Phase 2
+  cutover block with `vl-bin.old.17efeea9` and the rollback's RELEASE = `17efeea9…`.
 - **(b) one combined boot:** merge PR #87 first (RELEASE becomes `e42a0b43…`), replace
-  `~/nofx/nofx-bin.next` with the combined build above (it contains class 36 + 37), one cutover, one boot
+  `~/vl/vl-bin.next` with the combined build above (it contains class 36 + 37), one cutover, one boot
   line set: `BOOT INTEGRITY OK — rev e42a0b43 · expected e42a0b43`, `planner_stream_total=1200s`,
   `🛰 planner client: …`, plus class 36's own boot line. Rollback: `printf 'ec6632f9de41060b52398f41f9ffbbf840814c40' > deploy/RELEASE`
-  and `cp nofx-bin.prev.boot nofx-bin`, `kill -9 $(systemctl show -p MainPID --value nofx)`.
+  and `cp vl-bin.prev.boot vl-bin`, `kill -9 $(systemctl show -p MainPID --value vl)`.
 Either way: flat-gate quadruple + in-flight check + window first (§Phase 2), and note that at 17:53:33 CT an
 ASIA read was in flight (attempt 3/3 re-author) under the running `ec6632f9`.
 
@@ -411,9 +412,9 @@ ASIA read was in flight (attempt 3/3 re-author) under the running `ec6632f9`.
 kill shape has not recurred since the cutover window, and will recur on the next > 600 s read until the
 combined build runs.
 
-**Worktree state at closeout:** `~/nofx-planner-api` on `fix/planner-stream-total-deadline` @ `3c3f5465`
-(unlocked, kept for the owner's cutover; ignored `nofx-bin.next` inside), scratch clones in the session
-scratchpad only. `~/nofx-main.lock`: absent.
+**Worktree state at closeout:** `~/vl-planner-api` on `fix/planner-stream-total-deadline` @ `3c3f5465`
+(unlocked, kept for the owner's cutover; ignored `vl-bin.next` inside), scratch clones in the session
+scratchpad only. `~/vl-main.lock`: absent.
 
 ## CUTOVER — DONE (owner GO "GO 37", 2026-09-01) [A]
 
@@ -443,12 +444,12 @@ being replaced.
 
 **Merge + swap:**
 ```
-~/nofx-planner-api: git merge origin/dev (b7715a73, docs-only) → bc9ea126, RELEASE kept at e42a0b43, pushed
-~/nofx:             git merge --ff-only fix/planner-stream-total-deadline → dev = bc9ea126, pushed
+~/vl-planner-api: git merge origin/dev (b7715a73, docs-only) → bc9ea126, RELEASE kept at e42a0b43, pushed
+~/vl:             git merge --ff-only fix/planner-stream-total-deadline → dev = bc9ea126, pushed
                     RELEASE=e42a0b43  GUIDE_BUILT_REV=e42a0b43
-                    cp ~/nofx-planner-api/nofx-bin.next → ~/nofx/nofx-bin.next
+                    cp ~/vl-planner-api/vl-bin.next → ~/vl/vl-bin.next
                     sha256 75746bb7c0b1c35e…  vcs.revision=e42a0b43…  vcs.modified=false  (70,905,488 bytes)
-21:19:44 CT  cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.17efeea9 && mv nofx-bin.next nofx-bin && kill -9 1941026
+21:19:44 CT  cp vl-bin vl-bin.prev.boot && mv vl-bin vl-bin.old.17efeea9 && mv vl-bin.next vl-bin && kill -9 1941026
 21:19:49 CT  systemd relaunched (Restart=on-failure) → PID 1994488
 ```
 
@@ -477,13 +478,13 @@ it lands. Until then class 37 is SHIPPED-UNPROVEN (R6: EVENT-WAIT).
 
 **Rollback (still valid, exact):**
 ```
-cd ~/nofx && mv nofx-bin nofx-bin.bad.e42a0b43 && cp nofx-bin.prev.boot nofx-bin \
+cd ~/vl && mv vl-bin vl-bin.bad.e42a0b43 && cp vl-bin.prev.boot vl-bin \
   && printf '17efeea9fc5909473a40e60418428b521a2f1574' > deploy/RELEASE \
-  && kill -9 $(systemctl show -p MainPID --value nofx) && git checkout -- deploy/RELEASE web/src/guide/types.ts
+  && kill -9 $(systemctl show -p MainPID --value vl) && git checkout -- deploy/RELEASE web/src/guide/types.ts
 # value-only soft rollback (keeps the new class= telemetry):
-echo 'AI_PLAN_TOTAL_DEADLINE_SECS=600' >> ~/nofx/.env && kill -9 $(systemctl show -p MainPID --value nofx)
+echo 'AI_PLAN_TOTAL_DEADLINE_SECS=600' >> ~/vl/.env && kill -9 $(systemctl show -p MainPID --value vl)
 ```
-`nofx-bin.prev.boot` = the 17efeea9 binary (class 36), also kept as `nofx-bin.old.17efeea9`.
+`vl-bin.prev.boot` = the 17efeea9 binary (class 36), also kept as `vl-bin.old.17efeea9`.
 
 **What the owner will still see wrong (A15), post-cutover:**
 - A slow max read may now run up to 20 min per attempt (60 min for a 3-attempt read) before the plan
@@ -491,9 +492,9 @@ echo 'AI_PLAN_TOTAL_DEADLINE_SECS=600' >> ~/nofx/.env && kill -9 $(systemctl sho
 - Deadline/transport failures are still fed to attempt 2 as a "validator reason" and stored in
   `planner_rejected_prompts` — unchanged by this wave (prompt paths were out of scope). Owner ruling open.
 - The guide drift banner should now be CLEAR (`GUIDE_BUILT_REV` = running rev = `e42a0b43`); the FE is
-  served by the vite dev server from `~/nofx/web/src`, which the merge updated, so no `dist` rebuild was
+  served by the vite dev server from `~/vl/web/src`, which the merge updated, so no `dist` rebuild was
   needed.
-- `~/nofx` holds 30+ historical `nofx-bin.old.*`/`.prev.*` binaries (~2 GB); unrelated to this wave, worth
+- `~/vl` holds 30+ historical `vl-bin.old.*`/`.prev.*` binaries (~2 GB); unrelated to this wave, worth
   a prune.
 
 ## Appendix A — every planner attempt in the window (144 rows)

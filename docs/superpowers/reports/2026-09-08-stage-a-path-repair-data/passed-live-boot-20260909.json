@@ -21,11 +21,11 @@
     },
     {
       "timestamp_us": "1788976926399143",
-      "line": "09-09 13:02:06 [INFO] nofx/main.go:296 🗄 research snapshot: schema=1 · objects=5 · rows today market=0 candidate=0 plan=0 scenario=0 exec=0 · null-fields=0 · dropped=0 · added latency p50=UNKNOWN"
+      "line": "09-09 13:02:06 [INFO] vl/main.go:296 🗄 research snapshot: schema=1 · objects=5 · rows today market=0 candidate=0 plan=0 scenario=0 exec=0 · null-fields=0 · dropped=0 · added latency p50=UNKNOWN"
     },
     {
       "timestamp_us": "1788976926397694",
-      "line": "09-09 13:02:06 [INFO] nofx/main.go:294 🔐 BOOT INTEGRITY OK — rev 954f11b15f2e · built 2026-09-08T23:38:16Z · expected 954f11b1 · goldens PASS"
+      "line": "09-09 13:02:06 [INFO] vl/main.go:294 🔐 BOOT INTEGRITY OK — rev 954f11b15f2e · built 2026-09-08T23:38:16Z · expected 954f11b1 · goldens PASS"
     }
   ],
   "running_traders_n": 1,

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func pcLedger(t *testing.T) (*store.Store, *store.ArmedOrderStore) {

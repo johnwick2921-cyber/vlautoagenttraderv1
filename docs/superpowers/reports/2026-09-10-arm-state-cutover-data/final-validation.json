@@ -1,6 +1,6 @@
 {
   "merged_head": "a8b66cd0f463d2c2afb16a29e245de2dfa947433",
-  "clone": "/tmp/arm-state-cutover-20260910/nofx",
+  "clone": "/tmp/arm-state-cutover-20260910/vl",
   "captured_utc": "2026-09-10T17:04:49.361361+00:00",
   "go_test": {
     "exit": 1,

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // W5 — a trade closed on a REAL exit path (no AI close decision) still gets MAE/MFE

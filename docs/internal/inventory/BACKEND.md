@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Backend Layer Inventory
 
 Cross-cutting backend code paths that don't belong to one specific page. Page-specific handlers (and the routes that invoke them) are documented in the per-page files; this file covers the system entrypoint, the broker switch, the engine, the data providers, the agent runtime, and the store layer schema map.
@@ -37,10 +38,10 @@ Cross-cutting backend code paths that don't belong to one specific page. Page-sp
 10. **Line 109-130** — Log loaded trader configurations
 11. **Line 139** — `server := api.NewServer(traderManager, st, cryptoService, cfg.APIServerPort)`
 12. **Line 143-144** — Wire telegram reload channel into the API server
-13. **Line 147-150** — Construct + register the NOFXi agent. `nofxiAgent.Start()` starts the background goroutines.
+13. **Line 147-150** — Construct + register the VLi agent. `vliAgent.Start()` starts the background goroutines.
 14. **Line 153-157** — `go server.Start()` — gin HTTP server in a goroutine
 15. **Line 160** — `go telegram.Start(cfg, st, telegramReloadCh)` — Telegram bot
-16. **Line 162-181** — wait on `SIGINT`/`SIGTERM`, then graceful shutdown: `server.Shutdown()` → `nofxiAgent.Stop()` (via defer) → `traderManager.StopAll()`
+16. **Line 162-181** — wait on `SIGINT`/`SIGTERM`, then graceful shutdown: `server.Shutdown()` → `vliAgent.Stop()` (via defer) → `traderManager.StopAll()`
 
 **Critical security gate (per CLAUDE.md):** `config/config.go:67-69` defaults `JWTSecret = "default-jwt-secret-change-in-production"` when env unset. Verify with `grep JWT_SECRET .env`.
 
@@ -103,7 +104,7 @@ The per-trader long-running goroutine:
 
 ### Kernel — `kernel/engine.go` (924 LOC)
 
-Imports: `context`, `encoding/json`, `nofx/config`, `nofx/logger`, `nofx/market`, `nofx/provider/databento`, `nofx/provider/hyperliquid`, `nofx/provider/nofxos`, `nofx/security`, `nofx/store`. Note the unused `provider/nofxos` import — `nofxos.ai` is deprecated per CLAUDE.md.
+Imports: `context`, `encoding/json`, `vl/config`, `vl/logger`, `vl/market`, `vl/provider/databento`, `vl/provider/hyperliquid`, `vl/provider/vlos`, `vl/security`, `vl/store`. Note the unused `provider/vlos` import — `upstream website link (removed in the VL rename)` is deprecated per CLAUDE.md.
 
 Major types ([line 25-150ish](kernel/engine.go#L25)):
 - `PositionInfo` — 11-field position struct (Symbol/Side/EntryPrice/MarkPrice/Quantity/Leverage/UnrealizedPnL/UnrealizedPnLPct/PeakPnLPct/LiquidationPrice/MarginUsed/UpdateTime)
@@ -277,13 +278,13 @@ main.go
  │     └─ if t.IsRunning: go AutoTrader.Start()
  ├─ api.NewServer(traderManager, st, cryptoService, port)
  │  └─ setupRoutes()                            → ~80 routes
- ├─ nofxiagent.New(...)
- │  └─ NOFXi Agent + skill DAG + memory
+ ├─ vliagent.New(...)
+ │  └─ VLi Agent + skill DAG + memory
  ├─ go server.Start()                          → gin HTTP on :8080
  ├─ go telegram.Start(...)                     → telegram bot loop
  └─ <-quit                                     → SIGINT/SIGTERM
     ├─ server.Shutdown()
-    ├─ nofxiAgent.Stop() (via defer)
+    ├─ vliAgent.Stop() (via defer)
     └─ traderManager.StopAll()
 ```
 
@@ -386,7 +387,7 @@ Bot (Go side, TCPServer on :36974)            NT8 AddOn (Windows)
 | Manual close not supported for NT | Plan 1.5.x | `trader/ninjatrader/trader.go` (CSV) | `CloseLong`/`CloseShort` returns error; position only closes via SL/TP | requires C# AddOn change |
 | Cancel/modify not supported for NT | Plan 1.5.x | same | Mid-trade SL/TP changes can't be pushed | requires C# AddOn change |
 | 1-sec CSV dedup race | known limitation | `provider/ninjatrader/csv_writer.go` | Two signals within 1 sec → second silently dropped; TCP transport doesn't have this issue | Use NT_TRANSPORT=tcp |
-| `kernel/engine.go` imports `provider/nofxos` but the service is deprecated | technical debt | `kernel/engine.go:14` | Dead import + dead code paths | Cleanup after Plan 4.x ships |
+| `kernel/engine.go` imports `provider/vlos` but the service is deprecated | technical debt | `kernel/engine.go:14` | Dead import + dead code paths | Cleanup after Plan 4.x ships |
 | `cmd/nq_smoke/main.go` is the only consumer of multi-stage Databento pipeline outside `kernel/engine.go` | n/a | `cmd/nq_smoke/` | The smoke runner is the only way to test the data layer outside a full trader cycle | n/a — intended |
 
 ### NEW observations
@@ -394,10 +395,10 @@ Bot (Go side, TCPServer on :36974)            NT8 AddOn (Windows)
 | Description | File:line | Severity | Recommended scope |
 |---|---|---|---|
 | `main.go:160` starts the Telegram goroutine even when `TELEGRAM_BOT_TOKEN` is empty; the goroutine then sleeps in a check loop. Mild waste of a goroutine. | `main.go:160` + `telegram/start.go` | Cosmetic | 5-min: short-circuit `telegram.Start` when token is empty |
-| `nofxiAgent.Stop()` is called via `defer` AFTER `traderManager.StopAll()` returns — but the agent might still be holding handles to traders | `main.go:151, 180` | Edge case | Test for shutdown ordering issues. Currently no symptoms reported. |
+| `vliAgent.Stop()` is called via `defer` AFTER `traderManager.StopAll()` returns — but the agent might still be holding handles to traders | `main.go:151, 180` | Edge case | Test for shutdown ordering issues. Currently no symptoms reported. |
 | `crypto.SetGlobalCryptoService(cs)` uses a package-level global. Cleaner DI would inject this — but the GORM `EncryptedString` hook needs a global to work (no per-conn context in GORM hooks). Documented for future reference. | `crypto/` | Architectural — n/a now | n/a |
 | `agent/web.go:35` hardcodes `binanceFuturesAPIBaseURL = "https://fapi.binance.com"` — not env-overridable. Means even non-Binance traders hit Binance for ticker data via the agent. | `agent/web.go:35` | Multi-exchange chart gap | Bundle with Plan 4.5 |
-| The `nofxos` import in `kernel/engine.go` looks unused-at-glance but probably has indirect coupling via `nofxos.NewClient(apiKey)` usage. Worth a `go vet`-style pass. | `kernel/engine.go:14` | Code hygiene | 10-min: grep for actual usage |
+| The `vlos` import in `kernel/engine.go` looks unused-at-glance but probably has indirect coupling via `vlos.NewClient(apiKey)` usage. Worth a `go vet`-style pass. | `kernel/engine.go:14` | Code hygiene | 10-min: grep for actual usage |
 | `store/visibility.go` — IsVisibleExchange logic checks `NTDataDir != ""` as a sufficient condition for visibility. If a NT exchange row is misconfigured (saved with empty DataDir), it disappears from the list with no warning. | `store/visibility.go:64-80` | UX | Show disabled entries with a "config incomplete" warning instead of hiding |
 | All HTTP handlers use `c.GetString("user_id")` to identify the caller — but the value is the `user_id` field in the JWT claim, NOT the `username`. Worth documenting because tools like `agent_routes.go` re-use this value as `storeUserID` (the convention is "user_id from JWT == user_id in store"). | `api/handler_*.go` patterns | Documentation | n/a |
 | TraderManager error handling: `addTraderFromStore` returns error but main.go's `LoadTradersFromStore` swallows individual failures (logs but continues). One broken exchange config doesn't break the whole boot. | `manager/trader_manager.go` | Operational | Document explicitly |
@@ -405,7 +406,7 @@ Bot (Go side, TCPServer on :36974)            NT8 AddOn (Windows)
 ### Open questions
 
 - What's the relationship between `ai/` (if exists) and `agent/`? Quick file scan suggests no `ai/` package — AI provider abstractions live in `agent/model_provider_catalog.go`.
-- The `mcp/` import in main.go (line 13-14): `_ "nofx/mcp/payment"` + `_ "nofx/mcp/provider"` — blank imports for side effects (init() registration). What MCP servers are bootstrapped this way? Worth a follow-up pass.
+- The `mcp/` import in main.go (line 13-14): `_ "vl/mcp/payment"` + `_ "vl/mcp/provider"` — blank imports for side effects (init() registration). What MCP servers are bootstrapped this way? Worth a follow-up pass.
 - `kernel.Decision` shape vs `store.Decision` shape — same fields or do they diverge? The audit columns are on `store.Decision`; `kernel.Decision` is the in-memory shape produced by the LLM.
 - `trader/auto_trader.go` line 60 comment mentions Exchange field — what's the canonical source of truth for `exchange_type` string values? `store.Exchange.ExchangeType` is the column; the validation in `api/handler_exchange.go:347` has a `validTypes` map. Worth confirming they match.
 - ADR-007 lists 19 critical files but the actual count of files in `trader/ninjatrader/` + `provider/ninjatrader/` + `provider/databento/` + `market/` + `kernel/` + `cmd/nq_smoke/` is much higher now after Plan 4-5. Verify ADR-007 file list is current.

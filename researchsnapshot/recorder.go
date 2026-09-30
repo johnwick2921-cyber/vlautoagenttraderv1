@@ -3,12 +3,12 @@ package researchsnapshot
 import (
 	"context"
 	"fmt"
-	"nofx/safe"
+	"vl/safe"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"nofx/telemetry"
+	"vl/telemetry"
 )
 
 // OfferBudget bounds synchronous admission work, not disk latency. Builders,

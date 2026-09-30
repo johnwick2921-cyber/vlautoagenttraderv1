@@ -40,14 +40,14 @@
   ],
   "static_files": [
     {
-      "path": "/home/hoang/nofx-vet-06-complete/calendar_static_t1.json",
+      "path": "/home/hoang/vl-vet-06-complete/calendar_static_t1.json",
       "sha256": "32f9824e907e20b11d850eb54e1e005feee931804a64d18d318a1670fa34f9e6",
       "events": 16,
       "t1": 8,
       "notes": 3
     },
     {
-      "path": "/home/hoang/nofx/calendar_static_t1.json",
+      "path": "/home/hoang/vl/calendar_static_t1.json",
       "sha256": "32f9824e907e20b11d850eb54e1e005feee931804a64d18d318a1670fa34f9e6",
       "events": 16,
       "t1": 8,

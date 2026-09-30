@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 func TestEnrollCommentTruthACrashBetweenTheTwoRenames(t *testing.T) {

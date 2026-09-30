@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // E8 / A10 / CLASS 23 — A MEASURING INSTRUMENT MAY NEVER STOP THE TRADING LOOP.

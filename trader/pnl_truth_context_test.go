@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // P&L-TRUTH WAVE — the production plumbing (attachTradeContext) carries the

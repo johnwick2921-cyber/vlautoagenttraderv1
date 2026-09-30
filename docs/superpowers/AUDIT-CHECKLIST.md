@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # AUDIT-CHECKLIST — the permanent audit playbook
 
 Codified 2026-08-28 from the campaign's then-18 proven bug classes; 53 as of
@@ -99,7 +100,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
 13. **Concurrent-terminal.** Root cause: two dispatches in the main tree — one
     reset the other's uncommitted work out from under it (armed-orders vs
     level-truth; 6 dirty worktrees lost). **Probe:** porcelain gate
-    (`git status --porcelain` empty) + `deploy/nofx-lock.sh acquire <session>
+    (`git status --porcelain` empty) + `deploy/vl-lock.sh acquire <session>
     <task>` before ANY main-tree work (atomic; a second acquire REFUSES — see
     class 70, which removed the pid this line used to name). **Law:** WORKTREE LAW — the
     main checkout belongs to exactly ONE dispatch; secondary work runs in
@@ -166,7 +167,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     this class. **Law:** a guard without a firing fixture is decoration.
 
 21. **Committed binaries / embedded secrets.** Root cause: `git add` of build
-    artifacts — 14 tracked `nofx-bin.old*` binaries embedded a live-era
+    artifacts — 14 tracked `vl-bin.old*` binaries embedded a live-era
     DeepSeek `sk-` key in a PUBLIC repo (caught 2026-08-29 by T14's binary
     scan; every text-only secret scan missed it). **Probe:** `git ls-files`
     for binary artifacts + `strings`-scan EVERY tracked binary for `sk-`/
@@ -257,7 +258,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     a string, ask where the string was normalized and whether BOTH sides use
     the same normalizer. **Law:** one canonicalizer per identifier, called at
     the boundary where the value enters, not at each comparison.
-   *Instance 2026-09-24 (WAVE 3b-A):* `NOFX_RELEASE_DIR` was read in TWO
+   *Instance 2026-09-24 (WAVE 3b-A):* `VL_RELEASE_DIR` was read in TWO
    packages — `api/release_dir.go` latched it behind a `sync.Once`, while
    `kernel/boot_integrity.go:230` called `os.Getenv` on every use. One
    identifier, two resolutions, and they DISAGREE the moment the environment
@@ -1377,7 +1378,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     have dressed the wreckage as repaired.** (Renumbered 63→64→66 AT MERGE,
     combined boot 4. 63 went to the two-true-numbers class, then 64 collided
     with the detector class and 65 with the seam class — both allocated by
-    nofx-47 and nofx-ed. Highest occupied at merge: 65.)
+    vl-47 and vl-ed. Highest occupied at merge: 65.)
     `shadow_ab.go` mirrored stop/target/ref into a NEGATIVE price space for
     shorts so that "MFE is always favorable-positive in the replay". The
     close-rule fill returned the REAL close and `row.StopPx/TargetPx` were
@@ -1537,7 +1538,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
 
 70. **A lock that answers the wrong question.** (Number assigned at merge,
     A16 — highest occupied on dev was 69, the reported-wired-called-by-nobody
-    class from the wake-predicate boot.) Root cause: `~/nofx-main.lock` was ONE
+    class from the wake-predicate boot.) Root cause: `~/vl-main.lock` was ONE
     FLAT FILE, written with `>`, carrying a **pid**, and read with `kill -0`. It
     failed in three directions on 2026-09-03 alone, and no single failure was
     caught by the file — every one was caught by a peer asking:
@@ -1555,15 +1556,15 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     working"*, and only the owner can answer it. **Probe:** try to acquire a
     held lock — if it succeeds, the lock is a suggestion, not a lock; then read
     the lock and grep it for a pid. **Law:** the lock is an ATOMIC CREATE
-    (`mkdir ~/nofx-main.lock.d`, which fails if it exists, so (b) cannot be
+    (`mkdir ~/vl-main.lock.d`, which fails if it exists, so (b) cannot be
     represented) recording **session · task · acquired · expiry · heartbeat**
     and **no pid field at all**. Liveness is the heartbeat, rewritten by the
     holder every 2 min; older than 5 min reads **STALE**, and STALE IS NOT
     DEAD — the surface never prints "dead" and never self-clears. Corroboration
     stays mandatory before clearing: ask the named session, watch whether HEAD
-    moves, look for a build in flight. Fixed in `deploy/nofx-lock.sh`
+    moves, look for a build in flight. Fixed in `deploy/vl-lock.sh`
     (`acquire`/`heartbeat`/`release`/`status`/`check`/`with-heartbeat`), pinned
-    by `deploy/nofx-lock-test.sh` — 56 assertions including a second acquire
+    by `deploy/vl-lock-test.sh` — 56 assertions including a second acquire
     refusing, a stale heartbeat never reading "dead", and a source pin that the
     script cannot express `kill -0`, `pgrep` or `$$`. `with-heartbeat` beats
     **`acquire` now STARTS A KEEPER (2026-09-09)** that beats for you until the
@@ -1591,11 +1592,11 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     branch, the worktree and the timestamp, and a lane's work can otherwise be
     absorbed under another lane's name. That is what PART 3 step 0 exists to
     prevent.
-    **SECOND-ORDER HAZARD THIS WAVE CREATED, found by nofx-ed.** Changing the
+    **SECOND-ORDER HAZARD THIS WAVE CREATED, found by vl-ed.** Changing the
     lock changed `docs/superpowers/plans/2026-09-02-tree-guard-spec.md`, whose
     expected-dirty rule the tree-guard wave was implementing AT THE SAME TIME,
     from a worktree cut before the change. They built the old model —
-    `~/nofx-main.lock`, a pid, `kill -0` — and under the new lock there is no
+    `~/vl-main.lock`, a pid, `kill -0` — and under the new lock there is no
     legacy file, so during a cutover that guard would have found "no live
     holder", seen a legitimately dirty tree, and **ALARMED at exactly the moment
     it is meant to be trusted**, while running and printing normally. A guard
@@ -1610,7 +1611,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     read once, at a moment nobody recorded.
 
 71. **Global state that no worktree owns — the stash stack.** (Number assigned
-    at merge, A16 — highest occupied on dev was 70. Found by nofx-47 on
+    at merge, A16 — highest occupied on dev was 70. Found by vl-47 on
     2026-09-03, by accident, while isolating a test result.) Root cause: `git
     stash` is per-REPOSITORY, not per-worktree. This repo has **56 worktrees**,
     the main tree among them, and a plain `git stash pop` in ANY of them applies
@@ -1619,7 +1620,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     `6b770196` "On dev: class45-found-revert-1203" (2026-09-02 12:03:34): the
     preserved evidence of the class-45 VS Code stale-buffer revert, **127
     insertions / 596 deletions** of shipped safety code across six files.
-    nofx-47 popped it into an unrelated worktree by routine stash/pop; three
+    vl-47 popped it into an unrelated worktree by routine stash/pop; three
     files conflicted because dev had moved, and **three applied CLEANLY and
     staged**, deleting among other things:
 
@@ -1646,7 +1647,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     `.gitignore:143` is `*.patch`, which silently swallowed the first attempt to
     commit it — `git add -A` skipped it with no error and the file was reported
     as landed when it had not (a second instance of this checklist's own
-    never-claim-an-unverified-state rule, caught by nofx-47 reading dev rather
+    never-claim-an-unverified-state rule, caught by vl-47 reading dev rather
     than reading my report). **DROPPED 2026-09-03 on explicit owner
     authorisation**, after a four-point pre-flight (one entry on the stack · its
     sha IS `6b770196` · the local AND origin tags both dereference to it · the
@@ -1724,8 +1725,8 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     17584 > 8148, GREEN after).
 
 74. **A swap that failed and a kill that succeeded — the null cutover.** (Number
-    assigned at merge, A16 — highest occupied on dev was 73. Found by nofx-47
-    during combined boot 7, 2026-09-03.) Root cause: `cp nofx-bin.next nofx-bin`
+    assigned at merge, A16 — highest occupied on dev was 73. Found by vl-47
+    during combined boot 7, 2026-09-03.) Root cause: `cp vl-bin.next vl-bin`
     against a RUNNING binary fails with **`Text file busy`** — the inode is
     executing. The kill sat in the same command block and had already fired, so
     systemd relaunched the **OLD** binary while the operator's screen showed a
@@ -1745,7 +1746,7 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     `mv`.** This is not a gap in the procedure, it is a deviation from it whose
     failure mode is silent enough to read as success. `mv` replaces the directory
     entry and works on a busy inode; `cp` writes THROUGH it and cannot.
-    **Probe:** after any swap, verify `go version -m nofx-bin` BEFORE the kill,
+    **Probe:** after any swap, verify `go version -m vl-bin` BEFORE the kill,
     not after — and never put the swap and the kill in one block, because a
     `&&` chain hides which half failed and a `;` chain runs the kill anyway.
     **Law:** swap with `mv`, verify the swapped artifact, then kill — three
@@ -1758,13 +1759,13 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     output; going into the tree guard as its own check.) Root cause: Go embeds
     the **build directory name** in source paths, so a binary built from a clean
     clone in a directory called `cleanclone/` logs `cleanclone/main.go:291`
-    where every previous binary logged `nofx/main.go:291`. Measured on the
+    where every previous binary logged `vl/main.go:291`. Measured on the
     running binary: **41 lines carrying the `cleanclone/` prefix against 35
-    carrying `nofx/`** in the same tail. Behaviourally harmless and completely
+    carrying `vl/`** in the same tail. Behaviourally harmless and completely
     invasive for anything that reads logs by path — greps, alerts, the
-    journald filters, and every runbook that says "look for `nofx/main.go`".
+    journald filters, and every runbook that says "look for `vl/main.go`".
     **Probe:** after a clean-clone build, grep one log line for the module
-    directory name before shipping. **Law:** the clean clone is named `nofx`.
+    directory name before shipping. **Law:** the clean clone is named `vl`.
     A build artifact carries its build path into production, so the build
     directory is part of the deploy, not scratch space.
 
@@ -2110,12 +2111,12 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     **Law:** decouple the heartbeat from the work. A detached keeper that
     self-exits when the resource is released:
     ```
-    nohup bash -c 'while true; do deploy/nofx-lock.sh heartbeat <session> \
+    nohup bash -c 'while true; do deploy/vl-lock.sh heartbeat <session> \
       >/dev/null 2>&1 || exit 0; sleep 100; done' >/dev/null 2>&1 &
     ```
     And note what does NOT save you: the lock's `expiry` field is written at
     acquire and only ever PRINTED — the ALIVE/STALE branch compares heartbeat
-    AGE alone (`nofx-lock.sh`). Expiry is display; the keeper is the mechanism.
+    AGE alone (`vl-lock.sh`). Expiry is display; the keeper is the mechanism.
     **Corollary, from the same hour and the same two lanes.** Both lanes ran a
     census of this file and both were blind, in opposite ways: one grepped only
     `## CLASS N` and could not see the `NN. **Title.**` entries where 78-84 live;
@@ -2339,7 +2340,7 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    BEFORE writing a line:
 
    ```
-   NOFX_SESSION=<your session>  deploy/nofx-claim.sh new <branch> "<wave>"
+   VL_SESSION=<your session>  deploy/vl-claim.sh new <branch> "<wave>"
    ```
 
    which is exactly:
@@ -2357,15 +2358,15 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    **THE SESSION NAME AND THE ISO TIMESTAMP ARE MANDATORY, NOT DECORATION**
    (owner ruling 2026-09-04). The message MUST match
    `claim: <wave> — <session>, <ISO-8601 with offset>`, and
-   `deploy/nofx-claim.sh check <branch>` FAILS on anything else —
+   `deploy/vl-claim.sh check <branch>` FAILS on anything else —
    `audit` sweeps every claim on origin.
 
    **THE SESSION FIELD CARRIES BOTH IDENTIFIERS — A CLAIM MUST BE ROUTABLE, NOT
    MERELY ATTRIBUTABLE** (owner ruling 2026-09-07). Write it as:
 
    ```
-   NOFX_SESSION="<wave>-<session-uuid-prefix>/<ListAgents-name>[<ref>]"
-   # e.g.  claimid-ee7f9468/nofx-db[ca9c60]
+   VL_SESSION="<wave>-<session-uuid-prefix>/<ListAgents-name>[<ref>]"
+   # e.g.  claimid-ee7f9468/vl-db[ca9c60]
    ```
 
    The 2026-09-04 rule fixed attribution: a claim now names WHO. It did not fix
@@ -2379,7 +2380,7 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    `session-calendar-554049f5`. A second lane hit the collision at step 0
    exactly as designed, stood down exactly as designed — and then had to relay
    two owner additions to a lane it could not address: `ListAgents` offered
-   `nofx-2c / nofx-ba / nofx-e7 / nofx-6b` and no row matching `554049f5`. The
+   `vl-2c / vl-ba / vl-e7 / vl-6b` and no row matching `554049f5`. The
    message went to **all four sessions** because there was no way to send it to
    one. Three lanes paid an interrupt for a message that concerned none of them,
    and the fourth may not be the holder either. One message, four sends, delivery
@@ -2394,7 +2395,7 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    has moved out.
 
    **Enforcement is a NAMED FOLLOW-UP, not part of this entry.** The regex in
-   `deploy/nofx-claim.sh` (`CLAIM_RE`) treats the session field as `.+`, so the
+   `deploy/vl-claim.sh` (`CLAIM_RE`) treats the session field as `.+`, so the
    composite form passes `check` today and so does the old bare form — verified
    on this entry's own claim, which uses the new form and passes unchanged.
    Until that regex is tightened by owner ruling, **this is a convention the
@@ -2415,7 +2416,7 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    reachable identity can live. **A claim without a session proves a collision
    and cannot resolve it.** The template already showed `<session>`; a template is
    a suggestion, and two of the five claims on origin at the time this shipped
-   omitted it. Pins: `deploy/nofx-claim-test.sh` (10, including the real
+   omitted it. Pins: `deploy/vl-claim-test.sh` (10, including the real
    malformed reaper message as REAL-1 — a checker that passes the message which
    caused the incident is decoration; mutation-tested by hollowing the regex).
 
@@ -2443,7 +2444,7 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    branch needs a `--force-with-lease` and anyone holding the old sha is now
    holding a commit that no longer exists. This wave hit it: the claim pushed as
    `4d485b19` and landed as `5bcb5455`, same message, same author, same wave.
-   So a claim is addressed by its BRANCH, and `nofx-claim.sh check` reads the
+   So a claim is addressed by its BRANCH, and `vl-claim.sh check` reads the
    FIRST COMMIT AHEAD OF `origin/dev` on that branch — whatever its sha — rather
    than a recorded one. A coordination message that cites a claim sha will go
    stale the first time its lane rebases; cite `fix/<wave>` instead.
@@ -2457,7 +2458,7 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    a day's duplicate work and an attribution that git cannot reconstruct.
 
    **THE SECOND THING THIS BUYS — a lost dispatch stops looking like a quiet
-   lane.** (Found by nofx-ed 2026-09-03, the same night: four dispatches
+   lane.** (Found by vl-ed 2026-09-03, the same night: four dispatches
    misrouted, three to the wrong lane and one — "TWO-DAY AUDIT" — whose title
    reached a lane and whose body reached nobody.) A dispatch delivered to the
    WRONG lane is self-correcting: the receiver sees a mismatch and says so, which
@@ -2483,16 +2484,16 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    would look like if the thing had never existed at all — and if the answer is
    "identical to success", the check does not cover the case.
 
-1. **Tree gate:** porcelain-clean + `deploy/nofx-lock.sh acquire <session>
+1. **Tree gate:** porcelain-clean + `deploy/vl-lock.sh acquire <session>
    <task> [minutes]` (atomic create; records session · task · acquired ·
    expiry · heartbeat, NO pid — class 70) + HEAD is the single allowed branch
-   for this dispatch. Beat it as you work (`nofx-lock.sh heartbeat <session>`,
-   or wrap long steps in `nofx-lock.sh with-heartbeat <session> -- <cmd>`); a
+   for this dispatch. Beat it as you work (`vl-lock.sh heartbeat <session>`,
+   or wrap long steps in `vl-lock.sh with-heartbeat <session> -- <cmd>`); a
    heartbeat older than 5 min reads STALE, which means NOT CHECKED IN, never
    dead, and never clear one without corroboration.
 
 2. **Build:** from the MAIN checkout at the deploy commit (worktree builds lose
-   vcs stamping → `<no-vcs>` → INTEGRITY REFUSED). `go build -o nofx-bin.next`.
+   vcs stamping → `<no-vcs>` → INTEGRITY REFUSED). `go build -o vl-bin.next`.
 
 3. **Marker:** `deploy/RELEASE` = the 8-char build rev, committed (marker AFTER
    build; RELEASE must equal the BUILD sha).
@@ -2515,8 +2516,8 @@ curl -s -o /dev/null -w "HTTP %{http_code}  %{size_download} bytes\n" \
    REQUIRES the boot sweep to run and its result to be quoted in the report
    (`🛡 boot sweep CANCELLED pre-boot arm …` per row, or `cancelled 0`).
 
-6. **Swap:** `mv nofx-bin nofx-bin.old.<tag>` → `mv nofx-bin.next nofx-bin` →
-   VERIFY (`go version -m nofx-bin` shows the deploy rev) → `kill -9 <PID>`
+6. **Swap:** `mv vl-bin vl-bin.old.<tag>` → `mv vl-bin.next vl-bin` →
+   VERIFY (`go version -m vl-bin` shows the deploy rev) → `kill -9 <PID>`
    (SIGKILL — SIGTERM exits 0 and systemd does NOT relaunch). The classifier
    denies the kill to the agent: print the command and have the OWNER run it.
    **`mv`, never `cp`** — `cp` onto a running binary fails `Text file busy`,
@@ -3324,7 +3325,7 @@ The class-33 boot sweep still has no scenario-validity adoption policy. Its stat
 
 **Correction of this entry, 2026-09-10 (A24).** This entry first said **11**, and the query never returned 11 — every reading in the transcript is **10**. The 11 came from a hardcoded shell label, `echo "--- what the 11 arms are ---"`, printed directly above output that read `10`, and it propagated from there into this entry, into `reports/2026-09-09-candidates-not-entitlements.md`, and into what was told the owner and a peer lane. A count typed into an `echo` above a query is a placeholder that reads as data; it survived because it sat beside the real number and agreed with the story being told. The entry about not hand-typing values carried a hand-typed value in its own headline — the class caught its own author, in its own text, five days running.
 
-**Second instance — the mirror image, same predicate, same day, one hour later.** Lane nofx-07 ran, repeatedly between 21:05 and 22:21 CT on 2026-09-09 and inside three successive Monitor loops:
+**Second instance — the mirror image, same predicate, same day, one hour later.** Lane vl-07 ran, repeatedly between 21:05 and 22:21 CT on 2026-09-09 and inside three successive Monitor loops:
 
 ```sql
 select count(*) from armed_orders where state in ('armed','working')
@@ -3337,7 +3338,7 @@ Reproduced 2026-09-10, three predicates against the same table at the same insta
 | predicate | form | rows |
 |---|---|---|
 | `isTerminalArmState` — the code's seven | negative | **0** |
-| nofx-07's `IN ('armed','working')` | positive | **0** |
+| vl-07's `IN ('armed','working')` | positive | **0** |
 | this entry's five-of-seven `NOT IN` | negative | **10** |
 
 The table has only ever PERSISTED three states — `cancelled` 77, `filled` 22, `superseded` 10. Every live state (`armed`, `place_pending`, `working`, `cancel_pending`) is real, code-set and transient, so none of them is visible in a snapshot. **`select distinct state` cannot catch this class**; only the code's predicate knows the full set.
@@ -3346,7 +3347,7 @@ The table has only ever PERSISTED three states — `cancelled` 77, `filled` 22, 
 
 **Law:** a gate query reads the code's terminal set; it never retypes it. **A negative list of terminal states that omits one OVER-reports live rows and fails SAFE; a positive list of live states that omits one UNDER-reports and fails OPEN — the gate calls the desk flat while a real order rests at the broker.** A hand-typed list is therefore not merely wrong, it is wrong in a direction that depends on which way you happened to type it, and that is the argument for reading the code's set rather than for typing a better list.
 
-The structural remedy is to export ONE SQL fragment derived from the predicate, so the switch and every gate query have a single source. **Read class 107 before building it.** As stated, this paragraph is dangerous on its own: a lane that centralised every arm-state list onto a single `NonTerminalArmStateSQL()` pointed `store/boot_sweep.go` at a set that INCLUDES `cancel_pending`, and the sweep's raw `cancelled` write then re-cancelled rows whose cancels were sent but never confirmed. The three-state list it replaced was a deliberate, undocumented exception. The remedy is a single **SOURCE**, never a single **PREDICATE** — one name per intent (`SweepableArmStateSQL()` alongside `NonTerminalArmStateSQL()`), each carrying the comment that says why its set differs. **Attribution corrected 2026-09-10:** that work was NOT built by lane nofx-80. It exists, largely complete, on the unmerged branch `origin/fix/arm-state-predicate` @`45d677f5`, claimed by `arm-state-0b955fbc/root[unlisted]` on 2026-09-09 — a lane that has since ended. It exports `armStates` / `TerminalArmStateSQL()` / `NonTerminalArmStateSQL()` and retires every hand-typed list, and **it carries the class-107 regression described above**. Still not on dev (`origin/dev` keeps the safe three-state list at `store/boot_sweep.go:47`), and it must not merge until the sweep reads a named predicate. Finding, A/B and the owner-ruled fix: `reports/2026-09-10-boot-sweep-cancel-pending.md`. A caveat for whoever builds it, which is class 102 in this file seen from another angle: a `[]string` sitting *beside* a hardcoded `switch` does not close this class, it moves it — two hand-typed lists in one file diverge as readily as one in Go and one in SQL. It closes only when the switch ranges over the same slice the SQL is built from. Until then the fallback applies: the query quotes the predicate's file:line beside the literal and a test pins them equal, so a state added to the Go switch fails the test instead of silently widening the gate. The same rule covers any "is it finished / is it safe" list: order states, position states, plan lifecycle states. Related: class 53 (parity tests exercise production CALL SITES — a test that builds both sides' inputs proves only self-consistency). A worked example — the wrong query annotated in place beside the correct one — is preserved at `reports/2026-09-04-two-day-audit.md` §0. Dispatch 103 report: `reports/2026-09-09-candidates-not-entitlements.md`.
+The structural remedy is to export ONE SQL fragment derived from the predicate, so the switch and every gate query have a single source. **Read class 107 before building it.** As stated, this paragraph is dangerous on its own: a lane that centralised every arm-state list onto a single `NonTerminalArmStateSQL()` pointed `store/boot_sweep.go` at a set that INCLUDES `cancel_pending`, and the sweep's raw `cancelled` write then re-cancelled rows whose cancels were sent but never confirmed. The three-state list it replaced was a deliberate, undocumented exception. The remedy is a single **SOURCE**, never a single **PREDICATE** — one name per intent (`SweepableArmStateSQL()` alongside `NonTerminalArmStateSQL()`), each carrying the comment that says why its set differs. **Attribution corrected 2026-09-10:** that work was NOT built by lane vl-80. It exists, largely complete, on the unmerged branch `origin/fix/arm-state-predicate` @`45d677f5`, claimed by `arm-state-0b955fbc/root[unlisted]` on 2026-09-09 — a lane that has since ended. It exports `armStates` / `TerminalArmStateSQL()` / `NonTerminalArmStateSQL()` and retires every hand-typed list, and **it carries the class-107 regression described above**. Still not on dev (`origin/dev` keeps the safe three-state list at `store/boot_sweep.go:47`), and it must not merge until the sweep reads a named predicate. Finding, A/B and the owner-ruled fix: `reports/2026-09-10-boot-sweep-cancel-pending.md`. A caveat for whoever builds it, which is class 102 in this file seen from another angle: a `[]string` sitting *beside* a hardcoded `switch` does not close this class, it moves it — two hand-typed lists in one file diverge as readily as one in Go and one in SQL. It closes only when the switch ranges over the same slice the SQL is built from. Until then the fallback applies: the query quotes the predicate's file:line beside the literal and a test pins them equal, so a state added to the Go switch fails the test instead of silently widening the gate. The same rule covers any "is it finished / is it safe" list: order states, position states, plan lifecycle states. Related: class 53 (parity tests exercise production CALL SITES — a test that builds both sides' inputs proves only self-consistency). A worked example — the wrong query annotated in place beside the correct one — is preserved at `reports/2026-09-04-two-day-audit.md` §0. Dispatch 103 report: `reports/2026-09-09-candidates-not-entitlements.md`.
 
 ## CLASS 100 — A BRANCH ON A STALE BASE IS A DELETION PATCH (born 2026-09-09, dispatch 103 W3)
 
@@ -3365,7 +3366,7 @@ reasoning — and no code path ever compares it to anything.
 **Read beside class 88** (*a liveness signal that is a side effect of activity*),
 which is the defect this one was found while fixing, and **class 97**.
 
-**Root cause.** `deploy/nofx-lock.sh` wrote `expiry` at `acquire` and printed it
+**Root cause.** `deploy/vl-lock.sh` wrote `expiry` at `acquire` and printed it
 in every `status` line, ALIVE and STALE alike. Three occurrences in the file:
 written once, printed twice. `cmd_heartbeat` refused on exactly two conditions —
 no lock directory, and not the holder. **Past its expiry a lock beat happily,
@@ -3612,7 +3613,7 @@ The cache cap is **2500** — `DefaultBarCacheMaxBars` (`provider/ninjatrader/ba
 **Instance 2 — a rule in an untracked file.** `CLAUDE.md:205` instructed every lane on this machine:
 
 ```
-deploy/nofx-lock.sh heartbeat <session>                    # beat every ~2 min as you work
+deploy/vl-lock.sh heartbeat <session>                    # beat every ~2 min as you work
 ```
 
 On 2026-09-10 the lock-keeper wave (`417599a3`, classes 101–104) made `acquire` start the heartbeat itself. Hand-beating became a **second writer into the lock dir** — the precise failure that wave existed to close. The one file instructing every lane to hand-beat was the one file the wave could not touch: `CLAUDE.md` is **untracked**, so no branch could correct it, no review could see it drift, and no test could assert it still matched the script. This is the worse half of the class. Instance 1 misleads a reader; instance 2 **instructs** one, and a lane following it faithfully would have caused the defect the wave had just removed.
@@ -3625,7 +3626,7 @@ Drafting this entry, I read that citation, believed it, and wrote "class 73 (SPE
 
 **Law:** a rule about the code lives in a **tracked file with a contract test**, and untracked guidance **points at it** rather than restating it. A restatement is a second copy that drifts from the code and from the original, independently and silently; a pointer cannot be wrong about anything except where to look.
 
-Partial remedy already on dev: `docs/superpowers/CLAUDE-canon.md` (landed `557494c7`) mirrors the MAIN-TREE LOCK LAW into a tracked file, and it declares itself newer by construction because it is the copy a wave can reach. That closes the git half. **The test half is not closed** — `git grep CLAUDE-canon -- '*.go' '*.sh'` returns zero, so nothing asserts the mirror still matches `deploy/nofx-lock.sh`, and a mirror with no contract test is this class with one more copy in it. The pointer half is not closed either: `CLAUDE.md` cannot be made to point at the canon file by any wave, only by the owner. Until both halves land, treat the canon file as authoritative over `CLAUDE.md` and the script as authoritative over both.
+Partial remedy already on dev: `docs/superpowers/CLAUDE-canon.md` (landed `557494c7`) mirrors the MAIN-TREE LOCK LAW into a tracked file, and it declares itself newer by construction because it is the copy a wave can reach. That closes the git half. **The test half is not closed** — `git grep CLAUDE-canon -- '*.go' '*.sh'` returns zero, so nothing asserts the mirror still matches `deploy/vl-lock.sh`, and a mirror with no contract test is this class with one more copy in it. The pointer half is not closed either: `CLAUDE.md` cannot be made to point at the canon file by any wave, only by the owner. Until both halves land, treat the canon file as authoritative over `CLAUDE.md` and the script as authoritative over both.
 
 Related: **slot 50** (the prompt withheld what the validator enforces — a document that instructs a reader to do the thing a guard forbids; the dispatch called it "class 45", the merged slot is 50), the **SPEC-FRESHNESS LAW** (CLAUDE.md canon — it has NO checklist slot, and CLAUDE.md's claim that it is class 73 is instance 3 above), and the **GUIDE CONTENT LAW**, which is this law already applied to one surface: a guide that lies about the running binary is worse than no guide.
 
@@ -3781,9 +3782,9 @@ refactor had already been written, tested and pushed on the other reading.
 
 ## CLASS 108 — A SOURCE GUARD THAT SCANS NOTHING (assigned at arm-state cutover follow-up merge, 2026-09-10)
 
-**Finding:** TestTZGuardSingleTimeSource searched for a directory basename ending in nofx and swallowed walk errors. `/tmp/nofx-arm-state` therefore scanned `/kernel`, `/trader`, `/api`, `/agent`, read nothing and passed. A clean clone named nofx exposed four pre-existing timezone violations. A successful process exit was not evidence that the guard had examined source.
+**Finding:** TestTZGuardSingleTimeSource searched for a directory basename ending in vl and swallowed walk errors. `/tmp/vl-arm-state` therefore scanned `/kernel`, `/trader`, `/api`, `/agent`, read nothing and passed. A clean clone named vl exposed four pre-existing timezone violations. A successful process exit was not evidence that the guard had examined source.
 
-**Law and pin:** resolve the package's actual repository parent, require go.mod and propagate directory/read errors. A restored bare layout must fail in a worktree whose name does not end in nofx. The four renderers now use canonical CT helpers with byte-identical output. This guard correction is independent of arm-state classification and never weakens a terminal-state or flat-gate check. Receipt: `reports/2026-09-10-arm-state-cutover.md`.
+**Law and pin:** resolve the package's actual repository parent, require go.mod and propagate directory/read errors. A restored bare layout must fail in a worktree whose name does not end in vl. The four renderers now use canonical CT helpers with byte-identical output. This guard correction is independent of arm-state classification and never weakens a terminal-state or flat-gate check. Receipt: `reports/2026-09-10-arm-state-cutover.md`.
 
 **Instance 2026-09-24 M3:** the worker import guard asserted a package-count floor (20 vs 21 roots), which could not say which root went missing; every guarded root must now be walked (`911e69a3`)
 
@@ -3796,7 +3797,7 @@ as 93 while 104 already existed. I took 93 for a rider on that count; it is now 
 duplicate.
 
 **This entry has itself been miscounted twice, in opposite directions, and both
-corrections are the class.** nofx-b3 found the first while taking a number next to
+corrections are the class.** vl-b3 found the first while taking a number next to
 mine:
 
 - **Over-count.** A bare `grep -cE "^[0-9]+\. \*\*"` returns 100 and is wrong by
@@ -3867,7 +3868,7 @@ renumbered FOUR times before landing, across five dev tips in one day:
     109/111  →  109 was uncontested and stayed; the other moved to ceiling+1
 
 At the third collision, 108 was contested three ways at once — the arm-state
-lane's (merged, so it won), nofx-b3's, and mine. The merged one holds and BOTH
+lane's (merged, so it won), vl-b3's, and mine. The merged one holds and BOTH
 unmerged ones move; that is the whole rule, and it needs no adjudication because
 merge order already decided it.
 
@@ -3877,7 +3878,7 @@ first. **The census tells you the ceiling; only the merge assigns the number.**
 If renumbering at merge feels expensive, note that the alternative — reserving a
 number at accept — is what produced the 75/76/77/92/93 duplicates above.
 
-**Two lanes can also just talk.** Before taking 111 I messaged nofx-b3, whose
+**Two lanes can also just talk.** Before taking 111 I messaged vl-b3, whose
 108 also had to move, and offered them 111 or 112 rather than letting us both
 re-census into each other. Coordination is cheaper than a fifth renumber, and
 the branch name on origin is the only claim this protocol has (class 70).
@@ -4781,7 +4782,7 @@ grows by one per bar and requested differs per caller, so 8,258 lines fired
 since boot in a 5.1 GB log. The key is the CONDITION (symbol, tf, why); the
 callers are a list on the line.
 
-## CLASS 128 — A FIXTURE THAT SEEDS THROUGH A SKIP-ON-CONFLICT PATH AND NEVER ASKS WHAT LANDED (born 2026-09-16, fix/nt8-history-and-chart-depth, dispatch 101, found by nofx-93)
+## CLASS 128 — A FIXTURE THAT SEEDS THROUGH A SKIP-ON-CONFLICT PATH AND NEVER ASKS WHAT LANDED (born 2026-09-16, fix/nt8-history-and-chart-depth, dispatch 101, found by vl-93)
 
 **Shape.** A test seeds rows through a helper that silently SKIPS conflicts (`ImportBars` on the
 bars PK `(symbol, tf, open_time_ms)` — no contract in the key), then "measures" that a reader
@@ -5037,7 +5038,7 @@ error is `unexpected character %q in variable name near %q`, and the second
 `%q` is the ENTIRE REMAINDER OF THE FILE from the bad statement onward. On the
 partner-install shape that is the private key body and every secret after it.
 Logging `err` verbatim — the obvious one-line fix — would have shipped them to
-journald, `data/nofx_*.log` and the DB sink (`logger/db_sink.go` ships WARN+).
+journald, `data/vl_*.log` and the DB sink (`logger/db_sink.go` ships WARN+).
 It also does not name a line number, despite reading as if it would.
 
 **Probes.**
@@ -6053,7 +6054,7 @@ by the arm-feasibility WARN, where the warning's own text ("the gate will
 refuse it") made the write a knowing contradiction.
 
 **Probes.**
-- `journalctl -u nofx --since <window> | grep -E "arm feasibility"` — every
+- `journalctl -u vl --since <window> | grep -E "arm feasibility"` — every
   WARN whose session then wrote a plan is an instance of this class.
 - Any write-site warning whose text names a downstream refusal, but which does
   not feed the repair prompt or a disabled-arm stamp, is this class.
@@ -6956,7 +6957,7 @@ production caller [A: grep] (removed as dead code, 2026-09-26 dead-wire wave).
 
 ## CLASS 242 — a process guard that matches its own asker
 
-**Found:** 2026-09-24, WAVE 3a [A]. The load-rule guard `pgrep -f 'go test.*-race'` matches the shell that is RUNNING the pgrep, because the pattern is in that shell's own command line. It reported "race run in flight" on a box with no `go test` running at all, and the rule on that answer is to SKIP — so the guard had been unconditionally skipping and never once guarding. It failed in the direction that looks safe, which is why nothing surfaced it: no run was ever wrongly started, so no symptom appeared. Proven both ways: `pgrep -af 'go test.*-race'` → 1 match (itself), `pgrep -af '[g]o test'` → the real runs only. Exact twin of `pgrep -f nofx-bin` also matching `go version -m nofx-bin`, already fixed once at `deploy/leveltruth-cutover.sh:34-37` by reading `systemctl show -p MainPID --value nofx`: the one call site was fixed, the PATTERN survived and reappeared in a lane's procedure.
+**Found:** 2026-09-24, WAVE 3a [A]. The load-rule guard `pgrep -f 'go test.*-race'` matches the shell that is RUNNING the pgrep, because the pattern is in that shell's own command line. It reported "race run in flight" on a box with no `go test` running at all, and the rule on that answer is to SKIP — so the guard had been unconditionally skipping and never once guarding. It failed in the direction that looks safe, which is why nothing surfaced it: no run was ever wrongly started, so no symptom appeared. Proven both ways: `pgrep -af 'go test.*-race'` → 1 match (itself), `pgrep -af '[g]o test'` → the real runs only. Exact twin of `pgrep -f vl-bin` also matching `go version -m vl-bin`, already fixed once at `deploy/leveltruth-cutover.sh:34-37` by reading `systemctl show -p MainPID --value vl`: the one call site was fixed, the PATTERN survived and reappeared in a lane's procedure.
 
 **Probe:** a `pgrep -f` pattern either excludes itself (`'[g]o test'`) or is replaced by a positive identification of the target (`systemctl show -p MainPID`, a pidfile, a cgroup). Verify a guard by running it when the condition is KNOWN ABSENT and confirming it says absent — a guard is only trustworthy if its NEGATIVE answer has been observed. Fixing a pattern at one call site does not retire the pattern.
 
@@ -7053,7 +7054,7 @@ production caller [A: grep] (removed as dead code, 2026-09-26 dead-wire wave).
 **Probe:** for every workflow in `.github/workflows/`, name what triggers it and when it last ran GREEN — `gh run list --workflow=<file>` answers both in one line. A workflow with no green run in its history is broken or vestigial; decide which and act, rather than leaving a red name that everyone learns to ignore. Treat "this check has always been red" as a finding, never as context.
 ## CLASS 252 — a single-use ledger that forgets by wall clock re-admits a spent id after a clock step-back
 
-**Found:** 2026-09-24 00:46 CT, M3 triage of the stop-snapshot red-team probes (`0c0253db`) [A]. The red team's `TestRT_ClockRollbackAfterPruneReopensReplay` and `TestRTA_ClockRollbackAfterPruneReplaysThroughTheRouter` (in the `ef03e033` wip(STOP)) were kept RED behind `NOFX_M3_OPEN_FINDINGS=1` as `TestConsumeRefusesAReplayAfterAClockRollbackPastRetention` and `TestInstallReplayRefusedAfterAClockStepBackPastRetention`.
+**Found:** 2026-09-24 00:46 CT, M3 triage of the stop-snapshot red-team probes (`0c0253db`) [A]. The red team's `TestRT_ClockRollbackAfterPruneReopensReplay` and `TestRTA_ClockRollbackAfterPruneReplaysThroughTheRouter` (in the `ef03e033` wip(STOP)) were kept RED behind `VL_M3_OPEN_FINDINGS=1` as `TestConsumeRefusesAReplayAfterAClockRollbackPastRetention` and `TestInstallReplayRefusedAfterAClockStepBackPastRetention`.
 
 The seen-job store pruned an entry once `expires_at < now − SeenRetention` (`internal/updateauth/seen.go`, then :116-119).
 
@@ -7264,9 +7265,9 @@ A second copy then drifted: the H2 credential guard's own `issuedBefore` used `<
 
 Five censuses each `SkipDir`'d any directory NAMED web, node_modules, vendor, .git, .claude, .Codex or .understand-anything, at ANY depth; the import guard also skipped testdata. The five were the hold-writer census, the worker import guard, the update-auth census, the worker-socket literal census and M2's maintenance-setter census.
 
-Go compiles and links `api/web`, `internal/node_modules/x`, `api/.git`, `x/testdata/y`, `_x` and `api/.hidden` like any other package ([A] go1.25.13). A planted `api/web` minter passed `TestUpdateAuthCensus`, and `go list -deps` showed the app linking the worker side through `nofx/api/web`.
+Go compiles and links `api/web`, `internal/node_modules/x`, `api/.git`, `x/testdata/y`, `_x` and `api/.hidden` like any other package ([A] go1.25.13). A planted `api/web` minter passed `TestUpdateAuthCensus`, and `go list -deps` showed the app linking the worker side through `vl/api/web`.
 
-**It happened again inside M3.** FOLD-M3-A's users-table writer census (`84954734`) did its own walk and skipped `.*`, `_*` and testdata at any depth. The ha verifier (note A [A]) planted `api/.hidden/w.go`, a raw `UPDATE users`: it was linked (`go list -deps` names `nofx/api/.hidden`), and the census passed. A writer there would move the credential epoch unseen.
+**It happened again inside M3.** FOLD-M3-A's users-table writer census (`84954734`) did its own walk and skipped `.*`, `_*` and testdata at any depth. The ha verifier (note A [A]) planted `api/.hidden/w.go`, a raw `UPDATE users`: it was linked (`go list -deps` names `vl/api/.hidden`), and the census passed. A writer there would move the credential epoch unseen.
 
 **Shape.** A skip list copied from habit ("keep the census off node_modules") reads as hygiene. It encodes a model of which directories the toolchain builds, and nobody compared that model with the toolchain. Even `go list ./...` is not the answer: it never matches `_x` or `testdata`, yet an import still links them.
 
@@ -7321,7 +7322,7 @@ The follow-up is to move all nine onto censuswalk.
 
 **Found:** 2026-09-24 ~04:4x CT, integrating M3 with M5 (#196, merged via `760eb015`). The CTO ruled it a class [A].
 
-The M3 gate (`updatesRefusal`, `api/handler_updates.go`) refuses any `/api/updates*` request without exactly one `X-NOFX-Update: 1`, with 403 "update header missing or wrong", before it reads the JWT. `web/src/lib/api/updates.ts` (M5 U1/U2) never sent the header [A: grep, no occurrence outside tests]. On the merged tree, the enrolled admin's own Updates page and header badge would have read not-authorized/Unknown forever.
+The M3 gate (`updatesRefusal`, `api/handler_updates.go`) refuses any `/api/updates*` request without exactly one `X-VL-Update: 1`, with 403 "update header missing or wrong", before it reads the JWT. `web/src/lib/api/updates.ts` (M5 U1/U2) never sent the header [A: grep, no occurrence outside tests]. On the merged tree, the enrolled admin's own Updates page and header badge would have read not-authorized/Unknown forever.
 
 **Shape.** Each wave pinned its own half:
 - M5's shape pins mocked the transport.
@@ -7378,7 +7379,7 @@ Each branch was green alone: 3a had no such census, and M3 had no db-compat.sh. 
 ## CLASS 262 — a census that reads one compiler directive but not its siblings
 
 **Found:** 2026-09-24, in two verifier rounds on the update-auth census [A].
-- **fc verifier D2:** the census parsed with mode 0, which drops comments. `//go:linkname v3ComputeMAC nofx/internal/updateauth.ComputeMAC` needs no import, no selector and no restricted name; a main linking `nofx/api` printed the exact HMAC with the census green. Fixed by `aa7da00a`: parse with comments, and refuse any `//go:linkname` in non-test code (`TestUpdateAuthCensusRefusesLinkname`).
+- **fc verifier D2:** the census parsed with mode 0, which drops comments. `//go:linkname v3ComputeMAC vl/internal/updateauth.ComputeMAC` needs no import, no selector and no restricted name; a main linking `vl/api` printed the exact HMAC with the census green. Fixed by `aa7da00a`: parse with comments, and refuse any `//go:linkname` in non-test code (`TestUpdateAuthCensusRefusesLinkname`).
 - **The next census-repair verifier FAIL** (the commits title it "verify #3"): rule 5 now read comments, but for `//go:linkname` ONLY. With a random key under `data/updater/`, three probes built, vetted (rc 0) and minted a MAC that production `VerifyMAC` accepted, with `TestUpdateAuthCensus`, the store censuses and censuswalk all green:
   - **N1a:** `//go:embed data/updater/device.key` in the module-root package, minting through golang-jwt HS256;
   - **N1b:** the glob `//go:embed data/upd*r/dev*`, which never spells the file name;
@@ -7430,7 +7431,7 @@ bot.go:263:51: b.userID — in a closure built by (*botIdentity).refresh
   - `TestBotIdentityClosuresReadNoReceiverField`: no closure built by a `*botIdentity` method reads the receiver.
   - RED on each compiling revert: the goroutine back to `ident.agents.Run`, the factory back to `newLLMClient(b.st, b.userID)`, the pointer handed to the goroutine [A].
 - `1591e1c5`: `TestRaceBotRefreshAgainstInFlightManager`, race-tagged (a `//go:build race` / `!race` constant pair; it SKIPs without the detector). The production `refresh` re-mints on every call on the test goroutine while 64 answers run through managers captured before each `go` statement. Vacuity guards: 64 rebuilds, 64 no-model replies.
-  - **Run by the CTO in the race slot at `1591e1c5` [A, CTO-run]:** clean, `ok nofx/telegram 1.249s`. With the factory reverted to `newLLMClient(st, b.userID)`: `WARNING: DATA RACE` ×2, "race detected during execution of test", `--- FAIL: TestRaceBotRefreshAgainstInFlightManager (0.26s)`.
+  - **Run by the CTO in the race slot at `1591e1c5` [A, CTO-run]:** clean, `ok vl/telegram 1.249s`. With the factory reverted to `newLLMClient(st, b.userID)`: `WARNING: DATA RACE` ×2, "race detected during execution of test", `--- FAIL: TestRaceBotRefreshAgainstInFlightManager (0.26s)`.
   - It cannot drive runBot itself (that needs a live Telegram API); the structural pin covers that half.
 
 **Known limits:**
@@ -7515,19 +7516,19 @@ So BOTH legs of a two-leg proof were unpassable. Every real activation would hav
 
 **The rule already existed in this repo.** `kernel/boot_integrity.go` has carried "a prefix match so short SHAs work" since it was written. The knowledge was present and had not been carried across to new code that needed it — CLASS 242's lesson in a different costume.
 
-**Fixed in 3b-A:** `revisionsAgree(reported, expected)` — the REPORTED value may abbreviate the expected one, never the reverse, with a 7-character floor so an abbreviation too short to identify anything is not evidence. `lineNamesRevision` scans a line's whitespace-separated TOKENS rather than substring-matching, so a hex-looking fragment inside another value cannot be mistaken for the revision. Pinned with the REAL artifacts copied off the live box: the actual boot line string, the actual short health value. A third defect fell out of the same run — logs are named by BOOT date, not calendar date (at 08:04 on 09-24 the active file was `nofx_2026-09-23.log`), so `NewestLogPath` now picks the file actually being written rather than building a path from today's date.
+**Fixed in 3b-A:** `revisionsAgree(reported, expected)` — the REPORTED value may abbreviate the expected one, never the reverse, with a 7-character floor so an abbreviation too short to identify anything is not evidence. `lineNamesRevision` scans a line's whitespace-separated TOKENS rather than substring-matching, so a hex-looking fragment inside another value cannot be mistaken for the revision. Pinned with the REAL artifacts copied off the live box: the actual boot line string, the actual short health value. A third defect fell out of the same run — logs are named by BOOT date, not calendar date (at 08:04 on 09-24 the active file was `vl_2026-09-23.log`), so `NewestLogPath` now picks the file actually being written rather than building a path from today's date.
 
 **Probe:** before writing any comparison, obtain the evidence from the RUNNING SYSTEM — `curl` the endpoint, `grep` the real log — and pin the test with those captured bytes. A proof is a claim about what the system EMITS; writing it from what you expect the system to emit produces a check that cannot pass and a suite that agrees with you. Ask of every compared value: does it have a short form, a prefix form, a different case, a trailing newline, a unit?
 
 ## CLASS 268 — a guard that no dry run reaches is first exercised during the cutover
 
-**Found:** 2026-09-24, WAVE 3b-A, reading `deploy/cutover.sh` v6 while replacing it [A]. v6 read the process start time with `awk '{n=split($0,a," "); print a[22]}' /proc/$p/stat`. Field 2 of that line is the executable name in parentheses and MAY CONTAIN SPACES AND PARENTHESES — `(nofx bin (x))` — which shifts every later field. The identity check could therefore compare the wrong number: refusing a valid restart, or, worse, ACCEPTING a recycled pid, which is the single thing the identity check exists to prevent.
+**Found:** 2026-09-24, WAVE 3b-A, reading `deploy/cutover.sh` v6 while replacing it [A]. v6 read the process start time with `awk '{n=split($0,a," "); print a[22]}' /proc/$p/stat`. Field 2 of that line is the executable name in parentheses and MAY CONTAIN SPACES AND PARENTHESES — `(vl bin (x))` — which shifts every later field. The identity check could therefore compare the wrong number: refusing a valid restart, or, worse, ACCEPTING a recycled pid, which is the single thing the identity check exists to prevent.
 
 **It had never run.** Every `--dry-run` refuses earlier — at the token gate, or the dist check, or the binary proof — so the identity code sits *after* every exit a rehearsal takes. The rehearsal that exists to make the procedure safe never reached the line that makes it dangerous, and its first execution would have been during a real cutover, on a live trading box, under time pressure.
 
 That is the shape worth naming: a dry run proves the steps it REACHES. Code after the last refusal a rehearsal hits is unexercised no matter how many times the rehearsal is run, and a passing dry run is therefore evidence about a PREFIX of the procedure, not the procedure.
 
-**Fixed in 3b-A:** the parse moved into `internal/activation` and reads from the LAST `)` in the line, pinned by a test whose comm is literally `(nofx bin (x))`. `deploy/cutover.sh` v7 delegates rather than carrying its own copy, so the attended boot and the unattended worker share one implementation and one test suite.
+**Fixed in 3b-A:** the parse moved into `internal/activation` and reads from the LAST `)` in the line, pinned by a test whose comm is literally `(vl bin (x))`. `deploy/cutover.sh` v7 delegates rather than carrying its own copy, so the attended boot and the unattended worker share one implementation and one test suite.
 
 **Probe:** for every procedure with a rehearsal mode, list the steps the rehearsal never reaches and ask what tests them. If the answer is "nothing", they are exercised first in production. Either the rehearsal must reach them (a seam, a fixture, a `--force-through` for the safe parts) or they must be moved into code a unit test can call — the second is usually right, because a step that only a live cutover can exercise is a step nobody can afford to debug.
 
@@ -7591,23 +7592,23 @@ That is the shape: a spec says "call X" where X's value lives in another process
 
 **Found:** 2026-09-24, skeptic pass on live `4c05158b`, finding [5] (CTO ruling 1790280466263) [A]. `api/handler_updates.go` `updatesForbid` WARNed on EVERY refusal; the header badge polls `/api/updates` every 60 s, so an un-enrolled box wrote one 🔒 WARN and one `log_events` row per minute per open tab, forever. The signal drowns, and the log becomes a byte sink proportional to uptime.
 
-**Fixed in 3b-B:** WARN once per (route PATTERN, closed category) per process, DEBUG for repeats, and every refusal counted in `nofx_updates_refused_total{route,category}` on `/metrics`. The route is gin's pattern (`FullPath`), never the client's path; the category comes from a closed map pinned by an AST scan of every reason literal, never from free text; a pair that never refused has no series. `logger/db_sink.go` ships only WARN and above to `log_events`, so DEBUG repeats write no rows. Pinned by `TestUpdatesRefusalWarnsOncePerRouteAndCategoryThenCounts`, `TestEveryUpdatesRefusalReasonHasACategory`, `TestUpdatesRefusalSeriesIsAbsentUntilTheFirstRefusal` (`3eacf2d6`, `b3522251`).
+**Fixed in 3b-B:** WARN once per (route PATTERN, closed category) per process, DEBUG for repeats, and every refusal counted in `vl_updates_refused_total{route,category}` on `/metrics`. The route is gin's pattern (`FullPath`), never the client's path; the category comes from a closed map pinned by an AST scan of every reason literal, never from free text; a pair that never refused has no series. `logger/db_sink.go` ships only WARN and above to `log_events`, so DEBUG repeats write no rows. Pinned by `TestUpdatesRefusalWarnsOncePerRouteAndCategoryThenCounts`, `TestEveryUpdatesRefusalReasonHasACategory`, `TestUpdatesRefusalSeriesIsAbsentUntilTheFirstRefusal` (`3eacf2d6`, `b3522251`).
 
 **Probe:** for every log call on a refusal path, find whether anything polls the route (grep the web for `setInterval` / `refetchInterval` against it), and count WARN lines per hour in the refusing state. Confirm which levels the `log_events` sink ships (`logger/db_sink.go` Levels): a DEBUG repeat is flood-free only if the sink drops DEBUG.
 
 ## CLASS NN (assigned at merge) — a package-registered process-wide name: green alone, panicking in the first binary that links both
 
-**Found:** 2026-09-24, WAVE 3b-B U4, while wiring the activation adapter; reproduced on dev `e401eb5e` [A]. `internal/activation/steps.go:14` blank-imported `github.com/glebarez/go-sqlite`, and `store/sqlitedriver/backend_default.go` imports `modernc.org/sqlite`: both register the database/sql driver `"sqlite"`. Each package's own tests are green. The first binary that links both, the updater worker (`hold.go` → `store`), panics at init before `main`: `panic: sql: Register called twice for driver sqlite` (rc 2). `nofx-activate` alone never trips it because it does not link `store`.
+**Found:** 2026-09-24, WAVE 3b-B U4, while wiring the activation adapter; reproduced on dev `e401eb5e` [A]. `internal/activation/steps.go:14` blank-imported `github.com/glebarez/go-sqlite`, and `store/sqlitedriver/backend_default.go` imports `modernc.org/sqlite`: both register the database/sql driver `"sqlite"`. Each package's own tests are green. The first binary that links both, the updater worker (`hold.go` → `store`), panics at init before `main`: `panic: sql: Register called twice for driver sqlite` (rc 2). `vl-activate` alone never trips it because it does not link `store`.
 
-**Fixed:** in #205 (Claude-103): `internal/activation` imports `nofx/store/sqlitedriver`. In 3b-B: the trading app can never link `internal/activation` (`94e6caae`: the import guard's forbidden set, `go list -deps` leg), and the worker binary links exactly one sqlite registration (`e376bf88`); the adapter lands only after #205 (CTO ruling D4).
+**Fixed:** in #205 (Claude-103): `internal/activation` imports `vl/store/sqlitedriver`. In 3b-B: the trading app can never link `internal/activation` (`94e6caae`: the import guard's forbidden set, `go list -deps` leg), and the worker binary links exactly one sqlite registration (`e376bf88`); the adapter lands only after #205 (CTO ruling D4).
 
-**Instance (#205):** `internal/activation/steps.go` and `internal/updaterbootstrap/bootstrap.go` blank-imported a SQLite driver directly; the M4 worker links both → init panic. Fixed by importing `nofx/store/sqlitedriver`; enforced by `store/sqlitedriver/one_registration_census_test.go` (AST, libraries + mains that link sqlitedriver).
+**Instance (#205):** `internal/activation/steps.go` and `internal/updaterbootstrap/bootstrap.go` blank-imported a SQLite driver directly; the M4 worker links both → init panic. Fixed by importing `vl/store/sqlitedriver`; enforced by `store/sqlitedriver/one_registration_census_test.go` (AST, libraries + mains that link sqlitedriver).
 
 **Probe:** for each `cmd/*` and each TEST binary that imports the worker side (`go list -deps -test ./<pkg>`, under the default build AND `-tags cgofree`, since the tag changes which driver `store/sqlitedriver` registers), intersect with packages that register process-global names (`sql.Register`, promauto/`MustRegister` names, `flag` names, `gob.Register`, `http.Handle` on `DefaultServeMux`). Build each binary and run it with a no-op flag in a temp dir. A test binary is a binary: a `_test.go` import inherits every registrant of what it imports.
 
 ## CLASS NN (assigned at merge) — containment compared as a string prefix, not path elements, without resolving symlinks
 
-**Found:** 2026-09-24, WAVE 3b-B U4N verify [A]. `nofx-updater fetch` refused a release root inside the install with `!strings.HasPrefix(rel, "..")`, so `NOFX_RELEASE_DIR=<install>/..rel` counted as OUTSIDE and the release was written INSIDE the install (rc 0). A symlinked parent put the root inside the install the same way; a symlinked `<install>/deploy` let the trust anchor (`release_allowed_signers`) be read from outside the install; the backup-root check and a test guard (`HasPrefix(p, os.TempDir())`) carried the same shape.
+**Found:** 2026-09-24, WAVE 3b-B U4N verify [A]. `vl-updater fetch` refused a release root inside the install with `!strings.HasPrefix(rel, "..")`, so `VL_RELEASE_DIR=<install>/..rel` counted as OUTSIDE and the release was written INSIDE the install (rc 0). A symlinked parent put the root inside the install the same way; a symlinked `<install>/deploy` let the trust anchor (`release_allowed_signers`) be read from outside the install; the backup-root check and a test guard (`HasPrefix(p, os.TempDir())`) carried the same shape.
 
 **Fixed in 3b-B:** one helper, `updaterworker.ReleaseRoot`: P is outside D only when `rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator))`, after `filepath.EvalSymlinks` on BOTH sides, and a trusted root must equal its own resolved path. The trust anchor is read through `open(deploy/, O_DIRECTORY|O_NOFOLLOW)` then `openat(name, O_NOFOLLOW|O_NONBLOCK)`; `os.Root` was rejected because its `OpenFile` follows an in-root final symlink even with `O_NOFOLLOW`. A verdict re-proves only when its `release_dir` equals `<resolved root>/<source_sha>`. Pinned in `TestFetchRefusesWithoutItsInputs`, `TestReleaseReverifierRefuses`, `TestAVerdictIsReprovedOnlyUnderTheCurrentReleaseRoot` (`2e907033`, `6c378d15`, `178e6fa8`, `0b228202`, `f231fc8d`).
 

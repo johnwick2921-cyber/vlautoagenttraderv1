@@ -1,5 +1,5 @@
 import sqlite3, datetime as dt, collections, json
-c=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+c=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 def ct(s):
     s=str(s)
     if s.endswith('+00:00'): return (dt.datetime.strptime(s[:19].replace('T',' '),'%Y-%m-%d %H:%M:%S')-dt.timedelta(hours=5))

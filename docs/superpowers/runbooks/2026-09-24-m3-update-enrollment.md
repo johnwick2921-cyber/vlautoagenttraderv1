@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # M3 update enrollment: runbook (W-ONE-BUTTON M3, 2026-09-24)
 
 **Lane:** Claude-101 · **Branch:** `feat/one-button-m3-update-authz` · **Dispatch:** CTO `1790208803193` (WAVE 2, M3) and the M3 block of the master dispatch `1790131309474`.
@@ -9,10 +10,10 @@
 ## What M3 does and does not do
 
 - **OFF until enrolled.** With nothing enrolled, all five `/api/updates*` routes answer `403 {"error":"forbidden"}`. Nothing else in the app changes.
-- **Enrolled, the knob still OFF.** With `NOFX_UPDATER` unset, the manifest verifier is the stub that refuses every release (`422 {"error":"release not verified"}`) and `install_enabled` answers false. With the knob ON and the worker running, the install control's enabled state comes from the server (`install_enabled` AND `worker_listening`, both measured) AND the review constant `INSTALL_AUTHZ_UNDER_REVIEW` (`web/src/lib/api/updates.ts`) — while that constant is true the Updates page shows "install authorization under review" and no install POST can fire. The full loop — worker install, fetch, authorize, paste, resume, recovery — is `docs/superpowers/runbooks/2026-09-27-one-button-update.md`.
+- **Enrolled, the knob still OFF.** With `VL_UPDATER` unset, the manifest verifier is the stub that refuses every release (`422 {"error":"release not verified"}`) and `install_enabled` answers false. With the knob ON and the worker running, the install control's enabled state comes from the server (`install_enabled` AND `worker_listening`, both measured) AND the review constant `INSTALL_AUTHZ_UNDER_REVIEW` (`web/src/lib/api/updates.ts`) — while that constant is true the Updates page shows "install authorization under review" and no install POST can fire. The full loop — worker install, fetch, authorize, paste, resume, recovery — is `docs/superpowers/runbooks/2026-09-27-one-button-update.md`.
 - **Two factors per install** (from M4 on):
   - the enrolled admin's signed-in session (**identity**);
-  - an HMAC computed on this box from `device.key` by the attended `updater-bootstrap authorize` (**possession**).
+  - an HMAC computed on this box from `device.key` by the attended `vl-updater-bootstrap authorize` (**possession**).
   - The key never leaves the box and is never printed. Nothing on the API side can compute a MAC.
 
 ## Where the files live
@@ -22,8 +23,8 @@ The data dir is resolved by `internal/installpath` exactly as the bot resolves i
 | File | Mode | Written by |
 |---|---|---|
 | `<data>/updater/` | 0700, owned by the bot's user | `enroll` (or the maintenance hold) |
-| `<data>/updater/admin.json` | 0600 | `updater-bootstrap enroll` only. Holds user id, email, enrolled-at, and a binding to the account's current password hash |
-| `<data>/updater/device.key` | 0600 | `updater-bootstrap enroll` only. 32 random bytes |
+| `<data>/updater/admin.json` | 0600 | `vl-updater-bootstrap enroll` only. Holds user id, email, enrolled-at, and a binding to the account's current password hash |
+| `<data>/updater/device.key` | 0600 | `vl-updater-bootstrap enroll` only. 32 random bytes |
 | `<data>/updater/seen_job_ids.json` | 0600 | the install route only. Holds the job ids already used (single use) |
 | `<data>/updater/hold.json` | 0600 | the maintenance hold, **not** enrollment. Leave it alone here |
 
@@ -43,10 +44,15 @@ The loaders refuse a symlink, a mode looser than 0600, a file owned by another u
 
 1. From a checkout at the running binary's revision (the source only compiles the CLI; `--install-dir` points it at the live installation), run:
    ```
-   go run ./cmd/updater-bootstrap --install-dir <the bot's WorkingDirectory> enroll <email>
+   go run ./cmd/vl-updater-bootstrap --install-dir <the bot's WorkingDirectory> enroll <email>
    ```
 2. Before the prompt, the CLI prints what it will act on: `installation:`, `bot database:`, `data dir:` and `DB_PATH from:` (which file or default the path came from). Check them. Then type exactly `ENROLL <email>`. Anything else writes nothing.
 3. Expect `enrolled: user_id=<first 8>… dir=<data>/updater (both enrollment files 0600; the key is never printed)`.
+
+**After the R2 boot (the vl rename):** re-enroll once with the SAME command
+(`vl-updater-bootstrap enroll --replace <email>`) so the enrollment is recorded
+by the renamed tool and the renamed service dir. Until then a pre-R2 enrollment
+still authorizes (the binding is the password hash, not the tool name).
 4. Check the modes. **Never** `cat`, copy or paste `device.key`.
    ```
    stat -c '%a %U %n' <data>/updater <data>/updater/admin.json <data>/updater/device.key
@@ -61,7 +67,7 @@ A plain `enroll` on an enrolled box refuses: "already enrolled — re-run with -
 A password change (Settings → Account, which now requires the **current** password) does four things:
 
 - ends every session signed in before it, on every page; sign in again with the new password;
-- ends the Telegram bot's token, which the bot re-mints on its next `/start` or AI message and logs `Bot: token re-minted for <id> — the previous one would be refused (credential change or expiry)`. That line is INFO, so it goes to stdout/journald and `data/nofx_<boot date>.log`, not to `log_events`;
+- ends the Telegram bot's token, which the bot re-mints on its next `/start` or AI message and logs `Bot: token re-minted for <id> — the previous one would be refused (credential change or expiry)`. That line is INFO, so it goes to stdout/journald and `data/vl_<boot date>.log`, not to `log_events`;
 - **un-enrolls Updates**: `admin.json`'s binding was computed from the old password hash, so every `/updates` route answers 403 ("password changed since enrollment (re-enroll with --replace)");
 - nothing else.
 
@@ -86,7 +92,7 @@ Replace `NEW_BCRYPT_HASH` with a bcrypt hash of the new password and `YOUR_ACCOU
 ## Authorize one install
 
 ```
-go run ./cmd/updater-bootstrap --install-dir <the bot's WorkingDirectory> authorize <release_id>
+go run ./cmd/vl-updater-bootstrap --install-dir <the bot's WorkingDirectory> authorize <release_id>
 ```
 
 Type exactly `AUTHORIZE <release_id>`. It prints one JSON authorization, `{release_id, job_id, expires_at, hmac}`, **valid 5 minutes, single use**. A second use answers `409`.
@@ -105,7 +111,7 @@ Every gate refusal is the **same** response: `403 {"error":"forbidden"}`. The ca
 🔒 [updates] refused <METHOD> "<path>": <category>
 ```
 
-It is WARN, so it appears in journald, `data/nofx_<boot date>.log` **and** `log_events`. The categories, in the order they are checked:
+It is WARN, so it appears in journald, `data/vl_<boot date>.log` **and** `log_events`. The categories, in the order they are checked:
 
 | Category | Meaning / what to do |
 |---|---|
@@ -113,7 +119,7 @@ It is WARN, so it appears in journald, `data/nofx_<boot date>.log` **and** `log_
 | `peer not loopback`, `peer unparseable` | the request did not come from this box. Updates are loopback-DIRECT only |
 | `host not a loopback name` | open the UI as `127.0.0.1`/`localhost`, not the LAN name or IP |
 | `forwarded request (…)`, `x-forwarded-*` | a proxy or tunnel relayed it. Not supported: go direct |
-| `update header missing or wrong` | the client did not send `X-NOFX-Update: 1`. The Updates page sends it on its `/updates*` calls |
+| `update header missing or wrong` | the client did not send `X-VL-Update: 1`. The Updates page sends it on its `/updates*` calls |
 | `cross-origin`, `cross-site fetch` | another origin made the request. Refused by design |
 | the JWT-secret categories | the bot runs on a JWT secret this public repo publishes, or one shorter than 32 bytes. Set a private `JWT_SECRET` (`openssl rand -base64 64`) |
 | `authorization missing` / `malformed` / `token revoked` / `token invalid` | sign in again |
@@ -125,7 +131,7 @@ It is WARN, so it appears in journald, `data/nofx_<boot date>.log` **and** `log_
 
 ## Un-enroll
 
-As the bot's user, remove **only** the two enrollment files. To see the exact `<data>` directory without writing anything, run `go run ./cmd/updater-bootstrap --install-dir <the bot's WorkingDirectory> authorize x`, read its `data dir:` line, and answer the prompt with anything other than the confirmation ("confirmation did not match — nothing written"). Every route returns to `403` "not enrolled". No restart is needed.
+As the bot's user, remove **only** the two enrollment files. To see the exact `<data>` directory without writing anything, run `go run ./cmd/vl-updater-bootstrap --install-dir <the bot's WorkingDirectory> authorize x`, read its `data dir:` line, and answer the prompt with anything other than the confirmation ("confirmation did not match — nothing written"). Every route returns to `403` "not enrolled". No restart is needed.
 
 ```
 rm <data>/updater/admin.json <data>/updater/device.key
@@ -136,8 +142,8 @@ Keep `hold.json`, which is the maintenance hold. `seen_job_ids.json` may stay: i
 ## Known limits (named, not implied)
 
 - **Loopback-direct only.** A relay that adds no forwarding header is indistinguishable from a local client. Do not put a proxy or tunnel in front of `/api/updates`.
-- **WSL2 mirrored networking makes the whole machine the transport boundary.** This box needs mirrored mode so the bot can reach NT8. In that mode a process on the WINDOWS host arrives at the bot as a loopback peer. "Loopback" therefore means "anything on this physical machine", not "this Linux user". The factors that still stand are the enrolled admin's session (JWT), the `X-NOFX-Update` header, and the HMAC that only `updater-bootstrap authorize` can compute from `device.key`.
+- **WSL2 mirrored networking makes the whole machine the transport boundary.** This box needs mirrored mode so the bot can reach NT8. In that mode a process on the WINDOWS host arrives at the bot as a loopback peer. "Loopback" therefore means "anything on this physical machine", not "this Linux user". The factors that still stand are the enrolled admin's session (JWT), the `X-VL-Update` header, and the HMAC that only `vl-updater-bootstrap authorize` can compute from `device.key`.
 - **Logout is process-lifetime.** The logout blacklist lives in the bot's memory. A bot restart forgets it, so a session logged out before the restart is accepted again until its expiry + 60 s. A password change is the durable way to end sessions: it moves the credential epoch, which is stored.
 - **Vite dev server.** Under `npm run dev` (`:3000`, proxy `changeOrigin: true`), the POSTs (`/check`, `/install`) read `cross-origin`. Production is same-origin: Go serves `web/dist`.
-- **The receipt link** is fetched through the page's API client — the one that sends `X-NOFX-Update` on every `/updates*` call — because a bare `<a href>` cannot carry the header or the bearer token and 403s. A refusal shows the server's own text.
+- **The receipt link** is fetched through the page's API client — the one that sends `X-VL-Update` on every `/updates*` call — because a bare `<a href>` cannot carry the header or the bearer token and 403s. A refusal shows the server's own text.
 - **The census is a belt, not the boundary.** The worker shares the key file's UID. The boundary is the file mode, the attended enrollment and, later, the isolated host (M1 §8). "Nothing API-side mints a MAC" is enforced by a syntactic census with its named limits, never proven.

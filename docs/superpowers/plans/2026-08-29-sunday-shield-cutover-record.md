@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Sunday-Shield Cutover Record
 
 **Cutover:** 2026-08-29 16:35 CT · **Merge M:** `bf2b6e9f` · **Marker R:** `4763a664` · **Deployed rev:** `bf2b6e9f9968` (PID 87437, boot 16:35:30 CT).
@@ -5,10 +6,10 @@
 ## Sequence (per the wave record `2026-08-29-sunday-shield-wave.md`)
 
 1. Flat-gate all-origin BEFORE swap, all four quoted: API positions `[]` · API open-orders `[]` ×2 (symbol=MNQ, trader R8) · DB OPEN positions 0 · DB non-terminal armed 0.
-2. Lock marker `~/nofx-main.lock` acquired (owner/pid/expiry) → `git merge --no-ff fix/sunday-shield` → **M = bf2b6e9f**.
+2. Lock marker `~/vl-main.lock` acquired (owner/pid/expiry) → `git merge --no-ff fix/sunday-shield` → **M = bf2b6e9f**.
 3. Marker commit **R = 4763a664**: `GUIDE_BUILT_REV='bf2b6e9f9968'` + `deploy/RELEASE=bf2b6e9f9968`.
 4. Temp-clone build at M: `vcs.revision=bf2b6e9f9968…` `vcs.modified=false` ✓ (go version -m).
-5. mv-swap (`nofx-bin.prev.sunday-shield` backup) → `kill -9 4050566` → systemd relaunch (Restart=on-failure).
+5. mv-swap (`vl-bin.prev.sunday-shield` backup) → `kill -9 4050566` → systemd relaunch (Restart=on-failure).
 
 ## Boot acceptance (all quoted from journal)
 
@@ -31,7 +32,7 @@
 ## Post-cutover state
 
 - dev tip = `4763a664` pushed to origin.
-- `~/nofx-main.lock` released after the clean window.
+- `~/vl-main.lock` released after the clean window.
 - Next event: **16:55 CT Sunday 2026-08-30** (ASIA pre-read window) → live fire 17:00 CT.
 
 W5 (14 tracked binaries / secret purge) remains gated on the owner's "key rotated" confirmation.

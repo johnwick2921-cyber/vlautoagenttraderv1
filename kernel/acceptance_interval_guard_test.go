@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // TestAcceptanceIntervalNoHardcodedSites is the H10 guard: the raw bar counters

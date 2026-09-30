@@ -25,7 +25,7 @@ import (
 // directly: nothing failed.
 //
 // This is the census the rule needed. It ASKS THE GO PARSER for each file's
-// imports rather than grepping, which matters: cmd/nofx-activate/main_test.go
+// imports rather than grepping, which matters: cmd/vl-activate/main_test.go
 // contains a driver import inside a STRING LITERAL — the source of a throwaway
 // program handed to `go run -` — and a grep-based census would flag that as a
 // violation when it is a separate process that registers once and cannot
@@ -74,7 +74,7 @@ func TestNoPackageImportsASQLiteDriverDirectly(t *testing.T) {
 		}
 		// THE DOMAIN IS LIBRARIES, with ONE correction (DS-102 fold, CTO
 		// 1790305899255, option A): a `package main` is exempt ONLY when it
-		// PROVABLY does not link nofx/store/sqlitedriver under either tag set
+		// PROVABLY does not link vl/store/sqlitedriver under either tag set
 		// (`go list -deps .` and `go list -tags cgofree -deps .`). A main that
 		// links this package and also imports a driver directly is the
 		// two-registrant panic in its own binary — cmd/picture_htf_replay did
@@ -126,12 +126,12 @@ func TestNoPackageImportsASQLiteDriverDirectly(t *testing.T) {
 		t.Fatalf("%d package(s) import a SQLite driver directly instead of %s:\n  %s\n\n"+
 			"database/sql panics when two drivers register the name %q in one binary. "+
 			"Import nofx/store/sqlitedriver instead — it is the ONE registration site.",
-			len(offenders), "nofx/store/sqlitedriver", strings.Join(offenders, "\n  "), DriverName)
+			len(offenders), "vl/store/sqlitedriver", strings.Join(offenders, "\n  "), DriverName)
 	}
 }
 
 // mainLinksSqlitedriver proves (or fails to prove) that the main package
-// in dir does NOT link nofx/store/sqlitedriver under either tag set. A failed
+// in dir does NOT link vl/store/sqlitedriver under either tag set. A failed
 // go list is reported as linking (fail closed: absence unproven).
 func mainLinksSqlitedriver(dir string) (bool, string) {
 	for _, tags := range []string{"", "cgofree"} {
@@ -146,7 +146,7 @@ func mainLinksSqlitedriver(dir string) (bool, string) {
 		if err != nil {
 			return true, fmt.Sprintf("go list %v failed for %s (%v) — absence unproven", args, dir, err)
 		}
-		if strings.Contains(string(out), "nofx/store/sqlitedriver") {
+		if strings.Contains(string(out), "vl/store/sqlitedriver") {
 			return true, "links nofx/store/sqlitedriver under " + strings.Join(args, " ")
 		}
 	}

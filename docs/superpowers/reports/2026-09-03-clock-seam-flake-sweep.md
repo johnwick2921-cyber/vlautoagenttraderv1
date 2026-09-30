@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLOCK-SEAM + FLAKE SWEEP (checklist class 72; closes class 60's sweep)
 
 **Branch:** `fix/clock-seam-sweep` off `13680723` · **Scope:** seams and tests only
@@ -135,7 +136,7 @@ branch the same command failed roughly one run in four to six.
   reader racing the summary loses the count. Harmless in production today (nothing reads the
   counters synchronously) but it is the "counters record, never infer" rule pointing the
   other way, and it is exactly what made a gate test lie. Left alone under this wave's
-  zero-behaviour-change rule. nofx-47's framing on reading it, which is sharper than mine:
+  zero-behaviour-change rule. vl-47's framing on reading it, which is sharper than mine:
   the log line is the ONLY consumer that can ever observe a nonzero value, so anything else
   that reads those counters will be wrong intermittently and silently — a class-35 problem
   ("counters record, never infer") in waiting. It wants its own wave with its own boot line,

@@ -1,5 +1,5 @@
 # EXACT COMMANDS — adversarial verification of the arm-37 "closest approach 9.50 pts" claim
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 
 # 1. arm 37 row + the UTC/CT offset trap in updated_at
 sqlite3 -header -column "$DB" "SELECT id,entry_px,stop_px,target_px,state,state_reason,signal_id,created_at,updated_at FROM armed_orders WHERE id IN (35,36,37);"
@@ -37,11 +37,11 @@ sqlite3 "$DB" "SELECT datetime(open_time_ms/1000,'unixepoch','-5 hours'),o,h,l,c
 sqlite3 "$DB" "SELECT strftime('%s','2026-09-03 12:15:00')*1000+5*3600000 theirs, (strftime('%s','2026-09-03 12:15:00')+18000)*1000 mine;"
 
 # 7. the two — and only two — order_update summary lines on 09-03
-grep -n "armed order_update summary" /home/hoang/nofx/data/nofx_2026-09-03.log
+grep -n "armed order_update summary" /home/hoang/vl/data/vl_2026-09-03.log
 # 8. the arm + cancel log lines
-grep -n "43512e1d" /home/hoang/nofx/data/nofx_2026-09-03.log
-awk '/^09-03 12:15:/{p=1} /^09-03 12:16:/{p=0} p' /home/hoang/nofx/data/nofx_2026-09-03.log | grep -E "DORMANT|summary|cancelled in NT8|disarmed"
-# 9. source: counter scope + placement price source (worktree /home/hoang/nofx-2day04)
+grep -n "43512e1d" /home/hoang/vl/data/vl_2026-09-03.log
+awk '/^09-03 12:15:/{p=1} /^09-03 12:16:/{p=0} p' /home/hoang/vl/data/vl_2026-09-03.log | grep -E "DORMANT|summary|cancelled in NT8|disarmed"
+# 9. source: counter scope + placement price source (worktree /home/hoang/vl-2day04)
 sed -n '1078,1105p' trader/armed_executor.go     # global atomics, Swap(0), 1/60s throttle
 sed -n '853,866p'   trader/armed_executor.go     # price = bars[len(bars)-1].Close
 sed -n '917,930p'   trader/armed_executor.go     # marketable guard / place

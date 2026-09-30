@@ -1,11 +1,12 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # C1 — THE HTF VETO IS A DEAD GATE (evidence pack)
 
-All queries read-only: `sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"`; logs read from
-`/home/hoang/nofx/data/nofx_2026-*.log`. Clock CT = UTC-5.
+All queries read-only: `sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro"`; logs read from
+`/home/hoang/vl/data/vl_2026-*.log`. Clock CT = UTC-5.
 
 ## 1. The mechanism
 
-- `HTF_VETO_MODE=cross` — `/home/hoang/nofx/.env:34` (the ONLY C-subsystem env knob set).
+- `HTF_VETO_MODE=cross` — `/home/hoang/vl/.env:34` (the ONLY C-subsystem env knob set).
 - `kernel/htf_veto.go:92-101` — cross requires **both** `snap["1h"]` and `snap["4h"]`:
   `if !ok1 || !ok4 || ... { return false, "" }`.
 - `kernel/structure.go:34` — `var StructureTFs = []string{"5m", "15m", "1h"}`.

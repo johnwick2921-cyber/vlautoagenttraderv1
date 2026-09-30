@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // ── CLASS 47 (2026-09-02) — WAKE CADENCE ────────────────────────────────────

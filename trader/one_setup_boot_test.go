@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── ONE SETUP D8 — the boot line is READ, never literal ──────────────────────

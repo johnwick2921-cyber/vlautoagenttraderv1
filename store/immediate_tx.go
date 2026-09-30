@@ -27,7 +27,7 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"nofx/store/sqlitedriver"
+	"vl/store/sqlitedriver"
 )
 
 // immediateTxBusyTimeoutMs is the busy_timeout applied on the dedicated

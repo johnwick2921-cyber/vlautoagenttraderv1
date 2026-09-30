@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	"vl/kernel"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W3 D14 — the live-bar armed pass, through the REAL sink ────

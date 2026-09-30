@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 12 — market and other data providers
 
-Source review at `63968be62e44db2fb07a92883e02127b9064b0be`, isolated worktree `/tmp/nofx-understanding-execution-20260913`. Initial pwd/revision/status checks verified this tree and a clean porcelain status. All **49 assigned files / 7,579 lines** were read fully. `functions.json` inventories **216 named functions/methods**, exact start/end lines, semantics and observed call expressions. Anonymous callbacks are grouped under their containing declaration. `reads.json` distinguishes assigned full reads from additional dependency/test excerpts. No source/config/DB changes, runtime requests, payment calls, trades, deployments, or tests were performed.
+Source review at `63968be62e44db2fb07a92883e02127b9064b0be`, isolated worktree `/tmp/vl-understanding-execution-20260913`. Initial pwd/revision/status checks verified this tree and a clean porcelain status. All **49 assigned files / 7,579 lines** were read fully. `functions.json` inventories **216 named functions/methods**, exact start/end lines, semantics and observed call expressions. Anonymous callbacks are grouped under their containing declaration. `reads.json` distinguishes assigned full reads from additional dependency/test excerpts. No source/config/DB changes, runtime requests, payment calls, trades, deployments, or tests were performed.
 
 [A] below means directly read source or measured static inventory. [B] means a consequence inferred from that source. These are static findings, not reproduced runtime incidents. No live rows were inspected, so no P&L or account claims are made. The owner's daily-loss clarification remains authoritative; the optional pure `market.PositionSize` helper is not evidence that an additional mandatory per-trade cap should exist.
 
@@ -50,7 +51,7 @@ SYSTEM-MAP bars/routing sections and RULEBOOK contract/source sections were cons
 
 - [A] `market/api_client.go:103–124` type-asserts raw JSON fields after only a length check; free and paid CoinAnk Kline methods index nine fields without a length check; websocket `handleResponse:105–152` similarly indexes data. `market/historical.go:73–91` indexes/asserts seven fields without guards. [B] Malformed external rows can panic these paths. No hostile traffic or exploit test was performed, and caller recovery/reachability is not established.
 - [A] CoinAnk websocket pumps send to bounded channels without a cancellation select (`depth_ws.go:86–101`, `kline_ws.go:92–152`). Closing the socket does not unblock a goroutine already blocked sending. The demux also requires an exact serialized JSON prefix/key order. [B] Slow/abandoned consumers may leave blocked goroutines; reordered valid JSON may be silently dropped. No runtime leak was measured.
-- [A] `getOpenInterestData:389–392` fabricates Average as `Latest*0.999`; failed metadata is often rendered as zero, indistinguishable from a measured zero. NofxOS `GetNetFlowRanking:45–96` and `GetOIRanking:50–84` return non-nil results and nil error even if all constituent requests fail. `GetCoinData:79` and `fetchOIRanking:100` accept `success:false` when code is absent/zero. These are concrete availability/value semantics, not proof of current provider failure.
+- [A] `getOpenInterestData:389–392` fabricates Average as `Latest*0.999`; failed metadata is often rendered as zero, indistinguishable from a measured zero. VLOS `GetNetFlowRanking:45–96` and `GetOIRanking:50–84` return non-nil results and nil error even if all constituent requests fail. `GetCoinData:79` and `fetchOIRanking:100` accept `success:false` when code is absent/zero. These are concrete availability/value semantics, not proof of current provider failure.
 - [A] `calculateTimeframeSeries` loops the original configured EMA/RSI/BOLL period slices and appends into maps keyed by period. Duplicate periods therefore append multiple values per bar into the same key. Caller configuration deduplication was not audited; this is a local precondition risk, not proof user settings can trigger it.
 - [A] `AggregateToTF` assumes ascending input, accepts non-divisible src/dst periods, emits partially held buckets, and carries non-OHLCV fields from the first source bar rather than aggregating quote/trade fields. `CompletedBars` certifies temporal closure rather than data completeness; first-rung nonempty history can be arbitrarily short. Provenance is correct about source, not a coverage guarantee.
 - [A] `IsCMEFuturesSymbol:50–81` accepts any string containing lowercase `.c.` and known root-dot forms; it does not accept space-qualified `MNQ 06-26`, although `futuresRoot:142–158` does. Normalize preserves lowercase bare CME roots. Actual NT8 cache callers should supply canonical roots; this review did not audit the cache's own canonicalization.
@@ -64,7 +65,7 @@ SYSTEM-MAP bars/routing sections and RULEBOOK contract/source sections were cons
 
 [A] Alpaca `GetBars:69–131` ignores NextPageToken and returns one page from a 30-day/2-year lookback. Twelve Data `ParseBar:235–271` parses naive timestamps as UTC without using `Meta.ExchangeTimezone`; request methods check JSON status rather than HTTP status. No provider response freshness or current remote API capability was tested.
 
-[A] NofxOS direct transport uses `security.SafeGet` (implementation outside this slice). Optional Claw402 `DoRequest:77–113` is a paid x402 boundary, not a harmless offline getter: it creates a signing function and invokes `payment.DoX402Request`. Auth query stripping truncates at the auth parameter and can drop parameters after it. No payment key/environment was read and no such call was made.
+[A] VLOS direct transport uses `security.SafeGet` (implementation outside this slice). Optional Claw402 `DoRequest:77–113` is a paid x402 boundary, not a harmless offline getter: it creates a signing function and invokes `payment.DoX402Request`. Auth query stripping truncates at the auth parameter and can drop parameters after it. No payment key/environment was read and no such call was made.
 
 ## File-by-file role inventory
 
@@ -150,21 +151,21 @@ The following file notes summarize every assigned source. Exact function boundar
 
 - `provider/hyperliquid/kline.go`: Contextual mainnet/testnet read-only info API; candles/mids/meta, 30s timeout; interval aliases substituted not aggregated; symbol suffix rules case-sensitive and single-step.
 
-- `provider/nofxos/ai500.go`: AI500 retries3 separated2s, available flag, quadratic score sort, USDT normalization. fetch empty returns[] while available/top zero outputs can be nil.
+- `provider/vlos/ai500.go`: AI500 retries3 separated2s, available flag, quadratic score sort, USDT normalization. fetch empty returns[] while available/top zero outputs can be nil.
 
-- `provider/nofxos/claw402.go`: Optional paid x402 data transport, wallet key parsed from explicit/env input; endpoint mapping and auth truncation; payment boundary called only when client enabled, never invoked in review.
+- `provider/vlos/claw402.go`: Optional paid x402 data transport, wallet key parsed from explicit/env input; endpoint mapping and auth truncation; payment boundary called only when client enabled, never invoked in review.
 
-- `provider/nofxos/client.go`: Deprecated-service defaults still present; mutex config and optional Claw402 gateway, direct requests use security.SafeGet with auth in query; Error returns body only, auth parsing substring-based.
+- `provider/vlos/client.go`: Deprecated-service defaults still present; mutex config and optional Claw402 gateway, direct requests use security.SafeGet with auth in query; Error returns body only, auth parsing substring-based.
 
-- `provider/nofxos/coin.go`: Per-symbol/batch quant API and bilingual prompt rendering; success=false accepted if code omitted/zero, batch skips failures; price deltas x100, OI percentages pre-scaled; OI map output order unspecified.
+- `provider/vlos/coin.go`: Per-symbol/batch quant API and bilingual prompt rendering; success=false accepted if code omitted/zero, batch skips failures; price deltas x100, OI percentages pre-scaled; OI map output order unspecified.
 
-- `provider/nofxos/netflow.go`: Four sequential flow rankings; each failure logged and omitted, returns result,nil even all fail. Bilingual tables and top3 retail summary, FetchedAt request-start.
+- `provider/vlos/netflow.go`: Four sequential flow rankings; each failure logged and omitted, returns result,nil even all fail. Bilingual tables and top3 retail summary, FetchedAt request-start.
 
-- `provider/nofxos/oi.go`: Top/low OI ranks and legacy symbol wrappers; both requests may fail yet aggregate returns result,nil. success/code compatibility accepts omitted code zero. Percent fields already percent.
+- `provider/vlos/oi.go`: Top/low OI ranks and legacy symbol wrappers; both requests may fail yet aggregate returns result,nil. success/code compatibility accepts omitted code zero. Percent fields already percent.
 
-- `provider/nofxos/price.go`: Multi-duration ranking fetch with strict Success, map copy then bilingual renderer includes only1h/4h/24h; price ratio x100.
+- `provider/vlos/price.go`: Multi-duration ranking fetch with strict Success, map copy then bilingual renderer includes only1h/4h/24h; price ratio x100.
 
-- `provider/nofxos/util.go`: Language enums and signed K/M/B decimal formatting.
+- `provider/vlos/util.go`: Language enums and signed K/M/B decimal formatting.
 
 - `provider/twelvedata/kline.go`: API-key query client for time-series/quotes, 30s contextual requests; API status string checked, HTTP status ignored. ParseBar parses numeric OHLC strictly but assumes UTC for naive datetime and ignores exchange timezone metadata.
 

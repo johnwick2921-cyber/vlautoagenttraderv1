@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 type unifiedTurnDecision struct {

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W0 (CTO Q17): a chat entry is refused under STRICT exactly like

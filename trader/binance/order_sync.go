@@ -2,11 +2,11 @@ package binance
 
 import (
 	"fmt"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/safe"
-	"nofx/store"
-	"nofx/trader/types"
+	"vl/logger"
+	"vl/market"
+	"vl/safe"
+	"vl/store"
+	"vl/trader/types"
 	"sort"
 	"strings"
 	"sync"

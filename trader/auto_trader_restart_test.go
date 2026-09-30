@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // TestPlanRestartRecovery is the P3.6 MANDATORY mid-session-restart fixture: the

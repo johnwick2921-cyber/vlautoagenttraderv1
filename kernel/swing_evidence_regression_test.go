@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	"nofx/market"
+	"vl/market"
 	"testing"
 	"time"
 )

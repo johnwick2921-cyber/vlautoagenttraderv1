@@ -22,7 +22,7 @@ package trader
 //     and the demo row is invisible to both the card and the executor. Monday's
 //     real key (2026-08-17:NY) is never written here.
 //
-// GUARDED: skips unless NOFX_DEMO_SEED=1. Back up data/data.db first.
+// GUARDED: skips unless VL_DEMO_SEED=1. Back up data/data.db first.
 // Undo: docs/superpowers/reports/2026-08-16-demo-plan-seed.md has the cleanup.
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -34,8 +34,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 const (
@@ -111,14 +111,14 @@ const demoPlanV2 = `{
 }`
 
 func TestDemoSeed(t *testing.T) {
-	if os.Getenv("NOFX_DEMO_SEED") != "1" {
-		t.Skip("demo seeder is armed only with NOFX_DEMO_SEED=1 (writes to the live DB)")
+	if os.Getenv("VL_DEMO_SEED") != "1" {
+		t.Skip("demo seeder is armed only with VL_DEMO_SEED=1 (writes to the live DB)")
 	}
-	traderID := os.Getenv("NOFX_DEMO_TRADER")
+	traderID := os.Getenv("VL_DEMO_TRADER")
 	if traderID == "" {
-		t.Fatal("NOFX_DEMO_TRADER must be the live trader id the owner will look at")
+		t.Fatal("VL_DEMO_TRADER must be the live trader id the owner will look at")
 	}
-	dbPath := os.Getenv("NOFX_DEMO_DB")
+	dbPath := os.Getenv("VL_DEMO_DB")
 	if dbPath == "" {
 		dbPath = filepath.Join("..", "data", "data.db")
 	}

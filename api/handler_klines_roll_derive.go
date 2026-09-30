@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // W-ROLL-DAY-CHART (2026-09-19) — the roll stitch trusted the old contract's

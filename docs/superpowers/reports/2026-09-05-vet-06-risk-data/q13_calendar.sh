@@ -1,6 +1,6 @@
 #!/bin/bash
 # q13 — calendar slices in the store: coverage, FOMC/red events, upcoming dates; static fallback path
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "--- calendar tables ---"; sqlite3 "$DB" "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%calendar%';"
 T=$(sqlite3 "$DB" "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%calendar%' LIMIT 1;")
 echo "--- columns of $T ---"; sqlite3 "$DB" "PRAGMA table_info($T);" | cut -d'|' -f2 | tr '\n' ' '; echo
@@ -8,7 +8,7 @@ echo "--- slices: count, min/max trade_date ---"; sqlite3 -header "$DB" "SELECT 
 echo "--- last 12 slices: trade_date, n events, red events, source ---"
 python3 - <<PY
 import sqlite3, json
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 cols=[r[1] for r in con.execute("PRAGMA table_info($T)")]
 print("cols:", cols)
 dcol = 'trade_date' if 'trade_date' in cols else cols[0]
@@ -31,4 +31,4 @@ for r in allrows:
     except: pass
 print("event keys:", sorted(keys))
 PY
-echo "--- static fallback path ---"; grep -n "calendarStaticPath\|static.*\.json\|T1_STATIC\|CALENDAR_STATIC" /home/hoang/nofx-vet-06/trader/auto_trader_calendar.go | head -5
+echo "--- static fallback path ---"; grep -n "calendarStaticPath\|static.*\.json\|T1_STATIC\|CALENDAR_STATIC" /home/hoang/vl-vet-06/trader/auto_trader_calendar.go | head -5

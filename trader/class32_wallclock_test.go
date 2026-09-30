@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // CLASS 32 (owner ruling 2026-08-31) — scheduled reads must fire on wall-clock.

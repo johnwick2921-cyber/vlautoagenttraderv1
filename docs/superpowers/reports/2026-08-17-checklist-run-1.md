@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CHECKLIST RUN 1: 39 ✅ · 17 owner-to-verify · 25 pending · 13 NOT DONE (of which 0 blocking)
 
 Run against `docs/VL-VERIFICATION-CHECKLIST.md` v1 (committed `02ebb9e3` **before** this run, so the standard could not be edited to fit the result). READ-ONLY: nothing was fixed, nothing restarted, `data/data.db` opened `mode=ro` only. Prior evidence cited rather than re-derived where it already proves a row.
@@ -23,12 +24,12 @@ Run against `docs/VL-VERIFICATION-CHECKLIST.md` v1 (committed `02ebb9e3` **befor
 |---|---|---|
 | A1 | ✅ | `🔐 BOOT INTEGRITY OK — rev 909d3a48f288 +dirty · built 2026-08-16T16:48:48Z · expected 909d3a48f288 · goldens PASS` (13:04:21) |
 | A2 | ✅ *(with a caveat)* | `deploy/RELEASE` = `909d3a48…` = the running binary's `vcs.revision`. **Caveat:** HEAD is now 1 commit ahead (`02ebb9e3`, this run's checklist commit). Rebuilding without re-arming would refuse trading. |
-| A3 | ✅ | `pgrep -fa nofx-bin` → exactly one: `322463 /home/hoang/nofx/nofx-bin` (the sandbox runs as `nofx-sandbox`, a separate binary) |
+| A3 | ✅ | `pgrep -fa vl-bin` → exactly one: `322463 /home/hoang/vl/vl-bin` (the sandbox runs as `vl-sandbox`, a separate binary) |
 | A4 | 🔵 | Bundle IS current: `web/dist/assets/index-DLSi5dVY.js` built 13:04, and both W16 strings are in it (`Refused this session`, `kept the plan as it was`). The **hard-reload in your browser** is OWNER-TO-VERIFY. |
 | A5 | ✅ | `tcp_server: hello handshake OK protocol_version=3 source=vltrader-addon` (13:07:15) |
 | A6 | ✅ | `System clock synchronized: yes` · `NTP service: active` · `Time zone: America/Chicago (CDT, -0500)` |
 | A7 | ✅ | `/dev/sdf 1007G 90G 866G 10% /` · journals 1.9G (≤ 2G cap) |
-| A8 | ✅ | `nofx-2026-08-16_050006.db.gz` (today, 37M) + `deploy/RESTORE.md` present |
+| A8 | ✅ | `vl-2026-08-16_050006.db.gz` (today, 37M) + `deploy/RESTORE.md` present |
 | A9 | OWNER-TO-VERIFY | `RESTORE.md:57-89` documents the binary rollback **with the re-arm as step 3 "← never skip"**; the DB half is marked `TESTED read-back — 2026-08-13`. The binary half has never been rehearsed — the row asks you to read it once. |
 
 ---
@@ -48,9 +49,9 @@ Run against `docs/VL-VERIFICATION-CHECKLIST.md` v1 (committed `02ebb9e3` **befor
 | B9 | ✅ | W16/R7. `applyStaleDataBlock` runs post-fetch; 3 tests pinned — `TestW16StaleEntriesAreStillBlockedAfterT22Removal` (stale opens → `wait`, exits untouched), `TestW16FreshFeedIsNotBlocked`, `TestW16NoIntradayDataFailsOpen`. |
 | B10 | ✅ | W16/R5 `4381c801`. P0 `untracked-position` alert + `discipline.FreezeTrader`; `TestW16UntrackedPositionFreezesEntriesOnly` + `TestW16FreezeBlocksOpensNotExits` PASS. |
 | B11 | ⬜ **NOT DONE** *(the math is right; the row's bar and the audit report are not)* | **What IS verified ✅:** single source of truth `market/futures_symbol.go:88` `MNQ: 2.0` and `:114` `0.25` → $0.50/tick, and every production site that multiplies points by a point value agrees. One REAL trade to the cent — id=**515** (`source='system'`, not the demo row): matches `realized_pnl` exactly. **Three findings:** ① the W12 report's own note at `2026-08-16-math-audit.md:37-39` says the R:R floor is **3.0 (stricter)** — it is actually **1.0 (looser)**; the note is inverted **in the unsafe direction** (**Sev HIGH · Size S — correct the report**). ② `w12_money_math_test.go` uses a LOCAL `pnlRef` reimplementation and never executes the production P&L code in `close_sync.go:139-146` (**MED · S**). ③ **39 REAL closed rows cannot be re-derived** from entry/exit/quantity (multi-fill aggregation) and 60 more are booked at $0 — so any stat that recomputes P&L from those columns is wrong; `realized_pnl` is the only trustworthy field (**MED · M**). Also: the checklist's "3 oracles each" phrasing appears nowhere in the W12 report. |
-| B12 | ✅ | `127.0.0.1:8080` (nofx-bin) · `127.0.0.1:3000` (vite). Both loopback — the 0.0.0.0 dev-server bind was closed in `a84d6ae2`. |
+| B12 | ✅ | `127.0.0.1:8080` (vl-bin) · `127.0.0.1:3000` (vite). Both loopback — the 0.0.0.0 dev-server bind was closed in `a84d6ae2`. |
 | B13 | ✅ | Live, this run: `POST /api/reset-account → 401` · `/api/reset-password → 410` · `/api/crypto/decrypt → 401`. Matches `2026-08-16-security-p0-fix.md`. |
-| B14 | ✅ | No `sk-` under `data/`; none in journald over 24h. The one key-shaped string in `web/dist` is `cm_568c67eae410d912c54c` — the **known-dead public NofxOS default** (`provider/nofxos/client.go:19`, returns HTTP 402), not your secret. |
+| B14 | ✅ | No `sk-` under `data/`; none in journald over 24h. The one key-shaped string in `web/dist` is `cm_568c67eae410d912c54c` — the **known-dead public VLOS default** (`provider/vlos/client.go:19`, returns HTTP 402), not your secret. |
 | B15 | **OWNER-ONLY** | DeepSeek console — old keys revoked, new key in Studio. Cannot be verified from here. |
 
 ---

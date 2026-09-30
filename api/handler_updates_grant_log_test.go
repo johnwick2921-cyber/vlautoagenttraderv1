@@ -4,7 +4,7 @@ package api
 // install handler logs the M4 hand-off's error with %v
 // (handler_updates.go "hand-off refused"). A starter whose error carries the
 // Grant — the most natural thing for an M4 worker client to write — must not
-// put the live MAC into data/nofx_*.log or log_events.
+// put the live MAC into data/vl_*.log or log_events.
 
 import (
 	"bytes"
@@ -15,8 +15,8 @@ import (
 	"sync"
 	"testing"
 
-	"nofx/internal/updateauth"
-	"nofx/logger"
+	"vl/internal/updateauth"
+	"vl/logger"
 
 	"github.com/gin-gonic/gin"
 )

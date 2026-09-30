@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Weekly-Bias + Planner-Eyes Wave — 2026-08-30
 
-- **Branch:** `feat/weekly-bias` (off `dev` f08a300a), worktree `/home/hoang/nofx-weekly`
+- **Branch:** `feat/weekly-bias` (off `dev` f08a300a), worktree `/home/hoang/vl-weekly`
 - **Commit:** 2ed6a1704b77a0232242adf34bfb2f90509dd7d5 — https://github.com/johnwick2921-cyber/nofx/commit/2ed6a1704b77a0232242adf34bfb2f90509dd7d5
 - **Status:** built, gated, pushed — WARN/shadow only. NO deploy, NO C# changes, NO gate changes, NO DB writes outside the code path (no live DB touched).
 - **Law recap honored:** main tree untouched (all work in the worktree); SIM-only; no hard gates added; guide law satisfied in the same PR (no `GUIDE_BUILT_REV` bump — the cutover marker does that).
@@ -76,7 +77,7 @@ All garbage inputs fall back to the default (fixture `TestWeeklyKnobs`).
 
 ## Cutover notes
 
-This wave ships NOTHING that needs a cutover: no binary swap, no DB migration beyond the additive AutoMigrate `draw_align` column (zero-downtime), no C# change. The marker sequence for the next REAL deploy is unchanged from prior waves: lock marker → swap `nofx-bin` → RELEASE marker commit → `kill -9 <PID>` → boot ack within 90s → goldens. The promotion decision (W8) is a **Sep-9 data decision** — no knobs flip before the table's thresholds are met.
+This wave ships NOTHING that needs a cutover: no binary swap, no DB migration beyond the additive AutoMigrate `draw_align` column (zero-downtime), no C# change. The marker sequence for the next REAL deploy is unchanged from prior waves: lock marker → swap `vl-bin` → RELEASE marker commit → `kill -9 <PID>` → boot ack within 90s → goldens. The promotion decision (W8) is a **Sep-9 data decision** — no knobs flip before the table's thresholds are met.
 
 ## R12 coverage
 

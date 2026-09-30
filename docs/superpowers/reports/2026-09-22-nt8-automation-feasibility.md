@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W-ONE-BUTTON M1: NT8 automation feasibility (throwaway spike, read-only pass)
 
 **Lane:** Claude-101. **Branch:** `feat/one-button-updates` (claim `60d1ac24`). **Base:** origin/dev `0960a6ac` ("docs: record verified Planner chart frontend deployment").
@@ -19,7 +20,7 @@
 
 | Step (CTO dispatch §3 M1) | Verdict | Evidence / reason |
 |---|---|---|
-| 1. Read-only UIA tree dump of the live NT8 | **PROVEN** | See §6. `tools/nt8-spike/uia-tree-8.1.8.1.txt`: 191 nodes across 2 top-level windows (Control Center and Chart), 1.3 s. Property reads only. The guard showed NT8 pid 40804, start `2026-09-22T00:27:39.868`, and nofx MainPID 75597 with starttime ticks 35389515 **unchanged** before and after both passes (22:09:00 and 22:09:30 CT). [A] |
+| 1. Read-only UIA tree dump of the live NT8 | **PROVEN** | See §6. `tools/nt8-spike/uia-tree-8.1.8.1.txt`: 191 nodes across 2 top-level windows (Control Center and Chart), 1.3 s. Property reads only. The guard showed NT8 pid 40804, start `2026-09-22T00:27:39.868`, and vl MainPID 75597 with starttime ticks 35389515 **unchanged** before and after both passes (22:09:00 and 22:09:30 CT). [A] |
 | 2. Open the NinjaScript Editor via UIA | **BLOCKED** (no isolated install) | `ControlCenterMenuItemNew` exists and supports ExpandCollapse. Its children are collapsed and cannot be listed without Expand, which is a mutating call and was not made. [A] |
 | 3. Compile via the Editor's Compile control (InvokePattern) | **BLOCKED** | The Editor is not open on the live NT8, so its AutomationIds are unknown. |
 | 4. Read "0 errors" from the output pane | **BLOCKED** | NT8 writes **nothing** about compiles to its log or trace files (§3), so the Editor grid is the only place errors show. |
@@ -38,7 +39,7 @@ Per the dispatch, **none of steps 3–8 has FAILED, so the full-automation goal 
 - **Q1/F1 — CONFIRMED.** Every NT8-affecting step is blocked while ANY non-SIM connection is connected, and unknown coverage blocks. M2's `maintenance_ack` carries a connection/account census with no names. Whether a FLAT non-SIM connection may ever be disconnected is the owner's ruling; until then the answer is NO.
 - **Q2/F3 — CTO ruling, owner may veto.** M4's NT8 step is designed as **compile-in-place primary**: flat gate before the compile, UIA compile, then proof from the artifact, the Terminated→Active pair and a new-epoch hello. A full NT8 restart is an **attended fallback only**. The NT8 step is not built until the owner has seen this. The CLAUDE.md "no hot-reload" line is a canon correction for the owner to make (L12); it is not edited here.
 - **Q3/F4 — YES.** Additive omitempty hello fields (`nt8_pid`, `nt8_start_ms`, `assembly_mvid`, `source_hash`, `activation_nonce`) and a Go per-connection record. The verifier binds to that record. They go in the same C# commit as the maintenance frames.
-- **F7:** parked. **F9:** confirmed. **F10:** hash and back up `vltrader.cs` to the private `~/nofx-backups/addon/`, never the public repo.
+- **F7:** parked. **F9:** confirmed. **F10:** hash and back up `vltrader.cs` to the private `~/vl-backups/addon/`, never the public repo.
 
 Each finding lists the fail-closed default I am taking under R4.
 
@@ -68,7 +69,7 @@ Each finding lists the fail-closed default I am taking under R4.
 - **Wire proof, n=1, on 09-22 only [A, CTO re-verified]:**
   - Process #2 had pairs at 00:27:00.964/.974 and 00:27:10.871/.890, with no Session Break between `log.20260922.00003.txt:1` and 00:27:31.
   - The DLL was written at 00:27:10.428.
-  - The bot received `build_id=2026-09-20-p1` at 00:27:23 (`nofx_2026-09-19.log:203419`), **before** Session End at 00:27:31 and the next login at 00:27:52.
+  - The bot received `build_id=2026-09-20-p1` at 00:27:23 (`vl_2026-09-19.log:203419`), **before** Session End at 00:27:31 and the next login at 00:27:52.
 - **(Corrected) 09-22 had FIVE pairs, not two** [A]. Three came earlier, in process #1, at 00:11:55, 00:12:07 and 00:12:18 (`log.20260922.00000.txt:234/242`, `:303/311`, `:388/396`), each followed by a hello. **What they were is unknown** [C: F5 presses during that session's edits, with no build change on the wire].
 - **(Corrected) 09-07 does NOT prove an in-process reload.** Both F5 pairs (21:42:50/21:43:02 and 22:16:11/22:16:20) were followed by a restart **before** the bot printed the new build. Only 09-22 is wire proof.
 - **Inside one process: [B].** `research_facts.source_build_id` changed from `2026-09-07-h1` (ids ≤102825383) to `2026-09-20-p1` (from id 102825384). The CTO's verifier had no DB access, so this timing stays [B].
@@ -161,10 +162,10 @@ Log paths: `C:\Users\hoang\Documents\NinjaTrader 8\{log,trace}`.
 | Running process: PID 40804, started 2026-09-22 00:27:39.868, SessionId 1, parent explorer.exe (launched by hand or a shortcut [B]), owner hoang. | A |
 | Release-owned: 5 `AddOns\VL*.cs`, byte-identical to `ninjascript/*.cs` at `0960a6ac` (md5 and sha256). `AddOns` also holds 4 `*.cs.bak-20260911-*` files; they are not compiled because of their extension. | A |
 | Compiled assembly `bin\Custom\NinjaTrader.Custom.dll`: 1,371,136 bytes, mtime 2026-09-22 00:27:10.428. The csproj is SDK-style, net48, LangVersion 13, and regenerated by NT8 at compile time. | A |
-| Rollback source set: `~/nofx-backups/addon/20260922-002056/` holds all 5 `.cs` files. **(Corrected)** Their CRLF-stripped sha256 values equal the **`28ac9192`** state (09-12, reports `h1`). `38585854` changed only the protocol doc. **No DLL backup exists** for h1 or p1. | A |
+| Rollback source set: `~/vl-backups/addon/20260922-002056/` holds all 5 `.cs` files. **(Corrected)** Their CRLF-stripped sha256 values equal the **`28ac9192`** state (09-12, reports `h1`). `38585854` changed only the protocol doc. **No DLL backup exists** for h1 or p1. | A |
 | Toolchain: Windows PowerShell **5.1.26100.9444** only (no pwsh 7), execution policy RemoteSigned. .NET SDK 9.0.307 on the Windows side (not on the WSL PATH). MSBuild from VS BuildTools. NT8's own Roslyn. The framework `csc` v4 cannot build LangVersion 13. | A |
 | Isolation vehicles: Windows 11 Pro 25H2, build 26200. Windows Sandbox and Hyper-V are disabled; HypervisorPlatform, VirtualMachinePlatform and WSL are enabled. One usable profile. D:\ has about 1725 GB free. | A |
-| WSL 2.6.3.0, networking mirrored, systemd=true. `powershell.exe` from an interactive WSL shell runs in SessionId 1, UserInteractive, not elevated, and UIA loads. **Untested from `nofx.service`**, which has no `WSL_INTEROP` and no `/mnt/c` on PATH. | A / unknown |
+| WSL 2.6.3.0, networking mirrored, systemd=true. `powershell.exe` from an interactive WSL shell runs in SessionId 1, UserInteractive, not elevated, and UIA loads. **Untested from `vl.service`**, which has no `WSL_INTEROP` and no `/mnt/c` on PATH. | A / unknown |
 | Helper hosting pattern already on this machine: an At-logon Interactive scheduled task (`\Claude\ClaudeCoworkWatchdog`). A Windows service runs in session 0 and cannot drive UIA. | A / C |
 
 ---
@@ -211,7 +212,7 @@ Log paths: `C:\Users\hoang\Documents\NinjaTrader 8\{log,trace}`.
 - **An open Chart window** (`aid='ChartWindow'`, "Chart - MNQ 12-26") with Chart Trader. `ChartTraderControlAccountSelector` (name empty, value not read) and Quick Buy/Sell/Reverse/Close buttons, all with InvokePattern. **These are live order buttons.** Any future helper must scope its UIA search to the Editor window's subtree, never search from the desktop root by Name.
 - The NinjaScript Editor was **not open**, so its Compile control and error-grid AutomationIds are still unknown. Finding them needs the isolated install (step 2).
 
-**Guard:** before and after both passes, nofx MainPID 75597 with starttime ticks 35389515, and NT8 pid 40804 with start `2026-09-22T00:27:39.8680177-05:00`, were identical. [A]
+**Guard:** before and after both passes, vl MainPID 75597 with starttime ticks 35389515, and NT8 pid 40804 with start `2026-09-22T00:27:39.8680177-05:00`, were identical. [A]
 
 **Tooling note:** Windows PowerShell 5.1 reads a UTF-8 `.ps1` without BOM as ANSI. The first attempt failed to **parse** because of a non-ASCII dash, so nothing ran and the guard was unchanged. The script is now pure ASCII. [A]
 
@@ -219,31 +220,31 @@ Log paths: `C:\Users\hoang\Documents\NinjaTrader 8\{log,trace}`.
 
 ## 7. Service, restart and CWD-relative resources (feeds M4 and CTO correction C2)
 
-- **Unit:** `/etc/systemd/system/nofx.service`, generated by `install-autostart.sh`: Type=simple, User=hoang, `WorkingDirectory=/home/hoang/nofx`, `ExecStart=/home/hoang/nofx/nofx-bin`, Restart=on-failure, RestartSec=5, StartLimitIntervalSec=0. No Environment or EnvironmentFile. [A]
+- **Unit:** `/etc/systemd/system/vl.service`, generated by `install-autostart.sh`: Type=simple, User=hoang, `WorkingDirectory=/home/hoang/vl`, `ExecStart=/home/hoang/vl/vl-bin`, Restart=on-failure, RestartSec=5, StartLimitIntervalSec=0. No Environment or EnvironmentFile. [A]
 - **Process identity without sudo:**
-  - `systemctl show -p MainPID --value nofx` = 75597.
+  - `systemctl show -p MainPID --value vl` = 75597.
   - `/proc/75597/stat` field 22 = 35389515 ticks (CLK_TCK 100), within 30 ms of systemd's monotonic start.
   - `readlink /proc/75597/exe` is readable.
   - `go version -m /proc/75597/exe` gives `a2bac00d…`, modified=false.
   - **Wall-clock start times disagree by 151 s** (a WSL clock step), so restart detection must use (pid, starttime ticks), never wall clock. [A]
 - **CWD-relative census** (52 in-module packages, 612 non-test files) [A]:
   - **Release-owned:**
-    - `nofx-bin`;
+    - `vl-bin`;
     - `deploy/RELEASE` (`kernel/boot_integrity.go:90`, read once at boot);
     - `web/dist` (`api/ui_serving.go:35`). This one is resolved **per request** by `http.Dir`, so a swap goes live immediately, and it was hot-swapped at 16:05:13 on 09-22 with no record.
   - **Mutable, must stay at the installation:**
     - `.env`, read at boot **and written** by `api/handler_onboarding.go:241-246,339`;
-    - `data/nofx_<date>.log`, created before `.env` loads;
+    - `data/vl_<date>.log`, created before `.env` loads;
     - `data/data.db`. `main.go:71-76` runs MkdirAll, so **a wrong working directory silently creates an empty DB and boots "healthy"**;
     - `data/data.db.research.db`;
     - `data/clock-guard-state.json`, read relative but written with an absolute path.
   - **Ambiguous, needs an owner ruling in M4:** `calendar_static_t1.json`. It is git-tracked, but its comment calls it both "repo-shipped template" and "owner-editable".
   - **Rule:** never symlink the working directory itself. The process would pin the release inode, and `data/` and `.env` would resolve inside the release. [B]
-- **Second UI surface:** `nofx-web.service` runs `npm run dev` from the deploy tree's `web/`. No release layout versions it. [A]
+- **Second UI surface:** `vl-web.service` runs `npm run dev` from the deploy tree's `web/`. No release layout versions it. [A]
 - **Rollback today:**
-  - `~/nofx-backups/cutover-auto-rollback-v3.sh` covers `nofx-bin` and RELEASE (plus a bars key), with a 90 s `BOOT INTEGRITY OK` watch and `/api/health` check. It does not restore `web/dist`, HEAD or the DB. It refuses when `nofx-bin.old.$LIVE` already exists, and 67 `nofx-bin.*` files (4.6 G) sit in the tree.
-  - `RESTORE.md` and `leveltruth-cutover.sh` use `pgrep -f nofx-bin`, which also matches `go version -m nofx-bin`.
-  - Journald for uid 1000 keeps about 4 h. Boot proof survives only in `data/nofx_<boot-date>.log`. [A]
+  - `~/vl-backups/cutover-auto-rollback-v3.sh` covers `vl-bin` and RELEASE (plus a bars key), with a 90 s `BOOT INTEGRITY OK` watch and `/api/health` check. It does not restore `web/dist`, HEAD or the DB. It refuses when `vl-bin.old.$LIVE` already exists, and 67 `vl-bin.*` files (4.6 G) sit in the tree.
+  - `RESTORE.md` and `leveltruth-cutover.sh` use `pgrep -f vl-bin`, which also matches `go version -m vl-bin`.
+  - Journald for uid 1000 keeps about 4 h. Boot proof survives only in `data/vl_<boot-date>.log`. [A]
 
 ---
 
@@ -264,7 +265,7 @@ Log paths: `C:\Users\hoang\Documents\NinjaTrader 8\{log,trace}`.
 4. **Connections: Sim101 only.** No broker or prop connections, nothing ConnectOnStartup except SIM, ATI disabled or on another port, and no vendor DLLs (no Apex).
 5. **Market data for bars:** Playback or a simulated feed, because a SIM-only VM has no real-time data [C]. The verifier needs a bar frame on the new epoch, not only a hello.
 6. **`bin\Custom`:** stock NT8 plus the 5 `VL*.cs` at `0960a6ac`, plus **one deliberately unrelated dummy indicator** so error attribution for non-release files can be tested.
-7. **`%USERPROFILE%\NofxTrader\account.txt`** inside the VM naming the SIM account (`VLTraderTCPClient.cs:411-417`).
+7. **`%USERPROFILE%\VLTrader\account.txt`** inside the VM naming the SIM account (`VLTraderTCPClient.cs:411-417`).
 8. **A Go probe listener on the VM's `127.0.0.1:36974`**, built by me (spike S1). The VM must be able to run it: either a WSL instance or the Windows Go toolchain.
 9. **An interactive, logged-on desktop session** with PowerShell 5.1 and UIA. VM checkpoints so each run resets. A channel from this host to trigger spikes and fetch receipts.
 10. **Written owner authorization** that the helper may run UIA, compile, close and relaunch **only inside the VM NT8**. The live PID stays out of scope.
@@ -297,7 +298,7 @@ Log paths: `C:\Users\hoang\Documents\NinjaTrader 8\{log,trace}`.
 - The `ConfirmWindowClose` dialog, and the steady 5.1 s pause between `Finalizing addon` and `Shutting down`.
 - What NT8 does at startup when `NinjaTrader.Custom.dll` is missing.
 - Unattended login (F2); license terms for a VM; whether a same-user concurrent login is safe.
-- Whether `nofx.service` or a `--user` unit can reach WSL interop.
+- Whether `vl.service` or a `--user` unit can reach WSL interop.
 - A verified lock-detection signal.
 - Whether any of the 291 `@`-files were hand-edited, since their contents were not compared with a pristine set.
 - Provenance of the a2bac00d cutover at 00:48 and of the dirty `store/armed_orders.go` (preserved per owner ruling).
@@ -306,7 +307,7 @@ Log paths: `C:\Users\hoang\Documents\NinjaTrader 8\{log,trace}`.
 
 ## 11. What I did NOT do (L14)
 
-- No write to `/home/hoang/nofx`. No write under `/mnt/c`.
+- No write to `/home/hoang/vl`. No write under `/mnt/c`.
 - No compile, F5, restart, close, Invoke, SetFocus, Expand or keystroke against the live NT8.
 - No signal to any process, no lock acquire, no RELEASE edit, no merge.
 - No DB writes. Every sqlite read was `-readonly`.

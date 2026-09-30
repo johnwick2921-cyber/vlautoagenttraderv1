@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 🌍 International Documentation / 国际化文档
 
 VL Intelligent documentation is available in multiple languages.
@@ -171,9 +172,9 @@ faq.zh-CN.md                 → Chinese FAQ
 | 🇺🇦 Ukrainian | Community | Active |
 
 **Want to join the team? / 想加入团队？**
-- Contact on [Telegram](https://t.me/nofx_dev_community)
+- Contact on [Telegram](upstream telegram link (removed in the VL rename))
 - Open an issue on GitHub
-- DM [@nofx_official](https://x.com/nofx_official) on Twitter
+- DM [upstream x link (removed in the VL rename)](upstream x link (removed in the VL rename)) on Twitter
 
 ---
 
@@ -218,8 +219,8 @@ faq.zh-CN.md                 → Chinese FAQ
 ## 🆘 Translation Help / 翻译帮助
 
 **Questions? / 有问题？**
-- 💬 Ask in [Telegram Community](https://t.me/nofx_dev_community)
-- 🐙 Open a [GitHub Issue](https://github.com/NoFxAiOS/nofx/issues)
+- 💬 Ask in [Telegram Community](upstream telegram link (removed in the VL rename))
+- 🐙 Open a [GitHub Issue](upstream github link (removed in the VL rename))
 - 📧 Contact maintainers
 
 **Resources / 资源:**

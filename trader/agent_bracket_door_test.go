@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	nttrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 // ── W1b E9 — THE AGENT DOOR SENDS ITS OWN BRACKET ───────────────────────────

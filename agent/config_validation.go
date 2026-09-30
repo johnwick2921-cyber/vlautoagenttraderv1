@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"nofx/security"
-	"nofx/store"
+	"vl/security"
+	"vl/store"
 )
 
 type ConfigValidationResult struct {

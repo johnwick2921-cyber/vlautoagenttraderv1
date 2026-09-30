@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"nofx/config"
+	"vl/config"
 	"time"
 )
 

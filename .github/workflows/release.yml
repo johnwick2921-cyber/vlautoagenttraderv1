@@ -15,19 +15,26 @@
 #     fail-closed to THIS repo. The partner repo must never be a target.
 name: release
 
-# PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7): this repo is NEVER a release source.
-# No partner CI run may ever create a release or tag in the upstream nofx repo.
-# The only permitted trigger is a manual workflow_dispatch, and both jobs carry
-# `if: ${{ false }}` so even a manual dispatch cannot run them. Partner images
-# publish only under the partner's own github.repository base.
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'existing tag to release'
+        required: true
+      rollback_from:
+        description: 'optional 40-hex sha of the last released commit to prove rollback against (default: previous v* tag)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
 env:
-  # Partner base. Publication happens only under this repo's own name.
+# PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7): this repo is NEVER a release source.
+# No partner CI run may ever create a release or tag in the upstream nofx repo.
+# The only permitted trigger is a manual workflow_dispatch, and both jobs carry
+  # `if: ${{ false }}` so even a manual dispatch cannot run them. Partner images
+  # publish only under the partner's own github.repository base.
   RELEASE_REPO: johnwick2921-cyber/vlautoagenttraderv1
 
 jobs:
@@ -38,8 +45,8 @@ jobs:
   # broker, and the verdict is read off the DATABASE rather than the process
   # (with no NT8 a binary is not expected to stay up).
   dbcompat:
-    if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     runs-on: ubuntu-latest
+    if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     outputs:
       rollback_pairs: ${{ steps.pairs.outputs.json }}
     steps:
@@ -85,8 +92,8 @@ jobs:
 
   release:
     needs: [dbcompat]
-    if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     runs-on: ubuntu-latest
+    if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     # The protected Environment carries the owner as a REQUIRED REVIEWER and
     # holds the signing key. No approval, no release, no signature.
     environment: release
@@ -125,10 +132,10 @@ jobs:
         run: |
           set -euo pipefail
           test -z "$(git status --porcelain)" || { echo "REFUSED: working tree dirty before build"; git status --porcelain; exit 1; }
-          go build -trimpath -o nofx-bin ./
+          go build -trimpath -o vl-bin ./
           # The stamp is READ back out of the binary, never assumed: a build
           # that reports vcs.modified=true is not a release.
-          go version -m nofx-bin | tee /tmp/vcs.txt
+          go version -m vl-bin | tee /tmp/vcs.txt
           grep -q 'vcs.modified=false' /tmp/vcs.txt || { echo "REFUSED: vcs.modified is not false"; exit 1; }
           grep -q "vcs.revision=${{ steps.src.outputs.sha }}" /tmp/vcs.txt || { echo "REFUSED: binary does not carry the tag's revision"; exit 1; }
 
@@ -164,19 +171,19 @@ jobs:
           # Built OUTSIDE the checkout, then copied in. A binary written into
           # the tree is an untracked file, so the NEXT build reads
           # vcs.modified=true — the first release run (v2026.09.27.1,
-          # 2026-09-27) refused exactly that on nofx-updater-bootstrap.
+          # 2026-09-27) refused exactly that on vl-updater-bootstrap.
           # Pinned by TestReleaseWorkflowGoBuildsWriteOutsideTheTree.
           OUT="$RUNNER_TEMP/updater-bin"
           mkdir -p "$OUT"
-          go build -trimpath -o "$OUT/nofx-updater" ./cmd/nofx-updater
-          go build -trimpath -o "$OUT/nofx-updater-bootstrap" ./cmd/updater-bootstrap
-          for b in "$OUT/nofx-updater" "$OUT/nofx-updater-bootstrap"; do
+          go build -trimpath -o "$OUT/vl-updater" ./cmd/vl-updater
+          go build -trimpath -o "$OUT/vl-updater-bootstrap" ./cmd/vl-updater-bootstrap
+          for b in "$OUT/vl-updater" "$OUT/vl-updater-bootstrap"; do
             go version -m "$b" > /tmp/updater-vcs.txt
             grep -q 'vcs.modified=false' /tmp/updater-vcs.txt || { echo "REFUSED: $b is not a clean build"; exit 1; }
             grep -q "vcs.revision=${{ steps.src.outputs.sha }}" /tmp/updater-vcs.txt || { echo "REFUSED: $b does not carry the tag's revision"; exit 1; }
           done
           mkdir -p updater
-          cp "$OUT/nofx-updater" "$OUT/nofx-updater-bootstrap" updater/
+          cp "$OUT/vl-updater" "$OUT/vl-updater-bootstrap" updater/
 
       - name: Stage ONLY the allow-list
         run: bash deploy/release/package.sh "$PWD" /tmp/stage "${{ steps.src.outputs.sha }}"

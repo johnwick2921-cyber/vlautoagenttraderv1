@@ -19,5 +19,5 @@
 --- FAIL: TestStructuralStopF4RetirementWriteFailureCannotReachWire (0.59s)
     structural_geometry_wire_test.go:19: geometry refusal reached broker: {Symbol:MNQ Account:Sim101 Side:long Quantity:1 Entry:100 StopLoss:77 TakeProfit:104 SignalID:34c770cf-c626-469a-b2e4-d6b3787f0b4c Timestamp:2026-09-13T01:27:30.053Z TraderID: Seq:1 OrderType:limit LimitPrice:100 StopPrice:0}
 FAIL
-FAIL	nofx/trader	0.599s
+FAIL	vl/trader	0.599s
 FAIL

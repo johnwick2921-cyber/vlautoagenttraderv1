@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/discipline"
+	"vl/discipline"
 )
 
 // ── W-EXEC-TRUTH W0 (CTO M3) — an arm/picture refusal is logged and counted

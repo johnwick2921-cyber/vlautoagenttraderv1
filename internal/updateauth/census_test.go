@@ -22,7 +22,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // ── W-ONE-BUTTON M3 census: who may touch the enrollment, and who may mint ──
@@ -380,7 +380,7 @@ func updateAuthOffenders(t *testing.T, root string) (offenders []string, scanned
 		scanned++
 
 		// 5. //go:linkname binds a local name to ANY package's symbol
-		// (nofx/internal/updateauth.ComputeMAC included) with no import, no
+		// (vl/internal/updateauth.ComputeMAC included) with no import, no
 		// selector and no restricted identifier, so nothing above could see
 		// it. None is admitted in non-test code; the module has none.
 		dir := path.Dir(rel)
@@ -468,16 +468,16 @@ func updateAuthOffenders(t *testing.T, root string) (offenders []string, scanned
 				continue
 			}
 			if !importers(rel) {
-				offend(rel + ": imports nofx/internal/updateauth")
+				offend(rel + ": imports vl/internal/updateauth")
 			}
 			if imported++; imported == 2 {
-				offend(rel + ": imports nofx/internal/updateauth more than once")
+				offend(rel + ": imports vl/internal/updateauth more than once")
 			}
 			alias := "updateauth"
 			if im.Name != nil {
 				alias = im.Name.Name
 				if alias == "." || alias == "_" {
-					offend(rel + ": " + alias + "-imports nofx/internal/updateauth")
+					offend(rel + ": " + alias + "-imports vl/internal/updateauth")
 					continue
 				}
 			}

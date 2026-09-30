@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W-EXEC-TRUTH W2 (confirm resolver) — the byte-identity pin for every rule

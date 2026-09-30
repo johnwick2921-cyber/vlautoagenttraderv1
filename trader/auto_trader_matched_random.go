@@ -6,8 +6,8 @@ import (
 	"math"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // P5.6 — matched-random verdict recording (per graded close) + the fixed-cadence

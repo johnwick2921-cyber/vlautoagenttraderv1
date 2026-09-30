@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func TestLoadAIClientFromStoreUserPrefersModelWithBalance(t *testing.T) {

@@ -13,9 +13,9 @@ import { planStrings } from './plan-translations'
 import { translations } from './translations'
 
 // The source-type value set the code accepts (store/strategy.go source_type
-// comment: "static" | "ai500" | "oi_top" | "oi_low"). A label that drops or
-// adds a value would misdescribe what the engine will use.
-const sourceTypeValues = ['static', 'ai500', 'oi_top', 'oi_low']
+// comment: "static" | "hyper_all" | "hyper_main" | "mixed"). A label that
+// drops or adds a value would misdescribe what the engine will use.
+const sourceTypeValues = ['static', 'hyper_all', 'hyper_main', 'mixed']
 
 describe('coinSource label truth (pinned to store/strategy.go:1905-1930)', () => {
   it('sourceType label names exactly the four code values', () => {
@@ -27,17 +27,15 @@ describe('coinSource label truth (pinned to store/strategy.go:1905-1930)', () =>
     }
   })
 
-  it('useOITop label says ranking for long, useOILow says ranking for short', () => {
-    expect(coinSource.useOITop.en).toContain('OI increase ranking')
-    expect(coinSource.useOITop.en.toLowerCase()).toContain('long')
-    expect(coinSource.useOILow.en).toContain('OI decrease ranking')
-    expect(coinSource.useOILow.en.toLowerCase()).toContain('short')
+  it('hyper labels name the Hyperliquid halves and the mixed mode', () => {
+    expect(coinSource.useHyperAll.en).toContain('Hyperliquid All')
+    expect(coinSource.useHyperMain.en).toContain('Hyperliquid Main')
+    expect(coinSource.mixed.en).toContain('Mixed')
   })
 
-  it('limit labels name whose pool the count caps', () => {
-    expect(coinSource.ai500Limit.en).toContain('AI500')
-    expect(coinSource.oiTopLimit.en).toContain('OI Top')
-    expect(coinSource.oiLowLimit.en).toContain('OI Low')
+  it('the hyper main limit label names the default', () => {
+    expect(coinSource.hyperMainLimit.en).toContain('Hyperliquid Main')
+    expect(coinSource.hyperMainLimit.en).toContain('20')
   })
 
   it('staticDesc ties the list to source_type = static', () => {

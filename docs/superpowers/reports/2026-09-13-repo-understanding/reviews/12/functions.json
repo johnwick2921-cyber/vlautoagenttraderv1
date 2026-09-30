@@ -2197,7 +2197,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/ai500.go",
+    "path": "provider/vlos/ai500.go",
     "name": "GetAI500List",
     "receiver": "*Client",
     "start_line": 34,
@@ -2210,7 +2210,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/ai500.go",
+    "path": "provider/vlos/ai500.go",
     "name": "fetchAI500",
     "receiver": "*Client",
     "start_line": 59,
@@ -2223,7 +2223,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/ai500.go",
+    "path": "provider/vlos/ai500.go",
     "name": "GetTopRatedCoins",
     "receiver": "*Client",
     "start_line": 93,
@@ -2236,7 +2236,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/ai500.go",
+    "path": "provider/vlos/ai500.go",
     "name": "GetAvailableCoins",
     "receiver": "*Client",
     "start_line": 137,
@@ -2249,7 +2249,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/ai500.go",
+    "path": "provider/vlos/ai500.go",
     "name": "NormalizeSymbol",
     "receiver": "",
     "start_line": 156,
@@ -2262,12 +2262,12 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/claw402.go",
+    "path": "provider/vlos/claw402.go",
     "name": "NewClaw402DataClient",
     "receiver": "",
     "start_line": 29,
     "end_line": 54,
-    "purpose": "NewClaw402DataClient creates a client that routes nofxos requests through claw402. privateKeyHex is the wallet private key (0x-prefixed hex string).",
+    "purpose": "NewClaw402DataClient creates a client that routes vlos requests through claw402. privateKeyHex is the wallet private key (0x-prefixed hex string).",
     "connections": [
       "Observed body call expressions (syntax-only, not type-resolved): crypto.HexToECDSA, fmt.Errorf, os.Getenv, strings.TrimPrefix, strings.TrimRight"
     ],
@@ -2275,12 +2275,12 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/claw402.go",
+    "path": "provider/vlos/claw402.go",
     "name": "mapEndpoint",
     "receiver": "",
     "start_line": 65,
     "end_line": 74,
-    "purpose": "mapEndpoint converts a nofxos endpoint to a claw402 endpoint. For endpoints not in the static map, applies the general pattern: /api/xxx \u2192 /api/v1/nofx/xxx",
+    "purpose": "mapEndpoint converts a vlos endpoint to a claw402 endpoint. For endpoints not in the static map, applies the general pattern: /api/xxx \u2192 /api/v1/vl/xxx",
     "connections": [
       "Observed body call expressions (syntax-only, not type-resolved): strings.HasPrefix, strings.TrimPrefix"
     ],
@@ -2288,7 +2288,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/claw402.go",
+    "path": "provider/vlos/claw402.go",
     "name": "DoRequest",
     "receiver": "*Claw402DataClient",
     "start_line": 77,
@@ -2301,7 +2301,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "DefaultClient",
     "receiver": "",
     "start_line": 37,
@@ -2314,12 +2314,12 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "NewClient",
     "receiver": "",
     "start_line": 49,
     "end_line": 61,
-    "purpose": "NewClient creates a new NofxOS API client",
+    "purpose": "NewClient creates a new VLOS API client",
     "connections": [
       "Pure input/output boundary; no call expressions in body."
     ],
@@ -2327,7 +2327,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "SetClaw402",
     "receiver": "*Client",
     "start_line": 64,
@@ -2340,7 +2340,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "SetConfig",
     "receiver": "*Client",
     "start_line": 71,
@@ -2353,7 +2353,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "GetBaseURL",
     "receiver": "*Client",
     "start_line": 83,
@@ -2366,7 +2366,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "GetAuthKey",
     "receiver": "*Client",
     "start_line": 90,
@@ -2379,7 +2379,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "doRequest",
     "receiver": "*Client",
     "start_line": 98,
@@ -2392,7 +2392,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "Error",
     "receiver": "*APIError",
     "start_line": 147,
@@ -2405,7 +2405,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/client.go",
+    "path": "provider/vlos/client.go",
     "name": "ExtractAuthKey",
     "receiver": "",
     "start_line": 152,
@@ -2418,7 +2418,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/coin.go",
+    "path": "provider/vlos/coin.go",
     "name": "GetCoinData",
     "receiver": "*Client",
     "start_line": 54,
@@ -2431,7 +2431,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/coin.go",
+    "path": "provider/vlos/coin.go",
     "name": "GetCoinDataBatch",
     "receiver": "*Client",
     "start_line": 87,
@@ -2444,7 +2444,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/coin.go",
+    "path": "provider/vlos/coin.go",
     "name": "FormatQuantDataForAI",
     "receiver": "",
     "start_line": 107,
@@ -2457,7 +2457,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/coin.go",
+    "path": "provider/vlos/coin.go",
     "name": "formatQuantDataZH",
     "receiver": "",
     "start_line": 118,
@@ -2470,7 +2470,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/coin.go",
+    "path": "provider/vlos/coin.go",
     "name": "formatQuantDataEN",
     "receiver": "",
     "start_line": 168,
@@ -2483,7 +2483,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/netflow.go",
+    "path": "provider/vlos/netflow.go",
     "name": "GetNetFlowRanking",
     "receiver": "*Client",
     "start_line": 45,
@@ -2496,7 +2496,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/netflow.go",
+    "path": "provider/vlos/netflow.go",
     "name": "fetchNetFlowRanking",
     "receiver": "*Client",
     "start_line": 98,
@@ -2509,7 +2509,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/netflow.go",
+    "path": "provider/vlos/netflow.go",
     "name": "FormatNetFlowRankingForAI",
     "receiver": "",
     "start_line": 120,
@@ -2522,7 +2522,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/netflow.go",
+    "path": "provider/vlos/netflow.go",
     "name": "formatNetFlowRankingZH",
     "receiver": "",
     "start_line": 131,
@@ -2535,7 +2535,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/netflow.go",
+    "path": "provider/vlos/netflow.go",
     "name": "formatNetFlowRankingEN",
     "receiver": "",
     "start_line": 198,
@@ -2548,7 +2548,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "GetOIRanking",
     "receiver": "*Client",
     "start_line": 50,
@@ -2561,7 +2561,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "fetchOIRanking",
     "receiver": "*Client",
     "start_line": 86,
@@ -2574,7 +2574,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "GetOITopPositions",
     "receiver": "*Client",
     "start_line": 108,
@@ -2587,7 +2587,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "GetOITopSymbols",
     "receiver": "*Client",
     "start_line": 117,
@@ -2600,7 +2600,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "GetOILowPositions",
     "receiver": "*Client",
     "start_line": 133,
@@ -2613,7 +2613,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "GetOILowSymbols",
     "receiver": "*Client",
     "start_line": 142,
@@ -2626,7 +2626,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "FormatOIRankingForAI",
     "receiver": "",
     "start_line": 158,
@@ -2639,7 +2639,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "formatOIRankingZH",
     "receiver": "",
     "start_line": 169,
@@ -2652,7 +2652,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/oi.go",
+    "path": "provider/vlos/oi.go",
     "name": "formatOIRankingEN",
     "receiver": "",
     "start_line": 204,
@@ -2665,7 +2665,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/price.go",
+    "path": "provider/vlos/price.go",
     "name": "GetPriceRanking",
     "receiver": "*Client",
     "start_line": 47,
@@ -2678,7 +2678,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/price.go",
+    "path": "provider/vlos/price.go",
     "name": "FormatPriceRankingForAI",
     "receiver": "",
     "start_line": 87,
@@ -2691,7 +2691,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/price.go",
+    "path": "provider/vlos/price.go",
     "name": "formatPriceRankingZH",
     "receiver": "",
     "start_line": 98,
@@ -2704,7 +2704,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/price.go",
+    "path": "provider/vlos/price.go",
     "name": "formatPriceRankingEN",
     "receiver": "",
     "start_line": 141,
@@ -2717,7 +2717,7 @@
     "callbacks": "Anonymous callbacks within these line boundaries are grouped under this declaration."
   },
   {
-    "path": "provider/nofxos/util.go",
+    "path": "provider/vlos/util.go",
     "name": "formatValue",
     "receiver": "",
     "start_line": 14,

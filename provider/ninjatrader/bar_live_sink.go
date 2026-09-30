@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // LIVE BAR SINK (W-PICTURE-HTF, 2026-09-20) — event fan-out for deterministic

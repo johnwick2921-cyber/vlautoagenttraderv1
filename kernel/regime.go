@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // P1.6 — REGIME block (7 auto fields, zero config).

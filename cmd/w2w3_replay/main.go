@@ -35,7 +35,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 type row struct {

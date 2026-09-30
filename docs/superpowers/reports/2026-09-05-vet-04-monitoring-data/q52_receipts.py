@@ -1,11 +1,11 @@
 import pathlib,json,subprocess,datetime,zoneinfo
-root=pathlib.Path('/home/hoang/nofx-analysis/vet-04-complete-0905');o={'captured_ct':datetime.datetime.now(zoneinfo.ZoneInfo('America/Chicago')).isoformat(),'receipts':[]}
+root=pathlib.Path('/home/hoang/vl-analysis/vet-04-complete-0905');o={'captured_ct':datetime.datetime.now(zoneinfo.ZoneInfo('America/Chicago')).isoformat(),'receipts':[]}
 for filename,day in [('log.20260903.00001.txt','2026-09-03'),('log.20260904.00000.txt','2026-09-04')]:
  f=pathlib.Path('/mnt/c/Users/hoang/Documents/NinjaTrader 8/log')/filename
  for n,line in enumerate(f.open(errors='replace'),1):
   if (day=='2026-09-03' and line.startswith(day+' 15:06:') and any(t in line for t in ['Session Break','CONNECTED','Connected'])) or (day=='2026-09-04' and line.startswith(day+' 12:2') and any(t in line for t in ['data feed lost','Connection lost','Disconnected','could not be resolved'])):
    o['receipts'].append({'path':str(f),'line':n,'text':line.rstrip()})
-for f in sorted(pathlib.Path('/home/hoang/nofx/data').glob('nofx_*.log')):
+for f in sorted(pathlib.Path('/home/hoang/vl/data').glob('vl_*.log')):
  for n,line in enumerate(f.open(errors='replace'),1):
   if ((line.startswith('09-03 11:10:') or line.startswith('09-03 14:18:')) and 'BOOT INTEGRITY' in line) or (line.startswith('09-03 15:06:45') and 'bars: ingest' in line):
    o['receipts'].append({'path':str(f),'line':n,'text':line.rstrip()})

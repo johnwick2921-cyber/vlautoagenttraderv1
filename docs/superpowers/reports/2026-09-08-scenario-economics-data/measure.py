@@ -9,7 +9,7 @@ out = pathlib.Path(__file__).parent
 pin = '6095ca58fe5901ba398be374e4f9d3488d0bed6b'
 frozen_csv = subprocess.check_output(['git','show',pin+':docs/superpowers/reports/2026-09-07-planner-preparation-audit/all-scenarios.csv'],text=True)
 frozen_keys = {(r['plan'],r['scenario']) for r in csv.DictReader(io.StringIO(frozen_csv))}
-c = sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True)
+c = sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True)
 c.row_factory = sqlite3.Row
 c.execute('BEGIN')
 plans = list(c.execute("select rowid,plan_id,version,trade_date,session,doc,indicators_block,created_at from plans where trade_date >= '2026-08-15' order by rowid"))

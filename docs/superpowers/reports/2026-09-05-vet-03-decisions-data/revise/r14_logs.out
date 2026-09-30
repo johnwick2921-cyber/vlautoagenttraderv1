@@ -1,7 +1,7 @@
 ### L1 log rotation boundaries 09-04
-data/nofx_2026-09-03.log: first=09-03 10:28:29 [INFO] cleanclone/main.go last=09-04 07:38:34 [INFO] manager/trader_man count(^09-04 08:)=0 count(^09-04 0[0-7]:)=8720
-data/nofx_2026-09-04.log: first=09-04 07:38:40 [INFO] nofx/main.go:43 â• last=09-05 16:18:41 [INFO] trader/auto_trader count(^09-04 08:)=4079 count(^09-04 0[0-7]:)=1860
-data/nofx_2026-09-04.log
+data/vl_2026-09-03.log: first=09-03 10:28:29 [INFO] cleanclone/main.go last=09-04 07:38:34 [INFO] manager/trader_man count(^09-04 08:)=0 count(^09-04 0[0-7]:)=8720
+data/vl_2026-09-04.log: first=09-04 07:38:40 [INFO] vl/main.go:43 ï¿½ last=09-05 16:18:41 [INFO] trader/auto_trader count(^09-04 08:)=4079 count(^09-04 0[0-7]:)=1860
+data/vl_2026-09-04.log
 09-04 02:00:46 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoan
 09-04 02:00:46 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoan
 09-04 02:00:46 [INFO] trader/auto_trader_loop.go:177 

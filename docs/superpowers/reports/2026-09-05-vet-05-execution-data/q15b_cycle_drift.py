@@ -1,5 +1,5 @@
 import sqlite3, json, re, datetime
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True); c=con.cursor()
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True); c=con.cursor()
 def pct(xs,q):
     xs=sorted(xs)
     if not xs: return None

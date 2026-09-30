@@ -11,5 +11,5 @@ trader/auto_trader_planner.go:1555: researchTrace.Reply(raw, err) -> removed cal
 --- FAIL: TestStageAAuthoringAttemptRepairProductionPath (0.20s)
     research_snapshot_test.go:74: audit duration sequence lost: first=<nil> repair=<nil>
 FAIL
-FAIL	nofx/trader	0.203s
+FAIL	vl/trader	0.203s
 FAIL

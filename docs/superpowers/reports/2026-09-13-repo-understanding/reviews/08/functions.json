@@ -3943,7 +3943,7 @@
         "resolution": "syntax-only; source-read expression, not type-resolved caller proof"
       },
       {
-        "callee_expression": "engine.nofxosClient.GetOITopPositions",
+        "callee_expression": "engine.vlosClient.GetOITopPositions",
         "line": 314,
         "resolution": "syntax-only; source-read expression, not type-resolved caller proof"
       },
@@ -6784,7 +6784,7 @@
         "resolution": "syntax-only; source-read expression, not type-resolved caller proof"
       },
       {
-        "callee_expression": "nofxos.FormatOIRankingForAI",
+        "callee_expression": "vlos.FormatOIRankingForAI",
         "line": 98,
         "resolution": "syntax-only; source-read expression, not type-resolved caller proof"
       },

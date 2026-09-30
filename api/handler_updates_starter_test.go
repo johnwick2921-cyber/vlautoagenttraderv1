@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterjob"
+	"vl/internal/updaterwire"
 )
 
 func TestInstallHandsOffOverTheSocket(t *testing.T) {

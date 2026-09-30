@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // TRADE EXCURSION LOGGING (wave 1A) — F1, THE PIN.

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // PHASE 4 (T1–T4) — the last-entry cutoff is SESSION-scoped, America/Chicago.

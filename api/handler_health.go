@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // handleHealth (P2-6) reports REAL state, not a liveness constant: DB ping,

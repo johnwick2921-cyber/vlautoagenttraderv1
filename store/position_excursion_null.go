@@ -3,7 +3,7 @@ package store
 import (
 	"fmt"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // E4 (wave 1A, 2026-09-02) — trader_positions.mae / mfe: DEFAULT 0 made a

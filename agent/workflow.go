@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 const (

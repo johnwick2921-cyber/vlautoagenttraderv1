@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # WATERFALL-CLASS WAVE — BUILD & PROVE (NO DEPLOY)
 
 Branch `fix/waterfall-class` off dev (`2850e351`). Built in the isolated
-worktree `~/nofx-waterfall` (the main tree hosted an in-flight GAR follow-up
+worktree `~/vl-waterfall` (the main tree hosted an in-flight GAR follow-up
 WIP — worktree law). **NOT deployed.** Evidence base:
 `docs/superpowers/reports/2026-08-28-missed-200pt.md` (2026-08-28 -347pt crash,
 zero plan-legal entries, $0-by-own-rules verdict).

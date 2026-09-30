@@ -19,15 +19,15 @@
   "journal": [
     {
       "timestamp_us": 1788909114023696,
-      "message": "09-08 18:11:54 [INFO] nofx/main.go:76 WARN research snapshot archive unavailable; capture disabled"
+      "message": "09-08 18:11:54 [INFO] vl/main.go:76 WARN research snapshot archive unavailable; capture disabled"
     },
     {
       "timestamp_us": 1788909114127507,
-      "message": "09-08 18:11:54 [INFO] nofx/main.go:294 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 6f677b55daa1 \u00b7 built 2026-09-08T23:01:58Z \u00b7 expected 6f677b55 \u00b7 goldens PASS"
+      "message": "09-08 18:11:54 [INFO] vl/main.go:294 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 6f677b55daa1 \u00b7 built 2026-09-08T23:01:58Z \u00b7 expected 6f677b55 \u00b7 goldens PASS"
     },
     {
       "timestamp_us": 1788909114127912,
-      "message": "09-08 18:11:54 [INFO] nofx/main.go:296 \ud83d\uddc4 research snapshot: schema=UNKNOWN \u00b7 objects=5 \u00b7 rows today market=UNKNOWN candidate=UNKNOWN plan=UNKNOWN scenario=UNKNOWN exec=UNKNOWN \u00b7 null-fields=UNKNOWN \u00b7 dropped=UNKNOWN \u00b7 added latency p50=UNKNOWN"
+      "message": "09-08 18:11:54 [INFO] vl/main.go:296 \ud83d\uddc4 research snapshot: schema=UNKNOWN \u00b7 objects=5 \u00b7 rows today market=UNKNOWN candidate=UNKNOWN plan=UNKNOWN scenario=UNKNOWN exec=UNKNOWN \u00b7 null-fields=UNKNOWN \u00b7 dropped=UNKNOWN \u00b7 added latency p50=UNKNOWN"
     },
     {
       "timestamp_us": 1788909114175916,
@@ -39,11 +39,11 @@
     },
     {
       "timestamp_us": 1788909114176458,
-      "message": "09-08 18:11:54 [INFO] nofx/main.go:332 \ud83d\udd0e confirmation: close-requires-closed-bucket=on \u00b7 sequence-order=enforced \u00b7 missing-reference=UNKNOWN(not met) \u00b7 immediate-displacement=1m_displacement \u00b7 forming-bucket refusals=0 \u00b7 out-of-order refusals=0 \u00b7 validation-REJECT\u2192PASS=23 observations/2 scenarios (closure-only audit; evaluated=627 unevaluated=162) \u00b7 with-1m_displacement=24 (+1 audit observation)"
+      "message": "09-08 18:11:54 [INFO] vl/main.go:332 \ud83d\udd0e confirmation: close-requires-closed-bucket=on \u00b7 sequence-order=enforced \u00b7 missing-reference=UNKNOWN(not met) \u00b7 immediate-displacement=1m_displacement \u00b7 forming-bucket refusals=0 \u00b7 out-of-order refusals=0 \u00b7 validation-REJECT\u2192PASS=23 observations/2 scenarios (closure-only audit; evaluated=627 unevaluated=162) \u00b7 with-1m_displacement=24 (+1 audit observation)"
     },
     {
       "timestamp_us": 1788909114176787,
-      "message": "09-08 18:11:54 [INFO] nofx/main.go:346 \ud83e\udded plan liveness: tradeable=n/a \u00b7 exhausted-warnings=0 \u00b7 born-dead refusals=0 \u00b7 deaths recorded=1 \u00b7 authored UNKNOWN=5 \u00b7 exhaustion=warn-only"
+      "message": "09-08 18:11:54 [INFO] vl/main.go:346 \ud83e\udded plan liveness: tradeable=n/a \u00b7 exhausted-warnings=0 \u00b7 born-dead refusals=0 \u00b7 deaths recorded=1 \u00b7 authored UNKNOWN=5 \u00b7 exhaustion=warn-only"
     },
     {
       "timestamp_us": 1788909114250721,

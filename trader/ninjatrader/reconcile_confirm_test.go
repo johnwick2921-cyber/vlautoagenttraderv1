@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // TestCloseConfirmedSince_FramePath locks the reconcile-before-open FRAME path

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # LONDON-FORENSICS FIX WAVE — F1–F6 built & proven, NOTHING deployed (2026-08-28)
 
-**Branch `fix/london-forensics` off `origin/dev` (3023281c) · worktree `~/nofx-lfx` · deployed rev UNTOUCHED (67d2d10e)**
+**Branch `fix/london-forensics` off `origin/dev` (3023281c) · worktree `~/vl-lfx` · deployed rev UNTOUCHED (67d2d10e)**
 Zero deploys, zero restarts, zero config/env writes. Live DB only READ (the F2 integrity check queried bars read-only).
 
 ---
@@ -58,7 +59,7 @@ Zero deploys, zero restarts, zero config/env writes. Live DB only READ (the F2 i
 
 ## Swap 1 — main wave (07:28:10 CT)
 - Flat-gate ALL-ORIGIN PASS: DB `OPEN=0` · NT8 `positions snapshot account=Sim101 count=0` + `account=SimAccount1 count=0` @ 07:27:27 · API `/api/positions` `[]` ×2 @ 07:27:57 · armed_orders non-terminal=0.
-- `nofx-bin` 67d2d10e → `nofx-bin.prev.londonfix`; new binary `b4dc8345` (clean-clone build, vcs.revision == dev tip); `deploy/RELEASE=b4dc8345`; marker commit pushed; `kill -9 3299799`.
+- `vl-bin` 67d2d10e → `vl-bin.prev.londonfix`; new binary `b4dc8345` (clean-clone build, vcs.revision == dev tip); `deploy/RELEASE=b4dc8345`; marker commit pushed; `kill -9 3299799`.
 - Boot block (07:28:15, PID 3433125):
   - `🔐 BOOT INTEGRITY OK — rev b4dc8345905d · built 2026-08-28T12:25:25Z · expected b4dc8345 · goldens PASS`
   - `🛑 min-sl guard: atr_mult=1.0 level_clearance=2tick(s)`
@@ -70,7 +71,7 @@ Zero deploys, zero restarts, zero config/env writes. Live DB only READ (the F2 i
 
 ## Swap 2 — hotfix (07:39:16 CT, owner "GO HOTFIX")
 - Flat-gate: DB `OPEN=0` · NT8 `count=0` ×2 @ 07:38:27 · API `[]` @ 07:38:44 · one non-terminal arm: row 7 LONDON S4 `state=armed` (authorization only, no signal → nothing resting on the wire; survives the restart in the ledger — the protocol WAIT clause targets `working` arms).
-- `nofx-bin` b4dc8345 → `nofx-bin.prev.londonfix2`; new binary `2738d158` (vcs.revision == dev tip, clean); `deploy/RELEASE=2738d158`; marker commit pushed; `kill -9 3433125`.
+- `vl-bin` b4dc8345 → `vl-bin.prev.londonfix2`; new binary `2738d158` (vcs.revision == dev tip, clean); `deploy/RELEASE=2738d158`; marker commit pushed; `kill -9 3433125`.
 - Boot block (07:39:21, PID 3441452):
   - `🔐 BOOT INTEGRITY OK — rev 2738d158ee58 · built 2026-08-28T12:32:09Z · expected 2738d158 · goldens PASS`
   - **`🩹 RepairArmedLineage: stamped 1 position(s) with their armed-fill plan linkage (the #567 class)`**

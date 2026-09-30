@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // B2's boot line. The owner's instruction was explicit: the change is INERT

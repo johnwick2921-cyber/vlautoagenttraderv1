@@ -5,9 +5,9 @@
 //
 // TEST SUPPORT ONLY. It is the fixture internal/updaterworker's release tests
 // (buildRelease, the SSHSIG signers) have always used, moved here unchanged so
-// the cmd/nofx-updater tests can drive `nofx-updater fetch` end to end over
+// the cmd/vl-updater tests can drive `vl-updater fetch` end to end over
 // the SAME archive (unit U4N). No production package imports it:
-// cmd/nofx-updater's TestTheUpdaterBinaryNeverLinksTheReleaseFixture pins
+// cmd/vl-updater's TestTheUpdaterBinaryNeverLinksTheReleaseFixture pins
 // that the binary's dependency graph does not contain it.
 package releasefixture
 
@@ -156,12 +156,17 @@ func WriteFiles(t *testing.T, root string, files map[string]string) {
 }
 
 // ReleaseSource is a repo tree with exactly what package.sh requires, plus a
-// STALE deploy/RELEASE that package.sh must not ship.
+// STALE deploy/RELEASE that package.sh must not ship. ReleaseSourceBinary
+// names the binary (vl-bin or nofx-bin — R5 removes the nofx form).
 func ReleaseSource(t *testing.T, withIndex bool) string {
+	return ReleaseSourceBinary(t, withIndex, "nofx-bin")
+}
+
+func ReleaseSourceBinary(t *testing.T, withIndex bool, binary string) string {
 	t.Helper()
 	src := t.TempDir()
 	files := map[string]string{
-		"nofx-bin":                             "\x7fELF u3 stand-in binary\n",
+		binary:                                 "\x7fELF u3 stand-in binary\n",
 		"LICENSE":                              "test licence\n",
 		"ninjascript/vltrader_tcp_PROTOCOL.md": "protocol_version: 3\n",
 		"ninjascript/VLTraderTcp.cs":           "public const string VL_BUILD_ID = \"" + BuildID + "\";\n",
@@ -172,7 +177,7 @@ func ReleaseSource(t *testing.T, withIndex bool) string {
 		files["web/dist/index.html"] = "<!doctype html><title>u3</title>\n"
 	}
 	WriteFiles(t, src, files)
-	if err := os.Chmod(filepath.Join(src, "nofx-bin"), 0o755); err != nil {
+	if err := os.Chmod(filepath.Join(src, binary), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	return src

@@ -36,8 +36,8 @@ import (
 	"sort"
 	"strings"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 type episodeRec struct {

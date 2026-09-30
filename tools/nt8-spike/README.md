@@ -12,7 +12,7 @@ Report: `docs/superpowers/reports/2026-09-22-nt8-automation-feasibility.md`.
 ## How it was run (the guard is part of the procedure)
 
 ```bash
-guard() { local p=$(systemctl show -p MainPID --value nofx); echo "nofx MainPID=$p ticks=$(awk '{print $22}' /proc/$p/stat) | $(powershell.exe -NoProfile -Command "\$p=Get-Process NinjaTrader; 'NT8 pid=' + \$p.Id + ' start=' + \$p.StartTime.ToString('o')" | tr -d '\r')"; }
+guard() { local p=$(systemctl show -p MainPID --value vl); echo "vl MainPID=$p ticks=$(awk '{print $22}' /proc/$p/stat) | $(powershell.exe -NoProfile -Command "\$p=Get-Process NinjaTrader; 'NT8 pid=' + \$p.Id + ' start=' + \$p.StartTime.ToString('o')" | tr -d '\r')"; }
 B=$(guard)
 timeout 180 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w tools/nt8-spike/uia-dump.ps1)" -TargetPid <pid> > out.raw
 A=$(guard); [ "$B" = "$A" ] || echo "GUARD CHANGED - STOP"

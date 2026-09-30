@@ -3,7 +3,7 @@ package ninjatrader
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // TestDefaultAutoBarsTimeframes_MatchesSupported keeps the NT8 auto-subscribe

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# NOFX auto-start installer (WSL2/Linux with systemd). Run ONCE from YOUR clone:
+# VL auto-start installer (WSL2/Linux with systemd). Run ONCE from YOUR clone:
 #   sudo bash deploy/install-autostart.sh
 #
 # Universal by design — NOTHING machine-specific lives in the committed unit
@@ -21,11 +21,11 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-NOFX_DIR="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+VL_DIR="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 
 TARGET_USER="${SUDO_USER:-}"
 if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
-  TARGET_USER="$(stat -c '%U' "$NOFX_DIR")"   # fallback: owner of the checkout
+  TARGET_USER="$(stat -c '%U' "$VL_DIR")"   # fallback: owner of the checkout
 fi
 if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
   echo "ERROR: could not determine the target user — run via sudo from your normal account." >&2
@@ -33,9 +33,9 @@ if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
 fi
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 
-if [ ! -x "$NOFX_DIR/nofx-bin" ]; then
-  echo "⚠ WARNING: $NOFX_DIR/nofx-bin not found or not executable."
-  echo "  Build it first:  cd $NOFX_DIR && go build -o nofx-bin ."
+if [ ! -x "$VL_DIR/vl-bin" ]; then
+  echo "⚠ WARNING: $VL_DIR/vl-bin not found or not executable."
+  echo "  Build it first:  cd $VL_DIR && go build -o vl-bin ."
   echo "  Installing anyway — the backend unit will retry every 5s until the binary exists."
 fi
 
@@ -69,54 +69,54 @@ if [ ! -x "$NODE_DIR/npm" ]; then
   exit 1
 fi
 
-echo "→ detected: user=$TARGET_USER  repo=$NOFX_DIR  node=$NODE_DIR"
+echo "→ detected: user=$TARGET_USER  repo=$VL_DIR  node=$NODE_DIR"
 
 # --- .env guard ---------------------------------------------------------------
 # Services read env ONLY via .env (godotenv) — never ~/.bashrc. A missing
 # NT_TRANSPORT silently falls back to the deprecated CSV bridge.
-if [ -f "$NOFX_DIR/.env" ]; then
-  if ! grep -q '^NT_TRANSPORT=' "$NOFX_DIR/.env"; then
+if [ -f "$VL_DIR/.env" ]; then
+  if ! grep -q '^NT_TRANSPORT=' "$VL_DIR/.env"; then
     printf '\n# Added by deploy/install-autostart.sh — services never read ~/.bashrc\nNT_TRANSPORT=tcp\n' >> "$NOFX_DIR/.env"
     echo "⚠ NOTICE: NT_TRANSPORT was missing from .env — appended NT_TRANSPORT=tcp."
     echo "  (Without it the bot silently uses the deprecated CSV path instead of the TCP bridge.)"
   fi
 else
-  echo "⚠ WARNING: $NOFX_DIR/.env not found. Copy .env.example to .env and configure it,"
+  echo "⚠ WARNING: $VL_DIR/.env not found. Copy .env.example to .env and configure it,"
   echo "  or the service will run with defaults (including an INSECURE default JWT secret)."
 fi
 
 # --- stop previous instances ----------------------------------------------------
 echo "→ stopping any previous instances (units, nohup launches, stray vite)..."
-systemctl stop nofx nofx-web 2>/dev/null || true
-pkill -x nofx-bin 2>/dev/null || true
-pkill -f "node $NOFX_DIR/web/node_modules/.bin/vite" 2>/dev/null || true
+systemctl stop vl vl-web 2>/dev/null || true
+pkill -x vl-bin 2>/dev/null || true
+pkill -f "node $VL_DIR/web/node_modules/.bin/vite" 2>/dev/null || true
 sleep 2
 
 # --- render templates + install -------------------------------------------------
 echo "→ rendering unit templates and installing to /etc/systemd/system..."
-for u in nofx.service nofx-web.service; do
-  sed -e "s|__NOFX_USER__|$TARGET_USER|g" \
-      -e "s|__NOFX_DIR__|$NOFX_DIR|g" \
+for u in vl.service vl-web.service; do
+  sed -e "s|__VL_USER__|$TARGET_USER|g" \
+      -e "s|__VL_DIR__|$VL_DIR|g" \
       -e "s|__NODE_DIR__|$NODE_DIR|g" \
       "$SCRIPT_DIR/$u" > "/etc/systemd/system/$u"
 done
 systemctl daemon-reload
-systemctl reset-failed nofx nofx-web 2>/dev/null || true
-systemctl enable --now nofx nofx-web
+systemctl reset-failed vl vl-web 2>/dev/null || true
+systemctl enable --now vl vl-web
 
 sleep 4
 echo
 echo "→ status:"
-systemctl --no-pager --lines=0 status nofx 2>/dev/null | sed -n '1,4p' || true
-systemctl --no-pager --lines=0 status nofx-web 2>/dev/null | sed -n '1,4p' || true
+systemctl --no-pager --lines=0 status vl 2>/dev/null | sed -n '1,4p' || true
+systemctl --no-pager --lines=0 status vl-web 2>/dev/null | sed -n '1,4p' || true
 echo
 echo "→ listeners (8080=API, 3000=UI; 36974 binds once a ninjatrader trader loads):"
-ss -tlnp | grep -E ':(8080|3000|36974)' || echo "  (none yet — check journalctl -u nofx -u nofx-web)"
+ss -tlnp | grep -E ':(8080|3000|36974)' || echo "  (none yet — check journalctl -u vl -u vl-web)"
 echo
 echo "→ logs are in the JOURNAL (unit-level file logging 209s on this WSL2 systemd):"
-echo "    journalctl -u nofx -f        # backend"
-echo "    journalctl -u nofx-web -f    # frontend"
+echo "    journalctl -u vl -f        # backend"
+echo "    journalctl -u vl-web -f    # frontend"
 echo
 echo "✓ done. Crash-restart proof:"
-echo "    sudo kill -9 \$(pgrep -x nofx-bin); sleep 6; pgrep -x nofx-bin && echo RESTARTED"
+echo "    sudo kill -9 \$(pgrep -x vl-bin); sleep 6; pgrep -x vl-bin && echo RESTARTED"
 echo "  Windows-side steps (Task Scheduler / NT8): see docs/AUTOSTART.md"

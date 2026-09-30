@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Historical backfill — pull years, not weeks (wave 101)
 
-**Dispatch:** 101 — SELF-CONTAINED, owner's order: end-to-end. Branch `fix/historical-backfill` (claim `daa0e9ae`, NOFX_SESSION `historical-backfill-4abbb353/copilot[unlisted]`), code PR #106 merged → dev `7ad41317`. Follow-up branch `fix/historical-backfill-pins` carries the brand-scope rebaseline + this report.
-**Running rev verified (measured):** `/api/health` → `{"revision":"6c96683c704f","status":"ok"}`; `/proc/3497330/exe` → `/home/hoang/nofx/nofx-bin`. Dev tip at cut: `64d75cb9`.
-**A13 backup (before the first import):** `/home/hoang/nofx-backups/historical-backfill/data.db.pre-import.20260911-214126` — `PRAGMA integrity_check` = **ok**, md5 **`a032fb3491e6fdf7c360dc015234df76`**, 793 MB. Re-run this backup immediately before the first import (command in §D6).
+**Dispatch:** 101 — SELF-CONTAINED, owner's order: end-to-end. Branch `fix/historical-backfill` (claim `daa0e9ae`, VL_SESSION `historical-backfill-4abbb353/copilot[unlisted]`), code PR #106 merged → dev `7ad41317`. Follow-up branch `fix/historical-backfill-pins` carries the brand-scope rebaseline + this report.
+**Running rev verified (measured):** `/api/health` → `{"revision":"6c96683c704f","status":"ok"}`; `/proc/3497330/exe` → `/home/hoang/vl/vl-bin`. Dev tip at cut: `64d75cb9`.
+**A13 backup (before the first import):** `/home/hoang/vl-backups/historical-backfill/data.db.pre-import.20260911-214126` — `PRAGMA integrity_check` = **ok**, md5 **`a032fb3491e6fdf7c360dc015234df76`**, 793 MB. Re-run this backup immediately before the first import (command in §D6).
 
 ---
 
@@ -169,7 +170,7 @@ report at the gate, after the owner's F5+restart + GO.
 **Cutover (A19):** five-leg gate 5/5 (DB OPEN=0 · armed non-terminal=0 · API `[]` ·
 NT8 snapshots both accounts count=0, 00:16:38 · no planner read in flight) →
 `deploy/RELEASE` + `HISTORICAL_IMPORT_SEAM=on` written BEFORE the kill → binary
-swap (`nofx-bin.old.6c96683c` = rollback) → `kill -9 3497330` → systemd
+swap (`vl-bin.old.6c96683c` = rollback) → `kill -9 3497330` → systemd
 (`Restart=on-failure`, verified) relaunched PID 3671783 →
 **`🔐 BOOT INTEGRITY OK — rev 400ea26c12c8 · built 2026-09-12T05:19:33Z · expected 400ea26c12c8 · goldens PASS`**
 (A4 clean-clone build: `vcs.modified=false`, md5 `93e8bd17`). Marker `379713e3`
@@ -179,7 +180,7 @@ cycle (Sunday 17:00 CT) together with the other per-trader boot lines — market
 closed Saturday; the CLOCK CRITICAL boot line is the stale-feed reading before
 the first bar (system time verified correct) and is log-only.
 
-**A13 pre-import backup:** `~/nofx-backups/historical-backfill/data.db.pre-import.20260912-002200`
+**A13 pre-import backup:** `~/vl-backups/historical-backfill/data.db.pre-import.20260912-002200`
 — integrity **ok**, md5 **`f1ab180acd549d22cc200e3ea0306280`**.
 
 **D5 — three-state result** (raw responses:

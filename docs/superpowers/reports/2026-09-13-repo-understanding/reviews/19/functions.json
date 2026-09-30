@@ -8071,7 +8071,7 @@
       },
       {
         "line": 178,
-        "callee_expression": "nofxiagent.AITokenCapsSnapshot",
+        "callee_expression": "vliagent.AITokenCapsSnapshot",
         "resolution": "syntax-only, not type-resolved"
       },
       {
@@ -9126,7 +9126,7 @@
       },
       {
         "line": 646,
-        "callee_expression": "nofxiagent.New",
+        "callee_expression": "vliagent.New",
         "resolution": "syntax-only, not type-resolved"
       },
       {
@@ -9136,7 +9136,7 @@
       },
       {
         "line": 647,
-        "callee_expression": "nofxiagent.NewWebHandler",
+        "callee_expression": "vliagent.NewWebHandler",
         "resolution": "syntax-only, not type-resolved"
       },
       {
@@ -9151,12 +9151,12 @@
       },
       {
         "line": 649,
-        "callee_expression": "nofxiAgent.Start",
+        "callee_expression": "vliAgent.Start",
         "resolution": "syntax-only, not type-resolved"
       },
       {
         "line": 650,
-        "callee_expression": "nofxiAgent.Stop",
+        "callee_expression": "vliAgent.Stop",
         "resolution": "syntax-only, not type-resolved"
       },
       {
@@ -14225,7 +14225,7 @@
     "callbacks": []
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_now",
     "start_line": 73,
     "purpose": "Emit ISO8601 wall-clock time.",
@@ -14235,7 +14235,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_epoch",
     "start_line": 74,
     "purpose": "Emit wall-clock Unix seconds.",
@@ -14245,7 +14245,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_meta",
     "start_line": 75,
     "purpose": "Read lock metadata file.",
@@ -14255,7 +14255,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_field",
     "start_line": 76,
     "purpose": "Extract first named key from metadata.",
@@ -14265,7 +14265,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_write_meta",
     "start_line": 81,
     "purpose": "Write metadata to unique temporary file then atomic rename.",
@@ -14275,7 +14275,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_require_holder",
     "start_line": 86,
     "purpose": "Compare supplied session to metadata holder and refuse mismatch.",
@@ -14285,7 +14285,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "cmd_acquire",
     "start_line": 94,
     "purpose": "Atomically mkdir lock, write owner/task/window metadata, spawn bounded keeper.",
@@ -14295,7 +14295,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_spawn_keeper",
     "start_line": 132,
     "purpose": "Spawn detached process group repeatedly invoking heartbeat until expiry; verify own group before storing stop handle.",
@@ -14305,7 +14305,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_keeper_owns",
     "start_line": 199,
     "purpose": "Identify keeper candidate by lock-path substring in /proc command line.",
@@ -14315,7 +14315,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_is_group_leader",
     "start_line": 208,
     "purpose": "Read /proc pgrp after parenthesized comm and compare pid.",
@@ -14325,7 +14325,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_stop_keeper",
     "start_line": 236,
     "purpose": "Remove keeper handles, verify numeric owned target, TERM group or PID, wait then KILL.",
@@ -14335,7 +14335,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_sig",
     "start_line": 247,
     "purpose": "Nested signal helper targeting verified group or lone PID.",
@@ -14345,7 +14345,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_sig",
     "start_line": 248,
     "purpose": "Nested signal helper targeting verified group or lone PID.",
@@ -14355,7 +14355,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "cmd_heartbeat",
     "start_line": 261,
     "purpose": "Require existing holder and unexpired window, rewrite heartbeat metadata atomically.",
@@ -14365,7 +14365,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_show_history",
     "start_line": 291,
     "purpose": "Print succession history if present.",
@@ -14375,7 +14375,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_age",
     "start_line": 296,
     "purpose": "Calculate seconds since metadata heartbeat.",
@@ -14385,7 +14385,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_has_meta",
     "start_line": 313,
     "purpose": "Test metadata file presence.",
@@ -14395,7 +14395,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_dir_age",
     "start_line": 317,
     "purpose": "Use directory mtime as incomplete-lock age.",
@@ -14405,7 +14405,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "cmd_status",
     "start_line": 322,
     "purpose": "Render legacy/free/incomplete/held/stale and keeper/history observations.",
@@ -14415,7 +14415,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "_auto_beat",
     "start_line": 367,
     "purpose": "Render keeper on/ended/off from files only.",
@@ -14425,7 +14425,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "cmd_check",
     "start_line": 383,
     "purpose": "Return0 free,1 fresh,2 stale,3 incomplete,4 abandoned-incomplete.",
@@ -14435,7 +14435,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "cmd_clear_incomplete",
     "start_line": 405,
     "purpose": "Refuse metadata/young directory; otherwise remove and verify absence.",
@@ -14445,7 +14445,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "cmd_with_heartbeat",
     "start_line": 428,
     "purpose": "Start another beater around child command and propagate child status; does not reuse automatic keeper.",
@@ -14455,7 +14455,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "cmd_reclaim",
     "start_line": 459,
     "purpose": "Require named stale owner and nonempty corroboration, append history and replace identity/heartbeat; retain old expiry.",
@@ -14465,7 +14465,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock.sh",
+    "path": "deploy/vl-lock.sh",
     "name": "cmd_release",
     "start_line": 489,
     "purpose": "Require holder, stop keeper, remove lock directory and fail if still present.",
@@ -14475,7 +14475,7 @@
     "invariants_or_risks": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "ok",
     "start_line": 12,
     "purpose": "Increment passing assertion counter.",
@@ -14485,7 +14485,7 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "bad",
     "start_line": 13,
     "purpose": "Increment failing assertion counter.",
@@ -14495,7 +14495,7 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "check",
     "start_line": 14,
     "purpose": "Compare expected/actual assertion outputs or exit statuses.",
@@ -14505,7 +14505,7 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "has",
     "start_line": 15,
     "purpose": "Assert substring present.",
@@ -14515,7 +14515,7 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "hasnt",
     "start_line": 16,
     "purpose": "Assert substring absent.",
@@ -14525,7 +14525,7 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "lower",
     "start_line": 17,
     "purpose": "Lowercase text.",
@@ -14535,7 +14535,7 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "hasi",
     "start_line": 18,
     "purpose": "Case-insensitive contains assertion.",
@@ -14545,7 +14545,7 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "hasnti",
     "start_line": 19,
     "purpose": "Case-insensitive not-contains assertion.",
@@ -14555,17 +14555,17 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "L",
     "start_line": 30,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: L() { NOFX_LOCK_DIR=\"$NOFX_LOCK_DIR\" bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: L() { VL_LOCK_DIR=\"$VL_LOCK_DIR\" bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "age_lock",
     "start_line": 63,
     "purpose": "Rewrite test lock heartbeat to synthetic prior instant.",
@@ -14575,97 +14575,97 @@
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "K",
     "start_line": 172,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: K() { NOFX_LOCK_DIR=\"$KW/lock.d\" NOFX_LOCK_STALE_SECONDS=4 NOFX_LOCK_BEAT_SECONDS=1 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: K() { VL_LOCK_DIR=\"$KW/lock.d\" VL_LOCK_STALE_SECONDS=4 VL_LOCK_BEAT_SECONDS=1 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "R",
     "start_line": 214,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: R() { NOFX_LOCK_DIR=\"$KWR/lock.d\" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=30 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: R() { VL_LOCK_DIR=\"$KWR/lock.d\" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=30 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "O",
     "start_line": 283,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: O() { NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=1 PATH=\"$SHIM:$PATH\" bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: O() { VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=1 PATH=\"$SHIM:$PATH\" bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "G",
     "start_line": 305,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: G() { NOFX_LOCK_DIR=\"$KWG/lock.d\" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=30 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: G() { VL_LOCK_DIR=\"$KWG/lock.d\" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=30 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "X",
     "start_line": 327,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: X() { NOFX_LOCK_DIR=\"$KWX/lock.d\" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=1 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: X() { VL_LOCK_DIR=\"$KWX/lock.d\" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=1 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "Y",
     "start_line": 340,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: Y() { NOFX_LOCK_DIR=\"$KWY/lock.d\" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=1 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: Y() { VL_LOCK_DIR=\"$KWY/lock.d\" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=1 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "N",
     "start_line": 395,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: N() { NOFX_LOCK_DIR=\"$KWN/lock.d\" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=30 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: N() { VL_LOCK_DIR=\"$KWN/lock.d\" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=30 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "J",
     "start_line": 416,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: J() { NOFX_LOCK_DIR=\"$KWJ/lock.d\" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=30 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: J() { VL_LOCK_DIR=\"$KWJ/lock.d\" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=30 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-lock-test.sh",
+    "path": "deploy/vl-lock-test.sh",
     "name": "R",
     "start_line": 433,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
     "connections": [
-      "Shell invocation context: R() { NOFX_LOCK_DIR=\"$KR/parent/lock.d\" NOFX_LOCK_BEAT_SECONDS=60 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
+      "Shell invocation context: R() { VL_LOCK_DIR=\"$KR/parent/lock.d\" VL_LOCK_BEAT_SECONDS=60 bash \"$LOCK_SH\" \"$@\" 2>&1; }"
     ],
     "invariants_or_risks": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
   },
   {
-    "path": "deploy/nofx-claim.sh",
+    "path": "deploy/vl-claim.sh",
     "name": "die",
     "start_line": 43,
     "purpose": "Emit error and exit with tool-specific error status.",
@@ -14675,7 +14675,7 @@
     "invariants_or_risks": "Claim regex validates routable session; remote branch presence check, branch/empty commit/push; check/audit read local remote tracking refs."
   },
   {
-    "path": "deploy/nofx-claim.sh",
+    "path": "deploy/vl-claim.sh",
     "name": "claim_msg_of",
     "start_line": 45,
     "purpose": "Return oldest subject in origin/dev..branch; despite comment does not pass first-parent.",
@@ -14685,7 +14685,7 @@
     "invariants_or_risks": "Claim regex validates routable session; remote branch presence check, branch/empty commit/push; check/audit read local remote tracking refs."
   },
   {
-    "path": "deploy/nofx-claim.sh",
+    "path": "deploy/vl-claim.sh",
     "name": "cmd_new",
     "start_line": 50,
     "purpose": "Validate routable session, remote collision check, create branch/empty claim and push.",
@@ -14695,7 +14695,7 @@
     "invariants_or_risks": "Claim regex validates routable session; remote branch presence check, branch/empty commit/push; check/audit read local remote tracking refs."
   },
   {
-    "path": "deploy/nofx-claim.sh",
+    "path": "deploy/vl-claim.sh",
     "name": "cmd_check",
     "start_line": 63,
     "purpose": "Read oldest branch-ahead commit and validate routable claim regex.",
@@ -14705,7 +14705,7 @@
     "invariants_or_risks": "Claim regex validates routable session; remote branch presence check, branch/empty commit/push; check/audit read local remote tracking refs."
   },
   {
-    "path": "deploy/nofx-claim.sh",
+    "path": "deploy/vl-claim.sh",
     "name": "cmd_audit",
     "start_line": 83,
     "purpose": "Enumerate remote heads but read locally cached tracking history; report malformed claims only.",
@@ -14715,7 +14715,7 @@
     "invariants_or_risks": "Claim regex validates routable session; remote branch presence check, branch/empty commit/push; check/audit read local remote tracking refs."
   },
   {
-    "path": "deploy/nofx-claim-test.sh",
+    "path": "deploy/vl-claim-test.sh",
     "name": "t",
     "start_line": 9,
     "purpose": "Test wrapper invokes lock script under isolated path and compressed timing/environment for this fixture.",
@@ -14725,7 +14725,7 @@
     "invariants_or_risks": "Claim regex source-derived table pins for real malformed/routable messages; no execution."
   },
   {
-    "path": "deploy/nofx-db-backup.sh",
+    "path": "deploy/vl-db-backup.sh",
     "name": "prune",
     "start_line": 65,
     "purpose": "Sort timestamp-named backup files descending, delete beyond retention count.",

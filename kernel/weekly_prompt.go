@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── facts (what the model actually sees) ───────────────────────────────────

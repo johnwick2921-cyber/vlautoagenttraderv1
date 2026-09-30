@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── VOID SCOPE (2026-09-02) — ONE RESOLVED VIEW OF THE TAPE ───────────────────

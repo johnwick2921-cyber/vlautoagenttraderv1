@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W5 — The system describes itself truthfully
 
-**Wave:** fix/truthful-self-description · **claim:** `truthful-self-description-50f0837d/nofx-6b [a7075a]`
+**Wave:** fix/truthful-self-description · **claim:** `truthful-self-description-50f0837d/vl-6b [a7075a]`
 **Basis:** `docs/superpowers/reports/2026-09-08-the-strategy.md` @ `5519d4941c6742418f3124f38227d23893413f86` (65,178 bytes), section D4.
-**Running rev when the wave started:** `954f11b15f2e`, measured two ways — `/api/health` → `954f11b15f2e`, and `/proc/438/exe` → `/home/hoang/nofx/nofx-bin` with `vcs.revision=954f11b15f2e7615678f7d2b708c47895faebf1e`, `vcs.modified=false`.
+**Running rev when the wave started:** `954f11b15f2e`, measured two ways — `/api/health` → `954f11b15f2e`, and `/proc/438/exe` → `/home/hoang/vl/vl-bin` with `vcs.revision=954f11b15f2e7615678f7d2b708c47895faebf1e`, `vcs.modified=false`.
 
 Strings and docs only. Not one line of behaviour.
 
@@ -111,7 +112,7 @@ GREEN after the corrections.
 
 ## Rollback
 
-Prior binary preserved as `nofx-bin.old.<rev>` (named for the rev it holds, verified with `go version -m`). DB backed up before the config write to `~/nofx-backups/manual-w5-truthful/data.db` (762,155,008 bytes), taken with `sqlite3 .backup` against a read-only handle.
+Prior binary preserved as `vl-bin.old.<rev>` (named for the rev it holds, verified with `go version -m`). DB backed up before the config write to `~/vl-backups/manual-w5-truthful/data.db` (762,155,008 bytes), taken with `sqlite3 .backup` against a read-only handle.
 
 ## E5 was owed and unrun; when run it refuted the fixture
 

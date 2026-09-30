@@ -1,10 +1,11 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 1E — MONTE CARLO DRAWDOWN RIG (offline, read-only, pre-registered)
 
 **Status at this commit: PRE-REGISTRATION ONLY. No analysis has been run.**
 Committed 2026-09-03 before any computation, per the dispatch. Results are
 appended in a later commit; this header is not edited afterwards.
 
-Scripts: `~/nofx-analysis/mc-drawdown/` (stdlib + numpy, seeded, re-runnable).
+Scripts: `~/vl-analysis/mc-drawdown/` (stdlib + numpy, seeded, re-runnable).
 Engine: untouched. DB opened `mode=ro`. No knob writes, no lock, no live calls.
 
 ---
@@ -111,7 +112,7 @@ commit — the git history is the pre-registration's proof.*
 
 # RESULTS (appended 2026-09-03; the header above is unedited)
 
-Re-run: `cd ~/nofx-analysis/mc-drawdown && python3 mc_drawdown.py`
+Re-run: `cd ~/vl-analysis/mc-drawdown && python3 mc_drawdown.py`
 Seed 20260903 · B = 10,000 · CSVs in `2026-09-03-mc-drawdown-data/`.
 
 ## The sample

@@ -454,5 +454,5 @@
       "notes": "Additional targeted negative check/call site; incomplete whole-file review."
     }
   ],
-  "inherited_orientation": "Same session already read CLAUDE-canon full and audit pre-audit/cutover excerpts, SYSTEM-MAP and RULEBOOK excerpts during assignment19; that read record is /tmp/nofx-review-19/reads.json. trader/AGENTS.md absent at review base. No tests executed."
+  "inherited_orientation": "Same session already read CLAUDE-canon full and audit pre-audit/cutover excerpts, SYSTEM-MAP and RULEBOOK excerpts during assignment19; that read record is /tmp/vl-review-19/reads.json. trader/AGENTS.md absent at review base. No tests executed."
 }

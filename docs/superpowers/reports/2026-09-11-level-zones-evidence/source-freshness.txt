@@ -25,7 +25,7 @@ docs/superpowers/AUDIT-CHECKLIST.md
 docs/superpowers/reports/2026-09-09-candidates-not-entitlements.md
 d0df134d8badc10704b178442111338a179e3bd1 docs(class 99): correct 11 -> 10, record the mirror-image instance, name the direction
 docs/superpowers/reports/2026-09-10-every-detector-every-timeframe.md
-050cd5c1549b656ed06f6eaae8954b55a723ede4 docs(report): A15 — nofx/trader is RED on dev, and it is not the lunch band
+050cd5c1549b656ed06f6eaae8954b55a723ede4 docs(report): A15 — vl/trader is RED on dev, and it is not the lunch band
 docs/superpowers/reports/2026-09-11-provenance-merged-label.md
 616b52a9def4042ce40308deba46529723ba01d7 marker(provenance): boot 802fb00b verified — PID 3366586 08:58 CT, five references + md5 agree, sweep 0, book empty; live proof owed to the next read with a merged structural label
 trader/arm_test_clock_test.go (accepted source)

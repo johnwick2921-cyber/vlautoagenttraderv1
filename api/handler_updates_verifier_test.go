@@ -21,9 +21,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
-	"nofx/internal/updaterjob"
-	"nofx/internal/updaterworker"
+	"vl/internal/updateauth"
+	"vl/internal/updaterjob"
+	"vl/internal/updaterworker"
 )
 
 const verdictTestSHA = "c0ffeec0ffeec0ffeec0ffeec0ffeec0ffeeabcd"

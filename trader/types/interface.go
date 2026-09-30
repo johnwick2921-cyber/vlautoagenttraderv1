@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"nofx/logger"
+	"vl/logger"
 	"time"
 )
 

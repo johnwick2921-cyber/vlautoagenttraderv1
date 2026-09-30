@@ -15,7 +15,7 @@ import (
 	"math"
 	"strings"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 type StopComposition struct {

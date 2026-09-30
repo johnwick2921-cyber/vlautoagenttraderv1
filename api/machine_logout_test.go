@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
+	"vl/auth"
 )
 
 func TestMachineTokenCannotLogOutAndIsNotBlacklisted(t *testing.T) {

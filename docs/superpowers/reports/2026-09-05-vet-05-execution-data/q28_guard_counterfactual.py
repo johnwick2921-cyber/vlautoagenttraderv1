@@ -1,5 +1,5 @@
 import sqlite3
-c = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+c = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 arms = c.execute("""SELECT id, scenario, side, entry_px, stop_px, target_px, strftime('%s',updated_at)*1000 cancel_ms
   FROM armed_orders WHERE state_reason LIKE 'level accepted through%' ORDER BY id""").fetchall()
 TICK=0.25

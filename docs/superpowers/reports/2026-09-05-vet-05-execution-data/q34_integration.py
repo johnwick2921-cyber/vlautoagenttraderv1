@@ -1,6 +1,6 @@
 import sqlite3,json,datetime,collections
 from zoneinfo import ZoneInfo
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
 ct=ZoneInfo('America/Chicago');x=json.load(open('q31_verified.json')); days=collections.defaultdict(list);calendar=collections.defaultdict(list)
 for r in x['positions']:
  t=datetime.datetime.fromtimestamp(r['entry_time']/1000,ct)

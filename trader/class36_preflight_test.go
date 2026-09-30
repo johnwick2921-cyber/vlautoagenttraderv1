@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
 )
 
 // CLASS 36 (2026-09-01) — a preflight that refuses SCHEDULED work because the

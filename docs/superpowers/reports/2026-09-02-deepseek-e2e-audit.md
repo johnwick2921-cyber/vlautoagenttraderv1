@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # END-TO-END AUDIT OF THE DEEPSEEK CALL SYSTEM — ROOT CAUSE (2026-09-02)
 
-**READ-ONLY.** No code, config, knob, key or DB write; no restart, cancel, reset or cutover; no lock taken; **no live provider call made** (A3 — the running system's own calls are the only evidence). Work on `docs/deepseek-e2e-audit-0902` in worktree `~/nofx-dsaudit`; `~/nofx` untouched.
+**READ-ONLY.** No code, config, knob, key or DB write; no restart, cancel, reset or cutover; no lock taken; **no live provider call made** (A3 — the running system's own calls are the only evidence). Work on `docs/deepseek-e2e-audit-0902` in worktree `~/vl-dsaudit`; `~/vl` untouched.
 
 Evidence class on every line: **[RUNTIME]** journal/log/live state · **[DB]** query + result · **[CODE]** file:line · **[CONFIG]** resolved value · **[NET]** socket observation · **[DOC]** provider documentation. A [CODE]-only claim about live behavior is UNVERIFIED until a [RUNTIME]/[NET] line confirms it.
 
@@ -17,7 +18,7 @@ Evidence class on every line: **[RUNTIME]** journal/log/live state · **[DB]** q
 | `deploy/RELEASE` | `0d093c3b…` (equal) |
 | boot line | `🔐 BOOT INTEGRITY OK — rev 0d093c3b3a11 · built 2026-09-02T12:22:31Z · expected 0d093c3b3a11 · goldens PASS` |
 | dev tip | `7e7556b9` |
-| main tree | porcelain clean; **no `~/nofx-main.lock` present** (A2 satisfied without taking one) |
+| main tree | porcelain clean; **no `~/vl-main.lock` present** (A2 satisfied without taking one) |
 
 `8a756bba` was the **06:57:49** boot (class 33); it was superseded 35 minutes later by the root-fix cutover. **Four boots today** [RUNTIME]: 00:11:47 `23f56f49` (pnl-truth) · 06:27:45 `d5a6e138` (class-41 transport wave) · 06:57:49 `8a756bba` (class 33) · 07:32:15 `0d093c3b` (root-fix). Everything below distinguishes pre- and post-**06:27:45**, the class-41 policy boundary.
 
@@ -40,7 +41,7 @@ Resolved AI configuration in force [RUNTIME boot 07:32:15]:
 
 **The call system is not primarily failing at the transport. It is failing at the validator, and that is what costs sessions.**
 
-Census of every planner attempt that did not yield a usable plan, 2026-08-26 → 2026-09-02 07:40 CT. Source: the `📐 planner attempt N/3 (rejected|parse/schema rejected|failed)` lines in `data/nofx_2026-08-2[6-9].log`, `nofx_2026-08-3*.log`, `nofx_2026-09-0*.log` (the file logs are authoritative — the journal only reaches back to 08-27 13:37). **n = 194 failed attempts** [RUNTIME].
+Census of every planner attempt that did not yield a usable plan, 2026-08-26 → 2026-09-02 07:40 CT. Source: the `📐 planner attempt N/3 (rejected|parse/schema rejected|failed)` lines in `data/vl_2026-08-2[6-9].log`, `vl_2026-08-3*.log`, `vl_2026-09-0*.log` (the file logs are authoritative — the journal only reaches back to 08-27 13:37). **n = 194 failed attempts** [RUNTIME].
 
 | family | n | share |
 |---|---|---|
@@ -88,7 +89,7 @@ Every one of the 51 "remaining" was inspected individually and is **also** a mod
 
 The dispatch asks for the burst "in full and its relation to LONDON's fail-close". They are **unrelated**, and the evidence is unambiguous.
 
-**The burst** [RUNTIME, `data/nofx_2026-09-02.log`]. In the window 00:55–01:40 CT there were **22 `class=http_status http_status=503`** failures plus one `class=client_timeout` and one `class=other`. The 503s land on an **ASIA level-event wake read**, not on LONDON:
+**The burst** [RUNTIME, `data/vl_2026-09-02.log`]. In the window 00:55–01:40 CT there were **22 `class=http_status http_status=503`** failures plus one `class=client_timeout` and one `class=other`. The 503s land on an **ASIA level-event wake read**, not on LONDON:
 
 ```
 09-02 01:15:47 🗓️ level wake seated OB(bull)·1h invalidated: close 29049.00 below 29085.00 (noise 4.30)
@@ -279,8 +280,8 @@ Enumerated from [CODE] `grep -rn "CallWithMessages\|CallWithRequest\|CallWithReq
 | B8/B9 | **Ask-Planner · Realign** | `POST /api/plan/ask` · `/plan/realign` | `api/handler_plan.go:1411` · `:2150` | no | 600 s ceiling |
 | B10 | Studio test-run | `POST /api/strategies/test-run` | `api/strategy.go:833` | no | 600 s ceiling |
 | B11/B12 | **Telegram agent + summariser** | any Telegram message | `telegram/agent/agent.go:224` · `telegram/session/memory.go:94` | no | 600 s ceiling |
-| B13 | **AgentBeta / NOFXi web agent — 17 call sites** | `POST /api/agent/chat[/stream]` | `agent/central_brain.go:47,494,880`; `agent/planner_runtime.go` ×12; `agent/workflow.go` ×3; `agent/memory.go` ×2; others | no | own client, 600 s |
-| B15/B16 | `cmd/planner_ab`, `cmd/decisive-test` | manual CLI | hardcode `https://api.deepseek.com/chat/completions` | no | separate binaries, not in `nofx-bin` |
+| B13 | **AgentBeta / VLi web agent — 17 call sites** | `POST /api/agent/chat[/stream]` | `agent/central_brain.go:47,494,880`; `agent/planner_runtime.go` ×12; `agent/workflow.go` ×3; `agent/memory.go` ×2; others | no | own client, 600 s |
+| B15/B16 | `cmd/planner_ab`, `cmd/decisive-test` | manual CLI | hardcode `https://api.deepseek.com/chat/completions` | no | separate binaries, not in `vl-bin` |
 
 **All six day-plan trigger classes funnel into ONE outbound site** (`runPlannerReadWithTriggerClaimedCtx`, `:855`), which is why the class-41 policy covers the whole day-plan system at a single seam. `failClosed=true` for scheduled / death_replan / owner_reread / owner_reset; `false` for level_event and structure_mss (this is why the 01:15 503 storm was benign — §2).
 
@@ -429,7 +430,7 @@ Of the **50** `ok=false` lines on file, the `transport` stamp is **correct on 5 
 ### E — Surprises
 
 - **S-1 — HTTP/2 is OFF, and nobody appears to have intended it.** `security.SafeHTTPClient` sets a custom `DialContext` for SSRF protection, which silently disables Go's HTTP/2 auto-upgrade (`ForceAttemptHTTP2` appears **nowhere** in the repo). All DeepSeek traffic is HTTP/1.1 [B + RUNTIME: zero HTTP/2 signatures, three HTTP/1.1 `unexpected EOF`s]. **This explains the `unexpected EOF` cluster class 41 was chasing** — that is the HTTP/1.1 chunked-truncation signature.
-- **S-3 — the deprecated nofxos.ai key is still firing: 33 × HTTP 402** in the window, the largest failure bucket after read failures. `CLAUDE.md` records that key as dead; something still calls it.
+- **S-3 — the deprecated upstream website link (removed in the VL rename) key is still firing: 33 × HTTP 402** in the window, the largest failure bucket after read failures. `CLAUDE.md` records that key as dead; something still calls it.
 - **S-4 — the 27 ms reset is a stale pooled connection.** The transport sets **no `IdleConnTimeout`** (zero = keep idle connections forever) and no `MaxIdleConnsPerHost` tuning [CODE] `security/url_validator.go:164-186`. The boot line's `keepalive=30s (dialer)` is the TCP keepalive on the dialer and **does not bound idle-pool residency**.
 - **S-6 — stream attempt counts are not derivable from the completion lines.** 09-02 had 16 stream requests but 9 completion lines; the gap reconciles exactly to 6 stream-503s + 1 send reset. Any rate computed off `AI call complete (stream)` has a silent denominator.
 
@@ -523,7 +524,7 @@ The ten genuine cuts: seven are the `600.0 s` `timeout_source=client` class-37 k
 
 ### D6 The socket watcher — running, and blind to the one thing it was built for
 
-`/home/hoang/nofx-backups/transport-capture/sockwatch.sh`, **running as PID 2100539 since 00:14** — a **bare background bash loop**, not a systemd unit or timer, **unsupervised**: it will not survive a reboot or a stray kill, and nothing will notice.
+`/home/hoang/vl-backups/transport-capture/sockwatch.sh`, **running as PID 2100539 since 00:14** — a **bare background bash loop**, not a systemd unit or timer, **unsupervised**: it will not survive a reboot or a stray kill, and nothing will notice.
 
 It polls `ss -tnopi` every 250 ms. In **5,236 lines** since arming, the transition census is:
 ```
@@ -696,14 +697,14 @@ Stripping the 503 storm: overlapped streams cut **10/104 = 9.6%**, streams alone
 4. **The executor's 600 s ceiling equals DeepSeek's documented 10-minute no-start close** — zero margin, and the two causes are indistinguishable in our logs. It cost 10 minutes of executor blindness on 09-02 and contributes to the 96 cycle overruns.
 5. **`timeout_source=transport` is wrong on 23 of 28 classifiable failures** and `class=other` failures (empty-200, parse, `ErrTooLong`) are still fed to the model as validator reasons — the 01:15 disease, still open for every non-status failure.
 6. **Provider fallback does not exist.** "DeepSeek 2" is enabled and keyed but bound to nothing, and **no code re-resolves the client after a failure**. Ruling: wire it, or disable the row so it stops implying a fallback that isn't there.
-7. **Hygiene:** the boot line prints `AI_MAX_RETRIES=calls` (a format-string bug) · four of six class-41 boot fields are string literals that would not change if the code did · the four class-37/41 stream knobs are absent from the UNSET-defaults audit · `TestProbePeerRSTMidBodyErrorString` has **no assertion at all** · **no test instantiates the production transport**, so every defect in J1-④ lives in untested code · 33 × HTTP 402 from the deprecated nofxos.ai key are still firing · the socket watcher is an unsupervised bash loop.
+7. **Hygiene:** the boot line prints `AI_MAX_RETRIES=calls` (a format-string bug) · four of six class-41 boot fields are string literals that would not change if the code did · the four class-37/41 stream knobs are absent from the UNSET-defaults audit · `TestProbePeerRSTMidBodyErrorString` has **no assertion at all** · **no test instantiates the production transport**, so every defect in J1-④ lives in untested code · 33 × HTTP 402 from the deprecated upstream website link (removed in the VL rename) key are still firing · the socket watcher is an unsupervised bash loop.
 
 ---
 
 ## 16. CLOSEOUT
 
-**Read-only compliance:** no code, config, knob, key or DB write; no restart, cancel, reset or cutover; **no live provider call** (A3 — every figure comes from the running system's own calls); no lock taken (none was present). The only writes are this report on `docs/deepseek-e2e-audit-0902` in `~/nofx-dsaudit`.
+**Read-only compliance:** no code, config, knob, key or DB write; no restart, cancel, reset or cutover; **no live provider call** (A3 — every figure comes from the running system's own calls); no lock taken (none was present). The only writes are this report on `docs/deepseek-e2e-audit-0902` in `~/vl-dsaudit`.
 
 **What the owner will still see wrong on screen:** sessions that fail-close on `breakdown_continue` and need a manual reset (2026-09-01 ASIA four times, 2026-09-02 LONDON once) · a boot line advertising `AI_MAX_RETRIES=calls`, `keepalive=30s` read from nothing, and `truncation → 🚨 WARN, never silent` which is false for the planner · `timeout_source=transport` on failures that are 503s · `request_id=""` on every call, so no failure can be traced to the provider's side · a `📊 AI call complete (stream)` line on streams that did not complete.
 
-**A9 — commit-ref URL: NOT produced.** The branch is committed locally; a push from this session was classifier-denied in an earlier dispatch and was not re-attempted. The owner publishes with `git -C ~/nofx-dsaudit push -u origin docs/deepseek-e2e-audit-0902`, after which the raw URL is `https://raw.githubusercontent.com/johnwick2921-cyber/nofx/<sha>/docs/superpowers/reports/2026-09-02-deepseek-e2e-audit.md` — **curl it for 200 before citing it** (this has 404'd twice before).
+**A9 — commit-ref URL: NOT produced.** The branch is committed locally; a push from this session was classifier-denied in an earlier dispatch and was not re-attempted. The owner publishes with `git -C ~/vl-dsaudit push -u origin docs/deepseek-e2e-audit-0902`, after which the raw URL is `https://raw.githubusercontent.com/johnwick2921-cyber/nofx/<sha>/docs/superpowers/reports/2026-09-02-deepseek-e2e-audit.md` — **curl it for 200 before citing it** (this has 404'd twice before).

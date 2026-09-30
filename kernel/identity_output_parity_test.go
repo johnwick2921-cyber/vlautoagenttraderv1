@@ -3,7 +3,7 @@ package kernel
 import (
 	"encoding/json"
 	"math"
-	"nofx/market"
+	"vl/market"
 	"os"
 	"path/filepath"
 	"testing"

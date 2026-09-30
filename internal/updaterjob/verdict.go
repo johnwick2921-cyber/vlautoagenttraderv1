@@ -6,7 +6,7 @@ package updaterjob
 // Why here: the worker's `fetch` (internal/updaterworker.FetchRelease) writes
 // the verdict once, after every check has passed, but the API's install gate
 // (U5b, brief §3.8: updaterjob.ReadVerdict(trader.MaintenanceDataDir(), id))
-// must read it, and the trading app may not link nofx/internal/updaterworker
+// must read it, and the trading app may not link vl/internal/updaterworker
 // (store/maintenance_hold_writers_test.go, forbiddenWorkerPackages). This
 // package is app-linkable and imports only the standard library and
 // internal/updaterwire.
@@ -30,7 +30,7 @@ import (
 	"syscall"
 	"time"
 
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterwire"
 )
 
 const (

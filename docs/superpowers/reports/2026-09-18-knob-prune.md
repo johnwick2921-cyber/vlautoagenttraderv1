@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W-KNOB-PRUNE — Day Plan knob prune (owner order 2026-09-18 00:3x CT, "full fix 6")
 
 Branch `feat/knob-prune` cut from origin/dev TIP `0dd27940` (release d7f86fc5 live 00:09 CT).
 Claim `808c6ea8` pushed 00:46:02 CT. Verdict implemented EXACTLY as saved in
-`~/.claude/projects/-home-hoang-nofx/memory/project_knob_prune_list.md` (2026-09-17 evening,
+`~/.claude/projects/-home-hoang-vl/memory/project_knob_prune_list.md` (2026-09-17 evening,
 parked by the owner, re-ordered 2026-09-18). No merge, no deploy.
 
 Spec freshness: `git log -1 -- docs/superpowers/plans/…` not applicable — the spec is the
@@ -176,12 +177,12 @@ All run under `nice -n 19 ionice -c 3` in the worktree, 2026-09-18 01:0x–01:26
 $ gofmt -l <touched .go files>           → (empty)
 $ go vet ./...                            → (empty)
 $ go test ./... -count=1                  → 35 packages ok, EXIT=0
-    ok  nofx/api      9.071s · ok  nofx/kernel  1.457s · ok  nofx/store  86.310s
-    ok  nofx/trader 370.227s · ok  nofx/manager … · ok  nofx/trader/ninjatrader 13.183s
+    ok  vl/api      9.071s · ok  vl/kernel  1.457s · ok  vl/store  86.310s
+    ok  vl/trader 370.227s · ok  vl/manager … · ok  vl/trader/ninjatrader 13.183s
 $ go test ./kernel ./trader ./store -race -count=1
-    ok  nofx/kernel   4.885s
-    ok  nofx/trader 422.007s
-    ok  nofx/store  138.945s
+    ok  vl/kernel   4.885s
+    ok  vl/trader 422.007s
+    ok  vl/store  138.945s
     EXIT=0
 $ cd web && npx tsc --noEmit -p .         → (empty)
 $ npx vitest run                          → Test Files 71 passed (71) · Tests 463 passed (463)

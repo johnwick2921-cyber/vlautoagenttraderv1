@@ -2,7 +2,7 @@ package kernel
 
 import (
 	"encoding/json"
-	"nofx/market"
+	"vl/market"
 	"os"
 	"strings"
 	"testing"

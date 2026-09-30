@@ -272,7 +272,7 @@
     "receiver": "",
     "start_line": 120,
     "end_line": 138,
-    "purpose": "BackupBeforeRegrade takes an online sqlite3 backup to ~/nofx-backups/adherence-regrade/<stamp>.db before the migration writes",
+    "purpose": "BackupBeforeRegrade takes an online sqlite3 backup to ~/vl-backups/adherence-regrade/<stamp>.db before the migration writes",
     "connections": [
       "Declared receiver/input/output boundary: func BackupBeforeRegrade(dbPath, stamp string) (string, error) {",
       "Calls (syntax-only, receiver targets not type-resolved): os.UserHomeDir, fmt.Errorf, filepath.Join, os.MkdirAll, os.Stat, exec.Command, fmt.Sprintf, cmd.CombinedOutput, strings.TrimSpace, string"

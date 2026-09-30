@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Combined PLAN-LIVENESS / CONFIRMATION-TRUTH cutover
 
 **Status: combined boot VERIFIED at 2026-09-08 15:17:31 CT. Both wave boot
@@ -67,7 +68,7 @@ accepts with a warning. Exhaustion remains WARN + counter, with no added wake.
 
 ## Own merged-head verification and binary
 
-[A] Fresh ordinary clone: `/tmp/nofx-plan-liveness-combined-build/nofx`.
+[A] Fresh ordinary clone: `/tmp/vl-plan-liveness-combined-build/vl`.
 At merged HEAD `f8bc7044cc44d58e84904a0a7761e78b420404af`, before building:
 
 - `go test ./... -count=1`: PASS, exit 0.
@@ -75,7 +76,7 @@ At merged HEAD `f8bc7044cc44d58e84904a0a7761e78b420404af`, before building:
 - Vitest: **51 files / 368 tests PASS**, exit 0.
 - TypeScript: PASS, exit 0.
 
-`go build -o nofx-bin .` followed those checks in the same clean clone:
+`go build -o vl-bin .` followed those checks in the same clean clone:
 
 ```
 vcs.revision=f8bc7044cc44d58e84904a0a7761e78b420404af
@@ -167,12 +168,12 @@ above. A fresh read will be required again immediately before `mv`.
 
 [A] Online SQLite backup completed **15:04:25 CT**, source opened `mode=ro`,
 copy **750,182,400 bytes**, `PRAGMA integrity_check = ok`. Location:
-`/home/hoang/nofx-backups/plan-liveness-confirmation-20260908-150422/data.db`.
+`/home/hoang/vl-backups/plan-liveness-confirmation-20260908-150422/data.db`.
 No schema/data migration was performed by the deploy owner.
 
 The same backup directory preserves `RELEASE.before` (**33672fdd**) and
 `dist.before`. Preserved executable:
-`/home/hoang/nofx-backups/plan-liveness-confirmation-20260908-150422/nofx-bin.old.33672fdd2cd2fee60a2c562a9693e06ab3b13551`.
+`/home/hoang/vl-backups/plan-liveness-confirmation-20260908-150422/vl-bin.old.33672fdd2cd2fee60a2c562a9693e06ab3b13551`.
 Both `/proc/3260027/exe` and the disk/backup executable were independently
 read as **33672fdd2cd2fee60a2c562a9693e06ab3b13551**, `vcs.modified=false`,
 SHA-256 **25af1ec9714be825287fd697e9148340381ac1b702180cc392fb3dba0a5319c2**.

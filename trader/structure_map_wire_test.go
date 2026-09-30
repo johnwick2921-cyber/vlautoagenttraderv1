@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── S1 — THE CALL SITE, on TODAY's bars (store, read-only export 2026-09-16) ──

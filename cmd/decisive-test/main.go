@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"nofx/store/sqlitedriver"
+	"vl/store/sqlitedriver"
 
 	"github.com/joho/godotenv"
 
-	"nofx/config"
-	"nofx/crypto"
-	"nofx/store"
+	"vl/config"
+	"vl/crypto"
+	"vl/store"
 )
 
 func main() {

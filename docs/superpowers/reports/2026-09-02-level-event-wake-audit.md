@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Level-event wakes: re-planning a session past its useful window (read-only audit)
 
 **Owner request:** hoang, 2026-09-02. **READ-ONLY — no code changed, nothing deployed.**
-Live rev `0465a10b`. Evidence: `data/nofx_2026-08-*.log`, `data/nofx_2026-09-0*.log`, `data/data.db`.
+Live rev `0465a10b`. Evidence: `data/vl_2026-08-*.log`, `data/vl_2026-09-0*.log`, `data/data.db`.
 **Tiers:** [A] verified directly · [B] inferred from strong evidence · [C] speculation.
 
 ## Resolved values this audit is measured against (A11)

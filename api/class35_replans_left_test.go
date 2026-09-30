@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // CLASS 35 (2026-09-01) — the card's replans_left is the RECORDED budget, the

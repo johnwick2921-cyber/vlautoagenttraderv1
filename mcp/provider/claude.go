@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 const (

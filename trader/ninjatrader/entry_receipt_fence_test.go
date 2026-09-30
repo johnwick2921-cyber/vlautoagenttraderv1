@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // TestGetPositionsStaleFlatSnapshotFallsToFillCache: the account is KNOWN-flat

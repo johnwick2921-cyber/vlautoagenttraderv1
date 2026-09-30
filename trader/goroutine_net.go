@@ -8,7 +8,7 @@ package trader
 import (
 	"fmt"
 
-	"nofx/safe"
+	"vl/safe"
 )
 
 // goNetted launches fn in a new goroutine under the full panic net with this

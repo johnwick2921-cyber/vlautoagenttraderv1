@@ -7,7 +7,7 @@ package trader
 import (
 	"fmt"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // ArmsBootLine renders the arms posture for the boot log.

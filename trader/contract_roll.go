@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 
-	ntTrader "nofx/trader/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // P3 — CONTRACT-ROLL ENTRY BLOCK for the continuous symbol (ledger-close

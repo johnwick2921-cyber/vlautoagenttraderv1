@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"os"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func main() {

@@ -10,7 +10,7 @@ import (
 	"math"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 func s1Zigzag(extremes []float64, legBars int, ivMin int, startMs int64) []market.Kline {

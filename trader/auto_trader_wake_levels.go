@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W6 wake wave (2026-08-25) — event-diff planner wake-ups ─────────────────

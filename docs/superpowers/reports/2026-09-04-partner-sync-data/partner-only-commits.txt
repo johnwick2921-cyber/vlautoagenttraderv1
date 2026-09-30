@@ -1,9 +1,9 @@
-f6ae7597|2026-08-23 23:53:20 -0500|sync(nofx): P0 AI-params config + clock-drift feedNowUTC + close_sync parity
-dfa52364|2026-08-23 23:43:28 -0500|feat(ui): sync DecisionCard to latest nofx (structure-conflict dot, scenario-aware, 703-line card)
+f6ae7597|2026-08-23 23:53:20 -0500|sync(vl): P0 AI-params config + clock-drift feedNowUTC + close_sync parity
+dfa52364|2026-08-23 23:43:28 -0500|feat(ui): sync DecisionCard to latest vl (structure-conflict dot, scenario-aware, 703-line card)
 e49ca145|2026-08-23 23:37:46 -0500|fix(mirror): split glued brace line in sendCloseAt (build green, full tests pass)
 dc1d6b4e|2026-08-23 23:36:48 -0500|fix(mirror): restore missing brace in sendCloseAt payload literal
-31a486ce|2026-08-23 23:36:21 -0500|feat(mirror): 4.3 limit-close wire + C# fixes from nofx
-f9a6f001|2026-08-22 19:03:13 -0500|feat(wave4): per-model thinking knobs + exit-fill persistence (mirror of nofx #71/#73)
+31a486ce|2026-08-23 23:36:21 -0500|feat(mirror): 4.3 limit-close wire + C# fixes from vl
+f9a6f001|2026-08-22 19:03:13 -0500|feat(wave4): per-model thinking knobs + exit-fill persistence (mirror of vl #71/#73)
 5a1d12ef|2026-08-22 15:54:36 -0500|feat(ai): DeepSeek thinking mode defaults — thinking=enabled + reasoning_effort=max
 2bf3342d|2026-08-13 21:45:34 -0500|chore: Part A complete — remove hardening heartbeat
 7b61b04e|2026-08-13 21:45:34 -0500|feat(risk): A5 (G5) — prompt-ownership tags, skip a contaminated cycle
@@ -47,7 +47,7 @@ fe250333|2026-08-13 21:45:34 -0500|chore(hardening): Part D DEPLOYED — Go rest
 da2a86d8|2026-08-13 21:45:34 -0500|fix(nt8): D4/F3 — pre-prompt concurrent gate reads per-strategy max_positions
 2a9833d1|2026-08-13 21:45:34 -0500|fix(nt8): D3/F2 — futures size caps are ALWAYS ON, master-independent
 feb0acf1|2026-08-13 21:45:34 -0500|chore(hardening): heartbeat — hardening run started (D→C→B→A)
-04eaea3a|2026-08-13 21:45:26 -0500|realign: restore nofx-canonical base (SVP consts) before hardening train — kills the fork
+04eaea3a|2026-08-13 21:45:26 -0500|realign: restore vl-canonical base (SVP consts) before hardening train — kills the fork
 5199b7d6|2026-08-13 10:50:02 -0500|fix(web): F5 — hide DEAD-on-futures fields from Strategy Studio (min_position_size, raw_klines)
 78fb0436|2026-08-12 09:00:04 -0500|fix(nt8-addon): on-change PositionUpdate for ALL sim accounts (reconcile freshness)
 b05401f7|2026-08-12 09:00:04 -0500|fix(nt8): reconcile-before-open awaits the fill-confirmed close frame (not the 30s snapshot)
@@ -93,4 +93,4 @@ c3824782|2026-08-01 18:59:58 -0500|feat(session): hoist CME session gate to top 
 b3dc0a85|2026-06-24 17:37:59 -0500|fix(nt8-addon): rebuild BarsRequest on bot reconnect — overnight feed-gap self-heals (was frozen N3 snapshot)
 597d12fd|2026-06-24 16:54:04 -0500|feat(nt8): deeper bars_back (500→2000) + cache cap (1024→2500) — self-heal recoverable feed-down gaps
 f05baa96|2026-06-12 01:58:34 -0500|docs: quarterly contract-roll procedure + June→September roll postmortem
-75bcb576|2026-06-11 23:44:09 -0500|mirror: exact contents of nofx main 3ab61978 (fresh history)
+75bcb576|2026-06-11 23:44:09 -0500|mirror: exact contents of vl main 3ab61978 (fresh history)

@@ -24,12 +24,12 @@ func logRetentionDays() int {
 	return n
 }
 
-// pruneOldLogs (P2-2) deletes data/nofx_YYYY-MM-DD.log files strictly older
-// than `days` calendar days, EXCEPT today's file and the currently-open
+// pruneOldLogs (P2-2) deletes data/{vl,nofx}_YYYY-MM-DD.log files strictly
+// older than `days` calendar days, EXCEPT today's file and the currently-open
 // process file (a running boot's file is never deleted). Returns the removed
 // names (basenames) and the first error. Pure in (dir, now, days, current) so
 // the pin drives the production path — Init calls it once after opening the
-// day's file.
+// day's file. // R5 removes the vl prefix.
 func pruneOldLogs(dir string, now time.Time, days int, current string) ([]string, error) {
 	if days <= 0 {
 		return nil, nil // OFF: keep everything
@@ -42,10 +42,19 @@ func pruneOldLogs(dir string, now time.Time, days int, current string) ([]string
 	var removed []string
 	for _, e := range entries {
 		name := e.Name()
-		if !strings.HasPrefix(name, "nofx_") || !strings.HasSuffix(name, ".log") {
+		prefix := ""
+		switch {
+		case strings.HasPrefix(name, "nofx_"):
+			prefix = "nofx_" // R5 removes
+		case strings.HasPrefix(name, "vl_"):
+			prefix = "vl_"
+		default:
 			continue
 		}
-		datePart := strings.TrimSuffix(strings.TrimPrefix(name, "nofx_"), ".log")
+		if !strings.HasSuffix(name, ".log") {
+			continue
+		}
+		datePart := strings.TrimSuffix(strings.TrimPrefix(name, prefix), ".log")
 		if _, perr := time.Parse("2006-01-02", datePart); perr != nil {
 			continue // not our daily naming — leave it alone
 		}

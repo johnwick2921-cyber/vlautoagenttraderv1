@@ -274,7 +274,7 @@ func TestGoHelloReplyIsByteIdentical(t *testing.T) {
 	if !ok {
 		t.Fatal("no hello reply")
 	}
-	if got, want := string(env.Payload), `{"protocol_version":3,"source":"nofx-go"}`; got != want {
+	if got, want := string(env.Payload), `{"protocol_version":3,"source":"vl-go"}`; got != want {
 		t.Fatalf("the Go hello reply changed on the wire:\n got %s\nwant %s", got, want)
 	}
 }

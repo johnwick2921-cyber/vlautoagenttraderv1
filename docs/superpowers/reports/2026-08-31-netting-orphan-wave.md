@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Netting-Orphan Wave (class 27) — 2026-08-31
 
 **Rev:** `a0c7ff0b118769cabfb39c03d965637190461768` (marker `a0c7ff0b`)
 **Cutover:** 2026-08-31 14:49:56 CT · PID 1340498 · `🔐 BOOT INTEGRITY OK — rev a0c7ff0b1187 · goldens PASS`
-**Rollback kept:** `nofx-bin.prev.boot` = `2bc58ed9a4ace014236461bc06bc504284f0d4c5` (lead-time wave)
+**Rollback kept:** `vl-bin.prev.boot` = `2bc58ed9a4ace014236461bc06bc504284f0d4c5` (lead-time wave)
 **Flat-gate at cutover:** DB open rows = 0 · NT8 `positions snapshot account=Sim101 count=0` · no live armed orders
 **Trigger:** live forensics 2026-08-31 (owner screenshot): the S1 LONG @29413 was netted flat by the S3 SellShort @29459 at 13:09:16 — no `position_close` frame exists for a netting close — and 26 minutes later the orphaned S1 stop fired while flat and opened a naked short @29417.25 (closed +$39.50 by an orphaned TP at 13:38:19). The long's real +$92.00 never entered the ledger.
 
@@ -46,7 +47,7 @@ The live DB's historical rows (577/578) keep their placeholder values — they p
 - Go binary: rev `a0c7ff0b` live (PID 1340498, boot 14:49:56 CT, goldens PASS).
 - C# AddOn: **staged** at `C:\Users\hoang\Documents\NinjaTrader 8\bin\Custom\AddOns\` (sweep code present). **Pending owner F5-compile + full NT8 restart** — until then the old AddOn runs; the Go side is fully backward-compatible (`cancel_order` is an existing protocol frame), and the Go desync-cancel (FIX 1 Go half) is already live.
 - Tests: full Go suite green; web vitest 287/287; tsc clean.
-- Rollback: `mv nofx-bin.prev.boot nofx-bin` + revert `deploy/RELEASE` + `kill -9 1340498`.
+- Rollback: `mv vl-bin.prev.boot vl-bin` + revert `deploy/RELEASE` + `kill -9 1340498`.
 
 ## Notes for the owner
 

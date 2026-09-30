@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/logger"
-	"nofx/market"
+	"vl/logger"
+	"vl/market"
 )
 
 // C1 (F3) — machine evaluation of a scenario's structured confirmation, using

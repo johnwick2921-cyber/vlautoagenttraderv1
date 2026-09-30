@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // PICTURE-HTF LIVE WIRING (2026-09-20) — routes NATIVE LIVE NT8 bar events to

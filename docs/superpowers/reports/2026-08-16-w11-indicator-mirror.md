@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W11 — Planner Indicator Mirror + W11b flagged follow-ups
 
 **LINE 1 — W11 + W11b DONE + GREEN.** Planner now sees the executor's EXACT
@@ -20,7 +21,7 @@ overnight-gap now surface. 26 pkgs green, executor goldens byte-identical. Commi
   rewrites what the planner saw. plans bypasses AutoMigrate → added to raw `plansDDL`
   (fresh DBs) + idempotent `ALTER TABLE` (existing sqlite). ai_config fingerprint =
   sha256 over a canonical projection of ONLY prompt-reaching fields (excludes the
-  NofxOSAPIKey secret + crypto ranking); logged on every plan row.
+  VLOSAPIKey secret + crypto ranking); logged on every plan row.
 
 ## W11b — the two flagged follow-ups (rode the same regen) [A]
 1. **Persisted freshness surfaces:** `AssembleScoredLevels`'s nil freshness callback

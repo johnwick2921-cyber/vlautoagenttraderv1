@@ -8,7 +8,7 @@ Laws: pnl_corrected only; exclude source='e7_farside_test'; exclude pnl_correcte
 Writes trade_sample_58.csv (compliant, primary) and trade_sample_65.csv (sensitivity)."""
 import sqlite3, csv, datetime, zoneinfo
 ct = zoneinfo.ZoneInfo("America/Chicago")
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 rows = con.execute("""SELECT id, plan_session, cited_scenario_id, pnl_corrected, entry_time, created_at, source,
                              pnl_correction_note, side, entry_price, exit_price, mae, mfe, close_reason, plan_id
                       FROM trader_positions WHERE plan_id IS NOT NULL AND plan_id<>'' ORDER BY id""").fetchall()

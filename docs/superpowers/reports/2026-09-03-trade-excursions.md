@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # TRADE EXCURSION LOGGING (wave 1A, checklist class 54)
 
-**Branch:** `fix/trade-excursions` off `33de2bef` · worktree `~/nofx-excursions`
+**Branch:** `fix/trade-excursions` off `33de2bef` · worktree `~/vl-excursions`
 **Commits:** 08e0da2f · 44d4bbb7 · 01591040 · d4aee04a · a90f5de3 (+ this report)
 **Checklist:** entry **54** (highest occupied at merge: **53**, void-parity)
 **Boot line:** `📐 excursions: logging=on rows=… backfilled=… unresolved=…`

@@ -584,7 +584,7 @@ agent/preferences_test.go:8:1:TestNewPersistentPreference	agent/preferences_test
 agent/preferences_test.go:27:1:TestNewPersistentPreferenceRejectsEmptyText	agent/preferences_test.go	agent	TestNewPersistentPreferenceRejectsEmptyText		declaration	27	31	true	495b6c0f45153f372326b09402311d42c70e627ec1d60910a16a1a7410ebf013	2
 agent/prompt_context.go:8:1:buildCurrentTurnContext	agent/prompt_context.go	agent	buildCurrentTurnContext	*Agent	declaration	8	23	false	7bbd6ff7a145512a7a39545899286b1d42d413bc1f6a0cd95e4873e4cec14cf1	11
 agent/prompt_context.go:25:1:buildActiveTaskStateContext	agent/prompt_context.go	agent	buildActiveTaskStateContext	*Agent	declaration	25	74	false	82370621d78de002a2a54043d87988bebf7d1ae3075987f390e0d07f64d4f2d8	33
-agent/prompt_persona.go:22:1:prependNOFXiAdvisorPreamble	agent/prompt_persona.go	agent	prependNOFXiAdvisorPreamble		declaration	22	28	false	d0c090d6fa534802061348309ac6283969333a7cde690c989a444d76ad53156a	1
+agent/prompt_persona.go:22:1:prependVLiAdvisorPreamble	agent/prompt_persona.go	agent	prependVLiAdvisorPreamble		declaration	22	28	false	d0c090d6fa534802061348309ac6283969333a7cde690c989a444d76ad53156a	1
 agent/reference_memory.go:16:1:referenceMemoryConfigKey	agent/reference_memory.go	agent	referenceMemoryConfigKey		declaration	16	18	false	de3f12d84720ab1b52b497163da7c9b4af54f57da104393a109d56f2dee017e4	1
 agent/reference_memory.go:20:1:getReferenceMemory	agent/reference_memory.go	agent	getReferenceMemory	*Agent	declaration	20	39	false	fd786ef3c8457107a9c6fda104f5a64a6f79803c1b0b9ee6d3fb7df0589de146	7
 agent/reference_memory.go:41:1:saveReferenceMemory	agent/reference_memory.go	agent	saveReferenceMemory	*Agent	declaration	41	59	false	6437317b5e5b467d6c1ac6caf145495c19c64dda804dfd49f557f317e2c23d77	12
@@ -5399,49 +5399,49 @@ provider/ninjatrader/tcp_server_test.go:309:1:TestTCPServer_ShutdownUnblocksIdle
 provider/ninjatrader/tcp_server_test.go:341:5:<anonymous>	provider/ninjatrader/tcp_server_test.go	ninjatrader	<anonymous>		literal	341	341	true	add199319c702c70a9f9965c2cb022531cade251c24145b53ca09cec7cfd88fd	2
 provider/ninjatrader/timeframes_parity_test.go:16:1:TestDefaultAutoBarsTimeframes_MatchesSupported	provider/ninjatrader/timeframes_parity_test.go	ninjatrader	TestDefaultAutoBarsTimeframes_MatchesSupported		declaration	16	29	true	14c3e48c9920171c4e93af5457fc02f3328f589df5fc62f434b4a124d67a5ef5	6
 provider/ninjatrader/types.go:35:1:Validate	provider/ninjatrader/types.go	ninjatrader	Validate	SignalRow	declaration	35	59	false	d31f15f3d4f1b6af33e23b053ddbb99c69165df85b4173ef216923399367452f	8
-provider/nofxos/ai500.go:34:1:GetAI500List	provider/nofxos/ai500.go	nofxos	GetAI500List	*Client	declaration	34	57	false	41eb84199fc7112756a18a7573de539668ae02ebc9563f81d48aa6dfe9d6217c	6
-provider/nofxos/ai500.go:59:1:fetchAI500	provider/nofxos/ai500.go	nofxos	fetchAI500	*Client	declaration	59	90	false	49f2973180c8194362032253416135d567301e84bdeb73936e774085abc922ca	11
-provider/nofxos/ai500.go:93:1:GetTopRatedCoins	provider/nofxos/ai500.go	nofxos	GetTopRatedCoins	*Client	declaration	93	134	false	d1a9ec775f104006e3f6d35af15a8aa75b0df67e7b366acf126d3e8910e9eef8	9
-provider/nofxos/ai500.go:137:1:GetAvailableCoins	provider/nofxos/ai500.go	nofxos	GetAvailableCoins	*Client	declaration	137	153	false	4a3645b1c658fc90e14d5c0a0c08755a8b900528e7f56f51cca007a1bbe22718	3
-provider/nofxos/ai500.go:156:1:NormalizeSymbol	provider/nofxos/ai500.go	nofxos	NormalizeSymbol		declaration	156	163	false	d93f2279935d64a5e7a77c5c072238f047dcfcb0fcd89b7c3fda229deb8d017d	3
-provider/nofxos/claw402.go:29:1:NewClaw402DataClient	provider/nofxos/claw402.go	nofxos	NewClaw402DataClient		declaration	29	54	false	a4bd7bc3856d0edcfa06f58d9241cc7543e9d5b16a8d226f73f7896ab928a5c8	6
-provider/nofxos/claw402.go:65:1:mapEndpoint	provider/nofxos/claw402.go	nofxos	mapEndpoint		declaration	65	74	false	85cb3fc5d5176146005d7e4d3460c2ec6bddd7ce8023a91ead419056c1ad7480	2
-provider/nofxos/claw402.go:77:1:DoRequest	provider/nofxos/claw402.go	nofxos	DoRequest	*Claw402DataClient	declaration	77	113	false	58fed4999ead542983f82efd8aca7da5cad58a7e659c6c051bb7b389984630e3	7
-provider/nofxos/claw402.go:89:14:<anonymous>	provider/nofxos/claw402.go	nofxos	<anonymous>		literal	89	96	false	f5ac1b7444c3b2852ee0f5affa8d5f5576f0fc40d324a8bb83061d7ccf3da65d	3
-provider/nofxos/client.go:37:1:DefaultClient	provider/nofxos/client.go	nofxos	DefaultClient		declaration	37	46	false	02fd83937702689dda485ac909926d4b1a9342b866d583c8c16fd1b42e39fb7a	1
-provider/nofxos/client.go:38:16:<anonymous>	provider/nofxos/client.go	nofxos	<anonymous>		literal	38	44	false	fffbe78344e198a7b9be6ce08652f772e4314932f171b256a6528fd4fef471d4	0
-provider/nofxos/client.go:49:1:NewClient	provider/nofxos/client.go	nofxos	NewClient		declaration	49	61	false	cd45021ddde3e9b319606c8b7eef217fa8252712caa323def5ca2eac8eb9d492	0
-provider/nofxos/client.go:64:1:SetClaw402	provider/nofxos/client.go	nofxos	SetClaw402	*Client	declaration	64	68	false	5012593be529ebbad514141ae7448534201a0485196d5c142f27b804045d1a47	2
-provider/nofxos/client.go:71:1:SetConfig	provider/nofxos/client.go	nofxos	SetConfig	*Client	declaration	71	80	false	17732850efc2647df0359e04f0642a822922bece76e5ec7e12d85642b957fec9	2
-provider/nofxos/client.go:83:1:GetBaseURL	provider/nofxos/client.go	nofxos	GetBaseURL	*Client	declaration	83	87	false	4337553e35838bcedf2da833c20bfdadad7d37a72ef7363b34fb024dc01ec192	2
-provider/nofxos/client.go:90:1:GetAuthKey	provider/nofxos/client.go	nofxos	GetAuthKey	*Client	declaration	90	94	false	0321fa934166bd9ebff255195ac3471ad35aba04ddfa4d74ace3d2f9e44375ef	2
-provider/nofxos/client.go:98:1:doRequest	provider/nofxos/client.go	nofxos	doRequest	*Client	declaration	98	139	false	dc39799c19916259d61770caf3345cc5ff6446cb44538944c49eb428354ebab8	9
-provider/nofxos/client.go:147:1:Error	provider/nofxos/client.go	nofxos	Error	*APIError	declaration	147	149	false	2a141db79668a8505d80b79557cc49b62ad6e35f75c399a4f417a653dfa54936	0
-provider/nofxos/client.go:152:1:ExtractAuthKey	provider/nofxos/client.go	nofxos	ExtractAuthKey		declaration	152	161	false	3892074a66d1bfb57f285b3bf997807795afe110c89a9f99ff997ee9743ecb83	2
-provider/nofxos/coin.go:54:1:GetCoinData	provider/nofxos/coin.go	nofxos	GetCoinData	*Client	declaration	54	84	false	b0b411bdbd8aa1857997c727956fc78534813ebf90d5d13481da58d5b1a0c199	9
-provider/nofxos/coin.go:87:1:GetCoinDataBatch	provider/nofxos/coin.go	nofxos	GetCoinDataBatch	*Client	declaration	87	104	false	8acc077491b22e621e5be32d903027524d903ff2365c978bfbdcabe4a6556974	4
-provider/nofxos/coin.go:107:1:FormatQuantDataForAI	provider/nofxos/coin.go	nofxos	FormatQuantDataForAI		declaration	107	116	false	bc552f3e0504574ed5d36475ae1f09c004d035acb37b151d06f769035e4b9fa6	2
-provider/nofxos/coin.go:118:1:formatQuantDataZH	provider/nofxos/coin.go	nofxos	formatQuantDataZH		declaration	118	166	false	b77ca25cad6f33d8ac2d908487a896d5967353a701466d458607571506c8ec6f	27
-provider/nofxos/coin.go:168:1:formatQuantDataEN	provider/nofxos/coin.go	nofxos	formatQuantDataEN		declaration	168	216	false	a73ba834291ef760281b53e3df55ce878d328dfe2427fb0221783dc3d543d12b	27
-provider/nofxos/netflow.go:45:1:GetNetFlowRanking	provider/nofxos/netflow.go	nofxos	GetNetFlowRanking	*Client	declaration	45	96	false	9926e1d9e23dac1541dce8eca7a7ff040d4c66e156206f34af063ee9bb316afa	14
-provider/nofxos/netflow.go:98:1:fetchNetFlowRanking	provider/nofxos/netflow.go	nofxos	fetchNetFlowRanking	*Client	declaration	98	117	false	f7853f38c246a3d8e90763923b5061fdfa635ecbbf2cb388a14ebdced4ddaa77	6
-provider/nofxos/netflow.go:120:1:FormatNetFlowRankingForAI	provider/nofxos/netflow.go	nofxos	FormatNetFlowRankingForAI		declaration	120	129	false	61c14d0ae7378f2a13d2323071a7fdceb4d2e10f22d5fbf7b61215df3ff211ee	2
-provider/nofxos/netflow.go:131:1:formatNetFlowRankingZH	provider/nofxos/netflow.go	nofxos	formatNetFlowRankingZH		declaration	131	196	false	dd25954a5057634ccc1e3a18bc5da2726824774dff7b400649314cedf0a835c1	40
-provider/nofxos/netflow.go:198:1:formatNetFlowRankingEN	provider/nofxos/netflow.go	nofxos	formatNetFlowRankingEN		declaration	198	263	false	34ced50e243beeae2321b26da721e57ab99a3f345af9a89a2d070e6f1e29515c	40
-provider/nofxos/oi.go:50:1:GetOIRanking	provider/nofxos/oi.go	nofxos	GetOIRanking	*Client	declaration	50	84	false	3ca5250d1ece609c381e293fa8688fefffda8558bac60bff3f3e41913ff58688	8
-provider/nofxos/oi.go:86:1:fetchOIRanking	provider/nofxos/oi.go	nofxos	fetchOIRanking	*Client	declaration	86	105	false	43bffa7fff1a10406e0de5975bff2d06f190ef4a3a95433ed2c8944e1223d3c0	6
-provider/nofxos/oi.go:108:1:GetOITopPositions	provider/nofxos/oi.go	nofxos	GetOITopPositions	*Client	declaration	108	114	false	f458edb74161196694466daf35aeedb698a22c66db8eaeee0ecfcc9f2a9e9a3e	1
-provider/nofxos/oi.go:117:1:GetOITopSymbols	provider/nofxos/oi.go	nofxos	GetOITopSymbols	*Client	declaration	117	130	false	8c3ed6833c2dff852ab6a240f8323aed0781d59c45a216614e216726488806a0	3
-provider/nofxos/oi.go:133:1:GetOILowPositions	provider/nofxos/oi.go	nofxos	GetOILowPositions	*Client	declaration	133	139	false	33aeb13c02177753f04e1a9a2b689fb910a5552b735d2775ef0cd648629e9676	1
-provider/nofxos/oi.go:142:1:GetOILowSymbols	provider/nofxos/oi.go	nofxos	GetOILowSymbols	*Client	declaration	142	155	false	983f1a2f991e7fd02f5fe248636a8acdfec7eb0d1b4e745cb7f16401152683f0	3
-provider/nofxos/oi.go:158:1:FormatOIRankingForAI	provider/nofxos/oi.go	nofxos	FormatOIRankingForAI		declaration	158	167	false	5b37fbf9e8f06a7c87b76396abea8f198da56d67f51043226c01df126bc75f98	2
-provider/nofxos/oi.go:169:1:formatOIRankingZH	provider/nofxos/oi.go	nofxos	formatOIRankingZH		declaration	169	202	false	b8482a1c7bf088e3a2b97a0c57ff4c937445c054aa8f3c93676be59f5436697e	22
-provider/nofxos/oi.go:204:1:formatOIRankingEN	provider/nofxos/oi.go	nofxos	formatOIRankingEN		declaration	204	237	false	e06766815de9b6d04ef7d1b047b530053e908fc38633f3e415fb0122fe55863d	22
-provider/nofxos/price.go:47:1:GetPriceRanking	provider/nofxos/price.go	nofxos	GetPriceRanking	*Client	declaration	47	84	false	68286a2ac074013b22d222f70b22588c3924f66b40f9ab39b369e7978fe80b58	10
-provider/nofxos/price.go:87:1:FormatPriceRankingForAI	provider/nofxos/price.go	nofxos	FormatPriceRankingForAI		declaration	87	96	false	ae98d73122442a1c5e0b0d3b0294439bf6d96ae423ff376e1e37c9f44dbf151c	3
-provider/nofxos/price.go:98:1:formatPriceRankingZH	provider/nofxos/price.go	nofxos	formatPriceRankingZH		declaration	98	139	false	7dff016cb88a61052e759bddb7ea0ffe961853c7bcf3d4f21cd8fa7d6e99c96c	23
-provider/nofxos/price.go:141:1:formatPriceRankingEN	provider/nofxos/price.go	nofxos	formatPriceRankingEN		declaration	141	182	false	dbc4deef2b5bd4b747f24e28a5696ed04d7e837715a8b95f0ccbcd5b75a11323	23
-provider/nofxos/util.go:14:1:formatValue	provider/nofxos/util.go	nofxos	formatValue		declaration	14	31	false	37e26168cdca7d21b45a57d3651a19a8d666f8f2e84393e889eda4981c805a58	4
+provider/vlos/ai500.go:34:1:GetAI500List	provider/vlos/ai500.go	vlos	GetAI500List	*Client	declaration	34	57	false	41eb84199fc7112756a18a7573de539668ae02ebc9563f81d48aa6dfe9d6217c	6
+provider/vlos/ai500.go:59:1:fetchAI500	provider/vlos/ai500.go	vlos	fetchAI500	*Client	declaration	59	90	false	49f2973180c8194362032253416135d567301e84bdeb73936e774085abc922ca	11
+provider/vlos/ai500.go:93:1:GetTopRatedCoins	provider/vlos/ai500.go	vlos	GetTopRatedCoins	*Client	declaration	93	134	false	d1a9ec775f104006e3f6d35af15a8aa75b0df67e7b366acf126d3e8910e9eef8	9
+provider/vlos/ai500.go:137:1:GetAvailableCoins	provider/vlos/ai500.go	vlos	GetAvailableCoins	*Client	declaration	137	153	false	4a3645b1c658fc90e14d5c0a0c08755a8b900528e7f56f51cca007a1bbe22718	3
+provider/vlos/ai500.go:156:1:NormalizeSymbol	provider/vlos/ai500.go	vlos	NormalizeSymbol		declaration	156	163	false	d93f2279935d64a5e7a77c5c072238f047dcfcb0fcd89b7c3fda229deb8d017d	3
+provider/vlos/claw402.go:29:1:NewClaw402DataClient	provider/vlos/claw402.go	vlos	NewClaw402DataClient		declaration	29	54	false	a4bd7bc3856d0edcfa06f58d9241cc7543e9d5b16a8d226f73f7896ab928a5c8	6
+provider/vlos/claw402.go:65:1:mapEndpoint	provider/vlos/claw402.go	vlos	mapEndpoint		declaration	65	74	false	85cb3fc5d5176146005d7e4d3460c2ec6bddd7ce8023a91ead419056c1ad7480	2
+provider/vlos/claw402.go:77:1:DoRequest	provider/vlos/claw402.go	vlos	DoRequest	*Claw402DataClient	declaration	77	113	false	58fed4999ead542983f82efd8aca7da5cad58a7e659c6c051bb7b389984630e3	7
+provider/vlos/claw402.go:89:14:<anonymous>	provider/vlos/claw402.go	vlos	<anonymous>		literal	89	96	false	f5ac1b7444c3b2852ee0f5affa8d5f5576f0fc40d324a8bb83061d7ccf3da65d	3
+provider/vlos/client.go:37:1:DefaultClient	provider/vlos/client.go	vlos	DefaultClient		declaration	37	46	false	02fd83937702689dda485ac909926d4b1a9342b866d583c8c16fd1b42e39fb7a	1
+provider/vlos/client.go:38:16:<anonymous>	provider/vlos/client.go	vlos	<anonymous>		literal	38	44	false	fffbe78344e198a7b9be6ce08652f772e4314932f171b256a6528fd4fef471d4	0
+provider/vlos/client.go:49:1:NewClient	provider/vlos/client.go	vlos	NewClient		declaration	49	61	false	cd45021ddde3e9b319606c8b7eef217fa8252712caa323def5ca2eac8eb9d492	0
+provider/vlos/client.go:64:1:SetClaw402	provider/vlos/client.go	vlos	SetClaw402	*Client	declaration	64	68	false	5012593be529ebbad514141ae7448534201a0485196d5c142f27b804045d1a47	2
+provider/vlos/client.go:71:1:SetConfig	provider/vlos/client.go	vlos	SetConfig	*Client	declaration	71	80	false	17732850efc2647df0359e04f0642a822922bece76e5ec7e12d85642b957fec9	2
+provider/vlos/client.go:83:1:GetBaseURL	provider/vlos/client.go	vlos	GetBaseURL	*Client	declaration	83	87	false	4337553e35838bcedf2da833c20bfdadad7d37a72ef7363b34fb024dc01ec192	2
+provider/vlos/client.go:90:1:GetAuthKey	provider/vlos/client.go	vlos	GetAuthKey	*Client	declaration	90	94	false	0321fa934166bd9ebff255195ac3471ad35aba04ddfa4d74ace3d2f9e44375ef	2
+provider/vlos/client.go:98:1:doRequest	provider/vlos/client.go	vlos	doRequest	*Client	declaration	98	139	false	dc39799c19916259d61770caf3345cc5ff6446cb44538944c49eb428354ebab8	9
+provider/vlos/client.go:147:1:Error	provider/vlos/client.go	vlos	Error	*APIError	declaration	147	149	false	2a141db79668a8505d80b79557cc49b62ad6e35f75c399a4f417a653dfa54936	0
+provider/vlos/client.go:152:1:ExtractAuthKey	provider/vlos/client.go	vlos	ExtractAuthKey		declaration	152	161	false	3892074a66d1bfb57f285b3bf997807795afe110c89a9f99ff997ee9743ecb83	2
+provider/vlos/coin.go:54:1:GetCoinData	provider/vlos/coin.go	vlos	GetCoinData	*Client	declaration	54	84	false	b0b411bdbd8aa1857997c727956fc78534813ebf90d5d13481da58d5b1a0c199	9
+provider/vlos/coin.go:87:1:GetCoinDataBatch	provider/vlos/coin.go	vlos	GetCoinDataBatch	*Client	declaration	87	104	false	8acc077491b22e621e5be32d903027524d903ff2365c978bfbdcabe4a6556974	4
+provider/vlos/coin.go:107:1:FormatQuantDataForAI	provider/vlos/coin.go	vlos	FormatQuantDataForAI		declaration	107	116	false	bc552f3e0504574ed5d36475ae1f09c004d035acb37b151d06f769035e4b9fa6	2
+provider/vlos/coin.go:118:1:formatQuantDataZH	provider/vlos/coin.go	vlos	formatQuantDataZH		declaration	118	166	false	b77ca25cad6f33d8ac2d908487a896d5967353a701466d458607571506c8ec6f	27
+provider/vlos/coin.go:168:1:formatQuantDataEN	provider/vlos/coin.go	vlos	formatQuantDataEN		declaration	168	216	false	a73ba834291ef760281b53e3df55ce878d328dfe2427fb0221783dc3d543d12b	27
+provider/vlos/netflow.go:45:1:GetNetFlowRanking	provider/vlos/netflow.go	vlos	GetNetFlowRanking	*Client	declaration	45	96	false	9926e1d9e23dac1541dce8eca7a7ff040d4c66e156206f34af063ee9bb316afa	14
+provider/vlos/netflow.go:98:1:fetchNetFlowRanking	provider/vlos/netflow.go	vlos	fetchNetFlowRanking	*Client	declaration	98	117	false	f7853f38c246a3d8e90763923b5061fdfa635ecbbf2cb388a14ebdced4ddaa77	6
+provider/vlos/netflow.go:120:1:FormatNetFlowRankingForAI	provider/vlos/netflow.go	vlos	FormatNetFlowRankingForAI		declaration	120	129	false	61c14d0ae7378f2a13d2323071a7fdceb4d2e10f22d5fbf7b61215df3ff211ee	2
+provider/vlos/netflow.go:131:1:formatNetFlowRankingZH	provider/vlos/netflow.go	vlos	formatNetFlowRankingZH		declaration	131	196	false	dd25954a5057634ccc1e3a18bc5da2726824774dff7b400649314cedf0a835c1	40
+provider/vlos/netflow.go:198:1:formatNetFlowRankingEN	provider/vlos/netflow.go	vlos	formatNetFlowRankingEN		declaration	198	263	false	34ced50e243beeae2321b26da721e57ab99a3f345af9a89a2d070e6f1e29515c	40
+provider/vlos/oi.go:50:1:GetOIRanking	provider/vlos/oi.go	vlos	GetOIRanking	*Client	declaration	50	84	false	3ca5250d1ece609c381e293fa8688fefffda8558bac60bff3f3e41913ff58688	8
+provider/vlos/oi.go:86:1:fetchOIRanking	provider/vlos/oi.go	vlos	fetchOIRanking	*Client	declaration	86	105	false	43bffa7fff1a10406e0de5975bff2d06f190ef4a3a95433ed2c8944e1223d3c0	6
+provider/vlos/oi.go:108:1:GetOITopPositions	provider/vlos/oi.go	vlos	GetOITopPositions	*Client	declaration	108	114	false	f458edb74161196694466daf35aeedb698a22c66db8eaeee0ecfcc9f2a9e9a3e	1
+provider/vlos/oi.go:117:1:GetOITopSymbols	provider/vlos/oi.go	vlos	GetOITopSymbols	*Client	declaration	117	130	false	8c3ed6833c2dff852ab6a240f8323aed0781d59c45a216614e216726488806a0	3
+provider/vlos/oi.go:133:1:GetOILowPositions	provider/vlos/oi.go	vlos	GetOILowPositions	*Client	declaration	133	139	false	33aeb13c02177753f04e1a9a2b689fb910a5552b735d2775ef0cd648629e9676	1
+provider/vlos/oi.go:142:1:GetOILowSymbols	provider/vlos/oi.go	vlos	GetOILowSymbols	*Client	declaration	142	155	false	983f1a2f991e7fd02f5fe248636a8acdfec7eb0d1b4e745cb7f16401152683f0	3
+provider/vlos/oi.go:158:1:FormatOIRankingForAI	provider/vlos/oi.go	vlos	FormatOIRankingForAI		declaration	158	167	false	5b37fbf9e8f06a7c87b76396abea8f198da56d67f51043226c01df126bc75f98	2
+provider/vlos/oi.go:169:1:formatOIRankingZH	provider/vlos/oi.go	vlos	formatOIRankingZH		declaration	169	202	false	b8482a1c7bf088e3a2b97a0c57ff4c937445c054aa8f3c93676be59f5436697e	22
+provider/vlos/oi.go:204:1:formatOIRankingEN	provider/vlos/oi.go	vlos	formatOIRankingEN		declaration	204	237	false	e06766815de9b6d04ef7d1b047b530053e908fc38633f3e415fb0122fe55863d	22
+provider/vlos/price.go:47:1:GetPriceRanking	provider/vlos/price.go	vlos	GetPriceRanking	*Client	declaration	47	84	false	68286a2ac074013b22d222f70b22588c3924f66b40f9ab39b369e7978fe80b58	10
+provider/vlos/price.go:87:1:FormatPriceRankingForAI	provider/vlos/price.go	vlos	FormatPriceRankingForAI		declaration	87	96	false	ae98d73122442a1c5e0b0d3b0294439bf6d96ae423ff376e1e37c9f44dbf151c	3
+provider/vlos/price.go:98:1:formatPriceRankingZH	provider/vlos/price.go	vlos	formatPriceRankingZH		declaration	98	139	false	7dff016cb88a61052e759bddb7ea0ffe961853c7bcf3d4f21cd8fa7d6e99c96c	23
+provider/vlos/price.go:141:1:formatPriceRankingEN	provider/vlos/price.go	vlos	formatPriceRankingEN		declaration	141	182	false	dbc4deef2b5bd4b747f24e28a5696ed04d7e837715a8b95f0ccbcd5b75a11323	23
+provider/vlos/util.go:14:1:formatValue	provider/vlos/util.go	vlos	formatValue		declaration	14	31	false	37e26168cdca7d21b45a57d3651a19a8d666f8f2e84393e889eda4981c805a58	4
 provider/twelvedata/kline.go:78:1:NewClient	provider/twelvedata/kline.go	twelvedata	NewClient		declaration	78	85	false	5be25a6d04503a1e86acd0d455f95a61cd15499427c78a91c5f416ca2c2f3632	1
 provider/twelvedata/kline.go:88:1:NewClientWithKey	provider/twelvedata/kline.go	twelvedata	NewClientWithKey		declaration	88	95	false	3c4c943174c18bf3ee6ebefc6d8dd3021aed26d0ff66f8798356e5ccf4218965	0
 provider/twelvedata/kline.go:99:1:GetTimeSeries	provider/twelvedata/kline.go	twelvedata	GetTimeSeries	*Client	declaration	99	145	false	547699bef588b815c82ca3ca6a537fc4b6392d7a020950b865c31c5998e5564b	18

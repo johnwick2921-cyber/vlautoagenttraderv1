@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // T5 — armed row 35 (2026-09-03, NY v2 S1) read state=filled with

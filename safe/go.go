@@ -5,8 +5,8 @@ package safe
 
 import (
 	"fmt"
-	"nofx/logger"
-	"nofx/telemetry"
+	"vl/logger"
+	"vl/telemetry"
 	"runtime/debug"
 )
 

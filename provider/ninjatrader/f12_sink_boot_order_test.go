@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // TestSinkInstalledBeforeStartPersistsTheFirstFrame is the boot-order test: the

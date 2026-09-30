@@ -10,5 +10,5 @@
 09-08 16:01:55 [INFO] trader/auto_trader.go:44 [trader_id=t1] 📊 planner_candle_citations: 0 scenario line(s) cite "per candles" this read.
 09-08 16:01:55 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🗓️ PLAN written 2026-09-07 ASIA v2 (model fixture, lifecycle active, prompt hash, ai_config config-fixture)
 FAIL
-FAIL	nofx/trader	0.247s
+FAIL	vl/trader	0.247s
 FAIL

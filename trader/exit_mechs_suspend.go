@@ -3,13 +3,13 @@ package trader
 import (
 	"fmt"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 	"os"
 	"strings"
 	"sync"
 
-	ntTrader "nofx/trader/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── 0B (2026-09-02) — BE+40 AND THE ATR TRAIL ARE SUSPENDED ─────────────────

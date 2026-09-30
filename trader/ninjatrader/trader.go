@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
-	"nofx/logger"
-	"nofx/provider/databento"
-	"nofx/provider/ninjatrader"
-	"nofx/safe"
-	"nofx/trader/types"
+	"vl/logger"
+	"vl/provider/databento"
+	"vl/provider/ninjatrader"
+	"vl/safe"
+	"vl/trader/types"
 )
 
 type Config struct {

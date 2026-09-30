@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // TestP1CStillValidRequiresTouch is the regression for 2026-08-18 ASIA:

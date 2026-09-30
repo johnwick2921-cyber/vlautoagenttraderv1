@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"nofx/logger"
-	"nofx/mcp"
+	"vl/logger"
+	"vl/mcp"
 	"sync"
 	"time"
 )

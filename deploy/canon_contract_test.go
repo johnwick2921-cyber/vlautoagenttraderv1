@@ -1,9 +1,9 @@
 // Class 105 — the contract test the canon mirror was missing.
 //
-// docs/superpowers/CLAUDE-canon.md exists because ~/nofx/CLAUDE.md is UNTRACKED:
+// docs/superpowers/CLAUDE-canon.md exists because ~/VL/CLAUDE.md is UNTRACKED:
 // no wave can correct it, no review can see it drift, no test can check it. The
 // mirror closed the git half of that. It did NOT close the test half — nothing
-// asserted the mirror still described deploy/nofx-lock.sh, so the mirror was
+// asserted the mirror still described deploy/vl-lock.sh, so the mirror was
 // class 105 with one more copy in it: a second piece of prose about the code,
 // free to drift from the code AND from the original, independently and silently.
 //

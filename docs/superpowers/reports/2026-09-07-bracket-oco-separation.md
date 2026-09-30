@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # BRACKET-OCO SEPARATION — Section C verification (MEASURE FIRST, A17)
 
 **Status: BUILT. C1 was REFUTED and the owner ruled replacements; those were built.**
@@ -6,7 +7,7 @@ shipped. Awaiting the owner's GO for F1 (Go boot) and a separate GO for F2 (NT8)
 Owner: hoang · agent session `bracket-oco-554049f5` · branch `fix/bracket-oco-separation`
 Worktree base: `83314d69f973a22fd0567c5ae7d99e346db55c71` (dev tip at accept, 2026-09-07 09:50:52 -0500)
 Running rev measured by me: `vcs.revision=44ea117a02a1d6703003109a3386c92ca55d2bd5`,
-`vcs.modified=false`, pid 2745590 → `/home/hoang/nofx/nofx-bin`; `/api/health` → `{"revision":"44ea117a02a1"}`.
+`vcs.modified=false`, pid 2745590 → `/home/hoang/vl/vl-bin`; `/api/health` → `{"revision":"44ea117a02a1"}`.
 
 A1 spec-freshness: `git log -1 -- ninjascript/VLTraderTCPClient.cs` →
 `291a299c6e2d52e2fc3f78538ac0598a507a12a0  2026-09-05 22:37:49 -0500`
@@ -71,7 +72,7 @@ is a C# change, so it lands in the F2 half, not F1.
 
 ### The Go-side ordering defect, from the live log [A]
 
-`data/nofx_*.log:70047` and neighbours, 09-06:
+`data/vl_*.log:70047` and neighbours, 09-06:
 
 ```
 23:37:02  ✕ armed cancel REQUESTED (one_live_arm_guard): ASIA S1 leg 1 — pending broker confirmation
@@ -215,7 +216,7 @@ GREEN after D1
 MUTATION (the bracket walk put back)
       --- FAIL: TestCancellingAnEntryNeverTouchesItsBracket
 RESTORED
-      ok  nofx/trader
+      ok  vl/trader
 ```
 
 The pin's first draft failed on **its own explanatory comment**, which is the
@@ -396,14 +397,14 @@ Still possible, and stated plainly (A15) — see the next section.
 
 ## Rollback — BOTH halves
 
-**Go (F1):** `nofx-bin.old.<rev it holds>` preserved beside the binary; restore
+**Go (F1):** `vl-bin.old.<rev it holds>` preserved beside the binary; restore
 it, restore `deploy/RELEASE`, `kill -9` the pid, systemd relaunches. Everything
 in this wave is additive except `HandleCancelOrder` (C#) and the two
 `accepted_risk` narrowings; nothing in the Go half changes what is authored,
 which conditions arm, the stop composition, the R:R floor, or any gate.
 
 **NT8 (F2):** the `.cs` and `NinjaTrader.Custom.dll` are copied to
-`~/nofx-backups/nt8-addon/` named by build id with md5s quoted BEFORE anything is
+`~/vl-backups/nt8-addon/` named by build id with md5s quoted BEFORE anything is
 copied in (A13). To roll back: copy the backed-up `.cs` back, F5, full NT8
 restart. Reverting the AddOn alone is SAFE with the new Go binary running: the
 build gate then refuses `place_protective_stop` and D5 degrades to detect-and-
@@ -440,16 +441,16 @@ read claimed. Main tree porcelain 0 throughout; lock held by
 (including the guide's 14-section and 45-knob-card pins, which my guide edits had
 to not disturb).
 
-**Build.** Clean clone in a directory named `nofx`,
+**Build.** Clean clone in a directory named `vl`,
 `vcs.revision=b4195e6f877032090812214b8ae4b6acae777a4f`, **`vcs.modified=false`**.
 `GUIDE_BUILT_REV` then READ FROM THAT BINARY and set to the same 40-char rev;
 `web/dist` rebuilt AFTER the bump and verified to carry it
 (`web/dist/assets/index-DQJURKdg.js`).
 
-**A13.** Running binary preserved as `nofx-bin.old.44ea117a`, verified with
+**A13.** Running binary preserved as `vl-bin.old.44ea117a`, verified with
 `go version -m` to hold `44ea117a02a1d6703003109a3386c92ca55d2bd5` — named for
 the rev it HOLDS. AddOn `.cs` and `NinjaTrader.Custom.dll` copied to
-`~/nofx-backups/nt8-addon/` before anything was copied in:
+`~/vl-backups/nt8-addon/` before anything was copied in:
 `34efc3f85d0a775247f6c2f2ea576224` (`VLTraderTCPClient.2026-09-05-g2.cs`) and
 `7c2789ff35d96beb73dd740a29b913f1` (`NinjaTrader.Custom.2026-09-05-g2.dll`).
 **Caveat on that naming:** the `.cs` on disk is `g2`, but the DLL NT8 has loaded

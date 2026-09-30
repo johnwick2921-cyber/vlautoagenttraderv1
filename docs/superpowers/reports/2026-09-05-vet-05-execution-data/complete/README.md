@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 5 complete evidence — PRIMARY, 58 eligible positions
 
 These files supersede all conflicting performance, fill, excursion and exit-reason outputs in the parent historical data directory. The source base is b4376246, the branch docs/vet-05-0905-complete. The report explicitly withdraws the old 65-row tables and recommendations derived from them. Preserved historical q01–q34 files outside `complete/` are provenance only and must not be used as primary population results.
 
-Scratch: `/home/hoang/nofx-analysis/vet-05-complete-0905`. Worktree retained for parent: `/home/hoang/nofx-vet-05-complete`.
+Scratch: `/home/hoang/vl-analysis/vet-05-complete-0905`. Worktree retained for parent: `/home/hoang/vl-vet-05-complete`.
 
 ## Reproduce only in the authorized scratch directory
 

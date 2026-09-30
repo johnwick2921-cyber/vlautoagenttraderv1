@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 <h1 align="center">VL Intelligent</h1>
 
 <p align="center">
@@ -6,10 +7,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/NoFxAiOS/nofx/stargazers"><img src="https://img.shields.io/github/stars/NoFxAiOS/nofx?style=for-the-badge" alt="Stars"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/releases"><img src="https://img.shields.io/github/v/release/NoFxAiOS/nofx?style=for-the-badge" alt="Release"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg?style=for-the-badge" alt="License"></a>
-  <a href="https://t.me/nofx_dev_community"><img src="https://img.shields.io/badge/Telegram-Community-blue?style=for-the-badge&logo=telegram" alt="Telegram"></a>
 </p>
 
 <p align="center">
@@ -36,10 +33,6 @@ VL Intelligent — это **автономный** AI торговый асси�
 **Полная автономность**: AI сам решает, какую модель использовать, какие рыночные данные получить, когда торговать. Без ручной настройки моделей. Без жонглирования API ключами разных сервисов. Просто пополните USDC кошелёк и запустите.
 
 Ключевое отличие: **встроенные [x402](https://x402.org) микроплатежи**. Без API ключей. Пополните USDC кошелёк и платите за каждый запрос. Кошелёк — это ваша идентификация.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
 
 Откройте **http://127.0.0.1:3000**. Готово.
 
@@ -74,7 +67,6 @@ x402 процесс:
 ### Встроенные x402 провайдеры
 
 | Провайдер | Сеть | Модели |
-|:---------|:------|:-------|
 | <img src="../../../web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base | GPT-5.4, Claude Opus, DeepSeek, Qwen, Grok, Gemini, Kimi — 15+ моделей |
 
 ---
@@ -82,7 +74,6 @@ x402 процесс:
 ## Возможности
 
 | Функция | Описание |
-|:--------|:------------|
 | **Мульти-AI** | DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi, MiniMax — переключение в любой момент |
 | **Мульти-биржа** | Binance, Bybit, OKX, Bitget, KuCoin, Gate, Hyperliquid, Aster, Lighter |
 | **Студия стратегий** | Визуальный конструктор — источники монет, индикаторы, контроль рисков |
@@ -99,8 +90,7 @@ x402 процесс:
 ### Биржи (CEX)
 
 | Биржа | Статус | Регистрация (скидка) |
-|:---------|:------:|:------------------------|
-| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [Регистрация](https://www.binance.com/join?ref=NOFXENG) |
+| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [Регистрация](https://www.binance.com/join?) |
 | <img src="../../../web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [Регистрация](https://partner.bybit.com/b/83856) |
 | <img src="../../../web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [Регистрация](https://www.okx.com/join/1865360) |
 | <img src="../../../web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [Регистрация](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
@@ -110,7 +100,6 @@ x402 процесс:
 ### Биржи (Perp-DEX)
 
 | Биржа | Статус | Регистрация (скидка) |
-|:---------|:------:|:------------------------|
 | <img src="../../../web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [Регистрация](https://app.hyperliquid.xyz/join/AITRADING) |
 | <img src="../../../web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [Регистрация](https://www.asterdex.com/en/referral/fdfc0e) |
 | <img src="../../../web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [Регистрация](https://app.lighter.xyz/?referral=68151432) |
@@ -118,7 +107,6 @@ x402 процесс:
 ### AI Модели (Режим API ключей)
 
 | AI Модель | Статус | Получить API ключ |
-|:---------|:------:|:------------|
 | <img src="../../../web/public/icons/deepseek.svg" width="20" height="20" style="vertical-align: middle;"/> **DeepSeek** | ✅ | [Получить](https://platform.deepseek.com) |
 | <img src="../../../web/public/icons/qwen.svg" width="20" height="20" style="vertical-align: middle;"/> **Qwen** | ✅ | [Получить](https://dashscope.console.aliyun.com) |
 | <img src="../../../web/public/icons/openai.svg" width="20" height="20" style="vertical-align: middle;"/> **OpenAI (GPT)** | ✅ | [Получить](https://platform.openai.com) |
@@ -136,23 +124,6 @@ x402 процесс:
 
 ## Установка
 
-### Linux / macOS
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
-
-### Railway (Облако)
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/nofx?referralCode=nofx)
-
-### Docker
-
-```bash
-curl -O https://raw.githubusercontent.com/NoFxAiOS/nofx/main/docker-compose.prod.yml
-docker compose -f docker-compose.prod.yml up -d
-```
-
 ### Из исходников
 
 ```bash
@@ -160,22 +131,11 @@ docker compose -f docker-compose.prod.yml up -d
 # macOS: brew install ta-lib
 # Ubuntu: sudo apt-get install libta-lib0-dev
 
-git clone https://github.com/NoFxAiOS/nofx.git && cd nofx
-go build -o nofx && ./nofx          # бэкенд
+go build -o vl-bin && ./vl-bin          # бэкенд
 cd web && npm install && npm run dev  # фронтенд (новый терминал)
 ```
 
 ---
-
-## Ссылки
-
-| | |
-|:--|:--|
-| Сайт | [nofxai.com](https://nofxai.com) |
-| Панель | [nofxos.ai/dashboard](https://nofxos.ai/dashboard) |
-| API Документация | [nofxos.ai/api-docs](https://nofxos.ai/api-docs) |
-| Telegram | [nofx_dev_community](https://t.me/nofx_dev_community) |
-| Twitter | [@nofx_official](https://x.com/nofx_official) |
 
 > **Предупреждение**: AI автоторговля несёт значительные риски. Рекомендуется только для обучения/исследований или тестирования малых сумм.
 
@@ -185,4 +145,3 @@ cd web && npm install && npm run dev  # фронтенд (новый терми�
 
 [AGPL-3.0](../../../LICENSE)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NoFxAiOS/nofx&type=Date)](https://star-history.com/#NoFxAiOS/nofx&Date)

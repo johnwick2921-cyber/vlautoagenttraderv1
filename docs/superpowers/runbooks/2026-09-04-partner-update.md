@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # PARTNER UPDATE RUNBOOK — Binnie's machine, 2026-09-04
 
-**Author** session `nofx-c6` · branch `docs/partner-sync-0904` · **read-only on hoang's box**:
+**Author** session `vl-c6` · branch `docs/partner-sync-0904` · **read-only on hoang's box**:
 nothing here restarted, swapped, or changed the running bot.
 
 > ## ⛔ READ THIS FIRST — `git pull` WILL NOT WORK. YOU MUST RE-CLONE.
@@ -50,14 +51,14 @@ by construction."*
 
 | sha | date | subject |
 |---|---|---|
-| `f6ae7597` | 08-23 23:53 | sync(nofx): P0 AI-params config + clock-drift feedNowUTC + close_sync parity |
-| `dfa52364` | 08-23 23:43 | feat(ui): sync DecisionCard to latest nofx (703-line card) |
+| `f6ae7597` | 08-23 23:53 | sync(vl): P0 AI-params config + clock-drift feedNowUTC + close_sync parity |
+| `dfa52364` | 08-23 23:43 | feat(ui): sync DecisionCard to latest vl (703-line card) |
 | `e49ca145` | 08-23 23:37 | fix(mirror): split glued brace line in sendCloseAt |
-| `31a486ce` | 08-23 23:36 | feat(mirror): 4.3 limit-close wire + C# fixes from nofx |
+| `31a486ce` | 08-23 23:36 | feat(mirror): 4.3 limit-close wire + C# fixes from vl |
 | `f9a6f001` | 08-22 19:03 | feat(wave4): per-model thinking knobs + exit-fill persistence |
 
 **Owner decision needed before §3:** these 96 commits are *your* fork's work. A fresh clone of
-`nofx` **discards them**. If anything in them is not already in our dev, it must be re-applied by
+`vl` **discards them**. If anything in them is not already in our dev, it must be re-applied by
 hand afterwards. The owner rules on this; this runbook does not.
 
 **Secrets check (A25) — clean.** `.env` is untracked (`git ls-files | grep -c '^\.env$'` → 0).
@@ -77,18 +78,18 @@ curl -s http://127.0.0.1:8080/api/health
 #   write the revision down — it is your rollback target.
 
 # 1.2 NT8 AddOn build — read it from the bot's own log, not from the .cs file
-grep -h "🔌 nt8 addon" data/nofx_$(date +%F).log | tail -1
+grep -h "🔌 nt8 addon" data/vl_$(date +%F).log | tail -1
 #   ours reads: 🔌 nt8 addon: build_id=2026-09-03-f12 expected=2026-09-03-f12 match=yes
 #   if yours says match=no, §7 is mandatory.
 
 # 1.3 units — NOTE THE TWO SCOPES, they are not the same
-systemctl is-active nofx                         # SYSTEM unit  → expect: active
-#   (FragmentPath on ours: /etc/systemd/system/nofx.service)
-systemctl --user is-active nofx-backup.timer     # USER unit    → expect: active
-systemctl --user is-active nofx-clock-guard.timer # USER unit   → expect: active
+systemctl is-active vl                         # SYSTEM unit  → expect: active
+#   (FragmentPath on ours: /etc/systemd/system/vl.service)
+systemctl --user is-active vl-backup.timer     # USER unit    → expect: active
+systemctl --user is-active vl-clock-guard.timer # USER unit   → expect: active
 ```
 
-**There is no `nofx` *user* unit** — `systemctl --user is-active nofx` returns `inactive` on ours
+**There is no `vl` *user* unit** — `systemctl --user is-active vl` returns `inactive` on ours
 and that is correct. The dispatch listed all three as user units; only the two timers are.
 
 ### 1.4 Required `.env` keys — NAMES ONLY, never values
@@ -98,8 +99,8 @@ Twenty keys, from `.env.example`:
 ```
 DATABENTO_API_KEY   DATABENTO_DATASET   DATA_ENCRYPTION_KEY   DB_HOST   DB_NAME
 DB_PASSWORD         DB_PATH             DB_PORT               DB_SSLMODE DB_TYPE
-DB_USER             JWT_SECRET          NINJATRADER_DATA_DIR  NOFX_BACKEND_PORT
-NOFX_FRONTEND_PORT  NOFX_TIMEZONE       NT_TRANSPORT          RSA_PRIVATE_KEY
+DB_USER             JWT_SECRET          NINJATRADER_DATA_DIR  VL_BACKEND_PORT
+VL_FRONTEND_PORT  VL_TIMEZONE       NT_TRANSPORT          RSA_PRIVATE_KEY
 TRADING_MODE        TRANSPORT_ENCRYPTION
 ```
 
@@ -121,7 +122,7 @@ and treat any difference as new. `DATABENTO_API_KEY` is **not** required for fut
 ## 2. STOP CONDITIONS — do not proceed unless the gate says ready
 
 ```bash
-cd ~/nofx                      # MUST be the repo root: godotenv reads .env from $PWD
+cd ~/vl                      # MUST be the repo root: godotenv reads .env from $PWD
 TOKEN=$(go run ./cmd/gate-jwt <your-email> data/data.db)
 curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/cutover-gate
 ```
@@ -148,25 +149,25 @@ Five legs, all must pass (`class 33`, emitted at boot as
 
 ```bash
 # 3.1 preserve what is yours. NOTHING below touches these.
-cp ~/nofx/.env            ~/nofx-keep.env
-cp -r ~/nofx/data         ~/nofx-keep-data
-mv ~/nofx                 ~/nofx-old-$(date +%Y%m%d-%H%M)
+cp ~/vl/.env            ~/vl-keep.env
+cp -r ~/vl/data         ~/vl-keep-data
+mv ~/vl                 ~/vl-old-$(date +%Y%m%d-%H%M)
 
-# 3.2 fresh clone — the directory MUST be named nofx
-git clone https://github.com/johnwick2921-cyber/nofx.git ~/nofx
-cd ~/nofx
+# 3.2 fresh clone — the directory MUST be named vl
+git clone https://github.com/johnwick2921-cyber/nofx.git ~/vl
+cd ~/vl
 git checkout dev
 git rev-parse HEAD                      # expect b2d3826e… or later
 
 # 3.3 restore your own state
-cp ~/nofx-keep.env       ~/nofx/.env
-cp -r ~/nofx-keep-data/. ~/nofx/data/
+cp ~/vl-keep.env       ~/vl/.env
+cp -r ~/vl-keep-data/. ~/vl/data/
 
 # 3.4 build. vcs.modified MUST be false — a dirty tree stamps modified=true
 #     and BOOT INTEGRITY will refuse the binary.
 git status --porcelain                  # must be EMPTY before building
-go build -o nofx-bin.next .
-go version -m ./nofx-bin.next | grep -E 'vcs.revision|vcs.modified'
+go build -o vl-bin.next .
+go version -m ./vl-bin.next | grep -E 'vcs.revision|vcs.modified'
 #   expect: vcs.revision=<dev sha>   vcs.modified=false
 ```
 
@@ -193,22 +194,22 @@ final boot, not inside the marker commit.
 
 ```bash
 # 4.1 the ops scripts ship with the repo — nothing to install, but make them executable
-chmod +x deploy/nofx-lock.sh deploy/nofx-claim.sh deploy/nofx-clock-guard.sh deploy/nofx-db-backup.sh
+chmod +x deploy/vl-lock.sh deploy/vl-claim.sh deploy/vl-clock-guard.sh deploy/vl-db-backup.sh
 
 # 4.2 user timers (backup + clock-guard)
 bash deploy/install-db-backup.sh
 bash deploy/install-clock-guard.sh
 systemctl --user daemon-reload
-systemctl --user is-active nofx-backup.timer nofx-clock-guard.timer   # both: active
+systemctl --user is-active vl-backup.timer vl-clock-guard.timer   # both: active
 
 # 4.3 the OLD pid-style lock file — remove it if present.
 #     The lock is now an atomic mkdir directory with a heartbeat; there is no pid field.
-ls -d ~/nofx-main.lock.d 2>/dev/null      # the NEW form (a directory) — leave it alone
-rm -f ~/nofx-main.lock                    # the OLD form (a flat file) — remove
-deploy/nofx-lock.sh status                # rc 0 free · 1 held · 2 stale
+ls -d ~/vl-main.lock.d 2>/dev/null      # the NEW form (a directory) — leave it alone
+rm -f ~/vl-main.lock                    # the OLD form (a flat file) — remove
+deploy/vl-lock.sh status                # rc 0 free · 1 held · 2 stale
 ```
 
-**`nofx.service` is a SYSTEM unit** (`/etc/systemd/system/nofx.service`) and needs sudo to install
+**`vl.service` is a SYSTEM unit** (`/etc/systemd/system/vl.service`) and needs sudo to install
 or restart. If you do not have sudo, run the binary directly and skip the systemd path — the
 cutover in §6 uses `kill` + `Restart=on-failure`, which requires the system unit.
 
@@ -235,11 +236,11 @@ day-plan era rows those migrations target. **Leave both unset.** If either is al
 
 ```bash
 # backup BEFORE the boot — online, safe while the bot runs
-bash deploy/nofx-db-backup.sh
+bash deploy/vl-db-backup.sh
 #   or manually:
-mkdir -p ~/nofx-backups/manual-$(date +%F)
-sqlite3 data/data.db ".backup '$HOME/nofx-backups/manual-$(date +%F)/data.db'"
-ls -la ~/nofx-backups/manual-$(date +%F)/data.db     # must be non-zero
+mkdir -p ~/vl-backups/manual-$(date +%F)
+sqlite3 data/data.db ".backup '$HOME/vl-backups/manual-$(date +%F)/data.db'"
+ls -la ~/vl-backups/manual-$(date +%F)/data.db     # must be non-zero
 ```
 
 ---
@@ -254,18 +255,18 @@ git rev-parse --short=8 HEAD > deploy/RELEASE
 cat deploy/RELEASE
 
 # 6.2 swap with mv, NEVER cp (cp into a running binary's inode corrupts it)
-mv nofx-bin nofx-bin.prev-$(cat deploy/RELEASE)     # name the rollback by the rev it HOLDS
-mv nofx-bin.next nofx-bin
+mv vl-bin vl-bin.prev-$(cat deploy/RELEASE)     # name the rollback by the rev it HOLDS
+mv vl-bin.next vl-bin
 
 # 6.3 kill — SIGKILL, so systemd's Restart=on-failure relaunches.
 #     SIGTERM exits 0 and does NOT relaunch.
-sudo kill -9 $(systemctl show nofx --property=MainPID --value)
+sudo kill -9 $(systemctl show vl --property=MainPID --value)
 ```
 
 ### Within 90 seconds you must see all eight lines
 
 ```bash
-tail -f data/nofx_$(date +%F).log
+tail -f data/vl_$(date +%F).log
 ```
 
 | # | line | ours at boot 10 |
@@ -285,19 +286,19 @@ tail -f data/nofx_$(date +%F).log
 
 ```bash
 cat deploy/RELEASE                                    # 1
-go version -m ./nofx-bin | grep vcs.revision          # 2
+go version -m ./vl-bin | grep vcs.revision          # 2
 curl -s localhost:8080/api/health                     # 3
-grep "BOOT INTEGRITY" data/nofx_$(date +%F).log|tail -1  # 4
+grep "BOOT INTEGRITY" data/vl_$(date +%F).log|tail -1  # 4
 git rev-parse --short=8 HEAD                          # 5
 ```
 
 ### Rollback
 
 ```bash
-mv nofx-bin nofx-bin.failed
-mv nofx-bin.prev-<REV> nofx-bin      # the file is NAMED for the rev it holds — use that rev
+mv vl-bin vl-bin.failed
+mv vl-bin.prev-<REV> vl-bin      # the file is NAMED for the rev it holds — use that rev
 echo <REV> > deploy/RELEASE          # RELEASE must match the binary you just restored
-sudo kill -9 $(systemctl show nofx --property=MainPID --value)
+sudo kill -9 $(systemctl show vl --property=MainPID --value)
 ```
 
 ---
@@ -313,7 +314,7 @@ copy VLTraderTCPClient.cs  "VLTraderTCPClient.cs.bak-<old-build-id>"
 copy "..\..\NinjaTrader.Custom.dll" "NinjaTrader.Custom.dll.bak-<old-build-id>"
 
 # 7.2 copy the new AddOn in
-copy "\\wsl$\Ubuntu\home\binnie\nofx\ninjascript\VLTraderTCPClient.cs" .
+copy "\\wsl$\Ubuntu\home\binnie\vl\ninjascript\VLTraderTCPClient.cs" .
 ```
 
 Then, **in a flat window** (no position, no working order):
@@ -325,9 +326,9 @@ Then, **in a flat window** (no position, no working order):
 **Proof it took:**
 
 ```bash
-grep "🔌 nt8 addon" data/nofx_$(date +%F).log | tail -1
+grep "🔌 nt8 addon" data/vl_$(date +%F).log | tail -1
 #   build_id=2026-09-03-f12 expected=2026-09-03-f12 match=yes
-grep "order_snapshot" data/nofx_$(date +%F).log | tail -2
+grep "order_snapshot" data/vl_$(date +%F).log | tail -2
 ```
 
 **Leg 4 source flips `ledger → broker` once snapshots arrive.** Before the first snapshot ours
@@ -373,7 +374,7 @@ curl -s -o /dev/null -w '%{http_code}\n' localhost:8080/ # 200 — Studio is on 
 
 Honest list. None of these is fixed by this update.
 
-1. **The rebrand is not done.** `nofx` appears everywhere — binary name, service name, log files,
+1. **The rebrand is not done.** `vl` appears everywhere — binary name, service name, log files,
    DB path, API routes, the repo itself. Rebrand phases 1+2 are **on hold**. Expect the old name in
    every surface.
 2. **Row-38-class oddities persist** — mixed-timezone columns in sibling tables
@@ -421,5 +422,5 @@ Honest list. None of these is fixed by this update.
 | partner main | `f6ae7597` (2026-08-23) — **not an ancestor; unrelated history** |
 | pushed to partner | **NOTHING** (PARTNER REPO LAW) |
 | tags pushed | **NONE** — a tag push implies a shared history that does not exist |
-| written by | `nofx-c6`, branch `docs/partner-sync-0904` |
+| written by | `vl-c6`, branch `docs/partner-sync-0904` |
 | evidence | `docs/superpowers/reports/2026-09-04-partner-sync-data/` |

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"nofx/logger"
-	"nofx/telemetry"
+	"vl/logger"
+	"vl/telemetry"
 
 	"github.com/gin-gonic/gin"
 )

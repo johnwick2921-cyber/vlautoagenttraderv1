@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"nofx/auth"
-	"nofx/crypto"
-	"nofx/internal/updateauth"
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/manager"
-	"nofx/store"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"vl/auth"
+	"vl/crypto"
+	"vl/internal/updateauth"
+	"vl/kernel"
+	"vl/logger"
+	"vl/manager"
+	"vl/store"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -357,14 +357,12 @@ CRITICAL: Always use the "id" field for strategy_id.`,
 			// from the STORED row, never the ClampLimits'd copy the GET above serves.
 			s.route(protected, "GET", "/strategies/:id/effective", "Effective value + origin + scope per strategy setting (?session=NY|ASIA|LONDON, ?venue=)", s.handleStrategyEffective)
 			s.routeWithSchema(protected, "POST", "/strategies", "Create a new trading strategy",
-				`Body: {"name":"<string, required>","description":"<string, optional>","lang":"zh|en","config":<StrategyConfig object, OPTIONAL — if omitted the system applies complete working defaults automatically (ai500 top coins, all standard indicators, standard risk control)>}
+				`Body: {"name":"<string, required>","description":"<string, optional>","lang":"zh|en","config":<StrategyConfig object, OPTIONAL — if omitted the system applies complete working defaults automatically (static coin list, all standard indicators, standard risk control)>}
 IMPORTANT: For most use cases just POST {"name":"<name>"} — the backend fills everything in. Only include "config" when the user explicitly requests custom settings (specific coins, custom leverage, custom timeframes).
 
 StrategyConfig fields:
-  coin_source.source_type: "static"(fixed coin list) | "ai500"(AI top500 ranking) | "oi_top"(OI increasing, suited for long) | "oi_low"(OI decreasing, suited for short)
+  coin_source.source_type: "static"(fixed coin list) | "hyper_all"(all Hyperliquid perp coins) | "hyper_main"(top Hyperliquid by 24h volume)
   coin_source.static_coins: ["BTCUSDT","ETHUSDT"] — only when source_type="static"
-  coin_source.use_ai500, ai500_limit: number of coins from AI500 pool (default 10)
-  coin_source.use_oi_top/use_oi_low, oi_top_limit/oi_low_limit: OI-based coin selection
   indicators.klines.primary_timeframe: "1m"|"3m"|"5m"|"15m"|"1h"|"4h" — scalping→"5m", trend/swing→"1h"/"4h"
   indicators.klines.primary_count: number of candles (20-100)
   indicators.klines.enable_multi_timeframe: true for trend/swing analysis
@@ -382,13 +380,6 @@ StrategyConfig fields:
   indicators.rsi_periods: [7,14] default
   indicators.atr_periods: [14] default
   indicators.boll_periods: [20] default
-  indicators.nofxos_api_key: ALWAYS "cm_568c67eae410d912c54c"
-  indicators.enable_quant_data: ALWAYS true
-  indicators.enable_quant_oi: ALWAYS true
-  indicators.enable_quant_netflow: ALWAYS true
-  indicators.enable_oi_ranking: ALWAYS true, oi_ranking_duration:"1h", oi_ranking_limit:10
-  indicators.enable_netflow_ranking: ALWAYS true, netflow_ranking_duration:"1h", netflow_ranking_limit:10
-  indicators.enable_price_ranking: ALWAYS true, price_ranking_duration:"1h,4h,24h", price_ranking_limit:10
   risk_control.max_positions: max simultaneous positions (1=single coin, 3=diversified, 5=wide)
   risk_control.btc_eth_max_leverage: BTC/ETH leverage (conservative:3-5, moderate:5-10, aggressive:10-20)
   risk_control.altcoin_max_leverage: altcoin leverage (usually lower than BTC leverage)
@@ -480,7 +471,7 @@ addon_ack is the CURRENT AddOn connection's maintenance_ack only (null before on
 				s.handleMaintenanceStatus)
 			s.routeWithSchema(protected, "GET", "/installation-gate", "Installation-wide update gate: every trader, every account, one verdict (W-ONE-BUTTON M2; read-only)",
 				`Returns: {"ready":<bool>,"job_id":"<string>|n/a","legs":[{"name":"<string>","pass":<bool>,"detail":"<string>","source":"<string>"}],"traders":["<id>"],"note":"<string>"}
-Legs: hold · go_drained · in_flight_sends · queued_signals · planner_in_flight (union of every planner-class claim, any trader) · traders_nt8 · addon_ack · addon_census (no connected non-SIM connection, no position or working order on ANY account) · ledger_exposure (all trader ids) · trader_cutover:<id> (legs 1, 2, 4). A leg that cannot be evaluated fails.`,
+Legs: hold · go_drained · in_flight_sends · queued_signals · planner_in_flight (union of every planner-class claim, any trader) · traders_nt8 · addon_ack · addon_census (every connection settled; no position and no working order on ANY account — a connected non-SIM connection is allowed when every account is flat, owner ruling 2026-09-28) · ledger_exposure (all trader ids) · trader_cutover:<id> (legs 1, 2, 4). A leg that cannot be evaluated fails.`,
 				s.handleInstallationGate)
 			s.routeWithSchema(protected, "GET", "/decisions", "AI trading decisions (decision records)",
 				`Query: ?trader_id=<EXACT trader_id from GET /api/my-traders>&limit=<int, default 20>

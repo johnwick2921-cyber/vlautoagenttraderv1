@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── CLASS 45 (2026-09-02) — THE PROMPT WITHHOLDS WHAT THE VALIDATOR KNOWS ────

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func class33Trader(t *testing.T) *AutoTrader {

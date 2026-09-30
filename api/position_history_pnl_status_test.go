@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	storepkg "nofx/store"
+	storepkg "vl/store"
 )
 
 // Trading-P2 RED→GREEN (audit/0926-trading-pipeline): pnl_corrected NULL for

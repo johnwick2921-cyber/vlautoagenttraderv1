@@ -184,39 +184,6 @@
       "default": false,
       "description": "是否优先只挂 maker 单。"
     },
-    "use_ai500": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用 AI500 榜单作为候选币来源。"
-    },
-    "ai500_limit": {
-      "type": "int",
-      "min": 1,
-      "max": 10,
-      "description": "AI500 榜单选取数量，手动页面范围 1～10。"
-    },
-    "use_oi_top": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用 OI Top 作为候选币来源。"
-    },
-    "oi_top_limit": {
-      "type": "int",
-      "min": 1,
-      "max": 10,
-      "description": "OI Top 选取数量，手动页面范围 1～10。"
-    },
-    "use_oi_low": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用 OI Low 作为候选币来源。"
-    },
-    "oi_low_limit": {
-      "type": "int",
-      "min": 1,
-      "max": 10,
-      "description": "OI Low 选取数量，手动页面范围 1～10。"
-    },
     "primary_count": {
       "type": "int",
       "min": 10,
@@ -278,73 +245,6 @@
     "boll_periods": {
       "type": "int_array",
       "description": "布林带周期列表。"
-    },
-    "nofxos_api_key": {
-      "type": "credential",
-      "description": "量化数据 API Key。"
-    },
-    "enable_quant_data": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用量化数据增强。"
-    },
-    "enable_quant_oi": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用量化持仓量数据。"
-    },
-    "enable_quant_netflow": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用量化净流入数据。"
-    },
-    "enable_oi_ranking": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用 OI 排行榜。"
-    },
-    "oi_ranking_duration": {
-      "type": "enum",
-      "values": ["1h", "4h", "24h"],
-      "description": "OI 排行榜统计周期，页面选项为 1h、4h、24h。"
-    },
-    "oi_ranking_limit": {
-      "type": "int",
-      "min": 5,
-      "max": 20,
-      "description": "OI 排行榜返回数量，页面选项为 5、10、15、20。"
-    },
-    "enable_netflow_ranking": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用净流入排行榜。"
-    },
-    "netflow_ranking_duration": {
-      "type": "enum",
-      "values": ["1h", "4h", "24h"],
-      "description": "净流入排行榜统计周期，页面选项为 1h、4h、24h。"
-    },
-    "netflow_ranking_limit": {
-      "type": "int",
-      "min": 5,
-      "max": 20,
-      "description": "净流入排行榜返回数量，页面选项为 5、10、15、20。"
-    },
-    "enable_price_ranking": {
-      "type": "bool",
-      "default": false,
-      "description": "是否启用价格波动排行榜。"
-    },
-    "price_ranking_duration": {
-      "type": "enum",
-      "values": ["1h", "4h", "24h", "1h,4h,24h"],
-      "description": "价格排行榜统计周期，页面选项为 1h、4h、24h、1h,4h,24h。"
-    },
-    "price_ranking_limit": {
-      "type": "int",
-      "min": 5,
-      "max": 20,
-      "description": "价格排行榜返回数量，页面选项为 5、10、15、20。"
     }
   },
   "validation_rules": [

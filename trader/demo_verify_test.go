@@ -6,7 +6,7 @@ package trader
 // → overlay fold → ValidatePlanDoc armor — against the LIVE db, read-only, at a
 // simulated Sunday 10:00 CT (inside the NY window).
 //
-// Guarded by NOFX_DEMO_VERIFY=1. Reads only; writes nothing.
+// Guarded by VL_DEMO_VERIFY=1. Reads only; writes nothing.
 
 import (
 	"encoding/json"
@@ -15,15 +15,15 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func TestDemoVerify(t *testing.T) {
-	if os.Getenv("NOFX_DEMO_VERIFY") != "1" {
-		t.Skip("set NOFX_DEMO_VERIFY=1")
+	if os.Getenv("VL_DEMO_VERIFY") != "1" {
+		t.Skip("set VL_DEMO_VERIFY=1")
 	}
-	dbPath := os.Getenv("NOFX_DEMO_DB")
+	dbPath := os.Getenv("VL_DEMO_DB")
 	if dbPath == "" {
 		dbPath = filepath.Join("..", "data", "data.db")
 	}

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/store"
+	"vl/store"
 )
 
 var urlPattern = regexp.MustCompile(`https://[^\s"'<>]+`)
@@ -675,9 +675,6 @@ func strategyCreatePatchPaths(field string) [][]string {
 		return [][]string{
 			{"ai_config", "coin_source", "source_type"}, {"coin_source", "source_type"},
 			{"ai_config", "coin_source", "static_coins"}, {"coin_source", "static_coins"},
-			{"ai_config", "coin_source", "use_ai500"}, {"coin_source", "use_ai500"},
-			{"ai_config", "coin_source", "use_oi_top"}, {"coin_source", "use_oi_top"},
-			{"ai_config", "coin_source", "use_oi_low"}, {"coin_source", "use_oi_low"},
 		}
 	case "static_coins":
 		return [][]string{{"ai_config", "coin_source", "static_coins"}, {"coin_source", "static_coins"}}
@@ -765,7 +762,7 @@ func strategyCreateFieldInlineHint(lang, field string) string {
 	if lang != "zh" {
 		switch field {
 		case "source_type":
-			return "Coin source: ai500 / oi_top / oi_low / static"
+			return "Coin source: static / hyper_all / hyper_main"
 		case "static_coins":
 			return "Static coins: up to 10 symbols, e.g. BTCUSDT, ETHUSDT"
 		case "primary_timeframe":
@@ -805,7 +802,7 @@ func strategyCreateFieldInlineHint(lang, field string) string {
 	}
 	switch field {
 	case "source_type":
-		return "选币来源：AI500 / OI Top / OI Low / 静态币种（没有混合模式）"
+		return "选币来源：static（固定币种）/ hyper_all（Hyperliquid 全部合约）/ hyper_main（Hyperliquid 24h 成交量 Top）"
 	case "static_coins":
 		return "静态币种：最多 10 个，例如 BTCUSDT、ETHUSDT"
 	case "primary_timeframe":
@@ -859,7 +856,7 @@ func formatStrategyCreateFieldOptionsReply(lang, text, missingKind string) strin
 	if lang != "zh" {
 		switch field {
 		case "source_type":
-			return "Coin source options: ai500, oi_top, oi_low, or static. Pick one and I will continue filling the AI strategy template."
+			return "Coin source options: static, hyper_all, or hyper_main. Pick one and I will continue filling the AI strategy template."
 		case "primary_timeframe", "selected_timeframes":
 			return "Timeframe options: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w."
 		}
@@ -869,7 +866,7 @@ func formatStrategyCreateFieldOptionsReply(lang, text, missingKind string) strin
 	case "strategy_type":
 		return "策略类型只有两个：\n- AI 策略：让 AI 根据行情和策略规则判断开平仓。\n- 网格策略：在价格区间内按网格低买高卖。\n你直接回复“AI 策略”或“网格策略”就行。"
 	case "source_type":
-		return "AI 策略的选币来源有 4 个：\n- AI500：从 NOFX AI500 榜单自动选币。\n- OI Top：选持仓量靠前/更活跃的币。\n- OI Low：选持仓量较低或变化较弱的币。\n- 静态币种：你指定固定币种，比如 BTCUSDT、ETHUSDT。\n没有混合模式。你选一个，我继续填模板。"
+		return "AI 策略的选币来源：\n- static：你指定固定币种，比如 BTCUSDT、ETHUSDT。\n- hyper_all：Hyperliquid 全部永续合约自动选币。\n- hyper_main：Hyperliquid 24h 成交量 Top 选币。\n你选一个，我继续填模板。"
 	case "primary_timeframe":
 		return "主周期可选：1m、3m、5m、15m、30m、1h、2h、4h、6h、8h、12h、1d、3d、1w。高频一般偏 1m/3m/5m，稳健一点可以用 15m/1h。"
 	case "selected_timeframes":
@@ -1107,10 +1104,6 @@ func formatStrategyCreateFinalConfirmation(lang string, session skillSession, cf
 				fmt.Sprintf("- K线数量：%d", cfg.Indicators.Klines.PrimaryCount),
 				fmt.Sprintf("- 多周期：%s", defaultIfEmpty(strings.Join(cfg.Indicators.Klines.SelectedTimeframes, ","), "未设置")),
 				fmt.Sprintf("- 指标：%s", formatEnabledAIIndicatorsZH(cfg)),
-				fmt.Sprintf("- NofxOS 量化数据：%t", cfg.Indicators.EnableQuantData),
-				fmt.Sprintf("- OI 排行数据：%t（%s / %d）", cfg.Indicators.EnableOIRanking, defaultIfEmpty(cfg.Indicators.OIRankingDuration, "未设置"), cfg.Indicators.OIRankingLimit),
-				fmt.Sprintf("- 资金流排行数据：%t（%s / %d）", cfg.Indicators.EnableNetFlowRanking, defaultIfEmpty(cfg.Indicators.NetFlowRankingDuration, "未设置"), cfg.Indicators.NetFlowRankingLimit),
-				fmt.Sprintf("- 涨跌幅排行数据：%t（%s / %d）", cfg.Indicators.EnablePriceRanking, defaultIfEmpty(cfg.Indicators.PriceRankingDuration, "未设置"), cfg.Indicators.PriceRankingLimit),
 				fmt.Sprintf("- BTC/ETH 最大杠杆：%d倍", cfg.RiskControl.BTCETHMaxLeverage),
 				fmt.Sprintf("- 山寨币最大杠杆：%d倍", cfg.RiskControl.AltcoinMaxLeverage),
 				fmt.Sprintf("- 最小置信度：%d", cfg.RiskControl.MinConfidence),
@@ -1188,22 +1181,7 @@ func formatAICoinSourceSummaryZH(cfg store.StrategyConfig) []string {
 	switch sourceType {
 	case "static":
 		lines = append(lines, fmt.Sprintf("- 静态币种：%s", defaultIfEmpty(strings.Join(cfg.CoinSource.StaticCoins, ","), "未设置")))
-	case "ai500":
-		lines = append(lines, fmt.Sprintf("- AI500 数量：%d", cfg.CoinSource.AI500Limit))
-	case "oi_top":
-		lines = append(lines, fmt.Sprintf("- OI Top 数量：%d", cfg.CoinSource.OITopLimit))
-	case "oi_low":
-		lines = append(lines, fmt.Sprintf("- OI Low 数量：%d", cfg.CoinSource.OILowLimit))
 	default:
-		if cfg.CoinSource.UseAI500 {
-			lines = append(lines, fmt.Sprintf("- AI500 数量：%d", cfg.CoinSource.AI500Limit))
-		}
-		if cfg.CoinSource.UseOITop {
-			lines = append(lines, fmt.Sprintf("- OI Top 数量：%d", cfg.CoinSource.OITopLimit))
-		}
-		if cfg.CoinSource.UseOILow {
-			lines = append(lines, fmt.Sprintf("- OI Low 数量：%d", cfg.CoinSource.OILowLimit))
-		}
 	}
 	if len(cfg.CoinSource.ExcludedCoins) > 0 {
 		lines = append(lines, fmt.Sprintf("- 排除币种：%s", strings.Join(cfg.CoinSource.ExcludedCoins, ",")))
@@ -1527,15 +1505,6 @@ func formatStrategyDetailResponse(lang string, strategy *store.Strategy, cfg sto
 	if strings.TrimSpace(cfg.CoinSource.SourceType) != "" {
 		sourceBits = append(sourceBits, cfg.CoinSource.SourceType)
 	}
-	if cfg.CoinSource.UseAI500 {
-		sourceBits = append(sourceBits, fmt.Sprintf("AI500=%d", cfg.CoinSource.AI500Limit))
-	}
-	if cfg.CoinSource.UseOITop {
-		sourceBits = append(sourceBits, fmt.Sprintf("OITop=%d", cfg.CoinSource.OITopLimit))
-	}
-	if cfg.CoinSource.UseOILow {
-		sourceBits = append(sourceBits, fmt.Sprintf("OILow=%d", cfg.CoinSource.OILowLimit))
-	}
 	if len(cfg.CoinSource.StaticCoins) > 0 {
 		sourceBits = append(sourceBits, "static="+strings.Join(cfg.CoinSource.StaticCoins, ","))
 	}
@@ -1649,15 +1618,6 @@ func formatStrategyDetailResponse(lang string, strategy *store.Strategy, cfg sto
 		if len(indicatorBits) > 0 {
 			lines = append(lines, "- 已启用指标："+strings.Join(indicatorBits, "、"))
 		}
-		if strings.TrimSpace(cfg.Indicators.NofxOSAPIKey) != "" || cfg.Indicators.EnableQuantData || cfg.Indicators.EnableOIRanking || cfg.Indicators.EnableNetFlowRanking || cfg.Indicators.EnablePriceRanking {
-			lines = append(lines, fmt.Sprintf("- NofxOS 数据：API Key=%t，量化数据=%t，OI 排行=%t，净流入排行=%t，价格排行=%t",
-				strings.TrimSpace(cfg.Indicators.NofxOSAPIKey) != "",
-				cfg.Indicators.EnableQuantData,
-				cfg.Indicators.EnableOIRanking,
-				cfg.Indicators.EnableNetFlowRanking,
-				cfg.Indicators.EnablePriceRanking,
-			))
-		}
 		if len(promptBits) > 0 {
 			lines = append(lines, "- Prompt 模块："+strings.Join(promptBits, "、"))
 		}
@@ -1705,15 +1665,6 @@ func formatStrategyDetailResponse(lang string, strategy *store.Strategy, cfg sto
 		cfg.RiskControl.MinRiskRewardRatio, cfg.RiskControl.MaxMarginUsage, cfg.RiskControl.MinPositionSize))
 	if len(indicatorBits) > 0 {
 		lines = append(lines, "- Enabled indicators: "+strings.Join(indicatorBits, ", "))
-	}
-	if strings.TrimSpace(cfg.Indicators.NofxOSAPIKey) != "" || cfg.Indicators.EnableQuantData || cfg.Indicators.EnableOIRanking || cfg.Indicators.EnableNetFlowRanking || cfg.Indicators.EnablePriceRanking {
-		lines = append(lines, fmt.Sprintf("- NofxOS data: API key=%t, quant data=%t, OI ranking=%t, netflow ranking=%t, price ranking=%t",
-			strings.TrimSpace(cfg.Indicators.NofxOSAPIKey) != "",
-			cfg.Indicators.EnableQuantData,
-			cfg.Indicators.EnableOIRanking,
-			cfg.Indicators.EnableNetFlowRanking,
-			cfg.Indicators.EnablePriceRanking,
-		))
 	}
 	if len(promptBits) > 0 {
 		lines = append(lines, "- Prompt modules: "+strings.Join(promptBits, ", "))

@@ -3,8 +3,8 @@ package coinank_api
 import (
 	"context"
 	"encoding/json"
-	"nofx/provider/coinank"
-	"nofx/provider/coinank/coinank_enum"
+	"vl/provider/coinank"
+	"vl/provider/coinank/coinank_enum"
 )
 
 // BaseCoinSymbols get base coin from coinank free open api , all params is optional

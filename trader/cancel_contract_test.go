@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // E7 / D5 — NO CALL SITE MAY TREAT THE CANCEL RETURN AS CONFIRMATION.

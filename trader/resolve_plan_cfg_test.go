@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // Config-truth (settings fix) — the planner assembler HONORS the day_plan config:

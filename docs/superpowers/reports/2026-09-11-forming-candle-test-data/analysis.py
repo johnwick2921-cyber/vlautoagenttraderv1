@@ -6,7 +6,7 @@ run read-only against the live DB:
 
     python3 analysis.py
 
-Inputs : file:/home/hoang/nofx/data/data.db?mode=ro (SQLite, read-only)
+Inputs : file:/home/hoang/vl/data/data.db?mode=ro (SQLite, read-only)
 Outputs: stdout (all figures) + pairs_primary.csv (the A21 sample-id artifact:
           every joined pair with its episode id, outcome id, fields, verdict).
 
@@ -27,7 +27,7 @@ import numpy as np
 from scipy import stats
 
 CT = zoneinfo.ZoneInfo("America/Chicago")
-DB = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+DB = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 DB.row_factory = sqlite3.Row
 Z = 1.959963984540054
 RNG = np.random.default_rng(7)

@@ -557,177 +557,177 @@
         "label": "7 boots/feed/skips before 15 CT, exact log lines",
         "rows": [
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 42,
             "text": "09-03 10:28:29 [INFO] cleanclone/main.go:243 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 528edd78e3b9 \u00b7 built 2026-09-03T15:27:07Z \u00b7 expected 528edd78e3b9 \u00b7 goldens PASS"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 3658,
             "text": "09-03 11:10:33 [INFO] cc2/main.go:243 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev f478ed880dc9 \u00b7 built 2026-09-03T16:07:06Z \u00b7 expected f478ed880dc9 \u00b7 goldens PASS"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5465,
             "text": "09-03 14:18:26 [INFO] cc2/main.go:243 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev f478ed880dc9 \u00b7 built 2026-09-03T16:07:06Z \u00b7 expected f478ed880dc9 \u00b7 goldens PASS"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5638,
             "text": "09-03 14:28:39 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 10m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5650,
             "text": "09-03 14:29:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 11m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5651,
             "text": "09-03 14:30:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 12m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5667,
             "text": "09-03 14:31:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 13m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5668,
             "text": "09-03 14:32:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 14m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5684,
             "text": "09-03 14:33:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 15m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5685,
             "text": "09-03 14:34:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 16m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5697,
             "text": "09-03 14:35:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 17m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5698,
             "text": "09-03 14:36:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 18m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5710,
             "text": "09-03 14:37:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 19m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5711,
             "text": "09-03 14:38:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 20m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5723,
             "text": "09-03 14:39:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 21m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5724,
             "text": "09-03 14:40:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 22m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5740,
             "text": "09-03 14:41:39 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 23m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5741,
             "text": "09-03 14:42:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 24m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5753,
             "text": "09-03 14:43:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 25m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5754,
             "text": "09-03 14:44:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 26m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5766,
             "text": "09-03 14:45:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 27m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5767,
             "text": "09-03 14:46:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 28m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5781,
             "text": "09-03 14:47:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 29m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5786,
             "text": "09-03 14:48:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 30m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5798,
             "text": "09-03 14:49:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 31m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5799,
             "text": "09-03 14:50:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 32m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5811,
             "text": "09-03 14:51:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 33m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5816,
             "text": "09-03 14:52:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 34m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5828,
             "text": "09-03 14:53:27 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 35m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5829,
             "text": "09-03 14:54:39 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 36m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5841,
             "text": "09-03 14:55:28 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 37m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5846,
             "text": "09-03 14:56:28 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 38m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5858,
             "text": "09-03 14:57:28 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 39m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5859,
             "text": "09-03 14:58:28 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 40m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-03.log",
             "line": 5920,
             "text": "09-03 14:59:03 [INFO] cc3/main.go:243 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 8d47cc2108f8 \u00b7 built 2026-09-03T19:55:23Z \u00b7 expected 8d47cc2108f8 \u00b7 goldens PASS"
           }
@@ -1865,1152 +1865,1152 @@
         "label": "7 boots/feed/skips before 15 CT, exact log lines",
         "rows": [
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 40,
-            "text": "09-04 07:38:40 [INFO] nofx/main.go:291 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 4f47ed2c2543 \u00b7 built 2026-09-04T12:35:20Z \u00b7 expected 4f47ed2c2543 \u00b7 goldens PASS"
+            "text": "09-04 07:38:40 [INFO] vl/main.go:291 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 4f47ed2c2543 \u00b7 built 2026-09-04T12:35:20Z \u00b7 expected 4f47ed2c2543 \u00b7 goldens PASS"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 3812,
-            "text": "09-04 08:30:11 [INFO] nofx/main.go:291 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 70af663dcb6f \u00b7 built 2026-09-04T13:16:34Z \u00b7 expected 70af663d \u00b7 goldens PASS"
+            "text": "09-04 08:30:11 [INFO] vl/main.go:291 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 70af663dcb6f \u00b7 built 2026-09-04T13:16:34Z \u00b7 expected 70af663d \u00b7 goldens PASS"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 13280,
-            "text": "09-04 10:53:10 [INFO] nofx/main.go:291 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev ebe07d5f366a \u00b7 built 2026-09-04T15:49:56Z \u00b7 expected ebe07d5f \u00b7 goldens PASS"
+            "text": "09-04 10:53:10 [INFO] vl/main.go:291 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev ebe07d5f366a \u00b7 built 2026-09-04T15:49:56Z \u00b7 expected ebe07d5f \u00b7 goldens PASS"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17326,
             "text": "09-04 12:23:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:23 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17328,
             "text": "09-04 12:25:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:25 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17333,
             "text": "09-04 12:27:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:27 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17338,
             "text": "09-04 12:29:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:29 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17339,
             "text": "09-04 12:30:01 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 10m1s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17389,
             "text": "09-04 12:31:00 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 11m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17396,
             "text": "09-04 12:31:00 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:31 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17467,
             "text": "09-04 12:31:59 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 12m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17538,
             "text": "09-04 12:32:59 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 12m59s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17542,
             "text": "09-04 12:32:59 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:32 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17614,
             "text": "09-04 12:33:58 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 13m59s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17684,
             "text": "09-04 12:34:58 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 14m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17688,
             "text": "09-04 12:34:58 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:34 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17761,
             "text": "09-04 12:35:58 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 15m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17829,
             "text": "09-04 12:36:58 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 16m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17833,
             "text": "09-04 12:36:58 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:36 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17905,
             "text": "09-04 12:37:58 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 17m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17975,
             "text": "09-04 12:38:58 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 18m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 17979,
             "text": "09-04 12:38:58 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:38 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18060,
             "text": "09-04 12:39:58 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 19m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18140,
             "text": "09-04 12:40:57 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 20m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18144,
             "text": "09-04 12:40:57 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:40 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18219,
             "text": "09-04 12:41:57 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 21m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18292,
             "text": "09-04 12:42:57 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 22m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18296,
             "text": "09-04 12:42:57 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:42 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18363,
             "text": "09-04 12:43:57 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 23m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18436,
             "text": "09-04 12:44:57 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 24m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18440,
             "text": "09-04 12:44:57 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:44 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18509,
             "text": "09-04 12:45:57 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 25m58s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18591,
             "text": "09-04 12:46:57 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 26m57s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18595,
             "text": "09-04 12:46:57 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:46 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18674,
             "text": "09-04 12:47:57 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 27m57s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18746,
             "text": "09-04 12:48:56 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 28m57s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18750,
             "text": "09-04 12:48:56 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:48 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18820,
             "text": "09-04 12:49:56 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 29m56s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18892,
             "text": "09-04 12:50:55 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 30m55s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18896,
             "text": "09-04 12:50:55 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:50 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18967,
             "text": "09-04 12:51:55 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 31m55s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18968,
             "text": "09-04 12:52:55 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 32m55s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18972,
             "text": "09-04 12:52:55 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:52 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18973,
             "text": "09-04 12:53:54 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 33m55s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18974,
             "text": "09-04 12:54:54 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 34m55s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18978,
             "text": "09-04 12:54:54 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:54 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18979,
             "text": "09-04 12:55:54 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 35m54s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18980,
             "text": "09-04 12:56:54 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 36m54s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18984,
             "text": "09-04 12:56:54 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:56 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18985,
             "text": "09-04 12:57:54 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 37m54s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18986,
             "text": "09-04 12:58:54 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 38m54s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18990,
             "text": "09-04 12:58:54 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 12:58 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18991,
             "text": "09-04 12:59:54 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 39m55s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18992,
             "text": "09-04 13:00:53 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 40m54s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18996,
             "text": "09-04 13:00:53 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:00 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18997,
             "text": "09-04 13:01:53 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 41m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 18998,
             "text": "09-04 13:02:53 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 42m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19002,
             "text": "09-04 13:02:53 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:02 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19003,
             "text": "09-04 13:03:53 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 43m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19004,
             "text": "09-04 13:04:53 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 44m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19008,
             "text": "09-04 13:04:53 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:04 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19009,
             "text": "09-04 13:05:53 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 45m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19010,
             "text": "09-04 13:06:53 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 46m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19014,
             "text": "09-04 13:06:53 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:06 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19015,
             "text": "09-04 13:07:52 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 47m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19016,
             "text": "09-04 13:08:52 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 48m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19020,
             "text": "09-04 13:08:52 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:08 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19021,
             "text": "09-04 13:09:52 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 49m53s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19022,
             "text": "09-04 13:10:52 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 50m52s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19026,
             "text": "09-04 13:10:52 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:10 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19027,
             "text": "09-04 13:11:52 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 51m52s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19028,
             "text": "09-04 13:12:52 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 52m52s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19032,
             "text": "09-04 13:12:52 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:12 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19033,
             "text": "09-04 13:13:52 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 53m52s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19034,
             "text": "09-04 13:14:52 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 54m52s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19038,
             "text": "09-04 13:14:52 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:14 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19039,
             "text": "09-04 13:15:51 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 55m52s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19040,
             "text": "09-04 13:16:51 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 56m52s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19044,
             "text": "09-04 13:16:51 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:16 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19045,
             "text": "09-04 13:17:51 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 57m52s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19304,
             "text": "09-04 13:19:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 59m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19375,
             "text": "09-04 13:20:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h0m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19379,
             "text": "09-04 13:20:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:20 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19447,
             "text": "09-04 13:21:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h1m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19519,
             "text": "09-04 13:22:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h2m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19523,
             "text": "09-04 13:22:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:22 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19595,
             "text": "09-04 13:23:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h3m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19666,
             "text": "09-04 13:24:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h4m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19670,
             "text": "09-04 13:24:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:24 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19789,
-            "text": "09-04 13:25:47 [INFO] nofx/main.go:291 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 36648655cfe0 \u00b7 built 2026-09-04T18:22:30Z \u00b7 expected 36648655 \u00b7 goldens PASS"
+            "text": "09-04 13:25:47 [INFO] vl/main.go:291 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 36648655cfe0 \u00b7 built 2026-09-04T18:22:30Z \u00b7 expected 36648655 \u00b7 goldens PASS"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 19984,
             "text": "09-04 13:26:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h6m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20030,
             "text": "09-04 13:27:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h7m48s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20138,
             "text": "09-04 13:28:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h8m48s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20184,
             "text": "09-04 13:29:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h9m48s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20188,
             "text": "09-04 13:29:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:29 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20235,
             "text": "09-04 13:30:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h10m48s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20282,
             "text": "09-04 13:31:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h11m48s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20286,
             "text": "09-04 13:31:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:31 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20332,
             "text": "09-04 13:32:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h12m48s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20379,
             "text": "09-04 13:33:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h13m48s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20383,
             "text": "09-04 13:33:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:33 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20429,
             "text": "09-04 13:34:47 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h14m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20472,
             "text": "09-04 13:35:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h15m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20476,
             "text": "09-04 13:35:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:35 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20535,
             "text": "09-04 13:36:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h16m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20590,
             "text": "09-04 13:37:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h17m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20594,
             "text": "09-04 13:37:47 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:37 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20638,
             "text": "09-04 13:38:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h18m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20685,
             "text": "09-04 13:39:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h19m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20689,
             "text": "09-04 13:39:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:39 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20735,
             "text": "09-04 13:40:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h20m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20736,
             "text": "09-04 13:41:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h21m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20740,
             "text": "09-04 13:41:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:41 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20741,
             "text": "09-04 13:42:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h22m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20742,
             "text": "09-04 13:43:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h23m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20746,
             "text": "09-04 13:43:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:43 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20747,
             "text": "09-04 13:44:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h24m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20748,
             "text": "09-04 13:45:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h25m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20752,
             "text": "09-04 13:45:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:45 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20753,
             "text": "09-04 13:46:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h26m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20754,
             "text": "09-04 13:47:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h27m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20758,
             "text": "09-04 13:47:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:47 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20759,
             "text": "09-04 13:48:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h28m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20760,
             "text": "09-04 13:49:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h29m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20764,
             "text": "09-04 13:49:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:49 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20765,
             "text": "09-04 13:50:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h30m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20766,
             "text": "09-04 13:51:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h31m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20770,
             "text": "09-04 13:51:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:51 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20771,
             "text": "09-04 13:52:46 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h32m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20772,
             "text": "09-04 13:53:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h33m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20776,
             "text": "09-04 13:53:45 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:53 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20777,
             "text": "09-04 13:54:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h34m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20778,
             "text": "09-04 13:55:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h35m46s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20782,
             "text": "09-04 13:55:45 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:55 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20783,
             "text": "09-04 13:56:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h36m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20784,
             "text": "09-04 13:57:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h37m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20788,
             "text": "09-04 13:57:45 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:57 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20789,
             "text": "09-04 13:58:45 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h38m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20790,
             "text": "09-04 13:59:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h39m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20794,
             "text": "09-04 13:59:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:59 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20795,
             "text": "09-04 14:00:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h40m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20796,
             "text": "09-04 14:01:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h41m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20800,
             "text": "09-04 14:01:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:01 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20801,
             "text": "09-04 14:02:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h42m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20802,
             "text": "09-04 14:03:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h43m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20806,
             "text": "09-04 14:03:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:03 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20807,
             "text": "09-04 14:04:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h44m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20808,
             "text": "09-04 14:05:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h45m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20812,
             "text": "09-04 14:05:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:05 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20813,
             "text": "09-04 14:06:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h46m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20814,
             "text": "09-04 14:07:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h47m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20818,
             "text": "09-04 14:07:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:07 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20819,
             "text": "09-04 14:08:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h48m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20820,
             "text": "09-04 14:09:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h49m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20824,
             "text": "09-04 14:09:43 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:09 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20825,
             "text": "09-04 14:10:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h50m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20826,
             "text": "09-04 14:11:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h51m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20830,
             "text": "09-04 14:11:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:11 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20831,
             "text": "09-04 14:12:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h52m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20832,
             "text": "09-04 14:13:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h53m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20836,
             "text": "09-04 14:13:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:13 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20837,
             "text": "09-04 14:14:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h54m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20838,
             "text": "09-04 14:15:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h55m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20842,
             "text": "09-04 14:15:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:15 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20843,
             "text": "09-04 14:16:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h56m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20844,
             "text": "09-04 14:17:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h57m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20848,
             "text": "09-04 14:17:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:17 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20849,
             "text": "09-04 14:18:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h58m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20850,
             "text": "09-04 14:19:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 1h59m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20854,
             "text": "09-04 14:19:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:19 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20855,
             "text": "09-04 14:20:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h0m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20856,
             "text": "09-04 14:21:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h1m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20860,
             "text": "09-04 14:21:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:21 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20861,
             "text": "09-04 14:22:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h2m45s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20862,
             "text": "09-04 14:23:44 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h3m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20866,
             "text": "09-04 14:23:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:23 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20867,
             "text": "09-04 14:24:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h4m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20868,
             "text": "09-04 14:25:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h5m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20872,
             "text": "09-04 14:25:43 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:25 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20873,
             "text": "09-04 14:26:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h6m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20874,
             "text": "09-04 14:27:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h7m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20878,
             "text": "09-04 14:27:43 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:27 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20879,
             "text": "09-04 14:28:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h8m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20880,
             "text": "09-04 14:29:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h9m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20884,
             "text": "09-04 14:29:43 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:29 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20885,
             "text": "09-04 14:30:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h10m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20886,
             "text": "09-04 14:31:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h11m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20890,
             "text": "09-04 14:31:43 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:31 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20891,
             "text": "09-04 14:32:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h12m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20892,
             "text": "09-04 14:33:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h13m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20896,
             "text": "09-04 14:33:43 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:33 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20897,
             "text": "09-04 14:34:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h14m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20898,
             "text": "09-04 14:35:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h15m44s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20902,
             "text": "09-04 14:35:43 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:35 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20903,
             "text": "09-04 14:36:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h16m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20904,
             "text": "09-04 14:37:43 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h17m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20908,
             "text": "09-04 14:37:43 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:37 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20909,
             "text": "09-04 14:38:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h18m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20910,
             "text": "09-04 14:39:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h19m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20914,
             "text": "09-04 14:39:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:39 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20915,
             "text": "09-04 14:40:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h20m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20916,
             "text": "09-04 14:41:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h21m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20920,
             "text": "09-04 14:41:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:41 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20921,
             "text": "09-04 14:42:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h22m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20922,
             "text": "09-04 14:43:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h23m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20926,
             "text": "09-04 14:43:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:43 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20927,
             "text": "09-04 14:44:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h24m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20928,
             "text": "09-04 14:45:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h25m42s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20929,
             "text": "09-04 14:45:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:45 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20930,
             "text": "09-04 14:46:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h26m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20931,
             "text": "09-04 14:47:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h27m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20932,
             "text": "09-04 14:47:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:47 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20933,
             "text": "09-04 14:48:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h28m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20934,
             "text": "09-04 14:49:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h29m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20935,
             "text": "09-04 14:49:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:49 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20936,
             "text": "09-04 14:50:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h30m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20937,
             "text": "09-04 14:51:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h31m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20938,
             "text": "09-04 14:51:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:51 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20939,
             "text": "09-04 14:52:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h32m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20940,
             "text": "09-04 14:53:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h33m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20941,
             "text": "09-04 14:53:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:53 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20942,
             "text": "09-04 14:54:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h34m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20943,
             "text": "09-04 14:55:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h35m43s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20944,
             "text": "09-04 14:55:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:55 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20945,
             "text": "09-04 14:56:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h36m42s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20946,
             "text": "09-04 14:57:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h37m42s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20947,
             "text": "09-04 14:57:42 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:57 CT)"
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20948,
             "text": "09-04 14:58:42 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h38m42s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20949,
             "text": "09-04 14:59:41 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udea8 FEED DOWN: no NT8 bar for 2h39m42s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side \u2014 the AddOn reconnects on its own."
           },
           {
-            "path": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+            "path": "/home/hoang/vl/data/vl_2026-09-04.log",
             "line": 20950,
             "text": "09-04 14:59:41 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \u23ed cycle_skip=no_new_data \u2014 newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:59 CT)"
           }

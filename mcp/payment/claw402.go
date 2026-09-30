@@ -8,10 +8,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"nofx/mcp"
-	"nofx/mcp/provider"
-	"nofx/store"
-	"nofx/wallet"
+	"vl/mcp"
+	"vl/mcp/provider"
+	"vl/store"
+	"vl/wallet"
 )
 
 // Per-call cost buffers for preflight. Reasoner models emit long chain-of-thought

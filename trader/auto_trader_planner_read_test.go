@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/store"
+	"vl/telemetry"
 )
 
 const validTraderPlanJSON = `{

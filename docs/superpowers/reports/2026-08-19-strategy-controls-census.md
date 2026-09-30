@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # STRATEGY PAGE FULL CONTROL CENSUS — 2026-08-19 (read-only)
 
 **Branch:** `docs/strategy-controls-census` · **Artifact:** this report only, zero code changes.
@@ -40,7 +41,7 @@ Verdicts: **LIVE** (consumed, behavior stated) · **DEAD** (saved, zero consumer
 | Section | Controls | Verdict summary |
 |---|---|---|
 | Page-level (StrategyStudioPage.tsx) | 21 (14 action-only) | Name/description → `strategies` columns; strategy-type cards → `strategy_type` (**LIVE** — grid_trading routes every tick to the grid cycle, auto_trader.go:803-815; fully wired but **zero strategies use it today**); Style dropdown → `prompt_variant` (**LIVE**, prompt router engine_prompt.go:27, empty → ninjatrader→futures fallback); Extra Prompt → `ai_config.custom_prompt` (**LIVE both venues**, appended verbatim engine_prompt.go:169 / futures:236). |
-| IndicatorEditor | 35 | Enable flags **LIVE** (each adds/removes its prompt block); periods **LIVE** (drive the actual math, engine_analysis.go:642-647); `enable_funding_rate` **PARTIAL** (force-suppressed on futures, engine_prompt.go:265,652); `enable_svp` **PARTIAL** (futures-prompt-only; renders at engine_prompt_futures.go:169 AND :247); NofxOS block crypto-only (key `cm_568c…` returns HTTP 402 — known-dead service); Raw-OHLCV checkbox rendered permanently `disabled={true}` (:933) with the value force-set in code. |
+| IndicatorEditor | 35 | Enable flags **LIVE** (each adds/removes its prompt block); periods **LIVE** (drive the actual math, engine_analysis.go:642-647); `enable_funding_rate` **PARTIAL** (force-suppressed on futures, engine_prompt.go:265,652); `enable_svp` **PARTIAL** (futures-prompt-only; renders at engine_prompt_futures.go:169 AND :247); VLOS block crypto-only (key `cm_568c…` returns HTTP 402 — known-dead service); Raw-OHLCV checkbox rendered permanently `disabled={true}` (:933) with the value force-set in code. |
 | CoinSourceEditor | 13 | **LIVE** — the SourceType switch (kernel/engine.go:366-430) reads every field; futures locked to Static List (UI) matching the futures data path. |
 | PromptSectionsEditor | 12 | **LIVE all four sections, both venues** (crypto engine_prompt.go:51-134; futures engine_prompt_futures.go:96-200). |
 | PublishSettingsEditor | 2 | `strategies.is_public`/`config_visible` columns — UI/market only, no trading consumer. |
@@ -122,14 +123,14 @@ Post-P10 confirmed state: `scan_interval_minutes` LIVE (the real decision cadenc
 | 11 | `NINJATRADER_DATA_DIR` env dead on the live path, and auto_trader.go:584's error text still tells the owner to set it | misleading error | Reword the error to point at the exchange-row `nt_data_dir` | S |
 | 12 | `RISK_MAX_NOTIONAL_USD` + `RISK_MAX_CONTRACTS_PER_ORDER` + `DATABENTO_DATASET` env: loaded, enforced nowhere | DEAD env | Delete from config load, or comment them as reserved | S |
 
-Deliberate non-findings (checked, working as designed): Max-Margin-Usage's "AI-guided, not enforced" label is honest; funding-rate/OI/NofxOS crypto-only hiding matches the Go suppression; B7's futures-only FE visibility matches its NT8-only arming; the Raw-OHLCV checkbox is intentionally forced-on.
+Deliberate non-findings (checked, working as designed): Max-Margin-Usage's "AI-guided, not enforced" label is honest; funding-rate/OI/VLOS crypto-only hiding matches the Go suppression; B7's futures-only FE visibility matches its NT8-only arming; the Raw-OHLCV checkbox is intentionally forced-on.
 
 ## PART 4b — Env/code-only knobs (no Strategy-page control; owner may want surfaced)
 
-**Trading-behavior (19):** `TRADING_MODE` (crypto|futures master switch) · `NT_TRANSPORT` (csv|tcp) · `POSITION_RECONCILE` (default ON — desync guard, PR #50) · `INTRADE_FEED_ALERT_S`=120 · `STALE_BAR_GRACE_S`=15 · `ROLL_BLOCK_DAYS_BEFORE_EXPIRY`=3 · `CLOCK_WARN_MS`=30000 · `NOFX_EXPECTED_REVISION` (boot-integrity entry refusal) · `NOFX_CALENDAR_STATIC` / `NOFX_HALF_DAYS` (calendar files) · `AI_BALANCE_WARN` (off) · `CLAW402_WALLET_KEY`/`CLAW402_URL` · `SANDBOX_MODE`/`SANDBOX_LLM` (demo shadow) · `RISK_MAX_DAILY_LOSS_USD`=500 (silent fallback, #5) · `RISK_MAX_CONCURRENT_TRADES`=2 (fallback when `max_positions` unset — but note the 0→1 clamp usually wins first) · `NT_TCP_LISTEN_ADDR` · `ALLOW_ACCOUNT_RESET` (destructive, off).
+**Trading-behavior (19):** `TRADING_MODE` (crypto|futures master switch) · `NT_TRANSPORT` (csv|tcp) · `POSITION_RECONCILE` (default ON — desync guard, PR #50) · `INTRADE_FEED_ALERT_S`=120 · `STALE_BAR_GRACE_S`=15 · `ROLL_BLOCK_DAYS_BEFORE_EXPIRY`=3 · `CLOCK_WARN_MS`=30000 · `VL_EXPECTED_REVISION` (boot-integrity entry refusal) · `VL_CALENDAR_STATIC` / `VL_HALF_DAYS` (calendar files) · `AI_BALANCE_WARN` (off) · `CLAW402_WALLET_KEY`/`CLAW402_URL` · `SANDBOX_MODE`/`SANDBOX_LLM` (demo shadow) · `RISK_MAX_DAILY_LOSS_USD`=500 (silent fallback, #5) · `RISK_MAX_CONCURRENT_TRADES`=2 (fallback when `max_positions` unset — but note the 0→1 clamp usually wins first) · `NT_TCP_LISTEN_ADDR` · `ALLOW_ACCOUNT_RESET` (destructive, off).
 **Shadow-config over UI controls (4):** `NT_ALLOWED_ACCOUNTS` (overrides the account picker + persisted binding at order time) · `NT_EXTRA_SYMBOLS` (appends after the authoritative symbol list) · `NT_RUNTIME_SYMBOLS` (unset → runtime symbol API refuses) · `SANDBOX_MODE`.
 **Dead reads (4):** `RISK_MAX_NOTIONAL_USD` · `RISK_MAX_CONTRACTS_PER_ORDER` · `NINJATRADER_DATA_DIR` · `DATABENTO_DATASET`.
-**Infra-ish (flagged, not sized):** `LOG_DB_RETENTION_DAYS`, `NOFX_CLOCK_STATE`.
+**Infra-ish (flagged, not sized):** `LOG_DB_RETENTION_DAYS`, `VL_CLOCK_STATE`.
 
 Surfacing candidates if the owner wants Studio control: `ROLL_BLOCK_DAYS_BEFORE_EXPIRY`, `INTRADE_FEED_ALERT_S`, `STALE_BAR_GRACE_S`, `AI_BALANCE_WARN` — each already has a clean single read site.
 

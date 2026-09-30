@@ -1,8 +1,8 @@
 package telegram
 
 import (
-	"nofx/auth"
-	"nofx/store"
+	"vl/auth"
+	"vl/store"
 )
 
 // botTokenStale reports whether the API would refuse the bot's current JWT,

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W0 (b) — the entry latch, driven through the REAL entry

@@ -192,8 +192,8 @@ func typeCheckTelegram() (*typedTelegram, error) {
 			self = f
 		}
 	}
-	if self == nil || self[0] != "nofx/telegram" {
-		return nil, fmt.Errorf("go list did not name nofx/telegram for \".\" (got %q)", self)
+	if self == nil || self[0] != "vl/telegram" {
+		return nil, fmt.Errorf("go list did not name vl/telegram for \".\" (got %q)", self)
 	}
 	if self[4] != "" {
 		return nil, fmt.Errorf("cgo files %s are not type-checked by this pin — extend it", self[4])
@@ -219,7 +219,7 @@ func typeCheckTelegram() (*typedTelegram, error) {
 	if len(files) == 0 {
 		return nil, errors.New("no production file listed — the pin would walk nothing")
 	}
-	return checkTyped(fset, files, "nofx/telegram", exportImporter(fset, exports))
+	return checkTyped(fset, files, "vl/telegram", exportImporter(fset, exports))
 }
 
 // exportImporter imports from the go command's export data.
@@ -878,7 +878,7 @@ func TestRunBotGoroutinesReadNoBotIdentityField(t *testing.T) {
 	aiGoroutines := 0
 	countRun := func(m ast.Node) bool {
 		if se, ok := m.(*ast.SelectorExpr); ok {
-			if fn, ok := tp.info.Uses[se.Sel].(*types.Func); ok && fn.Name() == "Run" && fn.Pkg() != nil && fn.Pkg().Path() == "nofx/telegram/agent" {
+			if fn, ok := tp.info.Uses[se.Sel].(*types.Func); ok && fn.Name() == "Run" && fn.Pkg() != nil && fn.Pkg().Path() == "vl/telegram/agent" {
 				aiGoroutines++
 			}
 		}
@@ -900,7 +900,7 @@ func TestRunBotGoroutinesReadNoBotIdentityField(t *testing.T) {
 			case *ast.SelectorExpr:
 				if fn, ok := tp.info.Uses[fun.Sel].(*types.Func); ok &&
 					(fn.Name() == "GoNet" || fn.Name() == "GoNamed") &&
-					fn.Pkg() != nil && fn.Pkg().Path() == "nofx/safe" {
+					fn.Pkg() != nil && fn.Pkg().Path() == "vl/safe" {
 					for _, a := range call.Args {
 						if fl, ok := ast.Unparen(a).(*ast.FuncLit); ok {
 							ast.Inspect(fl.Body, countRun)
@@ -949,7 +949,7 @@ func TestBotIdentityClosuresReadNoReceiverField(t *testing.T) {
 		ast.Inspect(body, func(n ast.Node) bool {
 			if call, ok := n.(*ast.CallExpr); ok {
 				if se, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
-					if fn, ok := tp.info.Uses[se.Sel].(*types.Func); ok && fn.Name() == "NewManager" && fn.Pkg() != nil && fn.Pkg().Path() == "nofx/telegram/agent" {
+					if fn, ok := tp.info.Uses[se.Sel].(*types.Func); ok && fn.Name() == "NewManager" && fn.Pkg() != nil && fn.Pkg().Path() == "vl/telegram/agent" {
 						handoffs++
 					}
 				}
@@ -1067,7 +1067,7 @@ func TestBotIdentityPinRulesCatchEveryRoad(t *testing.T) {
 			}
 			files = append(files, f)
 		}
-		tp, err := checkTyped(fset, files, "nofx/telegram/synth", exportImporter(fset, telegramExports))
+		tp, err := checkTyped(fset, files, "vl/telegram/synth", exportImporter(fset, telegramExports))
 		if err != nil {
 			return nil, err
 		}
@@ -1104,10 +1104,10 @@ func TestBotIdentityPinRulesCatchEveryRoad(t *testing.T) {
 		{"an array element's address", `func c(ident *botIdentity) { p := &ident.arr[1]; go func() { _ = *p }() }`, "&ident.arr[1] — a pointer into the identity"},
 		{"a field address through the dereferenced identity", `func c(ident *botIdentity) { p := &(*ident).userID; go func() { _ = *p }() }`, "&(*ident).userID — a pointer into the identity"},
 		{"a slice of an array field", `func c(ident *botIdentity) { s := ident.arr[:]; go func() { _ = s[0] }() }`, "ident.arr[:] — a slice of an array inside the identity"},
-		{"implicit &: a method value on a value field", `func c(ident *botIdentity) { f := ident.val.bump; go f() }`, "ident.val.bump — (*nofx/telegram/synth.vfVal).bump has a pointer receiver"},
-		{"implicit &: go on a value field's pointer method", `func c(ident *botIdentity) { go ident.val.bump() }`, "ident.val.bump — (*nofx/telegram/synth.vfVal).bump has a pointer receiver"},
-		{"implicit &: a synchronous call that keeps it", `func c(ident *botIdentity) { ident.val.leak(); go func() { _ = vfLeak.n }() }`, "ident.val.leak — (*nofx/telegram/synth.vfVal).leak has a pointer receiver"},
-		{"implicit &: promoted through an embedded value", `func c(ident *botIdentity) { ident.leak(); go func() { _ = vfLeak.n }() }`, "ident.leak — (*nofx/telegram/synth.vfVal).leak has a pointer receiver"},
+		{"implicit &: a method value on a value field", `func c(ident *botIdentity) { f := ident.val.bump; go f() }`, "ident.val.bump — (*vl/telegram/synth.vfVal).bump has a pointer receiver"},
+		{"implicit &: go on a value field's pointer method", `func c(ident *botIdentity) { go ident.val.bump() }`, "ident.val.bump — (*vl/telegram/synth.vfVal).bump has a pointer receiver"},
+		{"implicit &: a synchronous call that keeps it", `func c(ident *botIdentity) { ident.val.leak(); go func() { _ = vfLeak.n }() }`, "ident.val.leak — (*vl/telegram/synth.vfVal).leak has a pointer receiver"},
+		{"implicit &: promoted through an embedded value", `func c(ident *botIdentity) { ident.leak(); go func() { _ = vfLeak.n }() }`, "ident.leak — (*vl/telegram/synth.vfVal).leak has a pointer receiver"},
 		// P2: a closure captures a holder.
 		{"E2a a holder's method in a closure", `func c(ident *botIdentity) { h := vfHolder{ident}; go func() { _ = h.cur() }() }`, "h — a closure captures a vfHolder"},
 		{"E2b a holder to a helper in a closure", `func c(ident *botIdentity) { h := vfHolder{ident}; go func() { _ = vfAgentsOf(h) }() }`, "h — a closure captures a vfHolder"},

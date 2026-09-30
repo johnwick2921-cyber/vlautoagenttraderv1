@@ -1,6 +1,6 @@
 import sqlite3,json,datetime,pathlib,urllib.request,subprocess
-out=pathlib.Path('/home/hoang/nofx-analysis/vet-09-complete-0905'); root=pathlib.Path('/home/hoang/nofx-vet-09-complete')
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
+out=pathlib.Path('/home/hoang/vl-analysis/vet-09-complete-0905'); root=pathlib.Path('/home/hoang/vl-vet-09-complete')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 r={'captured_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'base_revision':subprocess.check_output(['git','rev-parse','origin/dev'],cwd=root,text=True).strip(),'queries':[],'source':{}}
 queries=["SELECT id,entry_time,exit_time,plan_id,pnl_corrected,source FROM trader_positions WHERE entry_time >= 1786770000000 ORDER BY id", "SELECT name,sql FROM sqlite_master WHERE type='table' AND name LIKE '%calendar%'", "SELECT count(*) n FROM trade_excursions"]
 for q in queries:r['queries'].append({'sql':q,'rows':[dict(x) for x in c.execute(q)]})

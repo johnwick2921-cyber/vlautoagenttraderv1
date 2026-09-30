@@ -7,5 +7,5 @@
         stage_a_score_capture_test.go:38: real scorer components missing: "{}" (decode=<nil>)
         stage_a_score_capture_test.go:43: cut reason does not identify this candidate's actual exclusion: "max_levels: 1 seated, cap 1"
 FAIL
-FAIL	nofx/kernel	0.006s
+FAIL	vl/kernel	0.006s
 FAIL

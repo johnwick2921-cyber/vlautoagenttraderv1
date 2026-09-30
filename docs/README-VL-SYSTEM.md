@@ -1,4 +1,5 @@
-# NOFX / VL SYSTEM — OPERATOR'S MANUAL + FULL UI REFERENCE
+names rewritten to vl on 2026-09-30 (VL rename)
+# VL / VL SYSTEM — OPERATOR'S MANUAL + FULL UI REFERENCE
 
 - **Branch:** `docs/system-readme` (merged to dev) · **Docs-only** (zero code changes) · refreshed to the running rev **`717acd34`** (2026-08-27 S-dispatch; boot `BOOT INTEGRITY OK — rev 717acd34e52b +dirty · goldens PASS`; `+dirty` = only the untracked `.env.bak.0825-2157`).
 - **Verify-first law:** every row below was written after reading the FE component, the API handler, and the engine path behind it. Cites are `file:line` (or `[report]`). Where code disagrees with this or older docs, CODE wins; anything unverifiable is marked `[UNVERIFIED]`.
@@ -26,7 +27,7 @@ NT8 (Tradovate MNQ bars, Sim101)   ← SIM only, never live
 C# AddOn (NT8 AddOns folder)       ← must be compiled + NT8 restarted to take effect
         │ framed messages (ninjascript/vltrader_tcp_PROTOCOL.md)
         ▼
-Go bot (nofx-bin) ──── BarCache + bars table (SQLite data/data.db)
+Go bot (vl-bin) ──── BarCache + bars table (SQLite data/data.db)
         │
         ├─ PLANNER: DeepSeek → 1 day-plan per session (advisory JSON)
         ├─ EXECUTOR: every ~2 min → DeepSeek decision → risk gates → Sim101
@@ -404,7 +405,7 @@ AI model (full name + provider) · in-position mode `ai_watch`/`bracket_only`.
 
 | Surface | Where | Cite |
 |---|---|---|
-| Boot ledger (BOOT INTEGRITY + volume-wave + touch + fvg + S-wave lines) | log `data/nofx_<date>.log` at boot; NOT shown in the UI | `main.go:227+`, `kernel/levels_volume_boot.go` |
+| Boot ledger (BOOT INTEGRITY + volume-wave + touch + fvg + S-wave lines) | log `data/vl_<date>.log` at boot; NOT shown in the UI | `main.go:227+`, `kernel/levels_volume_boot.go` |
 | 402/payment banner | **[GAP] no payment banner exists in the UI**; 402 appears only in logs (`💸 DEEPSEEK PAYMENT FAILURE …`) | `trader/auto_trader_loop.go` 402 branch |
 | Sandbox banner | `🧪 SANDBOX — isolated test copy · not live` | `SandboxBanner.tsx:34-35` |
 | Running revision | Settings footer `running rev {revision}` | `SettingsPage.tsx:818-822` ← `/api/config` |

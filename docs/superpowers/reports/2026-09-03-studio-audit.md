@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-09-03 — Studio settings audit: every surface, every field, one table
 
 **Dispatch:** full Studio settings audit. READ-ONLY · no lock · no code.
-**Tree:** worktree `~/nofx-studioaudit`, branch `docs/studio-audit-0903`, base `b5b29ac3` (dev). Three parallel censuses: UI (`web/src/components/strategy/*`), schema/validators (`store/strategy.go`, `api/strategy.go`), engine readers (`kernel/*`, `trader/*`). All rows carry file:line evidence; the five highest-impact findings were re-verified directly [A].
+**Tree:** worktree `~/vl-studioaudit`, branch `docs/studio-audit-0903`, base `b5b29ac3` (dev). Three parallel censuses: UI (`web/src/components/strategy/*`), schema/validators (`store/strategy.go`, `api/strategy.go`), engine readers (`kernel/*`, `trader/*`). All rows carry file:line evidence; the five highest-impact findings were re-verified directly [A].
 **Conventions:** "reader NONE" = no production code consumes the value. "inherits" = the knob's resolver falls back to the strategy-level / default when unset. Legend for ISSUES: 🟥 dead · 🟧 silent rewrite/override · 🟨 label mismatch · 🟦 resolution split.
 
 ---
@@ -77,7 +78,7 @@
 | `enable_multi_timeframe` | **no direct UI** | **forced `true`** when timeframes non-empty (`strategy.go:276-278`) | — | 🟧 an explicit `false` is silently discarded |
 | `enable_raw_klines` | locked checkbox (always on) | none | kline fetch | 🟨 a toggle you cannot turn off |
 | `ema/rsi/atr/boll_periods` | comma lists | **hard reject 1..500 at save** (`ValidateIndicatorPeriods`) | indicator mirror | the only fields hard-rejected at save |
-| `enable_oi`, `enable_funding_rate`, NofxOS card, rankings | toggles (futures-hidden) | none | prompt/ranking fetches | 🟨 `nofxos_api_key` default is the deprecated 402 key (`cm_568c…`, CLAUDE.md) |
+| `enable_oi`, `enable_funding_rate`, VLOS card, rankings | toggles (futures-hidden) | none | prompt/ranking fetches | 🟨 `vlos_api_key` default is the deprecated 402 key (`cm_568c…`, CLAUDE.md) |
 | `external_data_sources` | **no UI** | none | **READER NONE** | 🟥 dead schema field |
 | `prompt_sections.*` / `custom_prompt` | free-text textareas | none | appended to prompts | |
 | `publish_config` (`is_public`, `config_visible`) | click-card toggles | none | **overwritten from the DB row** on every read (`api/strategy.go:34-43`) | 🟧 saved in config JSON but never read back from there |
@@ -137,7 +138,7 @@
 
 ## FIX SPEC (no code)
 
-1. **Dead options removed.** Drop from schema + any residual UI: items 1–4, 6, 7, 8, 15 above; stop seeding `nofxos_api_key` with the 402 key; retire the dormant `GridConfigModel` table or mark it display-only in the agent surface.
+1. **Dead options removed.** Drop from schema + any residual UI: items 1–4, 6, 7, 8, 15 above; stop seeding `vlos_api_key` with the 402 key; retire the dormant `GridConfigModel` table or mark it display-only in the agent surface.
 2. **Duplicate knobs shown once with inherit/override.** The per-session tri-state pattern is right — extend it to the arm seam (pass the real session into `armGateVerdictFor` so `sessions[].plan_mode` actually governs arms), and make `acceptance_rule`'s single-option UI show the RESOLVED value (`5m_close` self-healed) instead of a dead selector.
 3. **Resolved value displayed next to every field.** Reuse `StrategyClampWarnings` (already returned at save) and the read-time resolvers: render "saved X → resolved Y (clamped)" beside `proximity_filter_atr`, `max_positions`, R:R, confidence, `max_levels`, `scenario_cap`, `wake_min_interval_min`, and every env-shadowed knob (`max_contracts` shows the effective cap, `min_risk_reward` shows the ARM_MIN_RR note for armed entries).
 4. **Every field labeled with what it actually does.**

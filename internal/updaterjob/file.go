@@ -13,7 +13,7 @@ import (
 	"strings"
 	"syscall"
 
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterwire"
 )
 
 // Layout under the installation's data dir (the one internal/installpath

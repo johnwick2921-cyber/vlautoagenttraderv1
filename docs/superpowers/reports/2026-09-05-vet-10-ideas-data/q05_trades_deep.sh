@@ -1,6 +1,6 @@
 #!/bin/bash
 # q05: era usable trades — per-row detail for R-multiples, hold time, time-of-day, MAE/MFE
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 E="strftime('%s','2026-08-15 05:00:00')*1000"
 echo "--- era rows excluded and why"
 sqlite3 "$DB" "select id, source, pnl_corrected is null pnl_null, substr(coalesce(pnl_correction_note,''),1,60) from trader_positions where entry_time>=$E and (source='e7_farside_test' or pnl_corrected is null or coalesce(pnl_correction_note,'') like '%UNRESOLVABLE%') order by id"

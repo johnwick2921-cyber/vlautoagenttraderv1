@@ -3,10 +3,10 @@ package trader
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
 	"sync"
 	"time"
 )

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // THE REAPER READS THE BROKER, NOT SILENCE.
@@ -61,7 +61,7 @@ func reaperVerdictAt(
 	// the same defect this file exists to remove, one level down, and it is
 	// checked FIRST because it is the case where a cancel is least wanted: it can
 	// only arise when something upstream has already gone wrong.
-	// (Review finding, nofx-47, 2026-09-04.)
+	// (Review finding, vl-47, 2026-09-04.)
 	if strings.TrimSpace(row.SignalID) == "" {
 		return reaperUnknown, "link stale: ledger row carries no signal id — the broker cannot be asked about an order we cannot name"
 	}

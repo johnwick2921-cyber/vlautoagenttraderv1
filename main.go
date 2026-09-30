@@ -5,25 +5,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	nofxiagent "nofx/agent"
-	"nofx/api"
-	"nofx/auth"
-	"nofx/branding"
-	"nofx/config"
-	"nofx/crypto"
-	"nofx/expectancy"
-	"nofx/internal/retention"
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/manager"
-	"nofx/mcp"
-	_ "nofx/mcp/payment"
-	_ "nofx/mcp/provider"
-	"nofx/researchsnapshot"
-	"nofx/store"
-	"nofx/telegram"
-	"nofx/telemetry"
-	"nofx/trader"
+	nofxiagent "vl/agent"
+	"vl/api"
+	"vl/auth"
+	"vl/branding"
+	"vl/config"
+	"vl/crypto"
+	"vl/expectancy"
+	"vl/internal/retention"
+	"vl/kernel"
+	"vl/logger"
+	"vl/manager"
+	"vl/mcp"
+	_ "vl/mcp/payment"
+	_ "vl/mcp/provider"
+	"vl/researchsnapshot"
+	"vl/store"
+	"vl/telegram"
+	"vl/telemetry"
+	"vl/trader"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -32,15 +32,20 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/safe"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/internal/envcompat"
+	ntwire "vl/provider/ninjatrader"
+	"vl/safe"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 func main() {
 	// Initialize logger first so the .env outcome has somewhere to land
 	// (logger.Init reads no environment variable, so config sees the same order)
 	logger.Init(nil)
+
+	// envcompat: reads at package init (chart across-roll, bar-source knobs)
+	// queue their NOFX_-fallback WARN until a sink exists; the logger is it.
+	envcompat.SetWarnSink(func(m string) { logger.Warn(m) })
 
 	// Load .env environment variables — fails open: on any error nothing is
 	// set and every variable falls back to the process environment; the
@@ -743,7 +748,7 @@ func main() {
 	}
 	logger.Info("✅ HTTP server stopped")
 
-	// nofxiAgent.Stop() is handled by defer above
+	// VLiAgent.Stop() is handled by defer above
 
 	// Stop all traders
 	traderManager.StopAll()

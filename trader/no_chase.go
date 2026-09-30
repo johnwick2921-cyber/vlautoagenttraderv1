@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── NO-CHASE (2026-09-02) — entries must be near the level they cite ────────

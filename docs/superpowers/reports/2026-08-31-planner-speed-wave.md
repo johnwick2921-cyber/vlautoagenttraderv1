@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-31 — Planner Speed Wave (kill the 9-minute read)
 
 Root cause per autopsy 168e5282: ~26k output tokens/attempt at reasoning=max ≈
@@ -95,5 +96,5 @@ from the provider (chars proxy).
 
 ## Rollback
 
-`nofx-bin.prev.boot` = rev `e86ae805`. Revert = swap back + kill -9 +
+`vl-bin.prev.boot` = rev `e86ae805`. Revert = swap back + kill -9 +
 `deploy/RELEASE` = `e86ae805784b7b0ee10299a3c977738a813d0cd4`.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // G2 (regime wave, 2026-08-21) — PURE STRUCTURE DETECTORS: fractal swings →
@@ -120,7 +120,7 @@ type swing struct {
 }
 
 // simpleATR14 computes the classic ATR(14) on closed bars with WILDER
-// smoothing — the variant the research's nautilus ATR and nofx/market's
+// smoothing — the variant the research's nautilus ATR and vl/market's
 // calculateATR both use. Conformance audit C-ATR1 (2026-08-22): this file
 // previously used a plain SMA, which read ~43% low on the 08-21 15m series
 // and silently loosened the min-swing and MSS-displacement thresholds.

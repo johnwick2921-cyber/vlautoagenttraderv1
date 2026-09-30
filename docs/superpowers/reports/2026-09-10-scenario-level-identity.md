@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Dispatch 105 — scenario-level identity: corrected premises and implementation
 
 > **OPEN POST-BOOT DATA INCIDENT:** the shared chart/planner ring contains
@@ -14,7 +15,7 @@ the pre-approval state. The implementation addendum supersedes that status.
 
 
 **Lane:** `fix/scenario-level-identity`, session
-`scenario-identity-ac5a801d/root[unlisted]`. Claimed with `deploy/nofx-claim.sh new`,
+`scenario-identity-ac5a801d/root[unlisted]`. Claimed with `deploy/vl-claim.sh new`,
 including the expected file footprint. The branch's observed `git ls-remote`
 SHA immediately after acceptance was `8e8965be22fe60e0f6cfc94c616bf546fce6998f`;
 that observation is not a durable claim identifier. The branch is the claim.
@@ -391,7 +392,7 @@ proof. This report is not a deploy authorization or a five-leg gate result.
 ## Implementation addendum — owner-approved corrected scope
 
 **[A] Branch:** `fix/scenario-level-identity`; isolated locked worktree
-`/tmp/nofx-scenario-level-identity`. Rebased onto dev
+`/tmp/vl-scenario-level-identity`. Rebased onto dev
 `08aea8b81124bab5f1e18e9eccd76e35f108668c`, preserving the intervening collapse-keeps-names
 changes. The deletion comparison now includes no deletions of another lane's
 files. No main-tree edit, deploy lock, live DB write or boot occurred.
@@ -446,7 +447,7 @@ rejecting removal of obsolete `crypto/sha256` and `encoding/hex` imports from
 `trader/research_snapshot.go`. Moving the hash to the shared helper made these
 imports unused. The guard compared all future changes to `954f11b1`, extending
 that wave's import constraint indefinitely. The owner explicitly approved
-narrowing it to protect `nofx/...`; the existing rename-to-`vl/...` rejection
+narrowing it to protect `vl/...`; the existing rename-to-`vl/...` rejection
 pin remains and a standard-library-removal pin was added. No existing project
 import target or Go module path was renamed. Evidence:
 [initial full Go result](2026-09-10-scenario-level-identity-data/go-before-guard-correction.txt).
@@ -515,7 +516,7 @@ must be stamped from the clean-clone binary before dist. Checklist class number
 is assigned at merge; none is reserved here.
 
 Cutover still owes backup + integrity check before any migration, full suite at
-the merged head, clean clone named `nofx`, binary `vcs.modified=false`, source
+the merged head, clean clone named `vl`, binary `vcs.modified=false`, source
 GUIDE_BUILT_REV then dist, own five-leg gate, RELEASE → mv → VERIFY, permitted
 restart, owner boot acknowledgment, pushed same-tree marker and five-reference
 verification before lock release. Preserve the old binary by its actual embedded
@@ -562,8 +563,8 @@ stamp passes **60 files / 421 tests**. `npm run build` passes both TypeScript
 and Vite; Vite's existing chunk-size warning is advisory, not a failed build.
 [Frontend receipt](2026-09-10-scenario-level-identity-data/vitest-w2-full.txt).
 
-**[A] Clean clone:** `/tmp/identity-build/nofx`, porcelain-clean before `go build`.
-The built `/tmp/identity-build/nofx-bin` reports:
+**[A] Clean clone:** `/tmp/identity-build/vl`, porcelain-clean before `go build`.
+The built `/tmp/identity-build/vl-bin` reports:
 
 ```
 vcs.revision=b30afc6570936a628c8cef1f462dc9e8dd8216d9
@@ -585,7 +586,7 @@ These are prepared artifacts, not live references.
 `kernel/levels_score.go`, `kernel/fade_permission.go`, or W2's fade stamp wiring.
 The detector changes are output metadata; baseline output parity passes.
 No file from W2 or the collapse-keeps-names lane is deleted. The module remains
-`nofx`; the new `nofx/levelidentity` import is additive. Standard-library hash
+`vl`; the new `vl/levelidentity` import is additive. Standard-library hash
 imports moved out of the research writer under the explicitly approved guard
 correction. E8 production-call receipts remain available above.
 
@@ -617,7 +618,7 @@ job logs identify failures in unchanged workflow setup:
   `GOTOOLCHAIN=local`. The scanner did not complete. Its npm production-dependency
   job separately fails with exit 127 while running `husky`.
 - Image run `34543205094`: generated image tags have an empty prefix, e.g.
-  `nofx-backend:-4ed4efa-amd64`, and fail as invalid reference format before
+  `vl-backend:-4ed4efa-amd64`, and fail as invalid reference format before
   the image build. No image publication is claimed.
 - Docker frontend job `103090143569` cannot resolve
   `../../../branding/product.txt?raw` from `src/constants/branding.ts` inside
@@ -669,7 +670,7 @@ the free lock as `scenario-identity-ac5a801d/root[unlisted]` at 18:53:50 CT;
 the acquire-started keeper runs until 19:53:50 CT. No hand-beater was started.
 
 **[A]** Full `go test ./...` passed in clean clone
-`/tmp/identity-cutover/nofx` at that merged head (trader: 176.580 seconds).
+`/tmp/identity-cutover/vl` at that merged head (trader: 176.580 seconds).
 Full frontend suite passed: 60 files / 421 tests. The clone was porcelain-clean
 before `go build`. The binary reports:
 
@@ -685,7 +686,7 @@ clone's `web/src/guide/types.ts`, THEN dist built successfully. The main
 checkout has not yet been advanced or swapped.
 
 **[A]** SQLite online backup, including committed WAL contents, completed at
-18:56:55 CT: `/home/hoang/nofx-backups/identity-cd8f9978-20260910/data.db`,
+18:56:55 CT: `/home/hoang/vl-backups/identity-cd8f9978-20260910/data.db`,
 793,993,216 bytes; backup `PRAGMA integrity_check` returned `ok`. No live
 migration or identity boot is claimed before the actual restart.
 

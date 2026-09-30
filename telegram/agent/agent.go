@@ -3,11 +3,11 @@ package agent
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/auth"
-	"nofx/branding"
-	"nofx/logger"
-	"nofx/mcp"
-	"nofx/telegram/session"
+	"vl/auth"
+	"vl/branding"
+	"vl/logger"
+	"vl/mcp"
+	"vl/telegram/session"
 	"strings"
 )
 

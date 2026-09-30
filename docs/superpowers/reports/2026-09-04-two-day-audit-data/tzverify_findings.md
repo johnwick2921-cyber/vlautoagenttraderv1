@@ -1,11 +1,12 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial verification — "plans.created_at UTC vs plan_lifecycle_log.at CT"
-Verified 2026-09-04 (CT). Read-only, DB opened mode=ro. Worktree /home/hoang/nofx-2day04
+Verified 2026-09-04 (CT). Read-only, DB opened mode=ro. Worktree /home/hoang/vl-2day04
 HEAD 8579df0a (dfbfa660 is an ancestor; the diff is audit CSVs only, no Go changes).
 
 ## Verdict: PLAUSIBLE — observation reproduces exactly, scope + reasoning are wrong.
 
 ## 1. The observation reproduces (with the n they omitted)
-    sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+    sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
       "SELECT substr(created_at,-6) off, COUNT(*) n FROM plans GROUP BY 1;"
       -> +00:00  n=243
     sqlite3 ... "SELECT substr(at,-6) off, COUNT(*) n FROM plan_lifecycle_log GROUP BY 1;"

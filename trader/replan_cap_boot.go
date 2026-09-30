@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // replanCapBootSessions is the order the per-session caps print in — the

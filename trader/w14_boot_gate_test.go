@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // P1 — the ENTRY GATE honors the boot-integrity refusal: a refused process opens

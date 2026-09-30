@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
-	"nofx/store"
+	"vl/internal/updaterjob"
+	"vl/store"
 )
 
 const absentDown = 90 * time.Second

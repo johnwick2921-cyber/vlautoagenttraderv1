@@ -1,34 +1,35 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLASS 32 — Scheduled reads must fire on wall-clock
 
 Date: 2026-08-31 CT · Wave: class32-wallclock-reads · Branch: `class32-wallclock-reads` (merged → dev `ebc37e01`)
 
 **STATUS: SHIPPED — cutover 2026-08-31 23:40:22 CT, owner GO ("Send this and GO class 32").**
 Live rev now: `ebc37e01d7dd5f19c0e0f0ffa962388e12988f58` (PID 1589096).
-Rollback kept: `nofx-bin.prev.boot` = previous live `7004a7f1f726…` (0C, PID 1466535).
+Rollback kept: `vl-bin.prev.boot` = previous live `7004a7f1f726…` (0C, PID 1466535).
 
 Cutover evidence:
 - Flat gate pre (23:39-23:40 CT): DB open pos 0 · open orders 0 · armed nonterminal 0 · API positions `[]` · API open-orders MNQ `[]` · NT8 snapshots `count=0` ×2 @23:39:59.
-- Swap: `mv nofx-bin nofx-bin.prev.boot` → staged binary in (stamp verified on the deployed file: `vcs.revision=ebc37e01…`, `modified=false`) → `kill -9 1466535` @23:40:22 → systemd relaunch PID 1589096.
+- Swap: `mv vl-bin vl-bin.prev.boot` → staged binary in (stamp verified on the deployed file: `vcs.revision=ebc37e01…`, `modified=false`) → `kill -9 1466535` @23:40:22 → systemd relaunch PID 1589096.
 - Boot 23:40:27 quoted: `🔐 BOOT INTEGRITY OK — rev ebc37e01d7dd · expected ebc37e01d7dd · goldens PASS` · `🗓 session reads (owner ruling 2026-08-31, open−30): ASIA 16:30 · LONDON 01:30 · NY 08:00 CT` · `🔬 conditions: live [7] · shadow [breakout_retest, fvg_entry]` · `📜 scenario schema: 9 conditions`.
 - Post-boot: 0 `[ERRO]`/panic, equity 52216.00 preserved, API positions `[]`, open-orders MNQ `[]`.
 - TRUE LIVE PROOF pending: tomorrow ~16:35 CT — quote the actual ASIA read timestamp + `🗓 session read fired during halt …` line (the read is scheduled for 16:30 while CME is halted 16:00-17:00).
 
 Staged:
-- Build sha `ebc37e01d7dd5f19c0e0f0ffa962388e12988f58` — clean-clone build, `vcs.revision` matches, `vcs.modified=false`. Binary at `~/nofx-staged/nofx-32-bin`.
+- Build sha `ebc37e01d7dd5f19c0e0f0ffa962388e12988f58` — clean-clone build, `vcs.revision` matches, `vcs.modified=false`. Binary at `~/vl-staged/vl-32-bin`.
 - Marker `60ae142d` pushed: `deploy/RELEASE` = `ebc37e01…` + `GUIDE_BUILT_REV` = `ebc37e01…`.
 - Suites: `go build ./...` OK · `go test ./...` green · tsc 0 · vitest 36 files / 292 tests.
 - Flat gate pre-park (18:44-18:45 CT): DB open pos 0 · open orders 0 · armed nonterminal 0 · API positions `[]` · API open-orders MNQ `[]` · NT8 snapshots `account=Sim101 count=0` + `account=SimAccount1 count=0` @18:44:22.
 - Live bot untouched: rev `7004a7f1f726…` PID 1466535, ASIA v1 no_trade, window check passed (18:45 CT, not 16:45-17:10).
 
 Cutover runbook (on owner GO):
-1. `mv ~/nofx/nofx-bin ~/nofx/nofx-bin.prev.boot` → `cp ~/nofx-staged/nofx-32-bin ~/nofx/nofx-bin`
+1. `mv ~/vl/vl-bin ~/vl/vl-bin.prev.boot` → `cp ~/vl-staged/vl-32-bin ~/vl/vl-bin`
 2. `kill -9 <PID>` (SIGTERM exits 0 — no relaunch)
 3. Boot checklist within 90s: rev `ebc37e01` · `🔐 BOOT INTEGRITY OK` · goldens PASS · `🗓 session reads (owner ruling 2026-08-31, open−30)` line · `🔬 conditions` line (0C)
 4. Post-boot flat-gate re-quote (four legs).
 5. LIVE PROOF tomorrow ~16:35 CT: quote the actual ASIA read timestamp + the `🗓 session read fired during halt …` line.
 
-Rollback: `mv nofx-bin.prev.boot nofx-bin && <revert deploy/RELEASE> && kill -9 <PID>`
-(`nofx-bin.prev.boot` will hold the pre-wave live `7004a7f1f726…`.)
+Rollback: `mv vl-bin.prev.boot vl-bin && <revert deploy/RELEASE> && kill -9 <PID>`
+(`vl-bin.prev.boot` will hold the pre-wave live `7004a7f1f726…`.)
 
 ## Root cause (tonight's evidence)
 
@@ -97,7 +98,7 @@ Post-mortem facts:
 Path taken: **(a)** — the owner gave GO on 0C earlier tonight; 0C booted at
 17:34:21 CT (rev `7004a7f1f726`, PID 1466535) and its lock was released + its
 worktree removed in that wave's closeout. This wave re-acquired
-`~/nofx-main.lock` live under PID 1437095 (expiry 21:14:08 CT, task
+`~/vl-main.lock` live under PID 1437095 (expiry 21:14:08 CT, task
 class32-wallclock-reads) on a porcelain-clean main tree at `4be2c73d`.
 **1.4 liveness amendment recorded**: the lock rite now carries a `pgrep`/`kill -0`
 liveness re-verification step (canon added to CLAUDE.md MAIN-TREE LOCK LAW;
@@ -118,10 +119,10 @@ no_trade · zero armed/working rows · flat gates quoted at cutover below.
 ## Rollback
 
 ```
-mv nofx-bin.prev.boot nofx-bin && <revert deploy/RELEASE> && kill -9 <PID>
+mv vl-bin.prev.boot vl-bin && <revert deploy/RELEASE> && kill -9 <PID>
 ```
 
-`nofx-bin.prev.boot` holds the pre-wave live binary (`7004a7f1f726…`, 0C).
+`vl-bin.prev.boot` holds the pre-wave live binary (`7004a7f1f726…`, 0C).
 
 ## Anything the owner will still see wrong on screen
 

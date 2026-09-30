@@ -3,7 +3,7 @@ def wilson(h,n,z=1.96):
     if n==0: return (float('nan'),float('nan'))
     p=h/n; den=1+z*z/n; cen=(p+z*z/(2*n))/den; half=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den
     return (round(cen-half,4), round(cen+half,4))
-rows=list(csv.DictReader(open('/home/hoang/nofx-vet-02/docs/superpowers/reports/2026-09-05-vet-02-levels-data/q12b_plan_levels_forward_dedup.csv')))
+rows=list(csv.DictReader(open('/home/hoang/vl-vet-02/docs/superpowers/reports/2026-09-05-vet-02-levels-data/q12b_plan_levels_forward_dedup.csv')))
 print("rows", len(rows))
 def touched(r): return int(r['n_eps'])>0
 def bucket(rs, name):

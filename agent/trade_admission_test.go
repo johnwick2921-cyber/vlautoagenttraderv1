@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
-	"nofx/trader"
+	"vl/store"
+	"vl/trader"
 )
 
 // ── W-EXEC-TRUTH W0 (CTO Q17) — a chat trade asks the ONE admission gate ────

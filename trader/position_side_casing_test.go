@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	ntwire "nofx/provider/ninjatrader"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	ntwire "vl/provider/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0 (Q10/Q12, checklist canon 28) — POSITION SIDES ARE READ

@@ -1,5 +1,5 @@
 import sqlite3, datetime as dt
-c = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+c = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 arms = c.execute("""SELECT id, scenario, side, entry_px, stop_px, target_px,
   datetime(strftime('%s',updated_at),'unixepoch','-5 hours') cancel_ct, strftime('%s',updated_at)*1000 cancel_ms
   FROM armed_orders WHERE state_reason LIKE 'level accepted through%' ORDER BY id""").fetchall()

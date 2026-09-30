@@ -22,9 +22,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // oneSetupConfig resolves the two knobs from THE STRATEGY BOUND TO THIS TRADER

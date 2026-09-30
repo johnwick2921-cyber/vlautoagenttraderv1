@@ -2,7 +2,7 @@
 import sqlite3,json,csv,pathlib,datetime as dt,math,statistics as st,collections as co,re,argparse
 from zoneinfo import ZoneInfo
 ap=argparse.ArgumentParser();ap.add_argument('--repo',required=True);ap.add_argument('--out',required=True);a=ap.parse_args();repo=pathlib.Path(a.repo);out=pathlib.Path(a.out);CT=ZoneInfo('America/Chicago')
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 def save(name,rs):
  if not rs:return
  with (out/name).open('w',newline='') as f:w=csv.DictWriter(f,fieldnames=list(rs[0]),lineterminator="\n");w.writeheader();w.writerows(rs)
@@ -66,15 +66,15 @@ for fp,ranges in selections.items():
  for lo,hi in ranges:
   lines += [f'{fp}:{i}: {ls[i-1]}' for i in range(lo,min(hi,len(ls))+1)]
 (out/'source_evidence.txt').write_text('\n'.join(line.rstrip() for line in lines)+'\n')
-logsel={'nofx_2026-09-03.log':[(32440,32444)],'nofx_2026-09-04.log':[(1950,1950),(2158,2158),(2197,2197),(2259,2262),(6180,6182)]}
+logsel={'vl_2026-09-03.log':[(32440,32444)],'vl_2026-09-04.log':[(1950,1950),(2158,2158),(2197,2197),(2259,2262),(6180,6182)]}
 lines=[]
 for fn,ranges in logsel.items():
- p=pathlib.Path('/home/hoang/nofx/data')/fn;ls=p.read_text(errors='replace').splitlines()
+ p=pathlib.Path('/home/hoang/vl/data')/fn;ls=p.read_text(errors='replace').splitlines()
  for lo,hi in ranges:lines += [f'{p}:{i}: {ls[i-1]}' for i in range(lo,hi+1)]
 (out/'log_evidence.txt').write_text('\n'.join(line.rstrip() for line in lines)+'\n')
 (out/'supplement_summary.json').write_text(json.dumps(res,indent=2)+'\n');c.rollback();print(json.dumps(res,indent=2))
 # Additional reproducible decision gate extract (independent read snapshot).
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 rr=[]
 for r in c.execute("select id,timestamp,plan_id,plan_version,cited_scenario_id,execution_log,risk_check_error from decision_records where timestamp>='2026-09-02 05:00:00' and timestamp<'2026-09-05 05:00:00' order by id"):
  s=(r['execution_log'] or '')+' '+(r['risk_check_error'] or '')

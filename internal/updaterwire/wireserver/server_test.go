@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterwire"
 )
 
 // ── M3 worker channel, listening side — forged requests are refused and

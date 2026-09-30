@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 <h1 align="center">VL Intelligent</h1>
 
 <p align="center">
@@ -6,10 +7,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/NoFxAiOS/nofx/stargazers"><img src="https://img.shields.io/github/stars/NoFxAiOS/nofx?style=for-the-badge" alt="Stars"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/releases"><img src="https://img.shields.io/github/v/release/NoFxAiOS/nofx?style=for-the-badge" alt="Release"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg?style=for-the-badge" alt="License"></a>
-  <a href="https://t.me/nofx_dev_community"><img src="https://img.shields.io/badge/Telegram-Community-blue?style=for-the-badge&logo=telegram" alt="Telegram"></a>
 </p>
 
 <p align="center">
@@ -36,10 +33,6 @@ VL Intelligent はオープンソースの**自律型** AI トレーディング
 **完全自律**: AI がどのモデルを使うか、どの市場データを取得するか、いつ取引するかを自ら判断します。手動のモデル設定不要。複数サービスの API キー管理不要。USDC ウォレットに入金して実行するだけ。
 
 他との違い：**[x402](https://x402.org) マイクロペイメント内蔵**。API キー不要。USDC ウォレットに入金してリクエストごとに支払い。ウォレットがあなたの身分証明。
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
 
 **http://127.0.0.1:3000** を開く。完了。
 
@@ -74,7 +67,6 @@ x402 フロー：
 ### 内蔵 x402 プロバイダー
 
 | プロバイダー | チェーン | モデル |
-|:---------|:------|:-------|
 | <img src="../../../web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base | GPT-5.4, Claude Opus, DeepSeek, Qwen, Grok, Gemini, Kimi — 15+ モデル |
 
 ---
@@ -82,7 +74,6 @@ x402 フロー：
 ## 機能
 
 | 機能 | 説明 |
-|:--------|:------------|
 | **マルチ AI** | DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi, MiniMax — いつでも切替 |
 | **マルチ取引所** | Binance, Bybit, OKX, Bitget, KuCoin, Gate, Hyperliquid, Aster, Lighter |
 | **ストラテジースタジオ** | ビジュアルビルダー — コインソース、インジケーター、リスク管理 |
@@ -99,8 +90,7 @@ x402 フロー：
 ### 取引所 (CEX)
 
 | 取引所 | ステータス | 登録 (手数料割引) |
-|:---------|:------:|:------------------------|
-| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [登録](https://www.binance.com/join?ref=NOFXENG) |
+| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [登録](https://www.binance.com/join?) |
 | <img src="../../../web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [登録](https://partner.bybit.com/b/83856) |
 | <img src="../../../web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [登録](https://www.okx.com/join/1865360) |
 | <img src="../../../web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [登録](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
@@ -110,7 +100,6 @@ x402 フロー：
 ### 取引所 (Perp-DEX)
 
 | 取引所 | ステータス | 登録 (手数料割引) |
-|:---------|:------:|:------------------------|
 | <img src="../../../web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [登録](https://app.hyperliquid.xyz/join/AITRADING) |
 | <img src="../../../web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [登録](https://www.asterdex.com/en/referral/fdfc0e) |
 | <img src="../../../web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [登録](https://app.lighter.xyz/?referral=68151432) |
@@ -118,7 +107,6 @@ x402 フロー：
 ### AI モデル (API キーモード)
 
 | AI モデル | ステータス | API キー取得 |
-|:---------|:------:|:------------|
 | <img src="../../../web/public/icons/deepseek.svg" width="20" height="20" style="vertical-align: middle;"/> **DeepSeek** | ✅ | [API キー取得](https://platform.deepseek.com) |
 | <img src="../../../web/public/icons/qwen.svg" width="20" height="20" style="vertical-align: middle;"/> **Qwen** | ✅ | [API キー取得](https://dashscope.console.aliyun.com) |
 | <img src="../../../web/public/icons/openai.svg" width="20" height="20" style="vertical-align: middle;"/> **OpenAI (GPT)** | ✅ | [API キー取得](https://platform.openai.com) |
@@ -136,45 +124,17 @@ x402 フロー：
 
 ## インストール
 
-### Linux / macOS
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
-
-### Railway (クラウド)
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/nofx?referralCode=nofx)
-
-### Docker
-
-```bash
-curl -O https://raw.githubusercontent.com/NoFxAiOS/nofx/main/docker-compose.prod.yml
-docker compose -f docker-compose.prod.yml up -d
-```
-
 ### ソースから
 
 ```bash
 # 前提条件: Go 1.21+, Node.js 18+, TA-Lib
 # macOS: brew install ta-lib
 
-git clone https://github.com/NoFxAiOS/nofx.git && cd nofx
-go build -o nofx && ./nofx          # バックエンド
+go build -o vl-bin && ./vl-bin          # バックエンド
 cd web && npm install && npm run dev  # フロントエンド（新しいターミナル）
 ```
 
 ---
-
-## リンク
-
-| | |
-|:--|:--|
-| ウェブサイト | [nofxai.com](https://nofxai.com) |
-| ダッシュボード | [nofxos.ai/dashboard](https://nofxos.ai/dashboard) |
-| API ドキュメント | [nofxos.ai/api-docs](https://nofxos.ai/api-docs) |
-| Telegram | [nofx_dev_community](https://t.me/nofx_dev_community) |
-| Twitter | [@nofx_official](https://x.com/nofx_official) |
 
 > **リスク警告**: AI 自動取引には重大なリスクがあります。学習/研究目的または少額でのテストのみを推奨します。
 
@@ -184,4 +144,3 @@ cd web && npm install && npm run dev  # フロントエンド（新しいター�
 
 [AGPL-3.0](../../../LICENSE)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NoFxAiOS/nofx&type=Date)](https://star-history.com/#NoFxAiOS/nofx&Date)

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Rename: ClaudeTrader → VLTrader (NinjaScript only)
 
 **Date:** 2026-05-23
@@ -9,7 +10,7 @@ name. Plan 1 CSV bridge protocol (`trade_signals.csv`, `trades_taken.csv`,
 
 ### NinjaScript source (in the external bridge clone)
 
-`C:\NofxTrader\bridge\ninjascripts\claudetrader.cs` → `vltrader.cs`
+`C:\VLTrader\bridge\ninjascripts\claudetrader.cs` → `vltrader.cs`
 
 Inside the file:
 
@@ -37,7 +38,7 @@ removed; `vltrader.cs` copied in.
 - CSV file names: `trade_signals.csv`, `trades_taken.csv`
 - CSV schema: 5 fields signals (`DateTime,Direction,Entry_Price,Stop_Loss,Take_Profit`),
   3 fields fills (`DateTime,Direction,Entry_Price`)
-- Data directory: `C:\Users\<you>\NofxTrader\data\`
+- Data directory: `C:\Users\<you>\VLTrader\data\`
 - File polling interval: 2 seconds
 - Dedup behaviour: `DateTime + Direction` at 1-second resolution
 
@@ -52,8 +53,8 @@ Go-side changes were required.
 2. F5 to compile `VLTrader`. Expect `0 errors`.
 3. On the MNQ chart: Strategies → remove the old `ClaudeTrader` instance →
    add `VLTrader` with the same parameters:
-   - Signals File Path: `C:\Users\<you>\NofxTrader\data\trade_signals.csv`
-   - Trades Log File Path: `C:\Users\<you>\NofxTrader\data\trades_taken.csv`
+   - Signals File Path: `C:\Users\<you>\VLTrader\data\trade_signals.csv`
+   - Trades Log File Path: `C:\Users\<you>\VLTrader\data\trades_taken.csv`
    - File Check Interval: `2`
    - Contract Quantity: `1`
 4. Apply → Enable. Watch Output window for `VLTrader Initialized - Monitoring

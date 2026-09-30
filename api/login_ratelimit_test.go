@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/store"
+	"vl/auth"
+	"vl/store"
 )
 
 func loginCall(t *testing.T, e *updEnv, email, pass string) *httptest.ResponseRecorder {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 func confirmBars(base int64, closes ...float64) []market.Kline {

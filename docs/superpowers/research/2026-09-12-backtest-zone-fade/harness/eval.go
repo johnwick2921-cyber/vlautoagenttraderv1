@@ -12,8 +12,8 @@ package main
 import (
 	"math"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // touchRecord is one first-touch event of one zone in one session.

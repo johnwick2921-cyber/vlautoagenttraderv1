@@ -26,7 +26,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nofx/telemetry"
+	"vl/telemetry"
 )
 
 // Wire-protocol constants per spec L4359 + L4408 + L4415 + L4414 + L4376.
@@ -2024,7 +2024,7 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				"nt8_pid", pid, "assembly_mvid", mvid)
 			s.writeMu.Lock()
 			_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
-			err := WriteFrame(c, FrameHello, HelloPayload{ProtocolVersion: ProtocolVersion, Source: "nofx-go"})
+			err := WriteFrame(c, FrameHello, HelloPayload{ProtocolVersion: ProtocolVersion, Source: "vl-go"})
 			s.writeMu.Unlock()
 			if err != nil {
 				s.logger.Warn("tcp_server: write hello reply", "err", err)

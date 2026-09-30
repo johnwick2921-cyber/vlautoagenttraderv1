@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W3 — red-news (T1) HARD no-trade blackout windows. A T1 (red / High-impact)

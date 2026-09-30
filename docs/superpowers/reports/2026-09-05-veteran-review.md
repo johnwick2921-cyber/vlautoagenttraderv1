@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VETERAN REVIEW — LEAD REPORT
 
 **Owner:** hoang · **Date:** 2026-09-05 · **Lead agent**
@@ -20,7 +21,7 @@ I verified, before dispatching anything:
 - **No SQLite store anywhere in the container.** Every store query named in the dispatch
   (`touch_outcomes`, `trader_positions`, `plans`, `bars`, `trade_excursions`,
   `planner_rejected_prompts`, …) was **unexecutable**.
-- **No tape and no `~/nofx-analysis/`.** **No replay was performed.** Any statement in this
+- **No tape and no `~/vl-analysis/`.** **No replay was performed.** Any statement in this
   report about what "would have been armed or filled" is reasoning over code and committed
   data, never a simulation.
 - `docs/superpowers/plans/VL-MASTER-PLAN-v2.md` **does not exist** in the tree.

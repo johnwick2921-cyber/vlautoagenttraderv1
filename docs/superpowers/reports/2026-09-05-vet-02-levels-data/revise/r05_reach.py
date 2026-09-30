@@ -2,7 +2,7 @@ import csv, math
 def wilson(h,n,z=1.96):
     p=h/n; den=1+z*z/n; cen=(p+z*z/(2*n))/den; half=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den
     return (round(cen-half,3), round(cen+half,3))
-rows=list(csv.DictReader(open('/home/hoang/nofx-analysis/vet-02-0905/q12b_plan_levels_forward_dedup.csv')))
+rows=list(csv.DictReader(open('/home/hoang/vl-analysis/vet-02-0905/q12b_plan_levels_forward_dedup.csv')))
 n=len(rows); touched=sum(1 for r in rows if r['first']!='untouched')
 print(f"all seats n={n} touched {touched} = {100*touched/n:.1f}% {wilson(touched,n)}")
 for thr in (50,100,175,200):

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W5 — THE ADAPTER SEAM FOR PICTURE EVIDENCE.

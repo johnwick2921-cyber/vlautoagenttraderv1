@@ -6,7 +6,7 @@
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesProductionWiring (0.00s)
      FAIL
-     FAIL	nofx/trader	0.010s
+     FAIL	vl/trader	0.010s
      FAIL
 
 ── mutating kernel/level_zones.go
@@ -18,7 +18,7 @@ KILLED — a pin caught it.
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesWidthFamilyAndUnknown (0.00s)
      FAIL
-     FAIL	nofx/kernel	0.017s
+     FAIL	vl/kernel	0.017s
      FAIL
 
 ── mutating kernel/level_zones.go
@@ -30,7 +30,7 @@ KILLED — a pin caught it.
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesWidthFamilyAndUnknown (0.00s)
      FAIL
-     FAIL	nofx/kernel	0.017s
+     FAIL	vl/kernel	0.017s
      FAIL
 
 ── mutating trader/auto_trader_planner.go
@@ -42,7 +42,7 @@ KILLED — a pin caught it.
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesProductionWiring (0.00s)
      FAIL
-     FAIL	nofx/trader	0.010s
+     FAIL	vl/trader	0.010s
      FAIL
 
 ── mutating trader/auto_trader_planner.go
@@ -54,7 +54,7 @@ KILLED — a pin caught it.
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesProductionWiring (0.00s)
      FAIL
-     FAIL	nofx/trader	0.010s
+     FAIL	vl/trader	0.010s
      FAIL
 
 ── mutating kernel/level_zones.go
@@ -67,7 +67,7 @@ KILLED — a pin caught it.
      --- FAIL: TestLevelZonesOwnerSnapshot (0.01s)
      --- FAIL: TestLevelZonesCompatibilityAndNoChain (0.00s)
      FAIL
-     FAIL	nofx/kernel	0.017s
+     FAIL	vl/kernel	0.017s
      FAIL
 
 ── mutating kernel/level_zones.go
@@ -79,7 +79,7 @@ KILLED — a pin caught it.
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesOwnerSnapshot (0.01s)
      FAIL
-     FAIL	nofx/kernel	0.016s
+     FAIL	vl/kernel	0.016s
      FAIL
 
 ── mutating kernel/level_zones.go
@@ -90,7 +90,7 @@ KILLED — a pin caught it.
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesRankingIgnoresHTFAndKeepsAllReferences (0.00s)
      FAIL
-     FAIL	nofx/kernel	0.016s
+     FAIL	vl/kernel	0.016s
      FAIL
 
 ── mutating kernel/planner_prompt.go
@@ -102,7 +102,7 @@ KILLED — a pin caught it.
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesProductionWiring (0.00s)
      FAIL
-     FAIL	nofx/trader	0.010s
+     FAIL	vl/trader	0.010s
      FAIL
 
 ── mutating kernel/level_zones.go
@@ -116,7 +116,7 @@ KILLED — a pin caught it.
      --- FAIL: TestLevelZonesRankingIgnoresHTFAndKeepsAllReferences (0.00s)
      --- FAIL: TestLevelZonesWidthFamilyAndUnknown (0.00s)
      FAIL
-     FAIL	nofx/kernel	0.017s
+     FAIL	vl/kernel	0.017s
      FAIL
 
 ── mutating kernel/level_zones.go
@@ -128,5 +128,5 @@ KILLED — a pin caught it.
 KILLED — a pin caught it.
      --- FAIL: TestLevelZonesWidthFamilyAndUnknown (0.00s)
      FAIL
-     FAIL	nofx/kernel	0.017s
+     FAIL	vl/kernel	0.017s
      FAIL

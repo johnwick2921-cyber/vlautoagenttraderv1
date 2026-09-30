@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-09-02 — Bar-source audit: which consumers are starved of history the system already has
 
 **Dispatch:** BAR-SOURCE AUDIT — READ-ONLY · no lock · no engine code · no config. Owner hoang, 2026-09-02.
 **Live rev audited:** `0465a10bfa4b865a8406a1d684501ec4673febc7` (`deploy/RELEASE:1` = running binary [A]).
-**Audit tree:** worktree `~/nofx-barsource`, branch `docs/bar-source-audit-0902`, pinned at 0465a10b. Main tree untouched, porcelain-clean, no lock taken.
+**Audit tree:** worktree `~/vl-barsource`, branch `docs/bar-source-audit-0902`, pinned at 0465a10b. Main tree untouched, porcelain-clean, no lock taken.
 **Evidence tiers:** [A] directly verified (ran it / read the exact line / queried the DB) · [B] inferred · [C] speculation.
 **Evidence classes:** [RUNTIME] journal · [DB] read-only `data/data.db` · [CODE] file:line · [CONFIG] `.env` / resolver.
 

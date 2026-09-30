@@ -245,7 +245,7 @@
   {
     "section": 6,
     "question": 1,
-    "requirement": "Re-run ~/nofx-analysis/mc-drawdown against the current store (by session-day, not trade); report expectancy CI, drawdown quantiles at 20/50/100 trades, streak probabilities, effective sample in DAYS.",
+    "requirement": "Re-run ~/vl-analysis/mc-drawdown against the current store (by session-day, not trade); report expectancy CI, drawdown quantiles at 20/50/100 trades, streak probabilities, effective sample in DAYS.",
     "status": "reviewed: answer/proposal/explicit measurement limits",
     "report": "2026-09-05-vet-06-risk.md",
     "line": 25,

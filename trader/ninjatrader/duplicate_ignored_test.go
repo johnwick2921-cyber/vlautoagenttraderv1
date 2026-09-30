@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // FIX-DOUBLE-ENTRY test 7 — a "duplicate_ignored" reply from the AddOn-side

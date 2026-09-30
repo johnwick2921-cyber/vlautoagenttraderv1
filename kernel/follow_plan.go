@@ -4,7 +4,7 @@ import (
 	"math"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── THE FOLLOW-PLAN (round 17) — RECORDED ONLY, NEVER ARMED ─────────────────

@@ -1,9 +1,9 @@
 C6-F2 ADVERSARIAL RE-VERIFICATION — touch_outcomes.candidate_seated
-Verifier: independent lane. Worktree /home/hoang/nofx-2day04 @ f1c35e05 (dev tip dfbfa660 + audit checkpoint).
+Verifier: independent lane. Worktree /home/hoang/vl-2day04 @ f1c35e05 (dev tip dfbfa660 + audit checkpoint).
 All commands re-run from scratch; peer output NOT trusted.
 
 --- 1. every reference to the field (my own grep, whole tree) ---
-$ cd /home/hoang/nofx-2day04 && grep -rn "CandidateSeated\|candidate_seated" --include=*.go .
+$ cd /home/hoang/vl-2day04 && grep -rn "CandidateSeated\|candidate_seated" --include=*.go .
 store/touch_outcomes.go:31:     CandidateSeated bool   `gorm:"index"`          <- DECL
 trader/detector_record.go:66:  CandidateSeated: true, ...                      <- ONLY WRITE (literal)
 trader/detector_record_test.go:84: if !got.CandidateSeated {                   <- TEST ASSERT
@@ -46,7 +46,7 @@ and the cut one carries its reason."
 => [A] the bivalued off-policy instrument exists and works.
 
 --- 5. LIVE STORE (read-only) ---
-$ sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+$ sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
   "SELECT 'touch_outcomes',COUNT(*) FROM touch_outcomes UNION ALL SELECT 'candidate_pool',COUNT(*) FROM candidate_pool;"
 touch_outcomes|0
 candidate_pool|0
@@ -57,10 +57,10 @@ idx_touch_outcomes_candidate_seated).
 
 --- 6. the production writer has NEVER executed ---
 Running binary PID 594377 booted 2026-09-03 23:12:54 CT. Its own boot line:
-/home/hoang/nofx/data/nofx_2026-09-03.log:29005
+/home/hoang/vl/data/vl_2026-09-03.log:29005
   09-03 23:12:55 [INFO] .../main.go:404 (kernel.DetectorBootLine, READ not literal)
   "detector: D1' k=3 ... touch_outcomes=0 - candidate_pool=0"
-$ grep -hc "detector recorded" /home/hoang/nofx/data/nofx_2026-09-0[234].log -> 0, 0, 0
+$ grep -hc "detector recorded" /home/hoang/vl/data/vl_2026-09-0[234].log -> 0, 0, 0
 detector_record.go always logs exactly one of three lines when entered
 (:40 no-bars INFO, :45 delta-0 WARN, :104 recorded INFO). Zero of any =>
 [A] recordDetectorOutputs has not been entered in production, ever.

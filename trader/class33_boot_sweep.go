@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/trader/types"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/trader/types"
 	"time"
 )
 

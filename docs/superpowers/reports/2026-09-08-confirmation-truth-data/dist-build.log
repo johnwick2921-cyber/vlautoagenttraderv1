@@ -1,5 +1,5 @@
 
-> nofx-web@1.0.0 build
+> vl-web@1.0.0 build
 > tsc && vite build
 
 vite v6.4.1 building for production...

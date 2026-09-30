@@ -11,13 +11,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/telemetry"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // conditionsBootLogged dedupes the per-trader resolved-condition-map boot log
@@ -1987,7 +1987,7 @@ func StopEntryBootLine(received, expected string, seamOn bool) string {
 // match=NO" for the life of the process whenever the first armed cycle beat the
 // AddOn's first frame — which is not hypothetical: the sibling 🔌 line, which
 // reads the same value under the same latch, printed build_id=none on 3 of its
-// 8 observed emissions (data/nofx_*.log, 09-03 21:19:00, 09-03 21:48:12,
+// 8 observed emissions (data/vl_*.log, 09-03 21:19:00, 09-03 21:48:12,
 // 09-04 07:38:40 CT). Keying on the LINE means the none→proven transition is on
 // the record exactly once, and a steady state still prints once.
 func (at *AutoTrader) logStopEntryBootLine() {

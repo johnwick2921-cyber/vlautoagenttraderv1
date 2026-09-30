@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"nofx/logger"
+	"vl/logger"
 	"sync/atomic"
 	"time"
 )

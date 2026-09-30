@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // ITEM 2 (2026-08-17) — ASKING MUST WORK WITH NO ACTIVE PLAN.

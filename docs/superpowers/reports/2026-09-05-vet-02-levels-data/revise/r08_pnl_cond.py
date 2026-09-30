@@ -1,5 +1,5 @@
 import sqlite3, json, math, collections
-db=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True); db.row_factory=sqlite3.Row
+db=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True); db.row_factory=sqlite3.Row
 ERA=1786856400000  # 2026-08-15 00:00 CT
 plans={}
 for r in db.execute("SELECT plan_id, version, doc FROM plans"):

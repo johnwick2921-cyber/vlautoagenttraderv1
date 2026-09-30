@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // captureLog redirects the process logger into a buffer for one test.
@@ -39,7 +39,7 @@ func writeDotEnv(t *testing.T, body string) string {
 // the line, and must not echo the file: godotenv's error quotes the entire
 // remainder of the file from the bad statement onward.
 func TestLoadDotEnv_MalformedFileWarnsWithLineAndWithoutContents(t *testing.T) {
-	const good = "NOFX_TEST_DOTENV_GOOD"
+	const good = "VL_TEST_DOTENV_GOOD"
 	const secret = "sk-test-secret-must-not-appear-in-log"
 	t.Cleanup(func() { os.Unsetenv(good) })
 	os.Unsetenv(good)
@@ -73,7 +73,7 @@ func TestLoadDotEnv_MalformedFileWarnsWithLineAndWithoutContents(t *testing.T) {
 }
 
 func TestLoadDotEnv_ValidFileIsSilentAndLoads(t *testing.T) {
-	const key = "NOFX_TEST_DOTENV_VALID"
+	const key = "VL_TEST_DOTENV_VALID"
 	t.Cleanup(func() { os.Unsetenv(key) })
 	os.Unsetenv(key)
 

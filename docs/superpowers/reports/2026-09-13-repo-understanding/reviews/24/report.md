@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 24 — plan UI and guide source review
 
-Baseline `63968be62e44db2fb07a92883e02127b9064b0be`, isolated `/tmp/nofx-understanding-execution-20260913`. **61/61 assigned files, 12,988 lines fully read; zero unread.** Named-function census: 184 functions/methods, plus 17 declaration/content-only file records and 243 anonymous callbacks covered within their containing functions/file. Fifteen additional dependency/test files were read fully or in explicitly recorded excerpts. This is a slice review, not whole-repository coverage.
+Baseline `63968be62e44db2fb07a92883e02127b9064b0be`, isolated `/tmp/vl-understanding-execution-20260913`. **61/61 assigned files, 12,988 lines fully read; zero unread.** Named-function census: 184 functions/methods, plus 17 declaration/content-only file records and 243 anonymous callbacks covered within their containing functions/file. Fifteen additional dependency/test files were read fully or in explicitly recorded excerpts. This is a slice review, not whole-repository coverage.
 
 Evidence **[A]** means exact source/test inspection; **[B]** identifies inferred runtime consequences. No browser reproduction, service calls, trade execution, live data inspection, source edits, or tests were run. A test described below was read, not demonstrated passing. Historical comments and guide performance numbers were not independently revalidated.
 

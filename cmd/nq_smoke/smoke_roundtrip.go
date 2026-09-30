@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"nofx/safe"
+	"vl/safe"
 	"os"
 	"time"
 
-	ntpkg "nofx/provider/ninjatrader"
+	ntpkg "vl/provider/ninjatrader"
 )
 
 // runRoundtripSmoke exercises the full signal -> mockNT -> fill cycle on a

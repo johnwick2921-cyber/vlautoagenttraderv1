@@ -1,5 +1,5 @@
 package main
-import("encoding/json";"os";"time";"nofx/kernel";"nofx/market")
+import("encoding/json";"os";"time";"vl/kernel";"vl/market")
 func main(){
  b:=time.Date(2026,9,8,13,15,0,0,time.UTC).UnixMilli()
  bars:=[]market.Kline{{OpenTime:b,CloseTime:b+59999,Open:100,High:100,Low:98,Close:99,Volume:1}}

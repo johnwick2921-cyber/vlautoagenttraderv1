@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial verification — "decision-path EntryGate min-SL leg was fed the DAILY ATR"
 Verdict: CONFIRMED (independently reproduced, not by inverting the peer's arithmetic).
 
 ## 1. The three refusals (store) [A]
-sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" -header -column "
+sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" -header -column "
 SELECT id, datetime(created_at) AS utc,
        datetime(strftime('%s',substr(created_at,1,19)),'unixepoch','-5 hours') AS ct,
        plan_id, plan_version, cited_scenario_id, risk_check_error
@@ -17,7 +18,7 @@ has never fired on any other row). Double-prefix 'entry_gate: entry_gate:%' rows
 spanning 09-02 18:48:49 CT .. 09-03 02:12:56 CT.
 
 ## 2. The arm seam, same setup, same window (file log) [A]
-grep -n "arm stop ASIA S2" /home/hoang/nofx/data/nofx_2026-09-02.log
+grep -n "arm stop ASIA S2" /home/hoang/vl/data/vl_2026-09-02.log
  18:45:17  atr_floor 29228.42 (1.5xATR5m 12.78)
  18:47:17  atr_floor 29230.43 (1.5xATR5m 14.12)
  18:51:17  atr_floor 29229.45 (1.5xATR5m 13.47)   <- interleaves record 36641
@@ -38,10 +39,10 @@ Replayed over the last 2000 1m MNQ bars before 2026-09-02 18:45:17 CT:
   dATR = (315.50+285.25)/2 = 300.3750     1.5 x dATR = 450.5625 -> "%.2f" -> 450.56   EXACT MATCH
   ATR5m(14) on the same window, 5m-aggregated (AcceptanceBars "2x5m" -> Wilder ATR14) = 13.42
     (inside the log's 12.78-14.12 band)
-MIN_SL_ATR_MULT is NOT set in /home/hoang/nofx/.env; MinSLATRMultDefault = 1.5 (kernel/min_sl.go:34).
+MIN_SL_ATR_MULT is NOT set in /home/hoang/vl/.env; MinSLATRMultDefault = 1.5 (kernel/min_sl.go:34).
 
 ## 4. The buggy wiring was in the binary that wrote those rows [A]
-Boot lines (data/nofx_2026-09-02.log): 18:27:17 rev f34925c0ae3a ... next boot 20:42:28 rev 575e9c05f2a3.
+Boot lines (data/vl_2026-09-02.log): 18:27:17 rev f34925c0ae3a ... next boot 20:42:28 rev 575e9c05f2a3.
 The three refusals (18:48-18:52 CT) fall inside f34925c0ae3a's run.
   git show f34925c0ae3a:trader/entry_gate.go | grep -n "ATR5m:"
     185:  ATR5m:  atr5m,                          <- Path:"arm"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"nofx/market"
+	"vl/market"
 	"testing"
 )
 

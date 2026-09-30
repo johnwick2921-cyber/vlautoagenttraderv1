@@ -1,7 +1,7 @@
 """Recompute historical published claims, explicitly not primary evidence of strategy edge."""
 import csv,json,statistics as st,shutil,math
 from pathlib import Path
-root=Path('/home/hoang/nofx-vet-01-complete/docs/superpowers/reports')
+root=Path('/home/hoang/vl-vet-01-complete/docs/superpowers/reports')
 if not Path('legacy_floor_input.csv').exists():shutil.copyfile(root/'2026-09-04-research-conformance-data/E-d3-mae-mfe-per-trade.csv','legacy_floor_input.csv')
 if not Path('legacy_plan_geometry.csv').exists():
  rows=[]

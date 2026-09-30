@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-ONE-BUTTON M2 site 2 — the armed placement path ──────────────────────

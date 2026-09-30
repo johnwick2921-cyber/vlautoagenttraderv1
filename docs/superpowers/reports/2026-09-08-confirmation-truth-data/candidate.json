@@ -1,6 +1,6 @@
 {
   "source_revision": "2166a072339131fdb0a8e8e816e12148b261872b",
-  "binary_path": "/tmp/nofx-confirmation-build/nofx/nofx-bin",
+  "binary_path": "/tmp/vl-confirmation-build/vl/vl-bin",
   "binary_sha256": "26cecc0f0513482c88ec695051b9585f179cef53806b86f74e43645ecd770292",
   "binary_bytes": 72204224,
   "vcs_modified": false,

@@ -1,5 +1,5 @@
 #!/bin/bash
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "--- 09-03 outage bounds: last decision before 13:00 and first after 13:00 CT"
 sqlite3 "$DB" "select max(datetime(timestamp,'-5 hours')) from decision_records where date(timestamp,'-5 hours')='2026-09-03' and time(timestamp,'-5 hours')<'13:00'"
 sqlite3 "$DB" "select min(datetime(timestamp,'-5 hours')) from decision_records where date(timestamp,'-5 hours')='2026-09-03' and time(timestamp,'-5 hours')>='13:00'"

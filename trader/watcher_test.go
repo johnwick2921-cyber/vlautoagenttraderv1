@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 func defaultKnobs() watchRailKnobs { return watchRailKnobs{minConf: 70, minHold: 2, warnConsec: 2} }

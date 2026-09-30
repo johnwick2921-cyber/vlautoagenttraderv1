@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # COMBINED WAVE — WINRATE FIXES (Pack A) + VOLUME LEVELS (Pack B, NO-GO)
 # Implementation report 2026-08-26 · branch feat/winrate-volume · PR #76
 
@@ -63,5 +64,5 @@ asserted in planner_prompt_test + new min_sl_gate_test — no golden touched).
 2. Proximity 1.5→1.0 and seats 12→8 rulings: held for the volume wave (B2) —
    re-rule when Pack B re-dispatches.
 3. min-conf 65 revisit (week evidence favors it; early week mixed).
-4. Merge PR #76 → dev; partner catch-up rides on top (partner tree == nofx tree
+4. Merge PR #76 → dev; partner catch-up rides on top (partner tree == vl tree
    → format-patch clean).

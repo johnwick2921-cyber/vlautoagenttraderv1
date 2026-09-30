@@ -10,7 +10,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 func TestConfirmRefPriceIsThePreferredAnchor(t *testing.T) {

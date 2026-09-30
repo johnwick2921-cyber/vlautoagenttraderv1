@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func main() {

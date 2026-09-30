@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # EOD VERIFICATION — everything shipped 2026-08-31
 
 Date: 2026-09-01 00:59 CT · Read-only · No code, no config, no writes, no cutover.
@@ -20,10 +21,10 @@ Evidence: live journal, live SQLite (mode=ro), live API, dev tree @ `2d43ded1` (
 
 No missing line — no wave failed to activate.
 
-1.3 Rollback slot: `nofx-bin.prev.boot` = `ebc37e01d7dd…` (class 32). Note: the rollback chain is now ebc37e01 → fef656a4; the 0C binary is two slots deep (no longer held).
+1.3 Rollback slot: `vl-bin.prev.boot` = `ebc37e01d7dd…` (class 32). Note: the rollback chain is now ebc37e01 → fef656a4; the 0C binary is two slots deep (no longer held).
 1.4 `deploy/RELEASE` = `fef656a4ee7c…` · `GUIDE_BUILT_REV` = `fef656a4ee7c…` — both match the live rev.
-1.5 Lock: `~/nofx-main.lock` present (re-acquired for THIS dispatch): owner=hoang pid=1437095 expiry=2026-09-01 03:49:37 CT task=eod-verification. Liveness check (the canon added today): `kill -0 1437095` → **ALIVE**.
-1.6 Worktrees: 8 present — `nofx-cc`, `nofx-census`, `nofx-clockhold`, `nofx-entry` (locked), `nofx-news`, `nofx-sec`, `nofx-vf`, `nofx-weekly`. All pre-date today's six waves; `nofx-0c`, `nofx-32`, `nofx-34` were all removed at their closeouts. No leftovers from today.
+1.5 Lock: `~/vl-main.lock` present (re-acquired for THIS dispatch): owner=hoang pid=1437095 expiry=2026-09-01 03:49:37 CT task=eod-verification. Liveness check (the canon added today): `kill -0 1437095` → **ALIVE**.
+1.6 Worktrees: 8 present — `vl-cc`, `vl-census`, `vl-clockhold`, `vl-entry` (locked), `vl-news`, `vl-sec`, `vl-vf`, `vl-weekly`. All pre-date today's six waves; `vl-0c`, `vl-32`, `vl-34` were all removed at their closeouts. No leftovers from today.
 1.7 git: dev tip `2d43ded1` ("class 34 cutover record"), main tree porcelain-clean.
 
 ## PART 2 · PER-WAVE LIVE VERIFICATION
@@ -87,5 +88,5 @@ No missing line — no wave failed to activate.
 Plain language:
 - Genuinely live and proven tonight: classes 27 (source-parity + heartbeat), 0A/0A-2 (+$164.00 with visible-total agreement), read times, weekly render, repair retry, 0C map, and class 34 — whose new hint text already fired in production at 00:51:52.
 - Live but unproven until a future event: class 32's wall-clock read (event: today's ASIA read at **16:30 CT**, expect `🗓 session read fired during halt …`); the weekly prompt-render leg (event: next full planner authoring).
-- Did not take / report-vs-system mismatches: none functional. Two honest discrepancies: (a) checklist gaps are 27/28/29/33, not just 33; (b) `nofx-bin.prev.boot` holds class 32, not 0C — the rollback chain is one wave shorter than an all-day rollback would want.
+- Did not take / report-vs-system mismatches: none functional. Two honest discrepancies: (a) checklist gaps are 27/28/29/33, not just 33; (b) `vl-bin.prev.boot` holds class 32, not 0C — the rollback chain is one wave shorter than an all-day rollback would want.
 - The single most important thing to watch tomorrow: **the 16:30 CT ASIA read** — it must fire on wall-clock during the halt (class 32) and, if rejected, carry the legal `reject` hint + valid-conditions suffix (class 34). Second watch: the currently in-flight ASIA repair read (owner reset 00:44:40) — no cutover until it resolves.

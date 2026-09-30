@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // synthetic 1m hold: entry at t0, exit at t3; a spike up to 15650 and dip to 15550.

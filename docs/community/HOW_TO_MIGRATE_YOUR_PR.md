@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 🔄 How to Migrate Your PR to the New Format
 
 **Language:** [English](HOW_TO_MIGRATE_YOUR_PR.md) | [中文](HOW_TO_MIGRATE_YOUR_PR.zh-CN.md)
@@ -83,7 +84,7 @@ If you prefer to do it manually:
 
 ```bash
 # Add upstream if not already added
-git remote add upstream https://github.com/NoFxAiOS/nofx.git
+git remote add upstream upstream github link (removed in the VL rename)
 
 # Fetch latest changes
 git fetch upstream
@@ -254,8 +255,8 @@ If the migration script doesn't work:
 
 **Stuck on migration?**
 - Comment on your PR
-- Ask in [Telegram](https://t.me/nofx_dev_community)
-- Open a [Discussion](https://github.com/NoFxAiOS/nofx/discussions)
+- Ask in [Telegram](upstream telegram link (removed in the VL rename))
+- Open a [Discussion](upstream github link (removed in the VL rename))
 
 **We're here to help you succeed!** 🚀
 
@@ -269,4 +270,4 @@ Once migrated:
 3. ✅ Wait for maintainer review
 4. ✅ Celebrate when merged! 🎉
 
-**Thank you for contributing to NOFX!**
+**Thank you for contributing to VL!**

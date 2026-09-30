@@ -31,7 +31,7 @@ import {
   getStoredAuthUserId,
   loadAgentDraft,
   loadAgentMessages,
-  migrateAgentMessages,
+  migrateGuestMessagesIntoUserKey,
   prepareAgentMessagesForPersistence,
   persistAgentDraft,
   persistAgentMessages,
@@ -78,7 +78,7 @@ export function AgentChatPage() {
 
   useEffect(() => {
     if (!user?.id) return
-    migrateAgentMessages(window.localStorage, user.id)
+    migrateGuestMessagesIntoUserKey(window.localStorage, user.id)
   }, [user?.id])
 
   // Restore chat history for the current user when opening the agent page.

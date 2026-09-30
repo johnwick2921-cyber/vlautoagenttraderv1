@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/trader"
+	"vl/trader"
 )
 
 // ── the library seam mirrors the LANDED #201 shape (CTO 1790261377377) ─────

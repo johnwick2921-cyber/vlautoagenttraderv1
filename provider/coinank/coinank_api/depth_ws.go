@@ -3,10 +3,10 @@ package coinank_api
 import (
 	"context"
 	"encoding/json"
-	"nofx/provider/coinank/coinank_enum"
+	"vl/provider/coinank/coinank_enum"
 
 	"golang.org/x/net/websocket"
-	"nofx/safe"
+	"vl/safe"
 )
 
 const MainDepthWsUrl = "wss://ws.coinank.com/wsDepth/wsKline"

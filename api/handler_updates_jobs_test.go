@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 const testJobID = "0123456789abcdef"

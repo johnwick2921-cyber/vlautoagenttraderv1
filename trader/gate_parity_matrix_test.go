@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"nofx/discipline"
-	"nofx/kernel"
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/discipline"
+	"vl/kernel"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0b — THE GATE-PARITY MATRIX ───────────────────────────────

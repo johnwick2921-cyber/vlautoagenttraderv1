@@ -1,11 +1,12 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial verification — arm 35 stop / "zero slippage" claim
-Verifier run 2026-09-04. Source rev: worktree /home/hoang/nofx-2day04 (8579df0a, dev tip line for boot 7 / 530009ff).
-DB opened read-only: sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"
+Verifier run 2026-09-04. Source rev: worktree /home/hoang/vl-2day04 (8579df0a, dev tip line for boot 7 / 530009ff).
+DB opened read-only: sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro"
 
 ## Verdict: PLAUSIBLE core, REFUTED on "zero slippage" and on the evidence chain.
 
 ### 1. Stop composition is per-cycle, not a single value [A]
-$ { awk '/^09-03 /' nofx_2026-09-02.log; cat nofx_2026-09-03.log; } | grep "🛑 arm stop"
+$ { awk '/^09-03 /' vl_2026-09-02.log; cat vl_2026-09-03.log; } | grep "🛑 arm stop"
 NY S1 leg 1 short composed 24x on 09-03 from 08:30:54 to 09:15:01, range 29307.93 .. 29354.91.
 The 6 values after the plan moved the authored stop to 29340.00:
   09:02:54  29354.91  (1.5xATR5m 46.61)   <- the one the peer quotes
@@ -31,7 +32,7 @@ Two independent always-false conditions:
   (b) row.StopPx was already set to leg.Stop by the literal -> churnNeedsModify(x,y,x,y,tick) = false.
 Reproduced: churnNeedsModify(leg.Stop,leg.Target,leg.Stop,leg.Target,0.25) = false
             churnNeedsModify(29354.9141,29144.50,29351.6284728996,29144.50,0.25) = true (13.14 ticks)
-$ grep -c "bracket modify" nofx_2026-*.log   -> 0 in ALL 18 files, 2026-08-17 .. 2026-09-03.
+$ grep -c "bracket modify" vl_2026-*.log   -> 0 in ALL 18 files, 2026-08-17 .. 2026-09-03.
 So the count 0 is a dead-code zero, true every day for every arm; it carries no information.
 
 ### 4. Rounding is on the live path [A]

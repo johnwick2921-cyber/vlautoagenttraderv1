@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # One-button update: operator runbook (UPDATER-USABLE-V1, 2026-09-27)
 
 **What this is:** the owner-side procedure for the one-button update — from a
@@ -25,27 +26,27 @@ answers `install_enabled: true` + `worker_listening: true`.
 2. **GitHub Environment `release`:** repo → Settings → Environments → `release`:
    add yourself as a REQUIRED REVIEWER. The signing key lives ONLY there.
 3. **Enroll this box:** see the M3 enrollment runbook —
-   `go run ./cmd/updater-bootstrap --install-dir <bot folder> enroll <your exact account email>`.
-4. **Turn the glue on:** `NOFX_UPDATER=1` (exactly 1) in the bot's environment,
+   `go run ./cmd/vl-updater-bootstrap --install-dir <bot folder> enroll <your exact account email>`.
+4. **Turn the glue on:** `VL_UPDATER=1` (exactly 1) in the bot's environment,
    then restart the bot. Unset, nothing installs and the verifier is the stub.
 5. **Worker install** (no privilege escalation anywhere):
-   - create `~/.config/nofx-updater/env`, mode 0600, with exactly two lines:
-     `NOFX_RELEASE_DIR=/absolute/path/outside/nofx` (never inside `~/nofx` —
+   - create `~/.config/vl-updater/env`, mode 0600, with exactly two lines:
+     `VL_RELEASE_DIR=/absolute/path/outside/vl` (never inside `~/vl` —
      the worker refuses it, and so does the installer) and
-     `NOFX_CUTOVER_TOKEN=<a fresh gate-jwt>`.
+     `VL_CUTOVER_TOKEN=<a fresh gate-jwt>`.
    - run `deploy/install-updater-worker.sh <40-hex sha>` from a checkout — it
-     builds `~/bin/nofx-updater` from that exact commit in a throwaway clone
+     builds `~/bin/vl-updater` from that exact commit in a throwaway clone
      (proves `vcs.modified=false` and `vcs.revision=<sha>`), installs the
      systemd --user unit, and never prints the token.
-6. **Start the worker attended:** `systemctl --user start nofx-updater`, then
+6. **Start the worker attended:** `systemctl --user start vl-updater`, then
    open Settings → Updates: once the page reads install_enabled and
    worker_listening both true (and the review constant is off), the button is
    live.
 
-**The token clock:** `NOFX_CUTOVER_TOKEN` is a gate-jwt with a **24-hour**
+**The token clock:** `VL_CUTOVER_TOKEN` is a gate-jwt with a **24-hour**
 lifetime (`auth/auth.go:227`). There is no longer-lived token type. Re-mint it
 and replace the env line **before each install window**, then
-`systemctl --user restart nofx-updater`. An `authorize` grant is valid **5
+`systemctl --user restart vl-updater`. An `authorize` grant is valid **5
 minutes**, single use.
 
 ## 2. Every-release loop
@@ -53,20 +54,20 @@ minutes**, single use.
 1. **Tag + approve.** The release is cut from an APPROVED tag only
    (`release.yml` refuses anything else). Approve the `release` Environment run.
    The workflow proves the tree clean, builds the bot, the web assets, and the
-   two updater binaries (`updater/nofx-updater`,
-   `updater/nofx-updater-bootstrap`), stages the allow-list, scans for secrets,
+   two updater binaries (`updater/vl-updater`,
+   `updater/vl-updater-bootstrap`), stages the allow-list, scans for secrets,
    and signs the manifest.
-2. **Download to the local inbox:** `gh release download <release_id> --dir <NOFX_RELEASE_INBOX>`
-   — `nofx-updater fetch` reads `<inbox>/<release_id>.tar.gz`; there is no
+2. **Download to the local inbox:** `gh release download <release_id> --dir <VL_RELEASE_INBOX>`
+   — `vl-updater fetch` reads `<inbox>/<release_id>.tar.gz`; there is no
    network fetch.
-3. **Fetch (attended, verifies):** `nofx-updater fetch <release_id>`. It checks
+3. **Fetch (attended, verifies):** `vl-updater fetch <release_id>`. It checks
    the signature and every file against the INSTALL's
    `deploy/release_allowed_signers`, materializes the release under
-   `NOFX_RELEASE_DIR/<source_sha>`, and writes the verdict into
+   `VL_RELEASE_DIR/<source_sha>`, and writes the verdict into
    `data/updater/verdicts/`. No verdict, no install (`422 release not
    verified`).
 4. **Authorize (attended, single use):**
-   `go run ./cmd/updater-bootstrap --install-dir <bot folder> authorize <release_id>`,
+   `go run ./cmd/vl-updater-bootstrap --install-dir <bot folder> authorize <release_id>`,
    type `AUTHORIZE <release_id>`. It prints ONE JSON line —
    `{release_id, job_id, expires_at, hmac}` — valid 5 minutes, single use.
 5. **Paste + Update now.** Paste that line into the Updates page box and press
@@ -78,7 +79,7 @@ minutes**, single use.
 6. **Watch.** The job runs its states until it parks at `nt8_updated`; the
    maintenance hold covers the bot meanwhile.
 7. **F5 in NT8** when the job says `nt8_updated`.
-8. **Resume (attended):** `nofx-updater resume <job>`.
+8. **Resume (attended):** `vl-updater resume <job>`.
 9. **The RELEASE marker commit.** After the cutover, the deploy lane writes the
    post-update `deploy/RELEASE` marker commit per the boot procedure — that is
    a deploy-lane step, never yours from the Updates page.
@@ -106,24 +107,29 @@ PROCEEDS instead of waiting for an AddOn that cannot answer:
   and records that it did.
 - The simple owner flow: **close NT8 → authorize → paste → Update now →
   wait for complete → open NT8** (and F5 first if the job recorded it).
-- With NT8 OPEN the census rule is exactly as before (you can still update
-  with NT8 open by disconnecting any live data connections first).
+- With NT8 OPEN, live (non-SIM) connections may stay connected: the census
+  admits them when **every account is flat** — the census proves
+  `positions=0` and `working=0` across ALL accounts, live ones included
+  (owner ruling 2026-09-28; the updater never disconnects anything). Any
+  open position or working order on ANY account — live or SIM — still
+  refuses, as does any connection in a transitional state. The owner flow
+  is the same open or closed: **just flat**, then update.
 
 ## 3. Recovery
 
-- **`recovery_needed`:** `nofx-updater recovery <job>` prints the manual steps
+- **`recovery_needed`:** `vl-updater recovery <job>` prints the manual steps
   for that job. Do them in order, then resume.
 - **Rollback:** restore the prior binary per the boot procedure's rollback
-  (the `nofx-bin.old.*` the cutover kept), then RELEASE + restart — the
+  (the `vl-bin.old.*` the cutover kept), then RELEASE + restart — the
   deploy-lane runbook owns this; do not improvise it here.
-- **Token expiry:** a stale `NOFX_CUTOVER_TOKEN` shows up as 401s from the app;
+- **Token expiry:** a stale `VL_CUTOVER_TOKEN` shows up as 401s from the app;
   re-mint it (step 1.5) and restart the worker. An expired authorize grant is
   a `403` — authorize a new one (the old one stays spent).
 
 ## 4. Warnings (named, not implied)
 
-- **NEVER put `NOFX_RELEASE_DIR` in the bot's `.env`.** It belongs ONLY in
-  `~/.config/nofx-updater/env`, the worker's own file. The bot's environment
+- **NEVER put `VL_RELEASE_DIR` in the bot's `.env`.** It belongs ONLY in
+  `~/.config/vl-updater/env`, the worker's own file. The bot's environment
   must not see it; the worker refuses a release root inside the install anyway.
 - **Never hand-edit `deploy/release_allowed_signers`.** The CTO adds your key.
 - **No privilege escalation, no sudo, ever.** The worker runs as your own user

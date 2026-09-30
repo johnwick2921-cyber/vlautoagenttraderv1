@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // W-FLIP-LINE-SIDE-OF-PRICE (2026-09-17) — the trader half. Write site: the
