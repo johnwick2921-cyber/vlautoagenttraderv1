@@ -242,6 +242,16 @@ func TestDroppedAIEntrySettlesItsOrderRowAndNoPositionExists(t *testing.T) {
 		o, _ := w.st.Order().GetOrderByExchangeID(w.at.exchangeID, sid)
 		return o != nil && o.Status == "CANCELED"
 	})
+	// FLAKE HUNT 2026-09-26: handleMaintenanceDrop settles the rows and THEN
+	// logs (maintenance_drop.go — the WARN reports the settled count), so the
+	// row settle is NOT the synchronization point for the log line. Waiting on
+	// the settle and reading the buffer immediately raced the WARN's write
+	// (one instruction behind) under -race scheduling — the line went missing
+	// from the capture. Wait for the LINE; the assertion is unchanged.
+	waitDrop(t, "the drop line to be logged", 5*time.Second, func() bool {
+		out := logs.String()
+		return strings.Contains(out, sid) && strings.Contains(out, "NEVER reached NT8")
+	})
 	if out := logs.String(); !strings.Contains(out, sid) || !strings.Contains(out, "NEVER reached NT8") {
 		t.Fatalf("the drop must be said out loud (signal + never reached NT8), log:\n%s", out)
 	}

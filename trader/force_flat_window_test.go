@@ -194,6 +194,7 @@ func TestArmPassRefusesPastAnEarlierInSessionEODFlat(t *testing.T) {
 func TestDecisionPathRefusesInsideTheT1ForceFlatLead(t *testing.T) {
 	r := newZoneRig(t, "e13-decision", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
 	t1LeadSlice(t, r.st)
+	_, before := telemetry.GateBlockSnapshot()
 	reason, refused := r.at.admitEntry(admitIntent{Path: admitDecision, Symbol: "MNQ", Action: "open_long", Now: e13Lead,
 		Decision: &kernel.Decision{Action: "open_long", Symbol: "MNQ"}})
 	if !refused || !strings.HasPrefix(reason, "force_flat_window:") {
@@ -203,8 +204,12 @@ func TestDecisionPathRefusesInsideTheT1ForceFlatLead(t *testing.T) {
 		t.Fatalf("the agent door inside the lead must be refused as force_flat_window before its bracket is judged, got refused=%v %q", refused, reason)
 	}
 	_, table := telemetry.GateBlockSnapshot()
-	if got := table[r.at.id]; got["force_flat_window"] != 2 || got["session_gate"] != 0 || got["no_trade_band"] != 0 {
-		t.Fatalf("gate-block telemetry must count both refusals under force_flat_window only: %v", got)
+	// FLAKE HUNT 2026-09-26: GateBlockSnapshot is a process-wide accumulator and
+	// -count=N reuses the binary — assert the DELTA, never the absolute count
+	// (iteration 3 saw force_flat_window:4 from two runs of 2).
+	b := before[r.at.id]
+	if got := table[r.at.id]; got["force_flat_window"]-b["force_flat_window"] != 2 || got["session_gate"]-b["session_gate"] != 0 || got["no_trade_band"]-b["no_trade_band"] != 0 {
+		t.Fatalf("gate-block telemetry must count both refusals under force_flat_window only: %v (before %v)", got, b)
 	}
 }
 

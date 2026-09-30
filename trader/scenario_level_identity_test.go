@@ -219,13 +219,16 @@ func TestLevelIdentityBootLineFoldsOverlay(t *testing.T) {
 		t.Fatalf("append overlay: %v", err)
 	}
 
-	var buf strings.Builder
+	var buf syncLogBuf
 	// CLASS 142-adjacent (CTO gate RED, 2026-09-24): logger.Log.Writer() is NOT a
 	// getter — it spawns a logrus writerScanner goroutine that logs every later
 	// entry into an io.Pipe nobody reads. The pipe fills (~64KB), the scanner
 	// blocks HOLDING the logrus mutex, and the NEXT test's first log call hangs
 	// forever (the package wall named TestZoneAcceptedIdentitySkips...).
 	// The restore value is Out; Writer() is a producer, never a capture.
+	// FLAKE HUNT 2026-09-26: the capture is the MUTEXED syncLogBuf — a plain
+	// strings.Builder String() read races any still-alive background goroutine
+	// writing into the shared global Out under -race.
 	old := logger.Log.Out
 	logger.Log.SetOutput(&buf)
 	t.Cleanup(func() { logger.Log.SetOutput(old) })
@@ -354,7 +357,7 @@ func TestLoggerCaptureNeverSpawnsAWriterScanner(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		var buf strings.Builder
+		var buf syncLogBuf
 		old := logger.Log.Out
 		logger.Log.SetOutput(&buf)
 		defer logger.Log.SetOutput(old)

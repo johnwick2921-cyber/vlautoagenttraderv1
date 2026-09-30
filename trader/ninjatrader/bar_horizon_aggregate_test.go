@@ -77,15 +77,18 @@ func TestHorizonWindowIsFiveMinutesAndReArmsWithCallers(t *testing.T) {
 		}
 		barHorizonWarn(start.Add(time.Duration(i)*25*time.Second), h(154+i), "MNQ", "5m", c, 2500)
 	}
-	if n := bhCountLines(get(), "bar horizon"); n != 1 {
+	if n := bhCountLines(bhFilter(get(), "api/handler_klines.go:377"), "bar horizon"); n != 1 {
 		t.Fatalf("inside five minutes: %d lines, want 1", n)
 	}
 	barHorizonWarn(start.Add(5*time.Minute+1*time.Second), h(170), "MNQ", "5m", "api/handler_klines.go:377", 2500)
-	lines := get()
+	lines := bhFilter(get(), "api/handler_klines.go:377")
 	if n := bhCountLines(lines, "bar horizon"); n != 2 {
 		t.Fatalf("past five minutes the key must speak again: %d lines: %v", n, lines)
 	}
-	if bhCountLines(lines, "suppressed=11") != 1 {
+	// "suppressed=11 since" — the re-armed line's form. The bare substring
+	// also matches the boot-totals tail ("… suppressed=11") once -count=N
+	// reuses the binary and totals carry over from the prior iteration.
+	if bhCountLines(lines, "suppressed=11 since") != 1 {
 		t.Errorf("the re-armed line must say how many it ate: %v", lines)
 	}
 }

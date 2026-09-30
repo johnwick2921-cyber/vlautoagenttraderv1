@@ -57,6 +57,16 @@ var preflightFlatLegs = []string{"addon_census_prehold", "ledger_exposure", "pla
 // AddOn acked THIS job, flat, no working orders, nothing in flight.
 var drainLegs = []string{"hold", "go_drained", "in_flight_sends", "queued_signals", "addon_ack", "addon_census", "ledger_exposure", "planner_in_flight"}
 
+// drainPathNT8Absent is the drain path taken when NT8 is CLOSED
+// (UPDATER-NT8-CLOSED, owner ruling 22:1x CT 09-27): the link has been down
+// ≥ 60s continuously, so no AddOn ack can exist. The drain then passes on the
+// gate's nt8_absent verdict — every ledger leg on its own evidence, plus the
+// SIM-only bound-account check — and the job file records the path and the
+// server's disconnect stamp. An AddOn that connects during the job revokes
+// the verdict (the gate flips eligible=false) and the normal ack/census legs
+// apply again from that moment, never grandfathered.
+const drainPathNT8Absent = "nt8_absent"
+
 func (w *Worker) stepDownload(j updaterjob.Job) stepResult {
 	start, ev := w.host.Now(), map[string]string{}
 	v, err := w.rel.Verdict(j.ReleaseID)
@@ -247,26 +257,98 @@ func (w *Worker) stepHold(j updaterjob.Job) stepResult {
 	return res
 }
 
-// stepDrain READS the app's own view until it is held, drained, acked by the
-// AddOn for THIS job and flat (never inferred from the worker's own write).
+// stepDrain READS the app's own view until it is held and drained. Two paths:
+// the normal one (held + acked by the AddOn for THIS job + every drain leg)
+// and nt8_absent (UPDATER-NT8-CLOSED): NT8 closed, link down ≥60s, every
+// ledger leg passing on its own evidence. The gate's eligible flag flips off
+// the moment an AddOn connects, so the absent verdict is revoked — the normal
+// legs apply again, never grandfathered.
 func (w *Worker) stepDrain(ctx context.Context, j updaterjob.Job) stepResult {
 	start, ev := w.host.Now(), map[string]string{}
 	err := w.poll(ctx, j, w.cfg.Budgets.Drain, func() (string, error) {
+		g, gerr := w.app.InstallationGate(ctx)
+		if gerr != nil {
+			return "installation-gate: " + gerr.Error(), nil
+		}
+		if g.JobID != j.JobID {
+			return fmt.Sprintf("installation-gate names job %q", g.JobID), nil
+		}
+		// The absent path: eligible + ready + the hold on disk is ours.
+		if a := g.NT8Absent; a != nil && a.Eligible {
+			if !a.Ready {
+				if b := firstFailingLeg(GateView{Legs: a.Legs}, nil); b != "" {
+					return b, nil
+				}
+				return "nt8_absent: not ready", nil
+			}
+			if s, st := ReadHoldFor(w.dataDir(), j.JobID); s != HoldOurs {
+				return "the hold on disk is not this job's (" + holdSummary(s, st) + ")", nil
+			}
+			ev["drain_path"] = drainPathNT8Absent
+			ev["link_down_since"] = a.LinkDownSince
+			for _, l := range a.Legs {
+				ev["leg_"+l.Name] = legEvidence(l)
+			}
+			return "", nil
+		}
+		// The normal path.
 		b, m := w.heldView(ctx, j.JobID)
 		if b != "" {
 			return b, nil
 		}
 		ev["ack_received"], ev["ack_build_id"] = m.AddonAck.Received, orNA(m.AddonAck.BuildID)
-		g, err := w.app.InstallationGate(ctx)
-		if err != nil {
-			return "installation-gate: " + err.Error(), nil
-		}
-		if g.JobID != j.JobID {
-			return fmt.Sprintf("installation-gate names job %q", g.JobID), nil
-		}
+		ev["drain_path"] = "normal"
 		return firstFailingLeg(g, drainLegs), nil
 	})
-	return stepResult{receipts: []Receipt{w.receipt("drain", start, ev, err)}, err: err}
+	return stepResult{
+		receipts: []Receipt{w.receipt("drain", start, ev, err)},
+		err:      err,
+		set: func(k *updaterjob.Job) {
+			// The job file says which path the drain took, with the server's
+			// disconnect stamp (READ, never a guess).
+			if ev["drain_path"] == drainPathNT8Absent {
+				k.DrainPath = drainPathNT8Absent
+				k.LinkDownSince = ev["link_down_since"]
+			}
+		},
+	}
+}
+
+// legEvidence renders one leg's verdict for the receipt: its own detail text
+// on both outcomes — the receipt carries each leg's EVIDENCE (UPDATER-NT8-CLOSED
+// item 1: "The receipt records the path taken and each leg's evidence").
+func legEvidence(l GateLeg) string {
+	if l.Pass {
+		return "PASS: " + l.Detail
+	}
+	return "FAIL: " + l.Detail
+}
+
+// absentGate returns "" when the nt8_absent verdict is ready for THIS job and
+// the hold on disk is ours; else the blocker. The normal verdict is never
+// consulted here: absent mode has its own legs.
+func (w *Worker) absentGate(ctx context.Context, j updaterjob.Job) (string, GateView) {
+	g, err := w.app.InstallationGate(ctx)
+	if err != nil {
+		return "installation-gate: " + err.Error(), g
+	}
+	if g.JobID != j.JobID {
+		return fmt.Sprintf("installation-gate names job %q", g.JobID), g
+	}
+	a := g.NT8Absent
+	if a == nil || !a.Eligible {
+		return "nt8_absent: not eligible (the AddOn is connected, or the link has not been down long enough)", g
+	}
+	if !a.Ready {
+		if b := firstFailingLeg(GateView{Legs: a.Legs}, nil); b != "" {
+			return b, g
+		}
+		return "nt8_absent: not ready", g
+	}
+	if s, st := ReadHoldFor(w.dataDir(), j.JobID); s != HoldOurs {
+		return "the hold on disk is not this job's (" + holdSummary(s, st) + ")", g
+	}
+	return "", g
 }
 
 // heldView reads /api/maintenance: our hold, held, and a fresh held ack for
@@ -320,6 +402,15 @@ func (w *Worker) stepGate(ctx context.Context, j updaterjob.Job) stepResult {
 	start, ev := w.host.Now(), map[string]string{}
 	var firstArrival time.Time
 	err := w.poll(ctx, j, w.cfg.Budgets.Gate, func() (string, error) {
+		// UPDATER-NT8-CLOSED: with NT8 absent there is no ack to double-read.
+		// The absent verdict is ready (every ledger leg + the hold on disk
+		// ours); a reconnect flips eligible=false and the normal two-ack path
+		// below applies again.
+		if b, g := w.absentGate(ctx, j); b == "" {
+			ev["gate_path"] = drainPathNT8Absent
+			ev["link_down_since"] = g.NT8Absent.LinkDownSince
+			return "", nil
+		}
 		g, err := w.app.InstallationGate(ctx)
 		if err != nil {
 			return "installation-gate: " + err.Error(), nil
@@ -370,6 +461,10 @@ func (w *Worker) stepGate(ctx context.Context, j updaterjob.Job) stepResult {
 // withdraw_entries, and only HoldOurs may ride along.
 func (w *Worker) reprove(ctx context.Context, j updaterjob.Job) error {
 	return w.poll(ctx, j, w.cfg.Budgets.Reprove, func() (string, error) {
+		// UPDATER-NT8-CLOSED: the absent verdict re-proves like any ready.
+		if b, _ := w.absentGate(ctx, j); b == "" {
+			return "", nil
+		}
 		g, err := w.app.InstallationGate(ctx)
 		if err != nil {
 			return "installation-gate: " + err.Error(), nil
@@ -436,6 +531,12 @@ func (w *Worker) stepNT8(ctx context.Context, j updaterjob.Job) stepResult {
 		}
 		if d.CSUnchanged != nil {
 			ev["cs_unchanged"] = strconv.FormatBool(*d.CSUnchanged)
+		}
+		if d.Absent {
+			ev["absent"] = "true"
+		}
+		if d.F5Owed {
+			ev["f5_owed"] = "true"
 		}
 	}
 	err := w.reprove(ctx, j)
@@ -548,34 +649,42 @@ func (w *Worker) stepBootVerify(ctx context.Context, j updaterjob.Job) stepResul
 		if err != nil {
 			return err
 		}
-		if !validBuildID(f.AddonBuildID) {
-			return errors.New("the manifest names no addon build_id")
-		}
-		ev["manifest_build_id"] = f.AddonBuildID
-		since := *j.WatchSince
-		if err := w.poll(ctx, j, w.cfg.Budgets.PostBootAck, func() (string, error) {
-			b, m := w.heldView(ctx, j.JobID)
-			if b != "" {
-				return b, nil
+		// UPDATER-NT8-CLOSED: in the nt8_absent drain path the AddOn-ack wait
+		// is SKIPPED — NT8 was closed at install time, so no ack can name the
+		// new process. Recorded, never faked: no build-id comparison is
+		// invented to stand in for the ack.
+		if j.DrainPath == drainPathNT8Absent {
+			ev["addon_ack_wait"] = "skipped (drain path nt8_absent)"
+		} else {
+			if !validBuildID(f.AddonBuildID) {
+				return errors.New("the manifest names no addon build_id")
 			}
-			// One clock (#206 review fold): the ack was received at
-			// now − AgeMs (monotonic on the app side, the same box), so
-			// "received after the kill" is age ≤ now − since. The old
-			// wall-clock compare of the rendered received string made a
-			// backward clock step read the NEW process's fresh ack as
-			// older than WatchSince — a good release rolled back.
-			age := m.AddonAck.AgeMs
-			if age < 0 || time.Duration(age)*time.Millisecond > w.host.Now().Sub(since) {
-				return "addon_ack: waiting for the AddOn to ack the new process", nil
+			ev["manifest_build_id"] = f.AddonBuildID
+			since := *j.WatchSince
+			if err := w.poll(ctx, j, w.cfg.Budgets.PostBootAck, func() (string, error) {
+				b, m := w.heldView(ctx, j.JobID)
+				if b != "" {
+					return b, nil
+				}
+				// One clock (#206 review fold): the ack was received at
+				// now − AgeMs (monotonic on the app side, the same box), so
+				// "received after the kill" is age ≤ now − since. The old
+				// wall-clock compare of the rendered received string made a
+				// backward clock step read the NEW process's fresh ack as
+				// older than WatchSince — a good release rolled back.
+				age := m.AddonAck.AgeMs
+				if age < 0 || time.Duration(age)*time.Millisecond > w.host.Now().Sub(since) {
+					return "addon_ack: waiting for the AddOn to ack the new process", nil
+				}
+				ev["acked_build_id"], ev["acked_age_ms"] = m.AddonAck.BuildID, strconv.FormatInt(age, 10)
+				ev["acked_at"] = w.host.Now().Add(-time.Duration(age) * time.Millisecond).Format(time.RFC3339Nano)
+				if m.AddonAck.BuildID != f.AddonBuildID {
+					return fmt.Sprintf("addon_ack: the AddOn runs build %q, the release is %q", m.AddonAck.BuildID, f.AddonBuildID), nil
+				}
+				return "", nil
+			}); err != nil {
+				return err
 			}
-			ev["acked_build_id"], ev["acked_age_ms"] = m.AddonAck.BuildID, strconv.FormatInt(age, 10)
-			ev["acked_at"] = w.host.Now().Add(-time.Duration(age) * time.Millisecond).Format(time.RFC3339Nano)
-			if m.AddonAck.BuildID != f.AddonBuildID {
-				return fmt.Sprintf("addon_ack: the AddOn runs build %q, the release is %q", m.AddonAck.BuildID, f.AddonBuildID), nil
-			}
-			return "", nil
-		}); err != nil {
-			return err
 		}
 		want := f.Artifacts["web/dist/index.html"]
 		if want == "" {

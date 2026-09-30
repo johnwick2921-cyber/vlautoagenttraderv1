@@ -2,6 +2,7 @@ package ninjatrader
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -69,6 +70,45 @@ func bhCountLines(lines []string, subs ...string) int {
 	return n
 }
 
+// suppressedFiveRe is the rollover discriminator: the 5-read fresh run before
+// the rollover would show as "suppressed=5" in the rollover line if the state
+// had not cleared. `[^0-9]` bounds it: the cumulative totals line can reach
+// "suppressed=591" under -count=N, and "suppressed=5" is a prefix of it — the
+// exact-5 form never matches a 5xx total.
+var suppressedFiveRe = regexp.MustCompile(`suppressed=5[^0-9]`)
+
+// suppressedSinceRe is the re-armed dedupe marker: "suppressed=N since T".
+var suppressedSinceRe = regexp.MustCompile(`suppressed=[0-9]+ since `)
+
+// bhFilter returns only the lines containing sub — a test's own caller frames.
+// Under -count=N with -race, prior tests' goroutines can still emit warn lines
+// into the shared sink while a later test captures; every assert must scope to
+// the caller strings THIS test drives, never to the whole sink.
+func bhFilter(lines []string, sub string) []string {
+	out := make([]string, 0, len(lines))
+	for _, l := range lines {
+		if strings.Contains(l, sub) {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// bhCountRe counts lines matching the regexp exactly. The cumulative
+// "totals(since boot)" counters keep rising under -count=N, so a substring
+// assert like "suppressed=5" would match "suppressed=591" inside a totals line
+// (the -count=5 flake DS-108 reproduced). The re-armed dedupe marker is
+// `suppressed=<digits> since ` — matched exactly, never by the totals.
+func bhCountRe(lines []string, re *regexp.Regexp) int {
+	n := 0
+	for _, l := range lines {
+		if re.MatchString(l) {
+			n++
+		}
+	}
+	return n
+}
+
 // PIN 1 — a read served fewer bars than it asked for WARNS, and names the
 // consumer. Covers the two real 12000-bar sites (trader/auto_trader_planner.go
 // and trader/auto_trader_weekly.go) against a 2500-bar ring
@@ -86,7 +126,7 @@ func TestBridgeWarnsWhenServedIsShortOfRequested(t *testing.T) {
 	if len(out) != 2500 {
 		t.Fatalf("returned %d klines, want 2500 — the warn must change nothing that is RETURNED (A10)", len(out))
 	}
-	lines := get()
+	lines := bhFilter(get(), "bar_horizon_bridge_test.go")
 	if n := bhCountLines(lines, "bar horizon"); n != 1 {
 		t.Fatalf("want 1 bar-horizon warn, got %d captured lines (asked=12000 served=2500): %v", n, lines)
 	}
@@ -124,8 +164,8 @@ func TestBridgeSilentWhenReadIsSatisfied(t *testing.T) {
 	if out[0].OpenTime != cached[len(cached)-2000].T {
 		t.Fatalf("oldest returned bar %d, want %d", out[0].OpenTime, cached[len(cached)-2000].T)
 	}
-	if n := bhCountLines(get(), "bar horizon"); n != 0 {
-		t.Fatalf("a satisfied, contiguous read emitted %d bar-horizon warns, want 0: %v", n, get())
+	if n := bhCountLines(bhFilter(get(), "bar_horizon_bridge_test.go"), "bar horizon"); n != 0 {
+		t.Fatalf("a satisfied, contiguous read emitted %d bar-horizon warns, want 0: %v", n, bhFilter(get(), "bar_horizon_bridge_test.go"))
 	}
 }
 
@@ -146,7 +186,7 @@ func TestBridgeWarnsOnAHoledWindowThatIsNotShort(t *testing.T) {
 	if len(out) != 120 {
 		t.Fatalf("returned %d klines, want 120", len(out))
 	}
-	lines := get()
+	lines := bhFilter(get(), "bar_horizon_bridge_test.go")
 	if bhCountLines(lines, "bar horizon", "HOLED", "gaps=80") != 1 {
 		t.Fatalf("want one HOLED warn with gaps=80 (served==asked==120), got: %v", lines)
 	}
@@ -166,7 +206,7 @@ func TestWarnFieldsAreResolvedNotLiteral(t *testing.T) {
 
 	barsFromCache(cache, "MNQ", "1m", 500, now)
 
-	lines := get()
+	lines := bhFilter(get(), "bar_horizon_bridge_test.go")
 	for _, want := range []string{"ring=1234", "asked=500", "served=100"} {
 		if bhCountLines(lines, want) != 1 {
 			t.Fatalf("warn line missing %q: %v", want, lines)

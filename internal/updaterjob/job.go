@@ -87,6 +87,13 @@ type Job struct {
 
 	NT8 *NT8Decision `json:"nt8,omitempty"`
 
+	// DrainPath is how the drain passed: "" (the normal ack/census path) or
+	// "nt8_absent" (UPDATER-NT8-CLOSED: the link was down >= 60s and every
+	// ledger leg passed on its own evidence). LinkDownSince is the server's
+	// disconnect stamp when the absent path was taken.
+	DrainPath     string `json:"drain_path,omitempty"`
+	LinkDownSince string `json:"link_down_since,omitempty"`
+
 	ResumedAt       *time.Time `json:"resumed_at,omitempty"`        // the attended resume from nt8_updated
 	LastGoodReceipt *int       `json:"last_good_receipt,omitempty"` // index into receipts (recovery_needed)
 	RecoveryReason  string     `json:"recovery_reason,omitempty"`
@@ -148,6 +155,14 @@ type NT8Decision struct {
 	AckedAt         string `json:"acked_at,omitempty"`       // addon_ack.received, verbatim
 	AckAcceptSeq    uint64 `json:"ack_accept_seq,omitempty"` // the connection's accept_seq at the park — a new seq proves a new connection
 	CSUnchanged     *bool  `json:"cs_unchanged,omitempty"`
+	// Absent marks the nt8_absent decision (UPDATER-NT8-CLOSED): NT8 was
+	// closed at the decision, so no ack was read — the decision rests on the
+	// signed manifest vs the install's ninjascript/*.cs content alone.
+	// F5Owed records that the AddOn must be F5'd at the next NT8 start (the
+	// release's C# differs from the install's); the job does NOT park — NT8
+	// is closed, so there is nobody to F5 now.
+	Absent bool `json:"absent,omitempty"`
+	F5Owed bool `json:"f5_owed,omitempty"`
 }
 
 // NT8 decisions.

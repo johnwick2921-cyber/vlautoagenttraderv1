@@ -51,7 +51,14 @@ func fullJob(t *testing.T, dd string) Job {
 		Dist: "/home/u/nofx-releases/" + sha + "/web/dist", ReleaseFile: "/home/u/nofx-releases/" + sha + "/RELEASE",
 		ManifestPath: "/home/u/nofx-releases/" + sha + "/manifest.json"}
 	j.Install = &Release{Dir: "/home/u/nofx", SHA: old, Binary: "/home/u/nofx/nofx-bin", Dist: "/home/u/nofx/web/dist", ReleaseFile: "/home/u/nofx/deploy/RELEASE"}
-	for _, s := range []State{StatePreflightOK, StateMaintenanceHeld, StateDrainedAcked, StateGateOK} {
+	for _, s := range []State{StatePreflightOK, StateMaintenanceHeld} {
+		step(t, dd, &j, &now, s)
+	}
+	// UPDATER-NT8-CLOSED: the drain path + the server's disconnect stamp (the
+	// maximal-key fixture carries every schema key, not one real run's story).
+	j.DrainPath = "nt8_absent"
+	j.LinkDownSince = "2026-09-24T18:00:00.000000000Z"
+	for _, s := range []State{StateDrainedAcked, StateGateOK} {
 		step(t, dd, &j, &now, s)
 	}
 	j.BackupPath = "/home/u/nofx-backups/updater/" + id + "/data.db"
@@ -59,7 +66,7 @@ func fullJob(t *testing.T, dd string) Job {
 		Dist: "/home/u/nofx-backups/updater/" + id + "/install/web/dist", ReleaseFile: "/home/u/nofx-backups/updater/" + id + "/install/deploy/RELEASE"}
 	step(t, dd, &j, &now, StateBackupDone)
 	cs := false
-	j.NT8 = &NT8Decision{Decision: NT8Updated, Reason: "ninjascript/*.cs changed", ManifestBuildID: "2026-09-24-m4", AckedBuildID: "2026-09-23-m21", AckedAt: "2026-09-24T18:02:30Z", AckAcceptSeq: 7, CSUnchanged: &cs}
+	j.NT8 = &NT8Decision{Decision: NT8Updated, Reason: "ninjascript/*.cs changed", ManifestBuildID: "2026-09-24-m4", AckedBuildID: "2026-09-23-m21", AckedAt: "2026-09-24T18:02:30Z", AckAcceptSeq: 7, CSUnchanged: &cs, Absent: true, F5Owed: true}
 	step(t, dd, &j, &now, StateNT8Updated)
 	j.Blocker = "attended AddOn F5 required"
 	mustWrite(t, dd, j)

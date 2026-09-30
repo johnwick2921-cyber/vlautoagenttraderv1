@@ -9,10 +9,7 @@
 ## What M3 does and does not do
 
 - **OFF until enrolled.** With nothing enrolled, all five `/api/updates*` routes answer `403 {"error":"forbidden"}`. Nothing else in the app changes.
-- **Enrolled, M3 still installs nothing.**
-  - The manifest verifier is a stub that refuses every release (`422 {"error":"release not verified"}`).
-  - The Updates page's install button stays disabled ("install authorization under review") until the CTO's adversarial review of M3 closes.
-  - Enrolling now only proves the identity half end to end.
+- **Enrolled, the knob still OFF.** With `NOFX_UPDATER` unset, the manifest verifier is the stub that refuses every release (`422 {"error":"release not verified"}`) and `install_enabled` answers false. With the knob ON and the worker running, the install control's enabled state comes from the server (`install_enabled` AND `worker_listening`, both measured) AND the review constant `INSTALL_AUTHZ_UNDER_REVIEW` (`web/src/lib/api/updates.ts`) — while that constant is true the Updates page shows "install authorization under review" and no install POST can fire. The full loop — worker install, fetch, authorize, paste, resume, recovery — is `docs/superpowers/runbooks/2026-09-27-one-button-update.md`.
 - **Two factors per install** (from M4 on):
   - the enrolled admin's signed-in session (**identity**);
   - an HMAC computed on this box from `device.key` by the attended `updater-bootstrap authorize` (**possession**).
@@ -86,7 +83,7 @@ Replace `NEW_BCRYPT_HASH` with a bcrypt hash of the new password and `YOUR_ACCOU
 - **No restart.** The bot reads the users row on each request.
 - **Afterwards**, sign in with the new password. Updates is now un-enrolled (the password binding changed), so run `enroll --replace` as above. If the row is the FIRST account (the one the Telegram bot acts for), the bot re-mints its own token on its next message.
 
-## Authorize one install (M4 onwards; inert in M3)
+## Authorize one install
 
 ```
 go run ./cmd/updater-bootstrap --install-dir <the bot's WorkingDirectory> authorize <release_id>
@@ -94,7 +91,7 @@ go run ./cmd/updater-bootstrap --install-dir <the bot's WorkingDirectory> author
 
 Type exactly `AUTHORIZE <release_id>`. It prints one JSON authorization, `{release_id, job_id, expires_at, hmac}`, **valid 5 minutes, single use**. A second use answers `409`.
 
-In M3 this path is deliberately inert: the stub verifier refuses every release (`422`), and the page's install button is disabled.
+Paste that one line into the Updates page's authorization box and press **Update now** (UPDATER-USABLE-V1): the page POSTs the exact parsed body and then shows the 202 `job_id` and the job's progress and receipt. With the knob OFF the stub verifier still refuses every release (`422`), and while `INSTALL_AUTHZ_UNDER_REVIEW` is true the install control is disabled whatever the server answers.
 
 ## A refusal, and where its cause is
 
@@ -142,5 +139,5 @@ Keep `hold.json`, which is the maintenance hold. `seen_job_ids.json` may stay: i
 - **WSL2 mirrored networking makes the whole machine the transport boundary.** This box needs mirrored mode so the bot can reach NT8. In that mode a process on the WINDOWS host arrives at the bot as a loopback peer. "Loopback" therefore means "anything on this physical machine", not "this Linux user". The factors that still stand are the enrolled admin's session (JWT), the `X-NOFX-Update` header, and the HMAC that only `updater-bootstrap authorize` can compute from `device.key`.
 - **Logout is process-lifetime.** The logout blacklist lives in the bot's memory. A bot restart forgets it, so a session logged out before the restart is accepted again until its expiry + 60 s. A password change is the durable way to end sessions: it moves the credential epoch, which is stored.
 - **Vite dev server.** Under `npm run dev` (`:3000`, proxy `changeOrigin: true`), the POSTs (`/check`, `/install`) read `cross-origin`. Production is same-origin: Go serves `web/dist`.
-- **The receipt link** is a plain `<a href>`, which cannot carry the header or the bearer token. In M3 every job id is `404`; M4/M5 must fetch receipts through the client.
+- **The receipt link** is fetched through the page's API client — the one that sends `X-NOFX-Update` on every `/updates*` call — because a bare `<a href>` cannot carry the header or the bearer token and 403s. A refusal shows the server's own text.
 - **The census is a belt, not the boundary.** The worker shares the key file's UID. The boundary is the file mode, the attended enrollment and, later, the isolated host (M1 §8). "Nothing API-side mints a MAC" is enforced by a syntactic census with its named limits, never proven.

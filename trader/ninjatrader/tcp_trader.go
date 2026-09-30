@@ -522,6 +522,14 @@ func (t *TCPTrader) isAccountTradeable(name string) bool {
 	return true
 }
 
+// IsAccountTradeable is the SIM-only account predicate, exported for the
+// installation gate's nt8_absent leg (UPDATER-NT8-CLOSED). It is THE SAME
+// check every order path runs (isAccountTradeable) — the gate never weakens
+// it, it only exposes it.
+func (t *TCPTrader) IsAccountTradeable(name string) bool {
+	return t.isAccountTradeable(name)
+}
+
 // entryBracket is a market entry's OWN stop and target, carried INTO the send
 // (W1b FOLD-3) instead of through the shared (symbol, side) maps.
 type entryBracket struct{ stop, target float64 }

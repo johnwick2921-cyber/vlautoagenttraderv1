@@ -28,6 +28,17 @@ var (
 	pricedCloseByKey = map[string]pricedClose{}
 )
 
+// resetPricedCloseCacheForTest clears the parked-price cache. TEST-ONLY: the
+// cache is process-wide, and -count=N reuses the binary — a previous test's
+// parked close (e.g. reconcile_untracked_test's 29310) would be consumed by a
+// later test's reconstruction (the netting test saw exit 29310 instead of its
+// own 29459 ring fill).
+func resetPricedCloseCacheForTest() {
+	pricedCloseMu.Lock()
+	pricedCloseByKey = map[string]pricedClose{}
+	pricedCloseMu.Unlock()
+}
+
 // pricedCloseGraceMs bounds retention: past it, a parked price is too stale to trust
 // for a reconcile that only just observed the row flat.
 const pricedCloseGraceMs = 120_000 // 2 minutes

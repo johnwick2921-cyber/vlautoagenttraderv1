@@ -81,30 +81,43 @@ type box struct {
 	running string   // the sha the running process serves
 
 	// knobs
-	lockHeld       bool
-	flat           bool
-	addonConnected bool
-	addonBuild     string // what the running AddOn reports
-	manifestBuild  string // the signed manifest's addon.build_id
-	refuseBoot     map[string]bool
-	watchFail      map[string]bool
-	rollbackFail   bool
+	lockHeld         bool
+	flat             bool
+	addonConnected   bool
+	addonBuild       string // what the running AddOn reports
+	manifestBuild    string // the signed manifest's addon.build_id
+	refuseBoot       map[string]bool
+	watchFail        map[string]bool
+	rollbackFail     bool
 	rollbackDistFail bool // RollbackTo restores binary+RELEASE, fails at dist, no kill of its own
-	badToken       bool // the app refuses the token (401)
-	verdictMissing bool
-	holdWriteLies  bool          // the hold write lands on disk, then errs (U1 item 9)
-	holdWriteFails bool          // the hold write errs before anything lands
-	ackStale       bool          // the AddOn's last ack is 20 s old
-	ackJob         string        // the AddOn acks this job id instead of the hold's
-	addonSeq       uint64        // the AddOn's connection accept_seq (a reconnect = a new seq)
-	exe            string        // /proc/<MainPID>/exe, when not the install's binary
-	healthRev      string        // /api/health serves this revision instead of the running sha
-	ackLag         time.Duration // the AddOn's last ack is this much older than the 5 s tick (age stays consistent)
-	wallStep       time.Duration // a wall-clock step: shifts the RENDERED received time only; AgeMs stays monotonic
-	maintJob       string        // /api/maintenance names this job instead of the hold's
-	echo500        bool          // the authed endpoints answer 500 echoing the request's Authorization header
-	noCS           bool          // the signed manifest lists no ninjascript/*.cs
-	reverifyTamper func(*ReleaseFacts)
+	badToken         bool // the app refuses the token (401)
+	verdictMissing   bool
+	holdWriteLies    bool          // the hold write lands on disk, then errs (U1 item 9)
+	holdWriteFails   bool          // the hold write errs before anything lands
+	ackStale         bool          // the AddOn's last ack is 20 s old
+	ackJob           string        // the AddOn acks this job id instead of the hold's
+	addonSeq         uint64        // the AddOn's connection accept_seq (a reconnect = a new seq)
+	exe              string        // /proc/<MainPID>/exe, when not the install's binary
+	healthRev        string        // /api/health serves this revision instead of the running sha
+	ackLag           time.Duration // the AddOn's last ack is this much older than the 5 s tick (age stays consistent)
+	wallStep         time.Duration // a wall-clock step: shifts the RENDERED received time only; AgeMs stays monotonic
+	maintJob         string        // /api/maintenance names this job instead of the hold's
+	echo500          bool          // the authed endpoints answer 500 echoing the request's Authorization header
+	noCS             bool          // the signed manifest lists no ninjascript/*.cs
+	reverifyTamper   func(*ReleaseFacts)
+
+	// UPDATER-NT8-CLOSED knobs
+	addonDownSince  time.Duration // >0: the AddOn is disconnected this long (stamped on the fake server's record); the ack is nil and the fake gate attaches its nt8_absent view
+	absentInflight  bool          // nt8_absent leg: an entry send holds a permit
+	absentQueued    int           // nt8_absent leg: queued_signals
+	absentPlanner   bool          // nt8_absent leg: a planner read is in flight
+	absentSim       bool          // nt8_absent leg: the bound account is SIM-tradeable
+	absentDbOpen    bool          // nt8_absent leg: an OPEN trader_positions row (the CTO P1 leg)
+	absentOverride  bool          // attach the view with the flags below instead of the computed ones (the K_elig mutant probe)
+	absentEligible  bool
+	absentReady     bool
+	absentFlapAt    int // with absentOverride: from gate-read N onward the view flaps to eligible=false, ready=true (the gate must refuse — K_elig would let it through)
+	absentViewReads int // count of gate-view reads for the flap knob
 
 	calls       []string
 	violations  []string
@@ -113,7 +126,7 @@ type box struct {
 	rollbackArg [][2]Release
 	activateIDs []Identity
 	rollbackIDs []Identity
-	rollbackAtt []int // the job's attempts on disk at each RollbackTo call
+	rollbackAtt []int   // the job's attempts on disk at each RollbackTo call
 	ackAges     []int64 // every ack age the worker observed, in order
 }
 
@@ -150,6 +163,7 @@ func newRig(t *testing.T, opts ...rigOpt) *rig {
 		inst: filepath.Join(root, "nofx"), backupRoot: filepath.Join(root, "nofx-backups", "updater"),
 		id: Identity{PID: 4242, StartTicks: 1000}, running: boxOld,
 		lockHeld: true, flat: true, addonConnected: true, addonBuild: boxOldBuild, manifestBuild: boxOldBuild,
+		absentSim:  true,
 		refuseBoot: map[string]bool{}, watchFail: map[string]bool{},
 	}
 	b.data = filepath.Join(b.inst, "data")
@@ -659,8 +673,9 @@ func (b *box) serveApp(w http.ResponseWriter, r *http.Request) {
 func (b *box) ack() *AckView {
 	b.mu.Lock()
 	connected, build, stale, ackJob, lag, wall, seq := b.addonConnected, b.addonBuild, b.ackStale, b.ackJob, b.ackLag, b.wallStep, b.addonSeq
+	down := b.addonDownSince
 	b.mu.Unlock()
-	if !connected {
+	if !connected || down > 0 {
 		return nil
 	}
 	st := store.ReadMaintenanceHold(b.data)
@@ -738,7 +753,51 @@ func (b *box) gateView() GateView {
 	for _, l := range legs {
 		ready = ready && l.Pass
 	}
-	return GateView{Ready: ready, JobID: job, Legs: legs, Traders: []string{"t1"}, Note: "test"}
+	gv := GateView{Ready: ready, JobID: job, Legs: legs, Traders: []string{"t1"}, Note: "test"}
+	// UPDATER-NT8-CLOSED: the fake gate mirrors trader/installation_gate.go —
+	// the nt8_absent view is ATTACHED whenever an NT8 trader exists (also when
+	// the link is up: eligible=false, ready=false), and its flags are computed
+	// from the knobs; the override probes the worker's own eligibility check.
+	b.mu.Lock()
+	downSince, inflight, queued, planner, sim, dbOpen := b.addonDownSince, b.absentInflight, b.absentQueued, b.absentPlanner, b.absentSim, b.absentDbOpen
+	override, eligible, ready := b.absentOverride, b.absentEligible, b.absentReady
+	if override && b.absentFlapAt > 0 {
+		b.absentViewReads++
+		if b.absentViewReads >= b.absentFlapAt {
+			eligible, ready = false, true // flap: eligible is gone, ready lies
+		}
+	}
+	b.mu.Unlock()
+	abs := &NT8AbsentView{}
+	if override {
+		abs.Eligible, abs.Ready = eligible, ready
+		if ready {
+			abs.LinkDownSince = "2026-09-28T04:00:00Z"
+		}
+	} else if downSince > 0 {
+		downAt := b.clock.Now().Add(-downSince)
+		abs.Eligible = downSince >= 60*time.Second
+		abs.LinkDownSince = downAt.UTC().Format(time.RFC3339Nano)
+	}
+	if abs.Eligible || ready {
+		absLegs := []GateLeg{
+			{Name: "hold", Pass: st.Held, Detail: "held=" + fmt.Sprint(st.Held)},
+			{Name: "go_drained", Pass: st.Held, Detail: "barrier engaged"},
+			{Name: "in_flight_sends", Pass: !inflight, Detail: fmt.Sprintf("in_flight_sends=%v", inflight)},
+			{Name: "queued_signals", Pass: queued == 0, Detail: fmt.Sprintf("queued_signals=%d", queued)},
+			{Name: "planner_in_flight", Pass: !planner, Detail: "none"},
+			{Name: "ledger_exposure", Pass: flat, Detail: fmt.Sprintf("flat=%v", flat)},
+			{Name: "sim_accounts", Pass: sim, Detail: "Sim101 tradeable"},
+			{Name: "db_open_positions", Pass: !dbOpen, Detail: "0 open rows"},
+		}
+		abs.Ready = true
+		for _, l := range absLegs {
+			abs.Ready = abs.Ready && l.Pass
+		}
+		abs.Legs = absLegs
+	}
+	gv.NT8Absent = abs
+	return gv
 }
 
 // ── files ───────────────────────────────────────────────────────────────────

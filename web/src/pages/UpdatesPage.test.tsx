@@ -19,20 +19,29 @@ const mocks = vi.hoisted(() => ({
   getExchangeConfigs: vi.fn(),
   request: vi.fn(),
 }))
-vi.mock('../lib/api/updates', () => ({
-  updatesApi: {
-    health: mocks.health,
-    maintenance: mocks.maintenance,
-    installationGate: mocks.installationGate,
-    updatesStatus: mocks.updatesStatus,
-    check: mocks.check,
-    install: mocks.install,
-    job: mocks.job,
-    receipt: mocks.receipt,
-  },
-  INSTALL_AUTHZ_UNDER_REVIEW: true,
-  INSTALL_UNDER_REVIEW_TEXT: 'install authorization under review',
-}))
+vi.mock('../lib/api/updates', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/api/updates')>()
+  return {
+    ...actual,
+    updatesApi: {
+      health: mocks.health,
+      maintenance: mocks.maintenance,
+      installationGate: mocks.installationGate,
+      updatesStatus: mocks.updatesStatus,
+      check: mocks.check,
+      install: mocks.install,
+      job: mocks.job,
+      receipt: mocks.receipt,
+    },
+    // UPDATER-USABLE-V1: this file tests the page with the review CONSTANT
+    // OFF (the CTO flips it in the separate final commit after his own
+    // adversarial pass). The constant-ON behaviour is pinned in
+    // UpdatesPage.authzReview.test.tsx. parseInstallAuthorization stays the
+    // REAL one — the paste path is a production call site.
+    INSTALL_AUTHZ_UNDER_REVIEW: false,
+    INSTALL_UNDER_REVIEW_TEXT: 'install authorization under review',
+  }
+})
 vi.mock('../lib/api/traders', () => ({
   traderApi: { getTraders: mocks.getTraders },
 }))
@@ -204,15 +213,154 @@ describe('UpdatesPage', () => {
     await waitFor(() => expect(screen.getByText('not found')).toBeTruthy())
   })
 
-  it('install stays disabled with the exact review text and never POSTs', async () => {
+  it('install stays disabled without a pasted authorization and never POSTs', async () => {
+    mocks.updatesStatus.mockResolvedValue({
+      status: {
+        enrolled: true,
+        manifest_verifier: 'configured',
+        install_enabled: true,
+        worker_listening: true,
+      },
+    })
     render(<UpdatesPage />)
-    await waitFor(() =>
-      expect(
-        screen.getByText('install authorization under review')
-      ).toBeTruthy()
-    )
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
     const button = screen.getByTestId('update-button') as HTMLButtonElement
     expect(button.disabled).toBe(true)
+    fireEvent.click(button)
+    expect(mocks.install).not.toHaveBeenCalled()
+  })
+
+  const authzLine = JSON.stringify({
+    release_id: 'v9.9.9',
+    job_id: 'job-202',
+    expires_at: 1893456000,
+    hmac: 'deadbeef',
+  })
+  const validAuthz = {
+    release_id: 'v9.9.9',
+    job_id: 'job-202',
+    expires_at: 1893456000,
+    hmac: 'deadbeef',
+  }
+
+  const enableInstall = () =>
+    mocks.updatesStatus.mockResolvedValue({
+      status: {
+        enrolled: true,
+        manifest_verifier: 'configured',
+        install_enabled: true,
+        worker_listening: true,
+      },
+    })
+
+  it('pasting the authorize line calls install with the EXACT body and shows the 202 job id', async () => {
+    enableInstall()
+    mocks.install.mockResolvedValue({ ok: true, job_id: 'job-202' })
+    mocks.job.mockResolvedValue({
+      job_id: 'job-202',
+      state: 'downloaded',
+      timestamps: {},
+    })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    fireEvent.change(screen.getByTestId('authz-paste'), {
+      target: { value: authzLine },
+    })
+    const button = screen.getByTestId('update-button') as HTMLButtonElement
+    await waitFor(() => expect(button.disabled).toBe(false))
+    fireEvent.click(button)
+    await waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1))
+    // the body is the parsed fields EXACTLY — never retyped, never decorated
+    expect(mocks.install).toHaveBeenCalledWith(validAuthz)
+    // the 202 job id is shown, and the Job panel polls THAT id
+    expect(screen.getByTestId('install-accepted')).toHaveTextContent('job-202')
+    await waitFor(() => expect(mocks.job).toHaveBeenCalledWith('job-202'))
+    // single use: the paste box empties after any attempt
+    expect(
+      (screen.getByTestId('authz-paste') as HTMLTextAreaElement).value
+    ).toBe('')
+  })
+
+  it.each([
+    [400, 'bad request'],
+    [403, 'forbidden'],
+    [409, 'job already used'],
+    [422, 'release not verified'],
+    [503, 'installer unavailable'],
+  ])(
+    'a %i install refusal renders the SERVER text verbatim',
+    async (status, text) => {
+      enableInstall()
+      mocks.install.mockResolvedValue({ ok: false, error: text, status })
+      render(<UpdatesPage />)
+      await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+      fireEvent.change(screen.getByTestId('authz-paste'), {
+        target: { value: authzLine },
+      })
+      await waitFor(() => {
+        const b = screen.getByTestId('update-button') as HTMLButtonElement
+        expect(b.disabled).toBe(false)
+      })
+      fireEvent.click(screen.getByTestId('update-button'))
+      await waitFor(() =>
+        expect(screen.getByTestId('install-error')).toHaveTextContent(text)
+      )
+      // the code is spent even on a refusal — the box empties either way
+      expect(
+        (screen.getByTestId('authz-paste') as HTMLTextAreaElement).value
+      ).toBe('')
+    }
+  )
+
+  // UPDATER-NT8-CLOSED item 5: the install surface is loopback :8080 only.
+  // A non-8080 origin (the :3000 dev server) gets the plain hint, never a
+  // bare cross-origin 403; the origin check itself is unchanged.
+  const stubLocationPort = (port: string) => {
+    Object.defineProperty(window, 'location', {
+      value: new URL(`http://localhost:${port}/`),
+      writable: true,
+      configurable: true,
+    })
+  }
+
+  it('a non-8080 origin shows the plain install hint', async () => {
+    stubLocationPort('3000')
+    render(<UpdatesPage />)
+    await waitFor(() =>
+      expect(screen.getByTestId('non-8080-origin')).toBeTruthy()
+    )
+    expect(screen.getByTestId('non-8080-origin')).toHaveTextContent(
+      'http://localhost:8080'
+    )
+    expect(screen.getByTestId('non-8080-origin')).toHaveTextContent('3000')
+  })
+
+  it('the :8080 origin shows no hint', async () => {
+    stubLocationPort('8080')
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('no update job')).toBeTruthy())
+    expect(screen.queryByTestId('non-8080-origin')).toBeNull()
+  })
+
+  it('a quoted expires_at fails the parse with its own text and never POSTs', async () => {
+    enableInstall()
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    // the SAME fields, but expires_at quoted — the server would answer 400;
+    // the paste box refuses it first, with text that says why
+    fireEvent.change(screen.getByTestId('authz-paste'), {
+      target: {
+        value: JSON.stringify({ ...validAuthz, expires_at: '1893456000' }),
+      },
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('authz-parse-error')).toHaveTextContent(
+        'expires_at must be an unquoted whole number'
+      )
+    )
+    expect(
+      (screen.getByTestId('update-button') as HTMLButtonElement).disabled
+    ).toBe(true)
     expect(mocks.install).not.toHaveBeenCalled()
   })
 
@@ -263,7 +411,21 @@ describe('UpdatesPage', () => {
     await waitFor(() => expect(screen.getByText('Blocked')).toBeTruthy())
     // the exact reason the CTO ruling names — never a generic message
     expect(screen.getByText('updater worker not running')).toBeTruthy()
-    expect(screen.getByTestId('update-button')).toBeTruthy()
+    // even a valid paste cannot fire the install POST while the worker is down
+    fireEvent.change(screen.getByTestId('authz-paste'), {
+      target: {
+        value: JSON.stringify({
+          release_id: 'v9.9.9',
+          job_id: 'job-202',
+          expires_at: 1893456000,
+          hmac: 'deadbeef',
+        }),
+      },
+    })
+    const button = screen.getByTestId('update-button') as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    fireEvent.click(button)
+    expect(mocks.install).not.toHaveBeenCalled()
   })
 
   it('install_enabled=true and worker_listening=true does not block the button', async () => {

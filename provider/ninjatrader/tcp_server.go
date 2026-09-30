@@ -2711,6 +2711,13 @@ func (s *TCPServer) closeConn() {
 	if s.conn != nil {
 		_ = s.conn.Close()
 		s.conn = nil
+		// UPDATER-NT8-CLOSED: stamp the disconnect on the maintenance record
+		// (the nt8_absent verdict measures continuous link-down from THIS
+		// stamp). A new accept replaces the record, so the stamp is cleared
+		// by every reconnect — the verdict is revoked, never grandfathered.
+		s.maint.mu.Lock()
+		s.maint.rec.DisconnectedMonoMs = monoMs(time.Now())
+		s.maint.mu.Unlock()
 	}
 	// FIX-P1A — the far-side build proof belongs to THIS connection's frames
 	// (hello / heartbeat / order_snapshot). A disconnect retires the proof;

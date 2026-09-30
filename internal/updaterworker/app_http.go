@@ -169,7 +169,7 @@ func (a *HTTPApp) InstallationGate(ctx context.Context) (GateView, error) {
 }
 
 func decodeGate(b []byte) (GateView, error) {
-	if err := requireKeys(b, nil, "ready", "job_id", "legs"); err != nil {
+	if err := requireKeys(b, map[string]bool{"nt8_absent": true}, "ready", "job_id", "legs"); err != nil {
 		return GateView{}, fmt.Errorf("installation gate: %w", err)
 	}
 	var v GateView

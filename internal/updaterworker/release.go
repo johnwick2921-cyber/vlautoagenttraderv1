@@ -135,12 +135,12 @@ type SignedManifest struct {
 
 // FetchConfig is everything FetchRelease reads; it reads no environment.
 type FetchConfig struct {
-	Archive        string           // the local <release_id>.tar.gz (a path, never a URL)
-	ReleaseID      string           // the id asked for; the signed manifest must say the same
-	ReleaseRoot    string           // NOFX_RELEASE_DIR: absolute, a real dir, owner-only writable
-	AllowedSigners string           // <installDir>/deploy/release_allowed_signers
-	DataDir        string           // the installation's data dir (absolute)
-	Now            func() time.Time // nil ⇒ time.Now
+	Archive        string               // the local <release_id>.tar.gz (a path, never a URL)
+	ReleaseID      string               // the id asked for; the signed manifest must say the same
+	ReleaseRoot    string               // NOFX_RELEASE_DIR: absolute, a real dir, owner-only writable
+	AllowedSigners string               // <installDir>/deploy/release_allowed_signers
+	DataDir        string               // the installation's data dir (absolute)
+	Now            func() time.Time     // nil ⇒ time.Now
 	Logf           func(string, ...any) // nil ⇒ no warning line (a verdict-link dir-fsync warning)
 }
 

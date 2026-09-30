@@ -31,6 +31,15 @@ import (
 // ═══════════════════════════════════════════════════════════════════════════
 
 func TestLevelStatsNightlyPerTraderWiring(t *testing.T) {
+	// FLAKE HUNT 2026-09-26: levelStatsWired is process-wide and -count=N reuses
+	// the binary — iteration 2 would find "trader-A" already wired and fail
+	// "first wiring must start the job". Clean the ids back out.
+	t.Cleanup(func() {
+		levelStatsWired.Delete("trader-A")
+		levelStatsWired.Delete("trader-B")
+		levelStatsJobs.Delete("trader-A")
+		levelStatsJobs.Delete("trader-B")
+	})
 	if !wireLevelStatsForTrader("trader-A") {
 		t.Fatal("first wiring for trader-A must start the job")
 	}

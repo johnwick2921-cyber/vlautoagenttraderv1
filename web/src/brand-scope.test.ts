@@ -256,6 +256,12 @@
 //     oldest-first eviction past the cap + a WARN. ADDITIVE only: no
 //     identifier renamed, no guard removed, no VL_BUILD_ID bump (the owner
 //     compiles + F5s).
+// Wire baselines advanced 2026-09-28 for UPDATER-NT8-CLOSED
+// (feat/updater-nt8-closed): provider/ninjatrader/tcp_server.go — closeConn
+//   stamps DisconnectedMonoMs on the maintenance record (the nt8_absent
+//   link-down measurement, read through ConnectionRecord.DisconnectedAt).
+//   ADDITIVE only: no identifier renamed, no guard removed; the far-side
+//   proof retirement and the connection lifecycle are byte-untouched.
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
