@@ -703,7 +703,7 @@ func TestReleaseLockRefusedHeadAhead(t *testing.T) {
 
 func TestVerifyFailureAutoRollback(t *testing.T) {
 	fe := newFakeEnv(t)
-	out, code := runWithEnv(t, fe, []string{"BOT_SHA12=" + strings.Repeat("c", 12)}, fe.argsForward()...)
+	out, code := runWithEnv(t, fe, []string{"BOT_SHA12=" + strings.Repeat("c", 12), "VL_MIGRATE_VERIFY_WAIT_S=6"}, fe.argsForward()...)
 	if code == 0 {
 		t.Fatalf("expected verify failure, got success\n%s", out)
 	}
@@ -735,9 +735,9 @@ func TestStepErrorsAutoRollback(t *testing.T) {
 		want  string
 	}{
 		{
-			name: "step1 DB receipt zero bytes",
+			name:  "step1 DB receipt zero bytes",
 			extra: []string{"ACTIVATE_ZERO=1"},
-			want: "receipt is not ok:true",
+			want:  "receipt is not ok:true",
 		},
 		{
 			name: "step2 env rewrite fails after the moves",

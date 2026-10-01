@@ -603,31 +603,65 @@ steps_1_5() {
 # =============================================================================
 # verify_legs <mode>   mode=forward: auto legs decide (roll back on failure)
 #                      mode=rerun:   the already-migrated branch (no rollback)
+#
+# B2/B3 (R2 attempt-3): the bot needs seconds to write BOOT INTEGRITY OK and
+# serve :8080. Each deciding leg polls every 2 s up to VL_MIGRATE_VERIFY_WAIT_S
+# seconds (default 90; the env is a TEST SEAM only) and passes the moment it is
+# true, fails only at the deadline, and prints how long it took.
+verify_wait_secs() {
+  local v="${VL_MIGRATE_VERIFY_WAIT_S:-90}"
+  case "$v" in ''|*[!0-9]*) echo 90 ;; *) echo "$v" ;; esac
+}
+
+# wait_leg <secs> <probe...> — polls every 2 s until the probe exits 0; prints
+# the seconds waited on success, the seconds at the deadline on failure; rc 0 =
+# passed within the deadline.
+wait_leg() {
+  local max="$1" waited=0; shift
+  while [ "$waited" -lt "$max" ]; do
+    if "$@" >/dev/null 2>&1; then printf '%s' "$waited"; return 0; fi
+    sleep 2; waited=$((waited+2))
+  done
+  printf '%s' "$waited"; return 1
+}
+
+boot_line_ready() { # $1 mode (forward|rerun)
+  local mode="$1" log_file boot_epoch
+  log_file="$(newest_vl_log)"
+  boot_epoch="$(stat -c %Y "$log_file" 2>/dev/null || echo 0)"
+  if [ "$mode" = "rerun" ]; then
+    [ "$boot_epoch" -ge "$RUN_START" ] 2>/dev/null || return 1
+  else
+    [ "$boot_epoch" -ge "$STEP3_EPOCH" ] 2>/dev/null || return 1
+  fi
+  [ -n "$log_file" ] || return 1
+  grep -q "BOOT INTEGRITY OK — rev $SHA12" "$log_file" 2>/dev/null
+}
+
+health_ready() {
+  local h
+  h="$(health_rev)"
+  revs_agree "$h" "$(upper12 "$SHA")"
+}
+
 verify_legs() {
   local mode="$1" ok=1
   say "step 6: verify"
 
-  local log_file boot_epoch
-  log_file="$(newest_vl_log)"
-  boot_epoch="$(stat -c %Y "$log_file" 2>/dev/null || echo 0)"
-  if [ "$mode" = "rerun" ]; then
-    [ "$boot_epoch" -ge "$RUN_START" ] 2>/dev/null || ok=0
+  local max_wait waited
+  max_wait="$(verify_wait_secs)"
+
+  if waited="$(wait_leg "$max_wait" boot_line_ready "$mode")"; then
+    say "boot line OK after ${waited}s: $(newest_vl_log)"
   else
-    [ "$boot_epoch" -ge "$STEP3_EPOCH" ] 2>/dev/null || ok=0
-  fi
-  if [ "$ok" = 1 ] && [ -n "$log_file" ] && grep -q "BOOT INTEGRITY OK — rev $SHA12" "$log_file" 2>/dev/null; then
-    say "boot line OK: $log_file"
-  else
-    say "BOOT INTEGRITY leg FAIL: no 'BOOT INTEGRITY OK — rev $SHA12' in the newest vl log (${log_file:-none}) newer than the install"
+    say "BOOT INTEGRITY leg FAIL after ${waited}s: no 'BOOT INTEGRITY OK — rev $SHA12' in the newest vl log ($(newest_vl_log) or none) newer than the install"
     ok=0
   fi
 
-  local health_now
-  health_now="$(health_rev)"
-  if revs_agree "$health_now" "$(upper12 "$SHA")"; then
-    say "health revision OK: $health_now (a 7+ hex prefix of --sha — never == against 40 hex)"
+  if waited="$(wait_leg "$max_wait" health_ready)"; then
+    say "health revision OK after ${waited}s: $(health_rev) (a 7+ hex prefix of --sha — never == against 40 hex)"
   else
-    say "health revision leg FAIL: /api/health reports '${health_now:-none}' — not a 7+ hex prefix of --sha"
+    say "health revision leg FAIL after ${waited}s: /api/health reports '$(health_rev)' or none — not a 7+ hex prefix of --sha"
     ok=0
   fi
 
@@ -702,10 +736,19 @@ timers_leg() {
   if printf '%s' "$out" | grep -q 'vl-clock-guard'; then say "timer vl-clock-guard: next run listed"; else say "timer vl-clock-guard leg FAIL: not listed"; fi
 }
 
+vite_ready() {
+  [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3000 2>/dev/null || true)" = "200" ]
+}
+
 vite_leg() {
-  local code
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3000 2>/dev/null || true)"
-  if [ "$code" = "200" ]; then say "vite :3000 answers 200"; else say "vite :3000 leg FAIL: http $code"; fi
+  local max_wait waited code
+  max_wait="$(verify_wait_secs)"
+  if waited="$(wait_leg "$max_wait" vite_ready)"; then
+    say "vite :3000 answers 200 after ${waited}s"
+  else
+    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3000 2>/dev/null || true)"
+    say "vite :3000 leg FAIL after ${waited}s: http ${code:-none}"
+  fi
 }
 
 postboot_leg() {
@@ -882,23 +925,33 @@ EOF
       || say "rollback step 6 FAIL: the old clock-guard service cannot start (the wrappers must be mode 100755)"
   fi
 
-  # 7. verify the OLD boot.
-  local log_file boot_epoch ok=1
-  log_file="$(ls -1t "$OLD_ROOT"/data/${o}_*.log 2>/dev/null | head -1 || true)"
-  boot_epoch="$(stat -c %Y "$log_file" 2>/dev/null || echo 0)"
-  [ "$boot_epoch" -ge "$RUN_START" ] 2>/dev/null || ok=0
-  if [ "$ok" = 1 ] && [ -n "$log_file" ] && grep -q "BOOT INTEGRITY OK — rev $old12_s" "$log_file" 2>/dev/null; then
-    say "rollback: OLD boot line OK ($log_file)"
+  # 7. verify the OLD boot (B3: poll — the old bot needs seconds to boot and
+  # serve after the re-enable; one immediate read rolled back a good boot).
+  rb_boot_ready() {
+    local log_file boot_epoch
+    log_file="$(ls -1t "$OLD_ROOT"/data/${o}_*.log 2>/dev/null | head -1 || true)"
+    boot_epoch="$(stat -c %Y "$log_file" 2>/dev/null || echo 0)"
+    [ "$boot_epoch" -ge "$RUN_START" ] 2>/dev/null || return 1
+    [ -n "$log_file" ] || return 1
+    grep -q "BOOT INTEGRITY OK — rev $old12_s" "$log_file" 2>/dev/null
+  }
+  rb_health_ready() {
+    local h
+    h="$(health_rev)"
+    revs_agree "$h" "$(upper12 "$rb_old")"
+  }
+  local max_wait waited ok=1
+  max_wait="$(verify_wait_secs)"
+  if waited="$(wait_leg "$max_wait" rb_boot_ready)"; then
+    say "rollback: OLD boot line OK after ${waited}s ($(ls -1t "$OLD_ROOT"/data/${o}_*.log 2>/dev/null | head -1 || true))"
   else
-    say "rollback step 7 FAIL: no fresh 'BOOT INTEGRITY OK — rev $old12_s' line in ${log_file:-none}"
+    say "rollback step 7 FAIL after ${waited}s: no fresh 'BOOT INTEGRITY OK — rev $old12_s' line in the newest old log"
     ok=0
   fi
-  local health_now
-  health_now="$(health_rev)"
-  if revs_agree "$health_now" "$(upper12 "$rb_old")"; then
-    say "rollback: health revision OK ($health_now)"
+  if waited="$(wait_leg "$max_wait" rb_health_ready)"; then
+    say "rollback: health revision OK after ${waited}s ($(health_rev))"
   else
-    say "rollback step 7 FAIL: /api/health reports '${health_now:-none}' — not a 7+ hex prefix of the old sha"
+    say "rollback step 7 FAIL after ${waited}s: /api/health reports '$(health_rev)' or none — not a 7+ hex prefix of the old sha"
     ok=0
   fi
   [ "$ok" = 1 ] || return 1
