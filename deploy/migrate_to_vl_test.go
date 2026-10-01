@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/glebarez/go-sqlite"
+	_ "vl/store/sqlitedriver" // the ONE sqlite registration site (census)
 )
 
 func oldName() string { return "no" + "fx" }
@@ -242,10 +242,18 @@ case "$cmd" in
         ( cd "$HOME/vl" && ./vl-bin )
       fi
       if [ "$now" = 1 ] && [ "$u" = "$OLDNAME" ]; then
-        # the FAKE OLD BOT: a fresh old-prefix boot line + health
-        ( cd "$HOME/$OLDNAME" && mkdir -p data \
-          && echo "BOOT INTEGRITY OK — rev $OLD12" >> "data/${OLDNAME}_$(date +%F).log" \
-          && echo "$OLD12" > "$FAKE_STATE/health_rev.txt" )
+        # the FAKE OLD BOT: a fresh old-prefix boot line + health (optionally
+        # delayed so the rollback verify's poll is exercised).
+        oldboot(){
+          mkdir -p data
+          echo "BOOT INTEGRITY OK — rev $OLD12" >> "data/${OLDNAME}_$(date +%F).log"
+          echo "$OLD12" > "$FAKE_STATE/health_rev.txt"
+        }
+        if [ -n "${BOT_DELAY_S:-}" ]; then
+          ( cd "$HOME/$OLDNAME" && sleep "$BOT_DELAY_S" && oldboot ) &
+        else
+          ( cd "$HOME/$OLDNAME" && oldboot )
+        fi
       fi
       if [ "$now" = 1 ]; then set_mp 4242 "$u"; fi
     done
@@ -364,15 +372,22 @@ esac
 
 const fakeBot = `#!/usr/bin/env bash
 set -u
-m="$(tr -d '[:space:]' < deploy/RELEASE 2>/dev/null || true)"
-d="$(date +%F)"
-mkdir -p data
-if [ -n "$m" ] && [ "$(printf '%s' "$m" | cut -c1-12)" = "$BOT_SHA12" ]; then
-  echo "BOOT INTEGRITY OK — rev $BOT_SHA12" >> "data/vl_$d.log"
-  echo "$BOT_SHA12" > "$FAKE_STATE/health_rev.txt"
+bootwrite(){
+  m="$(tr -d '[:space:]' < deploy/RELEASE 2>/dev/null || true)"
+  d="$(date +%F)"
+  mkdir -p data
+  if [ -n "$m" ] && [ "$(printf '%s' "$m" | cut -c1-12)" = "$BOT_SHA12" ]; then
+    echo "BOOT INTEGRITY OK — rev $BOT_SHA12" >> "data/vl_$d.log"
+    echo "$BOT_SHA12" > "$FAKE_STATE/health_rev.txt"
+  else
+    echo "BOOT INTEGRITY REFUSED — marker '$(printf '%s' "$m" | cut -c1-12)'" >> "data/vl_$d.log"
+    echo "$OLD12" > "$FAKE_STATE/health_rev.txt"
+  fi
+}
+if [ -n "${BOT_DELAY_S:-}" ]; then
+  ( sleep "$BOT_DELAY_S"; bootwrite ) &
 else
-  echo "BOOT INTEGRITY REFUSED — marker '$(printf '%s' "$m" | cut -c1-12)'" >> "data/vl_$d.log"
-  echo "$OLD12" > "$FAKE_STATE/health_rev.txt"
+  bootwrite
 fi
 if [ "${BOT_HELLO:-0}" = "1" ]; then
   sleep 1.5
@@ -812,7 +827,10 @@ func TestStepErrorsAutoRollback(t *testing.T) {
 		want  string
 	}{
 		{
-			name:  "step1 DB receipt zero bytes",
+			name: "step1 DB receipt zero bytes",
+			setup: func(fe *fakeEnv) {
+				fe.write(filepath.Join(fe.relDir, "vl-activate"), fakeActivate)
+			},
 			extra: []string{"ACTIVATE_ZERO=1"},
 			want:  "receipt is not ok:true",
 		},
@@ -1406,4 +1424,37 @@ func TestRecoveryNeededJobListedNotRefused(t *testing.T) {
 		t.Fatalf("recovery_needed must not refuse (exit %d)\n%s", code, out)
 	}
 	mustContain(t, out, "recovery_needed (listed, left alone)")
+}
+
+// TestForwardDelayedBootReachesDoneWithoutRollback: the bot writes its boot
+// line and health only after a delay — the verify poll must wait, then DONE,
+// with NO rollback (B2).
+func TestForwardDelayedBootReachesDoneWithoutRollback(t *testing.T) {
+	fe := newFakeEnv(t)
+	out, code := runWithEnv(t, fe, []string{"BOT_DELAY_S=4", "VL_MIGRATE_VERIFY_WAIT_S=20"}, fe.argsForward()...)
+	if code != 0 {
+		t.Fatalf("exit %d\n%s", code, out)
+	}
+	mustContain(t, out, "boot line OK after")
+	mustContain(t, out, "DONE — the box runs vl")
+	if strings.Contains(out, "automatic rollback") {
+		t.Fatalf("a boot that comes up in seconds must not roll back\n%s", out)
+	}
+}
+
+// TestRollbackDelayedOldBootSaysDone: after a failed verify the rollback's old
+// bot comes up only after a delay — the rollback poll must wait and report
+// "rollback DONE" (B3).
+func TestRollbackDelayedOldBootSaysDone(t *testing.T) {
+	fe := newFakeEnv(t)
+	out, code := runWithEnv(t, fe, []string{
+		"BOT_SHA12=" + strings.Repeat("c", 12),
+		"BOT_DELAY_S=4",
+		"VL_MIGRATE_VERIFY_WAIT_S=6",
+	}, fe.argsForward()...)
+	if code == 0 {
+		t.Fatalf("expected verify failure, got success\n%s", out)
+	}
+	mustContain(t, out, "automatic rollback")
+	mustContain(t, out, "rollback DONE")
 }
