@@ -220,7 +220,16 @@ case "$cmd" in
     exit 0 ;;
   stop)
     shift
-    for u in "$@"; do log "stop $u"; deact "$u"; set_mp 0 "$u"; done
+    for u in "$@"; do
+      log "stop $u"
+      # 6b fixture: the old worker creates a job in the instant before it
+      # stops — step 1's re-scan must catch it.
+      if [ "$u" = "${OLDNAME}-updater" ] && [ "${JOB_APPEARS:-0}" = "1" ]; then
+        mkdir -p "$HOME/$OLDNAME/data/updater/jobs"
+        printf '{"job_id":"late-job","state":"running","phase":"started","created_at":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$HOME/$OLDNAME/data/updater/jobs/late.json"
+      fi
+      deact "$u"; set_mp 0 "$u"
+    done
     exit 0 ;;
   start)
     shift
@@ -308,7 +317,18 @@ case "$url" in
     printf '{"status":"ok","revision":"%s"}\n' "$rev"
     exit 0 ;;
   *"/api/installation-gate")
-    cat "$ST/gate.json"
+    if [ "${GATE_PLANNER_FLIP:-0}" = "1" ]; then
+      # first read answers READY (step 0); every later read answers the
+      # NOT-ready payload (the gate changed while the operator typed sudo).
+      if [ -f "$ST/gate_read_once" ]; then
+        cat "$ST/gate2.json"
+      else
+        : > "$ST/gate_read_once"
+        cat "$ST/gate.json"
+      fi
+    else
+      cat "$ST/gate.json"
+    fi
     exit 0 ;;
   *":3000"*)
     if [ -n "$fmt" ]; then printf '200'; else printf 'ok'; fi
@@ -1424,6 +1444,62 @@ func TestRecoveryNeededJobListedNotRefused(t *testing.T) {
 		t.Fatalf("recovery_needed must not refuse (exit %d)\n%s", code, out)
 	}
 	mustContain(t, out, "recovery_needed (listed, left alone)")
+}
+
+// TestGateChangedAfterStep0RefusesBeforeTheSystemStop (6a/RA1): the gate
+// answers READY at step 0 and NOT ready on the step-1 re-read — the run must
+// refuse BEFORE the system stop (the bot keeps trading until that stop).
+func TestGateChangedAfterStep0RefusesBeforeTheSystemStop(t *testing.T) {
+	o := oldName()
+	fe := newFakeEnv(t)
+	fe.writeGateDefault()
+	fe.writeState("gate2.json", `{
+  "ready": false,
+  "job_id": "gate-2",
+  "legs": [
+    {"name": "trader_cutover:open_positions", "pass": true},
+    {"name": "ledger_exposure", "pass": true},
+    {"name": "planner_in_flight", "pass": false},
+    {"name": "traders_nt8", "pass": true}
+  ]
+}`)
+	out, code := runWithEnv(t, fe, []string{"GATE_PLANNER_FLIP=1"}, fe.argsForward()...)
+	if code == 0 {
+		t.Fatalf("expected refusal, got success\n%s", out)
+	}
+	mustContain(t, out, "gate changed since step 0")
+	mustContain(t, out, "automatic rollback")
+	mustContain(t, out, "rollback DONE")
+	for _, l := range fe.journal() {
+		if l == "stop "+o || l == "stop "+o+"-web" {
+			t.Fatalf("the system units must never be stopped after the gate flipped\n%v", fe.journal())
+		}
+	}
+	if _, err := os.Lstat(filepath.Join(fe.home, o)); err != nil {
+		t.Fatalf("old tree missing: %v", err)
+	} else if fi, _ := os.Lstat(filepath.Join(fe.home, o)); fi.Mode()&os.ModeSymlink != 0 {
+		t.Fatalf("old tree is a symlink — the move must not have happened")
+	}
+}
+
+// TestUpdaterJobAppearingAfterStep0RefusesBeforeTheSystemStop (6b/RA2): the old
+// worker creates a job in the instant before it stops — the step-1 re-scan must
+// refuse before the system stop.
+func TestUpdaterJobAppearingAfterStep0RefusesBeforeTheSystemStop(t *testing.T) {
+	o := oldName()
+	fe := newFakeEnv(t)
+	out, code := runWithEnv(t, fe, []string{"JOB_APPEARS=1"}, fe.argsForward()...)
+	if code == 0 {
+		t.Fatalf("expected refusal, got success\n%s", out)
+	}
+	mustContain(t, out, "updater job appeared since step 0: late-job")
+	mustContain(t, out, "automatic rollback")
+	mustContain(t, out, "rollback DONE")
+	for _, l := range fe.journal() {
+		if l == "stop "+o || l == "stop "+o+"-web" {
+			t.Fatalf("the system units must never be stopped after the job appeared\n%v", fe.journal())
+		}
+	}
 }
 
 // TestForwardDelayedBootReachesDoneWithoutRollback: the bot writes its boot

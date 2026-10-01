@@ -150,6 +150,38 @@ go_stamp() { # $1 binary — prints "rev mod"
 }
 newest_vl_log() { ls -1t "$VL_ROOT"/data/vl_*.log 2>/dev/null | head -1 || true; }
 
+# updater_job_in_flight — the step-0 (j) scan as a reusable probe: prints the
+# first NON-TERMINAL updater job YOUNGER than 30 min and returns 0; returns 1
+# when nothing is in flight (stale/recovery_needed/terminal jobs are listed and
+# left alone, exactly as step 0 always did).
+updater_job_in_flight() {
+  local job_file job_id job_state job_phase job_created age
+  for job_file in "$OLD_ROOT/data/updater/jobs"/*.json; do
+    [ -e "$job_file" ] || continue
+    job_id="$(jq -r '.job_id // "?"' "$job_file" 2>/dev/null || echo '?')"
+    job_state="$(jq -r '.state // "?"' "$job_file" 2>/dev/null || echo '?')"
+    job_phase="$(jq -r '.phase // "started"' "$job_file" 2>/dev/null || echo 'started')"
+    if [ "$job_state" = "recovery_needed" ]; then
+      say "updater job $job_id: recovery_needed (listed, left alone)" >&2
+      continue
+    fi
+    case "$job_state" in
+      complete|rolled_back|cancelled|refused) [ "$job_phase" = "done" ] && continue ;;
+    esac
+    job_created="$(jq -r '.created_at // ""' "$job_file" 2>/dev/null || true)"
+    if [ -n "$job_created" ]; then
+      age=$(( $(date +%s) - $(date -d "$job_created" +%s 2>/dev/null || echo 0) ))
+      if [ "$age" -gt 1800 ]; then
+        say "updater job $job_id: stale (age ${age}s) — left alone" >&2
+        continue
+      fi
+    fi
+    printf '%s (state=%s phase=%s)' "$job_id" "$job_state" "$job_phase"
+    return 0
+  done
+  return 1
+}
+
 # =============================================================================
 # STEP 0 — refuse, before anything changes
 # =============================================================================
@@ -282,29 +314,12 @@ step0() {
   # OLDER than 30 min is stale — the worker's sweep marks it recovery_needed —
   # so it is listed and left alone; recovery_needed jobs are listed and left
   # alone (worker.go's sweep at the base, verified by the checkers).
-  local job_file job_id job_state job_phase job_created age
-  for job_file in "$OLD_ROOT/data/updater/jobs"/*.json; do
-    [ -e "$job_file" ] || continue
-    job_id="$(jq -r '.job_id // "?"' "$job_file" 2>/dev/null || echo '?')"
-    job_state="$(jq -r '.state // "?"' "$job_file" 2>/dev/null || echo '?')"
-    job_phase="$(jq -r '.phase // "started"' "$job_file" 2>/dev/null || echo 'started')"
-    if [ "$job_state" = "recovery_needed" ]; then
-      say "updater job $job_id: recovery_needed (listed, left alone)"
-      continue
-    fi
-    case "$job_state" in
-      complete|rolled_back|cancelled|refused) [ "$job_phase" = "done" ] && continue ;;
-    esac
-    job_created="$(jq -r '.created_at // ""' "$job_file" 2>/dev/null || true)"
-    if [ -n "$job_created" ]; then
-      age=$(( $(date +%s) - $(date -d "$job_created" +%s 2>/dev/null || echo 0) ))
-      if [ "$age" -gt 1800 ]; then
-        say "updater job $job_id: stale (age ${age}s) — left alone"
-        continue
-      fi
-    fi
-    die "an updater job is in flight: $job_id (state=$job_state phase=$job_phase) — a resumed job would kill the new unit mid-verify; wait for it or clean it first"
-  done
+  # Extracted as updater_job_in_flight so step 1's 6b re-runs the same scan.
+  local inflight
+  inflight="$(updater_job_in_flight || true)"
+  if [ -n "$inflight" ]; then
+    die "an updater job is in flight: $inflight — a resumed job would kill the new unit mid-verify; wait for it or clean it first"
+  fi
 
   # (k) the installation gate.
   gate_check
@@ -427,6 +442,48 @@ LEGS
   say "installation gate READY — every required leg passed"
 }
 
+# gate_recheck — 6a (RA1): the step-0 verdict can be as old as the operator's
+# password prompt; the bot keeps trading until the system stop below. Re-read
+# the gate right before that stop and stepdie naming any failing required leg
+# (a stepdie here triggers the auto-rollback, which only restarts the old
+# updater — the system units were never stopped).
+gate_recheck() {
+  local tok hdr gate legs name pass bad=""
+  tok="$(token_or_die)"
+  hdr="$(mkt)"
+  ( umask 077; printf 'Authorization: Bearer %s' "$tok" > "$hdr" ) \
+    || stepdie "cannot write the token header file on the re-check"
+  gate="$(gate_payload "$hdr")"
+  rm -f "$hdr"
+  [ -n "$gate" ] || stepdie "the installation gate did not answer on the re-check — refusing before the bot is stopped"
+  legs="$(printf '%s' "$gate" | jq -r '.legs[]? | "\(.name)\t\(.pass)"' 2>/dev/null || true)"
+  [ -n "$legs" ] || stepdie "the installation gate payload names no legs on the re-check — refusing before the bot is stopped"
+  require_leg2() { # $1 = glob
+    local found=0
+    while IFS=$'\t' read -r name pass; do
+      case "$name" in $1)
+        found=$((found+1))
+        [ "$pass" = "true" ] || bad="$bad $name"
+        ;;
+      esac
+    done <<LEGS
+$legs
+LEGS
+    [ "$found" -gt 0 ] || stepdie "the installation gate names no $1 leg on the re-check — refusing before the bot is stopped"
+  }
+  require_leg2 'trader_cutover:*'
+  require_leg2 'ledger_exposure'
+  require_leg2 'planner_in_flight'
+  require_leg2 'traders_nt8'
+  if printf '%s\n' "$legs" | cut -f1 | grep -qx 'addon_census_prehold'; then
+    require_leg2 'addon_census_prehold'
+  fi
+  if [ -n "$bad" ]; then
+    stepdie "gate changed since step 0:$bad — refusing before the bot is stopped"
+  fi
+  say "gate re-check: READY ($(printf '%s' "$legs" | tr '\t' '=' | tr '\n' ' '))"
+}
+
 # =============================================================================
 # STEPS 1–5 — the move (forward mode). Runs in a subshell so that ANY failure
 # (a guarded stepdie or a bare failing command under set -e) returns non-zero
@@ -442,10 +499,20 @@ steps_1_5() {
     if [ "$NO_UPDATER" = 0 ]; then
       systemctl --user stop "$o-updater" || stepdie "cannot stop the old updater"
     fi
+    # 6b (RA2): the old worker could have created/advanced a job between step 0
+    # and its stop — re-run the step-0 (j) scan before anything else moves.
+    local inflight6b
+    inflight6b="$(updater_job_in_flight || true)"
+    if [ -n "$inflight6b" ]; then
+      stepdie "updater job appeared since step 0: $inflight6b — refusing before the bot is stopped"
+    fi
     if [ "$HAS_BACKUP_SVC" = 1 ]; then systemctl --user stop "$o-backup.service" || stepdie "cannot stop the backup service"; fi
     if [ "$HAS_CLOCK_SVC" = 1 ]; then systemctl --user stop "$o-clock-guard.service" || stepdie "cannot stop the clock-guard service"; fi
     if [ "$HAS_BACKUP_TMR" = 1 ]; then systemctl --user stop "$o-backup.timer" || stepdie "cannot stop the backup timer"; fi
     if [ "$HAS_CLOCK_TMR" = 1 ]; then systemctl --user stop "$o-clock-guard.timer" || stepdie "cannot stop the clock-guard timer"; fi
+    # 6a (RA1): the gate verdict predates the sudo password prompt — re-read it
+    # immediately before the bot is stopped.
+    gate_recheck
     sudo systemctl stop "$o" "$o-web" || stepdie "cannot stop the system units"
     local waited=0 mainpid=0
     while [ "$waited" -lt 30 ]; do
