@@ -149,7 +149,7 @@ cleanup_boot_secrets() {
 }
 trap cleanup_boot_secrets EXIT INT TERM
 
-OLD_BIN="$WORK/nofx-old"; NEW_BIN="$WORK/nofx-new"
+OLD_BIN="$WORK/vl-old"; NEW_BIN="$WORK/vl-new"
 gen_boot_secrets || exit 1
 build_at "$OLD_REF" "$OLD_BIN" || exit 1
 build_at "$NEW_REF" "$NEW_BIN" || exit 1

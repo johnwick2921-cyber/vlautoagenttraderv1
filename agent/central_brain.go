@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"vl/branding"
 	"vl/mcp"
 	"vl/store"
 )
@@ -64,7 +65,7 @@ func (a *Agent) tryMinimalBrain(ctx context.Context, storeUserID string, userID 
 }
 
 func buildBrainSystemPrompt(lang string) string {
-	return prependNOFXiAdvisorPreamble(`You are the central brain of NOFXi. Read the intelligence report and output ONE JSON decision. No markdown, no extra text.
+	return prependPersonaAdvisorPreamble("You are the central brain of " + branding.PersonaName() + `. Read the intelligence report and output ONE JSON decision. No markdown, no extra text.
 
 Available action_type values:
 - "CONTINUE_TASK": user is continuing the current active task
@@ -467,7 +468,7 @@ func (a *Agent) ensureStrategyCreateExecutableState(ctx context.Context, lang, t
 	if history == "" {
 		history = "(empty)"
 	}
-	systemPrompt := prependNOFXiAdvisorPreamble(`You repair structured state for one active NOFXi strategy creation task.
+	systemPrompt := prependPersonaAdvisorPreamble("You repair structured state for one active " + branding.PersonaName() + ` strategy creation task.
 Return JSON only.
 
 Rules:
@@ -479,7 +480,7 @@ Rules:
 - Do not silently fill missing fields when the user has not authorized it. But if the user explicitly says things like "你帮我定 / 你推荐 / 按稳健高频设计 / 其他你定", that is authorization for the Agent to design the remaining fields. In that case you must produce a recommended config_patch based on the current strategy template and field limits, and explain which values came from the user versus which values are Agent recommendations.
 - The product editor template is the source of truth. Use only fields from the selected product template.
 - If the user switches strategy type, set extracted_data.strategy_type to the new type and discard fields from the previous type. Keep only shared fields such as name/description/publish settings.
-- In the VL product schema, static / Hyperliquid coin-source requests are ai_trading, not grid_trading.
+- In ` + branding.PersonaName() + ` product schema, AI500/OI Top/OI Low/static coin-source requests are ai_trading, not grid_trading.
 - Strategy creation is chat-executable. Do not tell the user to click a web/app button, open a page, or manually create it elsewhere.
 - Do not claim the strategy was created and do not promise future execution ("马上创建", "正在创建", "稍后通知"). This step only repairs state or asks for missing information.
 - When the current user message is a confirmation, prefer route="ready" whenever the structured template can be repaired. If it cannot be repaired, route="ask_user" with only the missing fields; never reply that you are about to create it.
@@ -812,7 +813,7 @@ func (a *Agent) planActiveSessionStep(ctx context.Context, storeUserID string, u
 	domainPrimer := buildSkillDomainPrimerForSession(lang, legacy)
 	specificRules := activeSessionSpecificRules(legacy)
 
-	systemPrompt := prependNOFXiAdvisorPreamble(fmt.Sprintf(`You are the active-task orchestration loop for NOFXi.
+	systemPrompt := prependPersonaAdvisorPreamble(fmt.Sprintf("You are the active-task orchestration loop for "+branding.PersonaName()+`.
 You decide the NEXT step for exactly one active task. Return JSON only.
 
 Active task:
@@ -843,7 +844,7 @@ Rules:
 - Prefer "ask_user" only when something truly necessary is still missing.
 %s
 - For any mutating task, a reply that only promises future execution ("now I will create/update/start it", "result soon") is not a valid finish_task or ask_user outcome. If execution is the next step, choose execute_skill.
-- For diagnosis, create, update, delete, start, stop, query/history, and performance-analysis tasks, never answer with only "马上处理 / 请稍等 / 诊断中 / I'll tell you later". NOFXi has no background chat job that will later push an answer. Choose execute_skill/planned_agent when enough information exists; otherwise ask for the missing target/range/data.
+- For diagnosis, create, update, delete, start, stop, query/history, and performance-analysis tasks, never answer with only "马上处理 / 请稍等 / 诊断中 / I'll tell you later". `+branding.PersonaName()+` has no background chat job that will later push an answer. Choose execute_skill/planned_agent when enough information exists; otherwise ask for the missing target/range/data.
 - Never choose finish_task for an unfinished mutating active task by claiming it was created/updated/deleted/started/stopped. Only a real skill/tool execution outcome can support that claim.
 - If the user says they do not understand the current form, choices, or required information, choose "ask_user" and explain the current pending question in plain language before asking the next easiest question. Cover the relevant concepts from the previous assistant reply; do not collapse the answer to only the first missing field.
 - For beginner/confusion replies, give a safe recommended path when the domain supports one, but do not execute or create anything unless the user confirms after the explanation.

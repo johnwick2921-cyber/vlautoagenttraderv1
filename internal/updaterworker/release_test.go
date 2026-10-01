@@ -544,7 +544,7 @@ func TestRehashRefusesExtraMissingOrChangedArtifact(t *testing.T) {
 		names  string
 	}{
 		"extra file":      {func(t *testing.T, d string) { writeFiles(t, d, map[string]string{"web/dist/extra.js": "x"}) }, ErrArtifactMismatch, "extra (not in artifacts[]): web/dist/extra.js"},
-		"missing file":    {func(t *testing.T, d string) { _ = os.Remove(filepath.Join(d, "ninjascript", "VLTraderTcp.cs")) }, ErrArtifactMismatch, "missing: ninjascript/VLTraderTcp.cs"},
+		"missing file":    {func(t *testing.T, d string) { _ = os.Remove(filepath.Join(d, "ninjascript", "VLTraderTCPClient.cs")) }, ErrArtifactMismatch, "missing: ninjascript/VLTraderTCPClient.cs"},
 		"changed binary":  {func(t *testing.T, d string) { flip("nofx-bin")(t, d) }, ErrArtifactMismatch, "changed: nofx-bin"},
 		"planted symlink": {func(t *testing.T, d string) { _ = os.Symlink("/etc/passwd", filepath.Join(d, "web", "dist", "x.js")) }, ErrArtifactMismatch, "not a regular file: web/dist/x.js"},
 		"RELEASE rewritten": {func(t *testing.T, d string) {

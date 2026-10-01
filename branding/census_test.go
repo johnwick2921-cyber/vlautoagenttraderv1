@@ -25,12 +25,6 @@ type censusEntry struct {
 }
 
 var censusTable = map[string][]censusEntry{
-	"deploy/{OLD}-lock-test.sh": {
-		{count: 99, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"deploy/{OLD}-db-backup.sh": {
-		{count: 46, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"deploy/postboot-check.sh": {
 		{count: 41, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
@@ -58,9 +52,6 @@ var censusTable = map[string][]censusEntry{
 	"internal/envcompat/envcompat_test.go": {
 		{count: 26, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/{OLD}-lock.sh": {
-		{count: 23, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"internal/activation/rename_r1a_test.go": {
 		{count: 22, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
@@ -79,14 +70,11 @@ var censusTable = map[string][]censusEntry{
 	"web/src/brand-scope.test.ts": {
 		{count: 21, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/{OLD}-claim-test.sh": {
-		{count: 18, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"deploy/rename_r1a_contract_test.go": {
 		{count: 18, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/{OLD}_db_backup_test.go": {
-		{count: 17, phase: "R5", reason: "transitional — re-pinned at final"},
+	"deploy/vl-db-backup.sh": {
+		{count: 18, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"docs/superpowers/reports/2026-09-10-scenario-level-identity-data/remote-ci-setup-failures.txt": {
 		{count: 16, phase: "R4", reason: "transitional — re-pinned at final"},
@@ -97,13 +85,13 @@ var censusTable = map[string][]censusEntry{
 	"deploy/updater_worker_install_test.go": {
 		{count: 15, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
+	"deploy/vl-lock-test.sh": {
+		{count: 15, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
 	"deploy/release_contract_test.go": {
 		{count: 14, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"deploy/install-updater-worker.sh": {
-		{count: 13, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"deploy/{OLD}-claim.sh": {
 		{count: 13, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"deploy/planner-ab-report.sh": {
@@ -127,16 +115,10 @@ var censusTable = map[string][]censusEntry{
 	"api/release_dir_test.go": {
 		{count: 11, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/leveltruth-cutover.sh": {
-		{count: 11, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"internal/updaterjob/verdict_read_test.go": {
 		{count: 11, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"cmd/vl-updater/rename_r1a_test.go": {
-		{count: 10, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"deploy/canon_contract_test.go": {
 		{count: 10, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"deploy/cutover_test.sh": {
@@ -148,8 +130,8 @@ var censusTable = map[string][]censusEntry{
 	"main.go": {
 		{count: 10, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"agent/planner_runtime.go": {
-		{count: 9, phase: "R5", reason: "transitional — re-pinned at final"},
+	"ninjascript/VLTraderTCPClient.cs": {
+		{count: 10, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"deploy/bars-key-rollback.sh": {
 		{count: 9, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -166,10 +148,10 @@ var censusTable = map[string][]censusEntry{
 	"cmd/vl-updater/main_test.go": {
 		{count: 8, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/{OLD}-clock-guard.sh": {
+	"deploy/release/package.sh": {
 		{count: 8, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/release/package.sh": {
+	"deploy/vl_twin_contract_test.go": {
 		{count: 8, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"internal/updaterworker/library_activation_test.go": {
@@ -183,9 +165,6 @@ var censusTable = map[string][]censusEntry{
 	},
 	"web/src/i18n/translations.ts": {
 		{count: 8, phase: "R4", reason: "transitional — re-pinned at final"},
-	},
-	"agent/central_brain.go": {
-		{count: 7, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"cmd/vl-updater/main.go": {
 		{count: 7, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -202,6 +181,9 @@ var censusTable = map[string][]censusEntry{
 	"cmd/vl-activate/main.go": {
 		{count: 6, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
+	"deploy/vl-lock.sh": {
+		{count: 6, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
 	"internal/activation/system.go": {
 		{count: 6, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
@@ -214,7 +196,7 @@ var censusTable = map[string][]censusEntry{
 	"web/src/lib/storageMigration.ts": {
 		{count: 6, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"agent/planner_runtime_state_test.go": {
+	"deploy/vl-claim.sh": {
 		{count: 5, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"docs/internal/external-reviews/2026-05-28-end-to-end-architecture.md": {
@@ -251,9 +233,6 @@ var censusTable = map[string][]censusEntry{
 		{count: 5, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	".github/workflows/docker-build.yml": {
-		{count: 4, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"agent/prompt_persona.go": {
 		{count: 4, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"api/handler_updates.go": {
@@ -295,6 +274,9 @@ var censusTable = map[string][]censusEntry{
 	"agent/backend_logs_test.go": {
 		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
+	"agent/prompt_persona.go": {
+		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
 	"agent/tools.go": {
 		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
@@ -307,7 +289,7 @@ var censusTable = map[string][]censusEntry{
 	"api/handler_updates_verifier_test.go": {
 		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/journald-{OLD}.conf": {
+	"deploy/vl-clock-guard.sh": {
 		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"internal/updaterworker/hold_census_test.go": {
@@ -331,9 +313,6 @@ var censusTable = map[string][]censusEntry{
 	"logger/log_prune.go": {
 		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"scripts/replay_write_time_feasibility.py": {
-		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"start.sh": {
 		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
@@ -349,22 +328,7 @@ var censusTable = map[string][]censusEntry{
 	"Makefile": {
 		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"agent/agent.go": {
-		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"agent/llm_skill_router.go": {
-		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"agent/memory_test.go": {
-		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"agent/skill_dispatcher_test.go": {
-		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"agent/web.go": {
-		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"agent/workflow.go": {
 		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"api/handler_exchange_test.go": {
@@ -385,13 +349,10 @@ var censusTable = map[string][]censusEntry{
 	"cmd/vl-activate/main_test.go": {
 		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/install-journald.sh": {
+	"deploy/{OLD}-lock.sh": {
 		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"deploy/planner_ab_report_fixture_test.sh": {
-		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"deploy/release/db-compat.sh": {
 		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"docs/superpowers/AUDIT-CHECKLIST.md": {
@@ -419,9 +380,6 @@ var censusTable = map[string][]censusEntry{
 		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"kernel/funding_suppress_test.go": {
-		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"ninjascript/VLTraderTCPClient.cs": {
 		{count: 2, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"store/ab_confirm.go": {
@@ -457,15 +415,6 @@ var censusTable = map[string][]censusEntry{
 	"agent/config_visibility_test.go": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"agent/llm_flow_extractor.go": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"agent/skill_execution_handlers.go": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"agent/skill_outcome.go": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"api/agent_routes.go": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
@@ -496,22 +445,34 @@ var censusTable = map[string][]censusEntry{
 	"cmd/nq_smoke/smoke_roundtrip.go": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
+	"deploy/canon_contract_test.go": {
+		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
 	"deploy/install-autostart.sh": {
+		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
+	"deploy/{OLD}-claim.sh": {
+		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
+	"deploy/{OLD}-clock-guard.sh": {
+		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
+	"deploy/{OLD}-db-backup.sh": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"deploy/release/README.md": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"deploy/release/secret-scan.sh": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"deploy/release_allowed_signers": {
+	"deploy/release_manifest_addon_pin_test.go": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"deploy/release_manifest_caller_test.go": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"deploy/release_manifest_versions_test.go": {
+		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
+	"deploy/vl_db_backup_test.go": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"docker/Dockerfile.backend": {
@@ -652,12 +613,6 @@ var censusTable = map[string][]censusEntry{
 	"manager/trader_manager.go": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
-	"ninjascript/vltrader_tcp_README.md": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"scripts/leveltruth_missed_turns.py": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"scripts/sandbox-down.sh": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
@@ -696,8 +651,8 @@ var censusTable = map[string][]censusEntry{
 	},
 }
 
-// Ceiling = sum of allowed counts at the R1b merge (1383).
-const censusCeiling = 1383
+// Ceiling = sum of allowed counts at the R1b merge (1160).
+const censusCeiling = 1160
 
 func TestCensusGuard(t *testing.T) {
 	tok := "no" + "fx" // runtime assembly — never the literal

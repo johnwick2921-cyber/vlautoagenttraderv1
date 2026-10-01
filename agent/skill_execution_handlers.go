@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"vl/branding"
 	"vl/mcp"
 	"vl/store"
 )
@@ -2402,7 +2403,7 @@ func (a *Agent) generateTraderDiagnosisAnswerWithLLM(ctx context.Context, lang, 
 	}
 	stageCtx, cancel := withPlannerStageTimeout(ctx, directReplyTimeout)
 	defer cancel()
-	systemPrompt := `You are the trader diagnosis reasoning layer for NOFXi.
+	systemPrompt := `You are the trader diagnosis reasoning layer for ` + branding.PersonaName() + `.
 You receive a complete evidence package collected by tools: trader config, bound model, bound exchange, bound strategy, account/positions, recent AI decisions, and backend logs.
 
 Your job:

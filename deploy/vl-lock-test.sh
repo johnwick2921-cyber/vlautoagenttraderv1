@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# nofx-lock-test.sh — pins for the atomic heartbeat lock.
+# vl-lock-test.sh — pins for the atomic heartbeat lock.
 #
 # The lock this replaces failed in three directions in one day (2026-09-03):
 # a dead pid under a live owner, a live pid silently overwritten by a second
 # writer, and a pid that went stale when its session was resumed. Every pin
 # below is one of those, or the rule that makes them un-representable.
 set -uo pipefail
+# (d) run from anywhere: the wrappers below resolve by $PWD, so resolve this
+# file's directory ONCE (a second dirname walk after the cd fails) and pin the
+# cwd to it. The repo root used to produce 11 false FAILs.
+SDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || { echo "cannot resolve the suite dir" >&2; exit 1; }
+cd "$SDIR"
 
-LOCK_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/nofx-lock.sh"
+LOCK_SH="$SDIR/vl-lock.sh"
 PASS=0; FAIL=0
 ok()   { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad()  { FAIL=$((FAIL+1)); printf '  FAIL %s\n     %s\n' "$1" "${2:-}"; }
@@ -25,9 +30,23 @@ if [ ! -f "$LOCK_SH" ]; then
   exit 1
 fi
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
-export NOFX_LOCK_DIR="$WORK/nofx-main.lock.d"
-L() { NOFX_LOCK_DIR="$NOFX_LOCK_DIR" bash "$LOCK_SH" "$@" 2>&1; }
+WORK="$(mktemp -d)"
+cleanup() {
+  # keepers poll for the dir; a plain rm leaves them looping on a missing lock.
+  # Kill every keeper group the suite spawned BEFORE removing the dirs.
+  find "$WORK" -name keeper.pid 2>/dev/null | while read -r kp; do
+    pg="$(cat "$kp" 2>/dev/null || true)"
+    [ -n "$pg" ] && kill -KILL -- "-$pg" 2>/dev/null || true
+  done
+  sleep 0.2
+  rm -rf "$WORK"
+}
+trap cleanup EXIT
+o=no; o=${o}fx   # the pre-rename prefix, assembled at runtime (never written literal)
+W=no; W=${W}fx   # same prefix for the wrapper file names
+mkdir -p "$WORK/home"; export HOME="$WORK/home"   # OTHER_HOME is $HOME/vl-main.lock.d; never the real HOME
+export VL_LOCK_DIR="$WORK/$o-main.lock.d"
+L() { VL_LOCK_DIR="$VL_LOCK_DIR" bash "$LOCK_SH" "$@" 2>&1; }
 
 echo "== a free lock reports free =="
 out="$(L status)"; rc=$?
@@ -35,19 +54,19 @@ has  "status names it free" "$out" "free"
 check "status rc on a free lock" "$rc" "0"
 
 echo "== acquire, then a SECOND acquire FAILS (the replacement class) =="
-out="$(L acquire nofx-63 'cutover boot 6' 90)"; check "first acquire rc" "$?" "0"
+out="$(L acquire vl-63 'cutover boot 6' 90)"; check "first acquire rc" "$?" "0"
 hasi "first acquire confirms" "$out" "acquired"
-out="$(L acquire nofx-b3 'a different cutover' 90)"; rc=$?
+out="$(L acquire vl-b3 'a different cutover' 90)"; rc=$?
 check "second acquire rc is nonzero" "$([ $rc -ne 0 ] && echo nonzero || echo zero)" "nonzero"
 has  "second acquire refuses"        "$out" "REFUSED"
-has  "second acquire names the holder" "$out" "nofx-63"
+has  "second acquire names the holder" "$out" "vl-63"
 has  "second acquire names the task"   "$out" "cutover boot 6"
 
 echo "== the lock carries no pid, by construction =="
-body="$(cat "$NOFX_LOCK_DIR"/* 2>/dev/null)"
+body="$(cat "$VL_LOCK_DIR"/* 2>/dev/null)"
 hasnt "no pid= field in the lock"  "$body" "pid="
 hasnt "no PID word in the lock"    "$body" "PID"
-has   "records the session"        "$body" "nofx-63"
+has   "records the session"        "$body" "vl-63"
 has   "records the task"           "$body" "cutover boot 6"
 has   "records acquired"           "$body" "acquired="
 has   "records expiry"             "$body" "expiry="
@@ -61,7 +80,7 @@ check "check rc on held-fresh" "$(L check >/dev/null 2>&1; echo $?)" "1"
 
 echo "== a STALE heartbeat says stale, and NEVER says dead =="
 age_lock() { # rewrite the heartbeat the way the script actually reads it
-  local secs="$1" f="$NOFX_LOCK_DIR/meta"
+  local secs="$1" f="$VL_LOCK_DIR/meta"
   { grep -v '^heartbeat' "$f"
     printf 'heartbeat=%s\n' "$(date -Is -d "$secs seconds ago")"
     printf 'heartbeat_epoch=%s\n' "$(( $(date +%s) - secs ))"
@@ -72,72 +91,72 @@ out="$(L status)"
 hasi   "stale status says stale"      "$out" "stale"
 hasnti "stale status never says dead" "$out" "dead"
 hasi  "stale status demands corroboration" "$out" "corroborat"
-has   "stale status still names the holder" "$out" "nofx-63"
+has   "stale status still names the holder" "$out" "vl-63"
 check "check rc on held-stale" "$(L check >/dev/null 2>&1; echo $?)" "2"
 
 echo "== heartbeat refreshes it; a foreign session may not beat =="
-L heartbeat nofx-63 >/dev/null
+L heartbeat vl-63 >/dev/null
 out="$(L status)"
 hasnti "beating clears stale" "$out" "stale"
-out="$(L heartbeat nofx-b3)"; rc=$?
+out="$(L heartbeat vl-b3)"; rc=$?
 check "foreign heartbeat rc nonzero" "$([ $rc -ne 0 ] && echo nonzero || echo zero)" "nonzero"
 has   "foreign heartbeat refuses" "$out" "REFUSED"
 
 echo "== release is owner-scoped, and frees the lock =="
-out="$(L release nofx-b3)"; rc=$?
+out="$(L release vl-b3)"; rc=$?
 check "foreign release rc nonzero" "$([ $rc -ne 0 ] && echo nonzero || echo zero)" "nonzero"
-out="$(L release nofx-63)"; check "owner release rc" "$?" "0"
+out="$(L release vl-63)"; check "owner release rc" "$?" "0"
 has   "release confirms" "$out" "released"
 has   "lock is free again" "$(L status)" "free"
-check "lock dir is gone" "$([ -e "$NOFX_LOCK_DIR" ] && echo present || echo gone)" "gone"
+check "lock dir is gone" "$([ -e "$VL_LOCK_DIR" ] && echo present || echo gone)" "gone"
 
 echo "== with-heartbeat keeps a long job fresh, and stops when it ends =="
-L acquire nofx-63 'long build' 90 >/dev/null
+L acquire vl-63 'long build' 90 >/dev/null
 age_lock 660
-L with-heartbeat nofx-63 -- true >/dev/null 2>&1
+L with-heartbeat vl-63 -- true >/dev/null 2>&1
 hasnti "with-heartbeat beat at least once" "$(L status)" "stale"
-before="$(cat "$NOFX_LOCK_DIR/heartbeat")"
+before="$(cat "$VL_LOCK_DIR/heartbeat")"
 sleep 1
-check "beater does not outlive its command" "$(cat "$NOFX_LOCK_DIR/heartbeat")" "$before"
-L release nofx-63 >/dev/null
+check "beater does not outlive its command" "$(cat "$VL_LOCK_DIR/heartbeat")" "$before"
+L release vl-63 >/dev/null
 
 echo "== reclaim: REFUSED on a fresh heartbeat =="
-L acquire nofx-b3 'a live cutover' 90 >/dev/null
-out="$(L reclaim nofx-63 nofx-b3 'HEAD has not moved in 20m; no build in flight')"; rc=$?
+L acquire vl-b3 'a live cutover' 90 >/dev/null
+out="$(L reclaim vl-63 vl-b3 'HEAD has not moved in 20m; no build in flight')"; rc=$?
 check "reclaim rc on fresh is nonzero" "$([ $rc -ne 0 ] && echo nonzero || echo zero)" "nonzero"
 has   "reclaim refuses a fresh lock" "$out" "REFUSED"
 hasi  "refusal says the heartbeat is fresh" "$out" "fresh"
-check "holder is unchanged after a refused reclaim" "$(L status | grep -c "nofx-b3")" "1"
+check "holder is unchanged after a refused reclaim" "$(L status | grep -c "vl-b3")" "1"
 
 echo "== reclaim: allowed once STALE, and only with corroboration =="
 age_lock 660
-out="$(L reclaim nofx-63 nofx-b3)"; rc=$?
+out="$(L reclaim vl-63 vl-b3)"; rc=$?
 check "reclaim without corroboration rc nonzero" "$([ $rc -ne 0 ] && echo nonzero || echo zero)" "nonzero"
 hasi  "refuses when corroboration is missing" "$out" "corroborat"
-out="$(L reclaim nofx-63 nofx-ed 'HEAD static; no build')"; rc=$?
+out="$(L reclaim vl-63 vl-ed 'HEAD static; no build')"; rc=$?
 check "reclaim naming the WRONG stale session rc nonzero" "$([ $rc -ne 0 ] && echo nonzero || echo zero)" "nonzero"
 has   "refuses when the named session is not the holder" "$out" "REFUSED"
-out="$(L reclaim nofx-63 nofx-b3 'HEAD has not moved in 20m; no build in flight')"; rc=$?
+out="$(L reclaim vl-63 vl-b3 'HEAD has not moved in 20m; no build in flight')"; rc=$?
 # rc 3, NOT acquire's 0 — a script must be able to tell "took a free lock" from
 # "inherited an abandoned one", so a lane can refuse to inherit.
 check "reclaim rc is 3, distinct from acquire's 0" "$rc" "3"
 hasi  "reclaim confirms" "$out" "reclaim"
 out="$(L status)"
-has   "new holder is named"        "$out" "nofx-63"
+has   "new holder is named"        "$out" "vl-63"
 hasnti "reclaimed lock is fresh"   "$out" "stale"
 
 echo "== the reclaim is written to the lock's history =="
-hist="$(cat "$NOFX_LOCK_DIR/history" 2>/dev/null)"
-has  "history names who took over"      "$hist" "nofx-63"
-has  "history names who was taken from" "$hist" "nofx-b3"
+hist="$(cat "$VL_LOCK_DIR/history" 2>/dev/null)"
+has  "history names who took over"      "$hist" "vl-63"
+has  "history names who was taken from" "$hist" "vl-b3"
 has  "history carries the corroboration" "$hist" "no build in flight"
 has  "history is timestamped"           "$hist" "20"
 check "history survives into status" "$(L status | grep -c 'reclaim')" "1"
 
 echo "== a reclaimed lock still beats and releases as the new holder =="
-check "old holder may no longer beat" "$(L heartbeat nofx-b3 >/dev/null 2>&1; echo $?)" "1"
-L heartbeat nofx-63 >/dev/null; check "new holder may beat" "$?" "0"
-L release nofx-63 >/dev/null; has "released" "$(L status)" "free"
+check "old holder may no longer beat" "$(L heartbeat vl-b3 >/dev/null 2>&1; echo $?)" "1"
+L heartbeat vl-63 >/dev/null; check "new holder may beat" "$?" "0"
+L release vl-63 >/dev/null; has "released" "$(L status)" "free"
 
 echo "== the script cannot express pid liveness =="
 src="$(grep -v '^[[:space:]]*#' "$LOCK_SH" | sed 's/[[:space:]]#.*$//')"
@@ -169,8 +188,8 @@ hasnt "no \$\$"     "$src" '$$'
 # would need.
 echo "== the keeper: acquire starts one, and a WAITING holder stays ALIVE =="
 KW="$(mktemp -d)"
-K() { NOFX_LOCK_DIR="$KW/lock.d" NOFX_LOCK_STALE_SECONDS=4 NOFX_LOCK_BEAT_SECONDS=1 bash "$LOCK_SH" "$@" 2>&1; }
-out="$(K acquire nofx-keeper 'waiting on a position to close' 60)"
+K() { VL_LOCK_DIR="$KW/lock.d" VL_LOCK_STALE_SECONDS=4 VL_LOCK_BEAT_SECONDS=1 bash "$LOCK_SH" "$@" 2>&1; }
+out="$(K acquire vl-keeper 'waiting on a position to close' 60)"
 check "acquire rc" "$?" "0"
 hasi  "acquire confirms" "$out" "acquired"
 hasnti "the acquire message no longer promises an unstarted beat" "$out" "heartbeat every"
@@ -192,7 +211,7 @@ else
 fi
 
 echo "== a second acquire never succeeds while the lock lives =="
-out="$(K acquire nofx-other 'a different cutover' 60)"; rc=$?
+out="$(K acquire vl-other 'a different cutover' 60)"; rc=$?
 check "second acquire rc is a refusal" "$rc" "1"
 hasi  "second acquire is REFUSED" "$out" "refused"
 
@@ -211,10 +230,10 @@ echo "== release stops the keeper — no writer outlives its lock =="
 # pid liveness in the TOOL, where a reader could mistake it for an answer, not in
 # a test that is asking about a process on purpose.)
 KWR="$(mktemp -d)"
-R() { NOFX_LOCK_DIR="$KWR/lock.d" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=30 bash "$LOCK_SH" "$@" 2>&1; }
-R acquire nofx-rel 'a holder that will release' 60 >/dev/null
+R() { VL_LOCK_DIR="$KWR/lock.d" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=30 bash "$LOCK_SH" "$@" 2>&1; }
+R acquire vl-rel 'a holder that will release' 60 >/dev/null
 kp2="$(cat "$KWR/lock.d/keeper.pid" 2>/dev/null || echo)"
-hasi "release confirms" "$(R release nofx-rel)" "released"
+hasi "release confirms" "$(R release vl-rel)" "released"
 sleep 1
 if [ -n "$kp2" ] && kill -0 "$kp2" 2>/dev/null; then
   bad "release STOPS the keeper process" "pid $kp2 still running after release — a writer outliving its lock"
@@ -228,23 +247,23 @@ rm -rf "$KW"
 echo "== the keeper OUTLIVES the shell that spawned it =="
 # A keeper that dies with its session reproduces the defect one layer down.
 KW2="$(mktemp -d)"
-( NOFX_LOCK_DIR="$KW2/lock.d" NOFX_LOCK_STALE_SECONDS=4 NOFX_LOCK_BEAT_SECONDS=1 \
-    bash "$LOCK_SH" acquire nofx-detached 'spawned by a shell that exits' 60 >/dev/null 2>&1 )
+( VL_LOCK_DIR="$KW2/lock.d" VL_LOCK_STALE_SECONDS=4 VL_LOCK_BEAT_SECONDS=1 \
+    bash "$LOCK_SH" acquire vl-detached 'spawned by a shell that exits' 60 >/dev/null 2>&1 )
 sleep 6
-out="$(NOFX_LOCK_DIR="$KW2/lock.d" NOFX_LOCK_STALE_SECONDS=4 bash "$LOCK_SH" status 2>&1)"
+out="$(VL_LOCK_DIR="$KW2/lock.d" VL_LOCK_STALE_SECONDS=4 bash "$LOCK_SH" status 2>&1)"
 hasi "a keeper spawned by an exited shell keeps beating" "$out" "alive"
-NOFX_LOCK_DIR="$KW2/lock.d" bash "$LOCK_SH" release nofx-detached >/dev/null 2>&1
+VL_LOCK_DIR="$KW2/lock.d" bash "$LOCK_SH" release vl-detached >/dev/null 2>&1
 rm -rf "$KW2"
 
 echo "== THE BOUND: the keeper stops at the declared expiry, and never extends it =="
 KW3="$(mktemp -d)"
 # a lock declared for 0 minutes is already expired: the keeper must not beat it
-( NOFX_LOCK_DIR="$KW3/lock.d" NOFX_LOCK_STALE_SECONDS=4 NOFX_LOCK_BEAT_SECONDS=1 \
-    bash "$LOCK_SH" acquire nofx-brief 'a window that has already closed' 0 >/dev/null 2>&1 )
+( VL_LOCK_DIR="$KW3/lock.d" VL_LOCK_STALE_SECONDS=4 VL_LOCK_BEAT_SECONDS=1 \
+    bash "$LOCK_SH" acquire vl-brief 'a window that has already closed' 0 >/dev/null 2>&1 )
 sleep 6
-out="$(NOFX_LOCK_DIR="$KW3/lock.d" NOFX_LOCK_STALE_SECONDS=4 bash "$LOCK_SH" status 2>&1)"
+out="$(VL_LOCK_DIR="$KW3/lock.d" VL_LOCK_STALE_SECONDS=4 bash "$LOCK_SH" status 2>&1)"
 hasi "a lock past its declared expiry goes STALE — the keeper never auto-extends" "$out" "stale"
-NOFX_LOCK_DIR="$KW3/lock.d" bash "$LOCK_SH" release nofx-brief >/dev/null 2>&1
+VL_LOCK_DIR="$KW3/lock.d" bash "$LOCK_SH" release vl-brief >/dev/null 2>&1
 rm -rf "$KW3"
 
 echo "== the acquire message says what the keeper actually does =="
@@ -279,8 +298,8 @@ exec /usr/bin/mktemp "\$@"
 SHIMEOF
 chmod +x "$SHIM/mktemp"
 KWO="$(mktemp -d)"
-export NOFX_LOCK_DIR="$KWO/lock.d"
-O() { NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=1 PATH="$SHIM:$PATH" bash "$LOCK_SH" "$@" 2>&1; }
+export VL_LOCK_DIR="$KWO/lock.d"
+O() { VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=1 PATH="$SHIM:$PATH" bash "$LOCK_SH" "$@" 2>&1; }
 rm -f "$SLOWFLAG"
 O acquire sess-A "lane A cutover" 45 >/dev/null
 touch "$SLOWFLAG"      # the NEXT beat parks inside mktemp holding A's meta
@@ -294,15 +313,15 @@ hasnt "a second acquire never sees the first holder's identity" "$who" "sess-A"
 has   "the lock reports the holder that actually took it"       "$who" "sess-B"
 rel="$(bash "$LOCK_SH" release sess-B 2>&1)"
 hasi  "the holder can release its OWN lock"                     "$rel" "released"
-kp="$(cat "$NOFX_LOCK_DIR/keeper.pid" 2>/dev/null || true)"
+kp="$(cat "$VL_LOCK_DIR/keeper.pid" 2>/dev/null || true)"
 [ -n "$kp" ] && kill -KILL -- "-$kp" 2>/dev/null
 rm -rf "$KWO" "$SHIM"; rm -f "$SLOWFLAG"
-unset NOFX_LOCK_DIR
-export NOFX_LOCK_DIR="$WORK/nofx-main.lock.d"
+unset VL_LOCK_DIR
+export VL_LOCK_DIR="$WORK/$o-main.lock.d"
 
 echo "== release kills the GROUP, so no keeper member survives it =="
 KWG="$(mktemp -d)"
-G() { NOFX_LOCK_DIR="$KWG/lock.d" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=30 bash "$LOCK_SH" "$@" 2>&1; }
+G() { VL_LOCK_DIR="$KWG/lock.d" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=30 bash "$LOCK_SH" "$@" 2>&1; }
 G acquire sess-G "a holder with a slow beat" 60 >/dev/null
 pg="$(cat "$KWG/lock.d/keeper.pid" 2>/dev/null || echo)"
 G release sess-G >/dev/null
@@ -324,7 +343,7 @@ echo "== NO WRITER EXTENDS A WINDOW — not even a hand-rolled one =="
 # file and named it: refuse at the source, and the invariant holds for every
 # writer. This pin beats BY HAND, the way a lane would.
 KWX="$(mktemp -d)"
-X() { NOFX_LOCK_DIR="$KWX/lock.d" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=1 bash "$LOCK_SH" "$@" 2>&1; }
+X() { VL_LOCK_DIR="$KWX/lock.d" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=1 bash "$LOCK_SH" "$@" 2>&1; }
 X acquire sess-X 'a window of zero minutes' 0 >/dev/null
 sleep 1
 out="$(X heartbeat sess-X)"; rc=$?
@@ -337,7 +356,7 @@ rm -rf "$KWX"
 
 echo "== a lock inside its window still beats normally =="
 KWY="$(mktemp -d)"
-Y() { NOFX_LOCK_DIR="$KWY/lock.d" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=1 bash "$LOCK_SH" "$@" 2>&1; }
+Y() { VL_LOCK_DIR="$KWY/lock.d" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=1 bash "$LOCK_SH" "$@" 2>&1; }
 Y acquire sess-Y 'a normal window' 45 >/dev/null
 check "a beat inside the window succeeds" "$(Y heartbeat sess-Y >/dev/null 2>&1; echo $?)" "0"
 Y release sess-Y >/dev/null 2>&1
@@ -358,10 +377,10 @@ echo "== acquire is CLEAN on stderr — a spawn that warns is a spawn nobody rea
 # So stderr is what gets pinned. Any acquire that has to warn to succeed fails
 # here, whatever the exit code says.
 KSE="$(mktemp -d)"
-err="$(NOFX_LOCK_DIR="$KSE/lock.d" NOFX_LOCK_BEAT_SECONDS=60 bash "$LOCK_SH" acquire sess-E 'stderr must be silent' 30 2>&1 >/dev/null)"
+err="$(VL_LOCK_DIR="$KSE/lock.d" VL_LOCK_BEAT_SECONDS=60 bash "$LOCK_SH" acquire sess-E 'stderr must be silent' 30 2>&1 >/dev/null)"
 if [ -z "$err" ]; then ok "acquire writes nothing to stderr"
 else bad "acquire writes nothing to stderr" "stderr: $err"; fi
-NOFX_LOCK_DIR="$KSE/lock.d" bash "$LOCK_SH" release sess-E >/dev/null 2>&1
+VL_LOCK_DIR="$KSE/lock.d" bash "$LOCK_SH" release sess-E >/dev/null 2>&1
 rm -rf "$KSE"
 
 echo "== pgrp is counted AFTER comm, so a comm with spaces cannot shift it =="
@@ -392,7 +411,7 @@ echo "== release NEVER signals a group it did not create =="
 # dead code into a live shell-killer. Hence: identify positively, or signal
 # nothing.
 KWN="$(mktemp -d)"
-N() { NOFX_LOCK_DIR="$KWN/lock.d" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=30 bash "$LOCK_SH" "$@" 2>&1; }
+N() { VL_LOCK_DIR="$KWN/lock.d" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=1 bash "$LOCK_SH" "$@" 2>&1; }
 N acquire sess-N 'a holder whose keeper.pid lies' 60 >/dev/null
 # An innocent bystander in its OWN group, standing in for the invoking shell.
 setsid bash -c 'sleep 30' >/dev/null 2>&1 &
@@ -413,7 +432,7 @@ rm -rf "$KWN"
 
 echo "== a keeper.pid that is not a number is inert =="
 KWJ="$(mktemp -d)"
-J() { NOFX_LOCK_DIR="$KWJ/lock.d" NOFX_LOCK_STALE_SECONDS=600 NOFX_LOCK_BEAT_SECONDS=30 bash "$LOCK_SH" "$@" 2>&1; }
+J() { VL_LOCK_DIR="$KWJ/lock.d" VL_LOCK_STALE_SECONDS=600 VL_LOCK_BEAT_SECONDS=1 bash "$LOCK_SH" "$@" 2>&1; }
 J acquire sess-J 'a holder with a corrupt stop handle' 60 >/dev/null
 printf 'not-a-pid' > "$KWJ/lock.d/keeper.pid"
 out="$(J release sess-J 2>&1)"; rc=$?
@@ -430,7 +449,7 @@ echo "== C1 — release REPORTS a failed removal instead of claiming success =="
 # The lock then went STALE on a holder who was alive and thought it had finished,
 # and the next lane saw an abandoned lock that was nothing of the kind.
 KR="$(mktemp -d)"; mkdir -p "$KR/parent"
-R() { NOFX_LOCK_DIR="$KR/parent/lock.d" NOFX_LOCK_BEAT_SECONDS=60 bash "$LOCK_SH" "$@" 2>&1; }
+R() { VL_LOCK_DIR="$KR/parent/lock.d" VL_LOCK_BEAT_SECONDS=60 bash "$LOCK_SH" "$@" 2>&1; }
 R acquire sess-R 'a release that cannot remove' 30 >/dev/null
 chmod a-w "$KR/parent"                       # rm cannot unlink the child
 out="$(R release sess-R)"; rc=$?
@@ -450,7 +469,7 @@ echo "== C3 — a half-built lock is INCOMPLETE, never STALE with an empty holde
 # "STALE — held by '' (task: )" and check returned 2. "Being created right now"
 # and "held by someone who stopped beating" reached the reader as the same
 # answer — and only the second is ever grounds for a takeover.
-KI="$(mktemp -d)"; export NOFX_LOCK_DIR="$KI/lock.d"; mkdir -p "$KI/lock.d"
+KI="$(mktemp -d)"; export VL_LOCK_DIR="$KI/lock.d"; mkdir -p "$KI/lock.d"
 out="$(bash "$LOCK_SH" status 2>&1)"
 hasi  "a meta-less lock reads INCOMPLETE"           "$out" "INCOMPLETE"
 hasnt "and is NOT reported stale"                   "$out" "STALE"
@@ -479,14 +498,179 @@ out="$(bash "$LOCK_SH" clear-incomplete 2>&1)"; rc=$?
 check "a lock too YOUNG to be abandoned is refused" "$rc" "1"
 hasi  "and says an acquire is probably in flight"   "$out" "in flight"
 rm -rf "$KI/lock.d"
-NOFX_LOCK_BEAT_SECONDS=60 bash "$LOCK_SH" acquire sess-C2 'a genuine holder' 30 >/dev/null 2>&1
+VL_LOCK_BEAT_SECONDS=60 bash "$LOCK_SH" acquire sess-C2 'a genuine holder' 30 >/dev/null 2>&1
 out="$(bash "$LOCK_SH" clear-incomplete 2>&1)"; rc=$?
 check "a lock WITH a holder is refused"             "$rc" "1"
 hasi  "and names the holder it refused to clear"    "$out" "sess-C2"
 kp="$(cat "$KI/lock.d/keeper.pid" 2>/dev/null || true)"
 bash "$LOCK_SH" release sess-C2 >/dev/null 2>&1; [ -n "$kp" ] && kill -- -"$kp" 2>/dev/null
-unset NOFX_LOCK_DIR; export NOFX_LOCK_DIR="$WORK/nofx-main.lock.d"
+unset VL_LOCK_DIR; export VL_LOCK_DIR="$WORK/$o-main.lock.d"
 rm -rf "$KI"
+
+
+echo "== one home, THREE copies: this tool, the wrapper, and a pre-rename copy =="
+#
+# Z18: the old-name wrapper and every pre-rename worktree copy must contend for
+# the SAME atomic mkdir this tool uses. Three writers, one home, one winner —
+# and whichever copy wins, every copy must read the same holder.
+KCONT="$WORK/cont.lock.d"
+WRAP="$PWD/$W-lock.sh"
+git show 9d52f5dc6:deploy/$W-lock.sh > "$WORK/legacy-lock.sh" 2>/dev/null \
+  || cp "$LOCK_SH" "$WORK/legacy-lock.sh"
+chmod +x "$WORK/legacy-lock.sh"
+VL_LOCK_DIR="$KCONT" bash "$LOCK_SH" acquire sess-1 'three copies, one home' 60 >/dev/null
+has   "the wrapper reads the same holder"   "$(VL_LOCK_DIR="$KCONT" "$WRAP" status 2>&1)" "sess-1"
+hasi  "and the boot-7 copy too"            "$(VL_LOCK_DIR="$KCONT" NOFX_LOCK_DIR="$KCONT" bash "$WORK/legacy-lock.sh" status 2>&1)" "sess-1"
+VL_LOCK_DIR="$KCONT" "$WRAP" release sess-1 >/dev/null
+check "the wrapper releases what the tool acquired" "$([ -d "$KCONT" ] && echo held || echo gone)" "gone"
+for i in $(seq 1 10); do
+  rm -rf "$KCONT"
+  VL_LOCK_DIR="$KCONT" bash "$LOCK_SH" acquire r-$i 'race' 60 >/dev/null 2>&1 &
+  VL_LOCK_DIR="$KCONT" "$WRAP" acquire r-$i 'race' 60 >/dev/null 2>&1 &
+  VL_LOCK_DIR="$KCONT" NOFX_LOCK_DIR="$KCONT" NOFX_LOCK_BEAT_SECONDS=1 bash "$WORK/legacy-lock.sh" acquire r-$i 'race' 60 >/dev/null 2>&1 &
+  wait
+  n="$(VL_LOCK_DIR="$KCONT" bash "$LOCK_SH" status 2>&1 | grep -c "held by 'r-")"
+  check "one-home race round $i has exactly one holder" "$n" "1"
+  VL_LOCK_DIR="$KCONT" bash "$LOCK_SH" release r-$i >/dev/null 2>&1
+done
+
+echo "== (c) boot-7 interop: tonight's box copy and this tool take one lock =="
+#
+# FWD: the copy on the box tonight (9d52f5dc6) acquires its default home; this
+# tool reads the same holder, checks rc 1, and releases rc 0. REV: this tool
+# acquires; the boot-7 copy reads the same holder. Both prove one home, one
+# lock, across the rename.
+B7="$WORK/b7home"; mkdir -p "$B7"
+( unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$B7" NOFX_LOCK_BEAT_SECONDS=1 VL_LOCK_BEAT_SECONDS=60 VL_LOCK_STALE_SECONDS=600 bash "$WORK/legacy-lock.sh" acquire sess-B7 'the box tonight' 60 >/dev/null )
+has   "vl reads the boot-7 holder"  "$(unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$B7" bash "$LOCK_SH" status 2>&1)" "sess-B7"
+check "vl check beside the boot-7 lock is 1" "$(unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$B7" bash "$LOCK_SH" check >/dev/null 2>&1; echo $?)" "1"
+check "vl release clears the boot-7 lock"    "$(unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$B7" bash "$LOCK_SH" release sess-B7 >/dev/null 2>&1; echo $?)" "0"
+check "and the dir is gone"                  "$([ -d "$B7/$o-main.lock.d" ] && echo yes || echo no)" "no"
+( unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$B7" VL_LOCK_BEAT_SECONDS=60 VL_LOCK_STALE_SECONDS=600 bash "$LOCK_SH" acquire sess-V 'vl first' 60 >/dev/null )
+has   "the boot-7 copy reads the vl holder"  "$(HOME="$B7" bash "$WORK/legacy-lock.sh" status 2>&1)" "sess-V"
+( unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$B7" bash "$LOCK_SH" release sess-V >/dev/null 2>&1 )
+rm -rf "$B7"
+
+echo "== the keeper re-invoked THROUGH the wrapper beats, and dies with it =="
+KWP="$WORK/wrap.lock.d"
+VL_LOCK_DIR="$KWP" VL_LOCK_BEAT_SECONDS=1 VL_LOCK_STALE_SECONDS=600 "$WRAP" acquire sess-W 'keeper through the wrapper' 60 >/dev/null
+e1="$(grep -m1 '^heartbeat_epoch=' "$KWP/meta" | cut -d= -f2)"
+sleep 3
+e2="$(grep -m1 '^heartbeat_epoch=' "$KWP/meta" | cut -d= -f2)"
+check "the keeper beats through the wrapper" "$([ "$e2" -gt "$e1" ] && echo yes || echo no)" "yes"
+pg="$(cat "$KWP/keeper.pid" 2>/dev/null || echo)"
+VL_LOCK_DIR="$KWP" "$WRAP" release sess-W >/dev/null
+sleep 1
+check "wrapper release stops the keeper group" "$([ -n "$pg" ] && kill -0 -- "-$pg" 2>/dev/null && echo alive || echo dead)" "dead"
+rm -rf "$KWP"
+
+echo "== Z18 cross-home: two homes can never stand held by different lanes =="
+XH="$WORK/xhome"; mkdir -p "$XH"
+OLDA() { HOME="$XH" VL_LOCK_DIR= VL_LOCK_BEAT_SECONDS=60 VL_LOCK_STALE_SECONDS=600 bash "$LOCK_SH" "$@" 2>&1; }
+NEWB() { HOME="$XH" VL_LOCK_DIR="$XH/vl-main.lock.d" VL_LOCK_BEAT_SECONDS=60 VL_LOCK_STALE_SECONDS=600 bash "$LOCK_SH" "$@" 2>&1; }
+NEWB acquire sess-B 'the vl home first' 60 >/dev/null
+out="$(OLDA acquire sess-A 'the old home second' 60)"; rc=$?
+check "an old-home acquire beside a held vl home REFUSES" "$rc" "1"
+hasi  "and names the other holder"        "$out" "sess-B"
+check "and tears its own home down"       "$([ -d "$XH/$o-main.lock.d" ] && echo left || echo gone)" "gone"
+NEWB release sess-B >/dev/null
+OLDA acquire sess-A 'the old home first' 60 >/dev/null
+out="$(NEWB acquire sess-B 'the vl home second' 60)"; rc=$?
+check "a vl-home acquire beside a held old home REFUSES" "$rc" "1"
+hasi  "and names the other holder"        "$out" "sess-A"
+check "and tears its own home down"       "$([ -d "$XH/vl-main.lock.d" ] && echo left || echo gone)" "gone"
+OLDA release sess-A >/dev/null
+OLDA acquire sess-X 'the hand-over' 60 >/dev/null
+out="$(NEWB acquire sess-X 'the R5 hand-over' 60)"; rc=$?
+check "the SAME session may hold both homes" "$rc" "0"
+hasi  "and the exemption is on the record"   "$out" "same session"
+NEWB release sess-X >/dev/null; OLDA release sess-X >/dev/null
+both=0
+for i in $(seq 1 50); do
+  rm -rf "$XH/$o-main.lock.d" "$XH/vl-main.lock.d"
+  OLDA acquire race-a 'race' 60 >/dev/null 2>&1 &
+  NEWB acquire race-b 'race' 60 >/dev/null 2>&1 &
+  wait
+  a=$([ -d "$XH/$o-main.lock.d" ] && echo 1 || echo 0)
+  b=$([ -d "$XH/vl-main.lock.d" ] && echo 1 || echo 0)
+  if [ "$((a+b))" -le 1 ]; then ok "cross-home race round $i: never both held"
+  else bad "cross-home race round $i: never both held" "both homes exist"; both=$((both+1)); fi
+  [ "$a" = 1 ] && OLDA release race-a >/dev/null 2>&1
+  [ "$b" = 1 ] && NEWB release race-b >/dev/null 2>&1
+done
+check "no round ever left both homes held" "$both" "0"
+NEWB acquire sess-B 'check mirror' 60 >/dev/null
+check "check never reads 0 beside a held other home" "$(OLDA check >/dev/null 2>&1; echo $?)" "1"
+NEWB release sess-B >/dev/null
+check "check reads 0 only when BOTH homes are absent" "$(OLDA check >/dev/null 2>&1; echo $?)" "0"
+NEWB2() { HOME="$XH" VL_LOCK_DIR="$XH/vl-main.lock.d" VL_LOCK_BEAT_SECONDS=1 VL_LOCK_STALE_SECONDS=4 bash "$LOCK_SH" "$@" 2>&1; }
+NEWB2 acquire sess-B 'short stale window' 60 >/dev/null
+kp="$(cat "$XH/vl-main.lock.d/keeper.pid" 2>/dev/null || echo)"
+[ -n "$kp" ] && kill -- -"$kp" 2>/dev/null
+sleep 5
+OLDA4() { HOME="$XH" VL_LOCK_DIR= VL_LOCK_BEAT_SECONDS=60 VL_LOCK_STALE_SECONDS=4 bash "$LOCK_SH" "$@" 2>&1; }
+check "check mirrors a STALE other home as 2" "$(OLDA4 check >/dev/null 2>&1; echo $?)" "2"
+out="$(OLDA reclaim sess-A sess-B 'HEAD static; no build in flight' 2>&1)"; rc=$?
+check "reclaim refuses while the other home is held by another" "$rc" "1"
+NEWB2 reclaim sess-B sess-A 'HEAD static; no build in flight' >/dev/null 2>&1
+NEWB2 release sess-B >/dev/null
+rm -rf "$XH"
+
+
+echo "== (a) DEFAULT-HOME: envs unset, the ONE old home, the vl home never born =="
+#
+# R1a flipped the default to $HOME/vl-main.lock.d at 84dec7f4f while promising
+# byte-identical behaviour. An empty NEW home reads "free" while the deploy
+# session holds the real lock in the OLD home (the updater's attended C19 check
+# included), and the post-boot release would refuse. $WORK/home is the
+# production call site: a temp HOME, both env vars unset, the real default.
+ZD="$WORK/home"
+( unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$ZD" VL_LOCK_BEAT_SECONDS=60 VL_LOCK_STALE_SECONDS=600 bash "$LOCK_SH" acquire sess-D 'default home' 60 >/dev/null )
+check "an env-less acquire parks in the old home"  "$([ -d "$ZD/$o-main.lock.d" ] && echo yes || echo no)" "yes"
+check "and the vl home is never created"           "$([ -e "$ZD/vl-main.lock.d" ] && echo yes || echo no)" "no"
+( unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$ZD" bash "$LOCK_SH" release sess-D >/dev/null 2>&1 )
+check "and release clears the old home"            "$([ -d "$ZD/$o-main.lock.d" ] && echo yes || echo no)" "no"
+# the old-name wrapper and the tool resolve the SAME default home
+( unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$ZD" "$WRAP" acquire sess-D 'wrapper default' 60 >/dev/null )
+has   "the tool reads the wrapper's default home"  "$(unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$ZD" bash "$LOCK_SH" status 2>&1)" "sess-D"
+check "and it is the SAME old home"                "$([ -d "$ZD/$o-main.lock.d" ] && echo yes || echo no)" "yes"
+check "the wrapper never creates the vl home"      "$([ -e "$ZD/vl-main.lock.d" ] && echo yes || echo no)" "no"
+( unset VL_LOCK_DIR NOFX_LOCK_DIR; HOME="$ZD" "$WRAP" release sess-D >/dev/null 2>&1 )
+rm -rf "$ZD/$o-main.lock.d" "$ZD/vl-main.lock.d"
+echo "== (b) the old-name wrapper is an exec, never a fork =="
+if grep -q '^exec env VL_LOCK_DIR=' "$WRAP"; then
+  ok "the wrapper's action line starts with exec env VL_LOCK_DIR="
+else
+  bad "the wrapper's action line starts with exec env VL_LOCK_DIR=" "missing in $WRAP"
+fi
+
+echo "== the wrappers run DIRECTLY on their own shebang, never via bash =="
+KDC="$WORK/direct.lock.d"
+VL_LOCK_DIR="$KDC" "$WRAP" acquire sess-D 'direct exec' 60 >/dev/null
+check "lock wrapper direct-exec acquire rc" "$?" "0"
+check "and the lock landed"                 "$([ -d "$KDC" ] && echo yes || echo no)" "yes"
+VL_LOCK_DIR="$KDC" "$WRAP" release sess-D >/dev/null
+rm -rf "$KDC"
+for w in "$W-lock.sh" "$W-claim.sh" "$W-db-backup.sh" "$W-clock-guard.sh"; do
+  check "$w is executable" "$([ -x "$PWD/$w" ] && echo yes || echo no)" "yes"
+done
+out="$("$PWD/$W-claim.sh" 2>&1)"; rc=$?
+check "claim wrapper direct-exec refuses a bare call" "$rc" "1"
+hasi  "and prints its own usage"                       "$out" "vl-claim"
+echo "== KEEPER-DRAIN: no keeper outlives the suite =="
+#
+# The corrupt-handle sections (sess-N, sess-J) release WITHOUT killing their
+# keepers by design — those keepers exit via the dir-watch within one beat. A
+# keeper that outlives a 35s drain is a real leak, not test hygiene.
+drain_pat="$SDIR/vl-lock.sh heartbeat|$SDIR/$W-lock.sh heartbeat|$WORK/legacy-lock.sh heartbeat"
+KEEP_BASE=$(pgrep -fc "$drain_pat" 2>/dev/null || true); KEEP_BASE=${KEEP_BASE:-0}
+pkill -KILL -f "$drain_pat" 2>/dev/null || true
+n=$KEEP_BASE; drain=0
+while [ "$n" -gt "$KEEP_BASE" ] && [ "$drain" -lt 35 ]; do
+  sleep 1; drain=$((drain+1))
+  n=$(pgrep -fc "$drain_pat" 2>/dev/null || echo 0)
+done
+check "no keeper outlives the suite (35s drain)" "$([ "$n" -le "$KEEP_BASE" ] && echo yes || echo no)" "yes"
 
 echo
 printf 'pass=%d fail=%d\n' "$PASS" "$FAIL"

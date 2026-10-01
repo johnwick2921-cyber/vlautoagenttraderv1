@@ -169,7 +169,7 @@ func ReleaseSourceBinary(t *testing.T, withIndex bool, binary string) string {
 		binary:                                 "\x7fELF u3 stand-in binary\n",
 		"LICENSE":                              "test licence\n",
 		"ninjascript/vltrader_tcp_PROTOCOL.md": "protocol_version: 3\n",
-		"ninjascript/VLTraderTcp.cs":           "public const string VL_BUILD_ID = \"" + BuildID + "\";\n",
+		"ninjascript/VLTraderTCPClient.cs":           "public const string VL_BUILD_ID = \"" + BuildID + "\";\n",
 		"web/dist/assets/app.js":               "console.log('u3')\n",
 		"deploy/RELEASE":                       strings.Repeat("a", 40) + "\n",
 	}

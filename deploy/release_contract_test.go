@@ -43,8 +43,6 @@ func TestReleaseWorkflowHasNoTriggerThatCanFire(t *testing.T) {
 			t.Fatalf("release.yml must have NO trigger that can fire — found %q", forbidden)
 		}
 	}
-	// Both jobs must be permanently disabled; count the `if: ${{ false }}`
-	// occurrences and the job declarations to make sure every job carries one.
 	jobCount := len(regexp.MustCompile(`(?m)^  [a-z]+:$`).FindAllString(y, -1))
 	ifCount := strings.Count(y, "if: ${{ false }}")
 	if jobCount == 0 || ifCount < jobCount {
@@ -81,10 +79,7 @@ func TestReleaseWorkflowPublishesOnlyUnderThePartnerRepoAndNeverNofx(t *testing.
 
 // PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7, checker fold): the install script's
 // REPO_URL default must name the partner repo — partner machines build the
-// updater from the partner repo, never from nofx. The CHECKER MUTANT report
-// (DS-102/DS-105) proved a mutant restoring the nofx default turned NO test
-// red (updater_worker_install_test.go always overrides
-// NOFX_UPDATER_BUILD_REPO, and nothing read REPO_URL). This test reads the
+// updater from the partner repo, never from nofx. This test reads the
 // production script directly, so the mutant turns it RED.
 func TestInstallUpdaterWorkerRepoUrlDefaultsToThePartnerRepo(t *testing.T) {
 	s := repoFile(t, "deploy/install-updater-worker.sh")

@@ -88,7 +88,7 @@ Same procedure as steps 1–8 above, with these deltas:
 
 Prepared on the `sync/vl-rename-prep` branch; the source tree is the nofx
 integrator head at the commit-of-build. `deploy/RELEASE` carries the nofx boot
-sha (placeholder `c0c9a7f86` — replace with the REAL booted sha once the R2 boot
+sha (placeholder `b214046b` — replace with the REAL booted sha once the R2 boot
 is VERIFIED and this sync re-runs).
 
 1. **Build at the commit-of-build** — `go build -o vl-bin .`, web built with

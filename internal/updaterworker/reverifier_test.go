@@ -90,7 +90,7 @@ func TestReleaseReverifierReprovesAFetchedRelease(t *testing.T) {
 	isum := sha256.Sum256(idx)
 	if f.ReleaseID != testReleaseID || f.SourceSHA != testSHA || f.ManifestSHA256 != v.ManifestSHA256 ||
 		f.SignerFingerprint != r.fp || f.AddonBuildID != testBuildID || len(f.Artifacts) != v.Artifacts ||
-		f.Artifacts["web/dist/index.html"] != hex.EncodeToString(isum[:]) || f.Artifacts["ninjascript/VLTraderTcp.cs"] == "" {
+		f.Artifacts["web/dist/index.html"] != hex.EncodeToString(isum[:]) || f.Artifacts["ninjascript/VLTraderTCPClient.cs"] == "" {
 		t.Fatalf("Reverify facts = %+v\nwant release %s source %s manifest %s signer %s build %s, %d artifacts incl. index.html %x",
 			f, testReleaseID, testSHA, v.ManifestSHA256, r.fp, testBuildID, v.Artifacts, isum)
 	}

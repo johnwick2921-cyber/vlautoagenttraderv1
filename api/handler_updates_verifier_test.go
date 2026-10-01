@@ -72,7 +72,7 @@ func fetchTestRelease(t *testing.T, dataDir, releaseID string) updaterjob.Verdic
 		"nofx-bin":                             "\x7fELF u5b stand-in binary\n",
 		"LICENSE":                              "test licence\n",
 		"ninjascript/vltrader_tcp_PROTOCOL.md": "protocol_version: 3\n",
-		"ninjascript/VLTraderTcp.cs":           "public const string VL_BUILD_ID = \"2026-09-24-u5b\";\n",
+		"ninjascript/VLTraderTCPClient.cs":           "public const string VL_BUILD_ID = \"2026-09-24-u5b\";\n",
 		"web/dist/assets/app.js":               "console.log('u5b')\n",
 		"web/dist/index.html":                  "<!doctype html><title>u5b</title>\n",
 		"deploy/RELEASE":                       strings.Repeat("a", 40) + "\n",

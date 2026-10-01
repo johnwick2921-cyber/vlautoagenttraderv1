@@ -49,7 +49,7 @@ The CSV bridge remains the canonical production path until one of these triggers
 ## Troubleshooting
 
 - **Compile errors**: NT8 API version drift can cause minor type mismatches between releases. Check the error message; usually a `using` directive or a method signature needs a small tweak (e.g. `NinjaScript.Log` vs `NinjaScript.NinjaScript.Log`). The wire protocol shape is the contract; the C# API surface is allowed to drift.
-- **"Connection refused"**: Go bot is not running or `NT_TRANSPORT=tcp` is not set. Check with `NT_TRANSPORT=tcp ./vl-bin > /tmp/nofx.log 2>&1` and verify `listening on 127.0.0.1:36974` appears in the log.
+- **"Connection refused"**: Go bot is not running or `NT_TRANSPORT=tcp` is not set. Check with `NT_TRANSPORT=tcp ./vl-bin > /tmp/vl.log 2>&1` and verify `listening on 127.0.0.1:36974` appears in the log.
 - **Port collision (36974 already in use)**: another process is holding the port. Verify with `ss -tlnp | grep 36974` on Linux or `netstat -ano | findstr 36974` on Windows. Note: 36974 is intentionally NOT NinjaTrader's ATI port 36973 — do not change it.
 - **OCO bracket not placed**: check NT8 Output for `VLTraderTCPClient: stale signal` or `no account` warnings. Stale signals (>60s old) are rejected by design.
 - **Multiple AddOn instances**: only one `VLTraderTCPClient` should be Active at a time. NT8 will load every `.cs` in the AddOns folder, so do not leave older copies behind.

@@ -12,7 +12,7 @@ predicate would have fired per scenario arm: min-SL / R:R / geometry / none.
 
 Sources (read-only):
   - history (plans+bars ≤ 2026-09-18 02:25 CT):
-    /home/hoang/nofx-backups/pre-bars-key-20260918-022516.db (pre-CLASS-149
+    ~/vl-backups/pre-bars-key-20260918-022516.db (pre-CLASS-149
     single-contract copy — the research load rule: the LIVE data.db is never
     queried for research during 08:30–15:30 CT).
   - rows written after 02:25 CT: live data.db, read-only lookups only.
@@ -30,11 +30,12 @@ Honesty rules applied (canon):
     identity resolution is used and flagged in the report.
 """
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 
-DB_LIVE = "/home/hoang/nofx/data/data.db"
-DB_HISTORY = "/home/hoang/nofx-backups/pre-bars-key-20260918-022516.db"
+DB_LIVE = os.path.expanduser("~/vl/data/data.db")
+DB_HISTORY = os.path.expanduser("~/vl-backups/pre-bars-key-20260918-022516.db")
 CUTOFF_MS = int(datetime.fromisoformat("2026-09-18T02:25:00-05:00").timestamp() * 1000)
 ARM_MIN_RR = 2.0
 MIN_SL_MULT = 1.5

@@ -1,4 +1,4 @@
-// Package agent implements the NOFXi Agent Core.
+// Package agent implements the VL Agent Core.
 //
 // Architecture: ALL user messages go to the LLM. The LLM understands intent
 // and calls tools to execute actions. No regex routing, no pattern matching.
@@ -545,7 +545,7 @@ const (
 	StreamEventError        = "error" // Error occurred
 )
 
-// buildSystemPrompt creates the system prompt that makes NOFXi behave like a real agent.
+// buildSystemPrompt creates the system prompt that makes the VL agent behave like a real agent.
 func (a *Agent) buildSystemPrompt(lang string) string {
 	return a.buildSystemPromptForStoreUser(lang, "default")
 }

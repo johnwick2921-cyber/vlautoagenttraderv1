@@ -61,7 +61,8 @@ if { pgrep -f nofx-bin >/dev/null 2>&1 || pgrep -f vl-bin >/dev/null 2>&1; } && 
 fi
 
 # Backup first (guarded write): VACUUM INTO is SQLite's online consistent copy.
-BKDIR="${BARS_KEY_BACKUP_DIR:-$HOME/nofx-backups}"
+DEFAULT_BKDIR="$HOME/vl-backups"; [ -d "$HOME/vl" ] || DEFAULT_BKDIR="$HOME/nofx-backups"
+BKDIR="${VL_BARS_KEY_BACKUP_DIR:-${BARS_KEY_BACKUP_DIR:-$DEFAULT_BKDIR}}"
 mkdir -p "$BKDIR"
 BK="$BKDIR/pre-bars-key-rollback-$(date +%Y%m%d-%H%M%S).db"
 q "VACUUM INTO '$BK';"

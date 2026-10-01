@@ -11,13 +11,14 @@ READ-ONLY. Usage: python3 scripts/leveltruth_missed_turns.py [db_path]
 """
 import json
 import math
+import os
 import sqlite3
 import sys
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 
 CT = timezone(timedelta(hours=-5))
-DB_PATH = sys.argv[1] if len(sys.argv) > 1 else "/home/hoang/nofx/data/data.db"
+DB_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/vl/data/data.db")
 BAND = 8.0
 K = 2  # structureSwingK
 

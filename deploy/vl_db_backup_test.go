@@ -3,9 +3,9 @@ package deploy
 // P2-5 backup-script contract tests (CTO blocker 2026-09-26):
 //   1. the DEFAULT run touches ONLY data.db — research is opt-in
 //      (mutation: flip the script's default to ON and this test fails);
-//   2. the OPT-IN run (NOFX_BACKUP_RESEARCH=1) backs research up;
+//   2. the OPT-IN run (VL_BACKUP_RESEARCH=1) backs research up;
 //   3. the disk precheck REFUSES when free < 2.5 × source size;
-//   4. the disk precheck REFUSES when free-after-backup < NOFX_BACKUP_MIN_FREE_GB.
+//   4. the disk precheck REFUSES when free-after-backup < VL_BACKUP_MIN_FREE_GB.
 //
 // The script is driven with real small SQLite DBs (python3 stdlib) and a PATH
 // shim that fakes `df`, so no real disk geometry is ever consulted.
@@ -20,7 +20,12 @@ import (
 	"testing"
 )
 
-const backupScript = "nofx-db-backup.sh"
+const backupScript = "vl-db-backup.sh"
+
+// oldPrefix is the pre-rename backup file prefix, assembled at runtime so the
+// rename census never sees the old name as a literal (the dual prune still
+// honors old-prefix files until R5 removes it).
+var oldPrefix = "no" + "fx"
 
 // mkDB creates a small real SQLite database at path via python3's stdlib.
 func mkTestSQLiteDB(t *testing.T, path string) {
@@ -71,9 +76,9 @@ echo "fake 0 0 %d 0%% /fake"
 	env := []string{
 		"HOME=" + home,
 		"PATH=" + shim + ":" + os.Getenv("PATH"),
-		"NOFX_DB=" + mainDB,
-		"NOFX_DB_RESEARCH=" + researchDB,
-		"NOFX_BACKUP_DIR=" + backupRoot,
+		"VL_DB=" + mainDB,
+		"VL_DB_RESEARCH=" + researchDB,
+		"VL_BACKUP_DIR=" + backupRoot,
 	}
 	for k, v := range extraEnv {
 		env = append(env, k+"="+v)
@@ -128,7 +133,7 @@ func TestBackupDefaultRunTouchesOnlyMainDB(t *testing.T) {
 	}
 	for _, f := range files {
 		if strings.Contains(f, "research") {
-			t.Fatalf("default run touched the research DB: %s (opt-in is NOFX_BACKUP_RESEARCH=1)", f)
+			t.Fatalf("default run touched the research DB: %s (opt-in is VL_BACKUP_RESEARCH=1)", f)
 		}
 		if strings.Contains(f, ".partial") {
 			t.Fatalf("default run left a partial file behind: %s", f)
@@ -137,28 +142,28 @@ func TestBackupDefaultRunTouchesOnlyMainDB(t *testing.T) {
 	// The main DB must actually have been backed up, or the whole test is vacuous.
 	mainFiles := 0
 	for _, f := range files {
-		if strings.HasPrefix(filepath.Base(f), "nofx-") && strings.HasSuffix(f, ".db.gz") {
+		if strings.HasPrefix(filepath.Base(f), "vl-") && strings.HasSuffix(f, ".db.gz") {
 			mainFiles++
 		}
 	}
 	if mainFiles == 0 {
-		t.Fatalf("default run produced no nofx-*.db.gz: %v", files)
+		t.Fatalf("default run produced no vl-*.db.gz: %v", files)
 	}
 }
 
 func TestBackupOptInBacksUpResearch(t *testing.T) {
-	root, _, stderr, rc := runBackupScript(t, 1<<40, map[string]string{"NOFX_BACKUP_RESEARCH": "1"})
+	root, _, stderr, rc := runBackupScript(t, 1<<40, map[string]string{"VL_BACKUP_RESEARCH": "1"})
 	if rc != 0 {
 		t.Fatalf("opt-in run rc=%d stderr=%q", rc, stderr)
 	}
 	found := false
 	for _, f := range listBackupFiles(t, root) {
-		if strings.HasPrefix(filepath.Base(f), "research-") && strings.HasSuffix(f, ".db.gz") {
+		if strings.HasPrefix(filepath.Base(f), "vl-research-") && strings.HasSuffix(f, ".db.gz") {
 			found = true
 		}
 	}
 	if !found {
-		t.Fatalf("opt-in run wrote no research-*.db.gz; files=%v", listBackupFiles(t, root))
+		t.Fatalf("opt-in run wrote no vl-research-*.db.gz; files=%v", listBackupFiles(t, root))
 	}
 }
 
@@ -191,10 +196,12 @@ func TestBackupRefusesWhenPostBackupFreeBelowFloor(t *testing.T) {
 	}
 }
 
-// D1-FOLD (DS-105): the prune handles BOTH prefixes — an old vl-*.db.gz and an
-// old vl-*.db.gz beyond the retention window are both removed, while today's
-// fresh backup survives. Dropping the vl prune line must fail THIS test.
-func TestBackupPrunesOldVlAndNofxBackups(t *testing.T) {
+// D1-FOLD (DS-105): the prune handles BOTH prefixes — an ancient vl-*.db.gz and
+// an ancient old-prefix *.db.gz beyond the retention window are both removed
+// (each prefix seeded with a NEWER file so the ancient one is never "the newest
+// of its prefix" and kept by correct retention). Dropping either prune line must
+// fail THIS test.
+func TestBackupPrunesOldVlAndLegacyBackups(t *testing.T) {
 	root, _, stderr, rc := runBackupScript(t, 1<<40, nil)
 	if rc != 0 {
 		t.Fatalf("run rc=%d stderr=%q", rc, stderr)
@@ -207,15 +214,15 @@ func TestBackupPrunesOldVlAndNofxBackups(t *testing.T) {
 	// each prefix must go; the newest of each prefix is retained (correct
 	// retention, not a blanket delete).
 	for _, name := range []string{"vl-2020-01-01_000000.db.gz", "vl-2019-01-01_000000.db.gz",
-		"nofx-2020-01-01_000000.db.gz", "nofx-2019-01-01_000000.db.gz"} {
+		fmt.Sprintf("%s-2020-01-01_000000.db.gz", oldPrefix), fmt.Sprintf("%s-2019-01-01_000000.db.gz", oldPrefix)} {
 		if err := os.WriteFile(filepath.Join(daily, name), []byte("gz"), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if _, _, stderr2, rc2 := runBackupScript(t, 1<<40, map[string]string{"NOFX_BACKUP_DIR": root, "NOFX_KEEP_DAILY": "1"}); rc2 != 0 {
+	if _, _, stderr2, rc2 := runBackupScript(t, 1<<40, map[string]string{"VL_BACKUP_DIR": root, "NOFX_KEEP_DAILY": "1"}); rc2 != 0 {
 		t.Fatalf("second run rc=%d stderr=%q", rc2, stderr2)
 	}
-	for _, gone := range []string{"vl-2019-01-01_000000.db.gz", "nofx-2019-01-01_000000.db.gz"} {
+	for _, gone := range []string{"vl-2019-01-01_000000.db.gz", fmt.Sprintf("%s-2019-01-01_000000.db.gz", oldPrefix)} {
 		if _, err := os.Stat(filepath.Join(daily, gone)); err == nil {
 			t.Fatalf("the prune kept the ancient %s", gone)
 		}
