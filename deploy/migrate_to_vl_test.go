@@ -405,6 +405,10 @@ bootwrite(){
   fi
 }
 if [ -n "${BOT_DELAY_S:-}" ]; then
+  # ONLY the delay tests set BOT_DELAY_S. Every other forward test relies on the
+  # synchronous path below: the boot line and health are written INLINE, before
+  # the systemctl enable --now vl call returns, so verify's first probe finds
+  # them and no 2 s wait_leg cost is paid. Do not introduce an async write here.
   ( sleep "$BOT_DELAY_S"; bootwrite ) &
 else
   bootwrite
@@ -695,6 +699,13 @@ func mustContain(t *testing.T, out, sub string) {
 	t.Helper()
 	if !strings.Contains(out, sub) {
 		t.Fatalf("output missing %q\n--- output ---\n%s", sub, out)
+	}
+}
+
+func mustNotContain(t *testing.T, out, sub string) {
+	t.Helper()
+	if strings.Contains(out, sub) {
+		t.Fatalf("output must NOT contain %q\n--- output ---\n%s", sub, out)
 	}
 }
 
@@ -1358,16 +1369,19 @@ func TestNT8Legs(t *testing.T) {
 		gate     string
 		botExtra string
 		want     string
+		notWant  []string
 	}{
 		{
-			name: "absent key prints n/a no wait",
-			gate: `{` + base + `}`,
-			want: "NT8: n/a (no NT8 wire)",
+			name:    "absent key prints n/a no wait",
+			gate:    `{` + base + `}`,
+			want:    "NT8: n/a (no NT8 wire)",
+			notWant: []string{"NT8: not seen in", "NT8: hello seen"},
 		},
 		{
-			name: "eligible true prints n/a no wait",
-			gate: `{"nt8_absent":{"eligible":true,"ready":false,"build_id":"b1"},` + base + `}`,
-			want: "NT8: n/a (eligible",
+			name:    "eligible true prints n/a no wait",
+			gate:    `{"nt8_absent":{"eligible":true,"ready":false,"build_id":"b1"},` + base + `}`,
+			want:    "NT8: n/a (eligible — link down long enough; no wait)",
+			notWant: []string{"NT8: not seen in", "NT8: hello seen"},
 		},
 		{
 			name:     "eligible false waits for the hello",
@@ -1380,16 +1394,18 @@ func TestNT8Legs(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			fe := newFakeEnv(t)
 			fe.writeGate(tc.gate)
-			start := time.Now()
 			out, code := runWithEnv(t, fe, []string{tc.botExtra}, fe.argsForward()...)
-			elapsed := time.Since(start)
 			if code != 0 {
 				t.Fatalf("exit %d\n%s", code, out)
 			}
 			mustContain(t, out, tc.want)
-			if tc.botExtra == "" && elapsed > 5*time.Second {
-				t.Fatalf("leg took %v — should not wait", elapsed)
+			for _, nw := range tc.notWant {
+				mustNotContain(t, out, nw)
 			}
+			// No wall-clock bound: item 2 (real vl-activate backup) and item 3
+			// (wait_leg's 2 s first-probe cost) legitimately lengthen the WHOLE
+			// forward run. What "no wait" means is measured on the NT8 leg's own
+			// output — the want/notWant assertions above.
 		})
 	}
 }
