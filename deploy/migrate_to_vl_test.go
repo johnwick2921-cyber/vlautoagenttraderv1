@@ -13,16 +13,70 @@ package deploy
 
 import (
 	"bufio"
+	"database/sql"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
+
+	_ "github.com/glebarez/go-sqlite"
 )
 
 func oldName() string { return "no" + "fx" }
+
+// buildRealActivate builds the production vl-activate CLI once per test process
+// (canon 53: the migrate script is exercised against the REAL backup binary,
+// not a printf fake).
+var (
+	activateOnce sync.Once
+	activateBin  string
+	activateErr  error
+)
+
+func buildRealActivate() (string, error) {
+	activateOnce.Do(func() {
+		wd, _ := os.Getwd()
+		root := filepath.Join(wd, "..")
+		dir, err := os.MkdirTemp("", "migrate-vl-activate-")
+		if err != nil {
+			activateErr = err
+			return
+		}
+		bin := filepath.Join(dir, "vl-activate")
+		cmd := exec.Command("go", "build", "-o", bin, "./cmd/vl-activate")
+		cmd.Dir = root
+		if out, err := cmd.CombinedOutput(); err != nil {
+			activateErr = fmt.Errorf("go build ./cmd/vl-activate: %v\n%s", err, out)
+			return
+		}
+		activateBin = bin
+	})
+	return activateBin, activateErr
+}
+
+// makeFixtureDB writes a REAL sqlite database (the backup step runs integrity
+// checks against it, so string bytes would be refused).
+func makeFixtureDB(t *testing.T, path string) {
+	t.Helper()
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatalf("open fixture db: %v", err)
+	}
+	if _, err := db.Exec("create table migrate_fixture(a int)"); err != nil {
+		t.Fatalf("create fixture table: %v", err)
+	}
+	if _, err := db.Exec("insert into migrate_fixture(a) values (1),(2),(3)"); err != nil {
+		t.Fatalf("seed fixture table: %v", err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatalf("close fixture db: %v", err)
+	}
+}
 
 // ---------------------------------------------------------------------------
 // fake environment
@@ -336,20 +390,35 @@ fi
 
 const fakeActivate = `#!/usr/bin/env bash
 set -u
-ST="$FAKE_STATE"
 src=""; dest=""
 while [ $# -gt 0 ]; do
   case "$1" in -db) src="$2"; shift 2;; -dest) dest="$2"; shift 2;; *) shift;; esac
 done
-echo "activate backup -db $src -dest $dest" >> "$ST/activate_args.log"
 if [ -f "$src" ] && [ "${ACTIVATE_ZERO:-0}" != "1" ]; then
   sz="$(stat -c%s "$src")"
   mkdir -p "$(dirname "$dest")"
   cp "$src" "$dest"
-  printf '{"ok":true,"integrity_check":"ok","bytes":%s}\n' "$sz"
+  if [ "${ACTIVATE_NONNUMERIC:-0}" = "1" ]; then
+    printf '{"step":"backup","started_at":"t","ended_at":"t","ok":true,"evidence":{"bytes":"abc","db":"%s","dest":"%s","integrity_check":"ok"}}\n' "$src" "$dest"
+  else
+    printf '{"step":"backup","started_at":"t","ended_at":"t","ok":true,"evidence":{"bytes":"%s","db":"%s","dest":"%s","integrity_check":"ok"}}\n' "$sz" "$src" "$dest"
+  fi
 else
-  printf '{"ok":false,"integrity_check":"missing","bytes":0}\n'
+  printf '{"step":"backup","started_at":"t","ended_at":"t","ok":false,"err":"fake activate zero","evidence":{}}\n'
 fi
+`
+
+// fakeActivateOldShape prints the PRE-FIX top-level receipt shape (canon 53:
+// the suite once proved self-consistency against this and missed the real
+// nested evidence shape — the script must now refuse it).
+const fakeActivateOldShape = `#!/usr/bin/env bash
+set -u
+src=""; dest=""
+while [ $# -gt 0 ]; do
+  case "$1" in -db) src="$2"; shift 2;; -dest) dest="$2"; shift 2;; *) shift;; esac
+done
+sz="$(stat -c%s "$src" 2>/dev/null || echo 0)"
+printf '{"ok":true,"integrity_check":"ok","bytes":%s}\n' "$sz"
 `
 
 const fakePostboot = `#!/usr/bin/env bash
@@ -412,7 +481,7 @@ func (fe *fakeEnv) writeOldTree() {
 	git("config", "user.name", "test")
 	fe.write(filepath.Join(tree, "deploy", "RELEASE"), fe.oldSHA+"\n")
 	fe.write(filepath.Join(tree, o+"-bin"), "old binary bytes")
-	fe.write(filepath.Join(tree, "data", "data.db"), "sqlite-ish bytes for the backup test")
+	makeFixtureDB(fe.t, filepath.Join(tree, "data", "data.db"))
 	fe.write(filepath.Join(tree, "deploy", o+"-lock.sh"),
 		strings.ReplaceAll(fakeLockTool, "<OLD>", o))
 	fe.write(filepath.Join(tree, "deploy", "vl-lock.sh"),
@@ -490,7 +559,15 @@ func (fe *fakeEnv) writeLockHome() {
 func (fe *fakeEnv) writeReleaseDir() {
 	fe.t.Helper()
 	fe.write(filepath.Join(fe.relDir, "vl-bin"), fakeBot)
-	fe.write(filepath.Join(fe.relDir, "vl-activate"), fakeActivate)
+	bin, err := buildRealActivate()
+	if err != nil {
+		fe.t.Fatalf("real vl-activate: %v", err)
+	}
+	b, err := os.ReadFile(bin)
+	if err != nil {
+		fe.t.Fatalf("read real vl-activate: %v", err)
+	}
+	fe.write(filepath.Join(fe.relDir, "vl-activate"), string(b))
 	fe.write(filepath.Join(fe.relDir, "updater", "vl-updater"), "updater bytes")
 	fe.write(filepath.Join(fe.relDir, "updater", "vl-updater-bootstrap"), "bootstrap bytes")
 	fe.write(filepath.Join(fe.relDir, "web", "dist", "index.html"), "<html>vl</html>")
@@ -1134,16 +1211,62 @@ func TestOptionalUnitsAbsent(t *testing.T) {
 }
 
 func TestDBBackupAbsoluteAndReceipt(t *testing.T) {
-	o := oldName()
 	fe := newFakeEnv(t)
 	out, code := fe.run(t, fe.argsForward()...)
 	if code != 0 {
 		t.Fatalf("exit %d\n%s", code, out)
 	}
-	args := fe.readState("activate_args.log")
-	wantDB := filepath.Join(fe.home, o, "data", "data.db")
-	if !strings.Contains(args, "-db "+wantDB) {
-		t.Fatalf("backup did not use the absolute -db path: %q", args)
+	// The REAL vl-activate printed the production receipt shape and the script
+	// parsed it (canon 53): the step-1 line carries the numeric byte count.
+	re := regexp.MustCompile(`DB backed up to .* \(bytes=([0-9]+)\)`)
+	m := re.FindStringSubmatch(out)
+	if m == nil || m[1] == "0" {
+		t.Fatalf("no 'DB backed up … (bytes=N)' with N>0 in output\n%s", out)
+	}
+	// The copy under <old>-backups/pre-vl-rename-<ts>/data.db is a REAL sqlite
+	// DB (integrity_check=ok was required for the run to pass).
+	dests, err := filepath.Glob(filepath.Join(fe.home, "no"+"fx"+"-backups", "pre-vl-rename-*", "data.db"))
+	if err != nil || len(dests) != 1 {
+		t.Fatalf("backup dest glob: %v (%d matches)", err, len(dests))
+	}
+	db, err := sql.Open("sqlite", dests[0])
+	if err != nil {
+		t.Fatalf("backup does not open as sqlite: %v", err)
+	}
+	defer db.Close()
+	var n int
+	if err := db.QueryRow("select count(*) from migrate_fixture").Scan(&n); err != nil || n != 3 {
+		t.Fatalf("backup is not the fixture DB (count=%d err=%v)", n, err)
+	}
+}
+
+// TestDBBackupReceiptOldTopLevelShapeRefused: the pre-fix top-level receipt
+// shape (what the suite once printed as its fake) must now be REFUSED.
+func TestDBBackupReceiptOldTopLevelShapeRefused(t *testing.T) {
+	fe := newFakeEnv(t)
+	fe.write(filepath.Join(fe.relDir, "vl-activate"), fakeActivateOldShape)
+	out, code := fe.run(t, fe.argsForward()...)
+	if code == 0 {
+		t.Fatalf("expected refusal on the old top-level receipt shape, got success\n%s", out)
+	}
+	mustContain(t, out, "receipt is not ok:true")
+	if strings.Contains(out, "step 2") {
+		t.Fatalf("must not proceed past step 1 on an unknown receipt shape\n%s", out)
+	}
+}
+
+// TestDBBackupReceiptNonNumericBytesRefused: a real-shaped receipt whose
+// evidence.bytes is not a numeric string must be REFUSED (m4 target).
+func TestDBBackupReceiptNonNumericBytesRefused(t *testing.T) {
+	fe := newFakeEnv(t)
+	fe.write(filepath.Join(fe.relDir, "vl-activate"), fakeActivate)
+	out, code := runWithEnv(t, fe, []string{"ACTIVATE_NONNUMERIC=1"}, fe.argsForward()...)
+	if code == 0 {
+		t.Fatalf("expected refusal on non-numeric bytes, got success\n%s", out)
+	}
+	mustContain(t, out, "receipt is not ok:true")
+	if strings.Contains(out, "step 2") {
+		t.Fatalf("must not proceed past step 1 on non-numeric bytes\n%s", out)
 	}
 }
 
