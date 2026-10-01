@@ -83,3 +83,23 @@ Same procedure as steps 1–8 above, with these deltas:
 5. **No release capability.** The partner workflow has no trigger that can
    fire; no partner CI run can create a release or tag in
    `johnwick2921-cyber/nofx`.
+
+## R2 — VL rename sync (`sync/vl-0b45081d-20261001`, DS-106, 2026-10-01)
+
+Syncs the partner tree to the R2 rename boot: nofx `0b45081d33e3f372fd2fde83fffda9f4268bb97a`
+(booted 23:07 CT 2026-09-30; docs-only dev content up to `db412e61c` is NOT included —
+this tree is `0b45081d` exactly, verified by blob-sha match table). Partner-machine steps:
+
+1. **Build at the commit-of-build** `ab8effac4fdb5e45b7d1915c82d7608b13d8f83f`
+   (named in `deploy/RELEASE`), from the partner repo, never from nofx.
+2. **Migrate**: `deploy/migrate-to-vl.sh --dry-run`, review, then the real run.
+3. **AddOn**: copy `VLTraderTCPClient.cs` for `VL_BUILD_ID 2026-09-30-m22`,
+   F5 compile, full NT8 restart (HARD RULE — no hot reload).
+4. **Updater re-enroll**: `deploy/install-updater-worker.sh` (defaults REPO_URL
+   to `johnwick2921-cyber/vlautoagenttraderv1`).
+5. **Carve-outs on this tree** (differ from nofx@0b45081d BY DESIGN):
+   `.github/workflows/release.yml` (workflow_dispatch-only, both jobs
+   `if: ${{ false }}`, `contents: read`, `RELEASE_REPO` = partner repo),
+   `deploy/release_contract_test.go` (partner assertions),
+   `deploy/install-updater-worker.sh` (`REPO_URL` defaults to the partner repo),
+   `deploy/RELEASE` (names the partner build commit), this runbook.

@@ -16,9 +16,6 @@
 name: release
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -30,7 +27,7 @@ on:
         default: ''
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   # PARTNER CARVE-OUT (sync PR): fail-closed default is THIS (partner) repo.
@@ -47,6 +44,7 @@ jobs:
   # (with no NT8 a binary is not expected to stay up).
   dbcompat:
     runs-on: ubuntu-latest
+    if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     outputs:
       rollback_pairs: ${{ steps.pairs.outputs.json }}
     steps:
@@ -93,6 +91,7 @@ jobs:
   release:
     needs: [dbcompat]
     runs-on: ubuntu-latest
+    if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     # The protected Environment carries the owner as a REQUIRED REVIEWER and
     # holds the signing key. No approval, no release, no signature.
     environment: release
