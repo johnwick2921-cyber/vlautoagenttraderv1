@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // crashPanic is a crash played at a boundary: the runner stops mid-flight and

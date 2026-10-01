@@ -1,7 +1,7 @@
 import sqlite3,json,statistics,math,urllib.request,datetime,re,pathlib
 from zoneinfo import ZoneInfo
-out=pathlib.Path('/home/hoang/nofx-analysis/vet-09-0905')
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
+out=pathlib.Path('/home/hoang/vl-analysis/vet-09-0905')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
 c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 lines=[]
 def emit(k,v): lines.append(k+'\n'+json.dumps(v,ensure_ascii=False,indent=2))

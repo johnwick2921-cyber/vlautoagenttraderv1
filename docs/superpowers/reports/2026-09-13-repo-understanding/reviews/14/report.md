@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 14 — NT8 wire and AddOn source review
 
-Base: `63968be62e44db2fb07a92883e02127b9064b0be`, isolated `/tmp/nofx-understanding-surfaces-20260913`; revision and empty porcelain verified before reading. All **20 assigned files / 10,442 lines** were read manually in bounded complete segments. `reads.json` records hashes and supplementary reads; `functions.json` inventories **306 named declarations**, including nested JSON parser methods. Closures belong to their containing method and lexical references are explicitly not type-resolved calls. No source edits, runtime orders, database access, deployment, restart, network reproduction, or tests were performed. These are source findings, not newly observed trading incidents.
+Base: `63968be62e44db2fb07a92883e02127b9064b0be`, isolated `/tmp/vl-understanding-surfaces-20260913`; revision and empty porcelain verified before reading. All **20 assigned files / 10,442 lines** were read manually in bounded complete segments. `reads.json` records hashes and supplementary reads; `functions.json` inventories **306 named declarations**, including nested JSON parser methods. Closures belong to their containing method and lexical references are explicitly not type-resolved calls. No source edits, runtime orders, database access, deployment, restart, network reproduction, or tests were performed. These are source findings, not newly observed trading incidents.
 
 Policy references: AUDIT-CHECKLIST pre-audit R1–R10 and classes 85–87 (producer omissions, self-validating pins, premature cleanup), SYSTEM-MAP execution/reconcile sections, rulebook B1/B3. Latest relevant logs at this base:
 

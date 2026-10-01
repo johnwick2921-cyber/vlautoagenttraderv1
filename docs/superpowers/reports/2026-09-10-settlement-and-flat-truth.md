@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Settlement and flat truth — Section G report
 
 **Wave:** settlement-and-flat-truth (owner-pinned Section C)
-**Branch:** `fix/settlement-and-flat-truth` · **Claim:** `settlement-554049f5/nofx-8e[88742a]`
+**Branch:** `fix/settlement-and-flat-truth` · **Claim:** `settlement-554049f5/vl-8e[88742a]`
 **Spec:** `reports/2026-09-09-next-wave-basis-settlement-and-flat-truth.md`,
 `git log -1` → **`1718cf75` 2026-09-09 14:28:22 -0500** (SPEC-FRESHNESS LAW),
 measured at `954f11b1`, re-verified at `bd295804` — see

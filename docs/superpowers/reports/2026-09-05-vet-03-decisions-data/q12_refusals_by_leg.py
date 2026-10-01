@@ -1,6 +1,6 @@
 # q12: per-leg refusal counts + counterfactual dollars (session-flat and CME-day horizons) from the two-day audit's refusals.csv; the single best saved-loss refusal per leg
 import csv, collections
-p='/home/hoang/nofx-vet-03/docs/superpowers/reports/2026-09-04-two-day-audit-data/refusals.csv'
+p='/home/hoang/vl-vet-03/docs/superpowers/reports/2026-09-04-two-day-audit-data/refusals.csv'
 rows=list(csv.DictReader(open(p)))
 def f(x):
     try: return float(x)

@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // P0 2026-08-17 — a plan may only be invalidated by what the market did AFTER it

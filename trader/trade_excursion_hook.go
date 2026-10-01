@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // TRADE EXCURSION LOGGING (wave 1A, 2026-09-02) — the three hooks that fill

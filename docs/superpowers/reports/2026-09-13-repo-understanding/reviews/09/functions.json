@@ -1719,10 +1719,10 @@
     "receiver": "",
     "start_line": 341,
     "end_line": 375,
-    "purpose": "Bind config and NofxOS client; optional wallet routes via claw402 with logged fallback.",
+    "purpose": "Bind config and VLOS client; optional wallet routes via claw402 with logged fallback.",
     "connections": [
       {
-        "callee_expression": "nofxos.NewClient",
+        "callee_expression": "vlos.NewClient",
         "line": 347,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -1742,7 +1742,7 @@
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
       {
-        "callee_expression": "nofxos.NewClaw402DataClient",
+        "callee_expression": "vlos.NewClaw402DataClient",
         "line": 362,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -2153,7 +2153,7 @@
     "purpose": "Fetch rated symbols with default limit30, attach source label.",
     "connections": [
       {
-        "callee_expression": "e.nofxosClient.GetTopRatedCoins",
+        "callee_expression": "e.vlosClient.GetTopRatedCoins",
         "line": 642,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -2176,7 +2176,7 @@
     "purpose": "Fetch OI increases, default limit10, normalize symbols.",
     "connections": [
       {
-        "callee_expression": "e.nofxosClient.GetOITopPositions",
+        "callee_expression": "e.vlosClient.GetOITopPositions",
         "line": 662,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -2204,7 +2204,7 @@
     "purpose": "Fetch OI decreases, default limit10, normalize symbols.",
     "connections": [
       {
-        "callee_expression": "e.nofxosClient.GetOILowPositions",
+        "callee_expression": "e.vlosClient.GetOILowPositions",
         "line": 686,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -2457,10 +2457,10 @@
     "receiver": "*StrategyEngine",
     "start_line": 838,
     "end_line": 908,
-    "purpose": "Toggle-gated NofxOS quant fetch; convert OI nested maps and flow metadata.",
+    "purpose": "Toggle-gated VLOS quant fetch; convert OI nested maps and flow metadata.",
     "connections": [
       {
-        "callee_expression": "e.nofxosClient.GetCoinData",
+        "callee_expression": "e.vlosClient.GetCoinData",
         "line": 849,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -2526,7 +2526,7 @@
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
       {
-        "callee_expression": "e.nofxosClient.GetOIRanking",
+        "callee_expression": "e.vlosClient.GetOIRanking",
         "line": 951,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -2553,7 +2553,7 @@
     ],
     "invariants_or_risks": "Shared high-cascade context/decision/account types and mutable per-engine prompt context. Config-driven crypto candidates and data sources; futures session/expiry helpers. External HTTP is URL-validated but body unbounded. Mixed candidate order uses map iteration.",
     "callbacks": [],
-    "input_output_boundary": "func (e *StrategyEngine) FetchOIRankingData() *nofxos.OIRankingData {"
+    "input_output_boundary": "func (e *StrategyEngine) FetchOIRankingData() *vlos.OIRankingData {"
   },
   {
     "path": "kernel/engine.go",
@@ -2569,7 +2569,7 @@
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
       {
-        "callee_expression": "e.nofxosClient.GetNetFlowRanking",
+        "callee_expression": "e.vlosClient.GetNetFlowRanking",
         "line": 982,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -2606,7 +2606,7 @@
     ],
     "invariants_or_risks": "Shared high-cascade context/decision/account types and mutable per-engine prompt context. Config-driven crypto candidates and data sources; futures session/expiry helpers. External HTTP is URL-validated but body unbounded. Mixed candidate order uses map iteration.",
     "callbacks": [],
-    "input_output_boundary": "func (e *StrategyEngine) FetchNetFlowRankingData() *nofxos.NetFlowRankingData {"
+    "input_output_boundary": "func (e *StrategyEngine) FetchNetFlowRankingData() *vlos.NetFlowRankingData {"
   },
   {
     "path": "kernel/engine.go",
@@ -2622,7 +2622,7 @@
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
       {
-        "callee_expression": "e.nofxosClient.GetPriceRanking",
+        "callee_expression": "e.vlosClient.GetPriceRanking",
         "line": 1014,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -2644,7 +2644,7 @@
     ],
     "invariants_or_risks": "Shared high-cascade context/decision/account types and mutable per-engine prompt context. Config-driven crypto candidates and data sources; futures session/expiry helpers. External HTTP is URL-validated but body unbounded. Mixed candidate order uses map iteration.",
     "callbacks": [],
-    "input_output_boundary": "func (e *StrategyEngine) FetchPriceRankingData() *nofxos.PriceRankingData {"
+    "input_output_boundary": "func (e *StrategyEngine) FetchPriceRankingData() *vlos.PriceRankingData {"
   },
   {
     "path": "kernel/engine.go",
@@ -4045,7 +4045,7 @@
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
       {
-        "callee_expression": "nofxos.FormatOIRankingForAI",
+        "callee_expression": "vlos.FormatOIRankingForAI",
         "line": 463,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -4055,7 +4055,7 @@
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
       {
-        "callee_expression": "nofxos.FormatNetFlowRankingForAI",
+        "callee_expression": "vlos.FormatNetFlowRankingForAI",
         "line": 468,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
@@ -4065,7 +4065,7 @@
         "evidence": "source expression; syntax-only target, not type-resolved"
       },
       {
-        "callee_expression": "nofxos.FormatPriceRankingForAI",
+        "callee_expression": "vlos.FormatPriceRankingForAI",
         "line": 473,
         "evidence": "source expression; syntax-only target, not type-resolved"
       },

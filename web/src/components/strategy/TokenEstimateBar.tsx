@@ -24,7 +24,11 @@ interface TokenEstimateBarProps {
   onTokenCountChange?: (total: number) => void
 }
 
-export function TokenEstimateBar({ config, language, onTokenCountChange }: TokenEstimateBarProps) {
+export function TokenEstimateBar({
+  config,
+  language,
+  onTokenCountChange,
+}: TokenEstimateBarProps) {
   const [estimate, setEstimate] = useState<TokenEstimateResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -44,11 +48,14 @@ export function TokenEstimateBar({ config, language, onTokenCountChange }: Token
     debounceRef.current = setTimeout(async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`${API_BASE}/api/strategies/estimate-tokens`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ config }),
-        })
+        const response = await fetch(
+          `${API_BASE}/api/strategies/estimate-tokens`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ config }),
+          }
+        )
         if (response.ok) {
           const data = await response.json()
           setEstimate(data)
@@ -72,7 +79,7 @@ export function TokenEstimateBar({ config, language, onTokenCountChange }: Token
 
   if (isLoading && !estimate) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-nofx-text-muted">
+      <div className="flex items-center gap-1.5 text-xs text-vl-neo-text-muted">
         <Loader2 className="w-3 h-3 animate-spin" />
         <span>{tr('tokenEstimating')}</span>
       </div>
@@ -82,7 +89,7 @@ export function TokenEstimateBar({ config, language, onTokenCountChange }: Token
   if (!estimate) return null
 
   // Display based on 200K reference
-  const pct = Math.round(estimate.total * 100 / 200000)
+  const pct = Math.round((estimate.total * 100) / 200000)
   const barWidth = Math.min(pct, 100)
 
   let barColor = '#0ECB81' // green
@@ -107,12 +114,19 @@ export function TokenEstimateBar({ config, language, onTokenCountChange }: Token
             style={{ width: `${barWidth}%`, background: barColor }}
           />
         </div>
-        <span className="text-xs font-mono whitespace-nowrap" style={{ color: textColor }}>
-          {isLoading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : `${pct}%`}
+        <span
+          className="text-xs font-mono whitespace-nowrap"
+          style={{ color: textColor }}
+        >
+          {isLoading ? (
+            <Loader2 className="w-3 h-3 animate-spin inline" />
+          ) : (
+            `${pct}%`
+          )}
         </span>
         <div className="relative group">
-          <Info className="w-3 h-3 text-nofx-text-muted cursor-help" />
-          <div className="absolute bottom-full right-0 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 bg-nofx-bg-lighter border border-nofx-border text-nofx-text-muted shadow-lg">
+          <Info className="w-3 h-3 text-vl-neo-text-muted cursor-help" />
+          <div className="absolute bottom-full right-0 mb-1.5 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 bg-vl-neo-bg-lighter border border-vl-neo-border text-vl-neo-text-muted shadow-lg">
             {tr('tokenTooltip')} (~{estimate.total.toLocaleString()} / 200K)
           </div>
         </div>

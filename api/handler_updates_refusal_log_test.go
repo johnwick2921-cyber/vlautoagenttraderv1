@@ -5,7 +5,7 @@ package api
 // GET /api/updates every 60 s — the un-enrolled live box wrote one 🔒 WARN
 // (and one log_events row) per minute per tab, forever. Now: ONE WARN per
 // (route, category) per process, then DEBUG; every refusal, first or
-// repeat, is COUNTED in nofx_updates_refused_total{route,category} — never
+// repeat, is COUNTED in vl_updates_refused_total{route,category} — never
 // silent, and a pair that never refused has no series (no fabricated 0 —
 // pinned in a fresh process: TestUpdatesRefusalSeriesIsAbsentUntilTheFirstRefusal).
 // "category" comes from a CLOSED mapping of the refusal reason, never the
@@ -26,13 +26,13 @@ import (
 	"testing"
 	"time"
 
-	"nofx/config"
-	"nofx/logger"
+	"vl/config"
+	"vl/logger"
 
 	"github.com/sirupsen/logrus"
 )
 
-// scrapeRefused reads nofx_updates_refused_total off the PRODUCTION /metrics
+// scrapeRefused reads vl_updates_refused_total off the PRODUCTION /metrics
 // route (the promhttp handler NewServer mounts) — never through
 // WithLabelValues, which would itself create the series it is asked about.
 // It returns every series as "route\x00category" → value.
@@ -45,10 +45,10 @@ func scrapeRefused(t *testing.T, e *updEnv) map[string]float64 {
 	if w.Code != http.StatusOK {
 		t.Fatalf("GET /metrics = %d", w.Code)
 	}
-	line := regexp.MustCompile(`^nofx_updates_refused_total\{category="([^"]*)",route="([^"]*)"\} (\S+)$`)
+	line := regexp.MustCompile(`^vl_updates_refused_total\{category="([^"]*)",route="([^"]*)"\} (\S+)$`)
 	out := map[string]float64{}
 	for _, l := range strings.Split(w.Body.String(), "\n") {
-		if !strings.HasPrefix(l, "nofx_updates_refused_total") {
+		if !strings.HasPrefix(l, "vl_updates_refused_total") {
 			continue
 		}
 		m := line.FindStringSubmatch(l)
@@ -99,7 +99,7 @@ func TestUpdatesRefusalWarnsOncePerRouteAndCategoryThenCounts(t *testing.T) {
 		t.Fatalf("two refusals of one (route, category) wrote %d WARN lines, want exactly 1:\n%s", n, tail)
 	}
 	if d := refusedCount(t, e, "/api/updates", "update_header") - before; d != 2 {
-		t.Fatalf("nofx_updates_refused_total{route=/api/updates,category=update_header} rose by %v, want 2 (every refusal counted)", d)
+		t.Fatalf("vl_updates_refused_total{route=/api/updates,category=update_header} rose by %v, want 2 (every refusal counted)", d)
 	}
 
 	// a repeat is DEBUG, never silent: visible at debug level, with its category
@@ -159,15 +159,15 @@ func TestUpdatesRefusalWarnsOncePerRouteAndCategoryThenCounts(t *testing.T) {
 	e.s.router.ServeHTTP(w, r)
 	body := w.Body.String()
 	for _, series := range []string{
-		`nofx_updates_refused_total{category="update_header",route="/api/updates"}`,
-		`nofx_updates_refused_total{category="update_header",route="/api/updates/jobs/:id"}`,
-		`nofx_updates_refused_total{category="install_mac",route="/api/updates/install"}`,
+		`vl_updates_refused_total{category="update_header",route="/api/updates"}`,
+		`vl_updates_refused_total{category="update_header",route="/api/updates/jobs/:id"}`,
+		`vl_updates_refused_total{category="install_mac",route="/api/updates/install"}`,
 	} {
 		if !strings.Contains(body, series) {
 			t.Fatalf("/metrics lacks %s", series)
 		}
 	}
-	if regexp.MustCompile(`nofx_updates_refused_total\{[^}]*(aaaaaaaa|bbbbbbbb)`).MatchString(body) {
+	if regexp.MustCompile(`vl_updates_refused_total\{[^}]*(aaaaaaaa|bbbbbbbb)`).MatchString(body) {
 		t.Fatal("/metrics carries a client-supplied id in a label")
 	}
 }
@@ -177,12 +177,12 @@ func TestUpdatesRefusalWarnsOncePerRouteAndCategoryThenCounts(t *testing.T) {
 // test's refusals would already have created series; the pin therefore
 // re-runs itself as a child of the test binary (only this test, nothing
 // before it), where no refusal has ever happened. There it scrapes the
-// production /metrics: NO nofx_updates_refused_total series at all before
+// production /metrics: NO vl_updates_refused_total series at all before
 // the first refusal (a series pre-created at registration — a fabricated 0 —
 // fails here), then one refusal ⇒ exactly that one pair, at 1, and every
 // other pair still absent.
 func TestUpdatesRefusalSeriesIsAbsentUntilTheFirstRefusal(t *testing.T) {
-	const childEnv = "NOFX_TEST_REFUSAL_SERIES_CHILD"
+	const childEnv = "VL_TEST_REFUSAL_SERIES_CHILD"
 	if os.Getenv(childEnv) != "1" {
 		cmd := exec.Command(os.Args[0], "-test.run=^TestUpdatesRefusalSeriesIsAbsentUntilTheFirstRefusal$", "-test.count=1", "-test.v")
 		cmd.Env = append(os.Environ(), childEnv+"=1")
@@ -194,7 +194,7 @@ func TestUpdatesRefusalSeriesIsAbsentUntilTheFirstRefusal(t *testing.T) {
 	}
 	e := newUpdEnv(t)
 	if got := scrapeRefused(t, e); len(got) != 0 {
-		t.Fatalf("before any refusal /metrics already carries %d nofx_updates_refused_total series (%v) — a pair that never refused must have NO series, never a fabricated 0", len(got), got)
+		t.Fatalf("before any refusal /metrics already carries %d vl_updates_refused_total series (%v) — a pair that never refused must have NO series, never a fabricated 0", len(got), got)
 	}
 	noHeader := func(r *http.Request) { r.Header.Del(UpdateHeader) }
 	if w := e.do("GET", "/api/updates", "", noHeader); w.Code != http.StatusForbidden {

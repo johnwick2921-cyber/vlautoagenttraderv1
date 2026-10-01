@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLASS 39 — normalize-don't-reject: legs on a non-sweep condition collapse to a single arm
 
-Date: 2026-09-01 · Owner: hoang · Worktree `../nofx-class39` (branch `fix/class39-legs-normalizer`)
+Date: 2026-09-01 · Owner: hoang · Worktree `../vl-class39` (branch `fix/class39-legs-normalizer`)
 Evidence tiers: **[A]** directly verified · **[B]** inferred from strong evidence · **[C]** speculation.
 All times CT (R8). Live rev at dispatch: `c0580011` (class 38), PID 2030083.
 
@@ -12,7 +13,7 @@ All times CT (R8). Live rev at dispatch: `c0580011` (class 38), PID 2030083.
 | Build | clean clone `--no-local` at `aeb11179`, `vcs.modified=false`, built 2026-09-02T04:12:33Z, sha256 `df0a24d4256b9767…`, 70,930,632 B |
 | Cutover | **DONE 00:01:01 CT 2026-09-02 on the owner's GO ("just go", overriding the live-arm HOLD)** — `🔐 BOOT INTEGRITY OK — rev aeb11179df5a · expected aeb11179df5a · goldens PASS` 00:01:07, PID 2089356; **marker committed AFTER the passed boot (A19)** — see §10 |
 | Proof (A20) | **NOT YET OCCURRED** for 39 — the first live arm on a non-sweep condition carrying legs. (Class 38's proof DID land during this wave: 23:12:44 CT, attempt 1 of 3, ASIA v5 active, zero rejects — see the class-38 report §12.) |
-| Lock (A2) | `~/nofx-main.lock` acquired 22:58 CT (no prior holder), released at closeout |
+| Lock (A2) | `~/vl-main.lock` acquired 22:58 CT (no prior holder), released at closeout |
 | Stop-lines | held: no leg synthesized · sweep_reclaim untouched · no second pass · validator logic unchanged beyond the C1 insertion · no prompt text · no retry semantics · no knob beyond the cap · 35/36/37/38 paths untouched |
 
 ---
@@ -154,21 +155,21 @@ Storage projection from the live table (read-only, 23:0x CT): 20 rows, avg 20,26
 ## 8. Build, stage, rollback (A4/A13) [A]
 
 ```
-git clone --no-local ~/nofx <scratch>/clone-c39 && git checkout aeb11179df5a52b400e03c0cefbee52d5e4e67b9   (clone porcelain-clean)
-go build -o nofx-bin .
+git clone --no-local ~/vl <scratch>/clone-c39 && git checkout aeb11179df5a52b400e03c0cefbee52d5e4e67b9   (clone porcelain-clean)
+go build -o vl-bin .
 	build	vcs.revision=aeb11179df5a52b400e03c0cefbee52d5e4e67b9
 	build	vcs.time=2026-09-02T04:12:33Z
 	build	vcs.modified=false
-sha256 df0a24d4256b9767c4f14693…  (70,930,632 bytes) → staged ~/nofx/nofx-bin.next (slot was free)
+sha256 df0a24d4256b9767c4f14693…  (70,930,632 bytes) → staged ~/vl/vl-bin.next (slot was free)
 goldens + class-39 guards re-run inside the built tree: ok
 ```
 **Rollback (exact):**
 ```
-cd ~/nofx && mv nofx-bin nofx-bin.bad.aeb11179 && cp nofx-bin.prev.boot nofx-bin \
+cd ~/vl && mv vl-bin vl-bin.bad.aeb11179 && cp vl-bin.prev.boot vl-bin \
   && printf 'c0580011b4ce4fdefa9d92566019a6d5789d5c1e' > deploy/RELEASE \
-  && kill -9 $(systemctl show -p MainPID --value nofx) && git checkout -- deploy/RELEASE web/src/guide/types.ts
+  && kill -9 $(systemctl show -p MainPID --value vl) && git checkout -- deploy/RELEASE web/src/guide/types.ts
 ```
-`nofx-bin.prev.boot` = the class-38 binary `c0580011`, also kept as `nofx-bin.old.c0580011`.
+`vl-bin.prev.boot` = the class-38 binary `c0580011`, also kept as `vl-bin.old.c0580011`.
 
 ## 9. What the owner will STILL see wrong (A15)
 
@@ -210,7 +211,7 @@ cd ~/nofx && mv nofx-bin nofx-bin.bad.aeb11179 && cp nofx-bin.prev.boot nofx-bin
 | A6 `replan_in_flight` | **false** · last read started 23:43:02 · last plan write 23:58:16 → **no read in flight** |
 | A7 live arms | **2 WORKING** (ids 29, 30 — ASIA v6 S1 split legs 0/1, limits at 29035.25) — **owner override "just go"** at 23:4x CT, after the 23:36 HOLD |
 
-**Swap:** `deploy/RELEASE` file written to `aeb11179…` at 00:01:01 (uncommitted) → `cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.c0580011 && mv nofx-bin.next nofx-bin` → `kill -9 2030083` at 00:01:01 → systemd relaunched → PID **2089356** at 00:01:06.
+**Swap:** `deploy/RELEASE` file written to `aeb11179…` at 00:01:01 (uncommitted) → `cp vl-bin vl-bin.prev.boot && mv vl-bin vl-bin.old.c0580011 && mv vl-bin.next vl-bin` → `kill -9 2030083` at 00:01:01 → systemd relaunched → PID **2089356** at 00:01:06.
 
 **Boot checklist (A19 — one boot, then one marker) [A]:**
 ```

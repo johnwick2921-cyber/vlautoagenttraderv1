@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Confirmation truth — pre-change consumer census and stored-scenario blast radius
 
 **Status: combined boot VERIFIED at 2026-09-08 15:17:31 CT, revision f8bc7044, with PLAN-LIVENESS as deploy owner.** Both boot lines and integrity/goldens were observed. [Combined postboot marker and lane provenance](2026-09-08-plan-liveness-confirmation-cutover.md). Organic confirmation-event proof remains outstanding; earlier audit/preparation sections below are historical.
@@ -294,7 +295,7 @@ The first attempted reference mutation returned `0, false` and failed compilatio
 
 [A] **Nine existing tests were adjusted:** the five semantic fixtures, two insufficiently specific rejection assertions, and desk-row shape listed in section 8, plus this text-contract assertion. This is separate from the **50 completed-case verdict goldens, whose verdict diff is empty**. The first failed integrated suite was not reported green.
 
-[A] At merged source **`2166a072339131fdb0a8e8e816e12148b261872b`**, in the clean clone **`/tmp/nofx-confirmation-build/nofx`**, immediately before the Go build:
+[A] At merged source **`2166a072339131fdb0a8e8e816e12148b261872b`**, in the clean clone **`/tmp/vl-confirmation-build/vl`**, immediately before the Go build:
 
 | Check | Observed result |
 |---|---|
@@ -303,7 +304,7 @@ The first attempted reference mutation returned `0, false` and failed compilatio
 | TypeScript `tsc --noEmit` | PASS, exit 0; empty output |
 | Production wiring census | **16 new functions/methods, zero with 0 production call sites**; [file:line census](2026-09-08-confirmation-truth-data/production-calls.json), [AST scanner](2026-09-08-confirmation-truth-data/production-calls.go.txt) |
 
-[A] `go build -o nofx-bin .` then produced **72,204,224 bytes**, SHA-256 **`26cecc0f0513482c88ec695051b9585f179cef53806b86f74e43645ecd770292`**. `go version -m` reads **`vcs.revision=2166a072339131fdb0a8e8e816e12148b261872b`**, **`vcs.modified=false`**, and `vcs.time=2026-09-08T19:35:49Z` (the commit time). Binary verification was **14:41:54 CT**. `GUIDE_BUILT_REV` was then populated from that binary's revision, followed by `npm run build` (TypeScript and Vite), exit 0. At **14:47:01 CT**, dist contained **92 files / 7,896,609 bytes**; the generated JavaScript contains that exact Guide revision. [Candidate receipt](2026-09-08-confirmation-truth-data/candidate.json), [dist manifest](2026-09-08-confirmation-truth-data/dist-manifest.json), [build output](2026-09-08-confirmation-truth-data/dist-build.log). The ensuing Guide/report commit is metadata after the tested Go source, not a claim that the binary embeds that later commit.
+[A] `go build -o vl-bin .` then produced **72,204,224 bytes**, SHA-256 **`26cecc0f0513482c88ec695051b9585f179cef53806b86f74e43645ecd770292`**. `go version -m` reads **`vcs.revision=2166a072339131fdb0a8e8e816e12148b261872b`**, **`vcs.modified=false`**, and `vcs.time=2026-09-08T19:35:49Z` (the commit time). Binary verification was **14:41:54 CT**. `GUIDE_BUILT_REV` was then populated from that binary's revision, followed by `npm run build` (TypeScript and Vite), exit 0. At **14:47:01 CT**, dist contained **92 files / 7,896,609 bytes**; the generated JavaScript contains that exact Guide revision. [Candidate receipt](2026-09-08-confirmation-truth-data/candidate.json), [dist manifest](2026-09-08-confirmation-truth-data/dist-manifest.json), [build output](2026-09-08-confirmation-truth-data/dist-build.log). The ensuing Guide/report commit is metadata after the tested Go source, not a claim that the binary embeds that later commit.
 
 [A] Candidate boot-line function output, from an isolated process, **not an observed service boot**:
 

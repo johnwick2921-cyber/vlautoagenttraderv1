@@ -1208,7 +1208,7 @@
     }
   ],
   "historical": {
-    "path": "/home/hoang/nofx-untracked-stash-20260816/.understand-anything/knowledge-graph.json",
+    "path": "/home/hoang/vl-untracked-stash-20260816/.understand-anything/knowledge-graph.json",
     "base": "7a8adce0",
     "date": "2026-07-10",
     "status": "Historical orientation only, never current proof",
@@ -1952,7 +1952,7 @@
         "type": "file",
         "name": "agentChatStorage.ts",
         "filePath": "web/src/lib/agentChatStorage.ts",
-        "summary": "localStorage persistence layer for the NOFXi agent chat: per-user message and draft keys, guest/legacy key fallback and one-time migration, and streaming-flag sanitization before persistence.",
+        "summary": "localStorage persistence layer for the VLi agent chat: per-user message and draft keys, guest/legacy key fallback and one-time migration, and streaming-flag sanitization before persistence.",
         "tags": [
           "storage",
           "persistence",

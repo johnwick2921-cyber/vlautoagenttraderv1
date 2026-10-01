@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // WEEKLY-BIAS W1 fixtures — R2 independent-math tests: every expectation is

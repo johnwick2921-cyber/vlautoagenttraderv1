@@ -1,18 +1,19 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 2 complete audit evidence — 2026-09-05
 
-Only Section 2 owns this directory. The parent integrates the docs branch. All scripts were created/run in `/home/hoang/nofx-analysis/vet-02-complete-0905`; detached worktree `/home/hoang/nofx-vet-02-complete` remains until integration. Source base: `488ce82748ca570804240630677c90d3055f128e`; claim branch `docs/vet-02-0905-complete`, NOFX_SESSION `codex-vet-02-complete-0905`.
+Only Section 2 owns this directory. The parent integrates the docs branch. All scripts were created/run in `/home/hoang/vl-analysis/vet-02-complete-0905`; detached worktree `/home/hoang/vl-vet-02-complete` remains until integration. Source base: `488ce82748ca570804240630677c90d3055f128e`; claim branch `docs/vet-02-0905-complete`, VL_SESSION `codex-vet-02-complete-0905`.
 
 This directory supersedes the **analytical use** of prior Section 2 data. Sibling legacy scripts/outputs remain untouched for provenance. In particular their wrong epoch, latest-plan fallback, future-range null sampling, differing RTH window, and uniform-across-bar volume allocation do not establish current-strategy outcomes. Read the correction ledger in the replacement report before reusing anything historical.
 
 Reproduction (all output stays next to the script):
 
 ```bash
-python3 /home/hoang/nofx-analysis/vet-02-complete-0905/audit.py
-python3 /home/hoang/nofx-analysis/vet-02-complete-0905/summarize.py
-python3 /home/hoang/nofx-analysis/vet-02-complete-0905/verify_details.py
+python3 /home/hoang/vl-analysis/vet-02-complete-0905/audit.py
+python3 /home/hoang/vl-analysis/vet-02-complete-0905/summarize.py
+python3 /home/hoang/vl-analysis/vet-02-complete-0905/verify_details.py
 ```
 
-`audit.py` opens `file:/home/hoang/nofx/data/data.db?mode=ro`, enables `PRAGMA query_only=ON`, and uses a read transaction. No store initialization, gate-jwt, writable database connection or runtime/order operation. It records raw inputs and outputs. `verify_details.py` uses the same read-only settings, exact plan versions and explicit reference-matching rules. **Run only from authorized scratch, not by writing outputs into a live application directory.** Neither script needs a network connection or API token.
+`audit.py` opens `file:/home/hoang/vl/data/data.db?mode=ro`, enables `PRAGMA query_only=ON`, and uses a read transaction. No store initialization, gate-jwt, writable database connection or runtime/order operation. It records raw inputs and outputs. `verify_details.py` uses the same read-only settings, exact plan versions and explicit reference-matching rules. **Run only from authorized scratch, not by writing outputs into a live application directory.** Neither script needs a network connection or API token.
 
 `summarize.py` is fully offline against the saved JSON inputs; it recreates `evidence.txt` and `inventory.md`. The complete reference snapshot is preserved in `source_snapshot.txt` as `repo/path:line text` (trailing whitespace normalized). All code references in the report refer to the pinned source base, not future dev lines. JSON files are formatted to keep their record IDs inspectable. `SHA256SUMS` verifies the frozen bundle.
 

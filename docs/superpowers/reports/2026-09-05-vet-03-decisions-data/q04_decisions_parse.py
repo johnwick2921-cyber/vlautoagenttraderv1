@@ -1,6 +1,6 @@
 # q04: parse decision_records.decision_json action per cycle (not LIKE), by CT day since 08-27; cycle_type; planner durations
 import sqlite3, json, collections, datetime
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 rows=con.execute("""SELECT id, datetime(timestamp,'-5 hours') ct, decision_json, cited_scenario_id, risk_check_passed, risk_check_error, execution_status, cycle_type, cycle_trigger, ai_request_duration_ms, plan_id, plan_version
  FROM decision_records WHERE date(timestamp,'-5 hours')>='2026-08-27' ORDER BY id""").fetchall()
 def act(dj):

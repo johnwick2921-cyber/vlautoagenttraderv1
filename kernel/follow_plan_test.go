@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── THE FOLLOW-PLAN (round 17) — RECORDED ONLY. ONE clock per test (E12). ────

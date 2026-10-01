@@ -1,6 +1,6 @@
 import sqlite3, math, statistics as st
 from collections import Counter, defaultdict
-db = sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True); c=db.cursor()
+db = sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True); c=db.cursor()
 def wilson(k,n,z=1.96):
     if n==0: return (0,0)
     p=k/n; d=1+z*z/n; cen=(p+z*z/(2*n))/d; h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d

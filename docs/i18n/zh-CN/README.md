@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 <h1 align="center">VL Intelligent</h1>
 
 <p align="center">
@@ -6,10 +7,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/NoFxAiOS/nofx/stargazers"><img src="https://img.shields.io/github/stars/NoFxAiOS/nofx?style=for-the-badge" alt="Stars"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/releases"><img src="https://img.shields.io/github/v/release/NoFxAiOS/nofx?style=for-the-badge" alt="Release"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg?style=for-the-badge" alt="License"></a>
-  <a href="https://t.me/nofx_dev_community"><img src="https://img.shields.io/badge/Telegram-Community-blue?style=for-the-badge&logo=telegram" alt="Telegram"></a>
 </p>
 
 <p align="center">
@@ -38,10 +35,6 @@ VL Intelligent 是一个开源的**自主式** AI 交易助手。与需要手动
 **完全自主**：AI 自行决定使用哪个模型、获取什么市场数据、何时交易。无需手动配置模型，无需管理各种服务的 API Key。只需充值 USDC 钱包，一键启动。
 
 核心差异：**内置 [x402](https://x402.org) 微支付协议**。无需 API Key，充值 USDC 钱包即可按需付费。钱包就是你的身份。
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
 
 打开 **http://127.0.0.1:3000**，完成。
 
@@ -76,7 +69,6 @@ x402 流程：
 ### 内置 x402 提供商
 
 | 提供商 | 链 | 模型 |
-|:---------|:------|:-------|
 | <img src="../../../web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base | GPT-5.4、Claude Opus、DeepSeek、Qwen、Grok、Gemini、Kimi — 15+ 模型 |
 
 ---
@@ -84,7 +76,6 @@ x402 流程：
 ## 功能概览
 
 | 功能 | 描述 |
-|:--------|:------------|
 | **多 AI** | DeepSeek、Qwen、GPT、Claude、Gemini、Grok、Kimi、MiniMax — 随时切换 |
 | **多交易所** | Binance、Bybit、OKX、Bitget、KuCoin、Gate、Hyperliquid、Aster、Lighter |
 | **策略工作室** | 可视化构建器 — 币种来源、指标、风控 |
@@ -100,8 +91,7 @@ x402 流程：
 ### 交易所 (CEX)
 
 | 交易所 | 状态 | 注册 (手续费折扣) |
-|:---------|:------:|:------------------------|
-| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [注册](https://www.binance.com/join?ref=NOFXENG) |
+| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [注册](https://www.binance.com/join?) |
 | <img src="../../../web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [注册](https://partner.bybit.com/b/83856) |
 | <img src="../../../web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [注册](https://www.okx.com/join/1865360) |
 | <img src="../../../web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [注册](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
@@ -111,7 +101,6 @@ x402 流程：
 ### 交易所 (Perp-DEX)
 
 | 交易所 | 状态 | 注册 (手续费折扣) |
-|:---------|:------:|:------------------------|
 | <img src="../../../web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [注册](https://app.hyperliquid.xyz/join/AITRADING) |
 | <img src="../../../web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [注册](https://www.asterdex.com/en/referral/fdfc0e) |
 | <img src="../../../web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [注册](https://app.lighter.xyz/?referral=68151432) |
@@ -119,7 +108,6 @@ x402 流程：
 ### AI 模型 (API Key 模式)
 
 | AI 模型 | 状态 | 获取 API Key |
-|:---------|:------:|:------------|
 | <img src="../../../web/public/icons/deepseek.svg" width="20" height="20" style="vertical-align: middle;"/> **DeepSeek** | ✅ | [获取 API Key](https://platform.deepseek.com) |
 | <img src="../../../web/public/icons/qwen.svg" width="20" height="20" style="vertical-align: middle;"/> **通义千问** | ✅ | [获取 API Key](https://dashscope.console.aliyun.com) |
 | <img src="../../../web/public/icons/openai.svg" width="20" height="20" style="vertical-align: middle;"/> **OpenAI (GPT)** | ✅ | [获取 API Key](https://platform.openai.com) |
@@ -137,31 +125,7 @@ x402 流程：
 
 ## 安装
 
-### Linux / macOS
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
-
-### Railway (云部署)
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/nofx?referralCode=nofx)
-
-### Docker
-
-```bash
-curl -O https://raw.githubusercontent.com/NoFxAiOS/nofx/main/docker-compose.prod.yml
-docker compose -f docker-compose.prod.yml up -d
-```
-
-### Windows
-
 安装 [Docker Desktop](https://www.docker.com/products/docker-desktop/)，然后：
-
-```powershell
-curl -o docker-compose.prod.yml https://raw.githubusercontent.com/NoFxAiOS/nofx/main/docker-compose.prod.yml
-docker compose -f docker-compose.prod.yml up -d
-```
 
 ### 从源码构建
 
@@ -170,16 +134,11 @@ docker compose -f docker-compose.prod.yml up -d
 # macOS: brew install ta-lib
 # Ubuntu: sudo apt-get install libta-lib0-dev
 
-git clone https://github.com/NoFxAiOS/nofx.git && cd nofx
-go build -o nofx && ./nofx          # 后端
+go build -o vl-bin && ./vl-bin          # 后端
 cd web && npm install && npm run dev  # 前端 (新终端)
 ```
 
 ### 更新
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
 
 ---
 
@@ -201,8 +160,6 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 
 ## 文档
 
-| | |
-|:--|:--|
 | [架构概览](../../architecture/README.md) | 系统设计和模块索引 |
 | [策略模块](../../architecture/STRATEGY_MODULE.md) | 币种选择、AI 提示词、执行 |
 | [常见问题](../../faq/README.md) | FAQ |
@@ -218,10 +175,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 
 所有贡献在 GitHub 上追踪。当 VL Intelligent 产生收入时，贡献者将获得空投。
 
-**解决 [置顶 Issue](https://github.com/NoFxAiOS/nofx/issues) 的 PR 获得最高奖励！**
-
 | 贡献类型 | 权重 |
-|:-------------|:------:|
 | 置顶 Issue PR | ★★★★★★ |
 | 代码提交 (合并的 PR) | ★★★★★ |
 | Bug 修复 | ★★★★ |
@@ -231,16 +185,6 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 
 ---
 
-## 链接
-
-| | |
-|:--|:--|
-| 官网 | [nofxai.com](https://nofxai.com) |
-| 数据面板 | [nofxos.ai/dashboard](https://nofxos.ai/dashboard) |
-| API 文档 | [nofxos.ai/api-docs](https://nofxos.ai/api-docs) |
-| Telegram | [nofx_dev_community](https://t.me/nofx_dev_community) |
-| Twitter | [@nofx_official](https://x.com/nofx_official) |
-
 > **风险提示**: AI 自动交易存在重大风险。建议仅用于学习/研究或小额测试。
 
 ---
@@ -249,4 +193,3 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 
 [AGPL-3.0](../../../LICENSE)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NoFxAiOS/nofx&type=Date)](https://star-history.com/#NoFxAiOS/nofx&Date)

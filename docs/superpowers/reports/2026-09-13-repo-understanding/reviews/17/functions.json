@@ -1751,7 +1751,7 @@
     ],
     "invariants_or_risks": "Shared CT conversion,1m loads,5m aggregation and Wilder ATR; aggregation permits partial buckets.",
     "file_context": "Shared CT conversion,1m loads,5m aggregation and Wilder ATR; aggregation permits partial buckets.",
-    "source_excerpt": "def load_1m(path='/home/hoang/nofx-analysis/vet-08-0905/bars_1m_0831_0904.csv'):\n    out=[]\n    for b in csv.DictReader(open(path)):\n        out.append((int(b['open_time_ms']), float(b['o']), float(b['h']), float(b['l']), float(b['c']), float(b['v'])))",
+    "source_excerpt": "def load_1m(path='/home/hoang/vl-analysis/vet-08-0905/bars_1m_0831_0904.csv'):\n    out=[]\n    for b in csv.DictReader(open(path)):\n        out.append((int(b['open_time_ms']), float(b['o']), float(b['h']), float(b['l']), float(b['c']), float(b['v'])))",
     "docstring": ""
   },
   {

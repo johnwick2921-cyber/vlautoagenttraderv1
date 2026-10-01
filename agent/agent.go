@@ -1,4 +1,4 @@
-// Package agent implements the NOFXi Agent Core.
+// Package agent implements the VL Agent Core.
 //
 // Architecture: ALL user messages go to the LLM. The LLM understands intent
 // and calls tools to execute actions. No regex routing, no pattern matching.
@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"nofx/branding"
-	"nofx/kernel"
+	"vl/branding"
+	"vl/kernel"
 	"os"
 	"sort"
 	"strconv"
@@ -22,11 +22,11 @@ import (
 
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 
-	"nofx/manager"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
-	"nofx/wallet"
+	"vl/manager"
+	"vl/market"
+	"vl/mcp"
+	"vl/store"
+	"vl/wallet"
 )
 
 type Agent struct {
@@ -545,7 +545,7 @@ const (
 	StreamEventError        = "error" // Error occurred
 )
 
-// buildSystemPrompt creates the system prompt that makes NOFXi behave like a real agent.
+// buildSystemPrompt creates the system prompt that makes the VL agent behave like a real agent.
 func (a *Agent) buildSystemPrompt(lang string) string {
 	return a.buildSystemPromptForStoreUser(lang, "default")
 }

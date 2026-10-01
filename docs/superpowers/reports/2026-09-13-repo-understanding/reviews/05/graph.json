@@ -238,7 +238,7 @@
       "type": "file",
       "name": "i18n.go",
       "filePath": "agent/i18n.go",
-      "summary": "Bilingual (Chinese/English) message catalog and lookup helper for NOFXi user-facing responses such as help, status, and trader-related texts.",
+      "summary": "Bilingual (Chinese/English) message catalog and lookup helper for VLi user-facing responses such as help, status, and trader-related texts.",
       "tags": [
         "i18n",
         "localization",
@@ -753,7 +753,7 @@
       "type": "file",
       "name": "skill_registry.go",
       "filePath": "agent/skill_registry.go",
-      "summary": "Loads embedded JSON skill definitions into a global registry at init and generates the prompt-context summaries (routing, definitions, dependencies, action contracts, field knowledge, forbidden behaviors) that teach the NOFXi agent LLM how each skill must be invoked.",
+      "summary": "Loads embedded JSON skill definitions into a global registry at init and generates the prompt-context summaries (routing, definitions, dependencies, action contracts, field knowledge, forbidden behaviors) that teach the VLi agent LLM how each skill must be invoked.",
       "tags": [
         "skill-system",
         "registry",
@@ -1140,7 +1140,7 @@
       "type": "file",
       "name": "web.go",
       "filePath": "agent/web.go",
-      "summary": "HTTP layer for the NOFXi agent: chat and SSE chat-stream endpoints carrying per-request store-user ID and session-policy context, plus public market-data endpoints (klines, ticker, batch tickers) that proxy Binance and merge stock quotes.",
+      "summary": "HTTP layer for the VLi agent: chat and SSE chat-stream endpoints carrying per-request store-user ID and session-policy context, plus public market-data endpoints (klines, ticker, batch tickers) that proxy Binance and merge stock quotes.",
       "tags": [
         "api-handler",
         "sse",

@@ -1,10 +1,10 @@
 package trader
 
 import (
-	"nofx/kernel"
+	"vl/kernel"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // currentContract is the trader-side face of the ONE source: the AddOn's most

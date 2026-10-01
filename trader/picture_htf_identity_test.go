@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W4 / D21 identity — bars belonging to ANOTHER contract must

@@ -1,7 +1,7 @@
 package api
 
 // PR #200 fold F8 (CTO 1790252194343, review item #16): the update header
-// (X-NOFX-Update: 1 — the CSRF factor) is judged BEFORE the JWT is parsed.
+// (X-VL-Update: 1 — the CSRF factor) is judged BEFORE the JWT is parsed.
 // A request without it is refused on transport grounds with no
 // token-derived work: no blacklist verdict, no signature verdict, no
 // enrollment read, no users-row read — so a cross-site page that cannot set
@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/logger"
+	"vl/logger"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"

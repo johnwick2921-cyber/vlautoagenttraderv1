@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # FINAL BUILD — land the sweep fixes @ HEAD b37697c8
 
 1. **4 of 8 landed (items 2, 3, 4, 8) + 2 of item 7's four leftovers · DEPLOYED: `🔐 BOOT INTEGRITY OK — rev b37697c82ecc +dirty · built 2026-08-18T00:23:27Z · expected b37697c82ecc · goldens PASS` · one PID 1171302 · bot cycling.**
@@ -6,7 +7,7 @@
 
 3. **Item 2 LANDED (a3a2c929):** the last non-empty model output survives retries that end in a call error (tonight's empty raw_response class); the parse-fail record now carries a truncated copy of the decision-less output in its execution log. Verified discards ALREADY preserved raw/decision_json/cot in full. Targeted JSON-only retry already existed (callWithSchemaRetry). New test green.
 
-4. **Item 4 LANDED (data):** demo position 520 (demo_seed, +$224.50, grade A, the only MAE/MFE carrier) purged — backup `~/nofx-backups/manual/pre-demo-purge-1922.db` → dry-run 1 row → delete → verified 517→516 positions, seeds 0. Refresh the dashboard: trades 179→178, Total P&L drops $224.50, GPA clears (no graded trades left).
+4. **Item 4 LANDED (data):** demo position 520 (demo_seed, +$224.50, grade A, the only MAE/MFE carrier) purged — backup `~/vl-backups/manual/pre-demo-purge-1922.db` → dry-run 1 row → delete → verified 517→516 positions, seeds 0. Refresh the dashboard: trades 179→178, Total P&L drops $224.50, GPA clears (no graded trades left).
 
 5. **Item 8 LANDED (b37697c8):** spec now reads conf≥60 owner-dated 2026-08-18.
 

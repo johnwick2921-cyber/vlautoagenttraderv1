@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // TestRecordClose_OwnerRouting locks the fix: a position_close frame received by a

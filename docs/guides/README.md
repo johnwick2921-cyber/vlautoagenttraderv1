@@ -1,8 +1,9 @@
-# 📘 NOFX User Guides
+names rewritten to vl on 2026-09-30 (VL rename)
+# 📘 VL User Guides
 
 **Language:** [English](README.md) | [中文](README.zh-CN.md)
 
-Comprehensive guides to help you use NOFX effectively.
+Comprehensive guides to help you use VL effectively.
 
 ---
 
@@ -129,9 +130,9 @@ Run multiple AI models simultaneously:
 ## 🆘 Need Help?
 
 **Can't find what you need?**
-- 💬 [Telegram Community](https://t.me/nofx_dev_community)
-- 🐛 [GitHub Issues](https://github.com/NoFxAiOS/nofx/issues)
-- 🐦 [Twitter @nofx_official](https://x.com/nofx_official)
+- 💬 [Telegram Community](upstream telegram link (removed in the VL rename))
+- 🐛 [GitHub Issues](upstream github link (removed in the VL rename))
+- 🐦 [Twitter upstream x link (removed in the VL rename)](upstream x link (removed in the VL rename))
 
 ---
 

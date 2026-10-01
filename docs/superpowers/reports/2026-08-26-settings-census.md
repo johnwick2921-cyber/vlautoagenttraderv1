@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # REPORT A — FULL SETTINGS CENSUS (as running NOW, 2026-08-26)
 
 Read-only audit. Fresh evidence only: live DB (`file:data/data.db?mode=ro`),
@@ -9,7 +10,7 @@ Branch: `docs/settings-week-audit`. Zero code changes.
 ## 1. BOOT LEDGER (ground truth, verbatim)
 
 ```
-PID 1991583 /home/hoang/nofx/nofx-bin
+PID 1991583 /home/hoang/vl/vl-bin
 🔐 BOOT INTEGRITY OK — rev 57b60b60d652 +dirty · built 2026-08-26T05:17:18Z · expected 57b60b60 · goldens PASS
 🧠 AI params in force: model=deepseek-v4-pro max_tokens=32768 temperature=0.50 top_p=omitted timeout=600s retries=2 backoff=2s · truncated-responses=0
 🗺️ day-plan knobs: seat_1h_zone=true min_scenario_quality=C ob_lookback_bars=8
@@ -72,8 +73,8 @@ rows are what actually arm ASIA/LONDON (override wins). See §8.
 
 | Key | State | Value |
 |---|---|---|
-| NOFX_BACKEND_PORT / FRONTEND_PORT | set | 8080 / 3000 |
-| NOFX_TIMEZONE | set | UTC |
+| VL_BACKEND_PORT / FRONTEND_PORT | set | 8080 / 3000 |
+| VL_TIMEZONE | set | UTC |
 | JWT_SECRET | set | <44 chars, masked> |
 | DATA_ENCRYPTION_KEY | set | <44 chars, masked> |
 | RSA_PRIVATE_KEY | set | <1730 chars, masked> |

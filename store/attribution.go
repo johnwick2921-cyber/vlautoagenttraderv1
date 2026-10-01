@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // ── ATTRIBUTION INTEGRITY (2026-09-02) — ONE SENTINEL ────────────────────────

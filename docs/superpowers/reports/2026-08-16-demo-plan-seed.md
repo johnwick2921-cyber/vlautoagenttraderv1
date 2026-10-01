@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL — DEMO PLAN SEED (2026-08-16)
 
 **LINE 1: DEMO PLAN LIVE — go look (today 08:30–15:00 CT; the card only renders while the NY window is open).**
@@ -5,7 +6,7 @@
 **Seeded key: `trade_date=2026-08-16` (SUNDAY) + `session=NY`, currently at v2.**
 Isolated three ways: the **scheduler can never write it** (`maybeRunSessionReads` needs `IsCMEOpen` AND the 08:25–15:00 window; on a Sunday CME is shut until 17:00, by which time the NY window is closed — the two can't both be true); the **executor can't act on it** (`runCycle`'s first gate is `cmeSessionClosedSkip()`, which returns before any context build, AI call or order path all Sunday; after 17:00 CT the active session is ASIA, which is disabled, so `ActivePlanProvider` returns nil); and it **self-expires** — at Monday 00:00 CT the trade date rolls to 2026-08-17 and the demo becomes invisible. Verified: `2026-08-17:NY` does not exist.
 
-Backup taken first: `~/nofx-backups/demo-seed-20260816-001118/data.db` (423M, `integrity_check=ok`).
+Backup taken first: `~/vl-backups/demo-seed-20260816-001118/data.db` (423M, `integrity_check=ok`).
 
 ## The 10 steps
 
@@ -32,7 +33,7 @@ Backup taken first: `~/nofx-backups/demo-seed-20260816-001118/data.db` (423M, `i
 ## Cleanup — one command, run it before Monday
 
 ```bash
-cd /home/hoang/nofx && sqlite3 data/data.db "
+cd /home/hoang/vl && sqlite3 data/data.db "
 DELETE FROM plans            WHERE trade_date IN ('2026-08-16','2026-08-15');
 DELETE FROM plan_overlays    WHERE plan_id   IN ('2026-08-16:NY','2026-08-15:NY');
 DELETE FROM day_plan_alerts  WHERE event_id LIKE 'demo:%' OR event_id LIKE '%:2026-08-15:%';
@@ -51,7 +52,7 @@ It also clears the 2026-08-15 acceptance-rehearsal leftovers (2 expired plans + 
 
 ## Files
 
-Seeder `trader/demo_seed_test.go` (idempotent, `NOFX_DEMO_SEED=1`, no paid call — the JSON goes through the real `ParsePlanDoc`/`ValidatePlanDoc`) and verifier `trader/demo_verify_test.go` (`NOFX_DEMO_VERIFY=1`, read-only, replays the exact `/api/plan/today` data path). Both left **untracked** per the dispatch's "commit report only" — say the word and I'll commit them.
+Seeder `trader/demo_seed_test.go` (idempotent, `VL_DEMO_SEED=1`, no paid call — the JSON goes through the real `ParsePlanDoc`/`ValidatePlanDoc`) and verifier `trader/demo_verify_test.go` (`VL_DEMO_VERIFY=1`, read-only, replays the exact `/api/plan/today` data path). Both left **untracked** per the dispatch's "commit report only" — say the word and I'll commit them.
 
 ---
 
@@ -67,7 +68,7 @@ is not a bug: `handlePlanToday` hardcodes `kernel.DefaultSessionRegistry()`
 |---|---|---|
 | API | `127.0.0.1:8080` — real DB, real traders running | `127.0.0.1:8232` — **copy** of the DB, all traders `is_running=0` |
 | UI | `127.0.0.1:3000` | **`127.0.0.1:3001`** ← open this |
-| binary | `nofx-bin` @ HEAD, no demo code | `nofx-preview` (scratchpad) with an env-gated session override |
+| binary | `vl-bin` @ HEAD, no demo code | `vl-preview` (scratchpad) with an env-gated session override |
 
 Safeguards: the override lives **only** in the preview binary (`strings` confirms the live
 binary has zero occurrences); the source patch was reverted immediately after the build and the
@@ -77,8 +78,8 @@ unauthenticated → 401). Log in at `:3001` with your normal credentials.
 
 **Stop the preview when done** (removes everything, touches nothing live):
 ```bash
-pkill -f nofx-preview; pkill -f vite.preview.config.ts
-rm -f /home/hoang/nofx/web/vite.preview.config.ts
-rm -rf /tmp/claude-1000/-home-hoang-nofx/*/scratchpad/preview
+pkill -f vl-preview; pkill -f vite.preview.config.ts
+rm -f /home/hoang/vl/web/vite.preview.config.ts
+rm -rf /tmp/claude-1000/-home-hoang-vl/*/scratchpad/preview
 ```
 The live seed on the real DB still needs the SQL cleanup above before Monday.

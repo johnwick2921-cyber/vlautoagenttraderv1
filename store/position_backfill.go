@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // 6.7 (final-bundle 2026-08-19) — entry_confidence backfill.

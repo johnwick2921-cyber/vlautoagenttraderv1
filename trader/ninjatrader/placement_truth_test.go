@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // Production command composition, real loopback frame, and real inbound reject

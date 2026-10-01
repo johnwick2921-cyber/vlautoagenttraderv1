@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W-EXEC-TRUTH W4 / D22 — pivot evidence is fail-closed.

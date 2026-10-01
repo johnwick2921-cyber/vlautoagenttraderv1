@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"nofx/logger"
-	"nofx/researchsnapshot"
+	"vl/logger"
+	"vl/researchsnapshot"
 	"os"
 	"strconv"
 	"strings"
@@ -16,13 +16,13 @@ import (
 
 	"github.com/google/uuid"
 
-	"nofx/calendar"
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/mcp"
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/calendar"
+	"vl/kernel"
+	"vl/market"
+	"vl/mcp"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
 )
 
 const plannerSystemPrompt = "You are a disciplined CME index-futures day-plan reasoner. Output ONLY the single JSON object requested — reasoning first, then the answer fields. No prose outside the JSON."

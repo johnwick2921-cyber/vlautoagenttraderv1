@@ -7,7 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"nofx/provider/databento"
+	"vl/provider/databento"
 )
 
 // runResolverSmoke resolves the continuous symbol NQ.c.0 to today's specific

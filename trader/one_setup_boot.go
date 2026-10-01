@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // boundOneSetup resolves the two knobs from THE STRATEGY BOUND TO A TRADER,

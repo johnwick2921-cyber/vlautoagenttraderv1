@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W5 (builder A) — the API's two folds and its one door ──────

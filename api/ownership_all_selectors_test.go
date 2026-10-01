@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/auth"
-	"nofx/manager"
-	"nofx/store"
+	"vl/auth"
+	"vl/manager"
+	"vl/store"
 )
 
 // F16 (WAVE 117 PR-D, ports #117 576bd75b) — the C1 ownership middleware must

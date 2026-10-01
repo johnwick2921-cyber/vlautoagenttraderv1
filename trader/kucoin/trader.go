@@ -10,7 +10,7 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"nofx/logger"
+	"vl/logger"
 	"strconv"
 	"strings"
 	"sync"
@@ -32,12 +32,6 @@ const (
 	kucoinPositionModePath = "/api/v1/position/margin/auto-deposit-status"
 	kucoinFillsPath        = "/api/v1/fills"
 	kucoinRecentFillsPath  = "/api/v1/recentFills"
-)
-
-// API channel configuration
-const (
-	kcPartnerID  = "NoFxFutures"
-	kcPartnerKey = "d7c05b0c-c81b-4630-8fa8-ca6d049d3aae"
 )
 
 // KuCoinTrader implements types.Trader interface for KuCoin Futures
@@ -184,14 +178,6 @@ func (t *KuCoinTrader) signPassphrase(passphrase string) string {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
-// signPartner generates partner signature: base64(HMAC-SHA256(timestamp + partner + apiKey, partnerKey))
-func (t *KuCoinTrader) signPartner(timestamp string) string {
-	preHash := timestamp + kcPartnerID + t.apiKey
-	h := hmac.New(sha256.New, []byte(kcPartnerKey))
-	h.Write([]byte(preHash))
-	return base64.StdEncoding.EncodeToString(h.Sum(nil))
-}
-
 // doRequest executes HTTP request
 func (t *KuCoinTrader) doRequest(method, path string, body interface{}) ([]byte, error) {
 	var bodyBytes []byte
@@ -220,11 +206,6 @@ func (t *KuCoinTrader) doRequest(method, path string, body interface{}) ([]byte,
 	req.Header.Set("KC-API-PASSPHRASE", signedPassphrase)
 	req.Header.Set("KC-API-KEY-VERSION", "3")
 	req.Header.Set("Content-Type", "application/json")
-
-	// Partner headers
-	req.Header.Set("KC-API-PARTNER", kcPartnerID)
-	req.Header.Set("KC-API-PARTNER-SIGN", t.signPartner(timestamp))
-	req.Header.Set("KC-API-PARTNER-VERIFY", "true")
 
 	resp, err := t.httpClient.Do(req)
 	if err != nil {

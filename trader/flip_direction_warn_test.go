@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // W-FLIP-DIRECTION (2026-09-17) — plans ALREADY in the store were written

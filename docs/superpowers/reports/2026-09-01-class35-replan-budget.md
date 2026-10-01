@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLASS 35 — replan budget arithmetic (PART 1) + 1C touch-band calibration & friction floor (PART 2)
 
-Date: 2026-09-01 · Owner: hoang · Agent: Fable 5 · Worktree: `../nofx-class35` (branch `fix/class35-replan-budget`)
+Date: 2026-09-01 · Owner: hoang · Agent: Fable 5 · Worktree: `../vl-class35` (branch `fix/class35-replan-budget`)
 Evidence tiers: **[A]** directly verified · **[B]** inferred from strong evidence · **[C]** speculation.
 
 ## STATUS AT CLOSEOUT
@@ -8,11 +9,11 @@ Evidence tiers: **[A]** directly verified · **[B]** inferred from strong eviden
 | Item | State |
 |---|---|
 | PART 1 code | **MERGED to dev @ `ec6632f9`**, pushed to origin (fast-forward from `d4b38604`) |
-| Build | clean clone `--no-local` at `ec6632f9`, `vcs.modified=false` (sha256 `b460def0d42469be…`) — now the running `~/nofx/nofx-bin` |
+| Build | clean clone `--no-local` at `ec6632f9`, `vcs.modified=false` (sha256 `b460def0d42469be…`) — now the running `~/vl/vl-bin` |
 | Marker | `b51f8f03` — `deploy/RELEASE` + `GUIDE_BUILT_REV` = `ec6632f9…` (one marker, one boot) |
-| Cutover | **DONE 17:23:54 CT on owner GO** — boot `🔐 BOOT INTEGRITY OK — rev ec6632f9 · goldens PASS` 17:24:00, PID 1908258, live replans_left 4/4 (see CUTOVER section at the end); rollback `nofx-bin.prev.boot` kept |
+| Cutover | **DONE 17:23:54 CT on owner GO** — boot `🔐 BOOT INTEGRITY OK — rev ec6632f9 · goldens PASS` 17:24:00, PID 1908258, live replans_left 4/4 (see CUTOVER section at the end); rollback `vl-bin.prev.boot` kept |
 | PART 2 | read-only analysis complete; recommendation **PARKED, NOT APPLIED** (no config, no knob, no DB write) |
-| Lock | `~/nofx-main.lock` acquired 16:18 CT under a dead subshell PID, found stale by a second agent, restored, then cleared+re-acquired by me at 16:40:57 CT under live pid 1860416 (note in A2 section); released at closeout |
+| Lock | `~/vl-main.lock` acquired 16:18 CT under a dead subshell PID, found stale by a second agent, restored, then cleared+re-acquired by me at 16:40:57 CT under live pid 1860416 (note in A2 section); released at closeout |
 
 ---
 
@@ -20,7 +21,7 @@ Evidence tiers: **[A]** directly verified · **[B]** inferred from strong eviden
 
 - **Porcelain gate [A]:** `git status --porcelain` → empty (quoted at 16:17:58 CT, again at 16:40 CT before the worktree, again before the ff-merge and before the marker commit).
 - **Lock [A]:** initial acquisition wrote the *subshell* PID (1861644), which died immediately. A second agent found it stale, cleared it, then restored it with a note. On my re-acquire: `kill -0 1861644` → dead → cleared with this note, re-acquired as `owner=hoang pid=1860416 expiry=2026-09-01T23:00:00-0500 task=class35-replan-budget+1C-touchband`, `kill -0 1860416` → alive. **Lesson recorded:** the lock PID must be the long-lived session process (the parent of the shell), never `$$`.
-- **Worktree [A]:** `git worktree add ../nofx-class35 -b fix/class35-replan-budget origin/dev` at `d4b38604`, locked. Removed at closeout.
+- **Worktree [A]:** `git worktree add ../vl-class35 -b fix/class35-replan-budget origin/dev` at `d4b38604`, locked. Removed at closeout.
 - **Session state at pre-flight (A7) [A]:** 16:17 CT — NY closed (EOD flat 14:45 CT: `🔒 armed cancel: session ended (EOD flat) — 1 order(s) disarmed`), ASIA read window opens 16:30 CT, CME halt 16:00–17:00. No cutover was attempted (owner GO not given).
 
 ---
@@ -115,7 +116,7 @@ Behavior change to name plainly: death re-plan rows are now **labelled `death_re
 --- FAIL: TestClass35PinTodayChain (0.15s)
     class35_pin_test.go:66: replans_left = 0, want 4 — nothing in this chain spent budget (chain: fail_closed, level_event, dormant:flip, level_event ×3)
     class35_pin_test.go:69: MayReplan must be TRUE for an unspent budget; the gate refused: "the re-read budget for LONDON is spent (5 of 4 used)"
-FAIL	nofx/trader	0.155s
+FAIL	vl/trader	0.155s
 ```
 
 **GREEN on the fix** (`ec6632f9`):
@@ -126,12 +127,12 @@ FAIL	nofx/trader	0.155s
 --- PASS: TestClass35OwnerRereadSpends (0.13s)                       // ForceReread → v2 owner_reread, Used 1, Left 3; CanForceReread then says 3
 --- PASS: TestClass35FreeReadsDoNotSpend (0.14s)                     // "", level_event, structure_mss, owner_reset all land rows, Used stays 0; fast-market = those classes
 --- PASS: TestClass35RefusedDeathReplanDoesNotSpend (0.12s)          // no client → no row → Used 0
-ok  	nofx/trader	0.729s
+ok  	vl/trader	0.729s
 ```
 
 Plus (all PASS): `store`: `TestReplanBudgetLeftAndMay`, `TestSpendReplanRecordsEachSpend`, `TestResetBaselineRearmsTheRecordedBudget` (4 spends → exhausted → baseline 7 → Used 0, Left 4; original chain's `4` still on record), `TestMalformedReplanCounterReadsAsZero`, `TestTriggerSpendsReplanClasses`, `TestNoLiteralReplanBudgetInThePath` (now also forbids `version − baseline` and the deleted function names in non-test code); `trader`: `TestForceResetWritesFreshChainAndRestoresBudget` (end-to-end reset re-arm, migrated to seed 4 recorded spends), `TestRereadRefusesWhenTheBudgetIsSpent` (migrated: 2 spends against cap 2 refuse with "0 left"); `api`: `TestClass35APIReplansLeftIsTheRecordedBudget` (the 6-row chain → `replans_left == cap`; one spend → `cap−1`); web: `Class35_budget.test.tsx` — "4 re-reads left" for today's chain; NO-TRADE marker at v3 with API `0/4` renders **"4 of 4 re-plans"** (old formula would print "1 of 4"); absent numbers render `? of ?`, never a fabricated `0 of`.
 
-Suites: `go test ./...` → **27 ok / 0 FAIL** (includes `nofx/kernel` goldens: `TestFuturesPlanGolden`, `TestFuturesKeyLevelsGolden`, `TestVerifyPromptGoldensPasses` … PASS) · `vitest run` → **37 files / 295 tests passed** · `tsc --noEmit` clean · `go vet` clean on the touched packages.
+Suites: `go test ./...` → **27 ok / 0 FAIL** (includes `vl/kernel` goldens: `TestFuturesPlanGolden`, `TestFuturesKeyLevelsGolden`, `TestVerifyPromptGoldensPasses` … PASS) · `vitest run` → **37 files / 295 tests passed** · `tsc --noEmit` clean · `go vet` clean on the touched packages.
 
 Fixture note: the canned `planClient` plan predates the `confirm{}` contract; the class-35 fixtures set `CONFIRM_GRACE_SESSIONS=100` (test seam) so consecutive reads land ACTIVE rows — the confirm contract is not what these tests exercise.
 
@@ -147,24 +148,24 @@ Boot block (after `🔐 ConfirmRuleLedger`): `🧮 replan budget: recorded-count
 
 ```
 git clone --no-local https://github.com/johnwick2921-cyber/nofx.git <scratch>/clone && git checkout ec6632f9de41060b52398f41f9ffbbf840814c40
-go build -o nofx-bin.next .
-go version -m nofx-bin.next:
+go build -o vl-bin.next .
+go version -m vl-bin.next:
 	build	vcs.revision=ec6632f9de41060b52398f41f9ffbbf840814c40
 	build	vcs.time=2026-09-01T21:54:27Z
 	build	vcs.modified=false
-cp nofx-bin.next /home/hoang/nofx/nofx-bin.next   # sha256 b460def0d42469be…  (70,858,376 bytes)
+cp vl-bin.next /home/hoang/vl/vl-bin.next   # sha256 b460def0d42469be…  (70,858,376 bytes)
 ```
 
-Running binary (unchanged): `/home/hoang/nofx/nofx-bin` = `fef656a4…` (vcs.modified=false, built 2026-09-01T04:52:30Z), PID 1625428. Between `fef656a4` and `ec6632f9` on dev there is exactly one non-docs commit besides this fix: the class-34 marker `d03db52a` (RELEASE/GUIDE_BUILT_REV only). So the cutover ships **this fix only**.
+Running binary (unchanged): `/home/hoang/vl/vl-bin` = `fef656a4…` (vcs.modified=false, built 2026-09-01T04:52:30Z), PID 1625428. Between `fef656a4` and `ec6632f9` on dev there is exactly one non-docs commit besides this fix: the class-34 marker `d03db52a` (RELEASE/GUIDE_BUILT_REV only). So the cutover ships **this fix only**.
 
 **Cutover (on GO, in a flat window outside 16:45–17:10 CT, no read in flight, no live arms):**
 ```
-cd /home/hoang/nofx && cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.fef656a4 && mv nofx-bin.next nofx-bin && kill -9 1625428
+cd /home/hoang/vl && cp vl-bin vl-bin.prev.boot && mv vl-bin vl-bin.old.fef656a4 && mv vl-bin.next vl-bin && kill -9 1625428
 # then within 90s expect: 🔐 BOOT INTEGRITY OK — rev ec6632f9 · expected ec6632f9 · goldens PASS   and   🧮 replan budget: recorded-counter (class 35)
 ```
 **Rollback (exact):**
 ```
-cd /home/hoang/nofx && mv nofx-bin nofx-bin.bad.ec6632f9 && cp nofx-bin.prev.boot nofx-bin && printf 'fef656a4ee7c45860ad0237f48cef90c6b148d17' > deploy/RELEASE && kill -9 $(pgrep -f '^/home/hoang/nofx/nofx-bin$') && git checkout -- deploy/RELEASE web/src/guide/types.ts   # (revert marker locally; push a revert of b51f8f03 if the rollback sticks)
+cd /home/hoang/vl && mv vl-bin vl-bin.bad.ec6632f9 && cp vl-bin.prev.boot vl-bin && printf 'fef656a4ee7c45860ad0237f48cef90c6b148d17' > deploy/RELEASE && kill -9 $(pgrep -f '^/home/hoang/vl/vl-bin$') && git checkout -- deploy/RELEASE web/src/guide/types.ts   # (revert marker locally; push a revert of b51f8f03 if the rollback sticks)
 ```
 
 ## 8. Proof — flat gate, in-flight, session state (A5/A6/A7) [A]
@@ -264,7 +265,7 @@ Labelled a **guess** (n = 44 bot fills). D5 test 3 (hand example: $0.35/side com
 ## Closeout
 
 - Commits: `ec6632f9` (fix, 20 files) · `b51f8f03` (marker) · this report (docs).
-- Lock released, worktree `../nofx-class35` removed, repo memory updated (`project_class35_replan_budget.md`).
+- Lock released, worktree `../vl-class35` removed, repo memory updated (`project_class35_replan_budget.md`).
 - **Next action is the owner's:** "GO" → cutover per §7 in a flat window (outside 16:45–17:10 CT, no planner read in flight, no live arms), then quote the boot line, `🧮` line and the live `replans_left` for the ASIA chain.
 
 ---
@@ -273,7 +274,7 @@ Labelled a **guess** (n = 44 bot fills). D5 test 3 (hand example: $0.35/side com
 
 - **GO received ~17:13 CT.** Lock re-acquired (pid 1860416, alive). Gates at 17:13:31 CT: outside the 16:45–17:10 window ✓; DB OPEN 0, armed 0, API positions `[]`, open-orders `[]`, NT8 `positions snapshot account=Sim101 count=0` ✓ — **but the ASIA session read was in flight** (17:10:09 `📐 planner attempt 1/3 rejected` → `🧩 attempt 2/3 repair`; 17:13:05 `planner read for 2026-09-01:ASIA … already in flight`). **Held per A6.**
 - **Read landed 17:23:14 CT:** `🗓️ PLAN written 2026-09-01 ASIA v1 (model deepseek-v4-pro, lifecycle no_trade …)` — fail-closed after three rejected attempts (class-34 style validator rejects; not this wave's concern). No claim after it. Gates re-quoted 17:23:37 CT: DB OPEN 0, armed 0, API positions `[]`, open-orders `[]`, NT8 snapshot `Sim101 count=0` (17:23:21), ASIA `armed: {}`.
-- **Swap 17:23:54 CT:** `cp nofx-bin nofx-bin.prev.boot` · `mv nofx-bin nofx-bin.old.fef656a4` · `mv nofx-bin.next nofx-bin` (rev check `ec6632f9` passed first) · `kill -9 1625428`.
+- **Swap 17:23:54 CT:** `cp vl-bin vl-bin.prev.boot` · `mv vl-bin vl-bin.old.fef656a4` · `mv vl-bin.next vl-bin` (rev check `ec6632f9` passed first) · `kill -9 1625428`.
 - **Boot checklist (6 s after the kill):**
   `09-01 17:24:00 🔐 BOOT INTEGRITY OK — rev ec6632f9de41 · built 2026-09-01T21:54:27Z · expected ec6632f9de41 · goldens PASS`
   `09-01 17:24:00 🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: <S>_scheduled_read, level_event, structure_mss (incl. fast-market), owner_reset, dormant/rearm + fail-closed markers · key dayplan_replans_used:<trader>:<date>:<session>:b<baseline>`
@@ -287,5 +288,5 @@ Labelled a **guess** (n = 44 bot fills). D5 test 3 (hand example: $0.35/side com
 | ASIA | 1 | no_trade (fail-closed) | 4 / 4 | **4 / 4** | 4 (v1 is free) ✓ |
 
   `system_config` counter rows: none yet (no `death_replan` / `owner_reread` has landed since boot — the first live spend will write `dayplan_replans_used:…:b1`).
-- **Rollback (still valid):** `mv nofx-bin nofx-bin.bad.ec6632f9 && cp nofx-bin.prev.boot nofx-bin && printf 'fef656a4ee7c45860ad0237f48cef90c6b148d17' > deploy/RELEASE && kill -9 1908258`.
+- **Rollback (still valid):** `mv vl-bin vl-bin.bad.ec6632f9 && cp vl-bin.prev.boot vl-bin && printf 'fef656a4ee7c45860ad0237f48cef90c6b148d17' > deploy/RELEASE && kill -9 1908258`.
 - **Still to observe live (A20):** a real `death_replan` spend and an owner re-read spend on this binary — neither has occurred yet; the proof so far is the fixture chain matching the live chain shape, plus the corrected live numbers above. Class 35's proving condition (a death on a wake-inflated chain now re-planning instead of fail-closing) has **not** occurred since boot — stated plainly.

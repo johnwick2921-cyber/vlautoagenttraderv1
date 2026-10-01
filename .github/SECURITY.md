@@ -1,8 +1,8 @@
 # Security Policy
 
-## 🔒 Security at NOFX
+## 🔒 Security at VL
 
-We take the security of NOFX seriously. This document outlines our security policy and procedures for reporting vulnerabilities.
+We take the security of VL seriously. This document outlines our security policy and procedures for reporting vulnerabilities.
 
 ## 📋 Supported Versions
 
@@ -22,9 +22,7 @@ If you discover a security vulnerability, please follow these steps:
 
 ### 1. Private Disclosure
 
-Send an email to the security team at:
-- **Email**: tinklefund@gmail.com (or contact maintainers directly via Twitter DM)
-- **Twitter**: [@nofx_official](https://x.com/nofx_official) or [@Web3Tinkle](https://x.com/Web3Tinkle)
+Report the vulnerability privately via a GitHub security advisory on this repository.
 
 ### 2. Information to Include
 
@@ -57,7 +55,7 @@ After you submit a report:
 
 ## 🛡️ Security Best Practices
 
-If you're using NOFX, please follow these security best practices:
+If you're using VL, please follow these security best practices:
 
 ### API Keys and Secrets
 
@@ -153,7 +151,7 @@ We appreciate the security research community's efforts. Contributors who respon
 
 ## 🔐 Encryption & Secure Storage
 
-NOFX uses the following security measures:
+VL uses the following security measures:
 
 - **AES-256 encryption** for sensitive data at rest (planned v3.1)
 - **TLS 1.3** for all network communications
@@ -182,12 +180,7 @@ We follow a **coordinated disclosure** approach:
 
 ## 📞 Contact
 
-For security concerns, reach out via:
-
-- **Email**: Contact maintainers (see [GitHub profile](https://github.com/NoFxAiOS/nofx))
-- **Twitter**: [@nofx_official](https://x.com/nofx_official) (DM open)
-- **Telegram**: [NOFX Developer Community](https://t.me/nofx_dev_community)
-- **GitHub**: Private security advisory (preferred for verified issues)
+For security concerns, report privately via a GitHub security advisory on this repository.
 
 ## ⚖️ Legal
 
@@ -217,7 +210,7 @@ This security policy may be updated from time to time. We will notify users of s
 **Last Updated**: January 2025
 **Version**: 1.0.0
 
-Thank you for helping keep NOFX and its users safe! 🙏
+Thank you for helping keep VL and its users safe! 🙏
 
 ---
 

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // MarkConsumedScenarios (G5, regime wave 2026-08-21) — at plan write AND at

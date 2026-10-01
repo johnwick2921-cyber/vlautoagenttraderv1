@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/trader/types"
+	ntwire "vl/provider/ninjatrader"
+	"vl/trader/types"
 )
 
 // openOrdersSourceSetter is asserted dynamically so this pin COMPILES on the

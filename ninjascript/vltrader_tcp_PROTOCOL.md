@@ -147,7 +147,7 @@ The C# AddOn sends `hello` as the FIRST frame on every (re)connect; the Go serve
 - `protocol_version`: the peer's wire generation (`ProtocolVersion` in `tcp_framing.go` == `PROTOCOL_VERSION` in `VLTraderTCPClient.cs`; v2 = symbol-tagged fills + this handshake). Bump ONLY with a lockstep C#+Go ship.
 - Go server on MISMATCH: logs `PROTOCOL VERSION MISMATCH — refusing connection` and CLOSES (never silently misparses). The AddOn's reconnect loop will retry + log its own mismatch warning from the server's reply.
 - Go server on a connection that NEVER sends hello: tolerated as a LEGACY (pre-v2) AddOn with a one-time warning — so the lockstep deploy window (new Go, not-yet-F5'd C#) cannot brick the bar feed.
-- `source`: `"vltrader-addon"` or `"nofx-go"` (diagnostics only).
+- `source`: `"vltrader-addon"` or `"vl-go"` (diagnostics only).
 
 ### 3. `heartbeat` (bidirectional)
 
@@ -570,9 +570,7 @@ evidence rather than to the hand-set `VL_BUILD_ID` (M1 finding F4):
 | `source_hash` | SHA-256 of `AddOns\VLTraderTCPClient.cs`, taken when the AddOn **activates** (`State.Active`), not at the first hello, so a copy made before the next F5 cannot change it (M2.1). Omitted when unreadable |
 | `activation_nonce` | minted once per AddOn activation |
 
-A value the AddOn cannot read is **left out**, never guessed. The Go reply sets none
-of them, so its bytes are unchanged (`{"protocol_version":3,"source":"nofx-go"}`, pinned
-by `TestGoHelloReplyIsByteIdentical`). Go stores each connection's hello, together with
+A value the AddOn cannot read is **left out**, never guessed. The Go reply sets none of them; its bytes are `{"protocol_version":3,"source":"vl-go"}`, pinned by `TestGoHelloReplyIsByteIdentical` (`provider/ninjatrader/maintenance_wire_test.go:270`). Go stores each connection's hello, together with
 its `accept_seq`, monotonic accept time and `remote_port`, as that connection's record.
 The verifier binds to that record, **never** to `FarSideBuildID()`. `VL_BUILD_ID` keeps
 its ISO-date prefix, because the capability floors compare it bytewise.

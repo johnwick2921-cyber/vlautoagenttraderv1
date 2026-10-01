@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func TestFundingRateSuppressedOnFutures(t *testing.T) {
@@ -41,13 +41,14 @@ func TestFundingRateSuppressedOnFutures(t *testing.T) {
 	}
 }
 
-// TestAI500OITopSuppressedOnFutures (F11a): AI500 / OI_Top filter tags are a crypto
-// screening concept and must NOT be advertised on a futures strategy (which trades a
-// single static symbol), while crypto keeps them.
-func TestAI500OITopSuppressedOnFutures(t *testing.T) {
+// TestAI500OITopRemovedWithNofxOSProvider (F11a, D2-DEAD item 12): the AI500 /
+// OI_Top filter tags rode the deleted legacy provider, so they must not be
+// advertised anywhere — futures never had them (single static symbol), and the
+// crypto branch loses them with the provider.
+func TestAI500OITopRemovedWithNofxOSProvider(t *testing.T) {
 	mk := func(symbol string) *StrategyEngine {
 		cfg := &store.StrategyConfig{}
-		cfg.CoinSource.StaticCoins = []string{symbol} // StaticCoins>0 → old code always emitted the tag line
+		cfg.CoinSource.StaticCoins = []string{symbol}
 		return NewStrategyEngine(cfg)
 	}
 
@@ -59,7 +60,7 @@ func TestAI500OITopSuppressedOnFutures(t *testing.T) {
 
 	var cb strings.Builder
 	mk("BTCUSDT").writeAvailableIndicators(&cb)
-	if !strings.Contains(cb.String(), "AI500 / OI_Top") {
-		t.Errorf("crypto: AI500/OI_Top filter tags must remain, got:\n%s", cb.String())
+	if strings.Contains(cb.String(), "AI500 / OI_Top") {
+		t.Errorf("crypto: AI500/OI_Top filter tags must be absent after the provider deletion, got:\n%s", cb.String())
 	}
 }

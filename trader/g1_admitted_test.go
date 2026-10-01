@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W0 (G1, dispatch D11) — an armed row is placed only by a

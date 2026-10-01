@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // THE REGRESSION TEST THAT ENDS THIS CLASS (P0 follow-up, 2026-08-17).

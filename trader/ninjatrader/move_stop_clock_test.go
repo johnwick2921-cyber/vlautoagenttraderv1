@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // The owner's pin, applied to the move_stop path: a command composed while the

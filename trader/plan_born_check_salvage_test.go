@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // FIX-PLANNER (2026-09-25) item 1 — scenario-level born-dead salvage at the

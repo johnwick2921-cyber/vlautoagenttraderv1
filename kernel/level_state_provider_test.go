@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W11b — with a LevelStateProvider installed, ScoreLevels keeps a consumed/burned

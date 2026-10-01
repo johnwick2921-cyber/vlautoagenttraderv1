@@ -1,7 +1,7 @@
 """Compliant fill-quality, exit-reason, floor-proxy re-derivation. READ-ONLY."""
 import sqlite3,math,json,datetime,csv,os
-os.chdir('/home/hoang/nofx-analysis/vet-05-0905')
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True); c.row_factory=sqlite3.Row
+os.chdir('/home/hoang/vl-analysis/vet-05-0905')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True); c.row_factory=sqlite3.Row
 c.execute('PRAGMA query_only=ON')
 ERA=1786770000000; END=1788584400000
 def rows(sql,a=()): return [dict(r) for r in c.execute(sql,a)]

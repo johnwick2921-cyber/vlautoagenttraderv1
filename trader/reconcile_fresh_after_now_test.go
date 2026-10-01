@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W1b FOLD-11 — a fill stamped AFTER the captured now is fresher than fresh

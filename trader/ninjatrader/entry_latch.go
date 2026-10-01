@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"nofx/logger"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/telemetry"
+	"vl/logger"
+	ntwire "vl/provider/ninjatrader"
+	"vl/telemetry"
 )
 
 // ── W-EXEC-TRUTH W0 (b) — ONE ENTRY LATCH ────────────────────────────────────

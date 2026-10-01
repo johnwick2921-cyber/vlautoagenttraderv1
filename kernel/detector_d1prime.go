@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── D1′ — THE CALIBRATED TOUCH DETECTOR (2026-09-03) ─────────────────────────
@@ -34,7 +34,7 @@ import (
 // confidence interval. The report's k=3 stands; k=3/range is computed as a
 // SENSITIVITY variant and presented beside it, never used for decisions.
 //
-// Reference: ~/nofx-analysis/detector-redesign/detectors.py detect_symmetric_v2.
+// Reference: ~/vl-analysis/detector-redesign/detectors.py detect_symmetric_v2.
 
 // TouchOutcome is one episode. Ambiguous outcomes are RECORDED and excluded
 // from the rate — never dropped (that is how a rate lies about its own base).

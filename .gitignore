@@ -8,10 +8,8 @@
 CLAUDE.md
 
 # 编译产物
-nofx-auto
 *.exe
 nofx
-nofx_test
 
 # Go 相关
 *.test
@@ -42,7 +40,6 @@ configbak.json
 
 # 决策日志
 decision_logs/
-nofx_test
 
 # Node.js
 web/node_modules
@@ -146,9 +143,12 @@ PR_DESCRIPTION.md
 .playwright-mcp/
 
 # Go build artifacts
-/nofx-server
+/vl
+/vl-bin*
+/vl-updater*
+/sandbox-seed
 
-# Compiled binaries (defensive: also matched by nofx pattern but explicit is better)
+# Compiled binaries (defensive; the vl form is anchored at /vl-bin* above)
 nofx-bin*
 /nq_smoke
 

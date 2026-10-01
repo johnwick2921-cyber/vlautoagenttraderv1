@@ -1,5 +1,5 @@
 # ADVERSARIAL VERIFICATION of peer claim: "armed_orders for 582/585 overwritten in place; brackets UNRECOVERABLE from DB, survive ONLY in the file log"
-# All DB reads: sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"
+# All DB reads: sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro"
 # armed_orders.created_at/updated_at are stored in UTC (CT = UTC-5).
 part,verdict,evidence
 mechanism_overwrite,CONFIRMED,"store/armed_orders.go:155 UpsertArm -> row.ID=existing.ID; db.Model(&existing).Updates({entry_px,stop_px,target_px,created_at,...}) = SAME ROW rewritten. Index is a guard, not the cause."
@@ -16,7 +16,7 @@ position_id,plan_session,plan_version,scenario,arm_entry,arm_stop,arm_target,pos
 582,LONDON,3,S2,29246.75,29273,29182,SHORT,29246.75,29182.00,129.5,TP
 585,NY,3,S1,29182,29220.75,29085,SHORT,29182.00,29220.75,-77.5,SL
 
-# ALL 09-01 arm log lines vs plans.doc (grep "⚔️ armed" /home/hoang/nofx/data/nofx_2026-09-01.log)
+# ALL 09-01 arm log lines vs plans.doc (grep "⚔️ armed" /home/hoang/vl/data/vl_2026-09-01.log)
 ct_time,session,scenario,leg,side,entry,stop,target,plans_version_holding_it,armed_orders_row_now
 04:55:29,LONDON,S2,1,short,29246.75,29273.00,29182.00,LONDON v3,"OVERWRITTEN (row 24 now v6)"
 06:05:58,LONDON,S2,1,long,29212.50,29170.00,29323.92,LONDON v4,"OVERWRITTEN (row 24 now v6)"

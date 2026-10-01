@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"math"
 	"net"
-	"nofx/researchsnapshot"
+	"vl/researchsnapshot"
 	"path/filepath"
 	"testing"
 	"time"

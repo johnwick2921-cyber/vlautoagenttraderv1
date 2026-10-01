@@ -44,10 +44,10 @@ import (
 	"sort"
 	"time"
 
-	_ "nofx/store/sqlitedriver"
+	_ "vl/store/sqlitedriver"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 func main() {

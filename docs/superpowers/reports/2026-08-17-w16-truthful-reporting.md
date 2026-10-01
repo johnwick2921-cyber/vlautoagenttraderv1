@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # ALL 7 SHIPPED — the dashboard now reports what the bot actually did
 
 W16, from the CTO final verification (`04475d66`). The gates were already right; the **reporting** lied. Seven items, one commit each, no change to any gate threshold or order-routing path. Exit bar green; goldens byte-identical.
@@ -22,7 +23,7 @@ W16, from the CTO final verification (`04475d66`). The gates were already right;
 
 ## Verification
 
-`go build` · `go vet` · `go test ./...` · **`-race` clean** on kernel/trader/store/api · `tsc` · `npm run build` · **goldens byte-identical** (`git diff 04475d66 -- kernel/testdata/` empty — R1 writes only a reporting surface and never touches the prompt). vitest **190/191**: the one failure (`RegistrationDisabled` "NoFx Logo") and the `e2e/gate.spec.ts` collection error are the same **pre-existing** pair, untouched.
+`go build` · `go vet` · `go test ./...` · **`-race` clean** on kernel/trader/store/api · `tsc` · `npm run build` · **goldens byte-identical** (`git diff 04475d66 -- kernel/testdata/` empty — R1 writes only a reporting surface and never touches the prompt). vitest **190/191**: the one failure (`RegistrationDisabled` "VL Logo") and the `e2e/gate.spec.ts` collection error are the same **pre-existing** pair, untouched.
 
 New tests: 11 Go (scenario ladder, anchor refusals, fixture day, lifecycle projection) · 2 Go (planner guard, incl. a 32-goroutine race asserting exactly one winner) · 2 Go (freeze lifecycle, exits never trapped) · 1 Go (digest two-trader race) · 3 Go (stale coverage) · 1 Go (decline KPI) · 8 vitest (decline branches, gate-blocks panel).
 
@@ -39,11 +40,11 @@ New tests: 11 Go (scenario ladder, anchor refusals, fixture day, lifecycle proje
 ## Deploy
 
 ```bash
-cd /home/hoang/nofx && git pull
-go build -o nofx-bin . && echo BUILD OK
+cd /home/hoang/vl && git pull
+go build -o vl-bin . && echo BUILD OK
 git rev-parse HEAD > deploy/RELEASE     # MANDATORY — else the boot assertion refuses trading
-sudo systemctl restart nofx
-journalctl -u nofx --since '2 min ago' | grep 'BOOT INTEGRITY'   # expected must equal rev
+sudo systemctl restart vl
+journalctl -u vl --since '2 min ago' | grep 'BOOT INTEGRITY'   # expected must equal rev
 cd web && npm run build && cd ..        # then hard-reload the browser
 ```
 

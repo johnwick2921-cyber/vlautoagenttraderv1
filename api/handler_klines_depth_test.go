@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // F1.1 (2026-09-14) — a thin coarse-TF ring gets older CLOSED buckets

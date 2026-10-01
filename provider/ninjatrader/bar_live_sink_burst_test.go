@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // DEFAULTS-SANE addendum (2026-09-24): the 22:00 CT hour-open storm dropped 101

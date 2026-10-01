@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/manager"
+	"vl/manager"
 )
 
 // wantGlueVerifier is the verifier the knob-ON server must hold and name.

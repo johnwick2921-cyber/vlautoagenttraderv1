@@ -1,5 +1,5 @@
 import sqlite3, datetime as dt, math
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True); c=con.cursor()
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True); c=con.cursor()
 era=int(dt.datetime(2026,8,15,5,0,tzinfo=dt.timezone.utc).timestamp()*1000)
 print("era cutoff (2026-08-15 00:00 CT) epoch-ms =",era)
 rows=c.execute("SELECT id,source,plan_id,pnl_corrected,entry_time FROM trader_positions").fetchall()

@@ -3,7 +3,7 @@ package kernel
 import (
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W10 — REALIZED-VOL BASELINE from stored 5m bars (the audit's dead wire: the

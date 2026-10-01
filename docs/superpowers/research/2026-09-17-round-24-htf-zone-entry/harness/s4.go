@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // s1HTFFreshTF is S2's htfFreshTFSet verbatim (kernel/levels_fresh_by_tf.go).

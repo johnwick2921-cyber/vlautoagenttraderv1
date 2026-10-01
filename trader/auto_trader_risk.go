@@ -2,9 +2,9 @@ package trader
 
 import (
 	"fmt"
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
 	"strings"
 	"time"
 )

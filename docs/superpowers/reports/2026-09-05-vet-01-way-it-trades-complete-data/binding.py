@@ -1,5 +1,5 @@
 import sqlite3,json,datetime
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.execute('PRAGMA query_only=ON');c.row_factory=sqlite3.Row
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.execute('PRAGMA query_only=ON');c.row_factory=sqlite3.Row
 allow={'sessions','sessions_enabled','plan_mode','min_risk_reward_ratio','min_sl_atr_mult','eod_flat_offset_min','daily_loss_enabled','daily_loss_limit','max_contracts','condition_status'}
 with open('binding.txt','w') as f:
  f.write('mode=ro; query_only=ON; captured '+datetime.datetime.now().isoformat()+' host local time\n')

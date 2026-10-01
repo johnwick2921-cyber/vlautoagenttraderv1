@@ -20,15 +20,15 @@ import (
 
 	"github.com/google/uuid"
 
-	"nofx/config"
-	"nofx/discipline"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/provider/databento"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/telemetry"
-	"nofx/trader/types"
+	"vl/config"
+	"vl/discipline"
+	"vl/logger"
+	"vl/market"
+	"vl/provider/databento"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
+	"vl/trader/types"
 ) // reflect used in GetBalance to notify parent AutoTrader
 
 // TCPTrader satisfies trader/types.Trader using the TCP bridge.

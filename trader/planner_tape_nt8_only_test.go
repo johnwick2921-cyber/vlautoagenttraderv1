@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // ── PLANNER TAPE IS NT8-ONLY (CTO ruling under the owner's delegation, 2026-09-16) ──

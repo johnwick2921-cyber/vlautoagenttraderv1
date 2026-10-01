@@ -1,6 +1,6 @@
 """Tape checks: penetration distribution, RTH bucket profile. READ-ONLY."""
 import sqlite3,math,datetime
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True); c.row_factory=sqlite3.Row
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True); c.row_factory=sqlite3.Row
 c.execute('PRAGMA query_only=ON')
 def pct(a,ps=(.5,.8,.9,.95)):
     a=sorted(a); out={}

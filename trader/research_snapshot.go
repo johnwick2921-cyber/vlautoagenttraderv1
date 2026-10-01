@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"nofx/kernel"
-	"nofx/levelidentity"
-	"nofx/researchsnapshot"
-	"nofx/store"
+	"vl/kernel"
+	"vl/levelidentity"
+	"vl/researchsnapshot"
+	"vl/store"
 	"time"
 )
 

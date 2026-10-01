@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"nofx/store/sqlitedriver"
+	"vl/store/sqlitedriver"
 )
 
 // GormDB is the global GORM database connection

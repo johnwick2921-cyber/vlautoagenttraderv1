@@ -1,18 +1,19 @@
-# MONITORING — nofx NQ Futures Bot
+names rewritten to vl on 2026-09-30 (VL rename)
+# MONITORING — vl NQ Futures Bot
 
 What to watch, where it lives, and what should fire an alert. See plan doc Task 32.
 
 ## 1. Key dashboards (Grafana / Prometheus)
 
-> The Prometheus metrics referenced below are part of Plan 4 and **not yet shipped**. Treat this section as the target wiring once `nofx_*` metrics are exposed.
+> The Prometheus metrics referenced below are part of Plan 4 and **not yet shipped**. Treat this section as the target wiring once `vl_*` metrics are exposed.
 
-- **Decision rate** — `rate(nofx_decisions_total[5m])` — expected ~1/scan_interval (default 60s). Drop to zero = engine stalled.
-- **Fill latency** — `histogram_quantile(0.95, nofx_fill_latency_seconds)` — alert if **p95 > 30s**. CSV bridge with NT polling every 2s should never exceed ~5s under normal load.
-- **Databento errors** — `rate(nofx_databento_errors_total[10m])` — alert if **> 0.1/sec** sustained. Burst spikes (auth blip) are tolerable.
+- **Decision rate** — `rate(vl_decisions_total[5m])` — expected ~1/scan_interval (default 60s). Drop to zero = engine stalled.
+- **Fill latency** — `histogram_quantile(0.95, vl_fill_latency_seconds)` — alert if **p95 > 30s**. CSV bridge with NT polling every 2s should never exceed ~5s under normal load.
+- **Databento errors** — `rate(vl_databento_errors_total[10m])` — alert if **> 0.1/sec** sustained. Burst spikes (auth blip) are tolerable.
 - **Daily PnL** — read from DB; alert if `SUM(realized_pnl) < -$500` for today. Matches `RiskMaxDailyLossUSD` default ($500). See §2 below.
 - **CME session health** — alert if a trade attempt is logged during the daily 16:00–17:00 CT maintenance break. Source-of-truth: `kernel.IsCMEOpen(time.Now())` returns false during that window.
 
-> TODO when Plan 4 ships: register the four `nofx_*` Prometheus collectors and expose `/metrics`.
+> TODO when Plan 4 ships: register the four `vl_*` Prometheus collectors and expose `/metrics`.
 
 ## 2. Alert thresholds matched to Plan 3 risk limits
 
@@ -34,10 +35,10 @@ Until Plan 4 ships, lean on `tail` + `curl` + `sqlite3`:
 
 ```bash
 # General error / warning stream
-tail -f /tmp/nofx.log | grep -E "ERROR|WARN"
+tail -f /tmp/vl.log | grep -E "ERROR|WARN"
 
 # Plan 3 risk + drift gate trips specifically
-tail -f /tmp/nofx.log | grep "Plan 3 T2[12]"
+tail -f /tmp/vl.log | grep "Plan 3 T2[12]"
 
 # TODO when Plan 4 ships: live risk status snapshot
 curl localhost:8080/api/risk/status
@@ -51,7 +52,7 @@ The manual SQL above should track the alert threshold — if it returns a number
 
 ## 4. Log patterns to watch for
 
-These are the most operationally important Plan 3 log lines. Each is grep-able from `/tmp/nofx.log`.
+These are the most operationally important Plan 3 log lines. Each is grep-able from `/tmp/vl.log`.
 
 - `🔴 Plan 3 T21 FORCE-FLAT invoked` — kill switch fired (daily-loss limit hit). Audit before resuming.
 - `⚠️ Plan 3 T21 risk gate tripped` — entry blocked by a non-fatal limit (concurrent / notional / per-order). Existing positions held.

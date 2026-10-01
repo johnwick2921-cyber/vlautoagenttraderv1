@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // ── the transition bodies (brief §3.3, all accepted defaults) ──────────────
@@ -549,7 +549,7 @@ func (w *Worker) stepNT8(ctx context.Context, j updaterjob.Job) stepResult {
 		if j.NT8 != nil && j.NT8.Reason != "" {
 			why = j.NT8.Reason
 		}
-		res.blocker = clipText("attended AddOn F5 required (" + why + "): compile the release's AddOn in NT8 (copy → F5 → full NT8 restart), then run: nofx-updater resume " + j.JobID)
+		res.blocker = clipText("attended AddOn F5 required (" + why + "): compile the release's AddOn in NT8 (copy → F5 → full NT8 restart), then run: vl-updater resume " + j.JobID)
 	}
 	return res
 }
@@ -603,8 +603,8 @@ func (w *Worker) stepActivate(ctx context.Context, j updaterjob.Job) stepResult 
 	if err == nil {
 		res.set = func(k *updaterjob.Job) {
 			k.IdentityAfter = &next
-			// the new process names its log by ITS boot date
-			if p := w.predictedLog(w.host.Now()); p != k.LogPath {
+			// the new process names its log by ITS boot date and ITS binary
+			if p := w.predictedLog(w.host.Now(), j.Release.Binary); p != k.LogPath {
 				zero := int64(0)
 				k.LogPath, k.LogOffset = p, &zero
 			}
@@ -725,7 +725,11 @@ func (w *Worker) stepRollback(ctx context.Context, j updaterjob.Job) stepResult 
 	if j.Attempts > 1 || j.IdentityRollback == nil {
 		id, ok := w.currentIdentityRetry(ctx)
 		since := w.host.Now().Truncate(time.Second)
-		path := w.predictedLog(since)
+		bin := "nofx-bin" // R5 removes: the snapshot's own binary
+		if j.Snapshot != nil {
+			bin = j.Snapshot.Binary
+		}
+		path := w.predictedLog(since, bin)
 		off := fileSize(path)
 		k, err := w.update(j.JobID, j.State, j.Phase, func(k *updaterjob.Job) error {
 			if ok {
@@ -758,13 +762,13 @@ func (w *Worker) stepRollback(ctx context.Context, j updaterjob.Job) stepResult 
 	}
 	// The boot log is re-resolved AFTER the kill (#206 review fold,
 	// runner.go:367): the path was predicted from the pre-kill instant, and a
-	// restart that crosses local midnight makes the bot log to nofx_<D+1>.log
+	// restart that crosses local midnight makes the bot log to vl_<D+1>.log
 	// — watching and scanning only the D file turned a successful rollback
 	// into recovery_needed. A new file is scanned whole (offset 0): it holds
 	// no earlier boot of today, so a stale OK line cannot satisfy it. The
 	// activate path re-predicts the same way (stepActivate).
 	watchLogPath, watchLogOff := j.RollbackLogPath, *j.RollbackLogOffset
-	if p := w.predictedLog(w.host.Now()); p != watchLogPath {
+	if p := w.predictedLog(w.host.Now(), j.Snapshot.Binary); p != watchLogPath {
 		zero := int64(0)
 		watchLogPath, watchLogOff = p, zero
 	}

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VOID PARITY — one resolver for the void scope
 
-Branch `fix/void-parity-inputs` · worktree `/home/hoang/nofx-voidparity` ·
+Branch `fix/void-parity-inputs` · worktree `/home/hoang/vl-voidparity` ·
 checklist class **51** (highest occupied at merge: 50).
 Status: **BUILT, GREEN, STAGED — awaiting owner GO. Not deployed.**
 
@@ -145,7 +146,7 @@ clean, **vitest 38 files / 298 tests**.
 Additive plus two signature changes; no data migration beyond an AutoMigrate that
 creates `planner_read_facts` (dropping the table is safe — nothing reads it on a
 hot path). `git revert` the wave commits, rebuild, restart.
-Binary rollback: `nofx-bin.prev.boot`.
+Binary rollback: `vl-bin.prev.boot`.
 
 ## CHECKLIST
 

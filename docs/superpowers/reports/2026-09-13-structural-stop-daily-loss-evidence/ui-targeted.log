@@ -1,9 +1,9 @@
 
-> nofx-web@1.0.0 test
+> vl-web@1.0.0 test
 > vitest run --run src/components/strategy/RiskControlEditor.test.tsx
 
 
- RUN  v4.1.11 /tmp/nofx-structural-daily-loss-20260913/web
+ RUN  v4.1.11 /tmp/vl-structural-daily-loss-20260913/web
 
 
  Test Files  1 passed (1)

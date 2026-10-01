@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"nofx/provider/coinank"
-	"nofx/provider/coinank/coinank_enum"
+	"vl/provider/coinank"
+	"vl/provider/coinank/coinank_enum"
 	"strconv"
 	"time"
 )

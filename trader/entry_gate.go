@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
-	"nofx/telemetry"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
+	"vl/telemetry"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── CLASS 48 — ONE ENTRY GATE FOR BOTH ORDER PATHS ──────────────────────────

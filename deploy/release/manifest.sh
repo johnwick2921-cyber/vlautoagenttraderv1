@@ -43,7 +43,7 @@ arts="$(cd "$STAGE" && find . -type f -printf '%P\n' | LC_ALL=C sort | while rea
 done | paste -sd, -)" || exit 1
 
 # Read from the AddOn source rather than restated here (L7: READ, never literal).
-ADDON_BUILD="$(grep -hoE 'VL_BUILD_ID[^"]*"[^"]+"' "$STAGE"/ninjascript/*.cs 2>/dev/null | head -1 | sed 's/.*"\(.*\)"/\1/')"
+ADDON_BUILD="$(grep -hoE 'VL_BUILD_ID[^"]*"[^"]+"' "$STAGE"/ninjascript/VLTraderTCPClient.cs 2>/dev/null | head -1 | sed 's/.*"\(.*\)"/\1/')"
 [ -n "$ADDON_BUILD" ] || ADDON_BUILD="n/a"
 # THE PROTOCOL VERSION COMES FROM THE CODE, NOT THE DOCUMENTATION.
 # This used to grep the first `protocol_version` out of

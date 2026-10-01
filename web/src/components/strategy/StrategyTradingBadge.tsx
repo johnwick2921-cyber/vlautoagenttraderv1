@@ -17,7 +17,7 @@ export function StrategyTradingBadge({ isActive, traderNames, tr }: Props) {
       {traderNames !== undefined && (
         <span
           data-testid="strategy-trading-badge"
-          className="px-1.5 py-0.5 text-[10px] rounded bg-nofx-gold/15 text-nofx-gold"
+          className="px-1.5 py-0.5 text-[10px] rounded bg-vl-neo-gold/15 text-vl-neo-gold"
           title={
             traderNames.length > 0
               ? tr('tradingBoundTo', { names: traderNames.join(', ') })
@@ -33,8 +33,8 @@ export function StrategyTradingBadge({ isActive, traderNames, tr }: Props) {
         data-testid="strategy-display-badge"
         className={`px-1.5 py-0.5 text-[10px] rounded ${
           isActive
-            ? 'bg-nofx-success/15 text-nofx-success'
-            : 'bg-nofx-bg-lighter text-nofx-text-muted'
+            ? 'bg-vl-neo-success/15 text-vl-neo-success'
+            : 'bg-vl-neo-bg-lighter text-vl-neo-text-muted'
         }`}
       >
         {isActive ? tr('displayActive') : tr('displayInactive')}

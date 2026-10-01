@@ -7,5 +7,5 @@
 KILLED — a pin caught it.
      --- FAIL: TestStructuralStopF4RetirementWriteFailureCannotReachWire (0.54s)
      FAIL
-     FAIL	nofx/trader	0.550s
+     FAIL	vl/trader	0.550s
      FAIL

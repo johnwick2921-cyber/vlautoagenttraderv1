@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // W-ONE-BUTTON M2, M-2 — the TCPTrader's half of a queue drop: only ITS OWN

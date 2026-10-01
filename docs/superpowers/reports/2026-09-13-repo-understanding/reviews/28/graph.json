@@ -1499,14 +1499,14 @@
       },
       {
         "source": "function:web/src/components/trader/TelegramConfigModal.tsx:TelegramConfigModal",
-        "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "target": "function:web/src/components/ui/select.tsx:VLSelect",
         "type": "contains",
         "direction": "forward",
         "weight": 1.0
       },
       {
         "source": "function:web/src/components/trader/PositionHistory.tsx:PositionHistory",
-        "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "target": "function:web/src/components/ui/select.tsx:VLSelect",
         "type": "contains",
         "direction": "forward",
         "weight": 1.0

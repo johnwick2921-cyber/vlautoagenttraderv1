@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLAUDE-canon — the operating rules that must SURVIVE, in a file a wave can reach
 
-**Why this file exists.** `~/nofx/CLAUDE.md` is **untracked**. Every rule in it is
+**Why this file exists.** `~/vl/CLAUDE.md` is **untracked**. Every rule in it is
 invisible to git: no wave can correct it on a branch, no review can see it drift, and
 no test can assert it still matches the code. On 2026-09-10 that cost real safety —
 the lock keeper wave (`417599a3`, checklist classes 101–104) made hand-beating a
@@ -16,15 +17,17 @@ construction** — it can be changed by a wave; the other cannot.
 ## MAIN-TREE LOCK LAW — the corrected verbs
 
 ```
-deploy/nofx-lock.sh acquire <session> "<task>" [minutes]   # atomic; REFUSES if held; STARTS THE KEEPER
-deploy/nofx-lock.sh heartbeat <session>                    # acquire starts the keeper; do NOT hand-beat — a second writer into the lock dir is the class-102 failure the keeper closed
-deploy/nofx-lock.sh with-heartbeat <session> -- <cmd>      # wrap long steps (builds, suites)
-deploy/nofx-lock.sh status                                 # human-readable: holder, task, heartbeat age, expiry, auto-beat on/ENDED/off
-deploy/nofx-lock.sh check                                  # CHECK rc: 0 free · 1 held · 2 stale · 3 incomplete · 4 abandoned-incomplete
-deploy/nofx-lock.sh reclaim <you> <stale> "<corroboration>"  # succession, ON THE RECORD; REFUSED while the heartbeat is fresh; returns RECLAIM rc 3 (inherited, not taken)
-deploy/nofx-lock.sh release <session>                      # only the holder may release; ends the keeper group, WAITS, and FAILS (rc 1) if the directory survives
-deploy/nofx-lock.sh clear-incomplete                       # removes a lock that names NOBODY; refuses one with meta, and one younger than 30s
+deploy/vl-lock.sh acquire <session> "<task>" [minutes]   # atomic; REFUSES if held; STARTS THE KEEPER
+deploy/vl-lock.sh heartbeat <session>                    # acquire starts the keeper; do NOT hand-beat — a second writer into the lock dir is the class-102 failure the keeper closed
+deploy/vl-lock.sh with-heartbeat <session> -- <cmd>      # wrap long steps (builds, suites)
+deploy/vl-lock.sh status                                 # human-readable: holder, task, heartbeat age, expiry, auto-beat on/ENDED/off
+deploy/vl-lock.sh check                                  # CHECK rc: 0 free · 1 held · 2 stale · 3 incomplete · 4 abandoned-incomplete
+deploy/vl-lock.sh reclaim <you> <stale> "<corroboration>"  # succession, ON THE RECORD; REFUSED while the heartbeat is fresh; returns RECLAIM rc 3 (inherited, not taken)
+deploy/vl-lock.sh release <session>                      # only the holder may release; ends the keeper group, WAITS, and FAILS (rc 1) if the directory survives
+deploy/vl-lock.sh clear-incomplete                       # removes a lock that names NOBODY; refuses one with meta, and one younger than 30s
 ```
+
+Run the lock tool ONLY from the MAIN TREE: `<main tree>/deploy/vl-lock.sh`, never a copy in your worktree. Until the R1b merge the main tree has only its old-name twin (`<main tree>/deploy/<old>-lock.sh`); after it, either tool works. Until R5 both take the SAME lock home (A5-S6 P3-2).
 
 **RC CODES ARE PER-VERB, AND TWO OF THEM COLLIDE ON 3.** `check` rc 3 means *an
 acquire is in flight — never take this over*; `reclaim` rc 3 means *you have
@@ -62,7 +65,7 @@ every reader used to treat that gap as a complete lock whose fields were empty.
   expiry a beat is REFUSED. A lock acquired *before* this landed carries no
   `expiry_epoch` and stays unbounded, deliberately: retroactively bounding a live lock
   could refuse a holder's next heartbeat mid-cutover.
-- **DO NOT run your own beater.** A `while true; do nofx-lock.sh heartbeat …; sleep N; done`
+- **DO NOT run your own beater.** A `while true; do vl-lock.sh heartbeat …; sleep N; done`
   alongside the keeper makes you a second writer into one lock dir. That is class 88.
 
 **The trap that nearly shipped inside the fix** (worth reading before you write any
@@ -86,8 +89,8 @@ calling `2000` "the cache cap" when the cap is `2500`, and `CLAUDE.md:205` instr
 every lane to hand-beat after hand-beating became unsafe. Both were prose describing
 code, in a place the code's own tests could not see.
 
-**Mirrored 2026-09-10 by lane `claude-canon-2bdef526/nofx-07[aa8e26]`, on owner order,
-from `~/nofx/CLAUDE.md:205` — quoted before and after in the wave's message. Detail:
+**Mirrored 2026-09-10 by lane `claude-canon-2bdef526/vl-07[aa8e26]`, on owner order,
+from `~/vl/CLAUDE.md:205` — quoted before and after in the wave's message. Detail:
 `docs/superpowers/reports/2026-09-10-lock-keeper-on-acquire.md`, checklist classes
 101–104.**
 
@@ -199,16 +202,17 @@ the rollback is safe in every respect.
 
 **Restart identity is `(MainPID, /proc/<pid>/stat` field 22 starttime`)`,
 never wall clock** — M1 measured two start times disagreeing by 151 s after a
-WSL clock step. Never `pgrep -f nofx-bin`: that also matches
-`go version -m nofx-bin`, so it can return the pid of a tool inspecting the
+WSL clock step. Never `pgrep -f vl-bin`: that also matches
+`go version -m vl-bin`, so it can return the pid of a tool inspecting the
 binary instead of the server running it. Ask systemd for MainPID.
 
-**The boot proof lives in `data/nofx_<date>.log`, not journald** (journald keeps
+**The boot proof lives in `data/vl_<date>.log`, not journald** (journald keeps
+(a box not yet through the R2 boot still writes the old-prefix log)
 about 4 h for uid 1000). The watchdog wants the `BOOT INTEGRITY OK — rev <sha>`
 line there, `/api/health` reporting the new revision, and the served bundle
 carrying it.
 
-**Only release-owned entries switch**: `nofx-bin`, `web/dist`,
+**Only release-owned entries switch**: `vl-bin`, `web/dist`,
 `deploy/RELEASE`, `calendar_static_t1.json`. The WORKING DIRECTORY is never
 symlinked, or `data/` and `.env` resolve inside a release and are lost at the
 next switch.

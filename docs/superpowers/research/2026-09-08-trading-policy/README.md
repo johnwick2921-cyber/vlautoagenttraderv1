@@ -1,8 +1,9 @@
-# NOFX • Trading-policy research
+names rewritten to vl on 2026-09-30 (VL rename)
+# VL • Trading-policy research
 
 Targets, confirmation, level ranking and plan staleness
 
-Prepared for the NOFX owner • September 8, 2026 • Research and proposals only
+Prepared for the VL owner • September 8, 2026 • Research and proposals only
 
 Four specialist research lanes, reconciled through independent source checks and frozen-audit arithmetic. The analytical standard is professional intraday index-futures preparation. No personal trading track record is claimed.
 
@@ -23,7 +24,7 @@ The distinction that matters throughout is between a measurement being correct, 
 
 **Reading route.** Section 02 corrects the audit premises. Sections 03–06 answer the four questions. Sections 07–09 connect the policies, specify the proposed experiments and state the decision thresholds. Sections 10–11 document scope, verification, limitations and source access.
 
-## 02 • What the frozen NOFX evidence actually says
+## 02 • What the frozen VL evidence actually says
 
 This is a research extension of the [frozen Planner audit](https://github.com/johnwick2921-cyber/nofx/blob/6095ca58fe5901ba398be374e4f9d3488d0bed6b/docs/superpowers/reports/2026-09-07-planner-preparation-audit/README.md), not a fresh audit of whatever version is running today. Source revision: **5457ac5accd97c3519bf6d16ead147a0db2ab0d0**. Published audit revision: **6095ca58fe5901ba398be374e4f9d3488d0bed6b**. Planner-history cutoff: **September 7, 2026, 22:17 Chicago**.
 
@@ -64,13 +65,13 @@ The frozen audit also corroborated session extrema against retained bars. A chan
 
 **Answer:** the first opposing structure should be identified as a decision location, but the evidence does not justify automatically making it the mandatory full exit. A first target below 1R can be viable with a sufficiently favorable outcome distribution and costs; a final target above 2R can be unattractive if rarely reached. A professional preparation document must explain the path and the action, not merely display an attractive ratio.
 
-This is a recommendation about the clarity of the plan, not a validated NOFX trading rule. It must remain possible to decline a setup, wait for a different entry, or retain a runner only when the chosen policy makes that behavior explicit.
+This is a recommendation about the clarity of the plan, not a validated VL trading rule. It must remain possible to decline a setup, wait for a different entry, or retain a runner only when the chosen policy makes that behavior explicit.
 
 ### What the target literature contributes
 
 **A useful matched counterexample, with important limits.** Wang, Wu and Chung study Taiwan index futures using minute data from January 4, 2010 to March 25, 2015, covering 1,291 days. Tables 2 and 4 report 1,180 trades per arm. With a 30-point stop unchanged, adding a 60-point target reduces average gross profit from **5.09 to 3.69 points**, raises win rate from **44.58% to 46.10%**, and reduces maximum drawdown from **659 to 581 points**. The conclusion explicitly excludes transaction costs. Entry detail, intrabar ordering and a held-out replication are insufficiently established. A paired-return confidence interval is unavailable here. This is evidence of an objective-dependent trade-off, not a prescription for NQ. [Wang, Wu & Chung, 2015](https://www.researchgate.net/publication/304299040_Empirical_Evaluations_on_Momentum_Effects_of_Taiwan_Index_Futures_Market)
 
-**Other-index evidence is mixed.** Yu and Rentzler examine S&P 500 futures day-trading rules over September 1988–June 2003. Accessible abstract and indexed excerpts suggest that some stop-loss rules assist trend-following, while profit-lock conclusions are less compelling and depend on the setup. Full methods and costs were inaccessible in this review, so this paper cannot select NOFX parameters. [Yu & Rentzler, 2004](https://joim.com/issue/2004q1/)
+**Other-index evidence is mixed.** Yu and Rentzler examine S&P 500 futures day-trading rules over September 1988–June 2003. Accessible abstract and indexed excerpts suggest that some stop-loss rules assist trend-following, while profit-lock conclusions are less compelling and depend on the setup. Full methods and costs were inaccessible in this review, so this paper cannot select VL parameters. [Yu & Rentzler, 2004](https://joim.com/issue/2004q1/)
 
 **Theory is conditional.** Leung and Zhang formulate optimal entry and liquidation with a trailing stop under diffusion-model assumptions, costs and discounting. Their result can include an earlier sell limit; another case permits continuing until the trailing stop. This establishes that the answer depends on the process and objective, not that a particular ATR multiplier or structural target is optimal in index futures. No empirical NQ sample is involved. [Leung & Zhang, theorem and qualification](https://arxiv.org/pdf/1701.03960v2)
 
@@ -104,7 +105,7 @@ Let a trade have only two gross outcomes: +bR with probability p, or −1R other
 | 2R | 33.33% | 34.67% |
 | 3R | 25.00% | 26.00% |
 
-These are checked mathematical examples, not estimated NOFX win rates or quoted transaction fees. Multiple targets, time exits, partials, gaps and variable losses require the full outcome distribution instead.
+These are checked mathematical examples, not estimated VL win rates or quoted transaction fees. Multiple targets, time exits, partials, gaps and variable losses require the full outcome distribution instead.
 
 At a first target of +0.5R, suppose continuing can end only at +2R or −1R. With no incremental costs and an expected-P&L objective, continuing beats closing at +0.5R only when the conditional probability of +2R exceeds 50%. That conditional probability is unknown here. An attractive initial R:R ratio cannot answer the decision after the first obstacle.
 
@@ -170,13 +171,13 @@ Reject a more elaborate confirmation if it fails to improve net value per initia
 
 ## 05 • Level ranking: does confluence predict reaction?
 
-**Answer:** published research gives reasons to study some level features, but it does not calibrate NOFX's grading ladder. Discovering a useful reference, predicting that price will reach it, predicting a reaction after touch, and ranking executable opportunities are separate tasks.
+**Answer:** published research gives reasons to study some level features, but it does not calibrate VL's grading ladder. Discovering a useful reference, predicting that price will reach it, predicting a reaction after touch, and ranking executable opportunities are separate tasks.
 
 The existing weights are **uncalibrated heuristics**, not proven errors. A multiplier of 1.2 does not mean 20% more chance of a reaction. A grade of A is not a probability unless calibration demonstrates that interpretation.
 
 ### Evidence that supports and challenges ranking
 
-**The strongest discovery-versus-ranking distinction:** Osler studies six firms' published FX levels with minute indicative quotes from 1996–1998 and artificial-level comparators. A bounce is being on the appropriate side fifteen minutes after an encounter, not uninterrupted survival or a costed trade. Published levels have information, but agreement across firms adds little consistent predictive power, and available strength categories do not rank bounces reliably. Some predictive information persists five business days. This is not a test of NOFX's distinct-family confluence or modern NQ. [Osler, definitions and Tables 10–12](https://www.newyorkfed.org/medialibrary/media/research/epr/00v06n2/0007osle.pdf)
+**The strongest discovery-versus-ranking distinction:** Osler studies six firms' published FX levels with minute indicative quotes from 1996–1998 and artificial-level comparators. A bounce is being on the appropriate side fifteen minutes after an encounter, not uninterrupted survival or a costed trade. Published levels have information, but agreement across firms adds little consistent predictive power, and available strength categories do not rank bounces reliably. Some predictive information persists five business days. This is not a test of VL's distinct-family confluence or modern NQ. [Osler, definitions and Tables 10–12](https://www.newyorkfed.org/medialibrary/media/research/epr/00v06n2/0007osle.pdf)
 
 **A testable memory hypothesis, with caveats:** Chung and Bellotti examine 2018 minute EURUSD, Lloyds and BRENT series using rolling-extrema zones, shuffled returns and simulations. More previous bounces often accompany higher bounce probability; elapsed-time decay is not uniform, with no significant decay coefficient for Lloyds in the reported groups. Longer discovery windows do not uniformly improve results. Zone width uses whole-series average price increments, which requires a past-only replacement for prospective testing. There is no costed held-out NQ comparison; BRENT construction is insufficiently specified for futures equivalence. [Chung & Bellotti, Eq. 1 and sections 3–4](https://arxiv.org/html/2101.07410v1)
 
@@ -190,7 +191,7 @@ Chan and coauthors report neural-model improvements from support/resistance dist
 
 The 2025 WIG20 volume-profile paper describes 163 recorded patterns, including overlapping consolidation/rebound categories and untouched cases. Its roughly 90% reaction headline is not an independent-touch success rate, has no competing-level comparator and does not establish POC superiority. Exact tradable instrument and volume construction are insufficiently clear for futures transfer. [Jóźwicki & Trippner, 2025](https://czasopisma.uni.lodz.pl/fipf/article/download/28410/27868/72359)
 
-### What the NOFX score actually commits to
+### What the VL score actually commits to
 
 The frozen line formula is: **kind weight × freshness × (1 + 0.20 × capped distinct-family confluence) × HTF multiplier**. Confluence is capped at three; HTF multiplier is 1.2. This already groups families, so “just count distinct families” is not a newly discovered fix. The unresolved questions include family correlation, overlap distance, directional relevance and whether the increments predict anything. [Frozen score and family definitions](https://github.com/johnwick2921-cyber/nofx/blob/5457ac5accd97c3519bf6d16ead147a0db2ab0d0/kernel/levels_score.go#L87)
 
@@ -235,7 +236,7 @@ Kurov and coauthors examine E-mini S&P 500 and Treasury futures around macro rel
 
 **State-triggered interruption has a real operational precedent.** The CFTC/SEC May 6 report documents automated pauses after rapid price changes or data-integrity concerns, followed by reassessment; widespread withdrawals also reduced liquidity. This exceptional event supports the existence of state-dependent controls, not a universal optimal pause or evidence that constantly reactive trading is superior. [CFTC/SEC report, summary and data-integrity discussion](https://www.sec.gov/news/studies/2010/marketevents-report.pdf)
 
-CME's educational worksheet frames preparation through objectives, instrument, risk, entry/exit criteria and review. It does not prescribe NOFX score weights, a minimum target multiple or a five-minute confirmation rule. [CME futures trade-plan worksheet](https://www.cmegroup.com/education/courses/files/download-trade-plan.pdf)
+CME's educational worksheet frames preparation through objectives, instrument, risk, entry/exit criteria and review. It does not prescribe VL score weights, a minimum target multiple or a five-minute confirmation rule. [CME futures trade-plan worksheet](https://www.cmegroup.com/education/courses/files/download-trade-plan.pdf)
 
 ### Distinguish four clocks
 
@@ -275,7 +276,7 @@ The history must connect input → attempts/repairs → accepted version → con
 
 ## 07 • The four choices form one trading decision
 
-The following flow is a proposed review contract. It is not new behavior installed in NOFX.
+The following flow is a proposed review contract. It is not new behavior installed in VL.
 
 **Known-at-the-time data → complete reference map → setup and market state → confirmation event → fresh permission → feasible entry/stop/obstacle/target → management → outcome and review.**
 
@@ -368,7 +369,7 @@ If later approved, progress from historical replay to prospective shadow evaluat
 | 4 | Compare simple target and confirmation alternatives. | Untouched-session net effect and tail-risk evidence under feasible entries and equal risk. |
 | 5 | Test ranking and revalidation against simple baselines. | Incremental benefit survives width/distance/episode controls and includes latency, missed trades and churn. |
 
-**Do not prescribe now:** a mandatory 1R first target; one universal 5m close rule; a replacement confluence coefficient; “fresh is always better”; a five-minute plan TTL; automatic ML ranking; or removal of protective stops. The reviewed evidence does not establish these as improvements for NOFX.
+**Do not prescribe now:** a mandatory 1R first target; one universal 5m close rule; a replacement confluence coefficient; “fresh is always better”; a five-minute plan TTL; automatic ML ranking; or removal of protective stops. The reviewed evidence does not establish these as improvements for VL.
 
 **Retain as explicit design aims:** causal information, consistent event semantics, meaningful structural invalidation, complete obstacle context, feasible contract sizing and traceable plan history. These make the policy evaluable. They do not guarantee an edge.
 
@@ -384,7 +385,7 @@ The search covered original empirical finance and microstructure studies, optima
 
 - **No new profitability claim.** The audit sample is preparation history, not a representative realized-P&L sample. No new NQ/MNQ policy comparison was run.
 - **Frozen system evidence.** The report concerns a pinned historical snapshot. It does not assert that earlier defects remain in a later update.
-- **External validity remains limited.** FX, equities, Taiwan futures, daily bars and diffusion theory illuminate mechanisms or methods; none automatically validates NOFX intraday settings.
+- **External validity remains limited.** FX, equities, Taiwan futures, daily bars and diffusion theory illuminate mechanisms or methods; none automatically validates VL intraday settings.
 - **Access limits are visible.** Some sources were abstract-only; two ranking full texts read by the researcher could not be re-opened by the coordinator. Their conclusions are lower-weight and not the sole basis of any recommendation.
 - **Recent and commercial evidence receives less weight.** Vendor pages lack verified independent replication. Mesfin's 2026 MNQ preprint concerns a broader OHLCV signal search; it is not used here to establish an exit-only winner or an impossibility result. [Mesfin preprint record](https://arxiv.org/abs/2605.04004)
 - **Professional practice is not efficacy evidence.** Desk accounts describe actual processes but do not supply controlled estimates of the best target, confirmation or refresh policy.
@@ -402,9 +403,9 @@ A source supports only the claim beside it. Links to the frozen audit use immuta
 
 All external sources below were accessed on September 8, 2026. Version dates distinguish working papers from later journal publications. “Full text” describes the version read; it does not imply that the underlying dataset or code was independently replicated.
 
-### Frozen NOFX Planner audit
+### Frozen VL Planner audit
 
-NOFX audit team. September 7–8, 2026. [Open Frozen NOFX Planner audit](https://github.com/johnwick2921-cyber/nofx/blob/6095ca58fe5901ba398be374e4f9d3488d0bed6b/docs/superpowers/reports/2026-09-07-planner-preparation-audit/README.md).
+VL audit team. September 7–8, 2026. [Open Frozen VL Planner audit](https://github.com/johnwick2921-cyber/nofx/blob/6095ca58fe5901ba398be374e4f9d3488d0bed6b/docs/superpowers/reports/2026-09-07-planner-preparation-audit/README.md).
 
 Access and scope: Full local report, history, CSV, metrics and probes inspected; verifier rerun. Snapshot, not current runtime.
 

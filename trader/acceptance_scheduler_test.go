@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 func TestAcceptanceSchedulerNextFire(t *testing.T) {

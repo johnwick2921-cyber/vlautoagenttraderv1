@@ -29,7 +29,7 @@ const (
 // PIN (D4, CTO ruling 1790302009885): no binary linking the worker set
 // registers the "sqlite" driver twice. internal/activation (#201) blank-
 // imported glebarez/go-sqlite beside store/sqlitedriver's modernc; any binary
-// linking both — the updater linking nofx/store (the hold) AND activation (the
+// linking both — the updater linking vl/store (the hold) AND activation (the
 // adapter) — panicked at init. For each binary the worker set reaches, the
 // toolchain's own dependency list must not carry both registrations (and must
 // carry one: a probe that sees neither proves nothing).
@@ -50,8 +50,8 @@ func TestNoBinaryLinkingTheWorkerSetRegistersADuplicateSQLDriver(t *testing.T) {
 		tags   string
 		want   string // the ONE driver the build tag selects
 	}{
-		{"the nofx-updater binary (./cmd/nofx-updater)", []string{"list", "-deps", "-f", "{{.ImportPath}}", "./cmd/nofx-updater"}, "", modernc},
-		{"the nofx-updater binary under -tags cgofree", []string{"list", "-deps", "-f", "{{.ImportPath}}", "./cmd/nofx-updater"}, "cgofree", glebarez},
+		{"the vl-updater binary (./cmd/vl-updater)", []string{"list", "-deps", "-f", "{{.ImportPath}}", "./cmd/vl-updater"}, "", modernc},
+		{"the vl-updater binary under -tags cgofree", []string{"list", "-deps", "-f", "{{.ImportPath}}", "./cmd/vl-updater"}, "cgofree", glebarez},
 		{"the updaterworker test binary (./internal/updaterworker)", []string{"list", "-deps", "-test", "-f", "{{.ImportPath}}", "./internal/updaterworker"}, "", modernc},
 		{"the updaterworker test binary under -tags cgofree", []string{"list", "-deps", "-test", "-f", "{{.ImportPath}}", "./internal/updaterworker"}, "cgofree", glebarez},
 		{"the api test binary (./api)", []string{"list", "-deps", "-test", "-f", "{{.ImportPath}}", "./api"}, "", modernc},
@@ -108,19 +108,19 @@ func goList(t *testing.T, root string, tags string, args ...string) map[string]b
 	return deps
 }
 
-// PIN (D4, the build smoke): the nofx-updater binary, built exactly as an
-// operator builds it (go build -o <dir>/nofx-updater ./cmd/nofx-updater), gets
+// PIN (D4, the build smoke): the vl-updater binary, built exactly as an
+// operator builds it (go build -o <dir>/vl-updater ./cmd/vl-updater), gets
 // through init and answers its no-argument usage: exit 2, the usage line on
 // stderr, nothing on stdout, no panic. No argument means run() prints the
 // usage BEFORE it resolves an install, reads an env or opens anything — the
-// run touches nothing (cmd/nofx-updater/main.go run: len(rest) == 0).
+// run touches nothing (cmd/vl-updater/main.go run: len(rest) == 0).
 func TestUpdaterBinaryInitsWithoutPanic(t *testing.T) {
 	root, err := filepath.Abs("../../..")
 	if err != nil {
 		t.Fatal(err)
 	}
-	bin := filepath.Join(t.TempDir(), "nofx-updater")
-	goBuild(t, root, "build", "-o", bin, "./cmd/nofx-updater")
+	bin := filepath.Join(t.TempDir(), "vl-updater")
+	goBuild(t, root, "build", "-o", bin, "./cmd/vl-updater")
 	cmd := exec.Command(bin)
 	cmd.Dir = t.TempDir()
 	cmd.Env = []string{"PATH=/usr/bin:/bin", "HOME=" + t.TempDir()} // no token, no install, no inherited knobs
@@ -134,9 +134,9 @@ func TestUpdaterBinaryInitsWithoutPanic(t *testing.T) {
 	} else if err != nil {
 		t.Fatalf("running %s: %v", bin, err)
 	}
-	const usage = "usage: nofx-updater [--install-dir d] serve | fetch <release_id> | status [<job>] | resume <job> | recovery <job>\n"
+	const usage = "usage: vl-updater [--install-dir d] serve | fetch <release_id> | status [<job>] | resume <job> | recovery <job>\n"
 	if strings.Contains(stderr.String(), "panic:") || code != 2 || stderr.String() != usage || stdout.Len() != 0 {
-		t.Fatalf("the built nofx-updater did not init cleanly: exit %d\nstdout %q\nstderr:\n%s", code, stdout.String(), stderr.String())
+		t.Fatalf("the built vl-updater did not init cleanly: exit %d\nstdout %q\nstderr:\n%s", code, stdout.String(), stderr.String())
 	}
 }
 

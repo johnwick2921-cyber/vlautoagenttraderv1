@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
-	"nofx/internal/installpath"
+	"vl/internal/censuswalk"
+	"vl/internal/installpath"
 )
 
 func TestSocketPathResolvesViaInstallpath(t *testing.T) {

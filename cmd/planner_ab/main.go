@@ -16,10 +16,10 @@ import (
 	"os"
 	"time"
 
-	"nofx/config"
-	"nofx/crypto"
-	"nofx/kernel"
-	"nofx/store"
+	"vl/config"
+	"vl/crypto"
+	"vl/kernel"
+	"vl/store"
 
 	"github.com/joho/godotenv"
 )

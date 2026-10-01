@@ -3,8 +3,8 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // S3 (mega-research 2026-08-26) — the entry-time attribution guarantee: the

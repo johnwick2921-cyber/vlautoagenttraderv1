@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Placement truth — final combined wave
 
 Updated 2026-09-07 23:58 CT. **[A] PROVEN in isolated tests; candidate NOT DEPLOYED.**
 Implementation: `98f4ec6e499eb7dafb31e192460cb774c9a425df`.
 Branch: `fix/placement-truth-0907`; locked worktree:
-`/tmp/nofx-placement-truth-0907`.
+`/tmp/vl-placement-truth-0907`.
 
 This dispatch performed no production DB writes, runtime restart, Windows file
 copy, NT8 compile/restart, or live order. A different dispatch deployed its own
@@ -152,8 +153,8 @@ establishes the ledger handle before placement. No sleep conceals that race.
 
 ## Candidate and remaining live proof
 
-Undeployed binary: `/tmp/nofx-placement-truth-candidate`, built with
-`go build -buildvcs=true` from clean clone `/tmp/nofx-placement-build/nofx`.
+Undeployed binary: `/tmp/vl-placement-truth-candidate`, built with
+`go build -buildvcs=true` from clean clone `/tmp/vl-placement-build/vl`.
 
 ```
 vcs.revision=98f4ec6e499eb7dafb31e192460cb774c9a425df

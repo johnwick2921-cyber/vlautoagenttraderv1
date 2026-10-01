@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
-	// nofx/store/sqlitedriver is the ONE place in this repo that registers the
+	// vl/store/sqlitedriver is the ONE place in this repo that registers the
 	// "sqlite" driver. A LIBRARY must never import a driver directly: anything
 	// may link it, and database/sql panics when two register the same name in
 	// one binary. This file imported github.com/glebarez/go-sqlite, which made
 	// it a landmine for the M4 worker — the worker links this package AND
 	// internal/updaterbootstrap, and the two registrants would have panicked the
 	// process at init, before main ran.
-	_ "nofx/store/sqlitedriver"
+	_ "vl/store/sqlitedriver"
 )
 
 // Backup takes an ONLINE copy of the database and proves the copy is readable
@@ -289,7 +289,7 @@ func lineNamesRevision(ln, sha string) bool {
 	return false
 }
 
-// lineTime reads the timestamp a nofx log line starts with: "MM-DD HH:MM:SS".
+// lineTime reads the timestamp a vl log line starts with: "MM-DD HH:MM:SS".
 // The year is absent from the format, so it is taken from the current year —
 // stated rather than hidden, because it is the one assumption here.
 func lineTime(ln string) (time.Time, bool) {
@@ -372,7 +372,7 @@ func healthSHA(url string) (string, error) {
 // prev is a Release DIRECTORY (NOFX_RELEASE_DIR/<sha>/). Under that layout all
 // three halves move together by repointing the `current` symlink, which is
 // atomic and cannot leave a mixed install. The v6 script kept siblings named
-// nofx-bin.old.<sha>.<timestamp>, which could collide and could not carry the
+// vl-bin.old.<sha>.<timestamp>, which could collide and could not carry the
 // dist or the marker alongside the binary they belonged to.
 //
 // Rollback does NOT Watch: the caller persists the receipt, then watches, so a
@@ -488,7 +488,7 @@ func Snapshot(install Release, dest string) (Receipt, error) {
 	out := Release{
 		Dir:         dest,
 		SHA:         install.SHA,
-		Binary:      filepath.Join(dest, "nofx-bin"),
+		Binary:      filepath.Join(dest, filepath.Base(install.Binary)), // snapshot keeps the install's basename (vl-bin or nofx-bin — R5 removes the nofx name)
 		Dist:        filepath.Join(dest, "web", "dist"),
 		ReleaseFile: filepath.Join(dest, "RELEASE"),
 	}

@@ -57,7 +57,7 @@ def since(rows, cutoff):
 out = {'measured_at_ct': datetime.now(CT).isoformat(),
        'source_revision': '770e2297d2188d09de0dcf76c3722e19e022e4c6',
        'cutoffs_ct': {'w1': W1.isoformat(), 'wtf': WTF.isoformat()}}
-db = connect('/home/hoang/nofx/data/data.db')
+db = connect('/home/hoang/vl/data/data.db')
 columns = ('id,level_kind,level_price,formed_at_ms,scenario_nearest,'
            'scenario_link_basis,plan_id,plan_version,created_at')
 rows = [dict(r) for r in db.execute('SELECT ' + columns + ' FROM touch_outcomes ORDER BY id')]
@@ -89,7 +89,7 @@ for row in plans:
 db.rollback()
 db.close()
 
-archive = connect('/home/hoang/nofx/data/data.db.research.db')
+archive = connect('/home/hoang/vl/data/data.db.research.db')
 out['archive_snapshot_at_ct'] = datetime.now(CT).isoformat()
 archive_rows = [dict(r) for r in archive.execute(
     'SELECT id,writer_revision,event,captured_ms,fields_json FROM research_facts '

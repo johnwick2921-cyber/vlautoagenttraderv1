@@ -7,13 +7,13 @@ import (
 	"sort"
 	"strings"
 
-	"nofx/config"
-	"nofx/crypto"
-	"nofx/logger"
-	"nofx/mcp"
-	"nofx/security"
-	"nofx/store"
-	"nofx/wallet"
+	"vl/config"
+	"vl/crypto"
+	"vl/logger"
+	"vl/mcp"
+	"vl/security"
+	"vl/store"
+	"vl/wallet"
 
 	"github.com/gin-gonic/gin"
 )
@@ -249,7 +249,7 @@ func (s *Server) handleUpdateModelConfigs(c *gin.Context) {
 	}
 
 	// SECURITY (P0 S5): this used to be `logger.Infof(... "%+v", req.Models)`,
-	// which wrote PLAINTEXT provider API keys into data/nofx_*.log (mode 0644,
+	// which wrote PLAINTEXT provider API keys into data/vl_*.log (mode 0644,
 	// retained indefinitely — real keys were found in three existing log files).
 	// Mask via the same helper the (previously unused) sanitizers use.
 	safe := make([]string, 0, len(req.Models))

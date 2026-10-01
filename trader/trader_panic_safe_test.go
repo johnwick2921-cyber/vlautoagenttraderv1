@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/discipline"
-	"nofx/telemetry"
+	"vl/discipline"
+	"vl/telemetry"
 )
 
 // TestTraderLoopPanicFreezesOnlyThatTrader is the P1-F pin (audit 2026-09-26):

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // S4 (mega-research 2026-08-26) — nPOC dedupe + ±1-tick retire tolerance.

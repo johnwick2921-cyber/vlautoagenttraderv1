@@ -1,14 +1,15 @@
-# 🗺️ NOFX Roadmap
+names rewritten to vl on 2026-09-30 (VL rename)
+# 🗺️ VL Roadmap
 
 **Language:** [English](README.md) | [中文](README.zh-CN.md)
 
-Strategic plan for NOFX development and universal market expansion.
+Strategic plan for VL development and universal market expansion.
 
 ---
 
 ## 📋 Overview
 
-NOFX is on a mission to become the **Universal AI Trading Operating System** for all financial markets. Our proven infrastructure on crypto markets is being extended to stocks, futures, options, forex, and beyond.
+VL is on a mission to become the **Universal AI Trading Operating System** for all financial markets. Our proven infrastructure on crypto markets is being extended to stocks, futures, options, forex, and beyond.
 
 **Vision:** Same architecture. Same agent framework. All markets.
 
@@ -261,7 +262,7 @@ NOFX is on a mission to become the **Universal AI Trading Operating System** for
 
 We welcome community contributions to accelerate our roadmap:
 
-- **Vote on Features**: Join our [Telegram community](https://t.me/nofx_dev_community) to vote on priority features
+- **Vote on Features**: Join our [Telegram community](upstream telegram link (removed in the VL rename)) to vote on priority features
 - **Contribute Code**: Check our [Contributing Guide](../../CONTRIBUTING.md)
 - **Bug Bounties**: Report issues and earn rewards
 - **Strategy Sharing**: Share your successful strategies

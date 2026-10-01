@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // TestFormatTimeframeSeriesData_EMAPeriods locks the prompt EMA labeling:

@@ -9,13 +9,13 @@ import (
 	"sort"
 	"strings"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // ── the AddOn decision (C12 as ruled: the stricter composite) ──────────────
 //
 // nt8_skipped ONLY when ALL of these are READ true, else nt8_updated (the job
-// parks for the owner's attended F5 and resumes only on `nofx-updater resume`):
+// parks for the owner's attended F5 and resumes only on `vl-updater resume`):
 //
 //	(a) /api/maintenance addon_ack is present, held, carries THIS job's id and
 //	    is at most 15 s old (the AddOn running now answered this hold);

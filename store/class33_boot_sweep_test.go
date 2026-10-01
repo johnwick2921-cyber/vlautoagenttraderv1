@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"nofx/store/sqlitedriver"
+	"vl/store/sqlitedriver"
 )
 
 func class33Ledger(t *testing.T) (*Store, *ArmedOrderStore) {

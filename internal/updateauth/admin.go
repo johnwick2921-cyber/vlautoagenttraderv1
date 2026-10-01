@@ -49,7 +49,7 @@ type Admin struct {
 	// users.password_hash) as it stood at enrollment. The /updates gate
 	// recomputes it from the CURRENT row: any password change — the owner's,
 	// or one forced through a stolen/machine token — un-enrolls (403 until
-	// `updater-bootstrap enroll --replace`), exactly as a reset-account does.
+	// `vl-updater-bootstrap enroll --replace`), exactly as a reset-account does.
 	// It is a MAC over a bcrypt hash under a key only this box holds: it
 	// reveals nothing about the password.
 	PasswordBinding string `json:"password_binding"`
@@ -59,7 +59,7 @@ type Admin struct {
 // (release|job|exp) under the same device.key: the NUL bytes cannot occur in
 // any grant message (the id allow-lists exclude them), so no binding can ever
 // be replayed as a grant or the reverse.
-const passwordBindingDomain = "nofx-updater/password-binding/v1\x00"
+const passwordBindingDomain = "vl-updater/password-binding/v1\x00"
 
 func passwordBindingMessage(userID, passwordHash string) []byte {
 	return []byte(passwordBindingDomain + userID + "\x00" + passwordHash)

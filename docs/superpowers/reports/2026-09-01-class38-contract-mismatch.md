@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLASS 38 — prompt/validator contract mismatch: the prompt offers what the validator refuses
 
-Date: 2026-09-01 · Owner: hoang · Worktree `../nofx-class38` (branch `fix/class38-contract-mismatch`)
+Date: 2026-09-01 · Owner: hoang · Worktree `../vl-class38` (branch `fix/class38-contract-mismatch`)
 Evidence tiers: **[A]** directly verified · **[B]** inferred from strong evidence · **[C]** speculation.
 All times CT (R8). Live rev at dispatch: `e42a0b43` (class 37, booted 21:19:49 CT).
 
@@ -9,10 +10,10 @@ All times CT (R8). Live rev at dispatch: `e42a0b43` (class 37, booted 21:19:49 C
 | Item | State |
 |---|---|
 | Code | **merged to dev @ `c0580011`** (fast-forward from `2d29e852`, pushed); marker `3af6af95` |
-| Build | clean clone `--no-local` at `c0580011`, `vcs.modified=false`, built 2026-09-02T02:47:37Z, sha256 `38a1620ba7210df5…`, 70,920,312 bytes — **STAGED as `~/nofx/nofx-bin.next`** |
+| Build | clean clone `--no-local` at `c0580011`, `vcs.modified=false`, built 2026-09-02T02:47:37Z, sha256 `38a1620ba7210df5…`, 70,920,312 bytes — **STAGED as `~/vl/vl-bin.next`** |
 | Cutover | **DONE 22:22:58 CT on the owner's GO** — boot `🔐 BOOT INTEGRITY OK — rev c0580011b4ce · expected c0580011b4ce · goldens PASS` 22:23:03, PID 2030083 (see §11) |
 | Proof (A20) | **LANDED 23:12:44 CT** — the first read authored against the new prompt (owner reset 23:06:33) completed in 371.2 s on **attempt 1 of 3**, zero validator rejects, zero new `planner_rejected_prompts` rows (max id still 86), `🗓️ PLAN written 2026-09-01 ASIA v5 … lifecycle active` — after four fail-closed ASIA plans today. See §12. |
-| Lock (A2) | `~/nofx-main.lock` acquired 21:27 CT (no prior holder), released at closeout |
+| Lock (A2) | `~/vl-main.lock` acquired 21:27 CT (no prior holder), released at closeout |
 | Stop-lines | held: no validator logic, no enum, no retry-semantic, no normalization (F7 is class 39) |
 
 ---
@@ -222,15 +223,15 @@ checklist entry.
 ## 7. Build, stage, rollback (A4/A13) [A]
 
 ```
-git clone --no-local ~/nofx <scratch>/clone-c38 && git checkout c0580011b4ce4fdefa9d92566019a6d5789d5c1e
+git clone --no-local ~/vl <scratch>/clone-c38 && git checkout c0580011b4ce4fdefa9d92566019a6d5789d5c1e
 (clone porcelain-clean)
-go build -o nofx-bin .
-go version -m nofx-bin:
+go build -o vl-bin .
+go version -m vl-bin:
 	build	vcs.revision=c0580011b4ce4fdefa9d92566019a6d5789d5c1e
 	build	vcs.time=2026-09-02T02:47:37Z
 	build	vcs.modified=false
 sha256 38a1620ba7210df506961f94b70b4101217779736db97fcc683e9390247a43ad  (70,920,312 bytes)
-cp → ~/nofx/nofx-bin.next        (no prior nofx-bin.next existed — class 37's was consumed at 21:19:44)
+cp → ~/vl/vl-bin.next        (no prior vl-bin.next existed — class 37's was consumed at 21:19:44)
 goldens + class-38 guards re-run inside the built tree: ok
 ```
 Marker `3af6af95`: `deploy/RELEASE` + `GUIDE_BUILT_REV` = `c0580011…`.
@@ -238,8 +239,8 @@ Running binary unchanged: `e42a0b43` (class 37), PID 1994488, booted 21:19:49 CT
 
 **Cutover (owner GO only; flat gate A5 + in-flight A6 + window A7 first):**
 ```
-cd ~/nofx && cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.e42a0b43 \
-  && mv nofx-bin.next nofx-bin && kill -9 $(systemctl show -p MainPID --value nofx)
+cd ~/vl && cp vl-bin vl-bin.prev.boot && mv vl-bin vl-bin.old.e42a0b43 \
+  && mv vl-bin.next vl-bin && kill -9 $(systemctl show -p MainPID --value vl)
 # within 90s expect:
 #   🔐 BOOT INTEGRITY OK — rev c0580011 · expected c0580011 · goldens PASS
 #   🧪 validator hints: 15 sites — … every rule token in its own field enum (class 34 + 38 guard)
@@ -248,12 +249,12 @@ cd ~/nofx && cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.e42a0b43
 
 **Rollback (exact):**
 ```
-cd ~/nofx && mv nofx-bin nofx-bin.bad.class38 && cp nofx-bin.prev.boot nofx-bin \
+cd ~/vl && mv vl-bin vl-bin.bad.class38 && cp vl-bin.prev.boot vl-bin \
   && printf 'e42a0b43b4bead2c5d2207958d8a0bde2d65be11' > deploy/RELEASE \
-  && kill -9 $(systemctl show -p MainPID --value nofx) \
+  && kill -9 $(systemctl show -p MainPID --value vl) \
   && git checkout -- deploy/RELEASE web/src/guide/types.ts
 ```
-`nofx-bin.prev.boot` is written at cutover from the running class-37 binary (`e42a0b43`).
+`vl-bin.prev.boot` is written at cutover from the running class-37 binary (`e42a0b43`).
 There is no env knob to soft-revert this wave: it is prompt text plus two guards.
 
 ---
@@ -349,9 +350,9 @@ after the fix was written, and it is the same defect class as rows 78/79/80.
 
 **Swap:**
 ```
-22:22:58 CT  cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.e42a0b43 \
-             && mv nofx-bin.next nofx-bin && kill -9 1994488
-             nofx-bin sha256 38a1620ba7210df5…  rev c0580011  (RELEASE already c0580011)
+22:22:58 CT  cp vl-bin vl-bin.prev.boot && mv vl-bin vl-bin.old.e42a0b43 \
+             && mv vl-bin.next vl-bin && kill -9 1994488
+             vl-bin sha256 38a1620ba7210df5…  rev c0580011  (RELEASE already c0580011)
 22:23:03 CT  systemd relaunched (Restart=on-failure) → PID 2030083
 ```
 
@@ -379,12 +380,12 @@ outstanding — longest read since its boot: 487.9 s.
 
 **Rollback (still valid, exact):**
 ```
-cd ~/nofx && mv nofx-bin nofx-bin.bad.c0580011 && cp nofx-bin.prev.boot nofx-bin \
+cd ~/vl && mv vl-bin vl-bin.bad.c0580011 && cp vl-bin.prev.boot vl-bin \
   && printf 'e42a0b43b4bead2c5d2207958d8a0bde2d65be11' > deploy/RELEASE \
-  && kill -9 $(systemctl show -p MainPID --value nofx) \
+  && kill -9 $(systemctl show -p MainPID --value vl) \
   && git checkout -- deploy/RELEASE web/src/guide/types.ts
 ```
-`nofx-bin.prev.boot` = the class-37 binary `e42a0b43`, also kept as `nofx-bin.old.e42a0b43`.
+`vl-bin.prev.boot` = the class-37 binary `e42a0b43`, also kept as `vl-bin.old.e42a0b43`.
 
 ---
 
@@ -405,7 +406,7 @@ it is now cap-relative (`plannerRejectedCap+5`) so it tests the trim rather than
 number.
 
 **Snapshot taken first (belt and braces):** before any of this, the live 20 rows were
-copied read-only to `~/nofx-backups/class39-sample/rejected_20260901-224220.sql`
+copied read-only to `~/vl-backups/class39-sample/rejected_20260901-224220.sql`
 (421,375 bytes) plus a CSV index, so tonight's reads cannot trim away the sample that
 already exists. Nothing was written to `data/data.db`.
 

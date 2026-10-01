@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 3 — Decisions: complete trading-method assessment
 
 Owner: hoang · 2026-09-05 · Section 3 only · `docs/vet-03-0905-complete` · documentation only.
@@ -366,4 +367,4 @@ I do not borrow an opening-range, intraday-momentum or volume-profile study to c
 
 ## Reproduction
 
-Use a fresh output folder **inside** `/home/hoang/nofx-analysis/vet-03-complete-0905` and run the committed `D/audit.py --repo /home/hoang/nofx-vet-03-complete --out <folder>` then `D/supplement.py` with the same arguments. The first script uses one read snapshot for populations/plans/rejects/prompts; the supplement uses read-only snapshots for auxiliary evidence. Neither imports bot code or opens a writable DB connection. `manifest.json` hashes the preserved outputs and scripts; current reruns can differ if the live store changes. Prior `.out` files and scripts outside `complete/` remain historical evidence only; none supplies a current recommendation or primary statistic.
+Use a fresh output folder **inside** `/home/hoang/vl-analysis/vet-03-complete-0905` and run the committed `D/audit.py --repo /home/hoang/vl-vet-03-complete --out <folder>` then `D/supplement.py` with the same arguments. The first script uses one read snapshot for populations/plans/rejects/prompts; the supplement uses read-only snapshots for auxiliary evidence. Neither imports bot code or opens a writable DB connection. `manifest.json` hashes the preserved outputs and scripts; current reruns can differ if the live store changes. Prior `.out` files and scripts outside `complete/` remain historical evidence only; none supplies a current recommendation or primary statistic.

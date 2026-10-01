@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Veteran deep review — Section 05: execution and trading method
 
 Owner: hoang · 2026-09-05 · branch `docs/vet-05-0905-complete` · source base **b4376246** · Section 5 only.
@@ -56,10 +57,10 @@ trigger "A retest of 29285.00 OR-H stalls after the 08:30 failure; short the tou
 the fade", targets [29233.08, 29222.75, 29144.5], quality B, `arm {enabled: true, entry: 29285,
 stop: 29340, target: 29144.5, wait_confirm: true}` (`complete/q35_complete.json`, `plan35`).
 
-**Composed (0B stop) [A].** Go log 09-03 09:02:54 CT (in `data/nofx_2026-09-02.log` — the
+**Composed (0B stop) [A].** Go log 09-03 09:02:54 CT (in `data/vl_2026-09-02.log` — the
 file rotates on process start, not on date):
 `🛑 arm stop NY S1 leg 1 short: stop 29354.91 (authored 29340.00 WIDENED) · anchor ONH
-29293.00 → beyond 29293.50`. The complete placement log explicitly records **1.5×ATR5m 46.61**, `bound=atr_floor` (`data/nofx_2026-09-02.log:84978`, preserved in `complete/raw_arm35_sources.out:7`). A later-cycle floor observation (not the placement-time ATR): `📓 read facts: void=20 · floor=67.6 pts
+29293.00 → beyond 29293.50`. The complete placement log explicitly records **1.5×ATR5m 46.61**, `bound=atr_floor` (`data/vl_2026-09-02.log:84978`, preserved in `complete/raw_arm35_sources.out:7`). A later-cycle floor observation (not the placement-time ATR): `📓 read facts: void=20 · floor=67.6 pts
 (1.5×ATR5m 45.10)` (09:06:54). The placement stop implies 69.91 pts of risk; the later 67.6-pt floor is a different observation. Composition drifted between
 29349.90 (09:00:54) and 29354.91 (09:02:54). Code: `kernel/min_sl.go:34` `MinSLATRMultDefault =
 1.5`; `:40` `MinSLTickClearance = 2` (the "beyond 29293.50").
@@ -168,7 +169,7 @@ A stop trigger does not promise a fill at the trigger. [CME iLink order semantic
 
 **[A/T] The 5/15 and three-fill claims belong to the September 1–3 arm window, ids 23–37.** Guard-cancel ids **25,27,33,34,36** are **5/15 = 33.3%, Wilson 15.2–58.3%**; filled ids **24,28,35** are **3/15 = 20.0%, 7.0–45.2%**, mapping to positions **584,586,591**, all eligible. Since September 2, calendar-created arms contain **37 rows** and only guard ids **33,34,36**: **3/37 = 8.1%, 2.8–21.3%**. The raw prior-window id query is `complete/q33_metrics.json`, the guard rows are in q31, and E8 gives decision logs. These cohorts must not be mixed.
 
-**I correct the “over 1.7 points” premise, and the prior report's claim that the exact price was unavailable.** Arm **33**, short entry **29166.80**, cancelled at **14:10:29 CT**. The raw Go log explicitly says **price 29167.50** (`data/nofx_2026-09-02.log:40385`; `complete/raw_guard_sources.out:5`). The actual logged guard distance is **0.70 points**. Containing bar **435638** later reaches high **29168.50**, giving **1.70**, while its final close happens to equal the logged 29167.50. The bar alone could not establish decision price; the raw log can. Full precision beyond the log's two decimals and executable bid/ask remain unavailable. The same extraction gives logged through-distances **28.00, 2.96, 0.70, 4.75, 7.70 points** for ids **25,27,33,34,36**, respectively (row/side/time matches; rounded logging precision).
+**I correct the “over 1.7 points” premise, and the prior report's claim that the exact price was unavailable.** Arm **33**, short entry **29166.80**, cancelled at **14:10:29 CT**. The raw Go log explicitly says **price 29167.50** (`data/vl_2026-09-02.log:40385`; `complete/raw_guard_sources.out:5`). The actual logged guard distance is **0.70 points**. Containing bar **435638** later reaches high **29168.50**, giving **1.70**, while its final close happens to equal the logged 29167.50. The bar alone could not establish decision price; the raw log can. Full precision beyond the log's two decimals and executable bid/ask remain unavailable. The same extraction gives logged through-distances **28.00, 2.96, 0.70, 4.75, 7.70 points** for ids **25,27,33,34,36**, respectively (row/side/time matches; rounded logging precision).
 
 **[I] My ruling is cancel crossed fades now; no bounded market entry.** A fade is a rejection trade. Entering after the market has already crossed its limit tests a different timing rule even if a marketable limit improves the fill price. `trader/armed_executor.go:955` implements cancellation; `:985` is the limit-side predicate. The comment “fills at a worse price” is not a limit-order guarantee: a limit constrains price. The concern is whether the thesis still holds. I would not remove confirmation or place orders early solely to raise the fill rate.
 
@@ -288,7 +289,7 @@ I expressly supersede unsupported recommendations to promote live trading from t
 | Original requirement | Status / result | Evidence or exact missing inputs |
 |---|---|---|
 | 1 authored plan → composed 0B stop | Answered: plan version2/S1 → arm35, ATR46.61, 29354.91 → broker29355 | Q1; E6/E8; `complete/q35_complete.json` plan35 |
-| 1 gates → placed order type | Answered: touch met, no-chase warning, short limit sent | Q1; `data/nofx_2026-09-02.log:84979`; E7/E8 |
+| 1 gates → placed order type | Answered: touch met, no-chase warning, short limit sent | Q1; `data/vl_2026-09-02.log:84979`; E7/E8 |
 | 1 order_update → fill → materialized | Answered: signal f2b1eb20, NT8 fill09:03:53.694, position59109:05:14, arm update09:05:35 | Q1; E7/E8 |
 | 1 excursions → exit, quote each hop | Exit answered, fill433, stop29355; true excursions **UNMEASURABLE** | Q1; E2/E6; empty trade_excursions, missing event-timed path |
 | 2 every fill vs containing range | Answered for all 58 position entry/exit legs; actual every execution **UNMEASURABLE** | Q2; E3 116 rows; missing immutable execution FK; missing bars521–523 and proxy timestamps |
@@ -317,7 +318,7 @@ I expressly supersede unsupported recommendations to promote live trading from t
 
 ## Reproduction, verification and handoff
 
-The only writable deliverables are this report and its own data directory. Fresh scratch is `/home/hoang/nofx-analysis/vet-05-complete-0905`; retained worktree is `/home/hoang/nofx-vet-05-complete`. The branch is for the parent to merge into dev; I do not merge or remove the worktree.
+The only writable deliverables are this report and its own data directory. Fresh scratch is `/home/hoang/vl-analysis/vet-05-complete-0905`; retained worktree is `/home/hoang/vl-vet-05-complete`. The branch is for the parent to merge into dev; I do not merge or remove the worktree.
 
 `complete/README.md` records the exact ordered script invocation, source base and data semantics. q36 extracts raw log evidence first; q11 and q14 rebuild fill-time/reason inputs; q31–q35 rebuild all eligible results; q37 captures supplemental source. Every SQLite reader uses both read-only mechanisms. Current outputs include all row/bar/signal keys; historical q01–q34 outside complete are explicitly superseded. Primary web documentation and its limits are recorded in `complete/PRIMARY-SOURCES.md`.
 

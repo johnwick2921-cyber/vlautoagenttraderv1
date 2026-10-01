@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/logger"
-	"nofx/security"
+	"vl/logger"
+	"vl/security"
 )
 
 // Config client configuration (centralized management of all configurations)

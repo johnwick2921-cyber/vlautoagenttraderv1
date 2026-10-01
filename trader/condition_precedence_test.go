@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W1 (c) at the production seams that act on a condition's status: the arm

@@ -6,7 +6,7 @@ Not an exact current-strategy replay, not a profitability backtest.
 import sqlite3,json,math,datetime,collections,bisect,pathlib,hashlib
 from zoneinfo import ZoneInfo
 OUT=pathlib.Path(__file__).resolve().parent
-DB='file:/home/hoang/nofx/data/data.db?mode=ro'
+DB='file:/home/hoang/vl/data/data.db?mode=ro'
 c=sqlite3.connect(DB,uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 ct=ZoneInfo('America/Chicago')
 def clock(t): return datetime.datetime.fromtimestamp(t/1000,ct).isoformat()

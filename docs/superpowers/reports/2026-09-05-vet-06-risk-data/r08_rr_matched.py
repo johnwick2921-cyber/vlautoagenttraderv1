@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """r08 — planned vs REALISED R on the arms that actually filled (the 2.55:1 / 1.66:1 premise, re-measured)."""
 import sqlite3, statistics as st
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True)
 arms=con.execute("""SELECT id, session, scenario, side, entry_px, stop_px, target_px, signal_id, fill_price
                     FROM armed_orders WHERE state='filled' AND session NOT LIKE 'TEST%' ORDER BY id""").fetchall()
 print("real filled arms:", len(arms))

@@ -1,6 +1,6 @@
 #!/bin/bash
 # q01 — store census: verify the dispatch's GROUND TRUTH premises on trader_positions etc.
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 S() { echo "--- $1"; sqlite3 "$DB" "$2"; }
 S "all-time rows / status" "SELECT COUNT(*), status FROM trader_positions GROUP BY status;"
 S "entry_time typeof sample" "SELECT typeof(entry_time), COUNT(*) FROM trader_positions GROUP BY 1;"

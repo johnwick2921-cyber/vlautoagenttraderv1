@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // F18 (WAVE 117 PR-D, ports #117 a6b88b7d) — the plan mutation session resolves

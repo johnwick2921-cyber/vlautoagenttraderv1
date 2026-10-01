@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"nofx/kernel"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 	"strings"
 	"time"
 )

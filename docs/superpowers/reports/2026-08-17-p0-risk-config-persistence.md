@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # NO P0 — the gates were running the owner's values all along; my audit query read the wrong path
 
 **Root cause, one sentence:** `risk_control` is nested under `ai_config` (exactly where the hand-rolled codec writes it), my audit query read the **top level**, found nothing, defaulted the miss to `{}`, and I reported the gates as running R:R 1.0 / confidence 50 / cap 10 / hold-lock OFF — when they were running **3.0 / 65 / 2 / ON** the entire time.
@@ -52,7 +53,7 @@ Everything **PERSISTS**. The two `0/0` rows are not running; before this train t
 
 *Deliberately not changed:* the hold-lock default stays OFF. It is **not** futures-gated, so flipping it globally would alter crypto behavior and break the byte-identical invariant. Both live strategies set it `true` explicitly. Guardrails master untouched.
 
-**Owner values applied (item 10)** via `cmd/dayplan-sessions` (`2c15f000`) — through the store layer, never raw SQL, dry-run by default, and it **refuses to loosen** without an explicit flag. Backup taken and integrity-checked first (`~/nofx-backups/pre-session-grade-fix/`, `quick_check = ok`).
+**Owner values applied (item 10)** via `cmd/dayplan-sessions` (`2c15f000`) — through the store layer, never raw SQL, dry-run by default, and it **refuses to loosen** without an explicit flag. Backup taken and integrity-checked first (`~/vl-backups/pre-session-grade-fix/`, `quick_check = ok`).
 
 | Setting | Before | After |
 |---|---|---|
@@ -76,16 +77,16 @@ Re-run reports `0 changes` — idempotent. Takes effect at the next trader reloa
 
 **Item 13 (Playwright) NOT DONE:** the sandbox is unauthenticated and `httpClient` redirects to `/login` on 401, so a UI round-trip of a risk value cannot be driven headlessly. Unchanged from the last two runs; it stays owner-to-verify.
 
-**Operational note worth keeping:** my first dry-run said "already correct" because I snapshotted with `cp data/data.db` — which omits the 3.5 MB `-wal` and silently loses every recent commit. Use `sqlite3 ".backup"` for any live snapshot, as `deploy/nofx-db-backup.sh` already does.
+**Operational note worth keeping:** my first dry-run said "already correct" because I snapshotted with `cp data/data.db` — which omits the 3.5 MB `-wal` and silently loses every recent commit. Use `sqlite3 ".backup"` for any live snapshot, as `deploy/vl-db-backup.sh` already does.
 
 ## Deploy (the only manual step)
 
 ```bash
-cd /home/hoang/nofx && git pull
-go build -o nofx-bin . && echo BUILD OK
+cd /home/hoang/vl && git pull
+go build -o vl-bin . && echo BUILD OK
 git rev-parse HEAD > deploy/RELEASE     # MANDATORY — else the boot assertion refuses trading
-sudo systemctl restart nofx
-journalctl -u nofx --since '2 min ago' | grep 'BOOT INTEGRITY'
+sudo systemctl restart vl
+journalctl -u vl --since '2 min ago' | grep 'BOOT INTEGRITY'
 cd web && npm run build && cd ..        # then hard-reload
 ```
 

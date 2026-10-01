@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // D4 — the knob is OFF by default: an instrument that bills the provider must

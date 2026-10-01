@@ -998,7 +998,7 @@
         "type": "file",
         "name": "ChatInput.tsx",
         "filePath": "web/src/components/agent/ChatInput.tsx",
-        "summary": "ForwardRef chat input box for the NOFXi agent chat with Enter-to-send handling, disabled states, and an imperative focus handle exposed to the parent page.",
+        "summary": "ForwardRef chat input box for the VLi agent chat with Enter-to-send handling, disabled states, and an imperative focus handle exposed to the parent page.",
         "tags": [
           "component",
           "agent-chat",
@@ -2126,7 +2126,7 @@
         "type": "file",
         "name": "select.tsx",
         "filePath": "web/src/components/ui/select.tsx",
-        "summary": "Custom NofxSelect dropdown replacing the native select: fixed-position menu anchored to the trigger, outside-click and scroll-away close handling, styled with cn.",
+        "summary": "Custom VLSelect dropdown replacing the native select: fixed-position menu anchored to the trigger, outside-click and scroll-away close handling, styled with cn.",
         "tags": [
           "component",
           "ui",
@@ -2136,9 +2136,9 @@
         "complexity": "moderate"
       },
       {
-        "id": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "id": "function:web/src/components/ui/select.tsx:VLSelect",
         "type": "function",
-        "name": "NofxSelect",
+        "name": "VLSelect",
         "filePath": "web/src/components/ui/select.tsx",
         "lineRange": [
           20,
@@ -2233,7 +2233,7 @@
         "type": "file",
         "name": "main.tsx",
         "filePath": "web/src/main.tsx",
-        "summary": "Frontend entry point: mounts the App component into #root under React.StrictMode and BrowserRouter, and installs a dark-themed sonner Toaster with nofx-branded styling.",
+        "summary": "Frontend entry point: mounts the App component into #root under React.StrictMode and BrowserRouter, and installs a dark-themed sonner Toaster with vl-branded styling.",
         "tags": [
           "entry-point",
           "bootstrap",
@@ -2246,7 +2246,7 @@
         "type": "file",
         "name": "AgentChatPage.tsx",
         "filePath": "web/src/pages/AgentChatPage.tsx",
-        "summary": "NOFXi conversational agent page: streams SSE responses from the /api/agent endpoint with abortable readers, parses plan/step/replan events into structured AgentStep timelines, persists per-user chat history and drafts to localStorage, and renders the chat surface with market ticker, positions, and preference side panels.",
+        "summary": "VLi conversational agent page: streams SSE responses from the /api/agent endpoint with abortable readers, parses plan/step/replan events into structured AgentStep timelines, persists per-user chat history and drafts to localStorage, and renders the chat surface with market ticker, positions, and preference side panels.",
         "tags": [
           "component",
           "page",
@@ -2795,7 +2795,7 @@
         "type": "file",
         "name": "tailwind.config.js",
         "filePath": "web/tailwind.config.js",
-        "summary": "Tailwind CSS theme configuration defining the NOFX cyberpunk design system: nofx-gold/nofx-bg/nofx-accent color palette, Inter and JetBrains Mono font stacks, scanline and grid background images, glitch/shimmer/scan/float keyframe animations, and neon box shadows. Content globs cover index.html and all source files under web/src.",
+        "summary": "Tailwind CSS theme configuration defining the VL cyberpunk design system: vl-gold/vl-bg/vl-accent color palette, Inter and JetBrains Mono font stacks, scanline and grid background images, glitch/shimmer/scan/float keyframe animations, and neon box shadows. Content globs cover index.html and all source files under web/src.",
         "tags": [
           "configuration",
           "styling",
@@ -4289,14 +4289,14 @@
       },
       {
         "source": "file:web/src/components/ui/select.tsx",
-        "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "target": "function:web/src/components/ui/select.tsx:VLSelect",
         "type": "contains",
         "direction": "forward",
         "weight": 1.0
       },
       {
         "source": "file:web/src/components/ui/select.tsx",
-        "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "target": "function:web/src/components/ui/select.tsx:VLSelect",
         "type": "exports",
         "direction": "forward",
         "weight": 0.8
@@ -4408,21 +4408,21 @@
       },
       {
         "source": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
-        "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "target": "function:web/src/components/ui/select.tsx:VLSelect",
         "type": "contains",
         "direction": "forward",
         "weight": 1.0
       },
       {
         "source": "function:web/src/components/trader/TelegramConfigModal.tsx:TelegramConfigModal",
-        "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "target": "function:web/src/components/ui/select.tsx:VLSelect",
         "type": "contains",
         "direction": "forward",
         "weight": 1.0
       },
       {
         "source": "function:web/src/components/trader/PositionHistory.tsx:PositionHistory",
-        "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "target": "function:web/src/components/ui/select.tsx:VLSelect",
         "type": "contains",
         "direction": "forward",
         "weight": 1.0
@@ -5268,7 +5268,7 @@
         "weight": 0.8
       },
       {
-        "source": "function:web/src/components/ui/select.tsx:NofxSelect",
+        "source": "function:web/src/components/ui/select.tsx:VLSelect",
         "target": "function:web/src/lib/cn.ts:cn",
         "type": "calls",
         "direction": "forward",

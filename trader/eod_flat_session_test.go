@@ -3,8 +3,8 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // The EOD-flat twin of the last-entry fix (defect class 7). The old day-scoped

@@ -1,14 +1,15 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 7 complete evidence
 
 Base b4376246. Captured with SQLite mode=ro and query_only; GETs only. No trading mutations.
 
-Run copies from the authorized scratch directory /home/hoang/nofx-analysis/vet-07-complete-0905, not in a runtime checkout. Scripts have explicit paths to this worktree and production read-only DB. Copy these script/template files into that scratch directory first.
+Run copies from the authorized scratch directory /home/hoang/vl-analysis/vet-07-complete-0905, not in a runtime checkout. Scripts have explicit paths to this worktree and production read-only DB. Copy these script/template files into that scratch directory first.
 
 ```text
-python3 /home/hoang/nofx-analysis/vet-07-complete-0905/capture.py
-PYTHONDONTWRITEBYTECODE=1 /home/hoang/nofx-analysis/vet-07-0905/tokvenv/bin/python /home/hoang/nofx-analysis/vet-07-complete-0905/measure.py
-python3 /home/hoang/nofx-analysis/vet-07-complete-0905/audit_evidence.py
-python3 /home/hoang/nofx-analysis/vet-07-complete-0905/finalize.py
+python3 /home/hoang/vl-analysis/vet-07-complete-0905/capture.py
+PYTHONDONTWRITEBYTECODE=1 /home/hoang/vl-analysis/vet-07-0905/tokvenv/bin/python /home/hoang/vl-analysis/vet-07-complete-0905/measure.py
+python3 /home/hoang/vl-analysis/vet-07-complete-0905/audit_evidence.py
+python3 /home/hoang/vl-analysis/vet-07-complete-0905/finalize.py
 ```
 
 The existing tokenizer environment is read only. It provides tiktoken o200k_base and cl100k_base, neither claimed as DeepSeek billing. The snapshot is intentionally dated; future DB runs can change evidence. Prompt measurements/map can be reproduced offline from the committed payloads. The finalize step adds read-only joined plan evidence and publishes the report from preserved templates.

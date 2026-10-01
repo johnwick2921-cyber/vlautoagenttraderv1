@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 func TestInstallRefusesWhenTheSeenStoreIsMissingAfterEnrollment(t *testing.T) {

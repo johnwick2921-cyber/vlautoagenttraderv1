@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/discipline"
-	"nofx/telemetry"
+	"vl/discipline"
+	"vl/telemetry"
 )
 
 // TestGoNetPanicRecoversFreezesAndCounts is the panic-net-complete RED pin: an

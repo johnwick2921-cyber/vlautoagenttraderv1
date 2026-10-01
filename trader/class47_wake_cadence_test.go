@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── CLASS 47 — F4: STALE-ARM EXPIRY (owner-ruled; the only non-WARN change) ──

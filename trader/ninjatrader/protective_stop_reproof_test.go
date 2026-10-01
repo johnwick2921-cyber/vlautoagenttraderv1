@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // dialForTest re-dials the single-client slot after a disconnect (the slot

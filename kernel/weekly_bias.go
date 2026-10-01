@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // WeekCandle is one COMPLETED CME week's OHLCV + structure tag.

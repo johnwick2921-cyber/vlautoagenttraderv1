@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Armed-Orders Cutover E2 — Complete (2026-08-27)
 
 Wave 2 armed-orders cutover declared **COMPLETE** on live proof. The two planner
@@ -157,7 +158,7 @@ unarmed.
   1.25) → `<no-vcs>` → BOOT INTEGRITY REFUSED. The deploy rule stands: build
   from a real checkout — a `git clone` at the exact code commit stamps
   correctly.
-- `NOFX_EXPECTED_REVISION` env overrides `deploy/RELEASE` if ever needed.
+- `VL_EXPECTED_REVISION` env overrides `deploy/RELEASE` if ever needed.
 
 ## Incident disclosure
 

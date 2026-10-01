@@ -1,4 +1,4 @@
-/home/hoang/nofx-analysis/vet-01-0905/revise/r04_close.py:36: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+/home/hoang/vl-analysis/vet-01-0905/revise/r04_close.py:36: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
   print(f"  pos {pid} exit {datetime.datetime.utcfromtimestamp(et/1000)} UTC | decision {did} {a} at {ts} | delta_s {(et-ms)/1000:.0f}")
 close_* decisions since 08-18: 2
    (32671, '2026-08-25 13:36:23.122769787+00:00', 'close_short', 'MNQ')

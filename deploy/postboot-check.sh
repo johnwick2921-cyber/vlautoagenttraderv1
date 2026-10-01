@@ -25,10 +25,15 @@ set -u
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 KIT_REPO=$(cd "$SCRIPT_DIR/.." && pwd)
 
-NOFX_REPO=${NOFX_REPO:-$KIT_REPO}
-NOFX_DATA=${NOFX_DATA:-$NOFX_REPO/data}
-NOFX_BIN=${NOFX_BIN:-$NOFX_REPO/nofx-bin}
-NOFX_ENV=${NOFX_ENV:-$NOFX_REPO/.env}
+# Every var is the shell twin VL_ → NOFX_ → default; the install-side
+# binary is vl-bin when present, else nofx-bin. R5 removes the NOFX twins.
+NOFX_REPO="${VL_REPO:-${NOFX_REPO:-$KIT_REPO}}"
+NOFX_DATA="${VL_DATA:-${NOFX_DATA:-$NOFX_REPO/data}}"
+NOFX_BIN="${VL_BIN:-${NOFX_BIN:-}}"
+if [ -z "$NOFX_BIN" ]; then
+  NOFX_BIN="$NOFX_REPO/vl-bin"; [ -f "$NOFX_BIN" ] || NOFX_BIN="$NOFX_REPO/nofx-bin"
+fi
+NOFX_ENV="${VL_ENV:-${NOFX_ENV:-$NOFX_REPO/.env}}"
 DB=$NOFX_DATA/data.db
 
 # The documented `_ =` baseline at dev 35a53d29 (regex below, non-test Go
@@ -267,7 +272,7 @@ NEEDLES
 
 LOG=${1:-}
 if [ -z "$LOG" ]; then
-  LOG=$(ls -t "$NOFX_DATA"/nofx_*.log 2>/dev/null | head -1)
+  LOG=$(ls -t "$NOFX_DATA"/{vl,nofx}_*.log 2>/dev/null | head -1) # R5 removes the nofx glob
 fi
 if [ -z "$LOG" ] || [ ! -r "$LOG" ]; then
   echo "no readable log (pass the path; looked in $NOFX_DATA)" >&2

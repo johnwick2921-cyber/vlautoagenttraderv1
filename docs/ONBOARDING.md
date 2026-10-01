@@ -1,4 +1,5 @@
-# Onboarding — nofx NQ Futures Bot
+names rewritten to vl on 2026-09-30 (VL rename)
+# Onboarding — vl NQ Futures Bot
 
 Welcome. This document gets a new engineer from "I just cloned this repo" to "I can ship a change with confidence." Read it once, then bookmark the cross-referenced docs.
 
@@ -8,7 +9,7 @@ If you only have five minutes, read this section and the data-flow diagram in §
 
 ## 1. Welcome
 
-`nofx` is an AI-driven trading bot. The repo started life as a crypto perpetuals bot (Binance / Bybit / Hyperliquid) and was repurposed for **CME NQ/MNQ index futures** using Databento for market data and NinjaTrader 8 (NT8) as the execution venue via a CSV file bridge.
+`vl` is an AI-driven trading bot. The repo started life as a crypto perpetuals bot (Binance / Bybit / Hyperliquid) and was repurposed for **CME NQ/MNQ index futures** using Databento for market data and NinjaTrader 8 (NT8) as the execution venue via a CSV file bridge.
 
 The crypto path still compiles and the code is still there — it remains in `trader/binance`, `trader/bybit`, etc. — but **the active target is NQ futures**. The Go binary boots into "futures mode" when `TRADING_MODE=futures` is set in `.env`.
 
@@ -35,7 +36,7 @@ Four control surfaces on the web UI:
 1. **Config / Settings** — AI models + exchanges + per-trader config.
 2. **Dashboard / Trader** — positions, P&L, AI decisions.
 3. **Strategy / Studio** — prompt + indicators + risk controls.
-4. **AgentBeta / Chat** — conversational AI assistant (NOFXi).
+4. **AgentBeta / Chat** — conversational AI assistant (VLi).
 
 Backend layers:
 
@@ -76,7 +77,7 @@ trader/ninjatrader/trader.go             (19-method Trader interface impl)
     ↓
 provider/ninjatrader/csv_writer.go       (atomic write — temp + rename)
     ↓
-trade_signals.csv                        (WSL2 path: /mnt/c/Users/<u>/NofxTrader/data)
+trade_signals.csv                        (WSL2 path: /mnt/c/Users/<u>/VLTrader/data)
     ↓
 NinjaTrader 8 + vltrader.cs              (Windows, polls every 2s)     — ADR-001
     ↓
@@ -104,10 +105,10 @@ Clone + build:
 
 ```bash
 git clone <your-repo-url>
-cd nofx
+cd vl
 
 # Backend
-go build -o nofx-bin .
+go build -o vl-bin .
 go test ./...
 
 # Frontend
@@ -117,11 +118,11 @@ cd web && npm install && npm run build && cd ..
 Run locally (no Databento, no NT8 — just the backend + UI for inspection):
 
 ```bash
-./nofx-bin > /tmp/nofx.log 2>&1 &
+./vl-bin > /tmp/vl.log 2>&1 &
 cd web && npm run dev   # opens http://localhost:3000
 ```
 
-The web UI proxies `/api` calls to `localhost:8080`. SQLite is at `data/data.db`. Stop with `pkill -TERM -f nofx-bin`.
+The web UI proxies `/api` calls to `localhost:8080`. SQLite is at `data/data.db`. Stop with `pkill -TERM -f vl-bin`.
 
 For the **full live SIM round-trip**, you need a Windows host running NT8 + VLTrader + a Databento API key. The runbook is `docs/operations/STARTUP.md` — start there, not here.
 
@@ -132,7 +133,7 @@ JWT_SECRET=...                            # openssl rand -base64 64
 TRADING_MODE=futures                      # or "crypto" for the legacy path
 DATABENTO_API_KEY=...                     # required when TRADING_MODE=futures
 DATABENTO_DATASET=GLBX.MDP3               # CME Globex (default)
-NINJATRADER_DATA_DIR=/mnt/c/Users/<u>/NofxTrader/data
+NINJATRADER_DATA_DIR=/mnt/c/Users/<u>/VLTrader/data
 RISK_MAX_DAILY_LOSS_USD=500
 RISK_MAX_CONCURRENT_TRADES=2
 RISK_MAX_NOTIONAL_USD=50000
@@ -262,6 +263,6 @@ Plan 7 (this onboarding doc + the 7 ADRs + CONTRIBUTING) is the final canonical 
 - **Implementation plan:** `docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md` — the full 37-task spec.
 - **Project-level instructions:** `CLAUDE.md` at repo root.
 - **Architecture decision records:** `docs/adr/ADR-001..ADR-007`.
-- **Upstream architecture docs (historical reference only):** `https://github.com/NoFxAiOS/nofx/tree/dev/docs/architecture` — useful for the strategy-engine design vocabulary. **Stale-path warning** in CLAUDE.md: upstream cites `decision/engine.go`, locally it's `kernel/engine.go`.
-- **Agent persona (NOFXi assistant spec):** `agents.md` (Chinese).
+- **Upstream architecture docs (historical reference only):** `upstream github link (removed in the VL rename)` — useful for the strategy-engine design vocabulary. **Stale-path warning** in CLAUDE.md: upstream cites `decision/engine.go`, locally it's `kernel/engine.go`.
+- **Agent persona (VLi assistant spec):** `agents.md` (Chinese).
 - **Persistent memory across Claude Code sessions:** `~/.claude/projects/<project-slug>/memory/`.

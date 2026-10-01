@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
 )
 
 func identityTestLevel(now time.Time, price float64) kernel.DetectedLevel {

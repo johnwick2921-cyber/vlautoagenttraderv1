@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 🚀 PR Management System Setup Guide
 
 **Language:** [English](SETUP_GUIDE.md) | [中文](SETUP_GUIDE.zh-CN.md)
 
-This guide will help you set up and activate the complete PR management system for NOFX.
+This guide will help you set up and activate the complete PR management system for VL.
 
 ---
 
@@ -103,7 +104,7 @@ jobs:
 ### Step 4: Create GitHub Projects
 
 1. Go to **Projects → New project**
-2. Create **"NOFX Development"** board
+2. Create **"VL Development"** board
    - Template: Board
    - Add columns: `Backlog`, `Triaged`, `In Progress`, `In Review`, `Done`
    - Add views: Sprint, Roadmap, By Area, Priority

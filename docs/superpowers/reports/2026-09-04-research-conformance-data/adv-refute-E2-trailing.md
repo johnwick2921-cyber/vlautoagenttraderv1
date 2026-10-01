@@ -1,15 +1,16 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # ADVERSARIAL VERIFY — E2 "Trailing 2.0×ATR14 after breakeven"
 Verdict: **CONFIRMED — could not refute.** Peer finding stands; evidence is STRONGER than they stated.
 Files verified identical to deployed rev 70af663d: `git diff --stat 70af663d HEAD -- trader/auto_trader_trailing.go trader/auto_trader_pause.go trader/auto_trader_risk.go` → EMPTY.
 
 ## Resolved value NOW (A11 — boot line + resolver, never a file default)
-- `/home/hoang/nofx/data/nofx_2026-09-04.log` 09-04 08:30:11 `nofx/main.go:335` → `🛑 exits: … BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)`
-- resolver `trader/exit_mechs_suspend.go:35-43` → default `return true` (:42). `EXIT_MECHS_SUSPENDED` absent from `/home/hoang/nofx/.env` AND from `/proc/878451/environ` (0 hits each). → SUSPENDED. [A]
+- `/home/hoang/vl/data/vl_2026-09-04.log` 09-04 08:30:11 `vl/main.go:335` → `🛑 exits: … BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)`
+- resolver `trader/exit_mechs_suspend.go:35-43` → default `return true` (:42). `EXIT_MECHS_SUSPENDED` absent from `/home/hoang/vl/.env` AND from `/proc/878451/environ` (0 hits each). → SUSPENDED. [A]
 - Stored strategy `a5b7662e` ("MNQ", bound to running trader `hoang`) `ai_config.risk_control` keys present: `trailing_enabled=true`, `trailing_atr_period=14`. `trailing_atr_mult` and `trailing_arm` ABSENT. [A]
 
 ## The contradiction, printed by ONE process 0 seconds apart (peer did not cite this)
 ```
-09-04 08:30:11 nofx/main.go:335            🛑 exits: … BE=off · trail=off …
+09-04 08:30:11 vl/main.go:335            🛑 exits: … BE=off · trail=off …
 09-04 08:30:11 trader/auto_trader.go:43    🧾 ledger boot: … trailing=2.0×ATR14 arm=after_breakeven (source: studio) …
 ```
 `trader/auto_trader_pause.go:196-201` computes `trailing` from `trailingConfig()` ONLY — never calls `exitMechsSuspended()`. [A]
@@ -32,7 +33,7 @@ Measured, n=5 positions since 0B (4657560b 2026-09-02 07:33:39 CT):
 | 591 | SHORT | 29285.00 | 43.50 | 75.00 | 2026-09-03 09:05:14 |
 
 id 591 MFE 43.5 > breakeven_trigger_points 40 → the BE trigger DID fire, yet:
-`grep -c` over `data/nofx_2026-09-0{2,3,4}.log`: `trailing_armed`=0, `trailing_moved`=0, `SUSPENDED`=0 (all three days).
+`grep -c` over `data/vl_2026-09-0{2,3,4}.log`: `trailing_armed`=0, `trailing_moved`=0, `SUSPENDED`=0 (all three days).
 `log_events` since 2026-09-02: `message LIKE '%trailing%'`=0, `LIKE '%SUSPENDED%'`=0, **total rows=8068** (sink demonstrably alive). [A]
 
 ## Production callers — peer said 1, actual E2 surface is 4 (method-level search, `_test.go` excluded)

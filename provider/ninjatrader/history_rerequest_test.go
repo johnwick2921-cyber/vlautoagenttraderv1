@@ -16,7 +16,7 @@ import (
 // barsBack lookback"), so a Go-side re-send IS the re-request — no AddOn
 // change. Three pins: one frame per break; ONCE PER SYMBOL PER BOOT — a
 // second break after a re-request is a diagnosis ("the replay is on another
-// contract"), and retrying it would re-pollute the ring every cycle (nofx-93's
+// contract"), and retrying it would re-pollute the ring every cycle (vl-93's
 // objection 2); nothing at all while the feed is down (that is exactly how the
 // 09-16 reconnects produced bars=0).
 

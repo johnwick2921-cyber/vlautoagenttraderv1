@@ -9,8 +9,8 @@
       "log_bytes": 2519,
       "log_sha256": "db1e4ef8ba71a99181836fc34215b686e42d2cefa871b1a6964da1878a345899",
       "summary": [
-        "ok  \tnofx/store\t28.188s",
-        "ok  \tnofx/trader\t87.714s"
+        "ok  \tvl/store\t28.188s",
+        "ok  \tvl/trader\t87.714s"
       ]
     },
     {

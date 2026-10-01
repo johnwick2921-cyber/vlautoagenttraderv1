@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	ntTrader "nofx/trader/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // P1.3 — day-plan durable session-profile snapshot + nPOC provider wiring.

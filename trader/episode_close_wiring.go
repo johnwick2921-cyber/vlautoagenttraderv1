@@ -3,8 +3,8 @@ package trader
 import (
 	"strings"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── W1 EPISODE CONTRACT — THE PRODUCTION CALL PATH FOR THE CLOSER ────────────

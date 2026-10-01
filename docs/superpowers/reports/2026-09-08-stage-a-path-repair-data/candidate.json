@@ -3,7 +3,7 @@
   "vcs_modified": false,
   "binary_bytes": 72459208,
   "binary_sha256": "c7c9c72321c89a56f5348cc0a9cee554b8f63633782cc6b29973e196fae2e4cf",
-  "binary_path": "/tmp/stage-a-path-build/nofx/nofx-bin",
+  "binary_path": "/tmp/stage-a-path-build/vl/vl-bin",
   "guide_stamp_ct": "2026-09-08T18:44:06.548080-05:00",
   "full_go_exit_code": 0,
   "vitest_files": 54,

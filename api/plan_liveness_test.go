@@ -1,7 +1,7 @@
 package api
 
 import (
-	"nofx/store"
+	"vl/store"
 	"path/filepath"
 	"testing"
 )

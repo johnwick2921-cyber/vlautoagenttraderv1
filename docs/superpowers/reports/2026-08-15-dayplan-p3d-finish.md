@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DAY-PLAN CAMPAIGN — P3.6 FINISH → P3 COMPLETE
 
-**Date:** 2026-08-15 · **Repo:** /home/hoang/nofx · **Branch:** main
+**Date:** 2026-08-15 · **Repo:** /home/hoang/vl · **Branch:** main
 **Range:** `0dfcd532` → `e19403fc` · 4 feature commits (A/B/C/D)
 **Contract:** [docs/VL-DAYPLAN-FULL-SPEC.md](../../VL-DAYPLAN-FULL-SPEC.md)
 

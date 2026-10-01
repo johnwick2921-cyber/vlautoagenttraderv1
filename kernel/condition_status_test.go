@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // 0C shadow demotion (owner ruling 2026-08-31) — resolver + boot-ledger tests.

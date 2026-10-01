@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // repairConsumedOnce runs the T4 legacy-row repair exactly once per process.

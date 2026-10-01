@@ -39,14 +39,14 @@ TimeCreated             Id
 9/3/2026 12:25:22 PM    41
 9/3/2026 12:25:38 PM  6008
 
-=== q47d: WSL boot history + nofx unit + Windows autostart ===
+=== q47d: WSL boot history + vl unit + Windows autostart ===
 uptime -s: 2026-09-03 13:58:49
 reboot   system boot  6.6.87.2-microso Thu Sep  3 14:18   still running
 reboot   system boot  6.6.87.2-microso Fri Aug 21 21:57   still running
 reboot   system boot  6.6.87.2-microso Wed Aug 19 00:53   still running
 reboot   system boot  6.6.87.2-microso Sun Aug 16 00:56   still running
-nofx.service: enabled / WSL systemd=1
-Windows scheduled tasks matching wsl|nofx|ninja: 0
+vl.service: enabled / WSL systemd=1
+Windows scheduled tasks matching wsl|vl|ninja: 0
 Startup folder: Ollama.lnk desktop.ini 
 
 === q47e: NT8 log 09-04 — the feed death as NT8 saw it ===

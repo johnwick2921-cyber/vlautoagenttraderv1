@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Class 49 — instrument honesty: the boot line that could not be wrong
 
 **Dispatch:** CLASS 46 (checklist slot **49** — 45/47/48 landed first, A16). Owner hoang, 2026-09-02.
 Audit basis: E2E DeepSeek audit @ 8c1e52ef. **Tiers:** [A] verified directly · [B] inferred · [C] speculation.
-**Built in** `~/nofx-honest`, branch `fix/class46-instrument-honesty`. No lock held during the build.
+**Built in** `~/vl-honest`, branch `fix/class46-instrument-honesty`. No lock held during the build.
 
 ## 0. Every premise verified before building (A23)
 
@@ -95,7 +96,7 @@ D5: provider calls are bounded **per read** (`AI_PLAN_STORM_CAP`, default 5), ho
 three planner attempts; hitting it logs `🌩 storm cap reached`. E5 asserts the tries are spaced by
 the schedule and that the cap holds across attempts.
 
-D6: the sockwatch bash loop is **removed** (processes killed, `~/nofx-backups/transport-capture`
+D6: the sockwatch bash loop is **removed** (processes killed, `~/vl-backups/transport-capture`
 deleted per A25) after 12,947 lines and zero FIN/CLOSE-WAIT states. `httptrace` now reports
 `closed_by=peer_fin|local_close|clean` with reused/idle/dial/ttfb/bytes/elapsed. **`closed_by` is
 INFERRED and the line says so** — httptrace sees no TCP flags; the inference is sound only because
@@ -139,5 +140,5 @@ _(pending: this boots after 45 and 48, which are already live; the wave is stage
 ## 9. Rollback
 
 ```
-cp nofx-bin.prev.boot nofx-bin && echo <previous rev> > deploy/RELEASE && kill -9 <MainPID>
+cp vl-bin.prev.boot vl-bin && echo <previous rev> > deploy/RELEASE && kill -9 <MainPID>
 ```

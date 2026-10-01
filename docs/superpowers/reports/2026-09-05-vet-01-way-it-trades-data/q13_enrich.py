@@ -1,5 +1,5 @@
 import sqlite3, json, csv, math
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 con.row_factory=sqlite3.Row
 ERA=1786770000000
 trades=[dict(r) for r in con.execute("SELECT * FROM trader_positions WHERE entry_time>=? ORDER BY id",(ERA,))]

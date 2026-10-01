@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
+	"vl/kernel"
+	"vl/logger"
 
 	"github.com/sirupsen/logrus"
 )
@@ -45,7 +45,7 @@ func renderBoot(t *testing.T, b kernel.BootIntegrity, level logrus.Level) string
 	if sp < 0 {
 		t.Fatalf("the formatter output %q has no space after the caller", line)
 	}
-	return line[:idx+2] + "nofx/main.go:322" + rest[sp:]
+	return line[:idx+2] + "vl/main.go:322" + rest[sp:]
 }
 
 func TestBootLineParityWithTheAppProducer(t *testing.T) {

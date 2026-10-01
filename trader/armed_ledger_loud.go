@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // P1-E (audit 2026-09-26) — armed-order lifecycle writes must never fail

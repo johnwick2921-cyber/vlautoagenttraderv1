@@ -158,7 +158,7 @@ export function DecisionAudit({ traderId, account }: Props) {
   if (loading) {
     return (
       <div
-        className="p-4 text-sm text-nofx-text-muted"
+        className="p-4 text-sm text-vl-neo-text-muted"
         data-testid="decision-audit-loading"
       >
         Loading decisions...
@@ -168,7 +168,7 @@ export function DecisionAudit({ traderId, account }: Props) {
   if (error) {
     return (
       <div
-        className="p-4 text-sm text-nofx-red"
+        className="p-4 text-sm text-vl-neo-red"
         data-testid="decision-audit-error"
       >
         Error: {error}
@@ -181,7 +181,7 @@ export function DecisionAudit({ traderId, account }: Props) {
   if (rows.length === 0) {
     return (
       <div
-        className="p-6 text-center text-nofx-text-muted opacity-70"
+        className="p-6 text-center text-vl-neo-text-muted opacity-70"
         data-testid="decision-audit-empty"
       >
         <div className="text-4xl mb-2 opacity-40">🧠</div>
@@ -194,7 +194,7 @@ export function DecisionAudit({ traderId, account }: Props) {
     <div className="overflow-x-auto">
       <table data-testid="decision-audit-table" className="w-full text-xs">
         <thead className="text-left border-b border-white/10">
-          <tr className="text-nofx-text-muted font-mono uppercase tracking-wider">
+          <tr className="text-vl-neo-text-muted font-mono uppercase tracking-wider">
             <th className="px-2 py-2 font-semibold whitespace-nowrap">Time</th>
             <th className="px-2 py-2 font-semibold whitespace-nowrap">
               Symbol
@@ -249,27 +249,27 @@ export function DecisionAudit({ traderId, account }: Props) {
                   className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
                   onClick={() => setExpandedKey(isExpanded ? null : row.rowKey)}
                 >
-                  <td className="px-2 py-2 text-nofx-text-muted whitespace-nowrap font-mono">
+                  <td className="px-2 py-2 text-vl-neo-text-muted whitespace-nowrap font-mono">
                     {tsDisplay}
                   </td>
-                  <td className="px-2 py-2 font-mono font-semibold text-nofx-text-main whitespace-nowrap">
+                  <td className="px-2 py-2 font-mono font-semibold text-vl-neo-text-main whitespace-nowrap">
                     {a.symbol || '—'}
                   </td>
                   <td className="px-2 py-2 whitespace-nowrap">
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/5 text-nofx-text-main">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/5 text-vl-neo-text-main">
                       {a.action || '—'}
                     </span>
                   </td>
-                  <td className="px-2 py-2 font-mono text-right text-nofx-text-main whitespace-nowrap">
+                  <td className="px-2 py-2 font-mono text-right text-vl-neo-text-main whitespace-nowrap">
                     {fmtNum(a.price)}
                   </td>
-                  <td className="px-2 py-2 font-mono text-right text-nofx-red whitespace-nowrap">
+                  <td className="px-2 py-2 font-mono text-right text-vl-neo-red whitespace-nowrap">
                     {fmtNum(a.stop_loss)}
                   </td>
-                  <td className="px-2 py-2 font-mono text-right text-nofx-green whitespace-nowrap">
+                  <td className="px-2 py-2 font-mono text-right text-vl-neo-green whitespace-nowrap">
                     {fmtNum(a.take_profit)}
                   </td>
-                  <td className="px-2 py-2 text-right font-mono text-nofx-gold whitespace-nowrap">
+                  <td className="px-2 py-2 text-right font-mono text-vl-neo-gold whitespace-nowrap">
                     {fmtConfidence(a.confidence)}
                   </td>
                   <td
@@ -279,8 +279,8 @@ export function DecisionAudit({ traderId, account }: Props) {
                     <span
                       className={`inline-flex items-center justify-center w-5 h-5 rounded text-[11px] font-bold ${
                         riskOk
-                          ? 'bg-nofx-green/15 text-nofx-green'
-                          : 'bg-nofx-red/15 text-nofx-red'
+                          ? 'bg-vl-neo-green/15 text-vl-neo-green'
+                          : 'bg-vl-neo-red/15 text-vl-neo-red'
                       }`}
                     >
                       {riskOk ? '✓' : '✗'}
@@ -295,20 +295,20 @@ export function DecisionAudit({ traderId, account }: Props) {
                       <span
                         data-testid={`decision-refused-${row.cycleId}`}
                         title={a.error}
-                        className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-nofx-red/15 border border-nofx-red/30 text-nofx-red"
+                        className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-vl-neo-red/15 border border-vl-neo-red/30 text-vl-neo-red"
                       >
                         ⛔ {a.error.split(':')[0]}
                       </span>
                     ) : (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-black/40 border border-white/10 text-nofx-text-muted">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-black/40 border border-white/10 text-vl-neo-text-muted">
                         {p.execution_status || '—'}
                       </span>
                     )}
                   </td>
-                  <td className="px-2 py-2 font-mono text-right text-nofx-text-main whitespace-nowrap">
+                  <td className="px-2 py-2 font-mono text-right text-vl-neo-text-main whitespace-nowrap">
                     {p.fill_price != null ? fmtNum(p.fill_price) : '—'}
                   </td>
-                  <td className="px-2 py-2 font-mono text-right text-nofx-text-muted whitespace-nowrap">
+                  <td className="px-2 py-2 font-mono text-right text-vl-neo-text-muted whitespace-nowrap">
                     {latencyMs > 0 ? `${latencyMs} ms` : '—'}
                   </td>
                 </tr>
@@ -316,9 +316,9 @@ export function DecisionAudit({ traderId, account }: Props) {
                   <tr data-testid={`decision-row-${row.cycleId}-reasoning`}>
                     <td
                       colSpan={11}
-                      className="px-3 py-3 bg-white/[0.03] text-nofx-text-main text-xs"
+                      className="px-3 py-3 bg-white/[0.03] text-vl-neo-text-main text-xs"
                     >
-                      <div className="flex items-center gap-3 mb-2 text-[10px] font-mono uppercase tracking-wider text-nofx-text-muted">
+                      <div className="flex items-center gap-3 mb-2 text-[10px] font-mono uppercase tracking-wider text-vl-neo-text-muted">
                         <span>Reasoning</span>
                         {p.ai_model && (
                           <span className="px-1.5 py-0.5 rounded bg-white/5">
@@ -331,12 +331,12 @@ export function DecisionAudit({ traderId, account }: Props) {
                           </span>
                         )}
                         {p.risk_check_error && (
-                          <span className="px-1.5 py-0.5 rounded bg-nofx-red/15 text-nofx-red">
+                          <span className="px-1.5 py-0.5 rounded bg-vl-neo-red/15 text-vl-neo-red">
                             risk: {p.risk_check_error}
                           </span>
                         )}
                       </div>
-                      <pre className="whitespace-pre-wrap font-mono text-xs text-nofx-text-main opacity-90">
+                      <pre className="whitespace-pre-wrap font-mono text-xs text-vl-neo-text-main opacity-90">
                         {a.reasoning || '(no reasoning recorded)'}
                       </pre>
                     </td>

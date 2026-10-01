@@ -3,9 +3,9 @@ package agent
 import (
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/trader"
-	ntTrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	"vl/trader"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W1b FOLD-5 repair — the resolver reads the manager's roster through the

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W2 A1 + A2 + D5 at the PRODUCTION call site

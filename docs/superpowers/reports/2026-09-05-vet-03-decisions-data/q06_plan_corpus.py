@@ -1,7 +1,7 @@
 # q06: full-corpus plan parse + trigger-fired join (plans ⋈ bars)
 # Corpus: LATEST version per (trade_date, session) to avoid version double-counting; also ALL versions reported.
 import sqlite3, json, collections, statistics, datetime, csv, sys
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 rows=con.execute("SELECT plan_id, version, trade_date, session, lifecycle, trigger_reason, doc, created_at FROM plans WHERE session IN ('ASIA','LONDON','NY') ORDER BY trade_date, session, version").fetchall()
 def parse_ts(s):
     # plans.created_at is UTC RFC3339 with nanos and +00:00
@@ -94,6 +94,6 @@ def wilson(k,n,z=1.96):
 k=fired['fired']
 print(f'## trigger-fired (LATEST version, confirm.ref_price touched by a 1m bar between plan creation and session end): {k}/{n} = {k/n:.3f} Wilson {wilson(k,n)}  (scenarios w/o bars coverage: {nobars})')
 for c in tot_by_cond: print(f'   {c}: {fired_by_cond[c]}/{tot_by_cond[c]}  Wilson {tuple(round(x,3) for x in wilson(fired_by_cond[c],tot_by_cond[c]))}')
-with open('/home/hoang/nofx-analysis/vet-03-0905/q06_trigger_fired.csv','w',newline='') as f:
+with open('/home/hoang/vl-analysis/vet-03-0905/q06_trigger_fired.csv','w',newline='') as f:
     w=csv.writer(f); w.writerow(['trade_date','session','version','scenario','condition','direction','ref_price','fired','first_touch_ct']); w.writerows(out)
 print('bars coverage:', datetime.datetime.fromtimestamp(times[0]/1000,CT), '→', datetime.datetime.fromtimestamp(times[-1]/1000,CT), 'n', len(times))

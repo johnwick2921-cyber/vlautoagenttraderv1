@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/mcp"
+	"vl/store"
 )
 
 // W-FLIP-REREAD — CTO takeover (2026-09-17). The first draft's suite

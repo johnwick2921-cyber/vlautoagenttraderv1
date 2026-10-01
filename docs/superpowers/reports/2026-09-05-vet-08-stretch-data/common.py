@@ -7,7 +7,7 @@ def ct_ms(s):
     return int(datetime.datetime.strptime(s,'%Y-%m-%d %H:%M:%S').replace(tzinfo=CT).timestamp()*1000)
 def ms_ct(ms):
     return datetime.datetime.fromtimestamp(ms/1000, CT).strftime('%Y-%m-%d %H:%M:%S')
-def load_1m(path='/home/hoang/nofx-analysis/vet-08-0905/bars_1m_0831_0904.csv'):
+def load_1m(path='/home/hoang/vl-analysis/vet-08-0905/bars_1m_0831_0904.csv'):
     out=[]
     for b in csv.DictReader(open(path)):
         out.append((int(b['open_time_ms']), float(b['o']), float(b['h']), float(b['l']), float(b['c']), float(b['v'])))

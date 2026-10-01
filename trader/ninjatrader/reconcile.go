@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"nofx/discipline"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/safe"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/discipline"
+	"vl/logger"
+	"vl/market"
+	"vl/safe"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // Position reconcile — the durable single-source-of-truth anchor for NT8.
@@ -617,7 +617,7 @@ func stampArmedLineageFromRow(st *store.Store, posID int64, r store.ArmedOrderDB
 	if strings.HasSuffix(r.StateReason, ";stamp_pending") {
 		_ = st.ArmedOrders().SetState(r.ID, "filled", strings.TrimSuffix(r.StateReason, ";stamp_pending"))
 	}
-	// F3 GAP (2026-09-03, found via nofx-89's 09-01 audit): fill_quantity is
+	// F3 GAP (2026-09-03, found via vl-89's 09-01 audit): fill_quantity is
 	// stamped HERE too. The fill-time stamp in stampArmedFillLineage returns
 	// early on this very path — the position row is not materialized when the
 	// fill frame lands — so stamping only there covered the minority case.

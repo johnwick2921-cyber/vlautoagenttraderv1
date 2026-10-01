@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // F-A (CTO review, class 40) — the ordered close path keeps the two legacy

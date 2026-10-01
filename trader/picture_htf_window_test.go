@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W4 / D23 — the entry window belongs to the H1 CLOSE that

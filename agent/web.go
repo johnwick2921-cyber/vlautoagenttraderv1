@@ -8,9 +8,10 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"nofx/safe"
 	"regexp"
 	"time"
+	"vl/branding"
+	"vl/safe"
 )
 
 type storeUserIDContextKey struct{}
@@ -63,7 +64,7 @@ var binanceClient = &http.Client{
 	},
 }
 
-// WebHandler provides HTTP endpoints for the NOFXi agent.
+// WebHandler provides HTTP endpoints for the VL agent.
 type WebHandler struct {
 	agent  *Agent
 	logger *slog.Logger
@@ -75,7 +76,7 @@ func NewWebHandler(agent *Agent, logger *slog.Logger) *WebHandler {
 
 // HandleHealth handles GET /api/agent/health.
 func (w *WebHandler) HandleHealth(rw http.ResponseWriter, r *http.Request) {
-	writeJSON(rw, 200, map[string]string{"status": "ok", "agent": "NOFXi", "time": time.Now().Format(time.RFC3339)})
+	writeJSON(rw, 200, map[string]string{"status": "ok", "agent": branding.PersonaName(), "time": time.Now().Format(time.RFC3339)})
 }
 
 // HandleChat handles POST /api/agent/chat.

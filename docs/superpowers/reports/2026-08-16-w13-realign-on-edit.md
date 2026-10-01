@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W13 — PLAN RE-ALIGNMENT ON OWNER EDIT (owner decision 2026-08-16 · AUTO trigger)
 
 **LINE 1 — W13 DONE + GREEN.** An overlay save now auto-triggers a whole-plan
@@ -64,11 +65,11 @@ manual button · failed says "plan unchanged" · **bulk-add = exactly ONE `onSav
 
 ## Deploy (owner)
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git pull
-go build -o nofx-bin . && echo BUILD OK
-sudo systemctl restart nofx
-go version -m ./nofx-bin | grep vcs        # expect vcs.revision=<HEAD>, vcs.modified=false
+go build -o vl-bin . && echo BUILD OK
+sudo systemctl restart vl
+go version -m ./vl-bin | grep vcs        # expect vcs.revision=<HEAD>, vcs.modified=false
 ```
 Frontend: `cd web && npm run build`, then **hard-reload** the browser (Ctrl+Shift+R) —
 Vite's HMR cache otherwise serves the old modules.

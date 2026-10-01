@@ -125,7 +125,7 @@
         200,
         234
       ],
-      "summary": "Constructs a StrategyEngine from a StrategyConfig, optionally wiring the NofxOS data-wallet client.",
+      "summary": "Constructs a StrategyEngine from a StrategyConfig, optionally wiring the VLOS data-wallet client.",
       "tags": [
         "factory",
         "strategy"
@@ -1524,56 +1524,56 @@
     },
     {
       "source": "file:kernel/engine.go",
-      "target": "file:provider/nofxos/ai500.go",
+      "target": "file:provider/vlos/ai500.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine.go",
-      "target": "file:provider/nofxos/claw402.go",
+      "target": "file:provider/vlos/claw402.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine.go",
-      "target": "file:provider/nofxos/client.go",
+      "target": "file:provider/vlos/client.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine.go",
-      "target": "file:provider/nofxos/coin.go",
+      "target": "file:provider/vlos/coin.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine.go",
-      "target": "file:provider/nofxos/netflow.go",
+      "target": "file:provider/vlos/netflow.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine.go",
-      "target": "file:provider/nofxos/oi.go",
+      "target": "file:provider/vlos/oi.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine.go",
-      "target": "file:provider/nofxos/price.go",
+      "target": "file:provider/vlos/price.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine.go",
-      "target": "file:provider/nofxos/util.go",
+      "target": "file:provider/vlos/util.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -2147,56 +2147,56 @@
     },
     {
       "source": "file:kernel/engine_prompt.go",
-      "target": "file:provider/nofxos/ai500.go",
+      "target": "file:provider/vlos/ai500.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine_prompt.go",
-      "target": "file:provider/nofxos/claw402.go",
+      "target": "file:provider/vlos/claw402.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine_prompt.go",
-      "target": "file:provider/nofxos/client.go",
+      "target": "file:provider/vlos/client.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine_prompt.go",
-      "target": "file:provider/nofxos/coin.go",
+      "target": "file:provider/vlos/coin.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine_prompt.go",
-      "target": "file:provider/nofxos/netflow.go",
+      "target": "file:provider/vlos/netflow.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine_prompt.go",
-      "target": "file:provider/nofxos/oi.go",
+      "target": "file:provider/vlos/oi.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine_prompt.go",
-      "target": "file:provider/nofxos/price.go",
+      "target": "file:provider/vlos/price.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
       "source": "file:kernel/engine_prompt.go",
-      "target": "file:provider/nofxos/util.go",
+      "target": "file:provider/vlos/util.go",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -2850,7 +2850,7 @@
     "Only four assigned paths have historical nodes;26 current files absent.",
     "engine.go fetchSingleExternalSource has unbounded io.ReadAll, not graph-claimed size cap.",
     "FetchQuantDataBatch sequential, not graph-claimed concurrent.",
-    "Quant provider is NofxOS client, not graph-claimed direct CoinAnk.",
+    "Quant provider is VLOS client, not graph-claimed direct CoinAnk.",
     "RiskLimits has three fields, not a contract cap; cap resolver separate.",
     "ResolveMaxContracts/ResolveNotionalLeverage do not take master/per-leg toggles.",
     "ResetDailyPnL updates key and latches; does not reset database/account PnL.",

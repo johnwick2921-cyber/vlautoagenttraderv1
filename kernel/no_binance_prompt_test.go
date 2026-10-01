@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/hook"
-	"nofx/market"
-	"nofx/store"
+	"vl/hook"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W-NO-BINANCE A — absent open interest / funding render n/a, never 0 ────

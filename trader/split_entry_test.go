@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ENTRY-MECHANICS E4 (2026-08-30) — sweep-reclaim SPLIT entry: two child

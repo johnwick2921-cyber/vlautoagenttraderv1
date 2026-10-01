@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"vl/branding"
 )
 
 type llmFlowExtractionTask struct {
@@ -29,7 +31,7 @@ type llmFlowFieldSpec struct {
 }
 
 func buildActiveFlowExtractionPrompt(lang, flowLabel, flowContext string, text string, recentConversationCtx string, currentRefs any, suspendedSnapshots any, extraSections []string) (string, string) {
-	systemPrompt := `You extract structured continuation input for an active NOFXi flow.
+	systemPrompt := `You extract structured continuation input for an active ` + branding.PersonaName() + ` flow.
 Return JSON only. No markdown.
 
 You must decide one of:

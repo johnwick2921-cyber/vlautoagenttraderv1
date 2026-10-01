@@ -17,7 +17,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 const webInstallBodyFixture = "web/src/lib/api/testdata/updates-install-body.wire.txt"

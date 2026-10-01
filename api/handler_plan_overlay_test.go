@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 
 	"github.com/gin-gonic/gin"
 )

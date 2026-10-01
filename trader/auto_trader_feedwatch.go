@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 	"strings"
 )
 

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Sunday-Shield Wave — W1–W4 build & park record
 
 **Branch:** `fix/sunday-shield` · **Base:** `da0d6fe1` (dev tip) · **Rev target:** `b0549ff2`-era findings fixed, parked for the owner's "go cutover" (deploy target: today, well before Sunday 16:00 CT).
@@ -47,9 +48,9 @@ Expected boot evidence Sunday: `🔕 PERSIST WATCHDOG` lines **0** from deploy t
 
 Do NOT start before the owner confirms the embedded key was rotated. Then, in ONE dispatch:
 
-1. `git rm` the 14 tracked binaries (`git ls-files | grep nofx-bin` → `nofx-bin.old.00090003 … f9ac3796`; every sampled binary embeds the same `sk-` key, repo is PUBLIC).
-2. `.gitignore`: add `nofx-bin.old*` (currently only `/nofx-bin` is covered) + keep `nofx-bin*` family covered.
-3. `git filter-repo --invert-paths --path-glob 'nofx-bin*'` history purge (on a fresh clone — do NOT run on the live checkout).
+1. `git rm` the 14 tracked binaries (`git ls-files | grep vl-bin` → `vl-bin.old.00090003 … f9ac3796`; every sampled binary embeds the same `sk-` key, repo is PUBLIC).
+2. `.gitignore`: add `vl-bin.old*` (currently only `/vl-bin` is covered) + keep `vl-bin*` family covered.
+3. `git filter-repo --invert-paths --path-glob 'vl-bin*'` history purge (on a fresh clone — do NOT run on the live checkout).
 4. **Force-push only on the owner's explicit ack** — history rewrite. All clones/forks must re-clone; **the partner repo `vlautoagenttraderv1` must re-clone** — append this to the Binnie runbook (`deploy/` or P2 report section) as a mandatory step.
 5. Verify: `git log --all -S 'sk-' --oneline | wc -l` == 0 · `strings` scan of every remaining tracked binary → 0 `sk-` hits · repo tree scan clean.
 6. **AUDIT-CHECKLIST class 20** (append in the SAME dispatch): "committed binaries / embedded secrets: `strings`-scan every tracked binary; binaries are never tracked; `.gitignore` covers every binary glob."

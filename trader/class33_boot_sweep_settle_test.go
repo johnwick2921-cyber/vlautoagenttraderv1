@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // B2 (the F8 gap the #216 PR body flagged): the boot sweep must REQUEST the

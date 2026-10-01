@@ -1,6 +1,6 @@
 {
   "merged_head": "05125bd6efffd2a9afd179728f32b29d679f71ac",
-  "clean_clone": "/tmp/brand-visible-build/nofx",
+  "clean_clone": "/tmp/brand-visible-build/vl",
   "go_test_all_exit": 0,
   "vitest_exit": 0,
   "vitest_files": 57,

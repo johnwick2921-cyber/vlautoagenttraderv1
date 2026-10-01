@@ -110,15 +110,15 @@
  deploy/RESTORE.md                                  |     37 +
  deploy/fix-wsl2-clock.sh                           |     78 +
  deploy/install-clock-guard.sh                      |     26 +
- deploy/journald-nofx.conf                          |      7 +
+ deploy/journald-vl.conf                          |      7 +
  deploy/leveltruth-cutover.sh                       |     52 +
- deploy/nofx-claim-test.sh                          |     37 +
- deploy/nofx-claim.sh                               |     93 +
- deploy/nofx-clock-guard.sh                         |     80 +
- deploy/nofx-lock-test.sh                           |    150 +
- deploy/nofx-lock.sh                                |    220 +
- deploy/systemd-user/nofx-clock-guard.service       |     12 +
- deploy/systemd-user/nofx-clock-guard.timer         |     13 +
+ deploy/vl-claim-test.sh                          |     37 +
+ deploy/vl-claim.sh                               |     93 +
+ deploy/vl-clock-guard.sh                         |     80 +
+ deploy/vl-lock-test.sh                           |    150 +
+ deploy/vl-lock.sh                                |    220 +
+ deploy/systemd-user/vl-clock-guard.service       |     12 +
+ deploy/systemd-user/vl-clock-guard.timer         |     13 +
  depth5_faq.png                                     |    Bin 301754 -> 0 bytes
  depth5_faq_no_results.png                          |    Bin 239572 -> 0 bytes
  depth5_login.png                                   |    Bin 190765 -> 0 bytes

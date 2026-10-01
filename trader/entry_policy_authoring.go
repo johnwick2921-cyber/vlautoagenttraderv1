@@ -3,8 +3,8 @@ package trader
 import (
 	"fmt"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W3 (2026-09-23) — the entry-policy knobs at the WRITE site.

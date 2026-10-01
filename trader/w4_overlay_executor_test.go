@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W4 — owner overlays reach the EXECUTOR: resolveActivePlanDoc folds overlays into

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func skipTestTrader(t *testing.T, planEnabled bool) (*AutoTrader, *store.Store) {

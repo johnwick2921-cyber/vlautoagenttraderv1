@@ -623,10 +623,10 @@ docs/superpowers/AUDIT-CHECKLIST.md:1860:   query; position_query.go).
 docs/superpowers/AUDIT-CHECKLIST.md:1861: - **R8 times** — all times CT.
 docs/superpowers/AUDIT-CHECKLIST.md:1862: - **R9 isolation** — read-only sweeps run in a worktree at the RUNNING rev;
 docs/superpowers/AUDIT-CHECKLIST.md:1863:   zero code/config/DB/env changes; no restarts. Main tree untouched.
-/home/hoang/nofx/data/nofx_2026-09-02.log:16710: 09-02 07:49:06 [INFO] clone0b2/main.go:240 🔐 BOOT INTEGRITY OK — rev 4175e0b62de7 · built 2026-09-02T12:44:37Z · expected 4175e0b62de7 · goldens PASS
-/home/hoang/nofx/data/nofx_2026-09-02.log:16755: 09-02 07:49:06 [INFO] clone0b2/main.go:267 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
-/home/hoang/nofx/data/nofx_2026-09-03.log:3658: 09-03 11:10:33 [INFO] cc2/main.go:243 🔐 BOOT INTEGRITY OK — rev f478ed880dc9 · built 2026-09-03T16:07:06Z · expected f478ed880dc9 · goldens PASS
-/home/hoang/nofx/data/nofx_2026-09-03.log:3696: 09-03 11:10:33 [INFO] cc2/main.go:270 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
+/home/hoang/vl/data/vl_2026-09-02.log:16710: 09-02 07:49:06 [INFO] clone0b2/main.go:240 🔐 BOOT INTEGRITY OK — rev 4175e0b62de7 · built 2026-09-02T12:44:37Z · expected 4175e0b62de7 · goldens PASS
+/home/hoang/vl/data/vl_2026-09-02.log:16755: 09-02 07:49:06 [INFO] clone0b2/main.go:267 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
+/home/hoang/vl/data/vl_2026-09-03.log:3658: 09-03 11:10:33 [INFO] cc2/main.go:243 🔐 BOOT INTEGRITY OK — rev f478ed880dc9 · built 2026-09-03T16:07:06Z · expected f478ed880dc9 · goldens PASS
+/home/hoang/vl/data/vl_2026-09-03.log:3696: 09-03 11:10:33 [INFO] cc2/main.go:270 🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
 BOOT f478ed880dc9 trader/entry_gate.go:124: 	if in.PlanMode == "strict" {
 BOOT f478ed880dc9 trader/entry_gate.go:125: 		if in.Path != "arm" {
 BOOT f478ed880dc9 trader/entry_gate.go:126: 			return fmt.Sprintf("entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a %s-path market entry", in.Path), true

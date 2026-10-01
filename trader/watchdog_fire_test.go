@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // The fire log records what the ruling asked for — call age, bytes — and the

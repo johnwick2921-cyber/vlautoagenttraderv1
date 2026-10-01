@@ -202,7 +202,7 @@ describe('UpdatesPage', () => {
     render(<UpdatesPage />)
     await waitFor(() => expect(screen.getByTestId('receipt-link')).toBeTruthy())
     const link = screen.getByTestId('receipt-link')
-    // A browser navigation to the URL cannot carry X-NOFX-Update and 403s;
+    // A browser navigation to the URL cannot carry X-VL-Update and 403s;
     // the page fetches through the client instead.
     expect(link.tagName).toBe('BUTTON')
     fireEvent.click(link)

@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // TOUCH TELEMETRY (Pack B addendum, 2026-08-26) — machine read of level

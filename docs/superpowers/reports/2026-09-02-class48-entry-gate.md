@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLASS 48 — THE DECISION PATH BYPASSES THE ARM-SEAM GATES
 **Phase 1 read-only report** · 2026-09-02 · owner hoang · read-only, no lock, no writes
-Worktree `~/nofx-gate` · branch `fix/class48-entry-gate` · base `8dad304e` (dev HEAD)
+Worktree `~/vl-gate` · branch `fix/class48-entry-gate` · base `8dad304e` (dev HEAD)
 Evidence tiers: [A] directly verified · [B] inferred · [C] speculation.
 
 ---
@@ -235,7 +236,7 @@ ONE `EntryGate(intent EntryIntent) (reason string, refused bool)`:
 
 ## SECTION G — PHASE 2 DELIVERED (owner-approved)
 
-**Code (worktree `~/nofx-gate`, branch `fix/class48-entry-gate`):**
+**Code (worktree `~/vl-gate`, branch `fix/class48-entry-gate`):**
 
 - **`trader/entry_gate.go` (new)** — `EntryGate(intent EntryIntent) (reason string, refused bool)`, pure and nil-safe, legs in order: plan-bias (direction mode) → scenario-direction (action vs the cited scenario's direction) → shadow map → **R:R at the execution price** (the 587/589 fix) → min-SL ×ATR5m → one-live-arm. Fail-open on missing inputs (mirrors `validateDecision`).
 - **Arm seam wiring** — `armed_executor.go` in `maybeManageArmedOrders`, after the `oneLiveArmGuard` block and before the `ArmedOrderDB` row write: `at.entryGateForArm(...)`; on refusal an existing resting arm for the spec is cancelled (reason `entry_gate:…`), and the refusal is RECORDED via `store.IncArmRefusal(..., "entry_gate:"+class)` + `🚦 entry-gate REFUSED` log.

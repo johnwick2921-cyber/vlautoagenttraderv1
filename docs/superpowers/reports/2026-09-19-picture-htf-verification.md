@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W-PICTURE-HTF — Verification Trace (DS-102, 2026-09-19/20)
 
 Inspection base (dispatch's historical context): `30db2e25ae9ce564198d37d629cb729884449bd5`.
 **Acceptance base (fresh dev tip):** `origin/dev = d7ca3846` — the wave was REBASED onto it 2026-09-20 (branch `fix/picture-htf` @ `1aa1733d`); the earlier base diverged below the #177 merge and has been corrected. `git log -1 -- docs/superpowers/reports/2026-09-19-picture-htf-verification.md` at accept = the claim commit `ceb894b9` rebased onto d7ca3846.
-Worktree `/home/hoang/nofx-102-picture` is `git worktree lock`-ed; the main-tree deployment lock is NOT held during implementation (released 2026-09-20; it will be re-acquired only for the owner-attended cutover).
+Worktree `/home/hoang/vl-102-picture` is `git worktree lock`-ed; the main-tree deployment lock is NOT held during implementation (released 2026-09-20; it will be re-acquired only for the owner-attended cutover).
 
 ## 1. Verification table
 
@@ -48,7 +49,7 @@ Resolutions in detail:
 
 6. **Market fills & protection.** Pre-submit R:R stored as `r_r_estimate`; actual fill R:R stored separately on the fill event. Structural stop/target are NOT moved to repair slippage. Partial fills: existing `netting_fills.go` + reconcile handle quantity shortfalls; protection timeout and recovery: **OWNER RULING REQUIRED** before activation unless existing bracket behavior already defines it (to be confirmed during implementation).
 
-7. **Activation & rollback.** Selected trader = owner's `hoang` SIM strategy (exact strategy id + account binding to be quoted at cutover). Flat-state + no outstanding entries verified from FRESH broker evidence (NT8 snapshots), not DB only. Config backup before change. Rollback = previous mode + prior binary (`nofx-bin.old.<rev>` slot) + AddOn compatibility floor (`MinAddonBuildPictureHtf` capability gate — old AddOn ⇒ mode prints unavailable, never active).
+7. **Activation & rollback.** Selected trader = owner's `hoang` SIM strategy (exact strategy id + account binding to be quoted at cutover). Flat-state + no outstanding entries verified from FRESH broker evidence (NT8 snapshots), not DB only. Config backup before change. Rollback = previous mode + prior binary (`vl-bin.old.<rev>` slot) + AddOn compatibility floor (`MinAddonBuildPictureHtf` capability gate — old AddOn ⇒ mode prints unavailable, never active).
 
 8. **Verification outcomes.** Four categories kept separate in the final report: (a) historical replay (Sept 17 labeled, feed receipt NOT claimed), (b) automated tests, (c) controlled SIM execution (synthetic opportunity seam), (d) natural market execution (pending; if none occurs: "active and ready; natural-entry proof pending").
 

@@ -5,9 +5,9 @@ import (
 	"os"
 	"strconv"
 
-	"nofx/logger"
-	"nofx/market"
-	"nofx/telemetry"
+	"vl/logger"
+	"vl/market"
+	"vl/telemetry"
 )
 
 // B4 — stale-data ENTRY block. A NEW entry requires the freshest intraday bar to

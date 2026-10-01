@@ -13,7 +13,7 @@ import (
 // the bot into a hold it cannot read), inside the bot's control group (the
 // unit's KillMode=control-group would kill the worker with the bot, mid-job),
 // and with TZ set (log line times are the bot's local zone). CheckProcess is
-// what `nofx-updater serve` calls first (cmd TestEverySubcommandRefusesRoot).
+// what `vl-updater serve` calls first (cmd TestEverySubcommandRefusesRoot).
 func TestWorkerRefusesRoot(t *testing.T) {
 	origE, origC, origT := geteuid, readCgroup, lookupTZ
 	t.Cleanup(func() { geteuid, readCgroup, lookupTZ = origE, origC, origT })
@@ -26,10 +26,9 @@ func TestWorkerRefusesRoot(t *testing.T) {
 		tz     func() (string, bool)
 		want   error
 	}{
-		"an ordinary user":          {user, plainCgroup, noTZ, nil},
-		"root":                      {func() int { return 0 }, plainCgroup, noTZ, ErrRoot},
-		"inside nofx.service":       {user, func() ([]byte, error) { return []byte("0::/system.slice/nofx.service\n"), nil }, noTZ, ErrBotCgroup},
-		"TZ set":                    {user, plainCgroup, func() (string, bool) { return "America/Chicago", true }, ErrTZ},
+		"an ordinary user":    {user, plainCgroup, noTZ, nil},
+		"root":                {func() int { return 0 }, plainCgroup, noTZ, ErrRoot},
+		"inside nofx.service": {user, func() ([]byte, error) { return []byte("0::/system.slice/nofx.service\n"), nil }, noTZ, ErrBotCgroup}, "inside vl.service": {user, func() ([]byte, error) { return []byte("0::/system.slice/vl.service\n"), nil }, noTZ, ErrBotCgroup}, // R5 removes the nofx name, keeps vl		"TZ set":                    {user, plainCgroup, func() (string, bool) { return "America/Chicago", true }, ErrTZ},
 		"TZ set empty is still set": {user, plainCgroup, func() (string, bool) { return "", true }, ErrTZ},
 	} {
 		geteuid, readCgroup, lookupTZ = c.euid, c.cgroup, c.tz

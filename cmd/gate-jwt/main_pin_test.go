@@ -80,8 +80,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/store"
+	"vl/auth"
+	"vl/store"
 )
 
 // gjGoCommand is the go command running this test (PATH, else $GOROOT/bin).
@@ -317,7 +317,7 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 		if p.self {
 			self = &pkgs[i]
 		}
-		if !strings.HasPrefix(p.path, "nofx/") && !p.self {
+		if !strings.HasPrefix(p.path, "vl/") && !p.self {
 			continue
 		}
 		for _, fn := range p.files {
@@ -390,7 +390,7 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 		}
 	}
 	// Positive control: the derivation finds the signer's own entry points.
-	for _, k := range []string{"nofx/auth.signToken", "nofx/auth.GenerateJWT", "nofx/auth.GenerateScopedJWT"} {
+	for _, k := range []string{"vl/auth.signToken", "vl/auth.GenerateJWT", "vl/auth.GenerateScopedJWT"} {
 		if !mint[k] {
 			t.Fatalf("positive control: %s is not derived as a minting function — the derivation is broken (minting set: %v)", k, sortedKeys(mint))
 		}
@@ -417,7 +417,7 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 			if !ok || se.Sel.Name != "SetJWTSecret" {
 				return true
 			}
-			if x, ok := se.X.(*ast.Ident); !ok || imports[x.Name] != "nofx/auth" {
+			if x, ok := se.X.(*ast.Ident); !ok || imports[x.Name] != "vl/auth" {
 				return true
 			}
 			if a, ok := ast.Unparen(call.Args[0]).(*ast.SelectorExpr); ok && a.Sel.Name == "JWTSecret" {
@@ -444,7 +444,7 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 				}
 			case gjIsJWTPath(r.pkg):
 				directMints[key] = append(directMints[key], pos(r.pos)+" "+r.pkg+"."+r.name+" (jwt)")
-			case r.pkg == "nofx/auth" && r.name == "JWTSecret":
+			case r.pkg == "vl/auth" && r.name == "JWTSecret":
 				directMints[key] = append(directMints[key], pos(r.pos)+" auth.JWTSecret (the signing secret)")
 			case gjIsCryptoPath(r.pkg):
 				directMints[key] = append(directMints[key], pos(r.pos)+" "+r.pkg+"."+r.name+" (a signing primitive: a hand-rolled token)")
@@ -496,8 +496,8 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 			}
 		}
 	}
-	if got := directMints["mintGateToken"]; len(got) != 1 || !strings.HasSuffix(got[0], " nofx/auth.GenerateScopedJWT") {
-		bad = append(bad, fmt.Sprintf("mintGateToken's direct mints = %v — want exactly one nofx/auth.GenerateScopedJWT", got))
+	if got := directMints["mintGateToken"]; len(got) != 1 || !strings.HasSuffix(got[0], " vl/auth.GenerateScopedJWT") {
+		bad = append(bad, fmt.Sprintf("mintGateToken's direct mints = %v — want exactly one vl/auth.GenerateScopedJWT", got))
 	}
 	// 2. main's ONLY mint is one call `mintGateToken(`.
 	mainMints := 0

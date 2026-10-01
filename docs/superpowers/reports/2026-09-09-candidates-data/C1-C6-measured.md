@@ -1,7 +1,8 @@
-# C1–C6 measured at the running rev — 2026-09-09, session nofx-66
+names rewritten to vl on 2026-09-30 (VL rename)
+# C1–C6 measured at the running rev — 2026-09-09, session vl-66
 
 Running rev verified three ways: `/api/health` → `954f11b15f2e` · `/proc/438/exe` →
-`/home/hoang/nofx/nofx-bin`, `vcs.revision=954f11b15f2e7615678f7d2b708c47895faebf1e`,
+`/home/hoang/vl/vl-bin`, `vcs.revision=954f11b15f2e7615678f7d2b708c47895faebf1e`,
 `vcs.modified=false` · `deploy/RELEASE` = `954f11b1`. All agree.
 
 SPEC-FRESHNESS: the dispatch's pins `f5927cdc` (range-fade) and `982091d4` (trading-policy)
@@ -45,8 +46,8 @@ Live line from **today's** boot of the running rev:
    (default 1.5×dATR) · family-confluence(cap=3) · role-overridden=false
 ```
 
-`seats=8` appears **only** in `nofx_2026-09-03.log` — a pre-fix boot. 09-04, 09-08 and 09-09 all read
-`seats=per-trader`. My earlier grep spanned `nofx_2026-09-0*.log` and quoted the 09-03 line as current.
+`seats=8` appears **only** in `vl_2026-09-03.log` — a pre-fix boot. 09-04, 09-08 and 09-09 all read
+`seats=per-trader`. My earlier grep spanned `vl_2026-09-0*.log` and quoted the 09-03 line as current.
 
 `DefaultMaxLevels = 8` (`levels_score.go:54`) and `PlanHardMaxLevels = 12` (`plan_doc.go:365`) are a
 package default and a hard ceiling; the bound strategy's resolved `max_levels` is 12. The line now

@@ -1,6 +1,6 @@
 # q07: re-author cost — for each rejected read cluster (trade_date, session, attempts within 20 min), seconds from first reject to the next accepted plans row; attempts per accepted read; fail-closed reads
 import sqlite3, datetime, collections, statistics
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 def p(s):
     s=s.strip()
     if s.endswith('+00:00'): s=s[:-6]

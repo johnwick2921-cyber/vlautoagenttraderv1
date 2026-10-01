@@ -35,9 +35,8 @@ jobs:
         run: |
           cat > .env <<EOF
           # Minimal config for healthcheck testing
-          NOFX_BACKEND_PORT=8080
-          NOFX_FRONTEND_PORT=3000
-          NOFX_TIMEZONE=UTC
+          VL_BACKEND_PORT=8080
+          VL_FRONTEND_PORT=3000
           DATA_ENCRYPTION_KEY=test-key-32-chars-minimum-length
           JWT_SECRET=test-jwt-secret-minimum-32-chars
           EOF
@@ -88,7 +87,7 @@ jobs:
         run: |
           echo "🔍 Checking backend container health..."
 
-          BACKEND_HEALTH=$(docker inspect nofx-trading --format='{{.State.Health.Status}}')
+          BACKEND_HEALTH=$(docker inspect vl-trading --format='{{.State.Health.Status}}')
           echo "Backend health status: $BACKEND_HEALTH"
 
           if [ "$BACKEND_HEALTH" != "healthy" ]; then
@@ -96,10 +95,10 @@ jobs:
             echo "Health status: $BACKEND_HEALTH"
             echo ""
             echo "Health logs:"
-            docker inspect nofx-trading --format='{{json .State.Health}}' | jq
+            docker inspect vl-trading --format='{{json .State.Health}}' | jq
             echo ""
             echo "Container logs:"
-            docker logs nofx-trading
+            docker logs vl-trading
             exit 1
           fi
 
@@ -109,7 +108,7 @@ jobs:
         run: |
           echo "🔍 Checking frontend container health..."
 
-          FRONTEND_HEALTH=$(docker inspect nofx-frontend --format='{{.State.Health.Status}}')
+          FRONTEND_HEALTH=$(docker inspect vl-frontend --format='{{.State.Health.Status}}')
           echo "Frontend health status: $FRONTEND_HEALTH"
 
           if [ "$FRONTEND_HEALTH" != "healthy" ]; then
@@ -117,10 +116,10 @@ jobs:
             echo "Health status: $FRONTEND_HEALTH"
             echo ""
             echo "Health logs:"
-            docker inspect nofx-frontend --format='{{json .State.Health}}' | jq
+            docker inspect vl-frontend --format='{{json .State.Health}}' | jq
             echo ""
             echo "Container logs:"
-            docker logs nofx-frontend
+            docker logs vl-frontend
             exit 1
           fi
 
@@ -153,12 +152,12 @@ jobs:
           echo "Testing backend healthcheck..."
           # CLASS 251: 127.0.0.1 for the same reason as the compose probe —
           # localhost is [::1] in busybox and the API is IPv4-loopback only.
-          docker exec nofx-trading wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/api/health
+          docker exec vl-trading wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/api/health
           echo "✅ Backend healthcheck command works"
 
           # Test frontend healthcheck command
           echo "Testing frontend healthcheck..."
-          docker exec nofx-frontend wget --no-verbose --tries=1 --spider http://127.0.0.1/health
+          docker exec vl-frontend wget --no-verbose --tries=1 --spider http://127.0.0.1/health
           echo "✅ Frontend healthcheck command works"
 
       - name: Show container status
@@ -171,10 +170,10 @@ jobs:
         if: failure()
         run: |
           echo "📋 Backend logs:"
-          docker logs nofx-trading
+          docker logs vl-trading
           echo ""
           echo "📋 Frontend logs:"
-          docker logs nofx-frontend
+          docker logs vl-frontend
 
       - name: Cleanup
         if: always()

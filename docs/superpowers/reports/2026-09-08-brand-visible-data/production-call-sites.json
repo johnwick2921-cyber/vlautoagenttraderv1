@@ -82,7 +82,7 @@
   {
     "path": "agent/prompt_persona.go",
     "line": 8,
-    "source": "var nofxiAdvisorSystemPreamble = `You are ` + branding.PersonaName() + `, the core intelligence hub of the ` + branding.ProductName() + ` platform."
+    "source": "var vliAdvisorSystemPreamble = `You are ` + branding.PersonaName() + `, the core intelligence hub of the ` + branding.ProductName() + ` platform."
   },
   {
     "path": "agent/prompt_persona.go",
@@ -287,17 +287,17 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 578,
-    "source": "whyChooseNofx: 'Why Choose ' + PERSONA_NAME + '?',"
+    "source": "whyChooseVL: 'Why Choose ' + PERSONA_NAME + '?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
     "line": 604,
-    "source": "aboutNofx: 'About ' + PERSONA_NAME,"
+    "source": "aboutVL: 'About ' + PERSONA_NAME,"
   },
   {
     "path": "web/src/i18n/translations.ts",
     "line": 605,
-    "source": "whatIsNofx: 'What is ' + PERSONA_NAME + '?',"
+    "source": "whatIsVL: 'What is ' + PERSONA_NAME + '?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -317,7 +317,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 658,
-    "source": "accessNofxPlatform: 'Access ' + PERSONA_NAME + ' Platform',"
+    "source": "accessVLPlatform: 'Access ' + PERSONA_NAME + ' Platform',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -327,7 +327,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 700,
-    "source": "faqWhatIsNOFX: 'What is ' + PERSONA_NAME + '?',"
+    "source": "faqWhatIsVL: 'What is ' + PERSONA_NAME + '?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -367,7 +367,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 750,
-    "source": "faqUpdateNOFX: 'How do I update ' + PERSONA_NAME + '?',"
+    "source": "faqUpdateVL: 'How do I update ' + PERSONA_NAME + '?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -412,7 +412,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 870,
-    "source": "faqCanNOFXStealFunds: 'Can ' + PERSONA_NAME + ' steal my funds?',"
+    "source": "faqCanVLStealFunds: 'Can ' + PERSONA_NAME + ' steal my funds?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -472,17 +472,17 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 1978,
-    "source": "whyChooseNofx: '为什么选择 ' + PERSONA_NAME + '？',"
+    "source": "whyChooseVL: '为什么选择 ' + PERSONA_NAME + '？',"
   },
   {
     "path": "web/src/i18n/translations.ts",
     "line": 2000,
-    "source": "aboutNofx: '关于 ' + PERSONA_NAME,"
+    "source": "aboutVL: '关于 ' + PERSONA_NAME,"
   },
   {
     "path": "web/src/i18n/translations.ts",
     "line": 2001,
-    "source": "whatIsNofx: '什么是 ' + PERSONA_NAME + '？',"
+    "source": "whatIsVL: '什么是 ' + PERSONA_NAME + '？',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -502,7 +502,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 2048,
-    "source": "accessNofxPlatform: '访问 ' + PERSONA_NAME + ' 平台',"
+    "source": "accessVLPlatform: '访问 ' + PERSONA_NAME + ' 平台',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -512,7 +512,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 2087,
-    "source": "faqWhatIsNOFX: PERSONA_NAME + ' 是什么？',"
+    "source": "faqWhatIsVL: PERSONA_NAME + ' 是什么？',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -552,7 +552,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 2137,
-    "source": "faqUpdateNOFX: '如何更新 ' + PERSONA_NAME + '？',"
+    "source": "faqUpdateVL: '如何更新 ' + PERSONA_NAME + '？',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -597,7 +597,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 2256,
-    "source": "faqCanNOFXStealFunds: PERSONA_NAME + ' 会盗取我的资金吗？',"
+    "source": "faqCanVLStealFunds: PERSONA_NAME + ' 会盗取我的资金吗？',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -657,17 +657,17 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 3361,
-    "source": "whyChooseNofx: 'Mengapa Memilih ' + PERSONA_NAME + '?',"
+    "source": "whyChooseVL: 'Mengapa Memilih ' + PERSONA_NAME + '?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
     "line": 3385,
-    "source": "aboutNofx: 'Tentang ' + PERSONA_NAME,"
+    "source": "aboutVL: 'Tentang ' + PERSONA_NAME,"
   },
   {
     "path": "web/src/i18n/translations.ts",
     "line": 3386,
-    "source": "whatIsNofx: 'Apa itu ' + PERSONA_NAME + '?',"
+    "source": "whatIsVL: 'Apa itu ' + PERSONA_NAME + '?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -687,7 +687,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 3430,
-    "source": "accessNofxPlatform: 'Akses Platform ' + PERSONA_NAME,"
+    "source": "accessVLPlatform: 'Akses Platform ' + PERSONA_NAME,"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -697,7 +697,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 3469,
-    "source": "faqWhatIsNOFX: 'Apa itu ' + PERSONA_NAME + '?',"
+    "source": "faqWhatIsVL: 'Apa itu ' + PERSONA_NAME + '?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -737,7 +737,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 3508,
-    "source": "faqUpdateNOFX: 'Bagaimana cara memperbarui ' + PERSONA_NAME + '?',"
+    "source": "faqUpdateVL: 'Bagaimana cara memperbarui ' + PERSONA_NAME + '?',"
   },
   {
     "path": "web/src/i18n/translations.ts",
@@ -772,7 +772,7 @@
   {
     "path": "web/src/i18n/translations.ts",
     "line": 3594,
-    "source": "faqCanNOFXStealFunds: 'Bisakah ' + PERSONA_NAME + ' mencuri dana saya?',"
+    "source": "faqCanVLStealFunds: 'Bisakah ' + PERSONA_NAME + ' mencuri dana saya?',"
   },
   {
     "path": "web/src/i18n/translations.ts",

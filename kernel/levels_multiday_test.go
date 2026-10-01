@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 func barAt(loc *time.Location, y int, mo time.Month, d, h, mi int, o, hi, lo, c float64) market.Kline {

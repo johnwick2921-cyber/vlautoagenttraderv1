@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W2 A1/A2 — the card's authored_invalidation block is READ from the row the

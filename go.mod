@@ -1,4 +1,4 @@
-module nofx
+module vl
 
 go 1.25.13
 

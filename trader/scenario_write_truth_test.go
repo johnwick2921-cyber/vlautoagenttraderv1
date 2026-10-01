@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W2 A3 (identity ≠ price = REFUSE) + A4 (obstacle-chain

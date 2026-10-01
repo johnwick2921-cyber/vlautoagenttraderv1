@@ -1,7 +1,7 @@
 """Docs-only evidence runner. DB opened exclusively mode=ro; no live mutations."""
 import sqlite3,json,math,datetime,pathlib,zoneinfo
-ROOT=pathlib.Path('/home/hoang/nofx-analysis/vet-04-complete-0905')
-conn=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True)
+ROOT=pathlib.Path('/home/hoang/vl-analysis/vet-04-complete-0905')
+conn=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True)
 conn.row_factory=sqlite3.Row
 conn.execute('PRAGMA query_only=ON')
 conn.execute('BEGIN')
@@ -37,7 +37,7 @@ FROM armed_orders WHERE julianday(created_at)>=julianday(:start/1000.0,'unixepoc
  blocks.append(query('broker order snapshot at cutoff is NOT a position book',"""SELECT id,account,symbol,working_count,received_at_ms,(:end-received_at_ms)/1000.0 age_seconds FROM nt8_order_snapshots WHERE received_at_ms<:end ORDER BY received_at_ms DESC LIMIT 1""",p))
  # Log source/line receipts, bounded to 15 CT across rotation files; no configuration contents.
  events=[];prefix=day[5:];cut=prefix+' 15:00:00'
- for f in sorted(pathlib.Path('/home/hoang/nofx/data').glob('nofx_*.log')):
+ for f in sorted(pathlib.Path('/home/hoang/vl/data').glob('vl_*.log')):
   for lineno,line in enumerate(f.open(errors='replace'),1):
    if line.startswith(prefix) and line[:14]<cut and any(s in line for s in ['BOOT INTEGRITY','FEED DOWN','cycle_skip=no_new_data']):events.append({'path':str(f),'line':lineno,'text':line.rstrip()})
  blocks.append({'label':'7 boots/feed/skips before 15 CT, exact log lines','rows':events,'counts':{s:sum(s in r['text'] for r in events) for s in ['BOOT INTEGRITY','FEED DOWN','cycle_skip=no_new_data']}})

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // TestTwoLegConfirmRenderS2Fixture — F2: the exact S2 10:54 artifact. Leg 1 MET

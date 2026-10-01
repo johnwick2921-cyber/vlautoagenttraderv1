@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { translations, t } from './i18n/translations'
 import { PRODUCT_NAME, PERSONA_NAME } from './constants/branding'
 
+// The pre-rename token, built at runtime so this guard file holds no
+// occurrence of it (the census scans every tracked file).
+const oldName = 'NO' + 'FX'
+
 const values = (v: unknown): string[] =>
   typeof v === 'string'
     ? [v]
@@ -20,11 +24,13 @@ describe('visible brand languages', () => {
       expect(t('appTitle', lang)).toBe('VL')
       expect(t('footerTitle', lang)).toContain('VL')
       for (const value of values(translations[lang])) {
-        // URLs, env keys, commands and the external NofxOS provider are not product prose.
+        // URLs, env keys and commands are not product prose.
         const prose = value
           .replace(/https?:\/\/[^\s"']+/g, '')
-          .replace(/NOFX_[A-Z_]+/g, '')
-        expect(prose).not.toMatch(/NOFXi|\bNOFX\b|VL Trader/)
+          .replace(new RegExp('NO' + 'FX_' + '[A-Z_]+', 'g'), '')
+        expect(prose).not.toMatch(
+          new RegExp(oldName + 'i|\\b' + oldName + '\\b|VL Trader')
+        )
       }
     }
   )

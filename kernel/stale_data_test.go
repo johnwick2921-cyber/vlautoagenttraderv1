@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 func mdWith1mBar(barMs int64) *market.Data {

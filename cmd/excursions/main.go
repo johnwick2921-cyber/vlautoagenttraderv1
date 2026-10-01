@@ -14,8 +14,8 @@ import (
 	"os"
 	"time"
 
-	"nofx/store"
-	"nofx/trader"
+	"vl/store"
+	"vl/trader"
 )
 
 func main() {

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W8 — the gates read the admin registry from system_config (the dead wire: every

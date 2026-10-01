@@ -11,4 +11,4 @@
 === RUN   TestResearchFailedStartupStillWarnsAndReportsUnknown
 --- PASS: TestResearchFailedStartupStillWarnsAndReportsUnknown (0.00s)
 PASS
-ok  	nofx/researchsnapshot	0.160s
+ok  	vl/researchsnapshot	0.160s

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
+	nt "vl/provider/ninjatrader"
 )
 
 const testMaxAge = 60 * time.Second

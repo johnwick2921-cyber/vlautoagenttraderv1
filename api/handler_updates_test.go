@@ -28,14 +28,14 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/config"
-	"nofx/internal/updateauth"
-	"nofx/logger"
-	"nofx/manager"
-	"nofx/store"
-	"nofx/telegram/agent"
-	"nofx/trader"
+	"vl/auth"
+	"vl/config"
+	"vl/internal/updateauth"
+	"vl/logger"
+	"vl/manager"
+	"vl/store"
+	"vl/telegram/agent"
+	"vl/trader"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -666,6 +666,25 @@ func TestUpdatesRequireTheUpdateHeader(t *testing.T) {
 		e.expectAllForbidden("header "+name, mut)
 	}
 	e.expectAllAdmitted("header 1")
+}
+
+// TestLegacyUpdateHeaderAcceptedUntilR5 — transition entry (d): the
+// pre-rename header name stays accepted until R5 removes it. Exactly one value
+// in total across both names is admitted; anything else is refused.
+func TestLegacyUpdateHeaderAcceptedUntilR5(t *testing.T) {
+	e := newUpdEnv(t)
+	e.expectAllAdmitted("legacy header 1", func(r *http.Request) {
+		r.Header.Del(UpdateHeader)
+		r.Header.Set(LegacyUpdateHeader, "1")
+	})
+	e.expectAllForbidden("new + legacy", func(r *http.Request) {
+		r.Header.Set(LegacyUpdateHeader, "1")
+	})
+	e.expectAllForbidden("legacy twice", func(r *http.Request) {
+		r.Header.Del(UpdateHeader)
+		r.Header.Add(LegacyUpdateHeader, "1")
+		r.Header.Add(LegacyUpdateHeader, "1")
+	})
 }
 
 func TestUpdatesRefuseCrossOrigin(t *testing.T) {

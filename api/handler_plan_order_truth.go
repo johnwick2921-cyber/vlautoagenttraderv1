@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/trader"
+	"vl/kernel"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/trader"
 )
 
 type orderPrices struct {

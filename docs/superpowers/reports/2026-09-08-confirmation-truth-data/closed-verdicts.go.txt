@@ -1,5 +1,5 @@
 package main
-import("encoding/json";"fmt";"os";"time";"nofx/kernel";"nofx/market")
+import("encoding/json";"fmt";"os";"time";"vl/kernel";"vl/market")
 type item struct{Name string `json:"name"`;Met bool `json:"met"`}
 func main(){base:=time.Date(2026,9,8,13,0,0,0,time.UTC).UnixMilli();now:=base+15*60000
  mk:=func(i int,c float64)market.Kline{return market.Kline{OpenTime:base+int64(i)*60000,CloseTime:base+int64(i+1)*60000-1,Open:c,High:c+.25,Low:c-.25,Close:c}}

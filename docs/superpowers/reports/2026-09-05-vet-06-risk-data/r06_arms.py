@@ -2,7 +2,7 @@
 """r06 — arm stop distribution and planned R:R, with the test seam excluded by the report's own law."""
 import sqlite3, statistics as st
 import numpy as np
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True)
 rows=con.execute("""SELECT id, session, scenario, state, plan_id, version, leg_index,
                            entry_px, stop_px, target_px, fill_price
                     FROM armed_orders WHERE entry_px IS NOT NULL AND stop_px IS NOT NULL ORDER BY id""").fetchall()

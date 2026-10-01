@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Round 23 — Structure Gate (S4 Measurement)
 
-**Lane:** DS-R001 (DeepSeek research). **Worktree:** `/home/hoang/nofx-r001`.
+**Lane:** DS-R001 (DeepSeek research). **Worktree:** `/home/hoang/vl-r001`.
 **Branch:** `docs/round-23-structure-gate` (claim `a74da3c3`, cut from
 `origin/docs/round-23-top-down-map` @ `d15db077` per CTO order; origin/dev base `1e3ad705`).
 **Dispatch:** CTO 2026-09-16 22:58Z, section 5 (S4 MEASUREMENT GATE). This report decides
@@ -125,7 +126,7 @@ z = −0.97, p = 0.332. **The ladder separates nothing in either family.**
 
 ## Sample ids (first 5 per cell; every row lives in out-s4/)
 
-All rows for every cell are in `/home/hoang/nofx-r101/docs/superpowers/research/2026-09-16-round-23/out-s4/{episodes,qa,trends}.jsonl` — id = day session kind tf@opened_at_ms.
+All rows for every cell are in `/home/hoang/vl-r101/docs/superpowers/research/2026-09-16-round-23/out-s4/{episodes,qa,trends}.jsonl` — id = day session kind tf@opened_at_ms.
 
 - Q-A 1m-grade fresh (n=4009): 2022-04-18 LONDON EQL 1h@1650358140000, 2022-04-18 NY EQH 1h@1650377280000, 2022-04-19 LONDON EQH 1h@1650455460000, 2022-04-19 NY EQH 1h@1650471180000, 2022-04-20 NY EQH 1h@1650556200000
 - Q-A 1m-grade tested-1 (n=380): 2022-04-11 NY EQL 1h@1649790540000, 2022-04-17 NY SUPPLY 1h@1650288660000, 2022-04-17 NY OB 1h@1650288660000, 2022-04-17 NY OB 1h@1650288660000, 2022-04-20 LONDON EQH 1h@1650527820000

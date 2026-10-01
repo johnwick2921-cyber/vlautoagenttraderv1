@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// SIDE-CASING LOOKUP (2026-09-03) — mechanism 2 from nofx-89's §D-9 chain,
+// SIDE-CASING LOOKUP (2026-09-03) — mechanism 2 from vl-89's §D-9 chain,
 // verified against the live store and confirmed.
 //
 // armed_orders.side is ALWAYS lowercase (armed_executor.go builds it with

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Page 5 — Strategy Studio (`/strategy`)
 
 ## Quick reference
@@ -96,7 +97,7 @@
 - **File:** [web/src/components/strategy/IndicatorEditor.tsx:34-691](web/src/components/strategy/IndicatorEditor.tsx#L34-L691)
 - **Props:** `{ config: IndicatorConfig, onChange, disabled?, language }`
 - **Module constants:**
-  - `DEFAULT_NOFXOS_API_KEY = 'cm_568c67eae410d912c54c'` ([line 7](web/src/components/strategy/IndicatorEditor.tsx#L7)) — hardcoded literal. Per CLAUDE.md: `nofxos.ai` is deprecated and returns HTTP 402; this default is dead.
+  - `DEFAULT_VLOS_API_KEY = 'cm_568c67eae410d912c54c'` ([line 7](web/src/components/strategy/IndicatorEditor.tsx#L7)) — hardcoded literal. Per CLAUDE.md: `upstream website link (removed in the VL rename)` is deprecated and returns HTTP 402; this default is dead.
   - `allTimeframes` ([line 17-32](web/src/components/strategy/IndicatorEditor.tsx#L17-L32)) — 14 entries (1m through 1w) categorized scalp/intraday/swing/position
 - **`toggleTimeframe()`** ([line 44-86](web/src/components/strategy/IndicatorEditor.tsx#L44-L86)) — enforces max 4 timeframes via inline DOM toast
 - **Section layout (read partial):** Quant Data, OI Ranking, NetFlow Ranking, Price Ranking, Market Sentiment (funding_rate, OI), Technical Indicators (EMA / MACD / RSI / BOLL / ATR), Raw Klines toggle.
@@ -220,7 +221,7 @@
 |---|---|---|---|---|
 | Strategy Studio is fully crypto-coupled — no NT-aware branches | Plan 4.6 | `CoinSourceEditor.tsx:60-88`, `IndicatorEditor.tsx` (all sections), `RiskControlEditor.tsx:60-128`, `TokenEstimateBar.tsx:122` | A NT trader's strategy editor still shows "BTC/ETH Leverage", "Altcoin Leverage", funding rate toggle, OI ranking — all meaningless for CME futures | ~400 LOC, 3 hr |
 | `CoinSourceEditor.handleAddCoin` auto-appends `USDT` for everything except the hardcoded `xyzDexAssets` set | bundled in Plan 4.6 | `CoinSourceEditor.tsx:78` | User typing `NQ` gets `NQUSDT` (which Databento rejects). Need a CME-futures pattern check (`NQ.c.0`, `MNQ.c.0`, `ES.c.0`, etc.) | bundled |
-| `IndicatorEditor.DEFAULT_NOFXOS_API_KEY` literal | open | `IndicatorEditor.tsx:7` | nofxos.ai is deprecated (HTTP 402). The default key is dead code; the field should default empty | 5-min |
+| `IndicatorEditor.DEFAULT_VLOS_API_KEY` literal | open | `IndicatorEditor.tsx:7` | upstream website link (removed in the VL rename) is deprecated (HTTP 402). The default key is dead code; the field should default empty | 5-min |
 
 ### NEW observations
 

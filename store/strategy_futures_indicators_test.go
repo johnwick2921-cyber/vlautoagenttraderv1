@@ -4,16 +4,14 @@ import "testing"
 
 // TestApplyFuturesIndicatorDefaults verifies the futures new-strategy indicator
 // defaults: the technical indicators ATR/EMA/RSI are enabled (the futures prompt
-// leans on them — ATR sizes stops), the crypto-only NofxOS/ranking feeds are
-// disabled, and MACD/BOLL are deliberately left off.
+// leans on them — ATR sizes stops), Open Interest (the Binance crypto-perp feed)
+// stays off, and MACD/BOLL are deliberately left off.
 func TestApplyFuturesIndicatorDefaults(t *testing.T) {
-	// Start from the crypto base defaults: technical indicators OFF, feeds ON.
+	// Start from the crypto base defaults: technical indicators OFF.
 	ind := IndicatorConfig{
 		EnableEMA: false, EnableRSI: false, EnableATR: false,
 		EnableMACD: false, EnableBOLL: false,
-		EnableOI:        true,
-		EnableQuantData: true, EnableQuantOI: true, EnableQuantNetflow: true,
-		EnableOIRanking: true, EnableNetFlowRanking: true, EnablePriceRanking: true,
+		EnableOI: true,
 	}
 	applyFuturesIndicatorDefaults(&ind)
 
@@ -26,10 +24,6 @@ func TestApplyFuturesIndicatorDefaults(t *testing.T) {
 	if ind.EnableOI {
 		t.Errorf("futures default must disable Open Interest (crypto-perp feed, empty on MNQ); got EnableOI=%v", ind.EnableOI)
 	}
-	if ind.EnableQuantData || ind.EnableQuantOI || ind.EnableQuantNetflow ||
-		ind.EnableOIRanking || ind.EnableNetFlowRanking || ind.EnablePriceRanking {
-		t.Errorf("futures default must disable NofxOS/ranking feeds; got %+v", ind)
-	}
 	if ind.EnableMACD || ind.EnableBOLL {
 		t.Errorf("futures default must NOT auto-enable MACD/BOLL; got MACD=%v BOLL=%v",
 			ind.EnableMACD, ind.EnableBOLL)
@@ -38,8 +32,8 @@ func TestApplyFuturesIndicatorDefaults(t *testing.T) {
 
 // TestCryptoDefaultLeavesTechnicalIndicatorsOff confirms the crypto path stays
 // byte-identical: in the default (non-futures) environment, GetDefaultStrategyConfig
-// keeps EMA/RSI/ATR OFF (the futures helper is never applied) and the NofxOS
-// Quant Data feed ON. Skipped if the env happens to be in futures mode.
+// keeps EMA/RSI/ATR OFF (the futures helper is never applied). Skipped if the
+// env happens to be in futures mode.
 func TestCryptoDefaultLeavesTechnicalIndicatorsOff(t *testing.T) {
 	if isFuturesMode() {
 		t.Skip("test environment is in futures mode; crypto-default assertion N/A")
@@ -49,7 +43,9 @@ func TestCryptoDefaultLeavesTechnicalIndicatorsOff(t *testing.T) {
 		t.Errorf("crypto default must keep EMA/RSI/ATR OFF; got EMA=%v RSI=%v ATR=%v",
 			cfg.Indicators.EnableEMA, cfg.Indicators.EnableRSI, cfg.Indicators.EnableATR)
 	}
-	if !cfg.Indicators.EnableQuantData {
-		t.Errorf("crypto default must keep NofxOS Quant Data ON; got %v", cfg.Indicators.EnableQuantData)
+	// D2-DEAD item 12: the NofxOS-backed coin pool is gone; a fresh crypto
+	// strategy seeds the static source (empty list, operator sets coins).
+	if cfg.CoinSource.SourceType != "static" {
+		t.Errorf("crypto default coin source must be static; got %q", cfg.CoinSource.SourceType)
 	}
 }

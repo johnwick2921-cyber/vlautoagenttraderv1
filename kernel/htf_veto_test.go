@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 func htfsnap(trend string, swing *SwingRef, events []StructureEvent) map[string]StructureState {

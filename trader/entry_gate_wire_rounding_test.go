@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // W1b E12(a) — LEGS 5 AND 6 JUDGE THE PRICES THE WIRE SENDS.

@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/mcp"
-	"nofx/store"
+	"vl/branding"
+	"vl/mcp"
+	"vl/store"
 )
 
 var (
@@ -695,36 +696,6 @@ func strategyConfigFieldDisplayName(field, lang string) string {
 			return "排除币种"
 		}
 		return "excluded coins"
-	case "use_ai500":
-		if lang == "zh" {
-			return "AI500"
-		}
-		return "use AI500"
-	case "ai500_limit":
-		if lang == "zh" {
-			return "AI500 数量"
-		}
-		return "AI500 limit"
-	case "use_oi_top":
-		if lang == "zh" {
-			return "OI Top"
-		}
-		return "use OI Top"
-	case "oi_top_limit":
-		if lang == "zh" {
-			return "OI Top 数量"
-		}
-		return "OI Top limit"
-	case "use_oi_low":
-		if lang == "zh" {
-			return "OI Low"
-		}
-		return "use OI Low"
-	case "oi_low_limit":
-		if lang == "zh" {
-			return "OI Low 数量"
-		}
-		return "OI Low limit"
 	case "primary_count":
 		if lang == "zh" {
 			return "K线数量"
@@ -753,35 +724,6 @@ func strategyConfigFieldDisplayName(field, lang string) string {
 			return "资金费率"
 		}
 		return "funding rate"
-	case "nofxos_api_key":
-		return "NofxOS API key"
-	case "enable_quant_data":
-		if lang == "zh" {
-			return "量化数据"
-		}
-		return "quant data"
-	case "enable_quant_oi":
-		return "quant OI"
-	case "enable_quant_netflow":
-		return "quant netflow"
-	case "enable_oi_ranking":
-		return "OI ranking"
-	case "oi_ranking_duration":
-		return "OI ranking duration"
-	case "oi_ranking_limit":
-		return "OI ranking limit"
-	case "enable_netflow_ranking":
-		return "netflow ranking"
-	case "netflow_ranking_duration":
-		return "netflow ranking duration"
-	case "netflow_ranking_limit":
-		return "netflow ranking limit"
-	case "enable_price_ranking":
-		return "price ranking"
-	case "price_ranking_duration":
-		return "price ranking duration"
-	case "price_ranking_limit":
-		return "price ranking limit"
 	case "role_definition":
 		if lang == "zh" {
 			return "角色定义"
@@ -903,30 +845,6 @@ func applyStrategyConfigPatch(cfg *store.StrategyConfig, field, value string) er
 		cfg.CoinSource.StaticCoins = cleanStringList(strings.Split(value, ","))
 	case "excluded_coins":
 		cfg.CoinSource.ExcludedCoins = cleanStringList(strings.Split(value, ","))
-	case "use_ai500":
-		cfg.CoinSource.UseAI500 = value == "true"
-	case "ai500_limit":
-		parsed, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("AI500 数量需要是整数")
-		}
-		cfg.CoinSource.AI500Limit = parsed
-	case "use_oi_top":
-		cfg.CoinSource.UseOITop = value == "true"
-	case "oi_top_limit":
-		parsed, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("OI Top 数量需要是整数")
-		}
-		cfg.CoinSource.OITopLimit = parsed
-	case "use_oi_low":
-		cfg.CoinSource.UseOILow = value == "true"
-	case "oi_low_limit":
-		parsed, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("OI Low 数量需要是整数")
-		}
-		cfg.CoinSource.OILowLimit = parsed
 	case "min_confidence":
 		parsed, err := strconv.Atoi(value)
 		if err != nil {
@@ -1002,44 +920,6 @@ func applyStrategyConfigPatch(cfg *store.StrategyConfig, field, value string) er
 		cfg.Indicators.EnableOI = value == "true"
 	case "enable_funding_rate":
 		cfg.Indicators.EnableFundingRate = value == "true"
-	case "nofxos_api_key":
-		cfg.Indicators.NofxOSAPIKey = value
-	case "enable_quant_data":
-		cfg.Indicators.EnableQuantData = value == "true"
-	case "enable_quant_oi":
-		cfg.Indicators.EnableQuantOI = value == "true"
-	case "enable_quant_netflow":
-		cfg.Indicators.EnableQuantNetflow = value == "true"
-	case "enable_oi_ranking":
-		cfg.Indicators.EnableOIRanking = value == "true"
-	case "oi_ranking_duration":
-		cfg.Indicators.OIRankingDuration = value
-	case "oi_ranking_limit":
-		parsed, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("OI 排行数量需要是整数")
-		}
-		cfg.Indicators.OIRankingLimit = parsed
-	case "enable_netflow_ranking":
-		cfg.Indicators.EnableNetFlowRanking = value == "true"
-	case "netflow_ranking_duration":
-		cfg.Indicators.NetFlowRankingDuration = value
-	case "netflow_ranking_limit":
-		parsed, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("资金流排行数量需要是整数")
-		}
-		cfg.Indicators.NetFlowRankingLimit = parsed
-	case "enable_price_ranking":
-		cfg.Indicators.EnablePriceRanking = value == "true"
-	case "price_ranking_duration":
-		cfg.Indicators.PriceRankingDuration = value
-	case "price_ranking_limit":
-		parsed, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("涨跌幅排行数量需要是整数")
-		}
-		cfg.Indicators.PriceRankingLimit = parsed
 	case "role_definition":
 		cfg.PromptSections.RoleDefinition = value
 	case "trading_frequency":
@@ -1082,7 +962,7 @@ func parseStrategyTypeValue(text string) string {
 		return "ai_trading"
 	case containsAny(lower, []string{"grid", "网格"}):
 		return "grid_trading"
-	case containsAny(lower, []string{"ai500", "oi top", "oi low", "静态币", "固定币", "选币来源"}):
+	case containsAny(lower, []string{"静态币", "固定币", "选币来源"}):
 		return "ai_trading"
 	case containsAny(lower, []string{"ai trading", "ai策略", "ai 策略", "ai交易", "ai 交易", "ai智能", "智能策略", "普通策略"}):
 		return "ai_trading"
@@ -1107,7 +987,7 @@ func extractLongSegmentAfterKeywords(text string, keywords []string) string {
 		for _, prefix := range []string{"改成", "改为", "设为", "设置为", "变成"} {
 			segment = strings.TrimSpace(strings.TrimPrefix(segment, prefix))
 		}
-		for _, marker := range []string{"排除币", "excluded coins", "exclude coins", "ai500", "oi top", "oi low", "并且", "然后"} {
+		for _, marker := range []string{"排除币", "excluded coins", "exclude coins", "并且", "然后"} {
 			if cut := strings.Index(strings.ToLower(segment), marker); cut > 0 {
 				segment = strings.TrimSpace(segment[:cut])
 				break
@@ -2295,9 +2175,9 @@ func (a *Agent) executeStrategyConfigUpdate(storeUserID string, userID int64, la
 	setSkillDAGStep(&session, "collect_config_patch")
 	a.saveSkillSession(userID, session)
 	if lang == "zh" {
-		return "你可以直接说想怎么改策略配置，比如“选币来源改成 AI500，最低置信度 80”。我会按当前策略类型的产品模板生成 config_patch 后再更新。"
+		return "你可以直接说想怎么改策略配置，比如“选币来源改成固定币种 BTCUSDT，最低置信度 80”。我会按当前策略类型的产品模板生成 config_patch 后再更新。"
 	}
-	return "Tell me how you want to change the strategy config, for example: set coin source to ai500 and minimum confidence to 80. I will turn it into a config_patch for the current strategy type before updating."
+	return "Tell me how you want to change the strategy config, for example: set coin source to static coins BTCUSDT and minimum confidence to 80. I will turn it into a config_patch for the current strategy type before updating."
 }
 
 func (a *Agent) loadStrategyConfigForUpdate(storeUserID, strategyID string) (*store.Strategy, store.StrategyConfig, error) {
@@ -2523,7 +2403,7 @@ func (a *Agent) generateTraderDiagnosisAnswerWithLLM(ctx context.Context, lang, 
 	}
 	stageCtx, cancel := withPlannerStageTimeout(ctx, directReplyTimeout)
 	defer cancel()
-	systemPrompt := `You are the trader diagnosis reasoning layer for NOFXi.
+	systemPrompt := `You are the trader diagnosis reasoning layer for ` + branding.PersonaName() + `.
 You receive a complete evidence package collected by tools: trader config, bound model, bound exchange, bound strategy, account/positions, recent AI decisions, and backend logs.
 
 Your job:

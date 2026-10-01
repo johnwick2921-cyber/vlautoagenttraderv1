@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"nofx/hook"
-	"nofx/kernel"
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/hook"
+	"vl/kernel"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0 (b), dispatch D10 — THE FIVE DUPLICATE SEQUENCES ────────

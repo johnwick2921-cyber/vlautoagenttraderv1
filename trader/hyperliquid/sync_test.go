@@ -2,13 +2,13 @@ package hyperliquid
 
 import (
 	"math"
-	"nofx/store"
+	"vl/store"
 	"testing"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"nofx/store/sqlitedriver"
+	"vl/store/sqlitedriver"
 )
 
 // TestHyperliquidOrderDirectionParsing tests Dir field parsing

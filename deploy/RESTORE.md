@@ -1,39 +1,39 @@
-# nofx DB backup & restore (C1)
+# vl DB backup & restore (C1)
 
 Automatic SQLite backups of `data/data.db`, taken twice daily by a **user** systemd
 timer (no root, survives logout via linger).
 
 ## What runs
 
-- **Timer:** `~/.config/systemd/user/nofx-backup.timer` → fires **05:00 & 17:30 CT**
+- **Timer:** `~/.config/systemd/user/vl-backup.timer` (before the R2 boot: `<old>-backup.timer`) → fires **05:00 & 17:30 CT**
   (host is `America/Chicago`, so those calendar times are already CT). `Persistent=true`
   runs a missed backup after a sleep/off window.
-- **Service:** `nofx-backup.service` (oneshot) → runs `deploy/nofx-db-backup.sh`.
+- **Service:** `vl-backup.service` (oneshot) → runs `deploy/vl-db-backup.sh` (before the R2 boot: `<old>-backup.service` → `deploy/<old>-db-backup.sh`).
 - **Method:** SQLite **online backup API** via `python3` stdlib (no `sqlite3` CLI
   required; consistent even while the bot is writing), integrity-checked, then gzipped.
-- **Location & retention** (under `~/nofx-backups/auto/`):
-  - `daily/nofx-YYYY-MM-DD_HHMMSS.db.gz` — every run; newest **14** kept.
-  - `weekly/nofx-...W##.db.gz` — one per ISO week; newest **8** kept.
+- **Location & retention** (under `~/vl-backups/auto/`; before the R2 boot: `~/<old>-backups/auto/`):
+  - `daily/vl-YYYY-MM-DD_HHMMSS.db.gz` — every run; newest **14** kept.
+  - `weekly/vl-...W##.db.gz` — one per ISO week; newest **8** kept.
 - **Research ledger (data/data.db.research.db, 200+ GB live) is OPT-IN**
-  (`NOFX_BACKUP_RESEARCH=1`). Default run = main DB only. When opted in:
+  (`VL_BACKUP_RESEARCH=1` (the old-name envs still read until R5)). Default run = main DB only. When opted in:
   `daily/research-*.db.gz` newest **1** kept, `weekly/research-*.db.gz` newest
   **1** kept (short on purpose — a 213 GB snapshot is a disk, not a record).
 - **Disk precheck on EVERY source (main DB too):** the run REFUSES — loud
   stderr, non-zero exit, nothing written — when free space on the backup volume
   is < 2.5 × the source size, or when free-after-backup would drop below
-  `NOFX_BACKUP_MIN_FREE_GB` (default **50**). A full disk breaks the live bot;
-  a refused backup is the correct outcome. Knobs: `NOFX_BACKUP_RESEARCH`,
-  `NOFX_BACKUP_MIN_FREE_GB`, `NOFX_KEEP_RESEARCH_DAILY` (1),
-  `NOFX_KEEP_RESEARCH_WEEKLY` (1).
+  `VL_BACKUP_MIN_FREE_GB` (default **50**). A full disk breaks the live bot;
+  a refused backup is the correct outcome. Knobs: `VL_BACKUP_RESEARCH`,
+  `VL_BACKUP_MIN_FREE_GB`, `VL_KEEP_RESEARCH_DAILY` (1),
+  `VL_KEEP_RESEARCH_WEEKLY` (1).
 
 ## Install / manage (all no-sudo)
 
 ```bash
-bash ~/nofx/deploy/install-db-backup.sh          # install + enable + show next run
-systemctl --user start   nofx-backup.service      # back up right now
-systemctl --user list-timers nofx-backup.timer    # when does it next run?
-journalctl --user -u nofx-backup.service -n 50     # last run's log
-systemctl --user disable --now nofx-backup.timer   # stop auto-backups
+bash ~/vl/deploy/install-db-backup.sh          # before the R2 boot: ~/<old>/deploy/install-db-backup.sh          # install + enable + show next run
+systemctl --user start   vl-backup.service      # back up right now
+systemctl --user list-timers vl-backup.timer    # when does it next run?
+journalctl --user -u vl-backup.service -n 50     # last run's log
+systemctl --user disable --now vl-backup.timer   # stop auto-backups
 ```
 
 ## Restore (TESTED read-back — 2026-08-13)
@@ -42,7 +42,7 @@ A backup is a complete, standalone SQLite database. To restore:
 
 ```bash
 # 1. Pick a backup (newest daily shown here).
-BK=$(ls -1 ~/nofx-backups/auto/daily/nofx-*.db.gz | sort -r | head -1)
+BK=$(ls -1 ~/vl-backups/auto/daily/{vl,<old>}-*.db.gz | sort -r | head -1)
 
 # 2. Decompress to a scratch file and verify it BEFORE touching the live DB.
 gunzip -c "$BK" > /tmp/restore.db
@@ -50,17 +50,17 @@ python3 -c "import sqlite3;print(sqlite3.connect('/tmp/restore.db').execute('PRA
 #   → must print: ok
 
 # 3. Stop the bot so nothing is writing the live DB.
-kill -9 "$(pgrep -f nofx-bin)"     # systemd Restart=on-failure relaunches it after step 5
+kill -9 "$(pgrep -f vl-bin)"     # systemd Restart=on-failure relaunches it after step 5
 
 # 4. Swap the file in (keep the current one aside first).
-mv ~/nofx/data/data.db ~/nofx/data/data.db.pre-restore
-cp /tmp/restore.db ~/nofx/data/data.db
+mv ~/vl/data/data.db ~/vl/data/data.db.pre-restore   # before the R2 boot: ~/<old>/data/…
+cp /tmp/restore.db ~/vl/data/data.db
 
 # 5. Let systemd relaunch the bot (or start it), then confirm it came up.
-journalctl -u nofx -n 20 --no-pager
+journalctl -u vl -n 20 --no-pager   # before the R2 boot: <old>
 ```
 
-**Verification performed 2026-08-13** on `nofx-2026-08-13_175507.db.gz`: decompressed,
+**Verification performed 2026-08-13** on `vl-2026-08-13_175507.db.gz`: decompressed,
 `PRAGMA quick_check = ok`, 19 tables with a schema set **identical** to the live DB,
 and core tables read back cleanly (`decision_records` 28042, `trader_positions` 516,
 `strategies` 9, `exchanges` 1). The backup is fully restorable.
@@ -80,22 +80,22 @@ takes no trades.
 
 ```bash
 # 1. Pick the revision to go back to (e.g. the previous release).
-cd ~/nofx && git log --oneline -5
+cd ~/vl && git log --oneline -5   # before the R2 boot: ~/<old>
 TARGET=<sha>
 
 # 2. Build that revision. (Checkout only if you intend to move the working tree;
 #    otherwise build from a worktree so main stays where it is.)
 git stash list && git status --porcelain      # know what you would disturb
 git checkout "$TARGET" -- . 2>/dev/null || git checkout "$TARGET"
-go build -o nofx-bin . && echo BUILD OK
+go build -o vl-bin . && echo BUILD OK
 
 # 3. RE-ARM the expected release to MATCH the binary you just built.  ← never skip
 git rev-parse HEAD > /tmp/rel
 { grep '^#' deploy/RELEASE; cat /tmp/rel; } > deploy/RELEASE.new && mv deploy/RELEASE.new deploy/RELEASE
 
 # 4. Relaunch and CONFIRM the assertion passed.
-kill -9 "$(pgrep -f nofx-bin)"                # systemd Restart=on-failure relaunches
-journalctl -u nofx --since '2 min ago' | grep 'BOOT INTEGRITY'
+kill -9 "$(pgrep -f vl-bin)"                # systemd Restart=on-failure relaunches
+journalctl -u vl --since '2 min ago' | grep 'BOOT INTEGRITY'
 #   → must read "BOOT INTEGRITY OK — rev <X> · expected <X> · goldens PASS"
 #   → "TRADING REFUSED" means step 3 was missed or the goldens drifted
 ```
@@ -113,7 +113,7 @@ The first boot of a binary at/after this wave moves `bars` from
 It is a guarded write, done by code at boot (`store/bar_contract_key.go`):
 
 1. a whole-database backup **before anything else** — `VACUUM INTO`
-   `~/nofx-backups/pre-bars-key-<YYYYMMDD-HHMMSS>.db`, verified by `bars` row count;
+   `~/vl-backups/pre-bars-key-<YYYYMMDD-HHMMSS>.db` (before the R2 boot: `~/<old>-backups/…`), verified by `bars` row count;
    if it cannot be written the migration is **refused** and the bot runs on the old key
    (boot line `🗄 bars: migration FAILED — …; old table intact`);
 2. `bars_v2` created on the new key, `INSERT … SELECT` of every row, then
@@ -139,29 +139,29 @@ is satisfied by the renamed table's index, which the migration keeps on purpose)
 
 Scripted: `deploy/bars-key-rollback.sh [--force] [--db PATH]` (rc 0 done · rc 4 nothing
 to do · rc 2 bot running · rc 3 unsafe state) — discovers the old table, refuses while
-`nofx-bin` runs unless `--force`, takes a `VACUUM INTO` backup, runs
+`vl-bin` runs unless `--force`, takes a `VACUUM INTO` backup, runs
 `deploy/bars-key-rollback.sql` (the rename pair in one transaction, new-shape indexes
 dropped from the parked copy so a later re-migration can recreate them), prints the counts.
 The CTO's unattended cutover calls it on a binary rollback. By hand:
 
 ```bash
 # 0. Stop the bot (nothing may write during the swap).
-kill -9 "$(pgrep -f nofx-bin)"     # systemd relaunches it — do this only with the old binary installed AND step 2 done
+kill -9 "$(pgrep -f vl-bin)"     # systemd relaunches it — do this only with the old binary installed AND step 2 done
 # 1. Which tables exist?
-sqlite3 ~/nofx/data/data.db "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'bars%';"
+sqlite3 ~/vl/data/data.db "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'bars%';"
 # 2. Swap: the migrated table aside, the pre-migration table back under its name.
 #    The old table still carries idx_bars_sym_tf_time_unique / idx_bars_contract / idx_bars_source,
 #    so the old binary's Migrate finds its unique index and is a no-op.
-OLD=$(sqlite3 ~/nofx/data/data.db "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'bars_pre_contract_key_%' ORDER BY name DESC LIMIT 1")
-sqlite3 ~/nofx/data/data.db "BEGIN; ALTER TABLE bars RENAME TO bars_contract_key_v2; ALTER TABLE \"$OLD\" RENAME TO bars; COMMIT;"
+OLD=$(sqlite3 ~/vl/data/data.db "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'bars_pre_contract_key_%' ORDER BY name DESC LIMIT 1")
+sqlite3 ~/vl/data/data.db "BEGIN; ALTER TABLE bars RENAME TO bars_contract_key_v2; ALTER TABLE \"$OLD\" RENAME TO bars; COMMIT;"
 # 3. (optional) carry bars written AFTER the migration back onto the old key.
 #    On the old key a minute held by two contracts collapses to ONE row (first wins) — this is the
 #    exact loss the wave removed; accept it or skip this step.
-sqlite3 ~/nofx/data/data.db "INSERT OR IGNORE INTO bars(symbol,tf,open_time_ms,o,h,l,c,v,convention,contract,source)
+sqlite3 ~/vl/data/data.db "INSERT OR IGNORE INTO bars(symbol,tf,open_time_ms,o,h,l,c,v,convention,contract,source)
   SELECT symbol,tf,open_time_ms,o,h,l,c,v,convention,contract,source FROM bars_contract_key_v2;"
 # 4. Verify, then boot the old binary (re-arm deploy/RELEASE — see the binary rollback above).
-sqlite3 ~/nofx/data/data.db "SELECT name FROM pragma_table_info('bars') WHERE pk>0 ORDER BY pk;"   # → symbol tf open_time_ms
-sqlite3 ~/nofx/data/data.db "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND tbl_name='bars' AND name='idx_bars_sym_tf_time_unique';"  # → 1
+sqlite3 ~/vl/data/data.db "SELECT name FROM pragma_table_info('bars') WHERE pk>0 ORDER BY pk;"   # → symbol tf open_time_ms
+sqlite3 ~/vl/data/data.db "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND tbl_name='bars' AND name='idx_bars_sym_tf_time_unique';"  # → 1
 ```
 
 To re-migrate later, the new binary refuses while a `bars_pre_contract_key_<today>`
@@ -171,11 +171,11 @@ table exists (it never overwrites a backup table): rename or drop
 ### Option B — restore the whole-database backup (loses EVERYTHING written after it)
 
 ```bash
-BK=$(ls -1 ~/nofx-backups/pre-bars-key-*.db | sort -r | head -1)
+BK=$(ls -1 ~/vl-backups/pre-bars-key-*.db | sort -r | head -1)
 python3 -c "import sqlite3,sys;print(sqlite3.connect(sys.argv[1]).execute('PRAGMA quick_check').fetchone()[0])" "$BK"   # → ok
-kill -9 "$(pgrep -f nofx-bin)"
-mv ~/nofx/data/data.db ~/nofx/data/data.db.pre-restore
-cp "$BK" ~/nofx/data/data.db
+kill -9 "$(pgrep -f vl-bin)"
+mv ~/vl/data/data.db ~/vl/data/data.db.pre-restore   # before the R2 boot: ~/<old>/data/…
+cp "$BK" ~/vl/data/data.db
 # then the binary rollback + RELEASE re-arm above
 ```
 
@@ -198,8 +198,8 @@ SELECT COUNT(*) FROM bars b WHERE b.contract='MNQ 12-26' AND b.symbol='MNQ' AND 
 - Backups are **gzip'd** (~402 MB DB → ~34 MB). Always `gunzip` before opening.
 - The `.backup` API copies a transactionally-consistent snapshot, so a backup taken
   mid-trade is still valid — no torn writes.
-- These automated backups are **separate** from the ad-hoc `~/nofx-backups/<name>/`
-  guarded-write snapshots; both live under `~/nofx-backups/`.
+- These automated backups are **separate** from the ad-hoc `~/vl-backups/<name>/`
+  guarded-write snapshots; both live under `~/vl-backups/` (before the R2 boot: `~/<old>-backups/`).
 
 ## Manual boot after W-ONE-BUTTON M4 — the guide rev is a BUILD INPUT
 
@@ -233,7 +233,7 @@ cutover if it fails; `.github/workflows/release.yml` does exactly the same for a
 tagged release, and additionally proves the negative — `VITE_GUIDE_BUILT_REV=
 npm run build` must FAIL before the real build runs.
 
-**Out-of-repo script:** the CTO's `~/nofx-backups/cutover-auto-rollback-v3.sh`
+**Out-of-repo script:** the CTO's `~/vl-backups/cutover-auto-rollback-v3.sh`
 still greps the old literal. It must be edited the same way before the next
 boot, or it will report a green preflight for a check that no longer exists.
 `deploy/cutover.sh` is its in-git successor and already does this.
@@ -241,11 +241,11 @@ boot, or it will report a green preflight for a check that no longer exists.
 ## Rollback copies
 
 `deploy/cutover.sh` keeps both halves of the previous release, named so they
-cannot collide (R-o — the old script reused `nofx-bin.old.<rev>`, so two
+cannot collide (R-o — the old script reused `vl-bin.old.<rev>`, so two
 cutovers at the same rev overwrote the only way back):
 
 ```
-nofx-bin.old.<rev12>.<YYYYmmdd-HHMMSS>
+vl-bin.old.<rev12>.<YYYYmmdd-HHMMSS>
 web/dist.old.<rev12>.<YYYYmmdd-HHMMSS>
 ```
 
@@ -264,8 +264,8 @@ worktree, and every lane works in one. `-buildvcs=true` does not help: it exits
 commit and the stamps appear:
 
     git clone --no-local <repo> /tmp/build && cd /tmp/build
-    git checkout <sha> && go build -o /tmp/nofx-bin .
-    go version -m /tmp/nofx-bin | grep vcs.      # revision + modified=false
+    git checkout <sha> && go build -o /tmp/vl-bin .
+    go version -m /tmp/vl-bin | grep vcs.      # revision + modified=false
 
 **"is stamped, but with a DIFFERENT revision"** — this really is the wrong
 binary for the sha you named. Check the sha, not the build location.

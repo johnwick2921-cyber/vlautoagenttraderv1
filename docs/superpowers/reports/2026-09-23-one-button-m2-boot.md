@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W-ONE-BUTTON M2 boot — 2026-09-23 00:46 CT (CTO, owner GO, SIM)
 
 - **Binary**: `0e490e44827995be0f0da4c01617e62ebbfcb351` (merge of PR #182), built from a
@@ -9,7 +10,7 @@
 - **Cutover**: `cutover-auto-rollback-v3.sh` from live `a2bac00d`, deploy tree `dbf06dc7`
   (guide bump), kill of PID 75597 at 00:46:26 CT; systemd relaunched PID 79574;
   `🔐 BOOT INTEGRITY OK — rev 0e490e448279 · expected 0e490e448279 · goldens PASS` at +7 s;
-  `/api/health` revision `0e490e448279`. Rollback binary kept as `nofx-bin.old.a2bac00d`.
+  `/api/health` revision `0e490e448279`. Rollback binary kept as `vl-bin.old.a2bac00d`.
 - **Flat gate**: open positions 0 · placed/pending arms 0 (14 superseded rows only) ·
   picture rows 0 · broker positions snapshot count=0 · no planner read in flight (last plan
   write 21:14 CT).

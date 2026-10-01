@@ -11,8 +11,8 @@ import (
 
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/stretchr/testify/assert"
-	"nofx/trader/testutil"
-	"nofx/trader/types"
+	"vl/trader/testutil"
+	"vl/trader/types"
 )
 
 // ============================================================

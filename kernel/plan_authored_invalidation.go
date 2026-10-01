@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // Deliberately a small complete grammar, not a price mined from prose. Compound,

@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLASS 45 — THE PROMPT FEEDS FORWARD
 
 Wave: dispatch **class 45** · checklist slot **50** (slot 45 was already the
 "pantry nobody could reach" class; 46 is left free to avoid a double meaning
 with the class-46 instrument-honesty dispatch, which filed under 49).
-Branch `fix/class45-prompt-feeds-forward` · worktree `/home/hoang/nofx-class45`.
+Branch `fix/class45-prompt-feeds-forward` · worktree `/home/hoang/vl-class45`.
 Status: **BUILT, GREEN, STAGED — awaiting owner GO. Not deployed.**
 
 ## THE CLASS IN ONE SENTENCE
@@ -196,7 +197,7 @@ Additive and dormant-safe. `git revert` the wave commit, rebuild, restart —
 nothing persists to the DB and no schema changes. Partial escapes, no rebuild
 needed for the first two: an empty `VoidBreakdownLevels` renders **nothing**;
 `StopFloorATR5m=0` renders **nothing**; an empty reject history falls back to the
-legacy single-defect tail. Binary rollback: `nofx-bin.prev.boot`.
+legacy single-defect tail. Binary rollback: `vl-bin.prev.boot`.
 
 ## A15 — WHAT I DID NOT DO
 

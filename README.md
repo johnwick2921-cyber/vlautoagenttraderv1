@@ -9,13 +9,6 @@
 > [docs/README-VL-SYSTEM.md](docs/README-VL-SYSTEM.md)
 
 <p align="center">
-  <a href="https://github.com/NoFxAiOS/nofx/stargazers"><img src="https://img.shields.io/github/stars/NoFxAiOS/nofx?style=for-the-badge" alt="Stars"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/releases"><img src="https://img.shields.io/github/v/release/NoFxAiOS/nofx?style=for-the-badge" alt="Release"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg?style=for-the-badge" alt="License"></a>
-  <a href="https://t.me/nofx_dev_community"><img src="https://img.shields.io/badge/Telegram-Community-blue?style=for-the-badge&logo=telegram" alt="Telegram"></a>
-</p>
-
-<p align="center">
   <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go" alt="Go"></a>
   <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react" alt="React"></a>
   <a href="https://x402.org"><img src="https://img.shields.io/badge/x402-USDC%20Payments-2775CA?style=flat" alt="x402"></a>
@@ -39,12 +32,6 @@ VL Intelligent is an open-source **autonomous** AI trading assistant. Unlike tra
 **Fully autonomous**: The AI decides which model to use, what market data to pull, when to trade — all by itself. No manual model configuration. No juggling API keys for different services. Just fund a USDC wallet and let it run.
 
 What makes it different: **built-in [x402](https://x402.org) micropayments**. No API keys. Fund a USDC wallet and pay per request. Your wallet is your identity.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
-
-Open **http://127.0.0.1:3000**. Done.
 
 ---
 
@@ -77,7 +64,6 @@ No accounts. No API keys. No prepaid credits. One wallet, every model.
 ### Built-in x402 Providers
 
 | Provider                                                                                                                           | Chain | Models                                                                |
-| :--------------------------------------------------------------------------------------------------------------------------------- | :---- | :-------------------------------------------------------------------- |
 | <img src="web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base  | GPT-5.4, Claude Opus, DeepSeek, Qwen, Grok, Gemini, Kimi — 15+ models |
 
 ---
@@ -85,7 +71,6 @@ No accounts. No API keys. No prepaid credits. One wallet, every model.
 ## What It Does
 
 | Feature             | Description                                                               |
-| :------------------ | :------------------------------------------------------------------------ |
 | **Multi-AI**        | DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi, MiniMax — switch anytime |
 | **Multi-Exchange**  | Binance, Bybit, OKX, Bitget, KuCoin, Gate, Hyperliquid, Aster, Lighter    |
 | **Strategy Studio** | Visual builder — coin sources, indicators, risk controls                  |
@@ -100,8 +85,7 @@ Crypto · US Stocks · Forex · Metals
 ### Exchanges (CEX)
 
 | Exchange                                                                                                              | Status | Register (Fee Discount)                                                              |
-| :-------------------------------------------------------------------------------------------------------------------- | :----: | :----------------------------------------------------------------------------------- |
-| <img src="web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** |   ✅   | [Register](https://www.binance.com/join?ref=NOFXENG)                                 |
+| <img src="web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** |   ✅   | [Register](https://www.binance.com/join)                                 |
 | <img src="web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit**     |   ✅   | [Register](https://partner.bybit.com/b/83856)                                        |
 | <img src="web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX**         |   ✅   | [Register](https://www.okx.com/join/1865360)                                         |
 | <img src="web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget**   |   ✅   | [Register](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
@@ -111,7 +95,6 @@ Crypto · US Stocks · Forex · Metals
 ### Exchanges (Perp-DEX)
 
 | Exchange                                                                                                                      | Status | Register (Fee Discount)                                 |
-| :---------------------------------------------------------------------------------------------------------------------------- | :----: | :------------------------------------------------------ |
 | <img src="web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** |   ✅   | [Register](https://app.hyperliquid.xyz/join/AITRADING)  |
 | <img src="web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX**         |   ✅   | [Register](https://www.asterdex.com/en/referral/fdfc0e) |
 | <img src="web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter**         |   ✅   | [Register](https://app.lighter.xyz/?referral=68151432)  |
@@ -119,7 +102,6 @@ Crypto · US Stocks · Forex · Metals
 ### AI Models (API Key Mode)
 
 | AI Model                                                                                                         | Status | Get API Key                                         |
-| :--------------------------------------------------------------------------------------------------------------- | :----: | :-------------------------------------------------- |
 | <img src="web/public/icons/deepseek.svg" width="20" height="20" style="vertical-align: middle;"/> **DeepSeek**   |   ✅   | [Get API Key](https://platform.deepseek.com)        |
 | <img src="web/public/icons/qwen.svg" width="20" height="20" style="vertical-align: middle;"/> **Qwen**           |   ✅   | [Get API Key](https://dashscope.console.aliyun.com) |
 | <img src="web/public/icons/openai.svg" width="20" height="20" style="vertical-align: middle;"/> **OpenAI (GPT)** |   ✅   | [Get API Key](https://platform.openai.com)          |
@@ -141,7 +123,6 @@ Crypto · US Stocks · Forex · Metals
 <summary><b>Config Page</b></summary>
 
 |                    AI Models & Exchanges                     |                         Traders List                         |
-| :----------------------------------------------------------: | :----------------------------------------------------------: |
 | <img src="screenshots/config-ai-exchanges.png" width="400"/> | <img src="screenshots/config-traders-list.png" width="400"/> |
 
 </details>
@@ -150,15 +131,12 @@ Crypto · US Stocks · Forex · Metals
 <summary><b>Dashboard</b></summary>
 
 |                        Overview                         |                          Market Chart                           |
-| :-----------------------------------------------------: | :-------------------------------------------------------------: |
 | <img src="screenshots/dashboard-page.png" width="400"/> | <img src="screenshots/dashboard-market-chart.png" width="400"/> |
 
 |                          Trading Stats                           |                          Position History                           |
-| :--------------------------------------------------------------: | :-----------------------------------------------------------------: |
 | <img src="screenshots/dashboard-trading-stats.png" width="400"/> | <img src="screenshots/dashboard-position-history.png" width="400"/> |
 
 |                          Positions                           |                    Trader Details                     |
-| :----------------------------------------------------------: | :---------------------------------------------------: |
 | <img src="screenshots/dashboard-positions.png" width="400"/> | <img src="screenshots/details-page.png" width="400"/> |
 
 </details>
@@ -167,7 +145,6 @@ Crypto · US Stocks · Forex · Metals
 <summary><b>Strategy Studio</b></summary>
 
 |                     Strategy Editor                      |                      Indicators Config                       |
-| :------------------------------------------------------: | :----------------------------------------------------------: |
 | <img src="screenshots/strategy-studio.png" width="400"/> | <img src="screenshots/strategy-indicators.png" width="400"/> |
 
 </details>
@@ -176,7 +153,6 @@ Crypto · US Stocks · Forex · Metals
 <summary><b>Competition</b></summary>
 
 |                     Competition Mode                      |
-| :-------------------------------------------------------: |
 | <img src="screenshots/competition-page.png" width="400"/> |
 
 </details>
@@ -185,48 +161,17 @@ Crypto · US Stocks · Forex · Metals
 
 ## Install
 
-### Linux / macOS
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
-
-### Railway (Cloud)
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/nofx?referralCode=nofx)
-
-### Docker
-
-```bash
-curl -O https://raw.githubusercontent.com/NoFxAiOS/nofx/main/docker-compose.prod.yml
-docker compose -f docker-compose.prod.yml up -d
-```
-
-### Windows
-
-Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), then:
-
-```powershell
-curl -o docker-compose.prod.yml https://raw.githubusercontent.com/NoFxAiOS/nofx/main/docker-compose.prod.yml
-docker compose -f docker-compose.prod.yml up -d
-```
-
 ### From Source
+
+In a checkout of this repository:
 
 ```bash
 # Prerequisites: Go 1.21+, Node.js 18+, TA-Lib
 # macOS: brew install ta-lib
 # Ubuntu: sudo apt-get install libta-lib0-dev
 
-git clone https://github.com/NoFxAiOS/nofx.git && cd nofx
-go build -o nofx && ./nofx          # backend
+go build -o vl-bin && ./vl-bin          # backend
 cd web && npm install && npm run dev  # frontend (new terminal)
-```
-
-### Update
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
 ```
 
 ---
@@ -248,13 +193,6 @@ Everything through the web UI at **http://127.0.0.1:3000**.
 ---
 
 ## Deploy to Server
-
-**HTTP (quick):**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-# Access via http://YOUR_IP:3000
-```
 
 **HTTPS (Cloudflare):**
 
@@ -295,8 +233,6 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 
 ## Docs
 
-|                                                         |                                       |
-| :------------------------------------------------------ | :------------------------------------ |
 | [Architecture](docs/architecture/README.md)             | System design and module index        |
 | [Strategy Module](docs/architecture/STRATEGY_MODULE.md) | Coin selection, AI prompts, execution |
 | [FAQ](docs/faq/README.md)                               | Common questions                      |
@@ -312,10 +248,7 @@ See [Contributing Guide](CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.m
 
 All contributions are tracked. When VL Intelligent generates revenue, contributors receive airdrops.
 
-**[Pinned Issues](https://github.com/NoFxAiOS/nofx/issues) get the highest rewards.**
-
 | Contribution      | Weight |
-| :---------------- | :----: |
 | Pinned Issue PRs  | ★★★★★★ |
 | Code (Merged PRs) | ★★★★★  |
 | Bug Fixes         |  ★★★★  |
@@ -324,16 +257,6 @@ All contributions are tracked. When VL Intelligent generates revenue, contributo
 | Documentation     |   ★★   |
 
 ---
-
-## Links
-
-|           |                                                       |
-| :-------- | :---------------------------------------------------- |
-| Website   | [nofxai.com](https://nofxai.com)                      |
-| Dashboard | [nofxos.ai/dashboard](https://nofxos.ai/dashboard)    |
-| API Docs  | [nofxos.ai/api-docs](https://nofxos.ai/api-docs)      |
-| Telegram  | [nofx_dev_community](https://t.me/nofx_dev_community) |
-| Twitter   | [@nofx_official](https://x.com/nofx_official)         |
 
 > **Risk Warning**: AI auto-trading carries significant risks. Recommended for learning/research or small amounts only.
 
@@ -353,10 +276,7 @@ All contributions are tracked. When VL Intelligent generates revenue, contributo
 <a href="https://github.com/leiwuhen1715"><img src="https://github.com/leiwuhen1715.png" width="50" height="50" style="border-radius:50%"/></a>
 <a href="https://github.com/SHAOXIA1991"><img src="https://github.com/SHAOXIA1991.png" width="50" height="50" style="border-radius:50%"/></a>
 
-[Become a sponsor](https://github.com/sponsors/NoFxAiOS)
-
 ## License
 
 [AGPL-3.0](LICENSE)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NoFxAiOS/nofx&type=Date)](https://star-history.com/#NoFxAiOS/nofx&Date)

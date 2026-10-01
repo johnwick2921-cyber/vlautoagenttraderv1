@@ -8,7 +8,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"nofx/logger"
+	"vl/logger"
 	"strings"
 	"sync"
 	"time"
@@ -16,7 +16,7 @@ import (
 	lighterClient "github.com/elliottech/lighter-go/client"
 	lighterHTTP "github.com/elliottech/lighter-go/client/http"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	tradertypes "nofx/trader/types"
+	tradertypes "vl/trader/types"
 )
 
 // AccountInfo LIGHTER account information

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // TestDetectHTFLevelsExportPinned — F0 (CTO review 2026-09-17): the replay

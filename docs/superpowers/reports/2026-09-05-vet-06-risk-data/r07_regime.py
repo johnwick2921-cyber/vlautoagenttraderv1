@@ -3,7 +3,7 @@
 import sqlite3, datetime, zoneinfo, math
 import numpy as np
 ct=zoneinfo.ZoneInfo("America/Chicago")
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True)
 d=con.execute("SELECT open_time_ms,o,h,l,c FROM bars WHERE symbol='MNQ' AND tf='1d' ORDER BY open_time_ms").fetchall()
 print("1d bars:", len(d), "first", datetime.datetime.fromtimestamp(d[0][0]/1000,ct).date(), "last", datetime.datetime.fromtimestamp(d[-1][0]/1000,ct).date())
 rows=[]

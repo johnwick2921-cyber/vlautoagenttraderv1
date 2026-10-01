@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Veteran review — Part B: monitoring, execution, risk (sections 4–6)
 
 **Sub-agent B · 2026-09-05 · READ-ONLY**
@@ -13,7 +14,7 @@ This review ran against a **fresh clone of the repository**, not the owner's mac
 
 - **No running engine.** `/api/health`, `/api/expectancy`, `/api/config/resolved` are unreachable — nothing is listening. Where the dispatch asked me to call an endpoint, I read the handler and the resolvers instead and say so.
 - **No SQLite store on disk.** Every query in the dispatch — `trader_positions`, `armed_orders`, `nt8_order_snapshots`, `bars`, `trade_excursions`, `decision_records` — is **BLOCKED — NO STORE IN THIS ENVIRONMENT**. I write the SQL I would have run and then answer from committed evidence, carrying that evidence's own n and interval.
-- **No `~/nofx-analysis/`, no NT8 logs, no journal.**
+- **No `~/vl-analysis/`, no NT8 logs, no journal.**
 - `docs/superpowers/plans/VL-MASTER-PLAN-v2.md` does not exist in this tree.
 
 **Could reach, and used:**

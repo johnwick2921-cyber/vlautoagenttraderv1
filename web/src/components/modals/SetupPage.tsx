@@ -4,6 +4,10 @@ import { useAuth } from '../../contexts/AuthContext'
 import { invalidateSystemConfig } from '../../lib/config'
 import { OnboardingModeSelector } from '../auth/OnboardingModeSelector'
 import type { UserMode } from '../../lib/onboarding'
+import {
+  VL_BEGINNER_ONBOARDING_COMPLETED_KEY,
+  VL_BEGINNER_WALLET_ADDRESS_KEY,
+} from '../../lib/storageMigration'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { LanguageSwitcher } from '../common/LanguageSwitcher'
 
@@ -64,8 +68,8 @@ export function SetupPage() {
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
     localStorage.removeItem('user_id')
-    localStorage.removeItem('nofx_beginner_onboarding_completed')
-    localStorage.removeItem('nofx_beginner_wallet_address')
+    localStorage.removeItem(VL_BEGINNER_ONBOARDING_COMPLETED_KEY)
+    localStorage.removeItem(VL_BEGINNER_WALLET_ADDRESS_KEY)
   }, [])
 
   const l = labels[language as keyof typeof labels] || labels.en
@@ -93,12 +97,18 @@ export function SetupPage() {
 
       {/* Grid */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-x-0 bottom-0 h-[60vh] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-40" style={{ transform: 'perspective(500px) rotateX(60deg) translateY(80px) scale(2)' }} />
+        <div
+          className="absolute inset-x-0 bottom-0 h-[60vh] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-40"
+          style={{
+            transform:
+              'perspective(500px) rotateX(60deg) translateY(80px) scale(2)',
+          }}
+        />
       </div>
 
       {/* Glow spots */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[10%] left-[15%] w-[500px] h-[500px] bg-nofx-gold/8 rounded-full blur-[150px]" />
+        <div className="absolute top-[10%] left-[15%] w-[500px] h-[500px] bg-vl-neo-gold/8 rounded-full blur-[150px]" />
         <div className="absolute bottom-[5%] right-[10%] w-[400px] h-[400px] bg-indigo-500/6 rounded-full blur-[140px]" />
         <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] bg-emerald-500/4 rounded-full blur-[120px]" />
       </div>
@@ -116,7 +126,10 @@ export function SetupPage() {
         {/* Fake content cards */}
         <div className="p-6 grid grid-cols-4 gap-4 mt-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 rounded-xl border border-white/15 bg-white/5" />
+            <div
+              key={i}
+              className="h-24 rounded-xl border border-white/15 bg-white/5"
+            />
           ))}
         </div>
         <div className="px-6 mt-2">
@@ -132,31 +145,37 @@ export function SetupPage() {
       {/* Modal card */}
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16">
         <div className="w-full max-w-sm animate-[fadeInUp_0.4s_ease-out]">
-
           {/* Logo + Title */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               <div className="relative">
-                <div className="absolute -inset-4 bg-nofx-gold/20 rounded-full blur-2xl" />
-                <img src="/icons/vl.svg" alt="VL" className="w-14 h-14 relative z-10 drop-shadow-[0_0_15px_rgba(240,185,11,0.3)]" />
+                <div className="absolute -inset-4 bg-vl-neo-gold/20 rounded-full blur-2xl" />
+                <img
+                  src="/icons/vl.svg"
+                  alt="VL"
+                  className="w-14 h-14 relative z-10 drop-shadow-[0_0_15px_rgba(240,185,11,0.3)]"
+                />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-1.5">{l.welcome}</h1>
+            <h1 className="text-2xl font-bold text-white mb-1.5">
+              {l.welcome}
+            </h1>
             <p className="text-zinc-500 text-sm">{l.subtitle}</p>
           </div>
 
           {/* Card */}
           <div className="bg-zinc-900/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5),0_0_40px_-10px_rgba(240,185,11,0.08)]">
             <form onSubmit={handleSubmit} className="space-y-5">
-
               {/* Email */}
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-2">{l.email}</label>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">
+                  {l.email}
+                </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nofx-gold/60 focus:ring-1 focus:ring-nofx-gold/30 transition-all"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-vl-neo-gold/60 focus:ring-1 focus:ring-vl-neo-gold/30 transition-all"
                   placeholder={l.emailPlaceholder}
                   required
                   autoFocus
@@ -165,13 +184,15 @@ export function SetupPage() {
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-2">{l.password}</label>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">
+                  {l.password}
+                </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nofx-gold/60 focus:ring-1 focus:ring-nofx-gold/30 transition-all"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-vl-neo-gold/60 focus:ring-1 focus:ring-vl-neo-gold/30 transition-all"
                     placeholder={l.passwordPlaceholder}
                     required
                   />
@@ -202,7 +223,7 @@ export function SetupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-nofx-gold hover:bg-yellow-400 active:scale-[0.98] text-black font-semibold py-3 rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2 shadow-[0_0_20px_rgba(240,185,11,0.2)]"
+                className="w-full bg-vl-neo-gold hover:bg-yellow-400 active:scale-[0.98] text-black font-semibold py-3 rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2 shadow-[0_0_20px_rgba(240,185,11,0.2)]"
               >
                 {loading ? l.submitting : l.submit}
               </button>

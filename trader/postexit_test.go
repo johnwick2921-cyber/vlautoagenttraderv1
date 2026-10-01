@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/discipline"
+	"vl/discipline"
 )
 
 // 4.5 — env gates: default ON, explicit off honored; delay default + override.

@@ -29,7 +29,7 @@
 //	Host        clock, sleeps, the main-tree lock check, build info, /proc
 //
 // Nothing here is reachable from the app, and nothing runs unless an operator
-// starts `nofx-updater serve` (L4: no worker, no job file = today).
+// starts `vl-updater serve` (L4: no worker, no job file = today).
 package updaterworker
 
 import (
@@ -37,7 +37,7 @@ import (
 	"errors"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // ── the activation library seam (CTO 1790261377377: the LANDED #201 shape) ──
@@ -74,14 +74,14 @@ type WatchOpts struct {
 // pins the rendered signatures). Every call is a step the worker has ALREADY
 // persisted as started (TestEveryTransitionPersistsBeforeItsSideEffect).
 type Library interface {
-	// Resolve reads <dir>/{nofx-bin,web/dist,RELEASE,manifest.json}.
+	// Resolve reads <dir>/{vl-bin,web/dist,RELEASE,manifest.json}.
 	Resolve(dir string) (Release, error)
 	// Stage proves rel's binary is the release it claims (vcs stamps + md5).
 	Stage(rel Release) (Receipt, error)
 	// Backup takes an online, integrity-checked copy of the database to dest.
 	Backup(dbPath, dest string) (Receipt, error)
 	// Snapshot copies the install's three halves to dest
-	// (<dest>/nofx-bin, <dest>/web/dist, <dest>/RELEASE).
+	// (<dest>/vl-bin, <dest>/web/dist, <dest>/RELEASE).
 	Snapshot(install Release, dest string) (Receipt, error)
 	// Activate installs rel's halves into prev's paths (prev = the install),
 	// then kills the process id names and returns the NEW identity.
@@ -99,7 +99,7 @@ type Library interface {
 // ── the release re-proof seam (U3; the adapter is reverifier.go) ────────────
 
 // Verdict mirrors U3's verdict file (updaterjob.Verdict, <data>/updater/verdicts/<release_id>.json,
-// written by the attended `nofx-updater fetch`) field for field: names, types,
+// written by the attended `vl-updater fetch`) field for field: names, types,
 // order AND json tags. The ONE mapping between the two is reverifier.go's
 // mirrorVerdict / Verdict.file — a plain Go struct conversion the compiler
 // refuses the day the field lists drift; a conversion ignores tags, so
@@ -231,7 +231,7 @@ type Host interface {
 	Now() time.Time
 	// Sleep waits d or until ctx ends.
 	Sleep(ctx context.Context, d time.Duration) error
-	// MainTreeLockHeld runs the installation's deploy/nofx-lock.sh check
+	// MainTreeLockHeld runs the installation's deploy/vl-lock.sh check
 	// (C19: rc 1 = held). The worker NEVER acquires the lock.
 	MainTreeLockHeld() (held bool, detail string, err error)
 	// BuildInfo reads vcs.revision and vcs.modified from a binary.

@@ -2,8 +2,8 @@ package trader
 
 import (
 	"fmt"
-	"nofx/logger"
-	"nofx/trader/types"
+	"vl/logger"
+	"vl/trader/types"
 )
 
 // Re-export types for backward compatibility

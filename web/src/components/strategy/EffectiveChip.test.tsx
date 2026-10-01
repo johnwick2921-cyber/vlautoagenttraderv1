@@ -62,7 +62,7 @@ describe('EffectiveChip', () => {
     render(
       <EffectiveChip
         knob={knob({
-          path: 'ai_config.indicators.nofxos_api_key',
+          path: 'api.model.api_key',
           stored: { present: true, value: 'redacted' },
           effective: 'redacted',
           origin: 'saved value',

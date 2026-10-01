@@ -2,13 +2,12 @@ package kernel
 
 import (
 	"fmt"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/provider/nofxos"
-	"nofx/store"
 	"sort"
 	"strings"
 	"time"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
 )
 
 // ============================================================================
@@ -271,17 +270,6 @@ func (e *StrategyEngine) writeAvailableIndicators(sb *strings.Builder) {
 	if indicators.EnableFundingRate && !e.isFuturesInstrument() {
 		sb.WriteString("- Funding rate\n")
 	}
-
-	// F11a — AI500 / OI_Top are crypto screening concepts; a futures strategy trades
-	// a single static symbol and never screens by them, so suppress this line on
-	// futures (like funding via B8) instead of advertising a filter the model can't use.
-	if !e.isFuturesInstrument() && (len(e.config.CoinSource.StaticCoins) > 0 || e.config.CoinSource.UseAI500 || e.config.CoinSource.UseOITop) {
-		sb.WriteString("- AI500 / OI_Top filter tags (if available)\n")
-	}
-
-	if indicators.EnableQuantData {
-		sb.WriteString("- Quantitative data (institutional/retail fund flow, position changes, multi-period price changes)\n")
-	}
 }
 
 // ============================================================================
@@ -442,11 +430,6 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 		sb.WriteString(fmt.Sprintf("### %d. %s%s\n\n", displayedCount, coin.Symbol, sourceTags))
 		sb.WriteString(e.formatMarketData(marketData))
 
-		if ctx.QuantDataMap != nil {
-			if quantData, hasQuant := ctx.QuantDataMap[coin.Symbol]; hasQuant {
-				sb.WriteString(e.formatQuantData(quantData))
-			}
-		}
 		sb.WriteString("\n")
 	}
 	sb.WriteString("\n")
@@ -456,27 +439,6 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	// judges; no gate lives here (G1/G4 consume the same snapshot in Go).
 	if e.isFuturesInstrument() && len(ctx.Structure) > 0 {
 		sb.WriteString(StructurePromptLine(ctx.Structure) + "\n\n")
-	}
-
-	// Get language for market data formatting
-	nofxosLang := nofxos.LangEnglish
-	if e.GetLanguage() == LangChinese {
-		nofxosLang = nofxos.LangChinese
-	}
-
-	// OI Ranking data (market-wide open interest changes)
-	if ctx.OIRankingData != nil {
-		sb.WriteString(nofxos.FormatOIRankingForAI(ctx.OIRankingData, nofxosLang))
-	}
-
-	// NetFlow Ranking data (market-wide fund flow)
-	if ctx.NetFlowRankingData != nil {
-		sb.WriteString(nofxos.FormatNetFlowRankingForAI(ctx.NetFlowRankingData, nofxosLang))
-	}
-
-	// Price Ranking data (market-wide gainers/losers)
-	if ctx.PriceRankingData != nil {
-		sb.WriteString(nofxos.FormatPriceRankingForAI(ctx.PriceRankingData, nofxosLang))
 	}
 
 	sb.WriteString("---\n\n")
@@ -514,11 +476,6 @@ func (e *StrategyEngine) formatPositionInfo(index int, pos PositionInfo, ctx *Co
 	if marketData, ok := ctx.MarketDataMap[pos.Symbol]; ok {
 		sb.WriteString(e.formatMarketData(marketData))
 
-		if ctx.QuantDataMap != nil {
-			if quantData, hasQuant := ctx.QuantDataMap[pos.Symbol]; hasQuant {
-				sb.WriteString(e.formatQuantData(quantData))
-			}
-		}
 		sb.WriteString("\n")
 	}
 
@@ -528,36 +485,15 @@ func (e *StrategyEngine) formatPositionInfo(index int, pos PositionInfo, ctx *Co
 func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 	if len(sources) > 1 {
 		// Multiple signal source combination
-		hasAI500 := false
-		hasOITop := false
-		hasOILow := false
 		hasHyperAll := false
 		hasHyperMain := false
 		for _, s := range sources {
 			switch s {
-			case "ai500":
-				hasAI500 = true
-			case "oi_top":
-				hasOITop = true
-			case "oi_low":
-				hasOILow = true
 			case "hyper_all":
 				hasHyperAll = true
 			case "hyper_main":
 				hasHyperMain = true
 			}
-		}
-		if hasAI500 && hasOITop {
-			return " (AI500+OI_Top dual signal)"
-		}
-		if hasAI500 && hasOILow {
-			return " (AI500+OI_Low dual signal)"
-		}
-		if hasOITop && hasOILow {
-			return " (OI_Top+OI_Low)"
-		}
-		if hasHyperMain && hasAI500 {
-			return " (HyperMain+AI500)"
 		}
 		if hasHyperAll || hasHyperMain {
 			return " (Hyperliquid)"
@@ -565,12 +501,6 @@ func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 		return " (Multiple sources)"
 	} else if len(sources) == 1 {
 		switch sources[0] {
-		case "ai500":
-			return " (AI500)"
-		case "oi_top":
-			return " (OI_Top OI increase)"
-		case "oi_low":
-			return " (OI_Low OI decrease)"
 		case "static":
 			return " (Manual selection)"
 		case "hyper_all":
@@ -987,110 +917,6 @@ func FormatIndicatorState(sb *strings.Builder, data *market.TimeframeSeriesData,
 			sb.WriteString(fmt.Sprintf("BOLL Lower: %s\n", formatFloatSlice(data.BOLLLower)))
 		}
 	}
-}
-
-func (e *StrategyEngine) formatQuantData(data *QuantData) string {
-	if data == nil {
-		return ""
-	}
-
-	indicators := e.config.Indicators
-	if !indicators.EnableQuantOI && !indicators.EnableQuantNetflow {
-		return ""
-	}
-
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("📊 %s Quantitative Data:\n", data.Symbol))
-
-	if len(data.PriceChange) > 0 {
-		sb.WriteString("Price Change: ")
-		timeframes := []string{"5m", "15m", "1h", "4h", "12h", "24h"}
-		parts := []string{}
-		for _, tf := range timeframes {
-			if v, ok := data.PriceChange[tf]; ok {
-				parts = append(parts, fmt.Sprintf("%s: %+.4f%%", tf, v*100))
-			}
-		}
-		sb.WriteString(strings.Join(parts, " | "))
-		sb.WriteString("\n")
-	}
-
-	if indicators.EnableQuantNetflow && data.Netflow != nil {
-		sb.WriteString("Fund Flow (Netflow):\n")
-		timeframes := []string{"5m", "15m", "1h", "4h", "12h", "24h"}
-
-		if data.Netflow.Institution != nil {
-			if data.Netflow.Institution.Future != nil && len(data.Netflow.Institution.Future) > 0 {
-				sb.WriteString("  Institutional Futures:\n")
-				for _, tf := range timeframes {
-					if v, ok := data.Netflow.Institution.Future[tf]; ok {
-						sb.WriteString(fmt.Sprintf("    %s: %s\n", tf, formatFlowValue(v)))
-					}
-				}
-			}
-			if data.Netflow.Institution.Spot != nil && len(data.Netflow.Institution.Spot) > 0 {
-				sb.WriteString("  Institutional Spot:\n")
-				for _, tf := range timeframes {
-					if v, ok := data.Netflow.Institution.Spot[tf]; ok {
-						sb.WriteString(fmt.Sprintf("    %s: %s\n", tf, formatFlowValue(v)))
-					}
-				}
-			}
-		}
-
-		if data.Netflow.Personal != nil {
-			if data.Netflow.Personal.Future != nil && len(data.Netflow.Personal.Future) > 0 {
-				sb.WriteString("  Retail Futures:\n")
-				for _, tf := range timeframes {
-					if v, ok := data.Netflow.Personal.Future[tf]; ok {
-						sb.WriteString(fmt.Sprintf("    %s: %s\n", tf, formatFlowValue(v)))
-					}
-				}
-			}
-			if data.Netflow.Personal.Spot != nil && len(data.Netflow.Personal.Spot) > 0 {
-				sb.WriteString("  Retail Spot:\n")
-				for _, tf := range timeframes {
-					if v, ok := data.Netflow.Personal.Spot[tf]; ok {
-						sb.WriteString(fmt.Sprintf("    %s: %s\n", tf, formatFlowValue(v)))
-					}
-				}
-			}
-		}
-	}
-
-	if indicators.EnableQuantOI && len(data.OI) > 0 {
-		for exchange, oiData := range data.OI {
-			if len(oiData.Delta) > 0 {
-				sb.WriteString(fmt.Sprintf("Open Interest (%s):\n", exchange))
-				for _, tf := range []string{"5m", "15m", "1h", "4h", "12h", "24h"} {
-					if d, ok := oiData.Delta[tf]; ok {
-						sb.WriteString(fmt.Sprintf("    %s: %+.4f%% (%s)\n", tf, d.OIDeltaPercent, formatFlowValue(d.OIDeltaValue)))
-					}
-				}
-			}
-		}
-	}
-
-	return sb.String()
-}
-
-func formatFlowValue(v float64) string {
-	sign := ""
-	if v >= 0 {
-		sign = "+"
-	}
-	absV := v
-	if absV < 0 {
-		absV = -absV
-	}
-	if absV >= 1e9 {
-		return fmt.Sprintf("%s%.2fB", sign, v/1e9)
-	} else if absV >= 1e6 {
-		return fmt.Sprintf("%s%.2fM", sign, v/1e6)
-	} else if absV >= 1e3 {
-		return fmt.Sprintf("%s%.2fK", sign, v/1e3)
-	}
-	return fmt.Sprintf("%s%.2f", sign, v)
 }
 
 func formatFloatSlice(values []float64) string {

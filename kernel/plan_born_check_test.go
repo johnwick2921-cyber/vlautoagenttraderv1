@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W-EXEC-TRUTH W2 A1 + A2 (2026-09-23). Fixture: plans rowid 455

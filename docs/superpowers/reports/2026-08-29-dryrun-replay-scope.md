@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DRY-RUN REPLAY — SCOPING REPORT (size-first, before build)
 
-- Worktree `~/nofx-dryrun` @ deployed `b0549ff2` · branch `docs/dryrun-replay` · 2026-08-29
+- Worktree `~/vl-dryrun` @ deployed `b0549ff2` · branch `docs/dryrun-replay` · 2026-08-29
 - Dispatch rule honored: the fake-provider harness is **well over ~150 lines** — this report states the size, the ONE architectural obstacle, and the options BEFORE any build. Parked bot, live DB, and NT8 untouched.
 
 ## The one hard obstacle: no clock abstraction
@@ -52,6 +53,6 @@ Owner ruled: go B (NY slice) WITHOUT the clock seam, faking the clock at the OS 
 
 **Root cause [A]:** Go resolves `clock_gettime` through the **vDSO**, not the libc symbol — `LD_PRELOAD` interception never sees the call, so libfaketime cannot move `time.Now()` in any Go binary. `ActiveSession(now)` would still see Saturday and the planner would refuse every plan. This is exactly the anticipated failure branch.
 
-**Disposition:** shadow session **CANCELLED cleanly** per the owner's fallback — tomorrow's (Sunday 17:00 CT) live-fire is the integration test. Harness not built; no code shipped; parked bot / live DB / NT8 untouched; worktree `~/nofx-dryrun` contains only this report. Done before the Sunday 15:00 CT deadline.
+**Disposition:** shadow session **CANCELLED cleanly** per the owner's fallback — tomorrow's (Sunday 17:00 CT) live-fire is the integration test. Harness not built; no code shipped; parked bot / live DB / NT8 untouched; worktree `~/vl-dryrun` contains only this report. Done before the Sunday 15:00 CT deadline.
 
 **If the shadow is ever re-attempted, the only working levers are:** (a) the ~120-line clock seam (owner-declined this round), (b) a dedicated VM/container with a rewritten system clock (root + isolation, heavier), or (c) live-fire itself.

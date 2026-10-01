@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // P3.6 — plan lifecycle helpers (pure, Go-side; no plan mutation).

@@ -3,8 +3,8 @@ package trader
 import (
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // DEFAULTS-SANE (CTO #212 fold, DS-105): the old pins compared the resolver to

@@ -16,9 +16,9 @@ import (
 	"sort"
 	"time"
 
-	"nofx/calendar"
-	"nofx/kernel"
-	"nofx/market"
+	"vl/calendar"
+	"vl/kernel"
+	"vl/market"
 )
 
 // fadeORWideKDefault is C5's own-tape 80th percentile over the 13-session

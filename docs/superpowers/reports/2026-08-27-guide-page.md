@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # G-DISPATCH — IN-APP USER GUIDE PAGE (2026-08-27)
 
 ## 1. Scope + laws

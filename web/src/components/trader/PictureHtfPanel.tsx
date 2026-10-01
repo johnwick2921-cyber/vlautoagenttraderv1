@@ -68,17 +68,17 @@ function Row({ r }: { r: PictureHtfRow }) {
         <span className={long ? 'text-emerald-400' : 'text-rose-400'}>
           {long ? 'LONG' : 'SHORT'}
         </span>
-        <span className="text-nofx-text-muted">
+        <span className="text-vl-neo-text-muted">
           {' '}
           {r.level_role} {num(r.level_body_top)}
         </span>
       </td>
       <td className="px-1 py-2 text-right whitespace-nowrap">
         <div>entry {num(r.entry_ref)}</div>
-        <div className="text-nofx-text-muted text-[10px]">
+        <div className="text-vl-neo-text-muted text-[10px]">
           stop {num(r.stop_px)} · target {num(r.target_px)}
         </div>
-        <div className="text-nofx-text-muted text-[10px]">
+        <div className="text-vl-neo-text-muted text-[10px]">
           R:R {num(r.rr_estimate)} (min {num(r.rr_configured)})
         </div>
       </td>
@@ -86,7 +86,7 @@ function Row({ r }: { r: PictureHtfRow }) {
         <span className="font-mono text-[11px]">
           {r.signal_id ? r.signal_id.slice(0, 13) : '—'}
         </span>
-        <div className="text-nofx-text-muted text-[10px]">
+        <div className="text-vl-neo-text-muted text-[10px]">
           sent {age(r.submitted_at_ms)} ago
         </div>
       </td>
@@ -95,7 +95,7 @@ function Row({ r }: { r: PictureHtfRow }) {
           {r.broker_status || '—'}
           {r.broker_order_id ? ` #${r.broker_order_id.slice(0, 8)}` : ''}
         </span>
-        <div className="text-nofx-text-muted text-[10px]">
+        <div className="text-vl-neo-text-muted text-[10px]">
           {r.fill_price
             ? `fill ${num(r.fill_price)} × ${num(r.fill_qty, 0)}`
             : 'no fill yet'}
@@ -106,16 +106,18 @@ function Row({ r }: { r: PictureHtfRow }) {
         )}
       </td>
       <td className="px-1 py-2 text-right whitespace-nowrap">
-        <span className="font-mono text-[11px] text-nofx-gold">{r.stage}</span>
+        <span className="font-mono text-[11px] text-vl-neo-gold">
+          {r.stage}
+        </span>
         {r.stage_reason && (
-          <div className="text-nofx-text-muted text-[10px] max-w-[220px] truncate">
+          <div className="text-vl-neo-text-muted text-[10px] max-w-[220px] truncate">
             {r.stage_reason}
           </div>
         )}
         {r.plan_link && (
           <div
             data-testid={`picture-plan-link-${r.opp_key}`}
-            className="text-nofx-text-muted text-[10px]"
+            className="text-vl-neo-text-muted text-[10px]"
             title={
               r.plan_link.arm_signal_id
                 ? `arm signal ${r.plan_link.arm_signal_id}`
@@ -163,18 +165,18 @@ export function PictureHtfPanel({ traderId }: { traderId: string }) {
 
   return (
     <section
-      className="min-w-0 nofx-glass p-6 animate-slide-in relative overflow-hidden group"
+      className="min-w-0 vl-neo-glass p-6 animate-slide-in relative overflow-hidden group"
       style={{ animationDelay: '0.2s' }}
     >
       <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
         <div className="w-24 h-24 rounded-full bg-indigo-500 blur-3xl" />
       </div>
       <div className="flex items-center justify-between mb-5 relative z-10">
-        <h2 className="text-lg font-bold flex items-center gap-2 text-nofx-text-main uppercase tracking-wide">
+        <h2 className="text-lg font-bold flex items-center gap-2 text-vl-neo-text-main uppercase tracking-wide">
           <span className="text-indigo-400">📷</span> Picture HTF opportunities
         </h2>
         {rows !== null && (
-          <span className="text-xs text-nofx-text-muted font-mono">
+          <span className="text-xs text-vl-neo-text-muted font-mono">
             {rows.length} recorded
           </span>
         )}
@@ -188,9 +190,11 @@ export function PictureHtfPanel({ traderId }: { traderId: string }) {
         </div>
       )}
       {rows === null ? (
-        <div className="text-xs text-nofx-text-muted">reading the ledger…</div>
+        <div className="text-xs text-vl-neo-text-muted">
+          reading the ledger…
+        </div>
       ) : rows.length === 0 ? (
-        <div className="text-xs text-nofx-text-muted">
+        <div className="text-xs text-vl-neo-text-muted">
           No two-picture opportunities recorded — the mode evaluates native
           4H/1H/5m bar events (enabled in the strategy's Day Plan block).
         </div>
@@ -199,19 +203,19 @@ export function PictureHtfPanel({ traderId }: { traderId: string }) {
           <table className="w-full text-xs">
             <thead className="text-left border-b border-white/5">
               <tr>
-                <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-left">
+                <th className="px-1 pb-3 font-semibold text-vl-neo-text-muted whitespace-nowrap text-left">
                   Setup
                 </th>
-                <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right">
+                <th className="px-1 pb-3 font-semibold text-vl-neo-text-muted whitespace-nowrap text-right">
                   Intended
                 </th>
-                <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-left">
+                <th className="px-1 pb-3 font-semibold text-vl-neo-text-muted whitespace-nowrap text-left">
                   Command
                 </th>
-                <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-left">
+                <th className="px-1 pb-3 font-semibold text-vl-neo-text-muted whitespace-nowrap text-left">
                   Broker answer
                 </th>
-                <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right">
+                <th className="px-1 pb-3 font-semibold text-vl-neo-text-muted whitespace-nowrap text-right">
                   Stage
                 </th>
               </tr>

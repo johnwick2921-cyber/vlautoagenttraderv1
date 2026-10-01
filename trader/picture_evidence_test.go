@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // W5 foundation — the evidence adapter reads the evaluator's hand-off, and

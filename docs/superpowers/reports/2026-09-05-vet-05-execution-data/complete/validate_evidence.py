@@ -19,7 +19,7 @@ assert len(f['stop_entry_sent_ids'])==21
 assert y['arm35_geometry']['max_adverse_entry_pts_at_2R']<.25
 assert y['arm35_geometry']['rr_one_adverse_tick']<2
 # Independent raw SQL using an explicit whitelist, not the application or q31 function.
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.execute('pragma query_only=ON')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.execute('pragma query_only=ON')
 r=c.execute('select count(*),sum(pnl_corrected),sum(pnl_corrected>0),sum(pnl_corrected<0),sum(pnl_corrected=0) from trader_positions where id in ('+','.join('?' for _ in expected)+')',sorted(expected)).fetchone()
 assert r[0]==58 and abs(r[1]+466.428572)<1e-8 and r[2:]==(18,38,2)
 for p in Path('.').glob('q*.py'):

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── CLASS 45 F2 — PARITY: the facts-block void list IS the validator's ──────

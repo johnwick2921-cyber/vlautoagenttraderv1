@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // The digest "session closed" predicate is wrap-aware (audit finding, class 2).

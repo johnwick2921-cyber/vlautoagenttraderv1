@@ -1,5 +1,5 @@
 import sqlite3, datetime, bisect, collections, statistics, json
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 CT=datetime.timezone(datetime.timedelta(hours=-5))
 def ms(y,m,d,h,mi): return int(datetime.datetime(y,m,d,h,mi,tzinfo=CT).timestamp()*1000)
 print('## (ss) 09-04 08:55–10:05 CT 5-min OHLC from 1m bars (MNQ)')

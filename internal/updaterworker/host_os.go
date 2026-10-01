@@ -30,8 +30,8 @@ var (
 	ErrRoot = errors.New("updaterworker: refusing to run as root: run nofx-updater as the bot's own user")
 	// ErrBotCgroup: the worker must never share the bot's control group — the
 	// unit is KillMode=control-group, so the activation's kill would kill the
-	// worker with the bot, mid-job.
-	ErrBotCgroup = errors.New("updaterworker: refusing to run inside the nofx.service control group")
+	// worker with the bot, mid-job. Both unit names until R5 removes vl.
+	ErrBotCgroup = errors.New("updaterworker: refusing to run inside the bot's service control group (vl or nofx — R5 removes the nofx name)")
 	// ErrTZ: the library parses log line times in time.Local; a worker whose
 	// zone differs from the bot's would misjudge every boot line's time.
 	ErrTZ = errors.New("updaterworker: refusing to run with TZ set: the worker must read log times in the bot's own local zone")
@@ -42,7 +42,7 @@ func CheckProcess() error {
 	if geteuid() == 0 {
 		return ErrRoot
 	}
-	if b, err := readCgroup(); err == nil && bytes.Contains(b, []byte("/nofx.service")) {
+	if b, err := readCgroup(); err == nil && (bytes.Contains(b, []byte("/nofx.service")) || bytes.Contains(b, []byte("/vl.service"))) { // R5 removes the vl name
 		return ErrBotCgroup
 	}
 	if _, set := lookupTZ(); set {
@@ -53,7 +53,7 @@ func CheckProcess() error {
 
 // OSHost is the production Host.
 type OSHost struct {
-	// LockScript is <install>/deploy/nofx-lock.sh; only its `check` verb is
+	// LockScript is <install>/deploy/vl-lock.sh; only its `check` verb is
 	// ever run (rc 1 = held, per the lock-verbs canon). Never acquire.
 	LockScript string
 }

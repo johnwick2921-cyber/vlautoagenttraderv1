@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // Class 27 FIX 1 (2026-08-31) — the instant the skip gate sees store-OPEN vs

@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"nofx/telemetry"
+	"vl/telemetry"
 
 	"github.com/gin-gonic/gin"
 )

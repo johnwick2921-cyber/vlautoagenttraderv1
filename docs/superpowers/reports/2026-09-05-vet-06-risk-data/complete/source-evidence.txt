@@ -48,12 +48,12 @@ trader/auto_trader_calendar.go:85: 				} else if cerr != nil {
 trader/auto_trader_calendar.go:86: 					at.logWarnf("📅 calendar: live-slice refresh for %s failed: %v", date, cerr)
 trader/auto_trader_calendar.go:110: // calendarStaticLoader loads the owner-editable static T1 fallback file (F0.2)
 trader/auto_trader_calendar.go:111: // so blackout coverage never depends on feed availability: on a feed 404/outage
-trader/auto_trader_calendar.go:112: // the static events STORE as source=static rows. Path: env NOFX_CALENDAR_STATIC,
+trader/auto_trader_calendar.go:112: // the static events STORE as source=static rows. Path: env VL_CALENDAR_STATIC,
 trader/auto_trader_calendar.go:113: // else ./calendar_static_t1.json (repo-shipped template). Shape: JSON array of
 trader/auto_trader_calendar.go:114: // calendar.Event ({"time": RFC3339-UTC, "currency", "title", "impact":"T1"}).
 trader/auto_trader_calendar.go:115: // Missing/unreadable/invalid file → nil (FetchWeek reports SourceNone + warns).
 trader/auto_trader_calendar.go:116: func calendarStaticLoader() []calendar.Event {
-trader/auto_trader_calendar.go:117: 	path := os.Getenv("NOFX_CALENDAR_STATIC")
+trader/auto_trader_calendar.go:117: 	path := os.Getenv("VL_CALENDAR_STATIC")
 trader/auto_trader_calendar.go:118: 	if path == "" {
 trader/auto_trader_calendar.go:119: 		path = "calendar_static_t1.json"
 trader/auto_trader_calendar.go:120: 	}
@@ -728,5 +728,5 @@ RUNNING 36648655:kernel/engine_analysis.go:186: 				telemetry.IncGateBlock(ctx.T
 RUNNING 36648655:kernel/engine_analysis.go:187: 				return holdCycle("daily_guardrail"), nil
 RUNNING 36648655:kernel/engine_analysis.go:188: 			} else if boolOrDefault(rc.BlackoutEnabled, false) && InBlackoutWindow(time.Now(), rc.BlackoutStartCT, rc.BlackoutEndCT) {
 RUNNING 36648655:trader/entry_gate.go: DailyForceFlat occurrences=0
-/home/hoang/nofx/data/nofx_2026-09-03.log:3630: 09-03 11:10:33 [INFO] manager/trader_manager.go:632 📊 Loading trader hoang: ScanIntervalMinutes=2 (source=Studio/DB), cadence=interval 2m0s, mode=interval (DB empty → default)
-/home/hoang/nofx/data/nofx_2026-09-03.log:3650: 09-03 11:10:33 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, flat 08:30) | NY 08:30→14:45 CT (last-entry 14:30, flat 14:45)] · stop_until=none · cadence=interval 2m0s · position_mode=ai_watch (source: db) · watcher[min_conf=70 hold=2 warn_consec=2] · trailing=2.0×ATR14 arm=after_breakeven (source: studio) · stale_dodge=on reeval_drift=0.25×ATR14 · post_exit_rescan=on delay=2000ms · guardrails=master=OFF (soft-audit only) · roll=pending AddOn ACK · balance-alert=off
+/home/hoang/vl/data/vl_2026-09-03.log:3630: 09-03 11:10:33 [INFO] manager/trader_manager.go:632 📊 Loading trader hoang: ScanIntervalMinutes=2 (source=Studio/DB), cadence=interval 2m0s, mode=interval (DB empty → default)
+/home/hoang/vl/data/vl_2026-09-03.log:3650: 09-03 11:10:33 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, flat 08:30) | NY 08:30→14:45 CT (last-entry 14:30, flat 14:45)] · stop_until=none · cadence=interval 2m0s · position_mode=ai_watch (source: db) · watcher[min_conf=70 hold=2 warn_consec=2] · trailing=2.0×ATR14 arm=after_breakeven (source: studio) · stale_dodge=on reeval_drift=0.25×ATR14 · post_exit_rescan=on delay=2000ms · guardrails=master=OFF (soft-audit only) · roll=pending AddOn ACK · balance-alert=off

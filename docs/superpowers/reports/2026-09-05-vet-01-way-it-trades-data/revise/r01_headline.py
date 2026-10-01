@@ -1,7 +1,7 @@
 import csv,math
 from lib import *
 UNRES={530,539,545,546,566,571,580}
-rows=list(csv.DictReader(open('/home/hoang/nofx-analysis/vet-01-0905/q21_trades_final.csv')))
+rows=list(csv.DictReader(open('/home/hoang/vl-analysis/vet-01-0905/q21_trades_final.csv')))
 for r in rows:
     r['id']=int(r['id']); r['pnl']=float(r['pnl_usd'])
     r['Rv']=float(r['R']) if r['R'] not in ('','None') else None

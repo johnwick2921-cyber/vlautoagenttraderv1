@@ -30,7 +30,7 @@ def writecsv(name,rows):
     with open(name,'w',newline='') as f:
         w=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator="\n");w.writeheader();w.writerows(rows)
 if '--extract' in sys.argv:
-    c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True)
+    c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True)
     c.execute('PRAGMA query_only=ON');c.execute('BEGIN');c.row_factory=sqlite3.Row
     queries={
       'positions':f'SELECT * FROM trader_positions WHERE entry_time >= {ERA} ORDER BY id',

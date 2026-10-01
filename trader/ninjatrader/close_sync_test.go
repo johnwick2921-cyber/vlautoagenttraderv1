@@ -3,7 +3,7 @@ package ninjatrader
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func TestBuildExitFill(t *testing.T) {

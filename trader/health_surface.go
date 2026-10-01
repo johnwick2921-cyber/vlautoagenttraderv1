@@ -3,7 +3,7 @@ package trader
 import (
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // HealthIsRunning reports whether this trader's loop is currently running

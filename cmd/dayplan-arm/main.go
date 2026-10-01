@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"os"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func main() {

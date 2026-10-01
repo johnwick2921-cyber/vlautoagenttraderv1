@@ -1,7 +1,7 @@
 import csv
 from lib import *
 UNRES={530,539,545,546,566,571,580}
-rows=list(csv.DictReader(open('/home/hoang/nofx-analysis/vet-01-0905/q21_trades_final.csv')))
+rows=list(csv.DictReader(open('/home/hoang/vl-analysis/vet-01-0905/q21_trades_final.csv')))
 def f(r,k):
     v=r.get(k,'')
     return float(v) if v not in ('','None',None) else None

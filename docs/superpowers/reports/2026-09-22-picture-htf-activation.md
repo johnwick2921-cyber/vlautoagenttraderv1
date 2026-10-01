@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W-PICTURE-HTF activation — 2026-09-22 (owner-attended, SIM)
 
 - **Cutover**: 00:48:10 CT — binary swap + SIGKILL; systemd relaunched PID
@@ -5,7 +6,7 @@
   · goldens PASS`.
 - **AddOn receipt**: `nt8 addon: build_id=2026-09-20-p1 expected=2026-09-20-p1
   match=yes` (received on the wire; folder md5s 66e8265c…/58feee90…; backup
-  ~/nofx-backups/addon/20260922-002056).
+  ~/vl-backups/addon/20260922-002056).
 - **Flat gate before the kill**: open positions 0 · non-terminal arms 0 ·
   broker book 0 orders · fresh snapshot (build 2026-09-20-p1). Arm 173 (S1)
   filled earlier and its position was manually closed by the owner (615,

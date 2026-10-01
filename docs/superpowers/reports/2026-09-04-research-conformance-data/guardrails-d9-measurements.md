@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # D9 — guardrails vs the Monte-Carlo rig (read-only measurements, 2026-09-04)
 
-Source of RESOLVED values: running binary PID 878451 (`/home/hoang/nofx/nofx-bin`,
+Source of RESOLVED values: running binary PID 878451 (`/home/hoang/vl/vl-bin`,
 rev 70af663d), boot 8 at 09-04 08:30:11 CT; DB read `mode=ro`; log files
-`/home/hoang/nofx/data/nofx_2026-08-16..2026-09-04.log` (20 files).
+`/home/hoang/vl/data/vl_2026-08-16..2026-09-04.log` (20 files).
 
 ## M1 — bound strategy (never `LIMIT 1`)
 `traders.strategy_id` = `a5b7662e-7bf7-49bb-9f09-7efa48f95ac8` ("MNQ"), trader
@@ -25,7 +26,7 @@ key returns nothing, which is how a naive probe concludes "no risk config").
 ## M2 — boot-8 resolved lines (read from the live log, never a file default)
     08:30:11 trader/auto_trader.go:43   🧾 ledger boot: … guardrails=master=OFF (soft-audit only) …
                                         … trailing=2.0×ATR14 arm=after_breakeven (source: studio) …
-    08:30:11 nofx/main.go:335           🛑 exits: … BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
+    08:30:11 vl/main.go:335           🛑 exits: … BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B)
     08:30:11 kernel/risk_limits.go:172  daily window reset to CME session-day 2026-09-03
     08:30:11..08:46:10 kernel/engine_analysis.go:173 — master-OFF WARN on 9 of 9 decision cycles
 

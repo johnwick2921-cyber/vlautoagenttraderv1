@@ -36,9 +36,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"nofx/auth"
-	"nofx/store"
-	"nofx/telegram/agent"
+	"vl/auth"
+	"vl/store"
+	"vl/telegram/agent"
 )
 
 // btWaits records refresh's waits. real=false: nothing sleeps (the second

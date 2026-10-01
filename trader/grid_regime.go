@@ -1,8 +1,8 @@
 package trader
 
 import (
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 	"time"
 )
 

@@ -4,7 +4,7 @@ package api
 // to the admin row's password_hash by HMAC under device.key, so ANY password
 // change — the owner's own, a bot's, a thief's with a retired token — leaves
 // /api/updates* refusing until the owner re-enrolls on the box (attended,
-// `updater-bootstrap enroll --replace`), exactly as a reset-account does.
+// `vl-updater-bootstrap enroll --replace`), exactly as a reset-account does.
 // Driven at the production router (canon 53).
 
 import (
@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 func TestPasswordChangeUnbindsTheEnrollment(t *testing.T) {

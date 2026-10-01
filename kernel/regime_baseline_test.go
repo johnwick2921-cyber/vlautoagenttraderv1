@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // synth5m builds `days`×288 5m bars starting at a fixed epoch, with a deterministic

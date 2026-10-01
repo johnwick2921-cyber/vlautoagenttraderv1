@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Hyperliquid Agent Wallet Setup Guide
 
 This guide explains how to create and configure an Agent Wallet for secure trading on Hyperliquid.
@@ -38,11 +39,11 @@ After creation, save these immediately:
 
 ⚠️ **Important**: The private key is only displayed once. Save it securely!
 
-## Step 4: Configure in NOFX
+## Step 4: Configure in VL
 
-Add your agent wallet through the NOFX web interface:
+Add your agent wallet through the VL web interface:
 
-1. Open NOFX dashboard (http://localhost:3000)
+1. Open VL dashboard (http://localhost:3000)
 2. Go to **Exchange Configuration**
 3. Enable **Hyperliquid**
 4. Enter:
@@ -56,7 +57,7 @@ Add your agent wallet through the NOFX web interface:
 |-------|-------------|---------|
 | Main Wallet | Your connected wallet (holds funds) | `0xABC123...` |
 | Agent Wallet | Sub-wallet for trading | `0xDEF456...` |
-| Private Key | Only needed for NOFX | `abc123...` (no 0x) |
+| Private Key | Only needed for VL | `abc123...` (no 0x) |
 
 ## Managing Your Agent
 
@@ -69,7 +70,7 @@ Add your agent wallet through the NOFX web interface:
 ### Create Multiple Agents
 
 You can create multiple agents for different purposes:
-- One for NOFX
+- One for VL
 - One for other trading bots
 - One for manual API access
 

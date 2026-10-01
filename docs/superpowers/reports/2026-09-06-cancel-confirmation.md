@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CANCEL-CONFIRMATION — a send is not a settlement
 
 **Branch:** `fix/cancel-confirmation` · **session:** `cancel-confirm-554049f5` ·
@@ -225,10 +226,10 @@ next session.
 ## 6 · ROLLBACK
 
 ```
-git -C ~/nofx checkout dev && git -C ~/nofx reset --hard <prior-dev-sha>
-mv ~/nofx/nofx-bin.old.f516da7c ~/nofx/nofx-bin      # named for the rev it HOLDS
-echo f516da7c > ~/nofx/deploy/RELEASE
-kill -9 $(pgrep -f nofx-bin)
+git -C ~/vl checkout dev && git -C ~/vl reset --hard <prior-dev-sha>
+mv ~/vl/vl-bin.old.f516da7c ~/vl/vl-bin      # named for the rev it HOLDS
+echo f516da7c > ~/vl/deploy/RELEASE
+kill -9 $(pgrep -f vl-bin)
 ```
 
 No data migration to reverse: the three new columns are additive and default 0,

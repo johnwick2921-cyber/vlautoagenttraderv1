@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SUBSYSTEM D — LEVEL GRADER (census D1–D10 + dispatch D5) — conformance fragment
 Snapshot 2026-09-04 08:46 CT · deployed rev 70af663d (PID 878451, booted 08:30:11 CT) ·
-worktree /home/hoang/nofx-conform @ fb50903f (base dev 492d2067) · READ-ONLY.
+worktree /home/hoang/vl-conform @ fb50903f (base dev 492d2067) · READ-ONLY.
 
 ## Headline
 1. kernel/levels_score.go is BYTE-IDENTICAL at the census commit ee64a494, at the deployed

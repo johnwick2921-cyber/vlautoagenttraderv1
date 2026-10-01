@@ -3,9 +3,9 @@ package trader
 import (
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // W6 — in-app alert emit (the audit's dead wire: AlertStore.Emit had zero

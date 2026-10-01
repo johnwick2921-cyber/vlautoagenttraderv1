@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // withMaintenanceDir points the process-wide hold at a temp data dir and

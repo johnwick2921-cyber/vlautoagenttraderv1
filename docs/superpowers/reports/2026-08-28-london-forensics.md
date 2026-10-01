@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # LONDON SESSION FORENSICS — 2026-08-28 02:00→06:16 CT (read-only)
 
-**Worktree `~/nofx-london` @ dev 3023281c · deployed rev 67d2d10e (untouched) · all times CT · pnl_corrected · strategy reads via TRADER BINDING (`8d5c8af5_…`).**
+**Worktree `~/vl-london` @ dev 3023281c · deployed rev 67d2d10e (untouched) · all times CT · pnl_corrected · strategy reads via TRADER BINDING (`8d5c8af5_…`).**
 Live DB read-only (`mode=ro`); journald full coverage (10.6k lines in-window).
 
 ## VERDICT (one line)

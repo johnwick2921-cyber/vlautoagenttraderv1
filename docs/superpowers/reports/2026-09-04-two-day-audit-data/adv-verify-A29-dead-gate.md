@@ -1,11 +1,12 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial verification — A29 "DEAD GATE" (armGateVerdict)
 
-Source tree: /home/hoang/nofx-2day04 @ 24685b70; `git diff --stat dfbfa660 HEAD -- trader/ kernel/` = EMPTY,
+Source tree: /home/hoang/vl-2day04 @ 24685b70; `git diff --stat dfbfa660 HEAD -- trader/ kernel/` = EMPTY,
 so trader/ is byte-identical to dev tip dfbfa660 (= deployed rev 530009ff / boot 7). [A]
 
 ## Reproduced exactly
 
-    cd /home/hoang/nofx-2day04 && grep -rn "armGateVerdict" --include=*.go .
+    cd /home/hoang/vl-2day04 && grep -rn "armGateVerdict" --include=*.go .
 
 - `armGateVerdict` defined trader/armed_executor.go:1268; comment at :1266 says "(legacy shape)".
 - 8 call sites, ALL in trader/armed_executor_test.go: 77, 82, 87, 94, 100, 180, 185, 189. ZERO production callers. [A]
@@ -34,7 +35,7 @@ OTHER stop consumer never runs in any of the 8. [A]
 branch leaves the stop unchanged, and :375 only assigns `leg.Stop = comp.Stop` when it moved.
 `composeArmStop` first shipped 4657560b 2026-09-02 07:33:39 CT, so only ledger arms 32..37 are post-composition:
 
-    sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+    sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
       "SELECT a.id,a.plan_id,a.version,a.scenario,a.side,a.leg_index,a.entry_px,a.stop_px,a.target_px,p.doc
        FROM armed_orders a JOIN plans p ON p.plan_id=a.plan_id AND p.version=a.version WHERE a.id>=23 ORDER BY a.id;"
     (composed stop_px compared field-by-field against doc scenarios[].arm.stop / .legs[i].stop)
@@ -54,7 +55,7 @@ Even so, "never" is refuted -- production gated on the exact authored stop for 3
 ### C4 — the live counterfactual "would PASS" is REFUTED
 Plan row (authoritative, not the log):
 
-    sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+    sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
       "SELECT json_extract(doc,'\$.scenarios') FROM plans
        WHERE plan_id='2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265' AND version=4;"
     -> S1 long B arm {enabled:true, entry:29135.65, stop:29099, target:29209.25, wait_confirm:true}
@@ -63,7 +64,7 @@ v4 created_at = 2026-09-02 14:45:52 UTC = 09:45:52 CT; v5 = 10:22:33 CT -> the 0
 lines ARE under NY v4. [A]  Their "NY v4 S1" is correct.
 
 Arithmetic (theirs, reproduced): reward 73.60; authored risk 36.65 -> R:R 2.0082; composed risk 77.40 -> R:R 0.9509.
-Log lines (grep -n on /home/hoang/nofx/data/nofx_2026-09-02.log, timestamps already CT):
+Log lines (grep -n on /home/hoang/vl/data/vl_2026-09-02.log, timestamps already CT):
 
     :25023 09-02 09:46:30 [INFO] 🛑 arm stop NY S1 leg 1 long: stop 29058.25 (authored 29099.00 WIDENED)
            · anchor PDC 29058.75 → beyond 29058.25 · atr_floor 29081.91 (1.5×ATR5m 35.82) · bound=anchor
@@ -86,7 +87,7 @@ trader/zerob_exit_sanity_test.go does `composeArmStop(...)` -> feed the composed
     :145-157 TestZeroBRRGateRefusesWithTheWiderStop  ("authored R:R 3.0, composed R:R 1.0, must be refused")
     :60,:70  TestZeroBPinStopFloor                    (min-SL 1.5×ATR on the production function, atr5m=20)
 
-    cd /home/hoang/nofx-2day04 && go test ./trader/ -run \
+    cd /home/hoang/vl-2day04 && go test ./trader/ -run \
       'TestArmedGateRefusesBadRR|TestArmedGateRRShortTwin|TestZeroBRRGateRefusesWithTheWiderStop|TestZeroBPinStopFloor' -v
     -> all 4 PASS (0.861s)
 

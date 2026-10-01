@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── S1 — THE STRUCTURE LAYER (CTO dispatch under the owner's delegation, 2026-09-16) ──

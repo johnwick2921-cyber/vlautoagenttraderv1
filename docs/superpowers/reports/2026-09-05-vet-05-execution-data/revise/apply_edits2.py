@@ -1,4 +1,4 @@
-P='/home/hoang/nofx-vet-05/docs/superpowers/reports/2026-09-05-vet-05-execution.md'
+P='/home/hoang/vl-vet-05/docs/superpowers/reports/2026-09-05-vet-05-execution.md'
 s=open(P,encoding='utf-8').read(); E=[]
 def rep(old,new,tag):
     global s

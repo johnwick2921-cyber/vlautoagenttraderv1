@@ -1,6 +1,6 @@
 #!/bin/bash
 # q04: first-pass store summaries — arms, ab_confirm_log, touch_outcomes, plans
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "--- armed_orders by state / scenario / kind"
 sqlite3 "$DB" "select state, count(*) from armed_orders group by 1 order by 2 desc"
 sqlite3 "$DB" "select scenario, state, count(*) from armed_orders group by 1,2 order by 1,3 desc"

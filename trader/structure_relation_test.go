@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // S3(c) — the repair block carries the relation vocabulary ONLY when the 4h

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
-	"nofx/trader"
+	"vl/store"
+	"vl/trader"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SESSION RISK LIMITS — dispatch 104 (W4)
 
-Owner: hoang · agent `sessionrisk-554049f5/nofx-80[aa87f6]` · branch
+Owner: hoang · agent `sessionrisk-554049f5/vl-80[aa87f6]` · branch
 `fix/session-risk-limits`, claimed at `9b578c06` off dev's tip `05125bd6`.
-Worktree `/home/hoang/nofx-srl`; main tree untouched (A2b).
+Worktree `/home/hoang/vl-srl`; main tree untouched (A2b).
 
 **Running rev, my own read:** `954f11b15f2e7615678f7d2b708c47895faebf1e`,
 `vcs.modified=false`, pid 438, up since 2026-09-09 13:02:45 CT; `/api/health`
@@ -318,7 +319,7 @@ run — so the break is a break, not a permanent mute.
 # ROLLBACK
 
 Single Go boot, no AddOn change. Preserve the running binary as
-`nofx-bin.old.954f11b1` (verified with `go version -m`), restore
+`vl-bin.old.954f11b1` (verified with `go version -m`), restore
 `deploy/RELEASE`, `mv` it back, owner runs `kill -9`; systemd relaunches.
 
 Everything here is additive except three behaviour changes, each independently
@@ -398,7 +399,7 @@ None of these are regressions from this wave; all predate it.
 
 ## OWED AT MERGE — three sentences this boot makes false
 
-The W5 lane (`nofx-6b`) is booting a docs wave that writes the no-trade-band gap
+The W5 lane (`vl-6b`) is booting a docs wave that writes the no-trade-band gap
 into the Guide and SYSTEM-MAP in plain words, correctly, because at rev
 `954f11b1` it is TRUE. **This wave falsifies all three**, and the GUIDE CONTENT
 LAW puts that on the wave that changes the gate:

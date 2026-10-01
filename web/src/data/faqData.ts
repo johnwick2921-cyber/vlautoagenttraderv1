@@ -26,7 +26,7 @@ export interface FAQCategory {
 
 /**
  * FAQ Data Configuration
- * Comprehensive FAQ covering all aspects of NOFX
+ * Comprehensive FAQ covering all aspects of VL
  *
  * Categories:
  * 1. Getting Started - Basic concepts and overview
@@ -46,9 +46,9 @@ export const faqCategories: FAQCategory[] = [
     icon: BookOpen,
     items: [
       {
-        id: 'what-is-nofx',
-        questionKey: 'faqWhatIsNOFX',
-        answerKey: 'faqWhatIsNOFXAnswer',
+        id: 'what-is-vl',
+        questionKey: 'faqWhatIsVL',
+        answerKey: 'faqWhatIsVLAnswer',
       },
       {
         id: 'how-does-it-work',
@@ -110,9 +110,9 @@ export const faqCategories: FAQCategory[] = [
         answerKey: 'faqServerDeploymentAnswer',
       },
       {
-        id: 'update-nofx',
-        questionKey: 'faqUpdateNOFX',
-        answerKey: 'faqUpdateNOFXAnswer',
+        id: 'update-vl',
+        questionKey: 'faqUpdateVL',
+        answerKey: 'faqUpdateVLAnswer',
       },
     ],
   },
@@ -276,9 +276,9 @@ export const faqCategories: FAQCategory[] = [
         answerKey: 'faqSecurityBestPracticesAnswer',
       },
       {
-        id: 'can-nofx-steal-funds',
-        questionKey: 'faqCanNOFXStealFunds',
-        answerKey: 'faqCanNOFXStealFundsAnswer',
+        id: 'can-vl-steal-funds',
+        questionKey: 'faqCanVLStealFunds',
+        answerKey: 'faqCanVLStealFundsAnswer',
       },
     ],
   },
@@ -293,11 +293,6 @@ export const faqCategories: FAQCategory[] = [
         id: 'strategy-studio',
         questionKey: 'faqStrategyStudio',
         answerKey: 'faqStrategyStudioAnswer',
-      },
-      {
-        id: 'backtest-lab',
-        questionKey: 'faqBacktestLab',
-        answerKey: 'faqBacktestLabAnswer',
       },
       {
         id: 'competition-mode',

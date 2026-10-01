@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Plan liveness — corrected premises and implementation
 
 **Current handoff:** combined boot with CONFIRMATION-TRUTH verified at
@@ -38,7 +39,7 @@ not this dispatch's implementation. The main checkout was not modified.
 
 [A] At 2026-09-08 00:03–00:06 CT, `/api/health` returned
 `{"revision":"317388e7ab50","status":"ok","time":null}`. Service PID was
-`3201079`; `/proc/3201079/exe` resolved to `/home/hoang/nofx/nofx-bin`.
+`3201079`; `/proc/3201079/exe` resolved to `/home/hoang/vl/vl-bin`.
 `go version -m /proc/3201079/exe` returned:
 
 ```
@@ -445,8 +446,8 @@ to that SHA. At that merged head:
   mutation removals fail the intended tests. Frontend `PlanLiveness` is rendered
   by the real SessionPlanCard, and the card supplies the records to ScenarioList.
 
-[A] After the merged-head suite passed, `go build -o nofx-bin .` ran in the clean
-clone `/tmp/nofx-plan-liveness-build/nofx` (leaf directory **nofx**). Build metadata:
+[A] After the merged-head suite passed, `go build -o vl-bin .` ran in the clean
+clone `/tmp/vl-plan-liveness-build/vl` (leaf directory **vl**). Build metadata:
 
 ```
 vcs.revision=393712c1bcbc767de0318517d5f2823a1907d374
@@ -523,7 +524,7 @@ identical kernel implementation. Vitest remains **50 files / 366 tests PASS**;
 TypeScript passes. The fault-injection fixture now returns the entropy error
 without panic.
 
-The replacement was built in the clean `nofx` clone **after** the complete
+The replacement was built in the clean `vl` clone **after** the complete
 merged-head Go suite passed:
 
 ```
@@ -535,9 +536,9 @@ SHA256=ce97e597ee86004002ce5c415c7f0d98aec0fe68251b59d6ec905696585f1981
 `GUIDE_BUILT_REV` is read from this replacement binary. The earlier 393712c1
 candidate and Guide stamp are superseded. Final marker-head checks and frontend
 bundle verification are recorded in the local handoff manifest at
-`/tmp/nofx-plan-liveness-build/candidate.json` after they finish; no such manifest
+`/tmp/vl-plan-liveness-build/candidate.json` after they finish; no such manifest
 is used as a substitute for live boot proof. Candidate binary and dist stay in
-`/tmp/nofx-plan-liveness-build/nofx/`; the original dispatch worktree is removed
+`/tmp/vl-plan-liveness-build/vl/`; the original dispatch worktree is removed
 at handoff. The transfer patch is `/tmp/plan-liveness-transfer.patch` and has not
 been applied to the stale partner checkout.
 
@@ -572,7 +573,7 @@ does not change wake policy.
 
 [A] Refreshed origin/dev and fix/plan-liveness both resolve to
 `b0f95bc6bdd133124061a68d20ae66328fd70903` at preparation. Existing claim
-resumed in isolated locked worktree `/tmp/nofx-plan-liveness-cutover`.
+resumed in isolated locked worktree `/tmp/vl-plan-liveness-cutover`.
 Source freshness read before changes:
 
 ```
@@ -591,7 +592,7 @@ the replacement's metadata, hash, suite SHA and bundle are recorded.
 [A] `go test ./...` and the explicit kernel golden/self-check run passed at
 merged dev HEAD `04a62a0e31868ac9618010e915215284574353da`. Vitest: **50 files /
 366 tests PASS**; TypeScript passes. A fresh ordinary clone at
-`/tmp/nofx-plan-liveness-a7-build/nofx` built the binary after those checks:
+`/tmp/vl-plan-liveness-a7-build/vl` built the binary after those checks:
 
 ```
 vcs.revision=04a62a0e31868ac9618010e915215284574353da
@@ -617,7 +618,7 @@ The gate's legacy trailing note still claims no NT8 working-order frame;
 the actual leg-4 source is the broker snapshot quoted above. This preparatory
 read is not reused at swap time. Running process **3260027**, health and
 `/proc` revision **33672fdd2cd2fee60a2c562a9693e06ab3b13551**, remains unchanged.
-No process `NOFX_EXPECTED_REVISION` override is set; the RELEASE file governs.
+No process `VL_EXPECTED_REVISION` override is set; the RELEASE file governs.
 
 The next permitted window begins **14:45 CT**. Until then: no RELEASE change,
 no binary/dist swap, no kill, and no new live proof. The main lock is released

@@ -17,9 +17,9 @@ import (
 	"strconv"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // followPlanHorizons are round 17's two horizons, in 5-minute buckets [T].

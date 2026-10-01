@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // TestWriteAvailableIndicators_OIGatedByEnableOI locks the OI honesty fix: the

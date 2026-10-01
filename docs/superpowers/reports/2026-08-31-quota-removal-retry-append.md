@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-31 — quota removal + retry-append (live before NY 08:30)
 
 ## Changes (owner ruling 2026-08-31)
@@ -29,7 +30,7 @@
 - Flat-gate pre-swap: DB OPEN positions 0 · non-terminal orders 0 · armed
   non-terminal 0 · API `/api/positions` `[]` · NT8 `positions snapshot
   count=0` ×2.
-- Swap: `nofx-bin` → `nofx-bin.prev.boot` (rollback = 59dc9460); new binary
+- Swap: `vl-bin` → `vl-bin.prev.boot` (rollback = 59dc9460); new binary
   live via `kill -9` + systemd relaunch (PID 1077758).
 - First boot REFUSED (expected: `deploy/RELEASE` still pointed at 59dc9460) —
   by design. RELEASE updated, restart → boot clean:
@@ -64,5 +65,5 @@ thin sides WARNed, plan WRITTEN:
 
 ## Rollback
 
-`nofx-bin.prev.boot` = rev `59dc9460`. Revert = swap back + `kill -9` (systemd
+`vl-bin.prev.boot` = rev `59dc9460`. Revert = swap back + `kill -9` (systemd
 relaunches) + `deploy/RELEASE` back to `59dc94603e493d9f4a6404a989cfec8d32c32d02`.

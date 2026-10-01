@@ -1,6 +1,6 @@
 // Package discipline holds small, dependency-free trade-discipline primitives
 // shared across the broker layer (which detects exits) and the kernel (which gates
-// entries). It imports nothing from the rest of nofx, so both layers can depend on
+// entries). It imports nothing from the rest of vl, so both layers can depend on
 // it without an import cycle.
 package discipline
 

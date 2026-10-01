@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 // Phase 3 — IN-POSITION WATCHER (final-bundle 2026-08-19). Owner ruling:

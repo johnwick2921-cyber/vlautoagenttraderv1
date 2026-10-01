@@ -1,5 +1,6 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL DESIGN SYSTEM — EXTEND: The Plan Card Pattern
-*How the Plan Card connects to every other component, and how the pipeline is designed. Companion to NOFX-MASTER-TRADING-SPEC §2#6 and the Day-Plan Integration Blueprint.*
+*How the Plan Card connects to every other component, and how the pipeline is designed. Companion to VL-MASTER-TRADING-SPEC §2#6 and the Day-Plan Integration Blueprint.*
 
 ---
 

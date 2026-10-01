@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # TRADER_MODE — User Runbook
 
 Written for the **user** who is actively trading the bot, not for engineers. Switch modes, do the daily checklist, hit the kill switch if things go wrong. See plan doc Task 34.
@@ -11,7 +12,7 @@ Step by step:
 1. In NinjaTrader 8: **Control Center → Connections** → switch from the simulation connection to the live (real-money) connection.
 2. Stop the trader bot:
    ```bash
-   pkill -TERM -f nofx-bin
+   pkill -TERM -f vl-bin
    ```
 3. Update `.env` if you want a tighter loss limit (e.g. $100 instead of $500):
    ```bash
@@ -21,7 +22,7 @@ Step by step:
 4. In NT: re-attach `vltrader.cs` (renamed from `claudetrader.cs` on 2026-05-23) to the chart of your real-account contract (e.g. `MNQH6` for the March 2026 contract — pick whichever quarter is the current front-month).
 5. Restart the bot:
    ```bash
-   ./nofx-bin > /tmp/nofx.log 2>&1 &
+   ./vl-bin > /tmp/vl.log 2>&1 &
    ```
 
 ## 2. Daily checklist (before RTH open at 08:30 CT, weekdays)
@@ -32,11 +33,11 @@ Run through all six items. If any fail, do not enable live trading.
 - [ ] VLTrader strategy enabled: chart toolbar shows green play icon
 - [ ] Bot logs healthy:
       ```bash
-      tail /tmp/nofx.log | grep "started successfully"
+      tail /tmp/vl.log | grep "started successfully"
       ```
 - [ ] Daily PnL window reset for today:
       ```bash
-      grep "Plan 3 T21: daily PnL window reset" /tmp/nofx.log | tail -1
+      grep "Plan 3 T21: daily PnL window reset" /tmp/vl.log | tail -1
       ```
       (last reset should be today's UTC date)
 - [ ] Risk limits configured:
@@ -50,7 +51,7 @@ Run through all six items. If any fail, do not enable live trading.
 
 - **Contract roll** — index futures expire on the 3rd Friday of quarterly months (Mar / Jun / Sep / Dec). Plan 2 Task 19 (`kernel.databento.ShouldBlockEntryForExpiry`) blocks new entries starting 5 days before expiry. Verify there are no false positives by spot-checking:
       ```bash
-      grep "ShouldBlockEntryForExpiry\|expiry" /tmp/nofx.log | tail -20
+      grep "ShouldBlockEntryForExpiry\|expiry" /tmp/vl.log | tail -20
       ```
       Roll your NT chart to the next quarter when the block fires (e.g. `MNQH6` → `MNQM6`).
 - **Decision audit trail review** — eyeball the last week of decisions in the DB:
@@ -79,7 +80,7 @@ Until then, the emergency procedure is **manual**:
 2. Disable VLTrader strategy on the chart (toolbar → stop icon).
 3. Stop the bot:
    ```bash
-   pkill -TERM -f nofx-bin
+   pkill -TERM -f vl-bin
    ```
 4. Once safe, audit the most recent decisions to understand what triggered the panic:
    ```bash

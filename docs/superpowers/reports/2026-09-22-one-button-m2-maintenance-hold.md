@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W-ONE-BUTTON M2 — the installation maintenance hold and gate
 
 **Lane:** Claude-101 · **Branch:** `feat/one-button-m2-maintenance-hold` · **Base:** `0960a6ac` (dev tip at accept, unchanged since) · **Dispatch:** CTO `1790131309474-27377-000001`, rulings `1790131568827`, `1790133979048`, `1790134409642`, review `1790136965857`, `1790137248636`.
@@ -63,7 +64,7 @@ Before a one-button update replaces the bot and the NinjaTrader AddOn, the whole
 ## What was NOT done
 
 - The C# AddOn is **not deployed**: not copied to AddOns, not compiled in NT8, NT8 not restarted. It was compile-checked against the installed NT8 DLLs in a Windows temp dir.
-- Nothing was merged, deployed or restarted; no lock was taken; `/home/hoang/nofx` was not written.
+- Nothing was merged, deployed or restarted; no lock was taken; `/home/hoang/vl` was not written.
 - GUIDE_BUILT_REV was not bumped.
 - No DB writes outside test temp stores.
 - The pre-existing AI "queued send recorded as a fill" defect is filed, not fixed.

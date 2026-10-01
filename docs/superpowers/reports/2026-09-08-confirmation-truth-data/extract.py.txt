@@ -1,5 +1,5 @@
 import collections,datetime,json,pathlib,re,sqlite3,zoneinfo
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 CT=zoneinfo.ZoneInfo('America/Chicago');out=pathlib.Path('/tmp/confirmation-truth-blast')
 def ms(s):return int(datetime.datetime.fromisoformat(s.replace('Z','+00:00')).timestamp()*1000)
 plans=[];known=set()
@@ -20,7 +20,7 @@ for r in c.execute("SELECT id,plan_id,plan_version,timestamp,system_prompt,input
  lines=[x.strip() for x in (r['system_prompt'] or '').splitlines() if re.match(r'\s*S\d+ confirm:',x)]
  decisions.append({'id':r['id'],'plan_id':r['plan_id'],'version':r['plan_version'],'snapshot_ms':now,'recorded_ms':ms(r['timestamp']),'clock_error':why,'confirm_lines':lines})
 settings={}
-for line in pathlib.Path('/home/hoang/nofx/.env').read_text().splitlines():
+for line in pathlib.Path('/home/hoang/vl/.env').read_text().splitlines():
  if '=' in line:
   k,v=line.split('=',1)
   if k in ['BD_MIN_CLOSES','BD_MIN_DISP_ATR','BD_MAX_LEVEL_DIST_ATR','VOID_SCOPE_BARS','ACCEPT_HOLD_MIN']:settings[k]=v.strip().strip('\"\'')

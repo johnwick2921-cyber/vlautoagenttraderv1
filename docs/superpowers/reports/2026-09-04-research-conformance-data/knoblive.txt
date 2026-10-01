@@ -87,7 +87,7 @@ model_limits
 name
 netflow_ranking_duration
 netflow_ranking_limit
-nofxos_api_key
+vlos_api_key
 oi_low_limit
 oi_ranking_duration
 oi_ranking_limit

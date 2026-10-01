@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/mcp"
+	"vl/store"
 )
 
 // wakeBars builds TF bars (open,high,low,close rows) spaced `tfMin` minutes,

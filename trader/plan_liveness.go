@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // validateAuthoredScenariosAt runs inside the existing candidate retry loop.

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // hourMs is a CT wall-clock hour rendered as epoch ms.
@@ -206,7 +206,7 @@ func TestG2Replay_ShiftDay15m(t *testing.T) {
 }
 
 func TestStructureATRMatchesMarketWilder(t *testing.T) {
-	// C-ATR1 conformance pin: the structure engine's ATR must equal nofx/market's
+	// C-ATR1 conformance pin: the structure engine's ATR must equal vl/market's
 	// Wilder-smoothed calculateATR on the same series (research: nautilus ATR).
 	bars := upFixture()
 	klines := make([]market.Kline, len(bars))

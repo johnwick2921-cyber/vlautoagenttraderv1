@@ -16,8 +16,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"nofx/auth"
-	"nofx/telegram/agent"
+	"vl/auth"
+	"vl/telegram/agent"
 )
 
 func TestEveryMintEntryPointStampsNowNotTheFuture(t *testing.T) {

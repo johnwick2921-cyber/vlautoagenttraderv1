@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // PIN (M3 fold M5, red-team 4 #1): the worker-socket literal census walks a
@@ -17,7 +17,7 @@ func TestWorkerSocketLiteralCensusSeesNestedSkipNamedDirs(t *testing.T) {
 		t.Helper()
 		root := t.TempDir()
 		for r, body := range map[string]string{
-			"go.mod":                        "module nofx\n\ngo 1.25\n",
+			"go.mod":                        "module vl\n\ngo 1.25\n",
 			"internal/updaterwire/paths.go": "package updaterwire\n\nconst socketName = \"worker.sock\"\n",
 			rel:                             "package " + pkg + "\n\nvar squat = \"updater/worker.sock\"\n",
 		} {

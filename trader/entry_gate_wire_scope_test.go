@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // W1b E12 verifier defects 1 and 4 — WHICH PRICES LEGS 5/6 JUDGE, BY VENUE.

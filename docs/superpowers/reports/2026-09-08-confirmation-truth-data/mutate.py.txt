@@ -1,6 +1,6 @@
 from pathlib import Path
 import subprocess,json
-root=Path('/tmp/nofx-confirmation-truth-0908');out=Path('/tmp/confirmation-truth-blast');receipt=[]
+root=Path('/tmp/vl-confirmation-truth-0908');out=Path('/tmp/confirmation-truth-blast');receipt=[]
 cases=[
  ('closed_bucket','kernel/confirmation_bucket.go','b.Closed = nowMs >= b.CloseMs','b.Closed = true','^TestConfirmationTruthBucketBoundary$'),
  ('sequence_order','kernel/confirmation_bucket.go','const confirmationOrderedSequence = true','const confirmationOrderedSequence = false','^TestConfirmationTruthSequenceOrder$'),

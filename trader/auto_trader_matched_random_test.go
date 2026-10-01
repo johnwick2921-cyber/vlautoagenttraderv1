@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // TestRecordMatchedRandomFoldsOverlay (WAVE 1a-plan P2) — the level-type

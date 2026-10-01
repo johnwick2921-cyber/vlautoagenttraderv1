@@ -5,7 +5,7 @@ import (
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/stretchr/testify/assert"
-	"nofx/trader/types"
+	"vl/trader/types"
 )
 
 // TraderTestSuite Generic Trader interface test suite (base suite)

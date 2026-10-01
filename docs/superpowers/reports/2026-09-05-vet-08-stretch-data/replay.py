@@ -24,7 +24,7 @@ from arm_state import is_terminal_arm_state
 def replay_arm_active(state):
     return not is_terminal_arm_state(state) and state != 'none' and state != 'refused'
 
-sys.path.insert(0,'/home/hoang/nofx-analysis/vet-08-0905')
+sys.path.insert(0,'/home/hoang/vl-analysis/vet-08-0905')
 from common import *
 TICK=0.25; BAND=25.0; RR_MIN=2.0; MULT=1.5; ANCHOR_MAX=3.0; CLR=2*TICK; NOISE_ATR=0.2; OFFSET=2*TICK
 SESS={'ASIA':('17:00','02:00'),'LONDON':('02:00','08:30'),'NY':('08:30','14:45')}

@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 func a3WireBars() (restore func()) {

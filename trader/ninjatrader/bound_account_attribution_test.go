@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // TestBoundAccount_DecoupledFromStreamedCurrent locks the G6 fix source: a

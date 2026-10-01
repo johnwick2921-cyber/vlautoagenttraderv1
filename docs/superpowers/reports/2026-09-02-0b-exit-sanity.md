@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 0B — EXIT SANITY + RE-ARM AFTER BOOT SWEEP
 
-Date: 2026-09-02 · Owner: hoang · Agent: Opus 5 (1M) · Worktree: `../nofx-0b` (branch `fix/0b-exit-sanity`) · Checklist: **CLASS 43**
+Date: 2026-09-02 · Owner: hoang · Agent: Opus 5 (1M) · Worktree: `../vl-0b` (branch `fix/0b-exit-sanity`) · Checklist: **CLASS 43**
 Evidence tiers: **[A]** directly verified · **[B]** inferred from strong evidence · **[C]** speculation.
 
 ## STATUS
@@ -131,7 +132,7 @@ A6/A7: session LONDON v4 · replan_in_flight false · armed {}
 ```
 One PID (2674837), `vcs.revision=4175e0b6`, **0 ERRO**, position-reconcile and the drawdown monitor both started.
 
-**Rollback:** `cd /home/hoang/nofx && mv nofx-bin nofx-bin.bad.4175e0b6 && cp nofx-bin.prev.boot nofx-bin && printf '0d093c3b3a11fb6ea6cb19454ffa59a9f7bd9f8b' > deploy/RELEASE && kill -9 $(pgrep -f '^/home/hoang/nofx/nofx-bin$')` — `nofx-bin.prev.boot` and `nofx-bin.old.0d093c3b` are the ROOT-FIX binary. (Set RELEASE to whatever `git show 7e7556b9:deploy/RELEASE` holds if the literal above is stale.)
+**Rollback:** `cd /home/hoang/vl && mv vl-bin vl-bin.bad.4175e0b6 && cp vl-bin.prev.boot vl-bin && printf '0d093c3b3a11fb6ea6cb19454ffa59a9f7bd9f8b' > deploy/RELEASE && kill -9 $(pgrep -f '^/home/hoang/vl/vl-bin$')` — `vl-bin.prev.boot` and `vl-bin.old.0d093c3b` are the ROOT-FIX binary. (Set RELEASE to whatever `git show 7e7556b9:deploy/RELEASE` holds if the literal above is stale.)
 
 ---
 
@@ -200,4 +201,4 @@ S3 composed with **`atr_floor n/a (no ATR)`**. When ATR5m is unavailable on a cy
 
 ## Closeout
 
-Commits: `4657560b` · `7c968238` · `4175e0b6` · `34532c1e` (marker) · this report. Lock released, worktree `../nofx-0b` removed, repo memory updated.
+Commits: `4657560b` · `7c968238` · `4175e0b6` · `34532c1e` (marker) · this report. Lock released, worktree `../vl-0b` removed, repo memory updated.

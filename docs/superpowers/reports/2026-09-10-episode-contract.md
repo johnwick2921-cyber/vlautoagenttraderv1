@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W1 — THE EPISODE CONTRACT
 
 **Branch** `fix/episode-contract` · **base** `origin/dev` @ `757eb578` · merged, not rebased (see §F.6)
@@ -166,13 +167,13 @@ than silent. It is not the single-reader ideal of class 97 and is not claimed to
 5. **My classes 105/106 landed as 109/111 — renumbered four times, across five
    dev tips in one day.** 105 went to dispatch 103; 106 and 107 went to a peer's
    generalisation of class 104 and to the boot-sweep wave; then 108 was contested
-   *three ways at once* — the arm-state lane's (merged, so it held), nofx-b3's,
+   *three ways at once* — the arm-state lane's (merged, so it held), vl-b3's,
    and mine. The merged one wins and both unmerged ones move, which needs no
    adjudication because merge order already decided it. 109 was uncontested and
    stayed. That is A27 working exactly as written, and class 109 carries it as
    the worked example: a census tells you the ceiling, only the merge assigns the
    number. The alternative — reserving at accept — is what produced the
-   75/76/77/92/93 duplicates. I also messaged nofx-b3 before taking 111, since
+   75/76/77/92/93 duplicates. I also messaged vl-b3 before taking 111, since
    coordination is cheaper than a fifth renumber.
 
 6. **This branch is merged onto dev, not rebased, and that was forced.** Four
@@ -196,7 +197,7 @@ and both belong to the rebrand lane.**
 
 **This section was wrong in the first two drafts and is corrected here.** I wrote
 that the suite "fails everywhere, main tree included". It does not. A peer
-(nofx-8e) measured it GREEN in the main tree and challenged the finding. They were
+(vl-8e) measured it GREEN in the main tree and challenged the finding. They were
 right about the observation and wrong about the cause; I was right about the
 observation in my tree and wrong about the cause. Neither of us was measuring
 badly. **We were running different versions of vite.**
@@ -268,8 +269,8 @@ the opposite direction.
 With G1 unblocked, a 13th failure surfaces that had been invisible:
 
 ```
-FAIL src/brand-scope.test.ts > preserves deploy/nofx-lock.sh byte for byte
-  Dispatch 102 protected file changed: deploy/nofx-lock.sh
+FAIL src/brand-scope.test.ts > preserves deploy/vl-lock.sh byte for byte
+  Dispatch 102 protected file changed: deploy/vl-lock.sh
 ```
 
 `web/src/test/brand-scope-baseline.json` pins sha256 of 16 protected files.
@@ -290,7 +291,7 @@ The timeline is the finding, and the order of the two events is the whole point:
 
 Current sha256 at dev tip `757eb578`: `46fcbf76…` — against a pin of `bcd82c52…`.
 
-**Corrected after nofx-8e's challenge, and the correction is against my own
+**Corrected after vl-8e's challenge, and the correction is against my own
 framing.** I first wrote that G1 had blinded this guard. In the environment where
 8e actually worked — the main tree, vite 6.4.1 — **the guard ran fine and was
 plainly RED, naming their file, for the whole 13h31m.** It was not muted there. It
@@ -363,7 +364,7 @@ for the class.
 **Owed and now paid.** "The wall-clock entry-point sweep in checklist 60" has been
 on my owed list since the class-52 wave. It was not theoretical.
 
-**FIXED on dev at `bd295804`** by nofx-8e, who owns the session-risk rule and whose
+**FIXED on dev at `bd295804`** by vl-8e, who owns the session-risk rule and whose
 own two verification runs today (11:26, 11:58) both happened to land before noon.
 `armTestClock` searches the registry for a moment inside an enabled session and
 outside every no-trade sub-window — searched, not hard-coded, because the windows
@@ -406,7 +407,7 @@ the useful part.**
 
 I reported `TestSplitArmWritesTwoLedgerRows` as order-or-state interference
 inside the package, on the evidence that it passed standalone six times and
-failed when the package ran whole. nofx-8e then reproduced it **standalone** at
+failed when the package ran whole. vl-8e then reproduced it **standalone** at
 13:20 on the same commit. There was no interference. It was the wall clock the
 entire time — and I had the disproof in my own message: one standalone RED at
 13:09:00 against six GREENs from 13:09:40. I filed that flip as "a timing
@@ -456,7 +457,7 @@ claims, applied to suite claims:
 
 | | |
 |---|---|
-| tree | `/home/hoang/nofx-episode` (linked worktree), `npm ci` from the tracked lockfile |
+| tree | `/home/hoang/vl-episode` (linked worktree), `npm ci` from the tracked lockfile |
 | go | `go1.25.3` |
 | node / npm | `v22.22.1` / `10.9.4` |
 | **vite** | **6.4.3** — matches `web/package-lock.json`; `npm ls vite` agrees |
@@ -609,7 +610,7 @@ The closer's facts come from the scenario's observed confirm/arm state, never
 from `armed_orders` — that row is mutated in place, and under the settlement
 wave a timed-out cancel now rests at `cancel_pending` rather than reaching
 `cancelled`, so a state read would be reading a value deliberately not yet final
-(flagged by nofx-8e before it could distort a count). But the touch → scenario
+(flagged by vl-8e before it could distort a count). But the touch → scenario
 link is still a price-proximity heuristic and is NULL whenever two levels sit
 inside the band or nothing is close. **A row with a NULL link closes as
 `reached_declined`** — correct for a touch nothing was armed at, and not yet

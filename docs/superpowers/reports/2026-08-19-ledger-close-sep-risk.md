@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Ledger-Close: Calendar Risk + Alerts + Debt — Dispatch Report (2026-08-19)
 
 Branch `fix/ledger-close-sep-risk` · 12 commits · 43 files · +2,540/−49
@@ -23,11 +24,11 @@ polkit-gated. Best root-free MEASUREMENT: `/sys/class/rtc/rtc0/
 since_epoch` (world-readable; rtc0 in WSL2 is the Windows host clock)
 vs `date +%s`.
 
-**Shipped:** `deploy/nofx-clock-guard.sh` + `systemd-user/
-nofx-clock-guard.{service,timer}` + `install-clock-guard.sh` — a
+**Shipped:** `deploy/vl-clock-guard.sh` + `systemd-user/
+vl-clock-guard.{service,timer}` + `install-clock-guard.sh` — a
 15-minute measure+alert detector (rtc + NTP offset + optional
 powershell interop cross-check), logging to the user journal and an
-atomic state JSON (`NOFX_CLOCK_STATE`, default
+atomic state JSON (`VL_CLOCK_STATE`, default
 `data/clock-guard-state.json`). The script SAYS resync is unavailable
 per dispatch 1.2 ("use the best available resync and SAY SO"); the
 owner-side root unit remains the escalation path. **Installed live
@@ -105,7 +106,7 @@ min-semantics); **last-entry was half-day-blind**, and the kernel twin
 day-after-Thanksgiving and Dec 24/31 as FULL closures — the decision
 cycle idles on those calendar dates entirely (see §8).
 
-**Shipped:** owner-editable `half_days.json` (env `NOFX_HALF_DAYS`)
+**Shipped:** owner-editable `half_days.json` (env `VL_HALF_DAYS`)
 seeded with the official table (§3); producer
 `trader/auto_trader_halfdays.go` merges it into the stored registry
 once per session-day (idempotent, file-wins per key, DB-only keys

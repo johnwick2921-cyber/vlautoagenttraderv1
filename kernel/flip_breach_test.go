@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W-FLIP-OWNS-THE-BREACH (2026-09-17) — resolver + breach-state units. The

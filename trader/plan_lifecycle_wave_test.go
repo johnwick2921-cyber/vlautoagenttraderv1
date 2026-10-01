@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // plan-lifecycle wave (2026-08-27) — trader-side: dormant/re-arm, budget,

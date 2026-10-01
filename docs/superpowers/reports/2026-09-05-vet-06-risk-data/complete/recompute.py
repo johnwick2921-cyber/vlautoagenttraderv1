@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Section 6, corrected population. Read-only extraction; offline rerun supported.
-python3 recompute.py --db /home/hoang/nofx/data/data.db --out PATH
+python3 recompute.py --db /home/hoang/vl/data/data.db --out PATH
 python3 recompute.py --sample PATH/trade_sample.csv --out PATH
 All outputs stay in --out. No store.New, API token, trading action or mutable risk inference.
 """

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # E7 SINGLE-BOOT PARK REPORT — 2026-08-30 (before the seam flip)
 
 Read-only facts, verified before the boot. One fix set · one branch map · one class numbering.
@@ -50,7 +51,7 @@ The clock-hold agent's uncommitted `f1_wrong_side_test.go` (strict AT-market bou
    - **Path B (new AddOn loaded):** first place accepts directly.
    - Then: order RESTS at 28700 (never fills — quoted + owner confirms in NT8) → `cancel` → cancel-ack quoted → **5 minutes, zero re-placement lines**.
 7. **Short watch:** panics=0 · restarts=0 · drops=0 for ≥10 min post-boot.
-8. Rollback: `nofx-bin.prev.e7` (06f1dc4e build, md5 `28e4f4bc`) + RELEASE restore on any panic/golden failure.
+8. Rollback: `vl-bin.prev.e7` (06f1dc4e build, md5 `28e4f4bc`) + RELEASE restore on any panic/golden failure.
 
 ## Live state at park time
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # q15 — filled arms: stop/target pts, planned RR, matched position P&L (realised R); post-0B and post-strict trade rate
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 S() { echo "--- $1"; sqlite3 -header "$DB" "$2"; }
 S "filled arms (all): id, session, scenario, side, entry, stop_pts, tgt_pts, planned RR, fill_price, updated CT" "SELECT id, session, scenario, side, entry_px, ROUND(ABS(entry_px-stop_px),2) stop_pts, ROUND(ABS(target_px-entry_px),2) tgt_pts, ROUND(ABS(target_px-entry_px)/ABS(entry_px-stop_px),2) rr, fill_price, datetime(strftime('%s',updated_at),'unixepoch','-5 hours') upd_ct FROM armed_orders WHERE state='filled' ORDER BY id;"
 S "armed_entry/reconcile positions since 08-31 (arm fills materialised): id, entry CT, side, entry, exit, pnl, pts" "SELECT id, datetime(entry_time/1000,'unixepoch','-5 hours') et, side, entry_price, exit_price, pnl_corrected, source, cited_scenario_id FROM trader_positions WHERE entry_time >= 1787115600000 AND source IN ('armed_entry','reconcile') ORDER BY id;"

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # External Architecture Report — End-to-end UI, Backend, NT8 Data Pipeline (2026-05-28)
 
 > **Source:** External agent / reviewer, delivered 2026-05-28.
@@ -12,19 +13,19 @@
 
 ---
 
-# nofx (johnwick2921-cyber fork) — End-to-End Architecture Report: UI, Backend, and NT8 Data Pipeline
+# vl (johnwick2921-cyber fork) — End-to-End Architecture Report: UI, Backend, and NT8 Data Pipeline
 
 ## TL;DR
 
-- **The futures/NT8 adaptation described in the brief is not visible on the public `dev` branch of `johnwick2921-cyber/nofx` as of 2026-05-28.** A direct probe of the repo found a 1,113-commit fork whose visible `dev` HEAD is the upstream crypto NOFX (CHANGELOG last-updated 2025-11-01, latest version 3.0.0, no v1.5.x entries, no `ninjascript/` folder, no `CLAUDE.md`, no `provider/ninjatrader` surfaced at the root listing, and zero C# in the language breakdown shown by GitHub). The NT8 work in this report is therefore documented from the owner's detailed architecture brief and external authoritative references, and is explicitly flagged as **INFERRED / UNVERIFIED-FROM-PUBLIC** where it cannot be corroborated against the visible source.
+- **The futures/NT8 adaptation described in the brief is not visible on the public `dev` branch of `johnwick2921-cyber/nofx` as of 2026-05-28.** A direct probe of the repo found a 1,113-commit fork whose visible `dev` HEAD is the upstream crypto VL (CHANGELOG last-updated 2025-11-01, latest version 3.0.0, no v1.5.x entries, no `ninjascript/` folder, no `CLAUDE.md`, no `provider/ninjatrader` surfaced at the root listing, and zero C# in the language breakdown shown by GitHub). The NT8 work in this report is therefore documented from the owner's detailed architecture brief and external authoritative references, and is explicitly flagged as **INFERRED / UNVERIFIED-FROM-PUBLIC** where it cannot be corroborated against the visible source.
 - **Architecturally, the system is a three-tier loop**: NT8 C# AddOn (`VLTraderTCPClient.cs` + `VLBarsSubscriptionManager.cs`) ⇄ Go backend (`provider/ninjatrader/tcp_server.go` + `tcp_framing.go`, `kernel/engine_*.go` decision layer, `store/` GORM persistence, Gin `api/` HTTP layer, SSE chart relay) ⇄ React frontend (Vite + TypeScript + TradingView Lightweight Charts v5). A single TCP socket carries both control-plane messages (`signal`, `fill`, `heartbeat`, `ack`) and the data-plane bar feed (`bars_subscribe`, `bars_historical`, `bar_update`, `bars_unsubscribe`) using a 4-byte big-endian length prefix + JSON envelope `{type, payload}`, 1 MB max frame.
 - **Three concrete operational risks dominate**: (1) the **N11 trader-starvation bug** — Balanced Strategy using the dead `ai500` crypto-coin source returns HTTP 402 (x402 payment) and starves the NQ trader; fix is `coin_source=static` + `["NQ.c.0"]`; (2) the **EventSource/JWT-in-query constraint** for the chart SSE stream — the WHATWG html issue #2177, opened by GitHub user chicoxyzzy on Dec 14, 2016, asks "Seems like there is no way to add Authorization header or any other headers for EventSource. Is there any reason it shouldn't be possible?" — so the JWT must travel as a URL query parameter and the chart relay endpoint must accept it there; (3) the **ADR-007 "Plan 1 critical files" byte-identical contract** — `tcp_server.go`, `tcp_framing.go`, and the C# `VLTraderTCPClient.cs` must remain wire-compatible across versions or the AddOn silently desyncs from the Go side.
 
 ## Key Findings
 
 ### 1. Repository state as actually observed
-- The public fork `https://github.com/johnwick2921-cyber/nofx` (forked from `NoFxAiOS/nofx`, owner login `johnwick2921-cyber`, default branch `dev`, 1,113 commits, 27 tags, homepage `vergex.trade`) **shows only the upstream crypto codebase on `dev`**. CHANGELOG.md last-updated 2025-11-01 has six entries — `[Unreleased]`, `[3.0.0] 2025-10-30`, `[2.0.2] 2025-10-29`, `[2.0.1] 2025-10-29`, `[2.0.0] 2025-10-28`, `[1.0.0] 2025-10-27` — none of which mention NT8, Databento, v1.5.x TCP fixes, Plan 4.4, ADR-007, or N11.
-- `agents.md` at the root is a 922-line Chinese-language NOFXi crypto-agent spec ("NOFXi 交易智能助手规范"); it lists agent tools (`manage_trader`, `manage_exchange_config`, `manage_model_config`, `manage_strategy`, `execute_trade`, `get_positions`, `get_balance`, `search_stock`) but contains no futures/NQ/NT8 vocabulary.
+- The public fork `https://github.com/johnwick2921-cyber/nofx` (forked from `upstream github link (removed in the VL rename)`, owner login `johnwick2921-cyber`, default branch `dev`, 1,113 commits, 27 tags, homepage `vergex.trade`) **shows only the upstream crypto codebase on `dev`**. CHANGELOG.md last-updated 2025-11-01 has six entries — `[Unreleased]`, `[3.0.0] 2025-10-30`, `[2.0.2] 2025-10-29`, `[2.0.1] 2025-10-29`, `[2.0.0] 2025-10-28`, `[1.0.0] 2025-10-27` — none of which mention NT8, Databento, v1.5.x TCP fixes, Plan 4.4, ADR-007, or N11.
+- `agents.md` at the root is a 922-line Chinese-language VLi crypto-agent spec ("VLi 交易智能助手规范"); it lists agent tools (`manage_trader`, `manage_exchange_config`, `manage_model_config`, `manage_strategy`, `execute_trade`, `get_positions`, `get_balance`, `search_stock`) but contains no futures/NQ/NT8 vocabulary.
 - No `ninjascript/` folder, no `CLAUDE.md` at root, and no C# language fraction is visible (GitHub language stats: Go 67.6%, TypeScript 31.2%, Shell 0.6%, CSS 0.4%, JavaScript 0.1%, Makefile 0.1%). The futures pivot work therefore **either lives on a non-`dev` branch, in a separate private fork, or in an unpushed working tree**. All NT8 architectural detail below is described as in the brief and should be treated as the intended/local design rather than confirmed-from-public source.
 
 ### 2. Pipeline at a glance (end-to-end)
@@ -47,7 +48,7 @@
         │
         └──► chart relay: Go SSE endpoint → React FuturesChart (Lightweight Charts v5)
 ```
-Round-trip latency is bounded by AI inference (decision cycle defaults documented at 3 minutes for upstream NOFX), not by the wire layer.
+Round-trip latency is bounded by AI inference (decision cycle defaults documented at 3 minutes for upstream VL), not by the wire layer.
 
 ### 3. Backend (Go) — package responsibilities
 - `provider/` — market-data ingress. `ninjatrader/tcp_server.go` is the TCP listener and frame dispatcher; `ninjatrader/tcp_framing.go` is the encode/decode for the 4-byte BE length prefix + JSON envelope. `databento/` is now historical-only (the documented tier split — Databento's product pages distinguish "APIs and client libraries for receiving historical data older than 24 hours" (Historical) from "real-time and intraday history from the last 24 hours" (Live) — made the Historical tier unusable for live decisions when only Historical was licensed).
@@ -60,7 +61,7 @@ Round-trip latency is bounded by AI inference (decision cycle defaults documente
 - `agent/` — chat agent + tools surface exposed in the AgentBeta page.
 - `config/` — loader for `.env`, `config.json`, and runtime feature flags.
 - `cmd/nq_smoke/` — a CLI smoke test for the NQ pipeline (subscribe a bar series, dump a few `bar_update` frames, exit).
-- Upstream `docs/architecture/README.md` confirms the broader package layout — *"nofx/ ├── main.go # Entry point ├── api/ # HTTP API (Gin framework) ├── trader/ # Trading execution layer ├── strategy/ # Strategy engine ├── market/ # Market data service ├── mcp/ # AI model clients ├── store/ # Database operations ├── auth/ # JWT authentication ├── manager/ # Multi-trader management └── web/ # React frontend"*.
+- Upstream `docs/architecture/README.md` confirms the broader package layout — *"vl/ ├── main.go # Entry point ├── api/ # HTTP API (Gin framework) ├── trader/ # Trading execution layer ├── strategy/ # Strategy engine ├── market/ # Market data service ├── mcp/ # AI model clients ├── store/ # Database operations ├── auth/ # JWT authentication ├── manager/ # Multi-trader management └── web/ # React frontend"*.
 
 ### 4. The TCP wire protocol (Plan 1.5)
 - **Framing**: 4-byte big-endian unsigned length prefix followed by the JSON envelope `{type: string, payload: object}`. Maximum frame size is 1 MB; oversized frames are rejected and logged.
@@ -94,7 +95,7 @@ The byte-identical contract pins the wire-protocol files so the C# AddOn and Go 
 Any change must be **simultaneous on both sides** and bumped through a coordinated release; otherwise the AddOn either silently drops new frame types (warn-and-continue path) or, worse, deserializes envelope fields into the wrong shape. The "warn-and-continue on unknown frame type" rule is the safety valve that makes a coordinated rollout merely degraded rather than fatal.
 
 ### 8. The N11 trader-starvation bug
-Symptom: the NQ trader's decision cycle never produces a signal; the log shows the Balanced Strategy hitting an HTTP 402 response and skipping the cycle. Root cause: the Balanced Strategy preset still references the upstream `ai500` coin-source endpoint (e.g. `https://nofxos.ai/api/ai500/list`), which is an x402-paywalled crypto signal API — it returns HTTP 402 in the absence of a USDC wallet payment, the strategy treats that as "no candidates", and the trader is starved. **Fix**: set `coin_source=static` and `coins=["NQ.c.0"]` in the strategy config; this bypasses the crypto signal pool entirely. (The Balanced Strategy is upstream-default; nothing about it is futures-aware until the static override is set.)
+Symptom: the NQ trader's decision cycle never produces a signal; the log shows the Balanced Strategy hitting an HTTP 402 response and skipping the cycle. Root cause: the Balanced Strategy preset still references the upstream `ai500` coin-source endpoint (e.g. `upstream website link (removed in the VL rename)`), which is an x402-paywalled crypto signal API — it returns HTTP 402 in the absence of a USDC wallet payment, the strategy treats that as "no candidates", and the trader is starved. **Fix**: set `coin_source=static` and `coins=["NQ.c.0"]` in the strategy config; this bypasses the crypto signal pool entirely. (The Balanced Strategy is upstream-default; nothing about it is futures-aware until the static override is set.)
 
 ## Details
 
@@ -117,7 +118,7 @@ Symptom: the NQ trader's decision cycle never produces a signal; the log shows t
 ### 11. Frontend chart specifics
 - **Initial load**: on mount, `FuturesChart` issues a REST call to `/api/klines?symbol=NQ.c.0&timeframe=1m`, which the Go server services from the bar cache (originally populated by a `bars_historical` response); the chart calls `series.setData(...)` exactly once.
 - **Live updates**: an EventSource is opened to `/api/klines/stream?symbol=NQ.c.0&timeframe=1m&token=<JWT>`. Each SSE event is a serialized `bar_update`; the chart calls `series.update(bar)` on each. The Lightweight Charts v5 docs are explicit: *"a series cannot be transferred from one type to another one, since different series types require different data and options types"* — so the candlestick series is constructed once and never replaced.
-- **JWT-in-query rationale**: see Key Findings §5 (WHATWG html#2177). The Go SSE handler must therefore parse the token from `r.URL.Query().Get("token")` instead of the `Authorization` header, and the JWT should be short-lived. The upstream NOFX SlowMist disclosure (Medium, Nov 2025) explicitly called out the residual hardcoded-secret risk: *"config.json.example:1–27 and… In main.go:198–226, admin_mode=true and the default jwt_secret are still hardcoded."* Any deployment must override the default secret before going live.
+- **JWT-in-query rationale**: see Key Findings §5 (WHATWG html#2177). The Go SSE handler must therefore parse the token from `r.URL.Query().Get("token")` instead of the `Authorization` header, and the JWT should be short-lived. The upstream VL SlowMist disclosure (Medium, Nov 2025) explicitly called out the residual hardcoded-secret risk: *"config.json.example:1–27 and… In main.go:198–226, admin_mode=true and the default jwt_secret are still hardcoded."* Any deployment must override the default secret before going live.
 
 ### 12. What was confirmed vs inferred
 - **Confirmed from the public repo as observed (2026-05-28)**: fork lineage, branch `dev` at 1,113 commits, upstream package layout (`api/`, `trader/`, `market/`, `mcp/`, `store/`, `auth/`, `manager/`, `web/`), upstream crypto CHANGELOG through v3.0.0, upstream `agents.md` Chinese spec, upstream `STRATEGY_MODULE.md` decision-cycle flow, upstream prompt structure (`<reasoning>`/`<decision>` XML+JSON), upstream issue #982 listing the nine valid actions, the SlowMist JWT-default disclosure.

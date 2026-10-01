@@ -1,5 +1,5 @@
 import sqlite3, datetime
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True)
 c=con.cursor()
 # RTH 08:30-14:59 CT per day from 1m bars
 rows=c.execute("""

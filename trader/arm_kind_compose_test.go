@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 func TestArmLegKindDerivedFromCondition(t *testing.T) {

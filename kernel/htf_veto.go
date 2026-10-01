@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // G1 (regime wave, 2026-08-21) — HTF VETO: a NEW entry whose direction opposes

@@ -4,5 +4,5 @@ kernel/levels_score.go:513: l.Research.Score = scoreValue(score) -> l.Research.S
     --- FAIL: TestStageACandidateRecorderKeepsComputedEvidence/PDH (0.00s)
         stage_a_score_capture_test.go:34: captured propensity was discarded: score=0 grade="A"; scorer supplied score=1 grade="A"
 FAIL
-FAIL	nofx/kernel	0.012s
+FAIL	vl/kernel	0.012s
 FAIL

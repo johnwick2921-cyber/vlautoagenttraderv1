@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Root-fix: shorten the planner call — what the measurement actually said
 
 **Dispatch:** ROOT-FIX (A) schema slim · (B) fast-mode shadow A/B · (C) provider fallback.
@@ -126,8 +127,8 @@ full `go test ./...` green · vitest guide 10/10 · `tsc --noEmit` clean (D7).
 ## 5. Cutover — staged, and a live proof arrived while staging
 
 Staged: clean clone of dev @ `928e49d2` → `vcs.revision=928e49d297f97b9dacac8456da65a6b1ab9eccba`,
-`vcs.modified=false`, copied to `nofx-bin.next`. Running: `8a756bba` PID 2065518. Rollback slot
-`nofx-bin.prev.boot`.
+`vcs.modified=false`, copied to `vl-bin.next`. Running: `8a756bba` PID 2065518. Rollback slot
+`vl-bin.prev.boot`.
 
 **CLASS-33 LEG 5 FIRED, ON ITS FIRST REAL USE — and it stopped this cutover.** At 07:21:33 CT
 `GET /api/cutover-gate` returned:
@@ -152,9 +153,9 @@ This is the live proof class 33's report listed as owed for leg 5. [A]
 **Swap (A26 — the owner runs it):**
 
 ```
-cd /home/hoang/nofx
+cd /home/hoang/vl
 echo 928e49d297f97b9dacac8456da65a6b1ab9eccba > deploy/RELEASE
-cp nofx-bin nofx-bin.prev.boot && mv nofx-bin nofx-bin.old.8a756bba && mv nofx-bin.next nofx-bin
+cp vl-bin vl-bin.prev.boot && mv vl-bin vl-bin.old.8a756bba && mv vl-bin.next vl-bin
 kill -9 <MainPID>
 ```
 
@@ -177,7 +178,7 @@ and the NY read fires at 08:00 CT. `ready:false` = HOLD.
 ## 7. Rollback
 
 ```
-cp nofx-bin.prev.boot nofx-bin && echo 8a756bba4a21ab455beafac75bf6415e71de2fb9 > deploy/RELEASE && kill -9 <MainPID>
+cp vl-bin.prev.boot vl-bin && echo 8a756bba4a21ab455beafac75bf6415e71de2fb9 > deploy/RELEASE && kill -9 <MainPID>
 ```
 
 ### 5.1 Boot record (owner GO 07:31 CT 2026-09-02)
@@ -186,7 +187,7 @@ Gate re-quoted at **07:31:57 CT** immediately before the swap — `ready: True`,
 pass (leg 5 `no planner read claimed`). RELEASE written before the swap; marker after the boot.
 
 Old process exited 07:32:10 (`status=9/KILL`); started 07:32:15; **PID 2461883, exactly one
-nofx-bin process, 0 `[ERRO]` lines, 0 TradingRefused**:
+vl-bin process, 0 `[ERRO]` lines, 0 TradingRefused**:
 
 ```
 🔐 BOOT INTEGRITY OK — rev 0d093c3b3a11 · built 2026-09-02T12:22:31Z · expected 0d093c3b3a11 · goldens PASS

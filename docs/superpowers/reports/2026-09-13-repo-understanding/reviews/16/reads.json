@@ -664,13 +664,13 @@
   ],
   "instruction_reads": [
     {
-      "path": "/home/hoang/nofx/AGENTS.md",
+      "path": "/home/hoang/vl/AGENTS.md",
       "mode": "full/manual",
       "notes": "Instruction-only read; no main checkout source reads."
     }
   ],
   "historical_graph_read": {
-    "path": "/home/hoang/nofx-untracked-stash-20260816/.understand-anything/knowledge-graph.json",
+    "path": "/home/hoang/vl-untracked-stash-20260816/.understand-anything/knowledge-graph.json",
     "mode": "excerpts/manual",
     "notes": "12 matching file summaries and first45 selected noncontainment file edges manually read;117 matching nodes/1084 edges exported, not all manually read."
   }

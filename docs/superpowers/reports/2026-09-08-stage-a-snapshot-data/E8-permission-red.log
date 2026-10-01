@@ -8,5 +8,5 @@ trader/auto_trader_levelstate.go:262: recordResearchPermissions(resolvedPlanID, 
 --- FAIL: TestStageAPermissionAndOutcomeProductionPaths (0.17s)
     research_snapshot_test.go:165: production record hooks absent: map[candidate:0 exec:1 market:0 plan:0 scenario:0]
 FAIL
-FAIL	nofx/trader	0.176s
+FAIL	vl/trader	0.176s
 FAIL

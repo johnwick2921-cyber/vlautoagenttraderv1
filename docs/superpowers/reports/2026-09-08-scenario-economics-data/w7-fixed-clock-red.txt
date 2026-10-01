@@ -36,5 +36,5 @@
     --- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions/17:21 (0.48s)
         w7_levelstate_test.go:133: touched-and-accepted-through level must be consumed, got consumed=false freshness=A
 FAIL
-FAIL	nofx/trader	4.034s
+FAIL	vl/trader	4.034s
 FAIL

@@ -5,7 +5,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"nofx/researchsnapshot"
+	"vl/researchsnapshot"
 	"os"
 	"time"
 )

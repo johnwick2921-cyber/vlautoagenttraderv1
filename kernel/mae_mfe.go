@@ -3,7 +3,7 @@ package kernel
 import (
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // P2.4 — MAE / MFE excursion analytics.

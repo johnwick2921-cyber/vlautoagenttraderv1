@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 func TestStopWouldWiden(t *testing.T) {

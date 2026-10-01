@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"nofx/telemetry"
+	"vl/telemetry"
 )
 
 // handleTelemetry (P2-8) serves the process-lifetime telemetry counters that

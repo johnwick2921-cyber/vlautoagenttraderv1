@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 func TestGetPositionsUnknownBeforeFirstSnapshot(t *testing.T) {

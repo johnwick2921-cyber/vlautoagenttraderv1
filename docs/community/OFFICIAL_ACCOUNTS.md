@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # ⚠️ Official Accounts & Anti-Impersonation Notice
 
 ## Legal Entity
@@ -14,21 +15,21 @@
 
 | Platform | Official Account | Link | Status |
 |----------|-----------------|------|--------|
-| Twitter/X | **@nofx_official** | https://x.com/nofx_official | ✅ Official |
+| Twitter/X | **upstream x link (removed in the VL rename)** | upstream x link (removed in the VL rename) | ✅ Official |
 | Twitter/X | **@Web3Tinkle** | https://x.com/Web3Tinkle | ✅ Founder |
-| GitHub | **NoFxAiOS** | https://github.com/NoFxAiOS | ✅ Official |
-| Website | **nofxai.com** | https://nofxai.com | ✅ Official |
-| Dashboard | **nofxos.ai** | https://nofxos.ai | ✅ Official |
+| GitHub | **upstream github link (removed in the VL rename)** | upstream github link (removed in the VL rename) | ✅ Official |
+| Website | **upstream website link (removed in the VL rename)** | upstream website link (removed in the VL rename) | ✅ Official |
+| Dashboard | **upstream website link (removed in the VL rename)** | upstream website link (removed in the VL rename) | ✅ Official |
 
 ## ⛔ Known Impersonation Accounts
 
-The following accounts are **NOT affiliated** with the NoFx project:
+The following accounts are **NOT affiliated** with the VL project:
 
 | Platform | Account | Status |
 |----------|---------|--------|
-| Twitter/X | @nofx_ai | ❌ **NOT OFFICIAL** — Not affiliated with this project |
+| Twitter/X | upstream x link (removed in the VL rename) | ❌ **NOT OFFICIAL** — Not affiliated with this project |
 
-> **Warning:** Any account claiming to represent NoFx that is not listed above is unauthorized. Please verify through this page before trusting any account claiming to be associated with NoFx.
+> **Warning:** Any account claiming to represent VL that is not listed above is unauthorized. Please verify through this page before trusting any account claiming to be associated with VL.
 
 ## How to Verify Authenticity
 
@@ -40,11 +41,11 @@ The following accounts are **NOT affiliated** with the NoFx project:
 
 ## Report Impersonation
 
-If you encounter accounts impersonating NoFx, please:
+If you encounter accounts impersonating VL, please:
 1. Report them on the respective platform
 2. Open an issue in this repository to notify our team
 
 ---
 
 *Last updated: 2026-03-01*
-*This document is maintained by Cryonic Holdings Limited in the official NoFx GitHub repository (10,500+ ⭐)*
+*This document is maintained by Cryonic Holdings Limited in the official VL GitHub repository (10,500+ ⭐)*

@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	nttrader "nofx/trader/ninjatrader"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 // M3 PIN (CTO 2026-09-26, on top of the merged #243) — the armed stop-entry

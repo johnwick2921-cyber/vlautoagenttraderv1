@@ -97,28 +97,28 @@ func TestWalkCoversEveryPackageTheToolchainLinks(t *testing.T) {
 // itself never matches — are covered (walked). Negative control first.
 func TestToolchainUncoveredControls(t *testing.T) {
 	root := t.TempDir()
-	write(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	write(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	var imports []string
 	for _, d := range NestedProbeDirs() {
 		if strings.Contains("/"+d+"/", "/vendor/") {
 			continue // nested vendor is not importable in module mode
 		}
 		write(t, root, d+"/a.go", "package "+PackageName(d)+"\n")
-		imports = append(imports, "import _ \"nofx/"+d+"\"\n")
+		imports = append(imports, "import _ \"vl/"+d+"\"\n")
 	}
 	write(t, root, "api/api.go", "package api\n\n"+strings.Join(imports, ""))
-	write(t, root, "main.go", "package main\n\nimport _ \"nofx/api\"\n\nfunc main() {}\n")
+	write(t, root, "main.go", "package main\n\nimport _ \"vl/api\"\n\nfunc main() {}\n")
 	uncovered, roots, err := ToolchainUncovered(root)
 	if err != nil || len(uncovered) != 0 || roots == 0 {
 		t.Fatalf("every nested probe dir is walked: uncovered=%v roots=%d err=%v", uncovered, roots, err)
 	}
 	write(t, root, "web/evil/e.go", "package evil\n")
-	write(t, root, "api/evil.go", "package api\n\nimport _ \"nofx/web/evil\"\n")
+	write(t, root, "api/evil.go", "package api\n\nimport _ \"vl/web/evil\"\n")
 	uncovered, _, err = ToolchainUncovered(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(uncovered) != 1 || !strings.HasPrefix(uncovered[0], "nofx/web/evil ") {
+	if len(uncovered) != 1 || !strings.HasPrefix(uncovered[0], "vl/web/evil ") {
 		t.Fatalf("a linked package under the root-level web/ must be reported, got %v", uncovered)
 	}
 }
@@ -132,14 +132,14 @@ func TestToolchainUncoveredControls(t *testing.T) {
 // the package instead of silently skipping it.
 func TestWalkRefusesSymlinkedPackageDir(t *testing.T) {
 	root := t.TempDir()
-	write(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
-	write(t, root, "api/api.go", "package api\n\nimport _ \"nofx/api/hid\"\n")
+	write(t, root, "go.mod", "module vl\n\ngo 1.25\n")
+	write(t, root, "api/api.go", "package api\n\nimport _ \"vl/api/hid\"\n")
 	write(t, root, "elsewhere/hid/x.go", "package hid\n\nvar X = 1\n")
 	if err := os.Symlink(filepath.Join(root, "elsewhere", "hid"), filepath.Join(root, "api", "hid")); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := NonTestGoFiles(root); err == nil {
-		t.Fatal("the walk accepted a symlinked package directory — api/hid is compiled through the link but the walk does not descend into it, so every census using NonTestGoFiles was blind to nofx/api/hid")
+		t.Fatal("the walk accepted a symlinked package directory — api/hid is compiled through the link but the walk does not descend into it, so every census using NonTestGoFiles was blind to vl/api/hid")
 	} else if !strings.Contains(err.Error(), filepath.Join("api", "hid")) {
 		t.Fatalf("error does not name the symlinked dir: %v", err)
 	}
@@ -264,17 +264,17 @@ func TestCensusWalkIsTestToolingOnly(t *testing.T) {
 // importer is not.
 func TestNonTestImportersControls(t *testing.T) {
 	root := t.TempDir()
-	write(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	write(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	write(t, root, "internal/censuswalk/w.go", "package censuswalk\n")
 	write(t, root, "api/api.go", "package api\n")
-	write(t, root, "api/api_test.go", "package api\n\nimport _ \"nofx/internal/censuswalk\"\n")
-	got, _, err := nonTestImporters(root, "nofx/internal/censuswalk")
+	write(t, root, "api/api_test.go", "package api\n\nimport _ \"vl/internal/censuswalk\"\n")
+	got, _, err := nonTestImporters(root, "vl/internal/censuswalk")
 	if err != nil || len(got) != 0 {
 		t.Fatalf("a _test.go importer is test tooling: got %v err %v", got, err)
 	}
-	write(t, root, "api/uses.go", "package api\n\nimport _ \"nofx/internal/censuswalk\"\n")
-	got, _, err = nonTestImporters(root, "nofx/internal/censuswalk")
-	if err != nil || len(got) != 1 || got[0] != "nofx/api" {
+	write(t, root, "api/uses.go", "package api\n\nimport _ \"vl/internal/censuswalk\"\n")
+	got, _, err = nonTestImporters(root, "vl/internal/censuswalk")
+	if err != nil || len(got) != 1 || got[0] != "vl/api" {
 		t.Fatalf("a non-test importer must be reported: got %v err %v", got, err)
 	}
 }
@@ -289,22 +289,22 @@ func TestNonTestImportersControls(t *testing.T) {
 // other-platform _test.go importer still is not.
 func TestNonTestImportersSeesEveryPlatform(t *testing.T) {
 	root := t.TempDir()
-	write(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	write(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	write(t, root, "internal/censuswalk/w.go", "package censuswalk\n")
 	write(t, root, "api/api.go", "package api\n")
-	write(t, root, "api/uses_plan9.go", "package api\n\nimport _ \"nofx/internal/censuswalk\"\n")
-	write(t, root, "api/x_windows_test.go", "package api\n\nimport _ \"nofx/internal/censuswalk\"\n")
-	write(t, root, "winonly/w_windows.go", "package winonly\n\nimport _ \"nofx/internal/censuswalk\"\n")
-	write(t, root, "tools/gen.go", "//go:build ignore\n\npackage main\n\nimport _ \"nofx/internal/censuswalk\"\n\nfunc main() {}\n")
+	write(t, root, "api/uses_plan9.go", "package api\n\nimport _ \"vl/internal/censuswalk\"\n")
+	write(t, root, "api/x_windows_test.go", "package api\n\nimport _ \"vl/internal/censuswalk\"\n")
+	write(t, root, "winonly/w_windows.go", "package winonly\n\nimport _ \"vl/internal/censuswalk\"\n")
+	write(t, root, "tools/gen.go", "//go:build ignore\n\npackage main\n\nimport _ \"vl/internal/censuswalk\"\n\nfunc main() {}\n")
 	write(t, root, "web/gopkg/a.go", "package gopkg\n")
-	write(t, root, "web/gopkg/b_plan9.go", "package gopkg\n\nimport _ \"nofx/internal/censuswalk\"\n")
+	write(t, root, "web/gopkg/b_plan9.go", "package gopkg\n\nimport _ \"vl/internal/censuswalk\"\n")
 	write(t, root, "clean/c.go", "package clean\n")
-	write(t, root, "clean/c_windows_test.go", "package clean\n\nimport _ \"nofx/internal/censuswalk\"\n")
-	got, _, err := nonTestImporters(root, "nofx/internal/censuswalk")
+	write(t, root, "clean/c_windows_test.go", "package clean\n\nimport _ \"vl/internal/censuswalk\"\n")
+	got, _, err := nonTestImporters(root, "vl/internal/censuswalk")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "nofx/api,nofx/tools,nofx/web/gopkg,nofx/winonly"; strings.Join(got, ",") != want {
+	if want := "vl/api,vl/tools,vl/web/gopkg,vl/winonly"; strings.Join(got, ",") != want {
 		t.Fatalf("importers behind another platform's build constraint: got %v, want exactly %s", got, want)
 	}
 }

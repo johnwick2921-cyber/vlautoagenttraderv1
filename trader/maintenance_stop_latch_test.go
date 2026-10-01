@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	nttrader "nofx/trader/ninjatrader"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 // ── W-ONE-BUTTON M2.1 (review 3 F7) — the stop path's hold refusal, BY

@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"nofx/wallet"
+	"vl/wallet"
 	"strings"
 	"time"
 

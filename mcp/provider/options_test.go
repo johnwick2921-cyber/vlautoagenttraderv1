@@ -3,7 +3,7 @@ package provider
 import (
 	"testing"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 func TestOptionsWithDeepSeekClient(t *testing.T) {

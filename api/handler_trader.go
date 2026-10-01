@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/safe"
-	"nofx/store"
+	"vl/kernel"
+	"vl/logger"
+	"vl/safe"
+	"vl/store"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Stage A — research snapshot
 
 Status: **Stage A startup and live recording verified on 2026-09-09 at revision `954f11b1`.** Machine reset booted PID 438 at 13:02:06 CT with `schema=1` and goldens PASS. Live candidate, cut, completed author attempt and deterministic export are proven below. A repair attempt and measured live admission p50 remain unproven.
@@ -218,13 +219,13 @@ A15 remains explicit: whole live per-read overhead, first real candidate/cut/att
 
 ## Final candidate preparation receipt
 
-[A] Source `2a96cf63278f7c836d55e14c5a02597f80280292` is the Stage A merge including scenario-economics and clean-machine documentation. Both `dev` and `fix/stage-a-snapshot` were verified by `git ls-remote` at that revision before clean-clone validation. Clone: `/tmp/stage-a-build/nofx`. Full `go test ./... -count=1` **PASS**, including prompt goldens and guarded source references; Vitest **54 files / 378 tests PASS**; `tsc --noEmit` **PASS**; final focused recorder/producer `-race` **PASS**. Exact receipt hashes are in `validation-receipt.json`; successful Go/race outputs are retained.
+[A] Source `2a96cf63278f7c836d55e14c5a02597f80280292` is the Stage A merge including scenario-economics and clean-machine documentation. Both `dev` and `fix/stage-a-snapshot` were verified by `git ls-remote` at that revision before clean-clone validation. Clone: `/tmp/stage-a-build/vl`. Full `go test ./... -count=1` **PASS**, including prompt goldens and guarded source references; Vitest **54 files / 378 tests PASS**; `tsc --noEmit` **PASS**; final focused recorder/producer `-race` **PASS**. Exact receipt hashes are in `validation-receipt.json`; successful Go/race outputs are retained.
 
 [A] Binary: **72,454,640 bytes**, SHA-256 `c94ee81fbe364bee2b7b9352b2c706918da8bcac49bc781895de6466872e211b`, **vcs.modified=false**. Its actual embedded revision was read into `GUIDE_BUILT_REV` at **16:49:46 CT**, THEN dist was rebuilt. Dist: **92 files / 7,918,497 bytes**, manifest SHA-256 `925919f3063014f8884604ba52fb0356f07967d17da7831de20e1037d342cf15`; its JavaScript contains that same full revision. See `candidate.json` and `dist-manifest.json`.
 
 [A] Own preparation gate at **16:45:40 CT**: all five legs PASS, no open position, no working order, no planner read claimed. Leg 4: **broker — NT8 order_snapshot frame (age 9s, build 2026-09-07-h1)**, broker and ledger both zero. This receipt is stale for cutover. A7 prohibits **16:45–17:10 CT**; next window is **after 17:10 only if flat, no arms, no open position**, with a fresh five-leg gate/in-flight read. A3 still requires owner GO before RELEASE/swap. No kill was issued.
 
-[A] At **16:47:41 CT**, PID **3566770** and the disk binary both held `f8bc7044cc44d58e84904a0a7761e78b420404af`, modified=false. Preserved actual running image `/tmp/stage-a-cutover/backup/nofx-bin.old.f8bc7044cc44d58e84904a0a7761e78b420404af`, SHA-256 `e2c2ce8602ca61e52d180309743593b3bf538337693e4f2c61ae83c21d457918`. Online backup `/tmp/stage-a-cutover/backup/data.db`: **751,267,840 bytes**, **integrity_check=ok**. Stage A does not migrate existing trading rows.
+[A] At **16:47:41 CT**, PID **3566770** and the disk binary both held `f8bc7044cc44d58e84904a0a7761e78b420404af`, modified=false. Preserved actual running image `/tmp/stage-a-cutover/backup/vl-bin.old.f8bc7044cc44d58e84904a0a7761e78b420404af`, SHA-256 `e2c2ce8602ca61e52d180309743593b3bf538337693e4f2c61ae83c21d457918`. Online backup `/tmp/stage-a-cutover/backup/data.db`: **751,267,840 bytes**, **integrity_check=ok**. Stage A does not migrate existing trading rows.
 
 ### Measured complete input-assembly overhead
 
@@ -274,7 +275,7 @@ That is a failed research initialization, not a live record. The scenario-econom
 
 ### Corrected candidate prepared
 
-Repair binary **954f11b15f2e7615678f7d2b708c47895faebf1e**, **vcs.modified=false**, built in `/tmp/stage-a-path-build/nofx` after full `go test ./... -count=1` PASS (including goldens), Vitest **54 files / 378 tests PASS**, and TypeScript PASS. Binary **72,459,208 bytes**, SHA-256 `c7c9c72321c89a56f5348cc0a9cee554b8f63633782cc6b29973e196fae2e4cf`. GUIDE_BUILT_REV was read from that binary at **18:44:06 CT**, THEN dist built: **92 files / 7,918,609 bytes**, exact manifest retained.
+Repair binary **954f11b15f2e7615678f7d2b708c47895faebf1e**, **vcs.modified=false**, built in `/tmp/stage-a-path-build/vl` after full `go test ./... -count=1` PASS (including goldens), Vitest **54 files / 378 tests PASS**, and TypeScript PASS. Binary **72,459,208 bytes**, SHA-256 `c7c9c72321c89a56f5348cc0a9cee554b8f63633782cc6b29973e196fae2e4cf`. GUIDE_BUILT_REV was read from that binary at **18:44:06 CT**, THEN dist built: **92 files / 7,918,609 bytes**, exact manifest retained.
 
 The repair keeper acquired the free lock at **18:37:10 CT**. Before cutover, actual running/disk revision **6f677b55daa1c7da33b8c35f8bcc67883f36b470**, PID **3726840**, was backed up by embedded revision with matching RELEASE/dist. Online `data.db` backup at **18:40:56 CT**, **753,287,168 bytes**, returned **integrity_check=ok**. No existing trading table is migrated.
 

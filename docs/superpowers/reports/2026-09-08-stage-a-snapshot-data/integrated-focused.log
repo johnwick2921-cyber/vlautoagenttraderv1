@@ -1,4 +1,4 @@
-ok  	nofx/researchsnapshot	0.201s
-ok  	nofx/kernel	0.023s
-ok  	nofx/provider/ninjatrader	0.066s
-ok  	nofx/trader	2.532s
+ok  	vl/researchsnapshot	0.201s
+ok  	vl/kernel	0.023s
+ok  	vl/provider/ninjatrader	0.066s
+ok  	vl/trader	2.532s

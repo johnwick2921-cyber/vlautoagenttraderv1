@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SECTION 4 — MONITORING: COMPLETE TRADER/SYSTEM AUDIT
 
-Owner: hoang · 2026-09-05 · branch `docs/vet-04-0905-complete` · fresh worktree `/home/hoang/nofx-vet-04-complete` from `origin/dev b4376246`. I own Section 4 only; the parent owns Section 9 integration. **Documentation only; no trading-system changes.** I write in first person as an analytical reviewer, not as someone claiming a professional trading biography. [T] = own-tape measurement; [I] = analytical judgment, untested here; [A] = inspected source/receipt; [B] = qualified inference. No named market study or transferred research claim is used in this section.
+Owner: hoang · 2026-09-05 · branch `docs/vet-04-0905-complete` · fresh worktree `/home/hoang/vl-vet-04-complete` from `origin/dev b4376246`. I own Section 4 only; the parent owns Section 9 integration. **Documentation only; no trading-system changes.** I write in first person as an analytical reviewer, not as someone claiming a professional trading biography. [T] = own-tape measurement; [I] = analytical judgment, untested here; [A] = inspected source/receipt; [B] = qualified inference. No named market study or transferred research claim is used in this section.
 
 ## One-page summary
 
@@ -14,9 +15,9 @@ Owner: hoang · 2026-09-05 · branch `docs/vet-04-0905-complete` · fresh worktr
 
 ## Evidence contract and corrections
 
-All fresh scripts write only to `/home/hoang/nofx-analysis/vet-04-complete-0905`; committed evidence is under `docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/`. `q50_eod_verified.py` and `q51_complete.py` open `file:/home/hoang/nofx/data/data.db?mode=ro`, set `PRAGMA query_only=ON`, and use read transactions. The renewal did **not** invoke `cmd/gate-jwt` or authenticated APIs. Earlier API payloads are historical captures only, not this run's production actions. Fresh unauthenticated `/api/health` returned HTTP 200, revision `36648655cfe0` (`q52_receipts.json`); that proves only the response at capture.
+All fresh scripts write only to `/home/hoang/vl-analysis/vet-04-complete-0905`; committed evidence is under `docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/`. `q50_eod_verified.py` and `q51_complete.py` open `file:/home/hoang/vl/data/data.db?mode=ro`, set `PRAGMA query_only=ON`, and use read transactions. The renewal did **not** invoke `cmd/gate-jwt` or authenticated APIs. Earlier API payloads are historical captures only, not this run's production actions. Fresh unauthenticated `/api/health` returned HTTP 200, revision `36648655cfe0` (`q52_receipts.json`); that proves only the response at capture.
 
-`q52` verifies no non-doc source changes from the original section source base `2a66d91c` to assigned base `b4376246`. `q51` preserves source excerpts/hashes for principal surfaces. The Q1 inventory is therefore valid **source UI inventory, never an observed screenshot or proof of the loaded browser asset**. Original q01–q47 references refer to retained captures in `/home/hoang/nofx-analysis/vet-04-0905/` unless a committed copy exists; the original scratch was neither modified nor rerun. Fresh q50–q52 take precedence over old calculations.
+`q52` verifies no non-doc source changes from the original section source base `2a66d91c` to assigned base `b4376246`. `q51` preserves source excerpts/hashes for principal surfaces. The Q1 inventory is therefore valid **source UI inventory, never an observed screenshot or proof of the loaded browser asset**. Original q01–q47 references refer to retained captures in `/home/hoang/vl-analysis/vet-04-0905/` unless a committed copy exists; the original scratch was neither modified nor rerun. Fresh q50–q52 take precedence over old calculations.
 
 | Correction | Authoritative result / evidence |
 |---|---|
@@ -82,8 +83,8 @@ Fourteen content modules (buttons, expectancy, faq, glossary, guards, levels, pl
 
 ### 1.10 Logs available to the owner; actual reading unobserved
 
-- `data/nofx_<boot-date>.log`: WARN+ lines are also shipped to `log_events` (`main.go:105`, "WARN+ → log_events"); INFO never reaches the store. The Go-side "🚨 FEED DOWN" is ERROR, so it is in `log_events` — but nothing reads `log_events` for the owner except by SQL.
-- journald: `tcp_server` logs through `slog.Default()` (`provider/ninjatrader/tcp_server.go:483`), so the link events ("hello handshake OK", `:1713`) go to journald and **never to `nofx_*.log`** (0 occurrences in four files, `q12`) — where they drown: 908 of 1,429 journal lines in the last hour are `received frame type=…` at INFO on a closed Saturday (`q13`), and retention is 16.5 hours. This is the retained original class-12 log-flood observation, not a renewal measurement.
+- `data/vl_<boot-date>.log`: WARN+ lines are also shipped to `log_events` (`main.go:105`, "WARN+ → log_events"); INFO never reaches the store. The Go-side "🚨 FEED DOWN" is ERROR, so it is in `log_events` — but nothing reads `log_events` for the owner except by SQL.
+- journald: `tcp_server` logs through `slog.Default()` (`provider/ninjatrader/tcp_server.go:483`), so the link events ("hello handshake OK", `:1713`) go to journald and **never to `vl_*.log`** (0 occurrences in four files, `q12`) — where they drown: 908 of 1,429 journal lines in the last hour are `received frame type=…` at INFO on a closed Saturday (`q13`), and retention is 16.5 hours. This is the retained original class-12 log-flood observation, not a renewal measurement.
 - NT8's own log (`…/NinjaTrader 8/log/`): the AddOn's watchdog writes "most-stale <key> bar age Ns; dead-subscriptions=N" every minute (`ninjascript/VLBarsSubscriptionManager.cs:619-624`) and the connection handler writes "data feed lost" (`ninjascript/VLTraderTCPClient.cs:315+`). On 09-04 that log had the answer at 12:20:16 CT. No dashboard reader of this NT8 log was found in the inspected source; owner attention is UNMEASURABLE.
 
 ---
@@ -168,7 +169,7 @@ That design would expose the alive-but-blind phase and, while the browser remain
 
 [I] I want one decision page: what money was actually realized, whether exposure is confirmed flat after14:45, which planned opportunities were handled, what data failed, and what I must verify before the next session. I do not want a digest of engineering passes substituted for that review.
 
-Run `python3 /home/hoang/nofx-analysis/vet-04-complete-0905/q50_eod_verified.py` and `q51_complete.py` from this worktree. Committed scripts and JSON reproduce every SQL statement, bound cutoff, row ID and result. `q50` re-runs the previously correct q48 recipe with `query_only=ON`; q48 is retained unchanged as its historical receipt. Queries use **[calendar midnight CT,15:00 CT)** and exit time for money. The separate baseline uses entry era≥1786770000000 and CME17:00 day grouping. September-only SQL hour labels use−5; boundaries use `America/Chicago` timezone conversion.
+Run `python3 /home/hoang/vl-analysis/vet-04-complete-0905/q50_eod_verified.py` and `q51_complete.py` from this worktree. Committed scripts and JSON reproduce every SQL statement, bound cutoff, row ID and result. `q50` re-runs the previously correct q48 recipe with `query_only=ON`; q48 is retained unchanged as its historical receipt. Queries use **[calendar midnight CT,15:00 CT)** and exit time for money. The separate baseline uses entry era≥1786770000000 and CME17:00 day grouping. September-only SQL hour labels use−5; boundaries use `America/Chicago` timezone conversion.
 
 | One-page block / query | Sep3 as-of15:00 | Sep4 as-of15:00 | Exact result / limit |
 |---|---|---|---|

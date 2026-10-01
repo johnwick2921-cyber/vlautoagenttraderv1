@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W5 (CTO 1790194913337) — the owner's re-read and reset treat

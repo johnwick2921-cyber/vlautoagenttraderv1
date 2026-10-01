@@ -1,10 +1,11 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Repository control-boundary repairs — source candidate
 
 Owner requested detailed traced review and repairs until complete. Source base:
 `63968be62e44db2fb07a92883e02127b9064b0be`; branch
 `fix/repo-audit-control-boundaries-20260913`; session
 `reporepair-8d38e6ac/Codex[unlisted]`. Isolated worktree
-`/tmp/nofx-audit-repairs-20260913`. No production database, settings, account,
+`/tmp/vl-audit-repairs-20260913`. No production database, settings, account,
 order, deployment or runtime changes. Source review evidence is on
 `docs/repo-understanding-20260913` under its separately claimed report scope.
 
@@ -145,7 +146,7 @@ remain unavailable. The test follows older empty, newer working and newer empty
 evidence. A second regression reproduced a previous process exhausting the new
 process's retry cap. The cap check now applies the process identity before
 counting attempts. Both regressions and existing settlement/boot-sweep tests pass
-(`/tmp/nofx-cancel-evidence-after.log`). No broker or runtime settings were touched.
+(`/tmp/vl-cancel-evidence-after.log`). No broker or runtime settings were touched.
 
 ## Stop-entry refusal and other scenarios
 
@@ -155,7 +156,7 @@ was refused by the AddOn build gate. The helper now returns whether placement
 was registered; only that result closes the pass and retires other scenarios.
 All three cases pass. A separate dispatch regression confirms registration
 still commits the account after an ambiguous send failure. Existing receipt,
-slot and fast-rejection tests pass (`/tmp/nofx-stop-refusal-after.log`).
+slot and fast-rejection tests pass (`/tmp/vl-stop-refusal-after.log`).
 The limit-path behavior after an ambiguous send remains a separate review item.
 
 ## Structural prompt and advisory parity
@@ -166,7 +167,7 @@ R:R/stop warnings for a reject arm. Prompt contract and facts now separate
 structural reject fades from non-reject legacy floors; omitted arms do not grant
 an AI-route bypass. Reject feasibility is left to composed-geometry admission,
 not authored-price legacy warnings. Focused prompt, warning and class45 checks
-pass (`/tmp/nofx-structural-prompt-after.log`). The existing heading and historical
+pass (`/tmp/vl-structural-prompt-after.log`). The existing heading and historical
 reject-warning assertions were updated; legacy floor arithmetic remains tested.
 
 ## Second full Go suite and protection shape
@@ -180,8 +181,8 @@ golden stays byte-identical. Updated coordinates and focused guard tests pass.
 wrong side, wrong type, missing action and missing type. Known protection now
 requires the order shape; incomplete named live stops remain UNKNOWN. Focused
 protection, short-side and map-reference tests pass in
-`/tmp/nofx-protection-shape-after.log`; map golden/prompt tests pass in
-`/tmp/nofx-map-guard-after.log`. These are synthetic book tests, not a live
+`/tmp/vl-protection-shape-after.log`; map golden/prompt tests pass in
+`/tmp/vl-map-guard-after.log`. These are synthetic book tests, not a live
 unprotected-position incident. Final combined suite remains due.
 
 ## Missing permission and inherited authorizations
@@ -191,7 +192,7 @@ the loopback wire while the cycle logged fail closed. Missing verdicts now retir
 unplaced authorizations. Retirement query/write/panic errors propagate to the
 cycle, stopping new placement. The same production-cycle test with an injected
 SQLite retirement failure sends nothing; the existing allowed-versus-declined
-scenario test still passes (`/tmp/nofx-unknown-arm-after.log`). Named system-map
+scenario test still passes (`/tmp/vl-unknown-arm-after.log`). Named system-map
 coordinates were synchronized and the map reference check passes.
 
 ## Current admission covers the placement pass
@@ -201,7 +202,7 @@ the wire after current scenario quality was refused. Production now passes the
 IDs of successfully admitted/saved rows into placement. Old rows cannot inherit
 permission merely from their stored armed state. A failed refresh does not enter
 that set. Focused missing-permission, quality-refusal, valid-placement and split
-fixtures pass (`/tmp/nofx-arm-current-gate-after.log`). Direct offline/debug
+fixtures pass (`/tmp/vl-arm-current-gate-after.log`). Direct offline/debug
 placement helpers retain their existing explicitly invoked test semantics.
 
 ## Frozen tape and session retirement
@@ -209,7 +210,7 @@ placement helpers retain their existing explicitly invoked test semantics.
 [A] A tickOnce regression reproduced an unplaced NY authorization surviving
 16:05 CT on unchanged bars. Session/news cutoff enforcement now precedes data
 cadence skips, using the tick clock. The regression and existing class32
-wall-clock scheduling/EOD/T1 tests pass (`/tmp/nofx-wallclock-retire-after.log`).
+wall-clock scheduling/EOD/T1 tests pass (`/tmp/vl-wallclock-retire-after.log`).
 The test uses an unconnected synthetic SIM adapter and temporary ledger; it
 does not claim a real resting broker order was cancelled.
 
@@ -222,11 +223,11 @@ production-router fixture covers own order, foreign order and an inconsistent
 foreign fill attached to an owned order; all pass. Before repair the fixture
 failed because the stopped owned trader was unavailable, so that before run
 does not itself reproduce a foreign-data disclosure. No real records were read.
-Logs: `/tmp/nofx-order-fills-before.log`, `/tmp/nofx-order-fills-after.log`.
+Logs: `/tmp/vl-order-fills-before.log`, `/tmp/vl-order-fills-after.log`.
 
 ## Combined Go verification checkpoint
 
-[A] At `99a065430cb28ced23c4992fe04ff9b13787dc3d`, `go test ./...` passed (all packages; `/tmp/nofx-repair-full-suite-03.log`). Focused race tests passed (`/tmp/nofx-repair-race-03.log`); this was not an all-package race run. `go build ./...` passed using explicit GIT_DIR/GIT_WORK_TREE to prevent Go's VCS discovery selecting the unrelated read-only `/tmp/.git` ancestor. The initial build failed at VCS discovery, not compilation. Build output: `/tmp/nofx-repair-build-02.log`, exit0. These results precede subsequent C#/frontend/overlay/limit repairs and do not certify their combined head.
+[A] At `99a065430cb28ced23c4992fe04ff9b13787dc3d`, `go test ./...` passed (all packages; `/tmp/vl-repair-full-suite-03.log`). Focused race tests passed (`/tmp/vl-repair-race-03.log`); this was not an all-package race run. `go build ./...` passed using explicit GIT_DIR/GIT_WORK_TREE to prevent Go's VCS discovery selecting the unrelated read-only `/tmp/.git` ancestor. The initial build failed at VCS discovery, not compilation. Build output: `/tmp/vl-repair-build-02.log`, exit0. These results precede subsequent C#/frontend/overlay/limit repairs and do not certify their combined head.
 
 ## Limit registration commits admission
 
@@ -234,11 +235,11 @@ Logs: `/tmp/nofx-order-fills-before.log`, `/tmp/nofx-order-fills-after.log`.
 
 ## Browser overlay revision binding
 
-[A] HTTP overlay edits require the plan ID, plan version and overlay revision the owner viewed. The current-plan response exposes these fields. The API rejects stale drafts with409; the serialized plan writer rechecks latest version, lifecycle and overlay revision so planner appends or competing edits cannot invalidate a checked snapshot before append. Read failures refuse edits. Temporary-database tests cover valid edits, stale plan/overlay drafts, competing writers and retired plans; all pass (`/tmp/nofx-overlay-revision-02.log`). The first test run exposed an invalid test fixture with zero scenarios; it was corrected to a schema-valid plan. No pre-repair runtime incident is claimed. Frontend snapshot propagation is a coordinated pending lane. Historical Q&A records do not store authored version; their separate test-op guard is not promoted to equivalent revision binding.
+[A] HTTP overlay edits require the plan ID, plan version and overlay revision the owner viewed. The current-plan response exposes these fields. The API rejects stale drafts with409; the serialized plan writer rechecks latest version, lifecycle and overlay revision so planner appends or competing edits cannot invalidate a checked snapshot before append. Read failures refuse edits. Temporary-database tests cover valid edits, stale plan/overlay drafts, competing writers and retired plans; all pass (`/tmp/vl-overlay-revision-02.log`). The first test run exposed an invalid test fixture with zero scenarios; it was corrected to a schema-valid plan. No pre-repair runtime incident is claimed. Frontend snapshot propagation is a coordinated pending lane. Historical Q&A records do not store authored version; their separate test-op guard is not promoted to equivalent revision binding.
 
 ## Request-local AgentBeta model selection
 
-[A] Concurrent authenticated `/status` requests with two synthetic model owners reproduced replacement of the shared/background AI client. Each chat/SSE request now owns a freshly selected client for all downstream calls; history, setup state and per-user flow locks stay shared through an explicit owner reference, never a copied mutex. An unconfigured authenticated user no longer inherits the default owner's credentials. Focused identity/model/history tests pass under `-race`; all agent package tests pass (`/tmp/nofx-agent-client-after.log`, `/tmp/nofx-agent-full-04.log`). Extra tests check model identity stability and shared setup/history ownership. The first reproduction fixture lacked chat configuration and panicked; the initialized fixture then reproduced the actual shared-client mutation (`/tmp/nofx-agent-client-before-02.log`). No AI endpoint was called. This does not claim all background lifecycle or trade-confirmation ownership issues are solved.
+[A] Concurrent authenticated `/status` requests with two synthetic model owners reproduced replacement of the shared/background AI client. Each chat/SSE request now owns a freshly selected client for all downstream calls; history, setup state and per-user flow locks stay shared through an explicit owner reference, never a copied mutex. An unconfigured authenticated user no longer inherits the default owner's credentials. Focused identity/model/history tests pass under `-race`; all agent package tests pass (`/tmp/vl-agent-client-after.log`, `/tmp/vl-agent-full-04.log`). Extra tests check model identity stability and shared setup/history ownership. The first reproduction fixture lacked chat configuration and panicked; the initialized fixture then reproduced the actual shared-client mutation (`/tmp/vl-agent-client-before-02.log`). No AI endpoint was called. This does not claim all background lifecycle or trade-confirmation ownership issues are solved.
 
 ## Integrated C# lifecycle repair
 
@@ -258,8 +259,8 @@ from the next candle (pivot close used as an open-time lookup), and the first
 bar's volume vanished from each aggregate bucket. Exact pivot-open identity
 now supplies the wick while existing presentation/confirmation timestamps stay
 separate. Aggregate initialization includes first-bar volume. Before tests failed;
-focused swing/T3/zone/formation tests pass (`/tmp/nofx-swing-evidence-before.log`,
-`/tmp/nofx-swing-evidence-after.log`). This corrects measured inputs; no strategy
+focused swing/T3/zone/formation tests pass (`/tmp/vl-swing-evidence-before.log`,
+`/tmp/vl-swing-evidence-after.log`). This corrects measured inputs; no strategy
 expectancy improvement or recalibrated zone-width distribution is claimed.
 
 ## Delayed flatten lifecycle
@@ -290,7 +291,7 @@ consistency corrections, not changes to the owner's saved values.
 recorded in `dependency-alerts-at-review.jsonl` (not inferred from the push banner).
 Go gnark-crypto0.19.0 is replaced by advisory-patched0.19.2 for GHSA-fj2x-735w-74vq.
 Only that module version and sums changed. Wallet package builds (no tests); mcp
-package tests pass (`/tmp/nofx-gnark-compatibility.log`). Four compatible npm
+package tests pass (`/tmp/vl-gnark-compatibility.log`). Four compatible npm
 updates are integrated in f5409132; their private updated install and combined
 frontend suite are recorded in the web repair report. This establishes affected
 versions, not exploitation or reachability in MNQ trading. Default-branch alert
@@ -302,8 +303,8 @@ closure requires publication/scanning and is not claimed from a local update.
 observations, contradicting its own daily-input contract. Before regression
 failed; requesting completed daily observations preserves both CME weeks and
 the known prior-week high, low and close. Focused weekly tests pass in
-`/tmp/nofx-weekly-calendar-after.log`; before evidence is
-`/tmp/nofx-weekly-calendar-before.log`. This fixes the active weekly reader. The old mid-week watch was removed
+`/tmp/vl-weekly-calendar-after.log`; before evidence is
+`/tmp/vl-weekly-calendar-before.log`. This fixes the active weekly reader. The old mid-week watch was removed
 from the loop; its legacy same-resolver fixture is not production parity proof. Generic epoch aggregation for other consumers and the information
 limits of daily bars for intraday weekend-gap timing remain separate issues.
 

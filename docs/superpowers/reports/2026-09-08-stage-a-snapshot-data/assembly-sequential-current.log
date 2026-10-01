@@ -6,7 +6,7 @@
 09-08 16:50:41 [INFO] trader/auto_trader.go:44 [trader_id=stage-a-benchmark] 📓 read facts: void=8 · floor=19.3 pts (1.5×ATR5m 12.89) · scope=1m×300 since=1788818400000 (cap 500)
 goos: linux
 goarch: amd64
-pkg: nofx/trader
+pkg: vl/trader
 cpu: Intel(R) Core(TM) Ultra 9 285K
 BenchmarkStageAWholeInputAssembly-24    	09-08 16:50:42 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
 09-08 16:50:42 [INFO] trader/auto_trader.go:44 [trader_id=stage-a-benchmark] 🗺️ G2 HTF detection @ASIA: 90 level(s) map[EQH·15m:1 EQH·1h:1 EQH·4h:1 EQL·15m:1 EQL·1h:1 EQL·4h:1 iFVG(bull)·15m:28 iFVG(bull)·1h:28 iFVG(bull)·4h:28]
@@ -1527,4 +1527,4 @@ BenchmarkStageAWholeInputAssembly-24    	09-08 16:50:50 [INFO] store/store.go:89
 09-08 16:50:54 [INFO] trader/auto_trader.go:44 [trader_id=stage-a-benchmark] 📓 read facts: void=8 · floor=19.3 pts (1.5×ATR5m 12.89) · scope=1m×300 since=1788818400000 (cap 500)
      100	  23515908 ns/op	       565.0 dropped-batches
 PASS
-ok  	nofx/trader	14.854s
+ok  	vl/trader	14.854s

@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // H7 — prove the SEAM end to end: the executor prompt's level assembly reads the

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL Day-Plan — ACCEPTANCE GATE (2026-08-15, pre-Monday)
 
 **LINE 1: STEP 0 FAIL — STOPPED. Missing: (1) W12 + F0 exist nowhere in the repo; (2) tree
@@ -83,7 +84,7 @@ tree would certify a source state that isn't HEAD and isn't deployed.
 |---|---|---|
 | Running process | PID 1113391, started **12:40:26** CT today | `ps lstart` |
 | Binary on disk | mtime **12:40:24** CT; `/proc/PID/exe` resolves cleanly (not deleted) → running == on-disk | `stat`, `readlink` |
-| Embedded VCS | `vcs.revision=cf66b016…` + **`vcs.modified=true`** | `go version -m nofx-bin` |
+| Embedded VCS | `vcs.revision=cf66b016…` + **`vcs.modified=true`** | `go version -m vl-bin` |
 | HEAD | `cbf12870` (W11), committed **12:46:38** CT | `git log` |
 
 Timeline: build 12:40 from **cf66b016 + dirty** → W11 committed 12:46 → W11b files

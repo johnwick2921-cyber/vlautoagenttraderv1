@@ -18,10 +18,10 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/provider/databento"
-	"nofx/provider/ninjatrader"
+	"vl/kernel"
+	"vl/market"
+	"vl/provider/databento"
+	"vl/provider/ninjatrader"
 )
 
 func main() {

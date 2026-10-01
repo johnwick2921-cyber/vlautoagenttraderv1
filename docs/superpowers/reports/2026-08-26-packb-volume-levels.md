@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-26 · Pack B Volume Levels + Role/Bias Addendum (owner override)
 
 **PR:** [#78](https://github.com/johnwick2921-cyber/nofx/pull/78) · **Branch:** `feat/volume-levels`
@@ -23,7 +24,7 @@ typeEvidence per spec with citation comments (0.90/0.85/0.80/0.60 — provisiona
 
 ## B2 — tiering
 
-- seats 12→8, proximity 2.0→1.5 — **overwritten with note** (DB backup `~/nofx-backups/pack-b/data.db.0800`, WHERE-scoped on strategy `a5b7662e`).
+- seats 12→8, proximity 2.0→1.5 — **overwritten with note** (DB backup `~/vl-backups/pack-b/data.db.0800`, WHERE-scoped on strategy `a5b7662e`).
 - `TIER1_PROXIMITY_TICKS=12` — a pattern grades above C only within 12 ticks of a Tier-1 anchor.
 - min_grade **Tier-1 exception** (Tier-1 rows/labels survive any min_grade cut).
 - HTF seats **Tier-1-or-displacement** (`isHTFSeatEligible`: Tier-1 kind OR reversal zone).

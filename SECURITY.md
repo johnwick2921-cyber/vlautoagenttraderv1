@@ -8,7 +8,7 @@
 
 ## 🛡️ Security Overview
 
-NOFX is an AI-powered trading system that handles real funds and API credentials. We take security seriously and appreciate the security community's efforts to responsibly disclose vulnerabilities.
+VL is an AI-powered trading system that handles real funds and API credentials. We take security seriously and appreciate the security community's efforts to responsibly disclose vulnerabilities.
 
 **Critical Areas:**
 - 🔑 API key storage and handling
@@ -37,7 +37,7 @@ We provide security updates for the following versions:
 
 ### ⚠️ Please DO NOT Publicly Disclose
 
-If you discover a security vulnerability in NOFX, please **DO NOT**:
+If you discover a security vulnerability in VL, please **DO NOT**:
 - ❌ Open a public GitHub Issue
 - ❌ Discuss it on social media (Twitter, Reddit, etc.)
 - ❌ Share it in Telegram/Discord groups
@@ -49,10 +49,7 @@ Public disclosure before a fix is available puts all users at risk.
 
 **Step 1: Report Privately**
 
-Contact core team directly:
-- **Tinkle:** [@Web3Tinkle on Twitter](https://x.com/Web3Tinkle) (DM)
-
-**Alternative:** Encrypted communication via [Keybase](https://keybase.io/) (if available)
+Report the vulnerability via a private GitHub security advisory on this repository.
 
 **Step 2: Include These Details**
 
@@ -138,7 +135,7 @@ We offer rewards for valid security vulnerabilities:
 
 ## 🔐 Security Best Practices (For Users)
 
-To keep your NOFX deployment secure:
+To keep your VL deployment secure:
 
 ### 1. API Key Management
 ```bash
@@ -153,11 +150,11 @@ api_key = "abc123..."  # NEVER DO THIS
 ### 2. Database Security
 ```bash
 # ✅ Set proper permissions
-chmod 600 nofx.db
+chmod 600 data.db
 chmod 600 config.json
 
 # ❌ DON'T: Leave files world-readable
-chmod 777 nofx.db  # NEVER DO THIS
+chmod 777 data.db  # NEVER DO THIS
 ```
 
 ### 3. Network Security
@@ -185,10 +182,9 @@ iptables -A INPUT -p tcp --dport 8080 -j DROP
 ```bash
 # Check for updates regularly
 git pull origin main
-go build -o nofx
+go build -o vl-bin
 
 # Subscribe to security advisories
-# Watch GitHub releases: https://github.com/NoFxAiOS/nofx/releases
 ```
 
 ---
@@ -232,15 +228,14 @@ We thank the following security researchers for responsibly disclosing vulnerabi
 ## 📞 Contact
 
 **For security issues ONLY:**
-- 🐦 **Twitter DM:** [@Web3Tinkle](https://x.com/Web3Tinkle)
+- Report privately via a GitHub security advisory on this repository.
 
 **For general questions:**
 - See [CONTRIBUTING.md](CONTRIBUTING.md)
-- Join [Telegram Community](https://t.me/nofx_dev_community)
 
 ---
 
-**Thank you for helping keep NOFX secure!** 🔒
+**Thank you for helping keep VL secure!** 🔒
 
 ---
 
@@ -248,7 +243,7 @@ We thank the following security researchers for responsibly disclosing vulnerabi
 
 ## 🛡️ 安全概述
 
-NOFX 是一个处理真实资金和 API 凭证的 AI 交易系统。我们非常重视安全，并感谢安全社区负责任地披露漏洞的努力。
+VL 是一个处理真实资金和 API 凭证的 AI 交易系统。我们非常重视安全，并感谢安全社区负责任地披露漏洞的努力。
 
 **关键领域：**
 - 🔑 API 密钥存储和处理
@@ -277,7 +272,7 @@ NOFX 是一个处理真实资金和 API 凭证的 AI 交易系统。我们非常
 
 ### ⚠️ 请勿公开披露
 
-如果您在 NOFX 中发现安全漏洞，请**不要**：
+如果您在 VL 中发现安全漏洞，请**不要**：
 - ❌ 公开创建 GitHub Issue
 - ❌ 在社交媒体上讨论（Twitter、Reddit 等）
 - ❌ 在 Telegram/Discord 群组中分享
@@ -289,10 +284,7 @@ NOFX 是一个处理真实资金和 API 凭证的 AI 交易系统。我们非常
 
 **步骤 1：私下报告**
 
-直接联系核心团队：
-- **Tinkle:** [@Web3Tinkle on Twitter](https://x.com/Web3Tinkle)（私信）
-
-**替代方案：** 通过 [Keybase](https://keybase.io/) 加密通信（如果可用）
+请通过本仓库的 GitHub 私有安全通告（security advisory）报告漏洞。
 
 **步骤 2：包含这些详细信息**
 
@@ -378,7 +370,7 @@ NOFX 是一个处理真实资金和 API 凭证的 AI 交易系统。我们非常
 
 ## 🔐 安全最佳实践（用户指南）
 
-保护您的 NOFX 部署安全：
+保护您的 VL 部署安全：
 
 ### 1. API 密钥管理
 ```bash
@@ -393,11 +385,11 @@ api_key = "abc123..."  # 永远不要这样做
 ### 2. 数据库安全
 ```bash
 # ✅ 设置适当的权限
-chmod 600 nofx.db
+chmod 600 data.db
 chmod 600 config.json
 
 # ❌ 不要：让文件全局可读
-chmod 777 nofx.db  # 永远不要这样做
+chmod 777 data.db  # 永远不要这样做
 ```
 
 ### 3. 网络安全
@@ -425,10 +417,9 @@ iptables -A INPUT -p tcp --dport 8080 -j DROP
 ```bash
 # 定期检查更新
 git pull origin main
-go build -o nofx
+go build -o vl-bin
 
 # 订阅安全公告
-# 关注 GitHub 发布：https://github.com/NoFxAiOS/nofx/releases
 ```
 
 ---
@@ -459,11 +450,11 @@ go build -o nofx
 ## 📞 联系方式
 
 **仅限安全问题：**
-- 🐦 **Twitter 私信：** [@Web3Tinkle](https://x.com/Web3Tinkle)
+- 请通过本仓库的 GitHub 私有安全通告（security advisory）报告。
 
 **一般问题：**
-- 加入 [Telegram 社区](https://t.me/nofx_dev_community)
+- 请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
 
-**感谢您帮助保持 NOFX 的安全！** 🔒
+**感谢您帮助保持 VL 的安全！** 🔒

@@ -1,29 +1,30 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 8 complete audit evidence
 
 Source revision: b4376246c2c502ecedd119c6a44a27956ed2f616. These files supersede the old parent directory's replay/payoff conclusions. `report.md` is the same text as the report at the parent reports path. The retained CSV/JSON files permit offline reproduction without production access.
 
-All analysis scripts were authored/run under `/home/hoang/nofx-analysis/vet-08-complete-0905`. SQLite extraction opens `file:/home/hoang/nofx/data/data.db?mode=ro`, sets `PRAGMA query_only=on` and uses one transaction. It never calls store.New. `extract.py` embeds each query beside the corresponding output. `logs.py` reads retained logs and preserves original path/line anchors; mirrored `.en` NT8 logs are excluded from counts. `rule_config.json` retains only nonsecret fields read recursively from the matching strategy's config; it is an as-of observation, not a history of resolved runtime settings.
+All analysis scripts were authored/run under `/home/hoang/vl-analysis/vet-08-complete-0905`. SQLite extraction opens `file:/home/hoang/vl/data/data.db?mode=ro`, sets `PRAGMA query_only=on` and uses one transaction. It never calls store.New. `extract.py` embeds each query beside the corresponding output. `logs.py` reads retained logs and preserves original path/line anchors; mirrored `.en` NT8 logs are excluded from counts. `rule_config.json` retains only nonsecret fields read recursively from the matching strategy's config; it is an as-of observation, not a history of resolved runtime settings.
 
 Reproduce using a scratch copy of this directory and a checkout of the pinned source. The Go source imports only pure kernel/market functions; the two unexported arithmetic functions are copied verbatim and checked by verify.py. Run from the checkout so its source remains the module root; use the external modfile to avoid edits to repository module files. No package main for the application or gate-jwt is invoked.
 
 ```bash
 # Optional fresh read-only extraction (changes the as-of data):
-python3 /home/hoang/nofx-analysis/vet-08-complete-0905/extract.py
-python3 /home/hoang/nofx-analysis/vet-08-complete-0905/logs.py
+python3 /home/hoang/vl-analysis/vet-08-complete-0905/extract.py
+python3 /home/hoang/vl-analysis/vet-08-complete-0905/logs.py
 
 # Offline run from the pinned repository checkout:
 GOTOOLCHAIN=local \
-GOCACHE=/home/hoang/nofx-analysis/vet-08-complete-0905/go-cache \
+GOCACHE=/home/hoang/vl-analysis/vet-08-complete-0905/go-cache \
 GOPROXY=off \
 /home/hoang/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.3.linux-amd64/bin/go run \
 -mod=readonly \
--modfile=/home/hoang/nofx-analysis/vet-08-complete-0905/offline.mod \
-/home/hoang/nofx-analysis/vet-08-complete-0905/replay.go \
-/home/hoang/nofx-analysis/vet-08-complete-0905
-python3 /home/hoang/nofx-analysis/vet-08-complete-0905/analyze.py
-python3 /home/hoang/nofx-analysis/vet-08-complete-0905/bounds.py
-python3 /home/hoang/nofx-analysis/vet-08-complete-0905/reaper.py
-python3 /home/hoang/nofx-analysis/vet-08-complete-0905/verify.py /home/hoang/nofx-vet-08-complete
+-modfile=/home/hoang/vl-analysis/vet-08-complete-0905/offline.mod \
+/home/hoang/vl-analysis/vet-08-complete-0905/replay.go \
+/home/hoang/vl-analysis/vet-08-complete-0905
+python3 /home/hoang/vl-analysis/vet-08-complete-0905/analyze.py
+python3 /home/hoang/vl-analysis/vet-08-complete-0905/bounds.py
+python3 /home/hoang/vl-analysis/vet-08-complete-0905/reaper.py
+python3 /home/hoang/vl-analysis/vet-08-complete-0905/verify.py /home/hoang/vl-vet-08-complete
 ```
 
 `replay_checkpoints.csv`: independent retained-minute necessary checks, not actual callbacks. `replay_static.csv`: disabled/validated scenarios and legs. `replay_opportunities.csv`: all enabled opportunities including those with no passing endpoint. `reach_bounds.csv`: independent price reach after a qualifying checkpoint; fill-indicator envelopes are conditional on that sampled information model and not an upper bound on a real full-book replay. No later P&L is computed. `reaper_observed.csv`: current three-valued predicate at the observed final stale-cancel timestamp; uses the preceding received snapshot and a 30-second configured interval, assumes cache continuity. It cannot reconstruct hypothetical broker inventory.

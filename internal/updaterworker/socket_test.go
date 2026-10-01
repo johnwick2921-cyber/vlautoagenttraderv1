@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
-	"nofx/internal/updaterwire"
-	"nofx/internal/updaterwire/wireserver"
+	"vl/internal/updaterjob"
+	"vl/internal/updaterwire"
+	"vl/internal/updaterwire/wireserver"
 )
 
 // serve puts the rig's worker behind the REAL socket (wireserver.Listen on

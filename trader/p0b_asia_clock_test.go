@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // P0-B (2026-08-18) — ASIA CLOCK. Two defects, two guarantees:

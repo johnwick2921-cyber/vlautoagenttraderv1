@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VETERAN REVIEW — PART C · THE PROMPTS + THE SYSTEM
 
 Sub-agent C · 2026-09-05 · section 7 · read-only.
@@ -48,7 +49,7 @@ Read the amendment before you read a number in this report.
 - **No SQLite store.** The dispatch's `planner_rejected_prompts` query is
   unexecutable. §7.7 states the exact SQL I would have run, marks it BLOCKED, and
   answers from code plus the committed CSVs.
-- `~/nofx-analysis/` does not exist. `docs/superpowers/plans/VL-MASTER-PLAN-v2.md`
+- `~/vl-analysis/` does not exist. `docs/superpowers/plans/VL-MASTER-PLAN-v2.md`
   does not exist.
 - **`docs/superpowers/research/` contains only `INDEX.md`.** Rounds 1–9 are not
   in this tree. So when the prompt cites "2,827-day NQ sample" or "40k-sample
@@ -125,7 +126,7 @@ I did not eyeball this. Commands and output:
 # render the real prompts (scratch overlay; nothing written into the tree)
 $ VET_OUT=$SCRATCH/out go test -overlay=$SCRATCH/overlay.json ./kernel/ -run TestVeteranDump -v
 --- PASS: TestVeteranDump (0.00s)
-ok  nofx/kernel 0.013s
+ok  vl/kernel 0.013s
 ```
 
 The overlay test calls the production builders directly:
@@ -929,11 +930,11 @@ hides the 81 env knobs that decide how a trade is entered — while reporting
 | `GET /api/config/resolved` (token `cmd/gate-jwt`) | **not executed** | No engine running. Substituted with `api/config_resolved.go`, `store/knob_registry*.go`, `store/resolve_source.go` and the committed `knob_registry_labels.csv` / `knoblive.txt`. Stated in §7.10. No token was read or printed. |
 | `planner_rejected_prompts` rejects per rule, last 7 days | **BLOCKED — no store** | Exact SQL given in §7.7. Answered from `store/planner_rejected.go` (the writer, the cap, the 19 restrictions) plus `subsystemB_planner_rejects.csv` (n=55, 09-01 → 09-04 CT) and `subsystemB_reject_class_tally.csv`. |
 | Query `trader_positions`, `armed_orders`, `plans`, `touch_outcomes`, `decision_records`, `nt8_order_snapshots`, `bars` | **BLOCKED — no store** | Not required by section 7; noted so the lead can see the boundary. |
-| Replay the tape · read the NT8 logs · run `~/nofx-analysis/` scripts | **not executed** | No tape, no NT8 logs, no `~/nofx-analysis/` in this environment. |
+| Replay the tape · read the NT8 logs · run `~/vl-analysis/` scripts | **not executed** | No tape, no NT8 logs, no `~/vl-analysis/` in this environment. |
 | `docs/superpowers/plans/VL-MASTER-PLAN-v2.md` | **absent from the tree** | Confirmed missing. |
 | `docs/superpowers/research/` rounds 1–9 | **absent from the tree** | Only `INDEX.md` is present. This is why §7.4 rows 5–7 are labelled *[R]-by-reference, unverifiable here* rather than [R]. |
 | Real DeepSeek token counts | **substituted** | No DeepSeek tokenizer available. Used `o200k_base` + `cl100k_base` (both reported), and quoted the PROVIDER's own `prompt=` counts from the journal where they exist (`2026-09-02-deepseek-e2e-audit.md:346`). |
-| Claim a branch / run `deploy/nofx-claim.sh` / merge | **not executed** | Amendment rule 5: the lead owns all git in this session. I ran no git command. |
+| Claim a branch / run `deploy/vl-claim.sh` / merge | **not executed** | Amendment rule 5: the lead owns all git in this session. I ran no git command. |
 
 Every other measurement in this report is command output I produced in this
 environment, or a `file:line` / `report:line` I read here.

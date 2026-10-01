@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Pre-Reopen Hotfix Wave — F1–F5 (BUILD & PROVE, NO DEPLOY)
 
 - Branch: `fix/pre-reopen` (off `dev` @ `72c8bfd8`)
 - Date: 2026-08-28
 - Status: **proven & parked — awaiting owner "go cutover"** (target Saturday, before Sunday 17:00 CT market reopen)
-- Canon: WORKTREE LAW (isolated `~/nofx-preop`) · GUIDE CONTENT LAW (env knob documented in same wave)
+- Canon: WORKTREE LAW (isolated `~/vl-preop`) · GUIDE CONTENT LAW (env knob documented in same wave)
 
 ## Why this wave exists
 
@@ -113,7 +114,7 @@ flat-gate (DB OPEN=0, armed non-terminal=0, API positions `[]`, NT8 positions 0)
 
 ## Merge + build
 - `fix/pre-reopen` (9e4a3ae0) → `dev` merge commit **`db9245dcccbab2bdd415d2c9ff4dadaadab7e7f2`** (pushed).
-- Temp-clone build at merge sha (`/tmp/nofx-cut`, clean tree): `vcs.revision=db9245dcccbab2bdd415d2c9ff4dadaadab7e7f2 · vcs.modified=false · vcs.time=2026-08-28T23:43:34Z` — matches merge sha exactly.
+- Temp-clone build at merge sha (`/tmp/vl-cut`, clean tree): `vcs.revision=db9245dcccbab2bdd415d2c9ff4dadaadab7e7f2 · vcs.modified=false · vcs.time=2026-08-28T23:43:34Z` — matches merge sha exactly.
 
 ## Flat-gate ALL-ORIGIN (market closed — trivially flat, all four quoted)
 - DB `trader_positions` status=OPEN: **0**
@@ -122,7 +123,7 @@ flat-gate (DB OPEN=0, armed non-terminal=0, API positions `[]`, NT8 positions 0)
 - `armed_orders` non-terminal (armed|working): **0** (+ risk: concurrent_trades=0, kill_switch armed)
 
 ## Swap (18:49:50 CT)
-- `nofx-bin` 8666db0b → `nofx-bin.prev.prereopen`; new binary rev db9245dc; `deploy/RELEASE=db9245dcccbab2bdd415d2c9ff4dadaadab7e7f2`
+- `vl-bin` 8666db0b → `vl-bin.prev.prereopen`; new binary rev db9245dc; `deploy/RELEASE=db9245dcccbab2bdd415d2c9ff4dadaadab7e7f2`
 - `kill -9 3619700` → systemd relaunch (restart counter 84) → **PID 3747820**
 
 ## Boot block (18:49:55, PID 3747820)

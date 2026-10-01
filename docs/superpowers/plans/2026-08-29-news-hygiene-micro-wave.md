@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # News-Hygiene Micro-Wave — build & park record
 
 **Branch:** `fix/news-hygiene` · **Base:** `f08a300a` (rewritten dev) · **Deploy:** Monday flat window, before NFP Friday 2026-09-04. Parked for the owner's "go".

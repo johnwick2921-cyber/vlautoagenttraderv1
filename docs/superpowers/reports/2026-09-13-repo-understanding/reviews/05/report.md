@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 05 — conversational agent management and HTTP boundaries
 
-Base: `63968be62e44db2fb07a92883e02127b9064b0be`. Read-only isolated worktree: `/tmp/nofx-understanding-market-20260913`. Assignment: 14 source files, **9,224 lines fully manually read**, **299 named functions/methods** inventoried. Anonymous callbacks are grouped under their enclosing function. No assigned source gaps. Additional dependency coverage is explicitly partial in `reads.json`; this is not a whole-agent or whole-repository certification.
+Base: `63968be62e44db2fb07a92883e02127b9064b0be`. Read-only isolated worktree: `/tmp/vl-understanding-market-20260913`. Assignment: 14 source files, **9,224 lines fully manually read**, **299 named functions/methods** inventoried. Anonymous callbacks are grouped under their enclosing function. No assigned source gaps. Additional dependency coverage is explicitly partial in `reads.json`; this is not a whole-agent or whole-repository certification.
 
 Evidence notation: **[A]** directly read source/control flow; **[B]** consequence inferred from that source; **[C]** unresolved hypothesis. No test, exploit, trade execution, live API request, or DB mutation was performed. Findings below are static concerns, not reproduced runtime incidents. Source hashes were verified again while assembling artifacts.
 

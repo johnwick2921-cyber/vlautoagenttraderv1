@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
+	nt "vl/provider/ninjatrader"
 )
 
 // OrderBookDisplay is one received account/symbol-scoped frame for read-only

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // ── SEAM ROWS ARE NEVER GRADED (owner ruling 2026-09-03) ─────────────────────

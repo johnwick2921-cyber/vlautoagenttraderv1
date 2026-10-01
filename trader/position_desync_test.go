@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
-	"nofx/trader/types"
+	"vl/store"
+	"vl/trader/types"
 )
 
 // P0 hotfix (2026-08-19) — the skip gate defers to live broker truth.

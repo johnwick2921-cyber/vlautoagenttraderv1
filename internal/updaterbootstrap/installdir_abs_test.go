@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 // PR #200 fold #18: --install-dir is absolutized at the CLI entry. Before

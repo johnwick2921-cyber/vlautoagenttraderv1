@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 func TestAuthorizeRefusesToMintACodeTheServerWouldRefuse(t *testing.T) {

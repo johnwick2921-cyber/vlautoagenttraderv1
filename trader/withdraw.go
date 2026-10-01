@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W0 (f) — WITHDRAW RESTING ENTRIES, ENTRIES ONLY ────────────

@@ -6,5 +6,5 @@
 --- FAIL: TestResearchReadOnlyRelativePathReadsExistingArchive (0.05s)
     runtime_test.go:89: read-only relative path failed: SQL logic error: out of memory (1)
 FAIL
-FAIL	nofx/researchsnapshot	0.054s
+FAIL	vl/researchsnapshot	0.054s
 FAIL

@@ -3,7 +3,7 @@ package api
 import (
 	"path/filepath"
 
-	"nofx/internal/installpath"
+	"vl/internal/installpath"
 )
 
 // The release-dir resolver lives in internal/installpath — the ONE resolver,

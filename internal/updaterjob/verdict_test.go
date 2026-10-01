@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"vl/internal/censuswalk"
 )
 
 // The verdict reader is app-linkable, so it must not be able to WRITE a
@@ -23,10 +25,14 @@ func TestVerdictFileHasNoWriter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	module, err := censuswalk.ModulePath(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatalf("module path: %v", err)
+	}
 	allowedImports := map[string]bool{
 		"bytes": true, "encoding/json": true, "errors": true, "fmt": true, "io": true, "io/fs": true,
 		"os": true, "path/filepath": true, "regexp": true, "strings": true, "syscall": true, "time": true,
-		"nofx/internal/updaterwire": true,
+		module + "/internal/updaterwire": true,
 	}
 	for _, im := range f.Imports {
 		p, _ := strconv.Unquote(im.Path.Value)

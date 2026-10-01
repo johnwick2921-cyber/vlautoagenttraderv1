@@ -24,7 +24,7 @@ cols: ['trade_date', 'source', 'events_json', 'created_at']
 slices mentioning FOMC/Fed rate: ['2026-08-19', '2026-09-16']
 event keys: ['currency', 'impact', 'time', 'title']
 --- static fallback path ---
-112:// the static events STORE as source=static rows. Path: env NOFX_CALENDAR_STATIC,
+112:// the static events STORE as source=static rows. Path: env VL_CALENDAR_STATIC,
 113:// else ./calendar_static_t1.json (repo-shipped template). Shape: JSON array of
-117:	path := os.Getenv("NOFX_CALENDAR_STATIC")
+117:	path := os.Getenv("VL_CALENDAR_STATIC")
 119:		path = "calendar_static_t1.json"

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Dispatch 105 — formation evidence and bounded seam feasibility
 
 Read-only source audit at pinned revision `770e2297`. Evidence **[A]** means
@@ -325,7 +326,7 @@ docs/superpowers/CLAUDE-canon.md
 290044296c482afdee04acd740d189b89bfd040d 2026-09-10T11:55:22-05:00 docs(canon): two different rc 3s sat on adjacent lines
 
 docs/superpowers/reports/2026-09-10-every-detector-every-timeframe.md
-050cd5c1549b656ed06f6eaae8954b55a723ede4 2026-09-10T13:18:24-05:00 docs(report): A15 — nofx/trader is RED on dev, and it is not the lunch band
+050cd5c1549b656ed06f6eaae8954b55a723ede4 2026-09-10T13:18:24-05:00 docs(report): A15 — vl/trader is RED on dev, and it is not the lunch band
 
 kernel/levels.go
 57d0ff5802c3c633b570a125016ac4f0e5a054ef 2026-09-10T12:51:56-05:00 W-TF D1/D2/C6: the daily family reaches the map, and timeframe becomes identity

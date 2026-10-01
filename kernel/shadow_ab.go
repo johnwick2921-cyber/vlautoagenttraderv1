@@ -4,7 +4,7 @@ import (
 	"math"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // SHADOW A/B COUNTERFACTUALS (E8, entry-mechanics 2026-08-30) — Sep-9's

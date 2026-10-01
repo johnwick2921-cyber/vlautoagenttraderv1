@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // FVG ENTRY MODEL (dispatch 2026-08-26) — FVG becomes a first-class PLAY, not

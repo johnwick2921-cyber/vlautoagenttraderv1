@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"nofx/internal/retry"
-	"nofx/telemetry"
+	"vl/internal/retry"
+	"vl/telemetry"
 )
 
 // Plan 4 Task 24 — retry + circuit breaker for transient HTTP errors

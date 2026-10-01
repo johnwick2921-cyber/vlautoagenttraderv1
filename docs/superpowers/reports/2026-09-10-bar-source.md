@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # One contract, two sources — Section G report (bar-source wave)
 
 **Owner ruling 2026-09-10 22:5x CT** ("ahead of everything") · SIM-only, MNQ, one contract
-**Branch:** `fix/bar-source` · **claim:** `barsource-554049f5/nofx-d7[09b1a9]` @ `edd483ef` · base `33fee48e` (dev tip at accept; dev has not moved since)
+**Branch:** `fix/bar-source` · **claim:** `barsource-554049f5/vl-d7[09b1a9]` @ `edd483ef` · base `33fee48e` (dev tip at accept; dev has not moved since)
 **Head at report:** see the marker · **Suites:** Go 31 ok / 0 fail / 0 build-fail at `7c344804` (bs3, 23:27–23:3x CDT); store + trader/ninjatrader re-run green at `4a95e023`; merged-head run recorded in the marker · vitest/tsc in the marker
 **Specs built from:** `git log -1 -- docs/superpowers/reports/2026-09-10-contract-roll.md` → `1cad9213` (unchanged since)
 
@@ -255,7 +256,7 @@ differ from the backup afterwards).
   historical=n mixed=n off-scale=n null=n · replay-never-overwrites-live=on ·
   unverified-replay-held=on · replay-hold: held=n released=n discarded=n ·
   scale-mismatch threshold=0.50% AND 20x median body [I] · mismatches this
-  process: …|none`. `NOFX_BAR_SCALE_MISMATCH_PCT` / `_MULT` now actually read
+  process: …|none`. `VL_BAR_SCALE_MISMATCH_PCT` / `_MULT` now actually read
   (the comment had promised them — class 19).
 - **D9 — docs:** SYSTEM-MAP, RULEBOOK, guide card "One contract, two sources",
   AUDIT-CHECKLIST class 118.
@@ -338,7 +339,7 @@ D4/D5; the P0 says so on every boot that trips it.
 
 ## Rollback
 
-- **Binary:** pre-swap binary copied to `~/nofx-backups/bin/` named by the rev
+- **Binary:** pre-swap binary copied to `~/vl-backups/bin/` named by the rev
   it holds (A13); `deploy/RELEASE` reverts with it.
 - **DB:** backed up BEFORE the migration boot, `PRAGMA quick_check` and md5 in
   the marker. The migration is additive (a column, an index, label UPDATEs on

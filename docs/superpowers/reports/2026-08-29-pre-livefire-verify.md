@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Full System Re-Verification — Pre-Live-Fire Sweep (synthesis, 2026-08-29 CT)
 
-- **Orchestration:** 4 parallel read-only agents (C1 18-class catalog · C2 deployed-state + readiness ledger · C3 Sunday-path fixtures · C4 data truth), isolated worktree `~/nofx-rev` @ running rev `451926d9ff85`, branch `docs/pre-livefire-verify`. Main tree + parked bot untouched (MAIN-TREE LOCK LAW). Orchestrator re-verified top claims **[O]** — including one agent flag overturned (touch drought: false).
+- **Orchestration:** 4 parallel read-only agents (C1 18-class catalog · C2 deployed-state + readiness ledger · C3 Sunday-path fixtures · C4 data truth), isolated worktree `~/vl-rev` @ running rev `451926d9ff85`, branch `docs/pre-livefire-verify`. Main tree + parked bot untouched (MAIN-TREE LOCK LAW). Orchestrator re-verified top claims **[O]** — including one agent flag overturned (touch drought: false).
 - **Rules:** R1 fresh evidence this run · R2 independent math · R3 twin paths · R4 file:line · R5 S/A/B/C · R6 PROVEN/EVENT-WAIT/BROKEN/UNVERIFIED · R7 pnl_corrected + excluded_null_pnl (354) · R8 trader binding · R9 1m bars. Market closed — no liveness faked.
 - **Committed evidence:** two new fixture files ship with this report (`trader/fastmarket_drift_fixture_test.go`, `provider/ninjatrader/c3_burst_fixture_test.go`).
 
@@ -15,7 +16,7 @@
 | A2 | B | VWAP residual 0.90pt at a fresh cut (best window; ≤0.05pt unproven — stored pdVWAP rows may be model-adjusted, indistinguishable from windowing with bars alone). | FAIL-TO-VERIFY | C4 |
 | A3 | B | Stamp gap post-cutover: 13 levels across 10 plan versions unstamped — all HTF-seat injections (`Demand·1h (HTF)`) that escape the T2 graded-pool stamp. | PROVEN | C4 |
 | A4 | C | Boot line `🧠 AI params in force … max_tokens=32768` is misleading — that is the general client cap; the planner silently gets 65536 via code default. | PROVEN | C1 |
-| A5 | C | Main tree holds `M store/position_query.go` (comment-only churn) with **no `~/nofx-main.lock`** while dirty — law gap, no collision. | PROVEN | C1/C2 |
+| A5 | C | Main tree holds `M store/position_query.go` (comment-only churn) with **no `~/vl-main.lock`** while dirty — law gap, no collision. | PROVEN | C1/C2 |
 
 **Rejected agent flags [O]:** C4's "08-28 touch_episodes drought (0 rows)" is a units artifact — correct CT grouping shows **08-26=45 · 08-27=101 · 08-28=142** (newest 15:58 CT Friday). Touch telemetry healthy.
 

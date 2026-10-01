@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	ntTrader "nofx/trader/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // Phase 4 — POST-EXIT IMMEDIATE RESCAN (final-bundle 2026-08-19).

@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // B2 (T6, fail-register wave 2026-08-20) — ONE feed-aliveness policy.

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ENTRY-MECHANICS E6 (2026-08-30) — the time_hold confirm primitive: price

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-31 — min_side_levels removal (park record)
 
 ## What shipped (owner ruling 2026-08-31)
@@ -26,7 +27,7 @@ to plumb.
 - Code commit `e86ae805784b7b0ee10299a3c977738a813d0cd4` (dev).
 - Flat-gate: DB OPEN 0 · non-terminal orders 0 · armed non-terminal 0 · API
   `/api/positions` `[]` · NT8 snapshot count=0.
-- Swap: `nofx-bin` → `nofx-bin.prev.boot` (rollback = 5d7be58a); `deploy/RELEASE`
+- Swap: `vl-bin` → `vl-bin.prev.boot` (rollback = 5d7be58a); `deploy/RELEASE`
   = e86ae805; kill -9 1077758 → systemd relaunch PID 1123319.
 - Boot checklist (08:13:51):
   - `🔐 BOOT INTEGRITY OK — rev e86ae805784b · goldens PASS`
@@ -51,5 +52,5 @@ to plumb.
 
 ## Rollback
 
-`nofx-bin.prev.boot` = rev `5d7be58a`. Revert = swap back + kill -9 +
+`vl-bin.prev.boot` = rev `5d7be58a`. Revert = swap back + kill -9 +
 `deploy/RELEASE` back to `5d7be58ae17bd1165da11179185bbf01c8568a63`.

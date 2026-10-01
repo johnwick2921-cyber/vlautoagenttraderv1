@@ -10,5 +10,5 @@ test rc: 1
 --- FAIL: TestIdentityE2DistinctCloseAndMissingInputs (0.00s)
     level_identity_test.go:83: different formation closes aliased
 FAIL
-FAIL	nofx/kernel	0.005s
+FAIL	vl/kernel	0.005s
 FAIL

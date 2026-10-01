@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // T9 (2026-08-27) — the σ math is PROVEN correct: volume-weighted standard

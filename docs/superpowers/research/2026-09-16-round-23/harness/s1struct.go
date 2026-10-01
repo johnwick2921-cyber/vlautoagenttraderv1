@@ -13,7 +13,7 @@ package main
 // own TestStructureMapReadsTrendImpulseAndPremiumDiscount pin (trend=up,
 // swings ≈118/108 on the identical zigzag fixture) through this port.
 
-import "nofx/market"
+import "vl/market"
 
 // s1 constants — verbatim defaults from S1's structure.go (STRUCTURE_SWING_K,
 // STRUCTURE_MIN_SWING_ATR, DefaultStructureTrendSwings).

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/telemetry"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // placeConfirmMaxWait is the existing broker-book freshness bound. It is not

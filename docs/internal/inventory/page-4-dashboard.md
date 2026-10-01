@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Page 4 — Dashboard (`/traders` + `/dashboard`)
 
 This page has two distinct routes and primary components, but operationally they form one user-facing surface: `/traders` is the list, `/dashboard` is the per-trader detail. Both are documented here together.
@@ -32,7 +33,7 @@ This page has two distinct routes and primary components, but operationally they
 | `ConfigStatusGrid` | `web/src/components/trader/ConfigStatusGrid.tsx` | — | /traders summary panel |
 | `TradersList` | `web/src/components/trader/TradersList.tsx` | — | /traders rows |
 | `PunkAvatar` | `web/src/components/common/PunkAvatar.tsx` | — | Both routes |
-| `NofxSelect` | `web/src/components/ui/select.tsx` | — | Both routes |
+| `VLSelect` | `web/src/components/ui/select.tsx` | — | Both routes |
 | `StatCard` (inline) | `TraderDashboardPage.tsx:1088-1154` | 66 | Dashboard equity/balance/pnl/positions cards |
 
 ### API endpoints captured during runtime

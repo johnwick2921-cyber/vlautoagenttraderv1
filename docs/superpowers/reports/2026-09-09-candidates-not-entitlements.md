@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W3 — CANDIDATES, NOT ENTITLEMENTS (Dispatch 103)
 
 **Branch** `fix/candidates-not-entitlements` · claim `a9bea0a3`, session
-`candidates-not-entitlements-51524a30/nofx-66 [fd21dd]`
+`candidates-not-entitlements-51524a30/vl-66 [fd21dd]`
 **Code merged** in the combined boot head `8941ec68` (with 102 bars-horizon, 101 rider, 104
 session-risk), booted and marked `18bf1e01` 2026-09-10 06:58 CT
 **Docs merged** `240e8cd4` (`--ff-only`, +53 −1)
@@ -28,7 +29,7 @@ Full working: `2026-09-09-candidates-data/C1-C6-measured.md`.
 **A third premise was withdrawn by me, not by the dispatch.** I reported the levels boot line as
 printing a literal `seats=8`. It does not: `0e016635` (2026-09-04) fixed it to
 `seats=per-trader (default 8, hard cap 12)` and that fix **is in the running rev**. My claim came
-from grepping `nofx_2026-09-0*.log` and quoting the **09-03** line as current.
+from grepping `vl_2026-09-0*.log` and quoting the **09-03** line as current.
 
 ## 2. The owner's ruling, and what it changed
 

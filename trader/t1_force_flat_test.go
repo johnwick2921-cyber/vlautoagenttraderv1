@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // t1ForceFlatDue is the pure decision boundary for the W3.4 T-2min red-news

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // W1 — the planner-read guard + daily-roll window, proven with a weekend clock

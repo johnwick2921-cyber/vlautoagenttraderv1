@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # The contract roll — Section G report
 
 **Dispatch 104 (roll wave)** · owner hoang · 2026-09-10 · SIM-only, MNQ, one contract
-**Branch:** `fix/contract-roll` · **claim:** `roll-554049f5/nofx-8e[88742a]` @ `86b26c5f`
+**Branch:** `fix/contract-roll` · **claim:** `roll-554049f5/vl-8e[88742a]` @ `86b26c5f`
 **Binary rev:** `0070fc79` · guide commit `1caf7264` (frontend-only)
 **Running rev at start:** `cd8f9978` (105's boot), pid 2826476 — per 105's report
 **Suites at `0070fc79`:** Go **30 ok / 3 test failures, all in 101's
@@ -212,7 +213,7 @@ the time I could tell them. vitest 421/421, tsc clean.
 
 ## Rollback
 
-- **Binary:** `~/nofx-backups/bin/` — the pre-swap binary is copied there named
+- **Binary:** `~/vl-backups/bin/` — the pre-swap binary is copied there named
   by the rev it holds before the swap (A13); `deploy/RELEASE` reverts with it.
 - **DB:** `data.db` is backed up BEFORE the migration boot with `PRAGMA
   integrity_check` quoted in the marker. The migration is additive (a column +

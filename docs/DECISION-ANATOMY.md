@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DECISION ANATOMY — how this bot decides, in plain language
 
 *The canonical owner's map of the machine as deployed 2026-08-19 (`1d67a675`, PR #55). For any cycle you can answer: why did it enter, why didn't it, what is it doing while holding — and where the knob is. Line references are clickable in the repo.*
@@ -78,7 +79,7 @@ Supporting cast: the **dodge** watches the 5m close boundary (defers a cycle tha
 
 ## 5 · "Why didn't it trade?" — the debugging guide
 
-Look at the decision card / `data/nofx_YYYY-MM-DD.log` (journald drops INFO lines under load — the file log is complete). Find your line:
+Look at the decision card / `data/vl_YYYY-MM-DD.log` (journald drops INFO lines under load — the file log is complete). Find your line:
 
 | You see | It means | The knob |
 |---|---|---|
@@ -121,5 +122,5 @@ Look at the decision card / `data/nofx_YYYY-MM-DD.log` (journald drops INFO line
 - **C3 — scenario confirmations are STRUCTURED and machine-computed since the fail-register wave**: every scenario authors `confirm{rule: touch|1x5m_close|2x5m_close|15m_close, ref_price, side}`; the executor prompt shows a machine-computed "MET / NOT MET" line and the card a chip. The prose trigger/invalid remain AI-judged, and dots/chips stay **advisory by design (D1 ruling)** — a hard scenario-state gate would recreate the suppression class; AI judgment + plan discipline + the risk gates decide. `target_chain` stays guidance (the executor AI sets TP — D2); `quality` stays informational (D3). `strict` plan-mode now also band-grades the entry against the cited scenario (off-band or SL/TP-inconsistent = B, not A).
 - **C4 — FIXED (fail-register wave):** `5m_close` now evaluates as authored — exactly one 5m close — and the death log names the rule that actually fired.
 - **C5 — Studio Save button**: toggling a control does nothing until you press **Save** — the Aug-19 "toggles left no trace" mystery was exactly this.
-- **C6 — journald still drops INFO lines** until you run the one root step: `sudo bash deploy/install-journald.sh`. WARN+ already reaches the dashboard regardless; the complete file log is `data/nofx_YYYY-MM-DD.log`.
+- **C6 — journald still drops INFO lines** until you run the one root step: `sudo bash deploy/install-journald.sh`. WARN+ already reaches the dashboard regardless; the complete file log is `data/vl_YYYY-MM-DD.log`.
 - **C7 — two clocks disagree politely**: the C2 drift line can read a slow AI call as "drift" (log-only), and the entry-side feed staleness check tolerates ~10× more silence than the in-position 120s alert. Both documented in the report's FAIL table.

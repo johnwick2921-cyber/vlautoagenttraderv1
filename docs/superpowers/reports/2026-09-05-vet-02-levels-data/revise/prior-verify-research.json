@@ -1,5 +1,5 @@
 {
- "lens": "RESEARCH LABELS + TRADER LOGIC \u2014 every [R]/[T]/[I] belief in 2026-09-05-vet-02-levels.md checked against the named study, the live store (mode=ro), a byte-identical re-run of the author's q11 replay (my copy under ~/nofx-analysis/vet-02-0905/verify-research/, OUT redirected), the code on the worktree HEAD 070ef996 (= 2a66d91c + docs), and /api/expectancy (200); plus the strongest case against each of the 11 recommendations from the report's own evidence.",
+ "lens": "RESEARCH LABELS + TRADER LOGIC \u2014 every [R]/[T]/[I] belief in 2026-09-05-vet-02-levels.md checked against the named study, the live store (mode=ro), a byte-identical re-run of the author's q11 replay (my copy under ~/vl-analysis/vet-02-0905/verify-research/, OUT redirected), the code on the worktree HEAD 070ef996 (= 2a66d91c + docs), and /api/expectancy (200); plus the strongest case against each of the 11 recommendations from the report's own evidence.",
  "checked": 58,
  "findings": [
   {

@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # LEVEL-KIND REPLAY — D1′ over the persisted MNQ tape, mechanical level kinds only
 
-**READ-ONLY · no lock · no engine code · scripts in `~/nofx-analysis/level-replay/`**
+**READ-ONLY · no lock · no engine code · scripts in `~/vl-analysis/level-replay/`**
 Owner: hoang · Live rev `e1b1176844aa` · Report opened **2026-09-02 ~18:30 CT**
 Instrument source: `docs/superpowers/reports/2026-09-02-detector-redesign.md` (D1′ amendment)
-Base scripts (imported, not copied): `~/nofx-analysis/detector-redesign/detectors.py`
+Base scripts (imported, not copied): `~/vl-analysis/detector-redesign/detectors.py`
 
 ---
 
@@ -27,7 +28,7 @@ completed session days and state the n-limits explicitly.
 ### Instrument (D1′)
 
 `detectors.detect_symmetric_v2(bars, level, k, Δ, H=12, exit_on='close')`, imported
-from `~/nofx-analysis/detector-redesign/detectors.py` (path quoted). Barriers anchored
+from `~/vl-analysis/detector-redesign/detectors.py` (path quoted). Barriers anchored
 on the level (`L ± k·Δ`); episode opens on a bar that straddles `L` while the previous
 bar does not; `entry_side` from the previous bar's close; exit when a CLOSE crosses a
 barrier (next bar onward); both in one bar → `ambiguous_span`; horizon `H=12` →
@@ -248,7 +249,7 @@ None distinguishes 0.50 at n≤10. TSMOM states use the deep 1d table (quoted); 
 CSVs (this branch, `docs/superpowers/reports/exports/2026-09-02-level-replay/`):
 `episodes.csv` (every episode: level id, kind, day, ordinal, k, Δ, band, entry side, exit side, outcome,
 bars to exit, MFE/MAE, session) · `per_kind.csv` · `bias_table.csv`.
-Scripts (outside the repo, per A1): `~/nofx-analysis/level-replay/{build_inputs,replay,bias_table}.py`.
+Scripts (outside the repo, per A1): `~/vl-analysis/level-replay/{build_inputs,replay,bias_table}.py`.
 
 ---
 
@@ -370,4 +371,4 @@ calibrated instrument. Session (holdout): ASIA 0.662 (n=68) · LONDON 0.692 (n=5
 ## 2.6 CSVs + scripts
 
 `exports/2026-09-02-level-replay/episodes_1h.csv` (582 episodes) · `per_kind_1h.csv` · `calibration_1h.csv`.
-Scripts: `~/nofx-analysis/level-replay/replay_1h.py` (+ `replay.py` Part 1).
+Scripts: `~/vl-analysis/level-replay/replay_1h.py` (+ `replay.py` Part 1).

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // touchBars builds ascending 1m bars; each bar is [open,high,low,close,vol].

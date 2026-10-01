@@ -3,9 +3,9 @@ package trader
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/kernel"
-	"nofx/levelidentity"
-	"nofx/store"
+	"vl/kernel"
+	"vl/levelidentity"
+	"vl/store"
 	"time"
 )
 

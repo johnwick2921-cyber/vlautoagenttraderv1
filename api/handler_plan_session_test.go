@@ -7,8 +7,8 @@ package api
 import (
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func TestW15ResolveRequestedSession(t *testing.T) {

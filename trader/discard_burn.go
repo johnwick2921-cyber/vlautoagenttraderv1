@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // Phase 2 — DISCARD-BURN (final-bundle 2026-08-19).

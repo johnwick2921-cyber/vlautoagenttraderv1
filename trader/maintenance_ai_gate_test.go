@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // W-ONE-BUTTON M2 site 1 — the AI entry path, AT THE PRODUCTION CALL SITE

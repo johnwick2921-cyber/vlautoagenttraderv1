@@ -1,6 +1,6 @@
 package api
 
-import "nofx/logger"
+import "vl/logger"
 
 func (s *Server) planStructuralGeometry(traderID, planID string, version int) any {
 	rows, err := s.store.StructuralGeometryFor(traderID, planID, version)

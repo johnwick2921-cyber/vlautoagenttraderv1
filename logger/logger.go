@@ -37,7 +37,7 @@ func (f *compactFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		}
 		// Skip logrus internal and our logger.go
 		if !strings.Contains(file, "logrus") && !strings.HasSuffix(file, "logger/logger.go") {
-			// Get package name from path (e.g., "nofx/manager/trader_manager.go" -> "manager")
+			// Get package name from path (e.g., "vl/manager/trader_manager.go" -> "manager")
 			dir := filepath.Dir(file)
 			pkg := filepath.Base(dir)
 			caller = fmt.Sprintf("%s/%s:%d", pkg, filepath.Base(file), line)
@@ -60,6 +60,14 @@ func init() {
 // ============================================================================
 // Initialization functions
 // ============================================================================
+
+// LogFileNameFor builds the bot's log file name for the given local date:
+// <dir>/vl_<YYYY-MM-DD>.log. The updater's boot-line prediction
+// (logPrefixForBinary in internal/updaterworker) must agree with the prefix
+// this function writes — a parity test pins the pair.
+func LogFileNameFor(dir string, t time.Time) string {
+	return filepath.Join(dir, fmt.Sprintf("vl_%s.log", t.Format("2006-01-02")))
+}
 
 // Init initializes the global logger
 // If config is nil, uses default configuration (console output, info level)
@@ -87,7 +95,7 @@ func Init(cfg *Config) error {
 	// Setup log file output (write to both stdout and file)
 	logDir := "data"
 	if err := os.MkdirAll(logDir, 0755); err == nil {
-		logFileName := filepath.Join(logDir, fmt.Sprintf("nofx_%s.log", time.Now().Format("2006-01-02")))
+		logFileName := LogFileNameFor(logDir, time.Now())
 		f, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err == nil {
 			logFile = f
@@ -102,7 +110,7 @@ func Init(cfg *Config) error {
 
 	Log.SetReportCaller(true)
 
-	// P2-2 — age-based prune of data/nofx_*.log behind LOG_RETENTION_DAYS
+	// P2-2 — age-based prune of data/vl_*.log behind LOG_RETENTION_DAYS
 	// (default OFF). Never deletes today's or the running boot's file.
 	pruneLogFilesAtInit()
 

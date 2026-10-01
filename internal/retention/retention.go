@@ -17,8 +17,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"nofx/safe"
-	"nofx/store"
+	"vl/safe"
+	"vl/store"
 )
 
 // Config carries the four retention knobs in days. 0 = OFF.

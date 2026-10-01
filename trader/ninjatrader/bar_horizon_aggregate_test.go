@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // ── 101 D3(b) — ONE HORIZON WARN PER (symbol,tf) PER WINDOW, CALLERS AGGREGATED ──

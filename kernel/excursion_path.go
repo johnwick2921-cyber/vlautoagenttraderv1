@@ -1,6 +1,6 @@
 package kernel
 
-import "nofx/market"
+import "vl/market"
 
 // TRADE EXCURSION LOGGING (wave 1A, 2026-09-02) — the intrabar path of a
 // position from entry to exit, on the 1m tape.

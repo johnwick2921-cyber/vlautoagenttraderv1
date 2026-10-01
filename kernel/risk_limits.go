@@ -16,9 +16,9 @@ package kernel
 
 import (
 	"fmt"
-	"nofx/config"
-	"nofx/logger"
-	"nofx/store"
+	"vl/config"
+	"vl/logger"
+	"vl/store"
 	"os"
 	"strconv"
 	"strings"

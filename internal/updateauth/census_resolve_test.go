@@ -47,7 +47,7 @@ import (
 // resolveTrust is the oracle: for the one admitted call in files (clear(key),
 // <x>.VerifyMAC(key, …) or <adm>.PasswordStillBound(key, …)), whether go/types
 // resolves its trusted name to the trusted object — the universe's builtin
-// clear; the PkgName of nofx/internal/updateauth; a variable DEFINED by `:=`
+// clear; the PkgName of vl/internal/updateauth; a variable DEFINED by `:=`
 // from a call of <the updateauth PkgName>.LoadAdmin.
 func resolveTrust(t *testing.T, files map[string]string) (kind string, trusted bool) {
 	t.Helper()
@@ -164,13 +164,13 @@ type importerFunc func(string) (*types.Package, error)
 
 func (f importerFunc) Import(path string) (*types.Package, error) { return f(path) }
 
-// resolveModule is the synthetic module's path (mintBase writes "module nofx").
-const resolveModule = "nofx"
+// resolveModule is the synthetic module's path (mintBase writes "module vl").
+const resolveModule = "vl"
 
 // resolvePrelude declares, once per matrix file, the stand-ins a shadow binds.
 const resolvePrelude = `package api
 
-import "nofx/internal/updateauth"
+import "vl/internal/updateauth"
 
 type sinkFn func([]byte)
 

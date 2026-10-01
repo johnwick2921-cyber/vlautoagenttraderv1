@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 	"strings"
 
-	"nofx/logger"
+	"vl/logger"
 )
 
 // ARMED ORDERS (Wave 2, 2026-08-27) — the durable ledger of scenario-arm

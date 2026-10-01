@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // THE PROMPT AND THE CARD MUST QUOTE THE SAME RE-PLAN CAP.

@@ -2,7 +2,7 @@ package researchsnapshot
 
 import (
 	"fmt"
-	"nofx/telemetry"
+	"vl/telemetry"
 	"os"
 	"sort"
 	"strconv"

@@ -22,8 +22,8 @@ import (
 	"os"
 	"time"
 
-	"nofx/internal/installpath"
-	"nofx/store"
+	"vl/internal/installpath"
+	"vl/store"
 )
 
 // geteuid is a seam so the root refusal is testable.

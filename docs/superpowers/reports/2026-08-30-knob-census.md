@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Knob & Constant Provenance Census — 2026-08-30
 
 Every tunable number in the money path, labeled by where it came from.
-Read-only dispatch (isolated worktree `nofx-census` @ origin/dev `a9aa9a04`).
+Read-only dispatch (isolated worktree `vl-census` @ origin/dev `a9aa9a04`).
 Live bot rev: `451926d9ff85` (pre-sunday cutover). NO code changes, NO DB writes.
 
 ## Label legend

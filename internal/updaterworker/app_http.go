@@ -9,9 +9,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
+
+	"vl/internal/envcompat"
 )
 
 // CutoverTokenEnv is the environment variable the worker reads the app's
@@ -46,7 +47,7 @@ func NewHTTPApp(base string) (*HTTPApp, error) {
 	if h := u.Hostname(); h != "127.0.0.1" && h != "::1" && h != "localhost" {
 		return nil, fmt.Errorf("updaterworker: app base must be loopback, got host %q", h)
 	}
-	tok := strings.TrimSpace(os.Getenv(CutoverTokenEnv))
+	tok := strings.TrimSpace(envcompat.EnvValue("CUTOVER_TOKEN")) // R5 removes: VL_/NOFX_ prefix is envcompat's business
 	if tok == "" {
 		return nil, ErrNoToken
 	}

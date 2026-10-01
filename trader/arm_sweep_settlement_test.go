@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
-	nttrader "nofx/trader/ninjatrader"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 func TestArmSweepLeavesPendingCancelForSnapshotConfirmation(t *testing.T) {

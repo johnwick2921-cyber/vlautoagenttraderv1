@@ -7,8 +7,8 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
-	"nofx/telemetry"
+	"vl/market"
+	"vl/telemetry"
 )
 
 // mdCtx builds a Context whose MarketDataMap gives `sym` the entry-reference price.

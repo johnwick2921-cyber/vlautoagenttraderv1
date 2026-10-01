@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL DAY-PLAN CAMPAIGN — P5 · THE DOOR — completion report (+ ★ RESTART 2 handoff)
 
 **Date:** 2026-08-15 · **Branch:** main · **Head after P5:** `41afa1b6`
@@ -150,19 +151,19 @@ separate follow-up, tracked for the next hardening train.
 a flat/safe state, and the first NY planner read fires **Monday 08:25 CT**, lighting
 the whole door + learning loop on a live plan.
 
-**Commands (owner, from `/home/hoang/nofx`):**
+**Commands (owner, from `/home/hoang/vl`):**
 ```bash
 git pull                                  # HEAD 41afa1b6
-go build -o nofx-bin ./... && echo BUILD OK
+go build -o vl-bin ./... && echo BUILD OK
 cd web && npm run build && cd ..          # ship the P5 door
 # rebuild the AddOn? NO — P5 touched NO ninjascript/*.cs. Skip the F5 dance.
-kill -9 $(pgrep -f nofx-bin)              # systemd Restart=on-failure respawns the new binary
+kill -9 $(pgrep -f vl-bin)              # systemd Restart=on-failure respawns the new binary
 ```
-(`sudo systemctl restart nofx` is classifier-blocked here; SIGKILL is the deploy
+(`sudo systemctl restart vl` is classifier-blocked here; SIGKILL is the deploy
 per CLAUDE.md. Day_plan is already armed from ★1 — no re-arm needed.)
 
 **VERIFY after boot (5 checks):**
-1. **Clean boot** — `journalctl -u nofx -n 40` shows the new binary up, no panic,
+1. **Clean boot** — `journalctl -u vl -n 40` shows the new binary up, no panic,
    bars flowing (`📊`/`KEY LEVELS`).
 2. **API graceful** — `GET /api/plan/today?trader_id=<id>` returns `found:false`
    (no-plan-yet) until Monday's read — never a 500.
@@ -177,4 +178,4 @@ per CLAUDE.md. Day_plan is already armed from ★1 — no re-arm needed.)
 **Deferred (post-★2, owner-run):** the blind-mark owner hour (10 days per the axes
 above) · the first weekly matched-random freeze (fires the next Sunday, shows
 WARMING). **vlauto:** DEFERRED — one propagation train after ★2 (format-patch from
-this nofx HEAD; build + goldens green there + secret-scan; owner runs the push).
+this vl HEAD; build + goldens green there + secret-scan; owner runs the push).

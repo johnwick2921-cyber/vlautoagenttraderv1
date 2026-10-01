@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // Leg4FromBrokerAt computes leg 4 from the broker's book, cross-checked against

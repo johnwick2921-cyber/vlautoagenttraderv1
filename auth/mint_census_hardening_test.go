@@ -145,7 +145,7 @@ func mintFuncValue() (string, error) {
 
 func TestFutureIatCensusCountsTokenLiteralAndFunctionValueMinters(t *testing.T) {
 	root := t.TempDir()
-	writeSynthetic(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	writeSynthetic(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	writeSynthetic(t, root, "auth/auth.go", syntheticSignToken)
 	writeSynthetic(t, root, "api/zz_mint.go", syntheticEvadingMinters)
 	minters, iatSites, offenders, _, err := futureIatCensus(root)
@@ -185,7 +185,7 @@ func GenerateJWT(userID, email string) (string, error) {
 
 const syntheticLoginRegister = `package api
 
-import "nofx/auth"
+import "vl/auth"
 
 func login() (string, error)    { return auth.GenerateJWT("u", "e") }
 
@@ -194,7 +194,7 @@ func register() (string, error) { return auth.GenerateJWT("u", "e") }
 
 func TestUnscopedMintCensusCountsTokenLiteralAndFunctionValueMinters(t *testing.T) {
 	root := t.TempDir()
-	writeSynthetic(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	writeSynthetic(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	writeSynthetic(t, root, "auth/auth.go", syntheticGenerateJWT)
 	writeSynthetic(t, root, "api/handler_user.go", syntheticLoginRegister)
 	writeSynthetic(t, root, "api/zz_mint.go", syntheticEvadingMinters)

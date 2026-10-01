@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // genBars builds n bars trending up by `step`/bar with a fixed range and a small

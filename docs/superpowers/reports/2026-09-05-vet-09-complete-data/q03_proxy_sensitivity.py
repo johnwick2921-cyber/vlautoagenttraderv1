@@ -1,6 +1,6 @@
 from pathlib import Path
 import json, math, subprocess
-root=Path('/home/hoang/nofx-vet-09-complete');d=root/'docs/superpowers/reports'
+root=Path('/home/hoang/vl-vet-09-complete');d=root/'docs/superpowers/reports'
 x=json.loads((d/'2026-09-05-vet-05-execution-data/complete/q31_verified.json').read_text())
 def quant(a,p):
  a=sorted(a);i=(len(a)-1)*p;k=int(i);return a[k]+(a[min(k+1,len(a)-1)]-a[k])*(i-k)

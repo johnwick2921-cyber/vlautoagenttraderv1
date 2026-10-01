@@ -2,7 +2,7 @@ package agent
 
 import (
 	"fmt"
-	"nofx/branding"
+	"vl/branding"
 )
 
 // BuildAgentPrompt constructs the full system prompt with live API documentation injected.

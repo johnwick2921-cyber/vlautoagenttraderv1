@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"nofx/logger"
+	"vl/internal/envcompat"
+	"vl/logger"
 )
 
 // ADHERENCE REGRADE (owner ruling 2026-09-03) — flag-guarded migration for the
@@ -111,18 +112,18 @@ func (s *PositionStore) AdherenceDistribution() (map[string]int, error) {
 }
 
 // BackupBeforeRegrade takes an online sqlite3 backup to
-// ~/nofx-backups/adherence-regrade/<stamp>.db before the migration writes.
+// ~/vl-backups/adherence-regrade/<stamp>.db before the migration writes.
 //
 // The guarded-write protocol requires a backup first, and this write rewrites
 // published grades. It uses the same online .backup mechanism the C1 timer
 // uses, so it is safe against a live process. A failure here ABORTS the
 // migration: no backup, no write.
 func BackupBeforeRegrade(dbPath, stamp string) (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("resolve home: %w", err)
+	root := envcompat.BackupRoot() // R5 removes: vl-backups wins, nofx-backups only when ~/nofx exists
+	if root == "" {
+		return "", fmt.Errorf("resolve home for the backup dir")
 	}
-	dir := filepath.Join(home, "nofx-backups", "adherence-regrade")
+	dir := filepath.Join(root, "adherence-regrade")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", fmt.Errorf("create backup dir: %w", err)
 	}

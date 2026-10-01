@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLEAN-MACHINE READINESS CHECKLIST — 2026-09-08
 
 Companion to `docs/superpowers/runbooks/2026-09-08-clean-machine.md`. One line
@@ -8,7 +9,7 @@ keys are named.
 ## Windows / WSL
 - [ ] WSL2 systemd enabled — `systemctl is-system-running` → `running` or `degraded` (docs/AUTOSTART.md §0)
 - [ ] Mirrored networking on — Windows browser opens `http://localhost:3000` (web/vite.config.ts:8-13)
-- [ ] Host TZ America/Chicago — `timedatectl` → `Time zone: America/Chicago` (nofx-backup.timer:6-7)
+- [ ] Host TZ America/Chicago — `timedatectl` → `Time zone: America/Chicago` (vl-backup.timer:6-7)
 - [ ] NinjaTrader 8 installed, logged in, B's OWN SIM account created — NT8 Accounts window shows it
 
 ## Toolchains
@@ -20,7 +21,7 @@ keys are named.
 ## Repo & build
 - [ ] Clone at B's own path — `git rev-parse HEAD` prints B's chosen sha (Step 2)
 - [ ] `deploy/RELEASE` coherent with the sha B will build — `cat deploy/RELEASE` matches or prefixes the planned build (kernel/boot_integrity.go:84-95)
-- [ ] Backend builds from the clone — `go build -o nofx-bin . && go version -m ./nofx-bin | grep vcs.revision` → `vcs.revision=<sha>` (install-autostart.sh:45-47)
+- [ ] Backend builds from the clone — `go build -o vl-bin . && go version -m ./vl-bin | grep vcs.revision` → `vcs.revision=<sha>` (install-autostart.sh:45-47)
 - [ ] Frontend bundle exists — `ls web/dist/index.html` → the file (api/ui_serving.go:34; UNTESTED `npm run build` in the audit wave)
 
 ## .env (names only)
@@ -35,10 +36,10 @@ keys are named.
 - [ ] No rows copied from A — positions/armed/equity counts all 0 on day one (C4)
 
 ## Units
-- [ ] `nofx.service` active — `systemctl status nofx --no-pager | grep Active` → `active (running)` (deploy/nofx.service)
-- [ ] `nofx-web.service` active (optional) — `systemctl status nofx-web --no-pager | grep Active` → `active (running)`
-- [ ] Backup timer installed and paths fixed — `systemctl --user list-timers | grep nofx-backup` shows next 05:00/17:30 CT; `systemctl --user start nofx-backup.service` then `journalctl --user -u nofx-backup.service -n 5` → `wrote …db.gz` (nofx-backup.service:7 hardcoded path edited)
-- [ ] Clock-guard timer installed and paths fixed — `systemctl --user list-timers | grep clock-guard` every 15 min; start it once → journal line `clock-guard status=OK|CRITICAL` (nofx-clock-guard.service:9)
+- [ ] `vl.service` active — `systemctl status vl --no-pager | grep Active` → `active (running)` (deploy/vl.service)
+- [ ] `vl-web.service` active (optional) — `systemctl status vl-web --no-pager | grep Active` → `active (running)`
+- [ ] Backup timer installed and paths fixed — `systemctl --user list-timers | grep vl-backup` shows next 05:00/17:30 CT; `systemctl --user start vl-backup.service` then `journalctl --user -u vl-backup.service -n 5` → `wrote …db.gz` (vl-backup.service:7 hardcoded path edited)
+- [ ] Clock-guard timer installed and paths fixed — `systemctl --user list-timers | grep clock-guard` every 15 min; start it once → journal line `clock-guard status=OK|CRITICAL` (vl-clock-guard.service:9)
 
 ## NT8 AddOn
 - [ ] Repo `.cs` copied to Documents AddOns folder — `ls "/mnt/c/Users/<B>/Documents/NinjaTrader 8/bin/Custom/AddOns/"` → all FIVE: VLTraderTCPClient.cs + VLBarsSubscriptionManager.cs + VLContractResolver.cs + VLHistoryPull.cs + VLInstrumentLookup.cs (HARD RULE — the 2026-09-16 partner install needed all five; three was a stale list)
@@ -46,28 +47,28 @@ keys are named.
 - [ ] FULL NT8 restart after compile — NT8 exited and relaunched (AddOns do not hot-reload)
 
 ## First boot (journal)
-- [ ] Encryption service up — `journalctl -u nofx -n 200 | grep 'Encryption service'` → `initialized successfully`
-- [ ] BOOT INTEGRITY OK — `journalctl -u nofx | grep 'BOOT INTEGRITY'` → `OK — rev <sha> · … · goldens PASS` (never REFUSED)
-- [ ] Fresh-DB line — `journalctl -u nofx | grep 'No trader configurations'` → the line (main.go:273-277)
-- [ ] UI served — `journalctl -u nofx | grep -E '🖥'` → served from web/dist (NOT served-by=none) (main.go:299-307)
-- [ ] Calendar loaded — `journalctl -u nofx | grep '🗓'` → session calendar line, unsourced dates counted (main.go D6)
+- [ ] Encryption service up — `journalctl -u vl -n 200 | grep 'Encryption service'` → `initialized successfully`
+- [ ] BOOT INTEGRITY OK — `journalctl -u vl | grep 'BOOT INTEGRITY'` → `OK — rev <sha> · … · goldens PASS` (never REFUSED)
+- [ ] Fresh-DB line — `journalctl -u vl | grep 'No trader configurations'` → the line (main.go:273-277)
+- [ ] UI served — `journalctl -u vl | grep -E '🖥'` → served from web/dist (NOT served-by=none) (main.go:299-307)
+- [ ] Calendar loaded — `journalctl -u vl | grep '🗓'` → session calendar line, unsourced dates counted (main.go D6)
 
 ## Provisioning (UI)
 - [ ] First user registered — login succeeds on :3000 (handler_user.go:52-55)
 - [ ] DeepSeek model row saved with B's key — Settings shows the model, enabled (store/ai_model.go:28)
 - [ ] NinjaTrader exchange row: `nt_data_dir` non-empty, instrument `MNQ`, qty 1 — Settings shows it (auto_trader.go:678-680; manager/trader_manager.go:681)
 - [ ] Strategy created, `max_contracts_per_order` ≤ 2 — Strategy page shows it (auto_trader_orders.go:25,49-60)
-- [ ] Trader created and BOUND to B's SIM account — trader card shows the account; `journalctl -u nofx | grep 'loaded to memory'` → `✓ Trader '…' loaded` (manager/trader_manager.go:713)
+- [ ] Trader created and BOUND to B's SIM account — trader card shows the account; `journalctl -u vl | grep 'loaded to memory'` → `✓ Trader '…' loaded` (manager/trader_manager.go:713)
 
 ## End-to-end
-- [ ] Far-side build id proven by receipt — `journalctl -u nofx | grep 'nt8 addon'` → `build_id=<VL_BUILD_ID> expected=… match=yes` (trader/auto_trader.go:44; VLTraderTCPClient.cs:55)
+- [ ] Far-side build id proven by receipt — `journalctl -u vl | grep 'nt8 addon'` → `build_id=<VL_BUILD_ID> expected=… match=yes` (trader/auto_trader.go:44; VLTraderTCPClient.cs:55)
 - [ ] Bars flowing (market hours) — dashboard chart moves; journal shows bar updates without backpressure floods
 - [ ] Ledger truly empty & flat — positions page shows none, snapshots show B's account with `count=0` (D4 item 2)
-- [ ] Planner writes a plan — `journalctl -u nofx | grep 'PLAN written'` after a read (proves AI key + bars + calendar + strategy)
-- [ ] Crash-restart — `sudo kill -9 $(pgrep -x nofx-bin); sleep 6; pgrep -x nofx-bin && echo RESTARTED` → `RESTARTED` + boot block re-prints with `goldens PASS`
+- [ ] Planner writes a plan — `journalctl -u vl | grep 'PLAN written'` after a read (proves AI key + bars + calendar + strategy)
+- [ ] Crash-restart — `sudo kill -9 $(pgrep -x vl-bin); sleep 6; pgrep -x vl-bin && echo RESTARTED` → `RESTARTED` + boot block re-prints with `goldens PASS`
 
 ## Divergence spot-checks (the silent killers)
 - [ ] B's NT8 account ≠ A's — NT8 Accounts window on B shows a different SIM name (C7 — nothing in code prevents the share)
 - [ ] B never received A's `data/data.db` — checklist item "No rows copied from A" holds
 - [ ] No `SANDBOX_MODE=1` in B's `.env` — `grep -c '^SANDBOX_MODE=' .env` → `0` unless deliberate (main.go:530-534)
-- [ ] B's claim/branch work uses NEW branch names — `deploy/nofx-claim.sh new` refuses collisions anyway (nofx-claim.sh)
+- [ ] B's claim/branch work uses NEW branch names — `deploy/vl-claim.sh new` refuses collisions anyway (vl-claim.sh)

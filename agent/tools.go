@@ -13,25 +13,25 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/safe"
-	"nofx/security"
-	"nofx/store"
-	"nofx/trader"
-	"nofx/trader/aster"
-	"nofx/trader/binance"
-	"nofx/trader/bitget"
-	"nofx/trader/bybit"
-	"nofx/trader/gate"
-	hyperliquidtrader "nofx/trader/hyperliquid"
-	"nofx/trader/indodax"
-	"nofx/trader/kucoin"
-	"nofx/trader/lighter"
-	ntTrader "nofx/trader/ninjatrader"
-	"nofx/trader/okx"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/mcp"
+	"vl/safe"
+	"vl/security"
+	"vl/store"
+	"vl/trader"
+	"vl/trader/aster"
+	"vl/trader/binance"
+	"vl/trader/bitget"
+	"vl/trader/bybit"
+	"vl/trader/gate"
+	hyperliquidtrader "vl/trader/hyperliquid"
+	"vl/trader/indodax"
+	"vl/trader/kucoin"
+	"vl/trader/lighter"
+	ntTrader "vl/trader/ninjatrader"
+	"vl/trader/okx"
 )
 
 // cachedTools holds the static tool definitions (built once, reused per message).
@@ -281,15 +281,9 @@ func strategyConfigSchema() map[string]any {
 					"coin_source": map[string]any{
 						"type": "object",
 						"properties": map[string]any{
-							"source_type":    map[string]any{"type": "string", "enum": []string{"static", "ai500", "oi_top", "oi_low"}, "description": "Manual page coin source: static, ai500, oi_top, oi_low."},
+							"source_type":    map[string]any{"type": "string", "enum": []string{"static", "hyper_all", "hyper_main"}, "description": "Manual page coin source: static, hyper_all, hyper_main."},
 							"static_coins":   stringArraySchema("Static coin symbols such as BTCUSDT or ETHUSDT. Manual page allows at most 10. xyz: assets such as xyz:TSLA, xyz:GOLD, xyz:XYZ100 are also supported."),
 							"excluded_coins": stringArraySchema("Coin symbols to exclude from all sources."),
-							"use_ai500":      map[string]any{"type": "boolean"},
-							"ai500_limit":    map[string]any{"type": "number", "minimum": 1, "maximum": 10, "description": "Manual page range 1-10."},
-							"use_oi_top":     map[string]any{"type": "boolean"},
-							"oi_top_limit":   map[string]any{"type": "number", "minimum": 1, "maximum": 10, "description": "Manual page range 1-10."},
-							"use_oi_low":     map[string]any{"type": "boolean"},
-							"oi_low_limit":   map[string]any{"type": "number", "minimum": 1, "maximum": 10, "description": "Manual page range 1-10."},
 						},
 					},
 					"indicators": map[string]any{
@@ -306,32 +300,19 @@ func strategyConfigSchema() map[string]any {
 									"selected_timeframes":    stringArraySchema("Selected analysis timeframes. Allowed values: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w. Manual page allows at most 4."),
 								},
 							},
-							"enable_raw_klines":        map[string]any{"type": "boolean"},
-							"enable_ema":               map[string]any{"type": "boolean"},
-							"enable_macd":              map[string]any{"type": "boolean"},
-							"enable_rsi":               map[string]any{"type": "boolean"},
-							"enable_atr":               map[string]any{"type": "boolean"},
-							"enable_boll":              map[string]any{"type": "boolean"},
-							"enable_volume":            map[string]any{"type": "boolean"},
-							"enable_oi":                map[string]any{"type": "boolean"},
-							"enable_funding_rate":      map[string]any{"type": "boolean"},
-							"ema_periods":              intArraySchema("EMA periods such as [20,50]."),
-							"rsi_periods":              intArraySchema("RSI periods such as [7,14]."),
-							"atr_periods":              intArraySchema("ATR periods such as [14]."),
-							"boll_periods":             intArraySchema("BOLL periods such as [20]."),
-							"nofxos_api_key":           map[string]any{"type": "string"},
-							"enable_quant_data":        map[string]any{"type": "boolean"},
-							"enable_quant_oi":          map[string]any{"type": "boolean"},
-							"enable_quant_netflow":     map[string]any{"type": "boolean"},
-							"enable_oi_ranking":        map[string]any{"type": "boolean"},
-							"oi_ranking_duration":      map[string]any{"type": "string", "enum": []string{"1h", "4h", "24h"}},
-							"oi_ranking_limit":         map[string]any{"type": "number", "enum": []int{5, 10, 15, 20}},
-							"enable_netflow_ranking":   map[string]any{"type": "boolean"},
-							"netflow_ranking_duration": map[string]any{"type": "string", "enum": []string{"1h", "4h", "24h"}},
-							"netflow_ranking_limit":    map[string]any{"type": "number", "enum": []int{5, 10, 15, 20}},
-							"enable_price_ranking":     map[string]any{"type": "boolean"},
-							"price_ranking_duration":   map[string]any{"type": "string", "enum": []string{"1h", "4h", "24h", "1h,4h,24h"}},
-							"price_ranking_limit":      map[string]any{"type": "number", "enum": []int{5, 10, 15, 20}},
+							"enable_raw_klines":   map[string]any{"type": "boolean"},
+							"enable_ema":          map[string]any{"type": "boolean"},
+							"enable_macd":         map[string]any{"type": "boolean"},
+							"enable_rsi":          map[string]any{"type": "boolean"},
+							"enable_atr":          map[string]any{"type": "boolean"},
+							"enable_boll":         map[string]any{"type": "boolean"},
+							"enable_volume":       map[string]any{"type": "boolean"},
+							"enable_oi":           map[string]any{"type": "boolean"},
+							"enable_funding_rate": map[string]any{"type": "boolean"},
+							"ema_periods":         intArraySchema("EMA periods such as [20,50]."),
+							"rsi_periods":         intArraySchema("RSI periods such as [7,14]."),
+							"atr_periods":         intArraySchema("ATR periods such as [14]."),
+							"boll_periods":        intArraySchema("BOLL periods such as [20]."),
 						},
 					},
 					"custom_prompt": map[string]any{"type": "string"},
@@ -1246,12 +1227,28 @@ func (a *Agent) toolGetExchangeConfigs(storeUserID string) string {
 }
 
 func latestBackendLogFilePath() string {
-	matches, err := filepath.Glob(filepath.Join("data", "nofx_*.log"))
-	if err != nil || len(matches) == 0 {
+	// BOTH prefixes; the newest by MTIME wins (lexicographic order would let
+	// a vl_/nofx_ prefix flip the choice — R5 removes the nofx glob).
+	var matches []string
+	for _, pat := range []string{"vl_*.log", "nofx_*.log"} {
+		hits, err := filepath.Glob(filepath.Join("data", pat))
+		if err == nil {
+			matches = append(matches, hits...)
+		}
+	}
+	if len(matches) == 0 {
 		return ""
 	}
-	sort.Strings(matches)
-	return matches[len(matches)-1]
+	best, bestAt := "", time.Time{}
+	for _, m := range matches {
+		if st, err := os.Stat(m); err == nil && st.ModTime().After(bestAt) {
+			best, bestAt = m, st.ModTime()
+		}
+	}
+	if best == "" {
+		return matches[len(matches)-1] // nothing statable: keep the old lexicographic result
+	}
+	return best
 }
 
 func isBackendErrorLikeLogLine(line string) bool {
@@ -3610,12 +3607,6 @@ func candidateCoinSourceSummary(cfg *store.StrategyConfig) map[string]any {
 	}
 	return map[string]any{
 		"source_type":      cfg.CoinSource.SourceType,
-		"use_ai500":        cfg.CoinSource.UseAI500,
-		"ai500_limit":      cfg.CoinSource.AI500Limit,
-		"use_oi_top":       cfg.CoinSource.UseOITop,
-		"oi_top_limit":     cfg.CoinSource.OITopLimit,
-		"use_oi_low":       cfg.CoinSource.UseOILow,
-		"oi_low_limit":     cfg.CoinSource.OILowLimit,
 		"use_hyper_all":    cfg.CoinSource.UseHyperAll,
 		"use_hyper_main":   cfg.CoinSource.UseHyperMain,
 		"hyper_main_limit": cfg.CoinSource.HyperMainLimit,

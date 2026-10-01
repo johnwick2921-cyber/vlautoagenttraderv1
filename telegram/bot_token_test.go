@@ -24,12 +24,12 @@ import (
 	"testing"
 	"time"
 
-	"nofx/api"
-	"nofx/auth"
-	"nofx/manager"
-	"nofx/store"
-	"nofx/telegram/agent"
-	"nofx/trader"
+	"vl/api"
+	"vl/auth"
+	"vl/manager"
+	"vl/store"
+	"vl/telegram/agent"
+	"vl/trader"
 
 	"github.com/golang-jwt/jwt/v5"
 )

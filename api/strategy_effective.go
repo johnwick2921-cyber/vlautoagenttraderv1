@@ -18,8 +18,8 @@ import (
 	"regexp"
 	"strings"
 
-	"nofx/config"
-	"nofx/trader"
+	"vl/config"
+	"vl/trader"
 
 	"github.com/gin-gonic/gin"
 )

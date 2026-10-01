@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial verification — Queue #1 min-SL floor (ATR leg + level clearance)
 
 VERDICT: **REFUTED** (headline `conforms=NO` is wrong). One sub-finding (prompt drift) SURVIVES
@@ -7,11 +8,11 @@ but is already on the record as drift D-2.
 
 | item | value | source | label |
 |---|---|---|---|
-| boot line (running PID 878451) | `min-sl guard: atr_mult=1.5 level_clearance=2tick(s)` | `data/nofx_2026-09-04.log` 07:38:40 + 08:30:11 CT | [A] |
+| boot line (running PID 878451) | `min-sl guard: atr_mult=1.5 level_clearance=2tick(s)` | `data/vl_2026-09-04.log` 07:38:40 + 08:30:11 CT | [A] |
 | boot line is RESOLVED, not literal | `kernel.MinSLATRMult()` (env-aware) + `kernel.MinSLTickClearance` (const) | `trader/auto_trader_dayplan.go:57-58` | [A] |
-| env override | `MIN_SL_ATR_MULT` **absent** from `/home/hoang/nofx/.env` → default path | grep | [A] |
-| live REJECT string | `sl_too_tight: 14.5 < 1.5×ATR (10.7) — widen or skip` | `nofx_2026-09-03.log` 19:10:58 CT, `kernel/engine_position.go:229` | [A] |
-| live arm WARN string | `too close (38.50 < 50.73 = 1.5×ATR5m)` | `nofx_2026-09-04.log` 08:09:03 CT | [A] |
+| env override | `MIN_SL_ATR_MULT` **absent** from `/home/hoang/vl/.env` → default path | grep | [A] |
+| live REJECT string | `sl_too_tight: 14.5 < 1.5×ATR (10.7) — widen or skip` | `vl_2026-09-03.log` 19:10:58 CT, `kernel/engine_position.go:229` | [A] |
+| live arm WARN string | `too close (38.50 < 50.73 = 1.5×ATR5m)` | `vl_2026-09-04.log` 08:09:03 CT | [A] |
 | persisted resolved floor | **n=26** `planner_read_facts` rows, `stop_floor_mlt` min=1.5 max=1.5 | `data.db?mode=ro` | [A] |
 | deployed-rev parity | `git diff 70af663d -- kernel/min_sl.go` = EMPTY | worktree | [A] |
 | const line numbers | `:34 MinSLATRMultDefault = 1.5` · `:40 MinSLTickClearance = 2` | grep -n | [A] |

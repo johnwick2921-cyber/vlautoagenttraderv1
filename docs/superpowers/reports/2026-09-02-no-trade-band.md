@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # NO-TRADE BAND (checklist class 51) — session-scoped, config-driven, judged at read time
 
-**Wave:** no-trade-band · worktree `~/nofx-band` off `origin/dev` 0bba743b
+**Wave:** no-trade-band · worktree `~/vl-band` off `origin/dev` 0bba743b
 **Commits:** 52903708 · c972075d · 091f83ee · d0b6e594 · fa15f2d9 (+ this report)
 **Boot line:** `🗓 no-trade band: …` (rendered below, every field resolved)
 **Executor diff:** none. No gate, arm, size or order path changed behaviour.
@@ -210,30 +211,30 @@ overlap on the surface. Neither is in this wave.
 Not deployed. Preconditions, in order: the wave ahead of this one boots by
 name, then `GET /api/cutover-gate` reads `ready: true` on all five legs with no
 arm resting, then the owner's explicit GO. A19 all three halves: `deploy/RELEASE`
-written in `~/nofx` before the kill, the marker committed from that same tree
+written in `~/vl` before the kill, the marker committed from that same tree
 after the boot line is observed, and the running binary preserved as
-`nofx-bin.old.<its own rev>` first.
+`vl-bin.old.<its own rev>` first.
 
 ---
 
 ## 8. BLOCKED — the main tree is mid-cutover under a dead lock (A23: measured, not touched)
 
-Measured at 22:12 CT, read-only. I did not touch `~/nofx`.
+Measured at 22:12 CT, read-only. I did not touch `~/vl`.
 
 | fact | value |
 |---|---|
-| `~/nofx-main.lock` | `owner=weekly-refs-deploy pid=976198 expiry=1788410353` |
+| `~/vl-main.lock` | `owner=weekly-refs-deploy pid=976198 expiry=1788410353` |
 | PID 976198 | **DEAD** (`kill -0` fails); the lock does not expire for ~87 more minutes |
 | main tree HEAD | `1cee77a8` (class-50b), 7 commits ahead of `origin/dev`, **unpushed** |
 | `deploy/RELEASE` | `1cee77a8` — **uncommitted** (` M deploy/RELEASE`) |
 | running process | PID 1093919, `vcs.revision=56904ec1`, up 37 min |
-| `nofx-bin` | 56904ec1 (unchanged) |
-| `nofx-bin.next` | clean build of `1cee77a8`, `vcs.modified=false`, built 21:39 |
-| `nofx-bin.old.56904ec1…` | preserved 21:31 |
+| `vl-bin` | 56904ec1 (unchanged) |
+| `vl-bin.next` | clean build of `1cee77a8`, `vcs.modified=false`, built 21:39 |
+| `vl-bin.old.56904ec1…` | preserved 21:31 |
 
 **The hazard.** `RELEASE` claims `1cee77a8` while the process runs `56904ec1`.
 `kernel.AssertBootIntegrity` reads `deploy/RELEASE` relative to the unit's
-`WorkingDirectory=/home/hoang/nofx`, prefix-matches it against the embedded
+`WorkingDirectory=/home/hoang/vl`, prefix-matches it against the embedded
 revision, and on mismatch latches `tradingRefused`. With `Restart=on-failure`,
 **any crash or host restart right now boots the bot into TradingRefused.** This
 is the exact failure mode recorded on 2026-09-02 07:32. **[A]** — read from the
@@ -254,15 +255,15 @@ they took 51, this wave is 52.
 ### 8.1 Resolved — the peer cutover completed at 22:37 CT
 
 ```
-22:37:30  nofx.service: Main process exited, code=killed, status=9/KILL
-22:37:35  Started nofx.service
+22:37:30  vl.service: Main process exited, code=killed, status=9/KILL
+22:37:35  Started vl.service
 22:37:38  🔐 BOOT INTEGRITY OK — rev 1cee77a87f1d · built 2026-09-03T02:38:05Z
                               · expected 1cee77a87f1d · goldens PASS
 22:37:38  🛡 cutover safety (class 33): gate legs=5 · leg4=ledger
           · boot sweep cancelled 0 pre-boot arm(s)
 ```
 
-`nofx-bin.next` was swapped in and killed; the binary, `deploy/RELEASE` and
+`vl-bin.next` was swapped in and killed; the binary, `deploy/RELEASE` and
 `HEAD:deploy/RELEASE` now all read `1cee77a8`, so A19's third half is done and
 the TradingRefused trap is gone. The stale `weekly-refs-deploy` lock file was
 still present at that moment naming a dead PID, so a live dispatch is working

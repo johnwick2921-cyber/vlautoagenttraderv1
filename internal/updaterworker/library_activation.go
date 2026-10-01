@@ -1,11 +1,11 @@
 package updaterworker
 
 import (
-	"nofx/internal/activation"
+	"vl/internal/activation"
 )
 
 // activationLibrary is the PRODUCTION Library: every method is ONE line that
-// delegates to the same-named function of nofx/internal/activation (Claude-103's
+// delegates to the same-named function of vl/internal/activation (Claude-103's
 // library, #201) with its arguments converted in, and its results converted out.
 //
 // It holds no state and adds no behaviour — no retry, no default, no check.
@@ -23,7 +23,7 @@ import (
 // is a compile error here; a tag drift is TestAdapterReceiptParity.
 type activationLibrary struct{}
 
-// NewActivationLibrary is cmd/nofx-updater's newLibrary: the activation
+// NewActivationLibrary is cmd/vl-updater's newLibrary: the activation
 // library adapter. It needs nothing and touches nothing until a method is
 // called — and every method is a step the worker has ALREADY persisted as
 // started (TestEveryTransitionPersistsBeforeItsSideEffect).

@@ -1,6 +1,6 @@
 # q11: Wilson intervals for every rate quoted; P&L split by entry path; MFE>=2R re-measure using each system trade's own authored stop (from its entry decision) and each arm's stop_px
 import sqlite3, json, math, datetime, collections
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 def wilson(k,n,z=1.96):
     if n==0: return (float('nan'),float('nan'))
     p=k/n; den=1+z*z/n; c=p+z*z/(2*n); h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n)); return ((c-h)/den,(c+h)/den)
@@ -71,5 +71,5 @@ print('winners n',len(wins),'MAE/R median', round(statistics.median([r[6]/r[3] f
 print('losers  n',len(losses),'MAE/R median', round(statistics.median([r[6]/r[3] for r in losses]),3))
 print('R (stop distance pts) median', round(statistics.median([r[3] for r in rows]),2))
 import csv
-with open('/home/hoang/nofx-analysis/vet-03-0905/q11_mfe_r_rows.csv','w',newline='') as f:
+with open('/home/hoang/vl-analysis/vet-03-0905/q11_mfe_r_rows.csv','w',newline='') as f:
     w=csv.writer(f); w.writerow(['position_id','side','entry','R_pts','mfe_pts','mfe_R','mae_pts','pnl_corrected','stop_source']); w.writerows(rows)

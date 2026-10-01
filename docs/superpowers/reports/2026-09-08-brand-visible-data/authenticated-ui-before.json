@@ -4,10 +4,10 @@
     "path": "/agent",
     "title": "VL Trader - AI Trading System",
     "brandMatches": [
-      "NOFXi"
+      "VLi"
     ],
     "placeholders": [
-      "Ask NOFXi anything...  ⌘K"
+      "Ask VLi anything...  ⌘K"
     ]
   },
   {
@@ -38,7 +38,7 @@
     "path": "/guide",
     "title": "VL Trader - AI Trading System",
     "brandMatches": [
-      "NOFX"
+      "VL"
     ],
     "placeholders": []
   },

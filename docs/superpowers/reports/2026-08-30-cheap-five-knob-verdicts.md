@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Cheap Five — Knob Verdict Tables from Stored Data — 2026-08-30
 
-Read-only dispatch (isolated worktree `nofx-cheap5` @ `79365622`, branch `docs/cheap-five`).
-DB accessed as `sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"` — zero writes.
+Read-only dispatch (isolated worktree `vl-cheap5` @ `79365622`, branch `docs/cheap-five`).
+DB accessed as `sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro"` — zero writes.
 Evidence tiers: **[A]** directly measured from DB/journal · **[B]** reconstructed with stated assumptions · **[C]** approximation.
 
 Knob definitions per the provenance census (`docs/superpowers/reports/2026-08-30-knob-census.md`, commit `39a0481e`, branch `docs/knob-census`):

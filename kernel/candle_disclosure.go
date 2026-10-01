@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── D1 — HELD-vs-CLAIMED (wave BARS HORIZON, 2026-09-09) ─────────────────────

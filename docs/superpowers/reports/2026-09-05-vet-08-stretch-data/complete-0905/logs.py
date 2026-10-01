@@ -2,7 +2,7 @@ import pathlib,re,csv,json,datetime
 from zoneinfo import ZoneInfo
 R=pathlib.Path(__file__).resolve().parent;ct=ZoneInfo('America/Chicago');rows=[];events=[]
 pat=re.compile(r'REFUSED|refused|sl_too_tight|last_entry_cutoff|cancelled —|NOT authored|gate changed|stop-entry|armed .*WORKING|plan .* (DORMANT|REARMED)|FEED DOWN|NT8 TCP link DOWN|dead-man|BOOT INTEGRITY|wake would_skip|wake skipped|cooldown|arm stop NY S1|no balance frame|daily.*OFF')
-for p in sorted(pathlib.Path('/home/hoang/nofx/data').glob('nofx_2026-09-0[234].log')):
+for p in sorted(pathlib.Path('/home/hoang/vl/data').glob('vl_2026-09-0[234].log')):
  for n,line in enumerate(p.open(errors='replace'),1):
   if not re.match(r'09-0[234] ',line):continue
   if pat.search(line):rows.append({'source':str(p),'line':n,'text':line.strip()})

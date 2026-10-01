@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // hotfix/watcher-eyes (2026-08-19) — regression tests for the anatomy census

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	ntpkg "nofx/provider/ninjatrader"
+	ntpkg "vl/provider/ninjatrader"
 )
 
 // TestTrader_RoundTrip_OpenLong exercises the full Go → CSV → mock NT →

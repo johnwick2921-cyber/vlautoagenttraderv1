@@ -1,14 +1,15 @@
-# NOFX Architecture Documentation
+names rewritten to vl on 2026-09-30 (VL rename)
+# VL Architecture Documentation
 
 **Language:** [English](README.md) | [中文](README.zh-CN.md)
 
-Technical documentation for developers who want to understand NOFX internals.
+Technical documentation for developers who want to understand VL internals.
 
 ---
 
 ## Overview
 
-NOFX is a full-stack AI trading platform for cryptocurrency and US stock markets:
+VL is a full-stack AI trading platform for cryptocurrency and US stock markets:
 
 - **Backend:** Go (Gin framework, SQLite)
 - **Frontend:** React/TypeScript (Vite, TailwindCSS)
@@ -21,7 +22,7 @@ NOFX is a full-stack AI trading platform for cryptocurrency and US stock markets
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              NOFX Platform                                  │
+│                              VL Platform                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────┐  ┌─────────────────────────────────────┐│
@@ -75,7 +76,7 @@ Complete strategy configuration system including:
 ## Project Structure
 
 ```
-nofx/
+vl/
 ├── main.go                    # Entry point
 ├── api/                       # HTTP API (Gin framework)
 ├── trader/                    # Trading execution layer
@@ -128,10 +129,10 @@ nofx/
 
 **Want to contribute?**
 - Read the module documentation above
-- Check [Open Issues](https://github.com/NoFxAiOS/nofx/issues)
+- Check [Open Issues](upstream github link (removed in the VL rename))
 - Join our community
 
-**Repository:** https://github.com/NoFxAiOS/nofx
+**Repository:** upstream github link (removed in the VL rename)
 
 ---
 

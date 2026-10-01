@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # FULL UI VERIFICATION — every button, every control (2026-08-18)
 
 **LINE 1:** 21 controls LIVE · 2 fixed · 0 broken · reset: **WORKS-BUT-SILENT — fixed** (the click always worked; the UI never said the read was running).
@@ -20,4 +21,4 @@
 
 **Exit bar:** go build/vet/test + -race green · tsc clean · vitest 244/245 (2 pre-existing harness failures: RegistrationDisabled logo, e2e/gate.spec.ts — test-infra, not controls) · goldens untouched.
 
-**Not deployed** (market open, per rule). Owner deploy after 14:45 CT: git pull → go build -o nofx-bin . → git rev-parse HEAD > deploy/RELEASE → restart → npm run build. The reading banner activates only with the new binary.
+**Not deployed** (market open, per rule). Owner deploy after 14:45 CT: git pull → go build -o vl-bin . → git rev-parse HEAD > deploy/RELEASE → restart → npm run build. The reading banner activates only with the new binary.

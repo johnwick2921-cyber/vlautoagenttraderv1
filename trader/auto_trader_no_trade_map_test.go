@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // P7 — levels are market FACTS; the plan is an opinion about them. A no-trade

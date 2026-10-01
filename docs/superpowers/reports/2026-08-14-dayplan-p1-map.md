@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DAY-PLAN CAMPAIGN — P1 · THE MAP (checkpoint report, 4/8 items)
 
-**Date:** 2026-08-14 · **Repo:** /home/hoang/nofx · **Branch:** main
+**Date:** 2026-08-14 · **Repo:** /home/hoang/vl · **Branch:** main
 **Range:** `d8e2f88c` (P0 head) → `9436ea79` · 5 commits
 **Contract:** [docs/VL-DAYPLAN-FULL-SPEC.md](../../VL-DAYPLAN-FULL-SPEC.md)
 

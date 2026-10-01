@@ -9,7 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"nofx/logger"
+	"vl/logger"
 	"strconv"
 	"strings"
 	"sync"

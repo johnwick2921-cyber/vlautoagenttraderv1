@@ -7,7 +7,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 func TestClockDriftMs(t *testing.T) {

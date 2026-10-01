@@ -3,8 +3,8 @@ package api
 import (
 	"log"
 	"net/http"
-	"nofx/config"
-	"nofx/crypto"
+	"vl/config"
+	"vl/crypto"
 
 	"github.com/gin-gonic/gin"
 )

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/mcp"
-	"nofx/store"
+	"vl/mcp"
+	"vl/store"
 )
 
 // Regression for the AgentBeta 400: an empty CustomModelName (the legal

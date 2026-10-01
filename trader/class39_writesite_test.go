@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // CLASS 39 — the write-site half: the ⚖ WARN fires, the recorded counter bumps,

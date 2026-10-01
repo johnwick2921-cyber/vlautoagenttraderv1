@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/trader/types"
+	"vl/kernel"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/trader/types"
 )
 
 // ═══════════════════════════════════════════════════════════════════════════

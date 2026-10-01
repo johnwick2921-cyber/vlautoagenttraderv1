@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 // P0-latency — the two halves that guarantee a decision can never be ACTED ON

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/store"
-	"nofx/telemetry"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0 (c) — the pre-open reconcile never flattens a position a

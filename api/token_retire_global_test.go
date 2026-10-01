@@ -23,10 +23,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"nofx/auth"
-	"nofx/manager"
-	"nofx/store"
-	"nofx/trader"
+	"vl/auth"
+	"vl/manager"
+	"vl/store"
+	"vl/trader"
 )
 
 // seedTokenOwner creates the account row a test token names: since H2,

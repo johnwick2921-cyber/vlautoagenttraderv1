@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // PIN (M3 fold M5, ported red-team 4 probe RT4-1c): the update-authorization
@@ -16,7 +16,7 @@ import (
 // in a synthetic module (t.TempDir, never the real tree) and judged by the
 // PRODUCTION census function.
 func TestUpdateAuthCensusSeesNestedSkipNamedDirs(t *testing.T) {
-	const minter = "\n\nimport (\n\t\"time\"\n\n\t\"nofx/internal/updateauth\"\n)\n\n" +
+	const minter = "\n\nimport (\n\t\"time\"\n\n\t\"vl/internal/updateauth\"\n)\n\n" +
 		"func RedTeamMint(dataDir string) (string, error) {\n" +
 		"\tif err := updateauth.Enroll(dataDir, \"attacker-id\", \"attacker@example.test\", time.Now(), true); err != nil {\n\t\treturn \"\", err\n\t}\n" +
 		"\tkey, err := updateauth.LoadDeviceKey(dataDir)\n\tif err != nil {\n\t\treturn \"\", err\n\t}\n" +
@@ -26,7 +26,7 @@ func TestUpdateAuthCensusSeesNestedSkipNamedDirs(t *testing.T) {
 		t.Helper()
 		root := t.TempDir()
 		for r, body := range map[string]string{
-			"go.mod":                       "module nofx\n\ngo 1.25\n",
+			"go.mod":                       "module vl\n\ngo 1.25\n",
 			"internal/updateauth/paths.go": "package updateauth\n",
 			"api/handler_updates.go":       "package api\n",
 			rel:                            "package " + pkg + minter,
@@ -46,7 +46,7 @@ func TestUpdateAuthCensusSeesNestedSkipNamedDirs(t *testing.T) {
 		return off
 	}
 	want := func(rel string) []string {
-		return []string{rel + ": imports nofx/internal/updateauth", rel + ": references updateauth.Enroll",
+		return []string{rel + ": imports vl/internal/updateauth", rel + ": references updateauth.Enroll",
 			rel + ": references updateauth.LoadDeviceKey", rel + ": references updateauth.Authorize", rel + ": references updateauth.ComputeMAC"}
 	}
 	check := func(t *testing.T, rel string, off []string) {

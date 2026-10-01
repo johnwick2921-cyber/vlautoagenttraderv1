@@ -1,6 +1,6 @@
 """Section 4 read-only audit. Run from worktree; outputs only to owned scratch."""
 import sqlite3,json,math,datetime,pathlib,zoneinfo,hashlib,subprocess
-ROOT=pathlib.Path('/home/hoang/nofx-analysis/vet-04-complete-0905')
+ROOT=pathlib.Path('/home/hoang/vl-analysis/vet-04-complete-0905')
 ct=zoneinfo.ZoneInfo('America/Chicago')
 # Resolve the current classifier; do not retype the ledger lifecycle here.
 repo=next(p for p in pathlib.Path(__file__).resolve().parents if (p/'go.mod').exists())
@@ -10,7 +10,7 @@ def wilson(k,n):
  if not n:return None
  z=1.95996398454;p=k/n;d=1+z*z/n;c=(p+z*z/(2*n))/d;w=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d
  return [c-w,c+w]
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 o={'captured_ct':datetime.datetime.now(ct).isoformat(),'source_base':'b4376246','era_ms':ms('2026-08-15'),'strict_boot_ms':ms('2026-09-03T11:10:00'),'query_only':c.execute('PRAGMA query_only').fetchone()[0],'queries':{}}
 def q(name,sql,p=()):
  rows=[dict(r) for r in c.execute(sql,p)];o['queries'][name]={'sql':sql,'parameters':p,'rows':rows};return rows

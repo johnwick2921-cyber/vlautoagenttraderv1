@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // P3.4 — executor injection of the active plan.

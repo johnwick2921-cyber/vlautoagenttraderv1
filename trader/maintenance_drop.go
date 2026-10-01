@@ -3,8 +3,8 @@ package trader
 import (
 	"fmt"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/telemetry"
+	ntwire "vl/provider/ninjatrader"
+	"vl/telemetry"
 )
 
 // ── W-ONE-BUTTON M2, M-2 — settling an entry the hold dropped ──────────────

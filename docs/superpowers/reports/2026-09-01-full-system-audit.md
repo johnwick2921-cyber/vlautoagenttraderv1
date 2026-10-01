@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # FULL SYSTEM AUDIT — research alignment · live status · every component · every counter · every open defect (2026-09-01)
 
-**READ-ONLY.** No code, config, knob, DB, cutover or reset was touched. Evidence class on every line: **[RUNTIME]** journal/log/API/live state · **[DB]** query + result (`sqlite3 -readonly`) · **[CODE]** file:line · **[CONFIG]** resolved value · **[DOC]** report path. A [CODE]-only claim about live behavior is UNVERIFIED until a [RUNTIME]/[DB] line confirms it. Percentages carry n. P&L reads `pnl_corrected` only. Audit window: 2026-09-01 16:18–17:3x CT. Branch `docs/full-system-audit-0901` in worktree `~/nofx-audit` (main tree untouched).
+**READ-ONLY.** No code, config, knob, DB, cutover or reset was touched. Evidence class on every line: **[RUNTIME]** journal/log/API/live state · **[DB]** query + result (`sqlite3 -readonly`) · **[CODE]** file:line · **[CONFIG]** resolved value · **[DOC]** report path. A [CODE]-only claim about live behavior is UNVERIFIED until a [RUNTIME]/[DB] line confirms it. Percentages carry n. P&L reads `pnl_corrected` only. Audit window: 2026-09-01 16:18–17:3x CT. Branch `docs/full-system-audit-0901` in worktree `~/vl-audit` (main tree untouched).
 
 > **API access note:** protected GETs were read with a JWT minted by `cmd/gate-jwt` against a **`.backup` copy** of the DB (the live DB was never opened read-write; `gate-jwt` does not load `.env`, so `JWT_SECRET` was exported for the mint only). GET-only. Every request is visible as a 200 in the GIN journal.
 
@@ -11,7 +12,7 @@
 See the closeout for the ranked list. The items with live consequence tonight:
 
 1. **ASIA has NO PLAN and the 16:30 read cannot author until bars resume [RUNTIME].** The class-32 wall-clock read fires every cycle since 16:31:05 CT, and the U1-3.2 planner preflight refuses each one: `🛑 planner_preflight_refused session=ASIA trade_date=2026-09-01 reason=stale_bars_1865s` (16:31:05), `…1985s` (16:33:05), `…2105s` (16:35:05), then 16:37/16:39/16:41 … — six refusals by 16:41, one per 2-minute cycle. Halt-fired authoring "from last stored bars" is ruled correct by class 32 (`trader/auto_trader_clock.go:89-97`) but `plannerPreflight` (`trader/auto_trader_feedwatch.go:109-131`) refuses whenever the newest 1m bar is older than `feedDownAfter()` = FEED_ALERT_S (600s) — which is ALWAYS true inside the 16:00–17:00 halt. Net effect: the plan cannot land before ~17:01 + planner wall time (405–581s observed today) ⇒ **ASIA opens planless for ~7–10 minutes, every day** — the class-32 symptom, shrunk from 30 min to ~8 min, now caused by a second gate. Outcome after 17:00 is quoted in §G4 (captured live).
-2. **Replan budget shows 0 left on both of today's chains with zero spends [RUNTIME/DB]** — `/api/plan/today?session=LONDON` → `replans_left: 0, replan_cap: 4, version: 6`; `?session=NY` → `replans_left: 0, replan_cap: 4, version: 5`. NY's chain is `NY_scheduled_read · dormant:death · dormant:flip · rearmed · level_event` — no death re-plan, no owner re-read. The next machine death on either chain fail-closes into NO-TRADE. (Class 35 — fix in flight in `~/nofx-class35`, not yet cut over.)
+2. **Replan budget shows 0 left on both of today's chains with zero spends [RUNTIME/DB]** — `/api/plan/today?session=LONDON` → `replans_left: 0, replan_cap: 4, version: 6`; `?session=NY` → `replans_left: 0, replan_cap: 4, version: 5`. NY's chain is `NY_scheduled_read · dormant:death · dormant:flip · rearmed · level_event` — no death re-plan, no owner re-read. The next machine death on either chain fail-closes into NO-TRADE. (Class 35 — fix in flight in `~/vl-class35`, not yet cut over.)
 3. **Guardrail master is OFF** (`guardrails=master=OFF (soft-audit only)` in the boot line) while the trade-count would-trip line fired 263 times today (`max daily trades would trip (today=6, max=3)` at 15:59:06). Nothing enforces the daily cage. Owner's setting — reported, not judged.
 
 ---
@@ -23,11 +24,11 @@ See the closeout for the ranked list. The items with live consequence tonight:
 | item | value | evidence |
 |---|---|---|
 | PID | **1625428** | `ps -p 1625428`: STARTED `Tue Sep 1 00:43:25 2026`, ELAPSED 15:51:37 at 16:35 CT |
-| systemd | `Active: active (running) since Tue 2026-09-01 00:43:30 CDT; 15h ago` · `NRestarts=106` · Memory 403.1M (peak 926.2M) · Tasks 21 | `systemctl status nofx` / `show -p NRestarts` |
-| prior death | `Sep 01 00:43:25 nofx.service: Main process exited, code=killed, status=9/KILL` → `Scheduled restart job, restart counter is at 106` | journal — the class-34 `kill -9` cutover, expected |
-| rev | `vcs.revision=fef656a4ee7c45860ad0237f48cef90c6b148d17 · vcs.time=2026-09-01T04:52:30Z · vcs.modified=false` | `go version -m nofx-bin` |
+| systemd | `Active: active (running) since Tue 2026-09-01 00:43:30 CDT; 15h ago` · `NRestarts=106` · Memory 403.1M (peak 926.2M) · Tasks 21 | `systemctl status vl` / `show -p NRestarts` |
+| prior death | `Sep 01 00:43:25 vl.service: Main process exited, code=killed, status=9/KILL` → `Scheduled restart job, restart counter is at 106` | journal — the class-34 `kill -9` cutover, expected |
+| rev | `vcs.revision=fef656a4ee7c45860ad0237f48cef90c6b148d17 · vcs.time=2026-09-01T04:52:30Z · vcs.modified=false` | `go version -m vl-bin` |
 
-**Boot checklist, line by line (journal 00:43:30 CT, `nofx-34-build/…`):**
+**Boot checklist, line by line (journal 00:43:30 CT, `vl-34-build/…`):**
 
 | required line | present? | verbatim |
 |---|---|---|
@@ -52,7 +53,7 @@ See the closeout for the ranked list. The items with live consequence tonight:
 | weekly | ✅ | `📅 WEEKLY READ skip-fresh — week 2026-08-31 doc already stored (v2), idempotent.` |
 | NT8 instrument cross-check | ✅ | `📐 NT8 instrument_info MNQ (MNQ 09-26): point_value=2 tick=0.25 — matches table ✓` |
 
-**No required line is missing.** Boot-block surprises: (a) `roll=pending AddOn ACK` printed at boot but `/api/status` now reports `roll: resolved=true, resolved_contract="MNQ SEP26", contract_expiry=2026-09-18, roll_window_start=2026-09-15, roll_days_left=17` — the boot line predates the AddOn hello by design (`trader/auto_trader_pause.go:163-166`); (b) the clock-guard RTC timer has not run since 2026-08-29 (`timer=stale … 77h43m21s ago`, `resync=unavailable-no-root`) — the owner root unit was never installed; (c) two `WARN no enabled AI model found for store user store_user_id=default` lines from the NOFXi agent (chat assistant unbound — cosmetic).
+**No required line is missing.** Boot-block surprises: (a) `roll=pending AddOn ACK` printed at boot but `/api/status` now reports `roll: resolved=true, resolved_contract="MNQ SEP26", contract_expiry=2026-09-18, roll_window_start=2026-09-15, roll_days_left=17` — the boot line predates the AddOn hello by design (`trader/auto_trader_pause.go:163-166`); (b) the clock-guard RTC timer has not run since 2026-08-29 (`timer=stale … 77h43m21s ago`, `resync=unavailable-no-root`) — the owner root unit was never installed; (c) two `WARN no enabled AI model found for store user store_user_id=default` lines from the VLi agent (chat assistant unbound — cosmetic).
 
 ### B2 RELEASE vs GUIDE_BUILT_REV vs live [RUNTIME]
 
@@ -66,33 +67,33 @@ See the closeout for the ranked list. The items with live consequence tonight:
 **All three equal ⇒ guide drift banner clear by construction** (the banner compares `GUIDE_BUILT_REV` with the status API `revision`). Marker commit `d03db52a deploy: class-34 marker — RELEASE=fef656a4 + GUIDE_BUILT_REV=fef656a4 (cutover pending owner GO)`; the cutover then happened at 00:43 CT.
 
 ### B3 Rollback slot [RUNTIME]
-`nofx-bin.prev.boot` (Aug 31 23:40, 70,812,520 B) → `vcs.revision=ebc37e01d7dd5f19c0e0f0ffa962388e12988f58 · vcs.time=2026-08-31T23:43:46Z · vcs.modified=false` = the class-32 build (booted 23:40:27 Aug 31). Rollback command (NOT run): `cp ~/nofx/nofx-bin.prev.boot ~/nofx/nofx-bin && echo ebc37e01d7dd5f19c0e0f0ffa962388e12988f58 > ~/nofx/deploy/RELEASE && kill -9 1625428` — note it would also roll GUIDE_BUILT_REV out of step (guide banner would then show drift). 26 other `nofx-bin.old.*` / `.prev.*` binaries sit in the tree (Aug 27–31) — untracked clutter, none referenced.
+`vl-bin.prev.boot` (Aug 31 23:40, 70,812,520 B) → `vcs.revision=ebc37e01d7dd5f19c0e0f0ffa962388e12988f58 · vcs.time=2026-08-31T23:43:46Z · vcs.modified=false` = the class-32 build (booted 23:40:27 Aug 31). Rollback command (NOT run): `cp ~/vl/vl-bin.prev.boot ~/vl/vl-bin && echo ebc37e01d7dd5f19c0e0f0ffa962388e12988f58 > ~/vl/deploy/RELEASE && kill -9 1625428` — note it would also roll GUIDE_BUILT_REV out of step (guide banner would then show drift). 26 other `vl-bin.old.*` / `.prev.*` binaries sit in the tree (Aug 27–31) — untracked clutter, none referenced.
 
 ### B4 Lock [RUNTIME]
-`~/nofx-main.lock` = `owner=hoang pid=1861644 expiry=2026-09-01T22:18:07-0500 task=class35-replan-budget+1C-touchband acquired=2026-09-01T16:18:07-0500 note=restored-by-second-agent-16:2x-after-mistaken-stale-clear`. **`kill -0 1861644` → DEAD.** Not cleared (A2). Disclosure: this session, when it briefly started the same class-35 dispatch at 16:18, mistook this lock for stale (the PID is a short-lived shell PID, not the holder's session PID), overwrote it, then restored the original line verbatim plus the note on the owner's instruction. The class-35 agent is alive (worktree `nofx-class35` exists, clean) — the lock's PID field is simply not liveness-checkable. Recommendation for that agent's report: re-stamp with its long-lived session PID.
+`~/vl-main.lock` = `owner=hoang pid=1861644 expiry=2026-09-01T22:18:07-0500 task=class35-replan-budget+1C-touchband acquired=2026-09-01T16:18:07-0500 note=restored-by-second-agent-16:2x-after-mistaken-stale-clear`. **`kill -0 1861644` → DEAD.** Not cleared (A2). Disclosure: this session, when it briefly started the same class-35 dispatch at 16:18, mistook this lock for stale (the PID is a short-lived shell PID, not the holder's session PID), overwrote it, then restored the original line verbatim plus the note on the owner's instruction. The class-35 agent is alive (worktree `vl-class35` exists, clean) — the lock's PID field is simply not liveness-checkable. Recommendation for that agent's report: re-stamp with its long-lived session PID.
 
 ### B5 Worktrees [RUNTIME]
 
 | worktree | branch | HEAD | merged into dev? | ahead of dev | dirty files |
 |---|---|---|---|---|---|
-| `~/nofx` | dev | d4b38604 | — | — | 0 |
-| `~/nofx-audit` (this audit) | docs/full-system-audit-0901 | d4b38604 | n/a | 0 | this report |
-| `~/nofx-class35` | fix/class35-replan-budget | d4b38604 → ec6632f9 by 16:56 | merged to dev at ec6632f9 (16:5x CT), **not deployed** | 0 | 0 — **locked**, in flight (lock re-acquired 16:40:57, pid 1860416) |
-| `~/nofx-entry` | feat/entry-mechanics | 1a6878bc | yes | 0 | **4** (`kernel/entry_law_test.go`, `kernel/plan_confirm_test.go`, `kernel/plan_doc_crosscheck_test.go`, `trader/split_entry_test.go`) — locked |
-| `~/nofx-news` | fix/news-hygiene | 9fa92f25 | yes | 0 | 0 — removable |
-| `~/nofx-sec` | fix/security-hygiene | bead12ed | yes | 0 | 0 — removable |
-| `~/nofx-clockhold` | fix/clock-hold | 40f5ba36 | **no** | **1**: `F1 (E7 resend loop, RECONCILED with dev): manual-cancel-wins version guard in UpsertArm + limitMarketableWrongSide strict-boundary` | 0 |
-| `~/nofx-weekly` | feat/weekly-bias | f9da39e1 | **no** | **2**: `fix(weekly-bias): calendar-anchored week governing Monday — Sunday-morning boot mis-mapped the week one back` · `fix(weekly-bias): InvalidatedAt stamp via kernel.FormatCT` | 0 |
-| `~/nofx-vf` | docs/dress-rehearsal-0830 | b54a9bfc | no | 4 (docs + `cmd/vfverify` harness) | **3** (`cmd/vfverify/d1.go`, `d2.go`, `p3.go`) |
-| `~/nofx-cc` | docs/confirm-cost-0830 | 8f09aa84 | no | 1 (report — its content was archived to dev by 741bfc2a) | 0 |
-| `~/nofx-census` | docs/knob-census | 39a0481e | no | 1 (report — archived to dev by 741bfc2a) | 0 |
+| `~/vl` | dev | d4b38604 | — | — | 0 |
+| `~/vl-audit` (this audit) | docs/full-system-audit-0901 | d4b38604 | n/a | 0 | this report |
+| `~/vl-class35` | fix/class35-replan-budget | d4b38604 → ec6632f9 by 16:56 | merged to dev at ec6632f9 (16:5x CT), **not deployed** | 0 | 0 — **locked**, in flight (lock re-acquired 16:40:57, pid 1860416) |
+| `~/vl-entry` | feat/entry-mechanics | 1a6878bc | yes | 0 | **4** (`kernel/entry_law_test.go`, `kernel/plan_confirm_test.go`, `kernel/plan_doc_crosscheck_test.go`, `trader/split_entry_test.go`) — locked |
+| `~/vl-news` | fix/news-hygiene | 9fa92f25 | yes | 0 | 0 — removable |
+| `~/vl-sec` | fix/security-hygiene | bead12ed | yes | 0 | 0 — removable |
+| `~/vl-clockhold` | fix/clock-hold | 40f5ba36 | **no** | **1**: `F1 (E7 resend loop, RECONCILED with dev): manual-cancel-wins version guard in UpsertArm + limitMarketableWrongSide strict-boundary` | 0 |
+| `~/vl-weekly` | feat/weekly-bias | f9da39e1 | **no** | **2**: `fix(weekly-bias): calendar-anchored week governing Monday — Sunday-morning boot mis-mapped the week one back` · `fix(weekly-bias): InvalidatedAt stamp via kernel.FormatCT` | 0 |
+| `~/vl-vf` | docs/dress-rehearsal-0830 | b54a9bfc | no | 4 (docs + `cmd/vfverify` harness) | **3** (`cmd/vfverify/d1.go`, `d2.go`, `p3.go`) |
+| `~/vl-cc` | docs/confirm-cost-0830 | 8f09aa84 | no | 1 (report — its content was archived to dev by 741bfc2a) | 0 |
+| `~/vl-census` | docs/knob-census | 39a0481e | no | 1 (report — archived to dev by 741bfc2a) | 0 |
 
-**Left behind (code, not docs):** `fix/clock-hold` 40f5ba36 (E7 resend-loop F1: manual-cancel-wins guard + strict wrong-side boundary) and `feat/weekly-bias` f9da39e1/59dc7144 (calendar-anchored week + InvalidatedAt CT stamp) are **unmerged code commits** — UNVERIFIED whether their content reached dev by another path; `git branch --merged dev` says no. `nofx-entry` holds 4 modified test files never committed.
+**Left behind (code, not docs):** `fix/clock-hold` 40f5ba36 (E7 resend-loop F1: manual-cancel-wins guard + strict wrong-side boundary) and `feat/weekly-bias` f9da39e1/59dc7144 (calendar-anchored week + InvalidatedAt CT stamp) are **unmerged code commits** — UNVERIFIED whether their content reached dev by another path; `git branch --merged dev` says no. `vl-entry` holds 4 modified test files never committed.
 
 ### B6 git [RUNTIME]
 At audit start (16:18–16:35 CT): `dev` tip `d4b38604 read-only: manual vs system segregation …` (a2b2b109, 741bfc2a below it — the archive merge); main tree `git status --porcelain` → **0 lines**; `dev...origin/dev` → `0 0`.
 
-**dev advanced during the audit [RUNTIME 16:56 CT]:** `ec6632f9 fix(class35): replan budget is a RECORDED counter, not version−baseline` is now the `dev` tip (committed 2026-09-01 16:54:27 CT; 20 files, +868/−230: `store/strategy.go`, `trader/auto_trader_planner.go`, `trader/auto_trader_reread.go`, `api/handler_plan.go`, `main.go`, `web/src/components/plan/SessionPlanCard.tsx`, guide content ×4, `docs/superpowers/AUDIT-CHECKLIST.md` +23, tests ×8; main tree still porcelain-clean, `dev == origin/dev`). This is the class-35 fix from the `nofx-class35` worktree, **merged to dev but NOT cut over** — the running binary is still `fef656a4` and every live replan-budget number in this report (§E1, §G1) is the pre-fix arithmetic. This audit's branch is based on `d4b38604`; nothing in it depends on the merge.
+**dev advanced during the audit [RUNTIME 16:56 CT]:** `ec6632f9 fix(class35): replan budget is a RECORDED counter, not version−baseline` is now the `dev` tip (committed 2026-09-01 16:54:27 CT; 20 files, +868/−230: `store/strategy.go`, `trader/auto_trader_planner.go`, `trader/auto_trader_reread.go`, `api/handler_plan.go`, `main.go`, `web/src/components/plan/SessionPlanCard.tsx`, guide content ×4, `docs/superpowers/AUDIT-CHECKLIST.md` +23, tests ×8; main tree still porcelain-clean, `dev == origin/dev`). This is the class-35 fix from the `vl-class35` worktree, **merged to dev but NOT cut over** — the running binary is still `fef656a4` and every live replan-budget number in this report (§E1, §G1) is the pre-fix arithmetic. This audit's branch is based on `d4b38604`; nothing in it depends on the merge.
 
 ### B7 NT8 [RUNTIME]
 
@@ -155,7 +156,7 @@ NT8 equity: `📊 Account equity: 52216.00` at 2026-08-31 17:00:04 and 17:02:04 
 **Live-surface caveat [RUNTIME]/[CODE]:** `/api/account` returns `daily_pnl: 0, total_pnl: 0, total_pnl_pct: 0` — `total_pnl` is NT8's `realized+unrealized` from the account frame (`trader/ninjatrader/tcp_trader.go:794-799 brokerNativePnL`, `trader/auto_trader_decision.go:197-201`), which is 0 while flat; `daily_pnl` is a **permanently-zero display field** (only writer `trader/auto_trader_loop.go:383 at.dailyPnL = 0`; the comment at :378-381 says so). The dashboard header cards render `account.total_pnl` (`web/src/pages/TraderDashboardPage.tsx:662,713`) → shows 0.00 while the PositionHistory day total (`computeDayTotal`, `PositionHistory.tsx:132-145`, pnl_corrected-only, A-2 rule) shows +212.00. Two P&L numbers on one screen — see §H.
 
 ### G6 Panics / ERROR / restarts since boot [RUNTIME]
-Process restarts since 00:43:30: **0** (systemd `NRestarts=106` lifetime; one in-process trader reload at 08:13:08, §G3). Panics: **0** (`grep -c "panic\|goroutine .* \[running\]"` = 0 in the file log). `[ERRO]` lines in `data/nofx_2026-09-01.log`: **20**, by class:
+Process restarts since 00:43:30: **0** (systemd `NRestarts=106` lifetime; one in-process trader reload at 08:13:08, §G3). Panics: **0** (`grep -c "panic\|goroutine .* \[running\]"` = 0 in the file log). `[ERRO]` lines in `data/vl_2026-09-01.log`: **20**, by class:
 
 | n | class |
 |---|---|
@@ -177,7 +178,7 @@ Also since boot: **348 × `GET "/wyvrn/Synapse"` → 404** from 127.0.0.1 every 
 
 *(Investigated by a read-only sub-agent; every [RUNTIME]/[DB]/[CODE] line below was produced from the running system during this audit. Audit-lead cross-checks are marked ⟂.)*
 
-Baseline [RUNTIME]: `~/nofx` on `dev` @ `d4b38604`, porcelain clean, `dev == origin/dev`. Process PID 1625428 started `Tue Sep 1 00:43:25 2026`; C-section ran 16:32–16:45 CT. The journal is INFO-suppressed for many trader lines; `data/nofx_2026-09-01.log` (23,111+ lines) is the primary runtime source. Boot-ms epoch used in queries: `1788241380000` (= 2026-09-01 00:43 CT).
+Baseline [RUNTIME]: `~/vl` on `dev` @ `d4b38604`, porcelain clean, `dev == origin/dev`. Process PID 1625428 started `Tue Sep 1 00:43:25 2026`; C-section ran 16:32–16:45 CT. The journal is INFO-suppressed for many trader lines; `data/vl_2026-09-01.log` (23,111+ lines) is the primary runtime source. Boot-ms epoch used in queries: `1788241380000` (= 2026-09-01 00:43 CT).
 
 ### C1 — Class 27 netting-orphan — VERIFIED (code + deploy + 1 of 6 arms live-fired); 5 arms UNVERIFIABLE-NOW (no triggering event since boot)
 
@@ -360,7 +361,7 @@ Context both agents established: bound strategy `a5b7662e-7bf7-49bb-9f09-7efa48f
 
 **D13** [DB] `plans.doc.levels` for `2026-09-01:NY` v1–v5: v5 (13:00:02) 11 levels — 29248.19 eVWAP·A, 29209.25 Supply·1h·C, 29197.5 SWG-H·5m·A, 29162 SWG-H·5m·A, 29130 SWG-L·5m·A, 29125 OR-H·C, 29100.5 SWG-L·5m·A, 29082.75 ONL·A, 29062.75 OR-L·A, 29040 SWG-L·15m·A, 28960.89 VWAP−2σ·A (cluster 29125–29130 = 5.00pt; densest 50pt window 4 lines 29082.75..29130.00); v4 12 (pairs 29209.25/29212.50 = 3.25pt Supply·1h/OB(bull)·1h; 29261.19/29266.78 = 5.59pt VWAP/eVWAP); v3 11 (29177.5/29182 = 4.5pt SWG-L·5m/SWG-L·15m); v2 12 (28963.03/28970.38 = 7.35pt VWAP−2σ/OB(bull)·4h; 29177.5/29182); v1 12 (triple 29085.00/29094.31/29099.12 = 14.12pt OB(bull)·1h/VWAP−2σ/Demand·4h; 29177.5/29182). Spans 287.3/284.5/211.7/290.5/269.0 pt. Max lines in any 50-pt window = 4.
 
-**D14/D15** [CODE] `kernel/levels_score.go:674-685 const LevelClusterTicks = 12; func clusterToleranceFor(price float64) float64 { _ = price; return LevelClusterTicks * 0.25 }` (consumers `:535`, `plan_doc.go:800`, `auto_trader_planner.go:1367`); `kernel/touch_telemetry.go:28-36 TouchBandTicks` env default 16, `:70 TouchBandPoints`; `kernel/level_stats_calc.go:20 LevelTouchTolPoints = 4.0`; `kernel/plan_lifecycle.go:190-201 levelTouched … if b.Low <= level && b.High >= level`. ⟂ **Correction to the D14–26 sub-agent:** it reported "No /home/hoang/nofx-class35 directory … no class35/touchband branch" — at audit time `git worktree list` shows `/home/hoang/nofx-class35 d4b38604 [fix/class35-replan-budget] locked` and the lock was re-acquired at 16:40:57 by pid 1860416 (`note=re-acquired-after-stale-holder-1861644-dead`). The 1C work is in flight in that worktree; it had produced no commit (`ahead_of_dev=0`) when checked. No parked 1C recommendation exists yet in any report.
+**D14/D15** [CODE] `kernel/levels_score.go:674-685 const LevelClusterTicks = 12; func clusterToleranceFor(price float64) float64 { _ = price; return LevelClusterTicks * 0.25 }` (consumers `:535`, `plan_doc.go:800`, `auto_trader_planner.go:1367`); `kernel/touch_telemetry.go:28-36 TouchBandTicks` env default 16, `:70 TouchBandPoints`; `kernel/level_stats_calc.go:20 LevelTouchTolPoints = 4.0`; `kernel/plan_lifecycle.go:190-201 levelTouched … if b.Low <= level && b.High >= level`. ⟂ **Correction to the D14–26 sub-agent:** it reported "No /home/hoang/vl-class35 directory … no class35/touchband branch" — at audit time `git worktree list` shows `/home/hoang/vl-class35 d4b38604 [fix/class35-replan-budget] locked` and the lock was re-acquired at 16:40:57 by pid 1860416 (`note=re-acquired-after-stale-holder-1861644-dead`). The 1C work is in flight in that worktree; it had produced no commit (`ahead_of_dev=0`) when checked. No parked 1C recommendation exists yet in any report.
 
 **D16** [CODE] `kernel/plan_lifecycle.go:322-329 FlipATRBuffer` default 0.5, applied `:255`; boot `🧬 plan lifecycle: hysteresis=buffer0.5×ATR14 confirm=2close(s) · flip/death→dormant+auto-rearm (version unchanged, budget untouched) · exec_reasoning=fast→low plan_reasoning=max`; `trader/auto_trader_planner.go:295-313` structured killer → `UpdatePlanLifecycle(…, "dormant", marker)` then `continue` (never re-plans, never flips bias); re-arm `:260-268`; `grep -rn -i "flipCount|flip_count|maxFlips|MAX_FLIPS"` → none; weekly `trader/auto_trader_weekly.go:277-336 maybeCheckWeeklyInvalidation` appends a WEEKLY row only, `grep weekly_invalidated|InvalidatedAt` outside the weekly files → no consumers. [RUNTIME] NY today: `09:15:08 v2 DORMANT (death)` → `09:51:07 v3 DORMANT (death)` → `10:11:07 v3 REARMED` → `10:13:07 v3 DORMANT — flip-condition … (8× 5m closes)` → `10:51:07 v4 DORMANT (death)` → `11:15:07 v4 REARMED` → `11:17:07 v4 DORMANT — flip-condition … (10× 5m closes)` — seven transitions, no breaker. ⟂ Note the boot line's "version unchanged" is contradicted by the plans table: dormant/rearm transitions appear as new version rows (§G1) — the D-agent read them as in-place `UpdatePlanLifecycle`, the E-agent found `store/plan.go:286-293 UpdatePlanLifecycle` overwrites `trigger_reason` in place. Both are true of different rows: v2/v3/v4 were WRITTEN by level-event wake reads (journal `08:43:08 … waking the planner (W6, 5th wake-up)` → `08:53:16 PLAN written NY v2` etc.) and their `trigger_reason` was later overwritten by the dormant/rearm transition — provenance destroyed (E1 finding 2).
 
@@ -397,12 +398,12 @@ Context both agents established: bound strategy `a5b7662e-7bf7-49bb-9f09-7efa48f
 14. Structured flip does not flip — it parks; NY cycled 7× today.
 15. `mae`/`mfe` `DEFAULT 0` — cannot distinguish computed-zero from absent; entry bar excluded.
 16. `GetFullStats` does not exclude NULL `pnl_corrected` (E5).
-17. ⟂ The D14–26 agent's "nofx-class35 does not exist" claim was wrong (worktree present, lock re-acquired 16:40:57).
+17. ⟂ The D14–26 agent's "vl-class35 does not exist" claim was wrong (worktree present, lock re-acquired 16:40:57).
 
 ### D — UNVERIFIED
 - D3: a research source stating "1.5–2.5×ATR stop floor" — not found in the repo (nearest: v5 build plan `stop_atr_mult: 2.5`); would verify: the owner naming the source.
 - D5: the non-signal dead wire at runtime since GAR-F1 (no manual NT8 entry reached +40 pts since 08-28); NT8-side acknowledgement of the 09-01 stop moves (NT8 Orders tab / log).
-- D6: the exact fields changed by the 08:13 save (inferred `min_risk_reward_ratio` 3→2); would verify: `~/nofx-backups/auto/` before/after diff.
+- D6: the exact fields changed by the 08:13 save (inferred `min_risk_reward_ratio` 3→2); would verify: `~/vl-backups/auto/` before/after diff.
 - D7: split-arm capacity 2 at runtime (no refusal/acceptance line either way).
 - D9: killzone share of adherence step-downs (reasons not persisted).
 - D14: cluster tolerance at runtime (no boot print, no collapse line).
@@ -482,7 +483,7 @@ RR / min-SL / one-live-arm / split-leg refusals: log-only via `armRefusalChanged
 **WRITER**: `store/position.go:148, :389, :411, :482-516, :549, :816`; `store/position_builder.go:157`; `store/position_history.go:183, :214, :255`; `store/order.go:67`; `trader/auto_trader_decision.go:597-616`; `trader/ninjatrader/close_sync.go:250`; `trader/position_rebuild.go:34-187`; crypto brokers (`trader/{aster,hyperliquid,bybit,lighter,kucoin,gate,bitget,okx,binance}/*`); `trader/types/interface.go:16,36`; `kernel/engine.go:86,155,157`; `kernel/risk_limits.go:180-239` (consumes `ctx.DailyRealizedPnL`, which is corrected). **CORRECTOR**: `store/pnl_correction.go:42, :107`. **READER-CORRECTED (strict)**: `store/position_query.go:40, :117`. **READER-CORRECTED-COERCING**: `store/position.go:830`; `position_query.go:256` → `trader/auto_trader_loop.go:1215, :1234` → `kernel/engine_prompt.go:314,320`, `kernel/formatter.go:203,214,470,481`; `web/src/components/trader/PositionHistory.tsx:68-71`. **READER-RAW (findings)**: `api/handler_plan.go:1674`; `PositionHistory.tsx:651` (sort); `trader/ninjatrader/tcp_trader.go:798` (broker-native, by design); `api/handler_trader_status.go:414,489` (hard-coded 0); `agent/tools.go:3359` (§C2). **TEST**: 100+ lines across `*_test.go` (store/pnl_correction*, trader/exchange_sync_test 22, trader/binance/*, ninjatrader/*, kernel/guardrails_test 9, …). No `.sql` files reference the column.
 
 ### E — Findings (defects)
-1. **Class 35 live-confirmed** on both chains today; no `dayplan_replans_used` record exists; fix in flight (`~/nofx-class35`).
+1. **Class 35 live-confirmed** on both chains today; no `dayplan_replans_used` record exists; fix in flight (`~/vl-class35`).
 2. **Provenance loss**: `UpdatePlanLifecycle` overwrites `plans.trigger_reason` in place.
 3. **Entries count** has no exclusion for test-seam / duplicate / unresolved / source (today's 6 real; 08-30 counted 3 e7 rows).
 4. **NULL coercion in five aggregators** (`GetFullStats`, `GetSymbolStats`, `GetDirectionStats`, `GetHoldingTimeStats`, `GetHistorySummary/streaks`) — the live AI prompt reads `Total PnL: −203.68 (220 trades)` vs strict `+304.32 (105)`; the consistency rule uses the coerced number.
@@ -503,7 +504,7 @@ RR / min-SL / one-live-arm / split-leg refusals: log-only via `armRefusalChanged
 ### E — UNVERIFIED
 - The exact call-time state that left 584/586 unstamped ([B] chain above).
 - Whether the 20 sign-broken E8 rows are exactly the short-direction set (no `direction` column).
-- The class-35 fix contents (`~/nofx-class35` not opened).
+- The class-35 fix contents (`~/vl-class35` not opened).
 
 ---
 
@@ -528,7 +529,7 @@ RR / min-SL / one-live-arm / split-leg refusals: log-only via `armRefusalChanged
 | F13 | Token-footer % (chars not tokens) | **Not reproduced at the located site.** `store/strategy.go:2194-2196` chars→tokens `/4` (CJK `/2`), `:2288-2293 total := subtotal*115/100; pct := total*100/limit` over estimated tokens → `TokenEstimateBar.tsx:11 usage_pct`. Other chars/4 sites (`auto_trader_planner.go:1277-1281`, `handler_plan.go:2214-2224`) are log/cost-only. Which "footer" the defect meant is UNVERIFIED. | [CODE] |
 | F14 | Facts not stored with rejected prompts | Confirmed: `planner_rejected_prompts` columns `id, trader_id, trade_date, session, prompt_hash, attempt, reject_reason, prompt_text, created_at` (`store/planner_rejected.go:13-23`, cap 20); no facts/snapshot column — facts survive only as prose in `prompt_text`. | [CODE] [DB] |
 | F15 | No manual/system flag | `DISTINCT source` = `system 563, reconcile 11, e7_farside_test 3, armed_entry 5` — **no 'manual'**; `Source` is a free string `default:system` (`store/position.go:159`); writers: `"sync"`, `"armed_entry"`, `"reconcile"`, `"snapshot"`. | [DB] [CODE] |
-| F16 | Journald flood | Go rate-limit shipped `871583a9` (08-27 18:06): order_update → DEBUG, 1-in-500 sample, 1-line/min summary (`armed_executor.go:930-983`). journald drop-in `/etc/systemd/journald.conf.d/nofx.conf`: `SystemMaxUse=2G`, `RateLimitIntervalSec=30`, `RateLimitBurst=200000`; `journalctl --disk-usage` → **1.9G (at cap)**. Per-day lines: 08-26 **0 (`-- No entries --`)**, 08-27 5,401,570 (+907,173 suppressed), 08-28 95,727, 08-29 35,299, 08-30 79,448, 08-31 209,108, 09-01 54,830 (to 16:40). Oldest entry `Aug 27 13:37:42`. **The journal is now a rolling ~5-day window**; file logs (`nofx_2026-08-26.log` 61,872 lines) are the only 08-26 source. | [CODE] [CONFIG] [RUNTIME] |
+| F16 | Journald flood | Go rate-limit shipped `871583a9` (08-27 18:06): order_update → DEBUG, 1-in-500 sample, 1-line/min summary (`armed_executor.go:930-983`). journald drop-in `/etc/systemd/journald.conf.d/vl.conf`: `SystemMaxUse=2G`, `RateLimitIntervalSec=30`, `RateLimitBurst=200000`; `journalctl --disk-usage` → **1.9G (at cap)**. Per-day lines: 08-26 **0 (`-- No entries --`)**, 08-27 5,401,570 (+907,173 suppressed), 08-28 95,727, 08-29 35,299, 08-30 79,448, 08-31 209,108, 09-01 54,830 (to 16:40). Oldest entry `Aug 27 13:37:42`. **The journal is now a rolling ~5-day window**; file logs (`vl_2026-08-26.log` 61,872 lines) are the only 08-26 source. | [CODE] [CONFIG] [RUNTIME] |
 | F17 | 334 June/July positions untraceable | `COUNT(*) WHERE entry_time < 2026-08-01` = **334** (May 8 / Jun 324 / Jul 2); 333 `pnl_corrected IS NULL`. NT8 trace dir earliest `trace.20260801.00000.txt`. Noted only in `2026-09-01-manual-system-segregation.md:24`; not in any UI. | [DB] [DOC] |
 | F18 | DeepSeek-2 old key revoked? Binnie re-clone sent? | **Both UNVERIFIED.** `.env` has 0 DEEPSEEK-named variables (keys live encrypted in `ai_models`; two DeepSeek rows, both `updated_at 2026-08-29 22:38:46 UTC`). `2026-08-30-pre-livefire-verify.md:263` says DeepSeek 2 still held the old key; `2026-08-31-eod-verification.md:71` says unverifiable. No artifact records a re-clone message. Would verify: the DeepSeek console key list; the partner repo's remote state / owner statement. | [CONFIG] [DB] [DOC] |
 | F19 | 08-31 canon laws in CLAUDE.md? | **lock-liveness: in CLAUDE.md (:147).** canonical-casing, no-fabricated-values, sample-id: **NOT in CLAUDE.md, NOT in the checklist** — only in wave reports (`2026-08-31-netting-orphan-wave.md:15`, `2026-08-31-0a2-ledger-honesty.md:84`, `2026-08-31-eod-verification.md:61`). corrected-column: NOT in CLAUDE.md; present as checklist **R7** (`:301-303` "pnl_corrected everywhere + excluded_null_pnl for the 354 legacy NULL rows" — the DB count is 357). | [DOC] |
@@ -578,7 +579,7 @@ RR / min-SL / one-live-arm / split-leg refusals: log-only via `armRefusalChanged
 | H21 | 0A-2 report "hidden rows excluded from the list" | `GetRecentTrades` applies no exclusion; prompt shows row 579 | Which surface the report meant is untraced; the prompt list is NOT excluded | §C2 |
 | H22 | boot `capacity=1 unless max_contracts_per_order raises` | resolved 2 (`max_contracts_per_order: 2`) | Text is conditionally true but the boot never prints the resolved number; one 2-lot fill exists (574) | §D7 |
 | H23 | `0C` boot `conditions: … shadow [breakout_retest, fvg_entry]` (enforced at the arm seam) | grader still weights `KindIFVG` = FVG weights and `fvg_entry` detector `on` at boot | Consistent by design (author + score, never place) — recorded so nobody reads the detector line as "fvg live" | §D12 |
-| H24 | D14–26 sub-agent: "no nofx-class35 worktree exists" | `git worktree list` → present; lock re-acquired 16:40:57 | Agent error, corrected (process note) | §D |
+| H24 | D14–26 sub-agent: "no vl-class35 worktree exists" | `git worktree list` → present; lock re-acquired 16:40:57 | Agent error, corrected (process note) | §D |
 | H25 | class-32 read scheduling (`ReadCT 16:30`) | `plannerPreflight` + `weekly` path both still data-gated in effect | Two scheduled reads (ASIA daily, weekly Sunday) cannot author inside the halt | §C9, §F4 |
 
 ---
@@ -658,10 +659,10 @@ RR / min-SL / one-live-arm / split-leg refusals: log-only via `armRefusalChanged
 
 ## CLOSEOUT NOTES
 
-- **Read-only compliance:** no file in the main tree, no config, no knob, no DB row, no order, no restart was touched. The only writes: this report on `docs/full-system-audit-0901` (worktree `~/nofx-audit`), a `.backup` DB copy + JWT token in the session scratchpad (outside the repo), and the GIN journal lines this audit's GETs produced.
+- **Read-only compliance:** no file in the main tree, no config, no knob, no DB row, no order, no restart was touched. The only writes: this report on `docs/full-system-audit-0901` (worktree `~/vl-audit`), a `.backup` DB copy + JWT token in the session scratchpad (outside the repo), and the GIN journal lines this audit's GETs produced.
 - **What the owner will still see wrong on screen:** dashboard header P&L `0.00` beside a +212.00 day total (H10); plan cards saying `0 re-reads left` on chains that spent nothing (H3, until ec6632f9 is cut over); the Guide's proximity "⭐ 0.3 LIVE" and NY read "08:25" (H1, H15); the boot block's "market-entry floor 3.0", "retuned 0.3", "capacity=1" (H6, H1, H22); `Total PnL −203.68` in every stored executor prompt (H11); four red `CLOCK EARLY-WARNING` lines a day that are artifacts (H9); an ASIA card that stays "not found" until ~17:08 every day (I4-1).
-- **Rollback command (for reference, NOT run):** `cp ~/nofx/nofx-bin.prev.boot ~/nofx/nofx-bin && echo ebc37e01d7dd5f19c0e0f0ffa962388e12988f58 > ~/nofx/deploy/RELEASE && kill -9 1625428` (then GUIDE_BUILT_REV would drift — see §B3).
-- **A9 commit-ref URL — NOT produced.** `git push -u origin docs/full-system-audit-0901` from `~/nofx-audit` was denied by the session's auto-mode classifier (no workaround attempted). The branch exists locally with this report committed; the owner publishes it with `git -C ~/nofx-audit push -u origin docs/full-system-audit-0901`, after which the raw URL is `https://raw.githubusercontent.com/johnwick2921-cyber/nofx/<sha>/docs/superpowers/reports/2026-09-01-full-system-audit.md` (curl it for 200 before citing — this has 404'd twice before).
+- **Rollback command (for reference, NOT run):** `cp ~/vl/vl-bin.prev.boot ~/vl/vl-bin && echo ebc37e01d7dd5f19c0e0f0ffa962388e12988f58 > ~/vl/deploy/RELEASE && kill -9 1625428` (then GUIDE_BUILT_REV would drift — see §B3).
+- **A9 commit-ref URL — NOT produced.** `git push -u origin docs/full-system-audit-0901` from `~/vl-audit` was denied by the session's auto-mode classifier (no workaround attempted). The branch exists locally with this report committed; the owner publishes it with `git -C ~/vl-audit push -u origin docs/full-system-audit-0901`, after which the raw URL is `https://raw.githubusercontent.com/johnwick2921-cyber/nofx/<sha>/docs/superpowers/reports/2026-09-01-full-system-audit.md` (curl it for 200 before citing — this has 404'd twice before).
 
 ---
 
@@ -679,7 +680,7 @@ RR / min-SL / one-live-arm / split-leg refusals: log-only via `armRefusalChanged
 - **17:23:14 — attempt 3 (full re-author) rejected → FAIL-CLOSED.** `🚨 PLANNER FAIL-CLOSED 2026-09-01 ASIA: S2 breakdown_continue: a close came back across 29130.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) — writing a NO-TRADE …` → `🗓️ PLAN written 2026-09-01 ASIA v1 (model deepseek-v4-pro, lifecycle no_trade, prompt 1338de68604e, ai_config a28d83f159084145)`. [DB] `plans` `2026-09-01:ASIA v1 planner_fail_closed no_trade 17:23:14`. [RUNTIME] `/api/plan/today?session=ASIA` → `found:true version:1 lifecycle:no_trade trigger_reason:planner_fail_closed replans_left:4 replan_cap:4`; doc = the Go stub (`S0 hold long B`, bias neutral/low, 12 levels carried). **Net for tonight: ASIA opened planless at 17:00 and sits out on a NO-TRADE marker from 17:23:14 — three planner attempts (543.6 s + 342.4 s + ~440 s) each rejected the same `breakdown_continue`-void class; the halt-refused 16:30 read cost the 31 minutes that would otherwise have absorbed one of those retries before the open.** The card can be re-opened only by an owner reset (`the owner reset is the escape hatch`, `auto_trader_reread.go:73`) or a level-event wake (`auto_trader_planner.go:281-283`).
 
 ### CUTOVER DURING THE AUDIT — CLASS 35 WENT LIVE AT 17:24:00 CT [RUNTIME]
-- `Sep 01 17:23:55 systemd[1]: nofx.service: Main process exited, code=killed, status=9/KILL` → `17:24:00 Started nofx.service` → `🔐 BOOT INTEGRITY OK — rev ec6632f9de41 · built 2026-09-01T21:54:27Z · expected ec6632f9de41 · goldens PASS` → new boot line `🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: <S>_scheduled_read, level_event, structure_mss (incl. fast-market), owner_reset, dor…`. New PID **1908258** (started 17:23:59). `go version -m nofx-bin` → `vcs.revision=ec6632f9… vcs.modified=false`; `deploy/RELEASE` = `GUIDE_BUILT_REV` = `ec6632f9…` (marker `b51f8f03 deploy: class-35 marker — RELEASE=ec6632f9 + GUIDE_BUILT_REV=ec6632f9`); class-35 report `155cd4dc` on dev; rollback slot `nofx-bin.prev.boot` now = `fef656a4…` (the binary this audit measured). Lock: `owner=hoang pid=1860416 expiry=2026-09-01T23:30:00-0500 task=class35-cutover acquired=17:13:31` — `kill -0 1860416` → **ALIVE**. Main tree porcelain 0, dev tip `155cd4dc`.
+- `Sep 01 17:23:55 systemd[1]: vl.service: Main process exited, code=killed, status=9/KILL` → `17:24:00 Started vl.service` → `🔐 BOOT INTEGRITY OK — rev ec6632f9de41 · built 2026-09-01T21:54:27Z · expected ec6632f9de41 · goldens PASS` → new boot line `🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: <S>_scheduled_read, level_event, structure_mss (incl. fast-market), owner_reset, dor…`. New PID **1908258** (started 17:23:59). `go version -m vl-bin` → `vcs.revision=ec6632f9… vcs.modified=false`; `deploy/RELEASE` = `GUIDE_BUILT_REV` = `ec6632f9…` (marker `b51f8f03 deploy: class-35 marker — RELEASE=ec6632f9 + GUIDE_BUILT_REV=ec6632f9`); class-35 report `155cd4dc` on dev; rollback slot `vl-bin.prev.boot` now = `fef656a4…` (the binary this audit measured). Lock: `owner=hoang pid=1860416 expiry=2026-09-01T23:30:00-0500 task=class35-cutover acquired=17:13:31` — `kill -0 1860416` → **ALIVE**. Main tree porcelain 0, dev tip `155cd4dc`.
 - **Supersedes** §B1–B3 (live rev/PID/rollback), §B6, and the "fix merged, not deployed" statements in §E1/§H3/§I: the recorded-counter budget is now live; the ASIA v1 NO-TRADE row written 49 s BEFORE the cutover shows `replans_left 4` under the new code (v1 = 0 spends). Everything else in this report was measured on `fef656a4` (00:43:30 → 17:23:55 CT) and stands as the pre-cutover baseline. The cutover happened while a scheduled ASIA read had just fail-closed (17:23:14) and no read was in flight — rule A6 satisfied by timing; the 16:45–17:10 CT window (A7) was respected (kill at 17:23:55).
 
 ---
@@ -692,7 +693,7 @@ RR / min-SL / one-live-arm / split-leg refusals: log-only via `armRefusalChanged
 
 §D-9 offered this chain at **[B]** (inferred): "`StampArmedLineageIfMatched` ran before the ledger row was `filled`; the fill handler's `GetOpenPositionBySymbol(side=\"short\")` (`store/position.go:616`, case-sensitive `side = ?`) missed a row stored `SHORT`; `RepairArmedLineage` runs only inside `reconcileOnce`."
 
-Session **nofx-06** measured this on the live store 2026-09-03 and reports it **[A]**:
+Session **vl-06** measured this on the live store 2026-09-03 and reports it **[A]**:
 
 - `armed_orders.side` is always lowercase (long 19 / short 17); `trader_positions.side` is overwhelmingly uppercase (LONG 280 / SHORT 304 against long 1 / short 2).
 - Against position 591: `side='short'` matched **0** rows, `side='SHORT'` matched **1**. `=` on a plain TEXT column is case-sensitive.
@@ -713,16 +714,16 @@ A re-run of the §D-9 column set on the current rev returns **3** unstamped, aga
 
 ### A3 — Open, quoted both ways (A12)
 
-nofx-06 reports `;stamp_pending` is transient by design, trimmed in `reconcile.go`, and that no row carries it now — so the defect is visible only in `fill_quantity`. §D-9 of this report records `armed_orders` 24 and 28 as **still** `filled ;stamp_pending` when read at 16:40 CT on 2026-09-01, against fills at 08:37:08 and 13:33:06 — carried ~8 h and ~3 h. Both hold if reconcile trimmed them later. Not resolved here; flagged because "transient" is the assumption that makes `fill_quantity` the sole symptom.
+vl-06 reports `;stamp_pending` is transient by design, trimmed in `reconcile.go`, and that no row carries it now — so the defect is visible only in `fill_quantity`. §D-9 of this report records `armed_orders` 24 and 28 as **still** `filled ;stamp_pending` when read at 16:40 CT on 2026-09-01, against fills at 08:37:08 and 13:33:06 — carried ~8 h and ~3 h. Both hold if reconcile trimmed them later. Not resolved here; flagged because "transient" is the assumption that makes `fill_quantity` the sole symptom.
 
-### A4 — Probe added to the class-59 checklist by nofx-06
+### A4 — Probe added to the class-59 checklist by vl-06
 
 1. Ask which **branch** a write sits on, not merely whether the write exists. A write on a path almost nothing takes is worse than a read nobody performs, because it produces a green proof.
 2. When a log line names a **cause**, check the code can actually distinguish that cause from the alternatives. `"position row not materialized yet — stamp pending"` prints whenever `pos == nil`, which is true under either mechanism, while asserting the race as fact. It was quoted as live proof of the race and proves only `pos == nil`.
 
 ### A5 — §F1's "25% blind" has become three failure states; and the grade-reset predicate keys on the wrong thing
 
-*(Measured 2026-09-03 ~11:40 CT, read-only: `sqlite3 'file:/home/hoang/nofx/data/data.db?mode=ro'` + `sed` over two source files. No writes. Prompted by nofx-06's observation that late-stamped positions keep a permanent off-plan D.)*
+*(Measured 2026-09-03 ~11:40 CT, read-only: `sqlite3 'file:/home/hoang/vl/data/data.db?mode=ro'` + `sed` over two source files. No writes. Prompted by vl-06's observation that late-stamped positions keep a permanent off-plan D.)*
 
 **A5.1 — The reset predicate catches a subset, not nothing [A].** `trader/ninjatrader/reconcile.go` clears the grade so W5 can regrade, but only for `F`:
 
@@ -737,7 +738,7 @@ if p.Status == "CLOSED" && p.AdherenceGrade == "F" {
 
 So an uncited close grades **F when either penalty applies, D when neither does**. The predicate is therefore not looking for an impossible value (an earlier characterisation, corrected here) — it is looking for a value that occurs in a *subset*. `RepairArmedLineage` silently succeeds on penalised uncited rows and silently fails on clean ones, which is why spot-checking would not catch it: a sampled F row shows the repair working. [DB] confirmation, all three `plan_version 0`, `source=reconcile`: **566 = F**, **571 = F**, **580 = D**.
 
-The correct fix keys on the *absence of lineage*, not on a grade letter that encodes lineage plus two unrelated penalties. **It must not simply also match `D`** — row **580** is a genuinely uncited close that has earned its D, and a predicate widened to `F` OR `D` would clear a correct grade along with the wrong ones. (Constraint pair credited to nofx-06.)
+The correct fix keys on the *absence of lineage*, not on a grade letter that encodes lineage plus two unrelated penalties. **It must not simply also match `D`** — row **580** is a genuinely uncited close that has earned its D, and a predicate widened to `F` OR `D` would clear a correct grade along with the wrong ones. (Constraint pair credited to vl-06.)
 
 **A5.2 — §F1's five ids are now three different failures wearing one ratio.**
 
@@ -760,11 +761,11 @@ The correct fix keys on the *absence of lineage*, not on a grade letter that enc
 
 **Not remediated.** Correcting the existing rows is a DB write and needs the owner's explicit authorisation under the guarded-write rule; this section is measurement only.
 
-**A5.4 — Probe (nofx-06, class 59, third):** when a repair path clears a value to trigger a recompute, check it matches the value the broken path actually writes. Extended by A5.1: check it matches *every* value that path can write, not the representative one — a predicate that matches a subset fails silently and samples clean.
+**A5.4 — Probe (vl-06, class 59, third):** when a repair path clears a value to trigger a recompute, check it matches the value the broken path actually writes. Extended by A5.1: check it matches *every* value that path can write, not the representative one — a predicate that matches a subset fails silently and samples clean.
 
 ### A6 — Correction of A5.3: the stuck count is 4, all four are reconcile-sourced, and 582 settles nothing
 
-*(2026-09-03, read-only. nofx-06 challenged two conclusions in A5.3; both challenges are correct and I verified them independently against the live store. This section supersedes A5.3's count, its 582 conclusion, and its 591 characterisation. A5.3's population figures and the A5.2 three-state split are unaffected.)*
+*(2026-09-03, read-only. vl-06 challenged two conclusions in A5.3; both challenges are correct and I verified them independently against the live store. This section supersedes A5.3's count, its 582 conclusion, and its 591 characterisation. A5.3's population figures and the A5.2 three-state split are unaffected.)*
 
 **A6.1 — The discriminator A5.3 lacked [A].** `GradeAdherence` bases a cited row that matched direction at **A** unless the band is `off_band` or `struct` (both base B). Only two penalties exist, each one step, so **base A can reach C at worst — never D**. A row with `plan_matched=1` and a band outside `{off_band, struct}` sitting at D is therefore impossible from correctly-ordered grading. That is the clean test A5.3 did not apply.
 
@@ -787,7 +788,7 @@ Applying it [DB] — `plan_matched` and `plan_band` on the six D rows:
 
 **A6.3 — The reversal A5.3 got backwards.** All four impossible-D rows are **`source=reconcile`** (575, 584, 586, 591). A5.3 concluded "this is not a reconcile-path problem" on the strength of 582; with 582 excluded, the evidence points the other way — every impossible-D row is on the reconcile path. This is not proof of reconcile-specificity, because the armed path has one D row and that row is undecidable; it is the absence of any counter-example.
 
-**A6.4 — 591 is not a post-fix regression (A5.3 wrong, correction is nofx-06's).** 591's armed row filled 09:03:53, the position materialized 09:05:14, and the boot carrying 664ab6b7 was 11:10:33 — it was graded roughly two hours before the fix existed.
+**A6.4 — 591 is not a post-fix regression (A5.3 wrong, correction is vl-06's).** 591's armed row filled 09:03:53, the position materialized 09:05:14, and the boot carrying 664ab6b7 was 11:10:33 — it was graded roughly two hours before the fix existed.
 
 **A6.5 — Denominator, and a trap in the discriminator [DB].** Closed rows carrying a grade: **71**. So an adherence rate computed today under-reports plan-following by **4 in 71** — not 5, not 7. Caveat for anyone re-running A6.1's predicate: without a lineage clause it also returns **572** (`plan_matched=1`, `plan_band='armed_fill'`, grade D, `plan_version 0`, `cited_scenario_id='TEST-E7'`), whose `source` and `close_reason` are both `e7_farside_test`. That is an `ARMED_TEST_SEAM` artifact, not a trade, and it must be excluded — the same test-seam contamination §D-3 of this report flags in `store/position_query.go`'s unfiltered counts.
 

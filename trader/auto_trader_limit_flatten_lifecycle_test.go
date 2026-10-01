@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 type limitFlattenRecorder struct {

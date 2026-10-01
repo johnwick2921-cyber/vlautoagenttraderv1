@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func effRowsFor(t *testing.T, raw, venue, session string) map[string]EffectiveKnob {
@@ -222,7 +222,6 @@ func TestEffectiveStoredPresenceMirrorsParse(t *testing.T) {
 // ai_config.* paths as rows (W1 (f) adds them).
 func TestEffectiveSecretRowsRedacted(t *testing.T) {
 	raw := `{"strategy_type":"ai_trading","ai_config":{"indicators":{
-		"nofxos_api_key":"PLANTED-KEY-9c1f",
 		"external_data_sources":[{"name":"feed","url":"https://h.example/?apikey=PLANTED-URL-77",
 			"headers":{"Authorization":"Bearer PLANTED-HDR-42"}}]}}}`
 	x, err := newEffCtx(raw, "ninjatrader", "")
@@ -230,7 +229,6 @@ func TestEffectiveSecretRowsRedacted(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []string{
-		"ai_config.indicators.nofxos_api_key",
 		"ai_config.indicators.external_data_sources.headers",
 		"ai_config.indicators.external_data_sources.url",
 	} {

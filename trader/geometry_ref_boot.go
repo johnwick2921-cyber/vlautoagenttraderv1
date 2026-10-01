@@ -1,7 +1,7 @@
 package trader
 
 import (
-	"nofx/store"
+	"vl/store"
 )
 
 // GeometryRefBootLine (W-GEOMETRY-REFUSAL, 2026-09-18) is the per-trader boot

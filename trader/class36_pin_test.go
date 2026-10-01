@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // CLASS 36 (2026-09-01) — PIN: the 16:30 CT scheduled ASIA read must AUTHOR

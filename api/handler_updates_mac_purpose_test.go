@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 func TestInstallRefusesAMACOverAnUntaggedMessage(t *testing.T) {

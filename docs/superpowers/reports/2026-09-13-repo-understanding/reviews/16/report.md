@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 16 — persistence and configuration source review
 
-Base: `63968be62e44db2fb07a92883e02127b9064b0be`. Worktree `/tmp/nofx-understanding-surfaces-20260913` verified at that HEAD with empty porcelain before review. All **43 assigned files, 10,006 lines and 458 named declarations** read in full. Additional caller/test excerpts are recorded separately. No source, live DB, account, environment, runtime or order mutations. No tests executed by this worker; root owns reproductions and repairs. [A] means direct source evidence, [B] static inference, not a demonstrated live failure.
+Base: `63968be62e44db2fb07a92883e02127b9064b0be`. Worktree `/tmp/vl-understanding-surfaces-20260913` verified at that HEAD with empty porcelain before review. All **43 assigned files, 10,006 lines and 458 named declarations** read in full. Additional caller/test excerpts are recorded separately. No source, live DB, account, environment, runtime or order mutations. No tests executed by this worker; root owns reproductions and repairs. [A] means direct source evidence, [B] static inference, not a demonstrated live failure.
 
 Rules consulted: root AGENTS.md; tracked CLAUDE-canon (new keeper semantics supersede stale hand-heartbeat instruction); AUDIT-CHECKLIST classes 7, 19, 28, 29, 35, 40 and PART2 R1–R10. SYSTEM-MAP and corrected RULEBOOK sections on storage, bars, P&L, settings and entry economics. Latest commit for BOTH documents: `565e8fbe fix: use owner daily-loss controls without requiring a per-trade cap`. Review uses the owner correction: daily loss controls remain; no new mandatory per-trade cap is inferred. Supplied base is review target; worker did not certify the running process revision.
 

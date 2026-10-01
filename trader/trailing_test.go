@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // 3B.4 — LONG and SHORT ratchet math (units: price points at every layer).

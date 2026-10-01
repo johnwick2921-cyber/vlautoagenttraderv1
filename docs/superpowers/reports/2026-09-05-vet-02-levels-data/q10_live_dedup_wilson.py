@@ -3,7 +3,7 @@
 Dynamic kinds (VWAP*, eVWAP, SWG-*, OR-* before 08:35, POC of the read day) are re-emitted at a NEW price per read and scanned
 over bars that PREDATE the level's existence -> lookahead-contaminated; static prior-day anchors are the only clean rows."""
 import sqlite3, math, collections
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 def wilson(h,n,z=1.96):
     if n==0: return (0,0)
     p=h/n; den=1+z*z/n; cen=(p+z*z/(2*n))/den; half=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den

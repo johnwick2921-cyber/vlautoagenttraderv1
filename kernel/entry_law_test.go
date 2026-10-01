@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ENTRY-MECHANICS E2 (2026-08-30) — per-condition entry-law fixtures: ONE

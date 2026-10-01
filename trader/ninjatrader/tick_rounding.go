@@ -10,7 +10,7 @@ import (
 	"math"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // InstrumentTickSize returns the tick size in points for a CME instrument.

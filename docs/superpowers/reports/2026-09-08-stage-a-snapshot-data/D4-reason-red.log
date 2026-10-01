@@ -4,5 +4,5 @@ kernel/research_score.go:46: reason := fmt.Sprintf("%s %.2f [%s]: %s", l.Kind, l
     --- FAIL: TestStageACandidateRecorderKeepsComputedEvidence/PDH (0.00s)
         stage_a_score_capture_test.go:43: cut reason does not identify this candidate's actual exclusion: "shared cap reason"
 FAIL
-FAIL	nofx/kernel	0.010s
+FAIL	vl/kernel	0.010s
 FAIL

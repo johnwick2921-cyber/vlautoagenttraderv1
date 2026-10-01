@@ -3,7 +3,7 @@ package binance
 import (
 	"context"
 	"fmt"
-	"nofx/logger"
+	"vl/logger"
 	"strconv"
 	"time"
 

@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/calendar"
-	"nofx/kernel"
-	"nofx/store"
+	"vl/calendar"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W-T1-CURRENCIES (2026-09-18) — PRODUCTION CALL SITES (class 53). The

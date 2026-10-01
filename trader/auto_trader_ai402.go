@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/mcp"
+	"vl/kernel"
+	"vl/mcp"
 )
 
 // P5 — 402 / BALANCE ALERT (ledger-close dispatch 2026-08-19, K11 class / U2).

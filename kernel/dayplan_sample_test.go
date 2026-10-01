@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // TestSampleKeyLevelsBlock assembles the full P1 pipeline (multi-day + intraday

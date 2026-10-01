@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // U1 (stale-bar dispatch) — feed problems become loud. T7 runs here with a

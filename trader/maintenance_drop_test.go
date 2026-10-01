@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-ONE-BUTTON M2, M-2 — an entry the hold dropped from the queue ────────

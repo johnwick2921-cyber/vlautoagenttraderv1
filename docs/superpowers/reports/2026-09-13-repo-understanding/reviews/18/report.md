@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 18 — research and report-source review
 
-[A] All 106 assigned files (8,052 source lines) were manually read in full at isolated worktree `/tmp/nofx-understanding-surfaces-20260913`, base `63968be62e44db2fb07a92883e02127b9064b0be`. `reads.json` records each full range and SHA-256; unread count is zero. `functions.json` records 252 named functions, including embedded shell/Python helpers; inline lambdas and callbacks are included in their enclosing function/file notes. This is source understanding of this slice, not a claim of whole-repository, runtime, or dataset validation.
+[A] All 106 assigned files (8,052 source lines) were manually read in full at isolated worktree `/tmp/vl-understanding-surfaces-20260913`, base `63968be62e44db2fb07a92883e02127b9064b0be`. `reads.json` records each full range and SHA-256; unread count is zero. `functions.json` records 252 named functions, including embedded shell/Python helpers; inline lambdas and callbacks are included in their enclosing function/file notes. This is source understanding of this slice, not a claim of whole-repository, runtime, or dataset validation.
 
 [A] No reviewed research script was executed, no live DB/API/environment was read, no production/source edit was made, no orders/settings/accounts were changed, and no tests or simulations were run. Small review-only Python helpers parsed source and wrote these `/tmp` artifacts. The main instruction file was read for policy only. Initial isolated worktree status was clean. Statistical/data values appearing below are the values asserted or discussed by source, not newly measured sample results.
 
@@ -8,7 +9,7 @@
 
 [A] Read the canon and the audit checklist, including R1 fresh evidence, R2 independent arithmetic, R3 long/short symmetry, R4 exact source locations, R7 corrected PnL/NULL discipline, and isolation/publication requirements. Relevant SYSTEM-MAP PnL and RULEBOOK structural geometry/daily-loss sections were read as excerpts. For both relevant specification files, `git log -1` was `565e8fbe Sun Sep 13 00:39:02 2026 -0500 fix: use owner daily-loss controls without requiring a per-trade cap`. That owner correction supersedes old report proposals. A historical $150 cap, ATR ceiling, fixed-point cap, or 'risk_cap_missing' interpretation is not current authorization or policy. SIM-only and sacred account/config bindings remain controlling.
 
-[A] Historical Understand Anything graph was parsed at `/home/hoang/nofx-untracked-stash-20260816/.understand-anything/knowledge-graph.json` (July10@7a8adce0). Zero nodes matched the 106 assigned paths, which are September artifacts. There are consequently no relevant historical graph edges to validate. `graph.json` preserves this negative result. No claim of current CGC coverage is made; root owns CGC export. Source takes precedence over those historical indexes.
+[A] Historical Understand Anything graph was parsed at `/home/hoang/vl-untracked-stash-20260816/.understand-anything/knowledge-graph.json` (July10@7a8adce0). Zero nodes matched the 106 assigned paths, which are September artifacts. There are consequently no relevant historical graph edges to validate. `graph.json` preserves this negative result. No claim of current CGC coverage is made; root owns CGC export. Source takes precedence over those historical indexes.
 
 ## What this slice does and how it connects
 

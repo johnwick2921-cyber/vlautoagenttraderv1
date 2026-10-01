@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/censuswalk"
-	ntwire "nofx/provider/ninjatrader"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/internal/censuswalk"
+	ntwire "vl/provider/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-ONE-BUTTON M2 — THE WIRING IS THE THING UNDER TEST (canon 53) ────────

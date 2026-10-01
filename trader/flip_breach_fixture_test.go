@@ -5,7 +5,7 @@ package trader
 // live) for 2026-09-17 21:30–23:09 CT — the window of the ASIA 09-17 chain
 // the W-FLIP-OWNS-THE-BREACH wave replays: the 22:15 MSS-up, the 22:38
 // reboot, the 22:42:33 stale-tape MSS wake that authored v2 at 22:52:04, and
-// the 23:10:46 death-dormant. /home/hoang/nofx-r101/data/db.copy.db is dated
+// the 23:10:46 death-dormant. /home/hoang/vl-r101/data/db.copy.db is dated
 // Sep 16 16:00 and does not carry these bars, so they were read from the live
 // store read-only. Columns: open_time_ms, o, h, l, c, v; CloseTime is derived
 // as open+60s-1 (the cache convention). 95 rows (5 one-minute gaps).

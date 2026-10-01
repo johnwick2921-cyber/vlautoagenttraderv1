@@ -1,7 +1,7 @@
 # q10: target-hit rates, MFE thresholds, sensitivity w/o 568/569 artifacts, hold-time x MFE, per-session R
 import csv, sys
-sys.path.insert(0,'/home/hoang/nofx-analysis/vet-10-0905'); from wilson import wilson, mean_ci
-rows=list(csv.DictReader(open('/home/hoang/nofx-analysis/vet-10-0905/q07_canonical_trades.csv')))
+sys.path.insert(0,'/home/hoang/vl-analysis/vet-10-0905'); from wilson import wilson, mean_ci
+rows=list(csv.DictReader(open('/home/hoang/vl-analysis/vet-10-0905/q07_canonical_trades.csv')))
 def f(x): 
     try: return float(x)
     except: return None

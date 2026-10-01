@@ -34,7 +34,7 @@ var macHexRe = regexp.MustCompile(`^[0-9a-f]{64}$`)
 // pre-tag release|job|exp shape — never verifies as an install. Introduced
 // before M3 shipped, so no untagged code was ever issued. A new layout gets a
 // new version, never a reinterpretation of v1.
-const MACPurpose = "nofx-update-install/v1"
+const MACPurpose = "vl-update-install/v1"
 
 // Message is the canonical MAC input:
 // MACPurpose|user_id|release_id|job_id|expires_at, with user_id the ENROLLED
@@ -59,7 +59,7 @@ func Message(userID, releaseID, jobID string, expiresAt int64) ([]byte, error) {
 }
 
 // ComputeMAC returns the lowercase-hex HMAC-SHA256 of Message under key.
-// Callers: the attended `updater-bootstrap authorize` ONLY (CTO ruling Q1(a):
+// Callers: the attended `vl-updater-bootstrap authorize` ONLY (CTO ruling Q1(a):
 // nothing on the API side mints a MAC). A census test pins it.
 func ComputeMAC(key []byte, userID, releaseID, jobID string, expiresAt int64) (string, error) {
 	if len(key) != DeviceKeyLen || degenerateKey(key) {
@@ -105,7 +105,7 @@ func CheckExpiry(expiresAt int64, now time.Time) error {
 }
 
 // Grant is one install authorization: exactly the POST /api/updates/install
-// body, and exactly what `updater-bootstrap authorize` prints.
+// body, and exactly what `vl-updater-bootstrap authorize` prints.
 type Grant struct {
 	ReleaseID string `json:"release_id"`
 	JobID     string `json:"job_id"`
@@ -118,7 +118,7 @@ const grantRedacted = "<redacted>"
 
 // String, GoString and Format make every fmt verb print the Grant with its
 // MAC redacted (red-team red-3 #6): a formatted grant reaches logs
-// (data/nofx_*.log, log_events), and a logged unused grant is a live code for
+// (data/vl_*.log, log_events), and a logged unused grant is a live code for
 // up to MaxAuthorizationWindow. json.Marshal is unaffected — the JSON IS the
 // grant (the CLI's output and the install body). Known limit: a Grant held
 // in an UNEXPORTED struct field is printed by reflection without these

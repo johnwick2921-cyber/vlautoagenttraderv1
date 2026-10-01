@@ -38,5 +38,5 @@ test rc: 1
     --- FAIL: TestIdentityE1AuthoringToEpisodeAndE3WarnProduction/named (0.22s)
         scenario_level_identity_test.go:73: row lost ID or corroboration {ID:1 TraderID:t1 Symbol:MNQ LevelPrice:15475 LevelKind:PDL CandidateSeated:true PlanID:2026-09-10:NY:t1 PlanVersion:1 Session:NY Ordinal:1 K:3 Delta:2.679358717434888 BandPts:8.038076152304665 Horizon:12 ExitOn:close EntrySide:below ExitSide:above Outcome:break Ambiguous:false BarsToExit:7 MFEPts:9.899999999999636 MAEPts:-2.899999999999636 OpenedAtMs:1789057080000 ClosedAtMs:1789057500000 FormedAtMs:1789052340000 Validity:valid LevelID:<nil> ScenarioNearest:0xc0003fb220 ScenarioLinkBasis:price_proximity ScenarioLinkDistPts:0xc0003eb4f0 ScenarioLinkDistDelta:0xc0003eb4f8 OpportunityOutcome:<nil> CloseCause:<nil> AttainableEntry:<nil> AttainableEntryBasis:<nil> TermsCapturedAtMs:<nil> TermsStop:<nil> TermsTarget:<nil> TermsR:<nil> CreatedAt:2026-09-10 20:00:00 -0500 -0500}
 FAIL
-FAIL	nofx/trader	0.514s
+FAIL	vl/trader	0.514s
 FAIL

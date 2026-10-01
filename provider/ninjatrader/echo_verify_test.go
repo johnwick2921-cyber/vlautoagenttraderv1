@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"nofx/discipline"
+	"vl/discipline"
 )
 
 func TestCheckEcho(t *testing.T) {

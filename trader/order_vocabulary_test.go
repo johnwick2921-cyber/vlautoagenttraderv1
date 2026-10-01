@@ -3,8 +3,8 @@ package trader
 import (
 	"testing"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // TestLocallyHeldStopIsNotAnAcceptedRisk — C3(c), 2026-09-07.

@@ -256,7 +256,7 @@ export function ExchangeConfigModal({
     { url: string; hasReferral?: boolean }
   > = {
     binance: {
-      url: 'https://www.binance.com/join?ref=NOFXENG',
+      url: 'https://www.binance.com/join',
       hasReferral: true,
     },
     okx: { url: 'https://www.okx.com/join/1865360', hasReferral: true },
@@ -1267,7 +1267,7 @@ export function ExchangeConfigModal({
                       data-testid="ninjatrader-data-directory"
                       value={ntDataDir}
                       onChange={(e) => setNtDataDir(e.target.value)}
-                      placeholder="/mnt/c/Users/<u>/NofxTrader/data"
+                      placeholder="/mnt/c/Users/<u>/VLTrader/data"
                       className="w-full px-4 py-3 rounded-xl font-mono text-sm"
                       style={{
                         background: '#0B0E11',

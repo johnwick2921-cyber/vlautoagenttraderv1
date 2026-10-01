@@ -1,6 +1,6 @@
 # SUPERSEDED by r08_pnl_cond.py. Kept as the record of a trap: this draft mapped cited_scenario_id to the LATEST plan version (and used a 2025 era constant). Scenario ids S1/S2/S3 are REUSED across versions with DIFFERENT conditions, so the condition cells came out wrong. Map on (plan_id, plan_version).
 import sqlite3, json, math
-db=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+db=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 c=db.cursor()
 ERA=1755234000000  # 2026-08-15 00:00 CT
 rows=c.execute("""SELECT id, source, plan_id, cited_scenario_id, pnl_corrected, plan_session, symbol

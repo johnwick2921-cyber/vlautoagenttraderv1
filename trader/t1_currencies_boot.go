@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // T1CurrenciesBootLine (W-T1-CURRENCIES, 2026-09-18) renders the resolved

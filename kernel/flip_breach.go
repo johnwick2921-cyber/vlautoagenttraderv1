@@ -4,7 +4,7 @@ import (
 	"math"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W-FLIP-OWNS-THE-BREACH (2026-09-17, owner: "why at the flip point it

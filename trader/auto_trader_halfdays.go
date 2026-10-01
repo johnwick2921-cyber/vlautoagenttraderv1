@@ -5,8 +5,8 @@ import (
 	"sort"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
+	"vl/kernel"
+	"vl/logger"
 )
 
 // P4 — HalfDays, FOLDED INTO THE SESSION CALENDAR (owner ruling 2026-09-07).
@@ -24,7 +24,7 @@ import (
 // CT}, consumed by the EOD-flat + last-entry pull-ins in auto_trader_clock.go —
 // but nothing ever populated it, so Labor Day Sep 7 (and every other early
 // close) was unprotected. This producer seeds it from an owner-editable JSON
-// file (half_days.json at the repo root, path env NOFX_HALF_DAYS) — the
+// file (half_days.json at the repo root) — the
 // calendarStaticLoader pattern.
 //
 // OFFICIAL 2026 SOURCES (fetched as archived CME originals, ledger-close recon):

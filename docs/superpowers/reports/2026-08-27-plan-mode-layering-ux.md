@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # UX fix (S) — plan_mode layering honesty (2026-08-27)
 
 FE + docs only. Cutover may ride any flat window — no urgency; the Go boot is

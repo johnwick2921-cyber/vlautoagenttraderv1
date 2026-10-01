@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/mcp"
+	"vl/store"
 )
 
 // ── ROOT-FIX PART B (2026-09-02) — FAST-MODE SHADOW A/B ──────────────────────

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W5 foundation — machine scenarios and the ONE fold (ResolvePlanFinal).

@@ -1,7 +1,7 @@
 import csv, math, sqlite3, statistics as st
-D="/home/hoang/nofx-vet-10/docs/superpowers/reports/2026-09-05-vet-10-ideas-data/q07_canonical_trades.csv"
+D="/home/hoang/vl-vet-10/docs/superpowers/reports/2026-09-05-vet-10-ideas-data/q07_canonical_trades.csv"
 rows=[r for r in csv.DictReader(open(D)) if r['realized_R']]
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True)
 unres={str(r[0]) for r in con.execute("select id from trader_positions where plan_id='UNRESOLVABLE'")}
 sess={str(r[0]):(r[1] or '') for r in con.execute("select id,plan_session from trader_positions")}
 def wilson(k,n,z=1.96):

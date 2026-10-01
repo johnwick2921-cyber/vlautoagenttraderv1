@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // A3 (2026-08-26) — min-SL validation: pure verdict + level clearance + the

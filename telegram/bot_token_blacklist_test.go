@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
+	"vl/auth"
 )
 
 // btPrivateSecret gives the test its own JWT secret (btBoot's cleanup restores

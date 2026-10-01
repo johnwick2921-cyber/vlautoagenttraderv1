@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # ATTRIBUTION INTEGRITY — one sentinel, one armed-under version
 
 Branch `fix/attribution-integrity` · checklist class **52** (highest occupied at
@@ -106,4 +107,4 @@ clean `origin/dev` checkout after the count differed from an earlier run).
 Additive: one new file, one column (default 0), one guarded idempotent UPDATE
 scoped to the day-plan era. `git revert` + rebuild. The converged rows would keep
 the sentinel, which is harmless — it is the documented value the view already
-expects. Binary rollback: `nofx-bin.prev.boot`.
+expects. Binary rollback: `vl-bin.prev.boot`.

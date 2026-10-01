@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // bar whose close lands at a stated CT wall time on the fixture's date

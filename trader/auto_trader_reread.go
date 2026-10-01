@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ITEM 3 (2026-08-17) — THE OWNER'S MANUAL ESCAPE HATCH.

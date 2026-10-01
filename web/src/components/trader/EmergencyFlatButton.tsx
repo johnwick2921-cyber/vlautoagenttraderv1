@@ -73,17 +73,17 @@ export function EmergencyFlatButton({ traderId }: Props) {
           onClick={closeModal}
         >
           <div
-            className="nofx-glass max-w-md w-full mx-4 rounded-lg p-6 border border-red-600/40"
+            className="vl-neo-glass max-w-md w-full mx-4 rounded-lg p-6 border border-red-600/40"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold text-red-400 mb-3">
               Confirm Emergency Flat
             </h2>
-            <p className="text-sm text-nofx-text-muted mb-4">
+            <p className="text-sm text-vl-neo-text-muted mb-4">
               This will close all open positions for trader{' '}
-              <code className="font-mono text-nofx-gold">{traderId}</code>. The
-              action triggers the kernel kill switch and resets the daily PnL
-              window. Cannot be undone.
+              <code className="font-mono text-vl-neo-gold">{traderId}</code>.
+              The action triggers the kernel kill switch and resets the daily
+              PnL window. Cannot be undone.
             </p>
 
             {result && (

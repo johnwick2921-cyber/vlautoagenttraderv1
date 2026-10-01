@@ -3,8 +3,8 @@ package updaterworker
 import (
 	"errors"
 
-	"nofx/internal/updaterjob"
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterjob"
+	"vl/internal/updaterwire"
 )
 
 // ── the socket handler (C14 as ruled: EXACTLY the four verbs) ──────────────

@@ -30,8 +30,8 @@ import (
 // "MM-DD HH:MM:SS [LEVEL] caller msg" (logger/logger.go), main.go prints the
 // OK line at INFO and the REFUSED line at ERROR, the caller is
 // "<build-dir>/main.go:<line>" — the directory the binary was BUILT in, which
-// varies (live logs show clone-build/main.go, nofx-clean/main.go, nofx/main.go
-// [A: read from data/nofx_2026-09-23.log]). The match starts at LINE START
+// varies (live logs show clone-build/main.go, vl-clean/main.go, vl/main.go
+// [A: read from data/vl_2026-09-23.log]). The match starts at LINE START
 // with the formatter's exact prefix, the caller must be the FIRST token after
 // the level (attacker text can only appear after it), and the line must carry
 // the NEW MainPID the worker read after the restart (kernel/boot_integrity.go

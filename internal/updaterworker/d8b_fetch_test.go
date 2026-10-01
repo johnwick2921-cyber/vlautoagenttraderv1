@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // PIN (D8b, CTO 1790279155144 (4) / 1790280128238 — U4's crash suite): a

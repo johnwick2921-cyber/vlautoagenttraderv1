@@ -7,5 +7,5 @@
 KILLED — a pin caught it.
      --- FAIL: TestStructuralStopF6BothFailNetReasonComesFirst (0.14s)
      FAIL
-     FAIL	nofx/trader	0.907s
+     FAIL	vl/trader	0.907s
      FAIL

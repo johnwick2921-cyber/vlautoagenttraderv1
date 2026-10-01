@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DAY-PLAN CAMPAIGN — P0 · FOUNDATIONS (checkpoint report)
 
-**Date:** 2026-08-14 · **Repo:** /home/hoang/nofx · **Branch:** main
+**Date:** 2026-08-14 · **Repo:** /home/hoang/vl · **Branch:** main
 **Range:** `97512286..` (spec+heartbeat) → `041e4450` (P0.5) + config-truth test
 **Build contract:** [docs/VL-DAYPLAN-FULL-SPEC.md](../../VL-DAYPLAN-FULL-SPEC.md) (v1 FINAL, recon-verified @ca1f38c6)
 

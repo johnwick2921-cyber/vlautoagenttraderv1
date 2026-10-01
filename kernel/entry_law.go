@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ENTRY-MECHANICS E2 (2026-08-30) — the per-condition ENTRY LAW.

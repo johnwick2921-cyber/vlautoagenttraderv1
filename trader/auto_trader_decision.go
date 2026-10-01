@@ -3,12 +3,12 @@ package trader
 import (
 	"fmt"
 	"math"
-	"nofx/discipline"
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/discipline"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
+	"vl/telemetry"
 	"strings"
 	"time"
 )

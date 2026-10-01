@@ -34,7 +34,7 @@ ai_config.indicators.klines.primary_timeframe,,,primary decision timeframe,store
 ai_config.indicators.klines.selected_timeframes,,,strategy field (ai_config.indicators.klines.selected_timeframes),store/strategy.go:1998,yes (settings.ts indicators block),,done
 ai_config.indicators.netflow_ranking_duration,,,strategy field (ai_config.indicators.netflow_ranking_duration),store/strategy.go:1976,yes (settings.ts indicators block),,done
 ai_config.indicators.netflow_ranking_limit,,,strategy field (ai_config.indicators.netflow_ranking_limit),store/strategy.go:1977,yes (settings.ts indicators block),,done
-ai_config.indicators.nofxos_api_key,,,strategy field (ai_config.indicators.nofxos_api_key),store/strategy.go:1962,yes (settings.ts indicators block),,done
+ai_config.indicators.vlos_api_key,,,strategy field (ai_config.indicators.vlos_api_key),store/strategy.go:1962,yes (settings.ts indicators block),,done
 ai_config.indicators.oi_ranking_duration,,,strategy field (ai_config.indicators.oi_ranking_duration),store/strategy.go:1971,yes (settings.ts indicators block),,done
 ai_config.indicators.oi_ranking_limit,,,strategy field (ai_config.indicators.oi_ranking_limit),store/strategy.go:1972,yes (settings.ts indicators block),,done
 ai_config.indicators.price_ranking_duration,,,strategy field (ai_config.indicators.price_ranking_duration),store/strategy.go:1981,yes (settings.ts indicators block),,done

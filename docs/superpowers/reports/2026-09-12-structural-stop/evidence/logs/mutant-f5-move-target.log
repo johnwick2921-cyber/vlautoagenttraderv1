@@ -11,5 +11,5 @@ KILLED — a pin caught it.
      --- FAIL: TestStructuralStopF6NetGainBeforeRR (0.14s)
      --- FAIL: TestStructuralStopF6BothFailNetReasonComesFirst (0.15s)
      FAIL
-     FAIL	nofx/trader	0.868s
+     FAIL	vl/trader	0.868s
      FAIL

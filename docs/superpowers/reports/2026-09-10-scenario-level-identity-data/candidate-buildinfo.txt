@@ -1,6 +1,6 @@
-/tmp/identity-build/nofx-bin: go1.25.3
-	path	nofx
-	mod	nofx	v0.0.0-20260910233148-b30afc657093	
+/tmp/identity-build/vl-bin: go1.25.3
+	path	vl
+	mod	vl	v0.0.0-20260910233148-b30afc657093	
 	build	-buildmode=exe
 	build	-compiler=gc
 	build	CGO_ENABLED=1

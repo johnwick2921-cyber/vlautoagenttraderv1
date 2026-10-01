@@ -1,10 +1,11 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial verify — planner_read_facts (peer claim: 17 rows, all 09-03, n=0 for 09-02)
 
 ## Verdict: PLAUSIBLE — the NUMBERS reproduce exactly; the CLASSIFICATION ("A / DEFECT") is wrong.
 
 ### 1. Numbers reproduce exactly [A]
 ```
-sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
   "SELECT count(*), min(datetime(created_at,'-5 hours')), max(datetime(created_at,'-5 hours')) FROM planner_read_facts;"
 -> 17|2026-09-03 00:00:56|2026-09-03 20:24:03
 ```
@@ -12,7 +13,7 @@ Full dump: ids 1..17 contiguous (no trim; PlannerReadFactsCap=500, store/planner
 All 17 rows trade_date='2026-09-03'. Zero rows for 2026-09-02. No TZ error: raw
 created_at carries an explicit '+00:00' suffix; row 17 raw = 2026-09-04
 01:24:03Z -> 2026-09-03 20:24:03 CT, and the file log carries the SAME line at
-`09-03 20:24:03 ... 📓 read facts` (nofx_2026-09-03.log:20190). CSV:
+`09-03 20:24:03 ... 📓 read facts` (vl_2026-09-03.log:20190). CSV:
 planner_read_facts_all_rows.csv
 
 ### 2. The zero is a DEPLOY DATE, not a write failure [A]
@@ -21,8 +22,8 @@ Writer `persistReadFacts` first appears in commit 4659874a (2026-09-02 21:52:07 
 git show 1cee77a8:trader/auto_trader_planner.go | grep -c persistReadFacts  -> 0
 git show 60f214d9:trader/auto_trader_planner.go | grep -c persistReadFacts  -> 3
 ```
-- RELEASE 1cee77a8 booted 09-02 22:37:38 CT (nofx_2026-09-02.log:62066; marker cf8ed4f4) — writer ABSENT.
-- RELEASE 60f214d9 booted 09-02 22:41:58 CT (nofx_2026-09-02.log:62424; marker 466ca82c) — writer PRESENT.
+- RELEASE 1cee77a8 booted 09-02 22:37:38 CT (vl_2026-09-02.log:62066; marker cf8ed4f4) — writer ABSENT.
+- RELEASE 60f214d9 booted 09-02 22:41:58 CT (vl_2026-09-02.log:62424; marker 466ca82c) — writer PRESENT.
 - LAST planner read on 09-02 CT: 22:04:51 (`🧠 planner model`), i.e. 37 min BEFORE the writer went live.
 - FIRST planner read after it: 09-03 00:00:56 CT -> row id 1.
 Zero rows on 09-02 is arithmetically required. Zero `read-facts write failed`

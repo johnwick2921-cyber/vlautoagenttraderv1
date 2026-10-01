@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/internal/updaterwire"
-	"nofx/store"
+	"vl/internal/updaterwire"
+	"vl/store"
 )
 
 // ── THE census-admitted worker hold writer ──────────────────────────────────
@@ -15,7 +15,7 @@ import (
 // store/maintenance_hold_writers_test.go admits EXACTLY this file (by name) to
 // call store.WriteMaintenanceHold / store.ClearMaintenanceHold and to reference
 // store.MaintenanceHoldPath; no other file of the worker, and not
-// cmd/nofx-updater, may. CTO ruling 1790258770876: "a hold that must cross a
+// cmd/vl-updater, may. CTO ruling 1790258770876: "a hold that must cross a
 // process boundary is a file + a reader, not a Go call" — the worker writes
 // the hold file, the app engages its in-process barrier from it
 // (trader.maintenanceState → Engage), the AddOn refuses entries and acks.

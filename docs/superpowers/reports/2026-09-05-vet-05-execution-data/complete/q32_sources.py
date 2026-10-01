@@ -1,5 +1,5 @@
 import pathlib,subprocess,datetime,sqlite3,json,glob,re
-root=pathlib.Path('/home/hoang/nofx-vet-05-complete')
+root=pathlib.Path('/home/hoang/vl-vet-05-complete')
 print('Read at',datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).isoformat())
 print('Pinned source base b4376246; historical running rev 36648655 from original health artifact; no new deployment assertion')
 ranges={'ninjascript/VLTraderTCPClient.cs':[(970,980),(1338,1385),(1425,1433),(1819,1829)],'trader/armed_executor.go':[(935,945),(978,996),(1250,1290)],'kernel/risk_limits.go':[(151,175),(300,327)],'kernel/engine_analysis.go':[(180,202)],'trader/entry_gate.go':[(145,162)],'trader/exit_mechs_suspend.go':[(10,46)],'kernel/min_sl.go':[(25,43)],'trader/f12_leg4.go':[(199,210)],'store/armed_orders.go':[(190,210)]}
@@ -17,7 +17,7 @@ for fn in sorted(glob.glob('/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.2
   if 'slippage' in line.lower():slip+=1
   if any(s in line for s in ['f2b1eb20','931a761a','e38f1774']) and any(s in line for s in ["New state=",'submitted entry','routed to account']): print(pathlib.Path(fn).name+':'+str(n)+': '+line.strip())
 print('Slippage text occurrence count',slip,'files',files)
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
 c.execute('PRAGMA query_only=ON')
 print('Strategy schema',[(r[1],r[2]) for r in c.execute('pragma table_info(strategies)')])
 print('Known bound trader mapping',[(r['id'],r['strategy_id']) for r in c.execute("select id,strategy_id from traders where strategy_id='a5b7662e-7bf7-49bb-9f09-7efa48f95ac8'")])

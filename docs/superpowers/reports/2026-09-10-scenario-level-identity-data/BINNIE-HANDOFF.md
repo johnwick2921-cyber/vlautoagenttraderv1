@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Binnie lane: dispatch 105 partner patch handoff
 
 Owner routing: hand this patch to Binnie; 105 must not apply it.
@@ -15,5 +16,5 @@ agent/skill_dispatcher_test.go, agent/trader_scope_test.go.
 Do not overwrite existing work. Synchronize prerequisites/history first;
 canon requires fresh re-clone after origin history rewrite.
 105 has not applied the patch or changed/pushed the partner checkout.
-Local nofx full Go suite and frontend 421 tests passed; partner tests have
+Local vl full Go suite and frontend 421 tests passed; partner tests have
 not run. CI setup failures are pre-existing, owed to cleanup batch 2.

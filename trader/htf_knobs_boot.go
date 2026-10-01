@@ -3,8 +3,8 @@ package trader
 import (
 	"fmt"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // HtfKnobsBootLine (S3, 2026-09-16) renders the resolved HTF knobs at trader

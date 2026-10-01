@@ -1,5 +1,5 @@
 import sqlite3, json, collections, re
-db=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True); db.row_factory=sqlite3.Row
+db=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True); db.row_factory=sqlite3.Row
 rows=list(db.execute("SELECT plan_id, version, trade_date, session, doc FROM plans WHERE session<>'WEEKLY'"))
 sess=set(); cnt=collections.Counter(); sessions=collections.defaultdict(set)
 for r in rows:

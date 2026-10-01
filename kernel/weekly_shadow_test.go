@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── W5.1 shadow twins (confluent / non-confluent) ──────────────────────────

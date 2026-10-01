@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W5 — the seams the lane joined, proven at the call site ────

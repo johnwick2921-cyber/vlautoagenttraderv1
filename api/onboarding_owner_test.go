@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/store"
+	"vl/auth"
+	"vl/store"
 )
 
 // onboardingCall drives POST /api/onboarding/beginner through the production

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import pathlib,json,csv,hashlib,math,re
-S=pathlib.Path(__file__).resolve().parent; ROOT=pathlib.Path('/home/hoang/nofx-vet-06-complete'); R=ROOT/'docs/superpowers/reports/2026-09-05-vet-06-risk.md'
+S=pathlib.Path(__file__).resolve().parent; ROOT=pathlib.Path('/home/hoang/vl-vet-06-complete'); R=ROOT/'docs/superpowers/reports/2026-09-05-vet-06-risk.md'
 x=json.loads((S/'results.json').read_text()); meta=json.loads((S/'extraction.json').read_text())
 D='docs/superpowers/reports/2026-09-05-vet-06-risk-data/complete'; evidence=[]; ix={}
 def ev(k,v):
@@ -265,12 +265,12 @@ The order calls the resolver at `ninjascript/VLTraderTCPClient.cs:901`; bar subs
 Authoritative evidence is under `{D}/`. `recompute.py` extracts only through a read-only URI and `query_only=ON`; `--sample` reruns entirely offline. Example (write outputs only to the authorized scratch directory):
 
 ```bash
-python3 /home/hoang/nofx-analysis/vet-06-complete-0905/recompute.py --sample /home/hoang/nofx-analysis/vet-06-complete-0905/trade_sample.csv --out /home/hoang/nofx-analysis/vet-06-complete-0905/offline-check
+python3 /home/hoang/vl-analysis/vet-06-complete-0905/recompute.py --sample /home/hoang/vl-analysis/vet-06-complete-0905/trade_sample.csv --out /home/hoang/vl-analysis/vet-06-complete-0905/offline-check
 ```
 
-The offline `results.json` reproduces the initial run byte-for-byte. The original `~/nofx-analysis/mc-drawdown/` was read and copied into this lane without modification; the copied original rig ran against the corrected CSV. Its iid and generic trade-block outputs, flat-inconsistent recursion and iid sample-size calculation are **compatibility artifacts only**, not the primary day-block findings. The old max-trades experiment is not a proposal to override the owner's no-cap ruling. `context_evidence.py` preserves bounded source excerpts, both default static hashes and explicit account-scope sensitivity; `source-evidence.txt` embeds original path:line. `SHA256SUMS` identifies committed evidence files. The report's generated values are drawn from `results.json` and indexed in `evidence.txt`.
+The offline `results.json` reproduces the initial run byte-for-byte. The original `~/vl-analysis/mc-drawdown/` was read and copied into this lane without modification; the copied original rig ran against the corrected CSV. Its iid and generic trade-block outputs, flat-inconsistent recursion and iid sample-size calculation are **compatibility artifacts only**, not the primary day-block findings. The old max-trades experiment is not a proposal to override the owner's no-cap ruling. `context_evidence.py` preserves bounded source excerpts, both default static hashes and explicit account-scope sensitivity; `source-evidence.txt` embeds original path:line. `SHA256SUMS` identifies committed evidence files. The report's generated values are drawn from `results.json` and indexed in `evidence.txt`.
 
-No code, config, DB, prompt, environment, runtime or order was changed. No `cmd/gate-jwt`, credential generation or `store.New` ran. The only HTTP request was unauthenticated GET health (200). All scratch writes are under `/home/hoang/nofx-analysis/vet-06-complete-0905`; worktree edits are confined to this section's report and report data. The own worktree remains `/home/hoang/nofx-vet-06-complete` for parent integration. No main-tree lock, existing worktree or dev merge was touched.
+No code, config, DB, prompt, environment, runtime or order was changed. No `cmd/gate-jwt`, credential generation or `store.New` ran. The only HTTP request was unauthenticated GET health (200). All scratch writes are under `/home/hoang/vl-analysis/vet-06-complete-0905`; worktree edits are confined to this section's report and report data. The own worktree remains `/home/hoang/vl-vet-06-complete` for parent integration. No main-tree lock, existing worktree or dev merge was touched.
 '''
 R.write_text(report)
 print('report',R,'lines',len(report.splitlines()),'words',len(report.split()))

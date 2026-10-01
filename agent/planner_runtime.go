@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"nofx/branding"
+	"vl/branding"
 	"sort"
 	"strings"
 	"time"
 
-	"nofx/mcp"
-	"nofx/safe"
-	"nofx/store"
+	"vl/mcp"
+	"vl/safe"
+	"vl/store"
 )
 
 const (
@@ -1316,7 +1316,7 @@ func (a *Agent) extractExecutionStateContinuationWithLLM(ctx context.Context, us
 		},
 	)
 	systemPrompt += `
-- This is the structured continuation input for an active NOFXi execution flow.
+- This is the structured continuation input for an active ` + branding.PersonaName() + ` execution flow.
 - Prefer "continue" only when the message clearly contributes to the current waiting question or active execution goal.
 - Use "switch" for read-only queries, unrelated requests, explanation requests, or clear topic changes.
 - For "continue", extract only explicit field values that answer the waiting question or pending fields.
@@ -1477,7 +1477,7 @@ type suspendedTaskSelectionResult struct {
 }
 
 func buildActiveFlowClassifierPrompt(lang, flowLabel, flowContext, text, recentConversationCtx string, currentRefs any, suspendedSnapshots any) (string, string) {
-	systemPrompt := `You classify one user message while an active NOFXi flow is in progress.
+	systemPrompt := `You classify one user message while an active ` + branding.PersonaName() + ` flow is in progress.
 Return JSON only. No markdown.
 
 Possible decisions:
@@ -2063,7 +2063,7 @@ func (a *Agent) tryRestoreSuspendedTaskWithLLM(ctx context.Context, userID int64
 	}
 	snapshotsJSON, _ := json.Marshal(snapshots)
 	recentConversationCtx := a.buildRecentConversationContext(userID, text)
-	systemPrompt := `You select whether a user message refers to one suspended NOFXi snapshot that should be restored now.
+	systemPrompt := `You select whether a user message refers to one suspended ` + branding.PersonaName() + ` snapshot that should be restored now.
 Return JSON only. No markdown.
 
 Rules:
@@ -2274,7 +2274,7 @@ func (a *Agent) tryDirectAnswer(ctx context.Context, userID int64, lang, text st
 
 	currentTurnCtx := a.buildCurrentTurnContext(userID, lang, text)
 	activeTaskCtx := a.buildActiveTaskStateContext(userID, lang)
-	systemPrompt := `You are the first-pass router for NOFXi.
+	systemPrompt := `You are the first-pass router for ` + branding.PersonaName() + `.
 Decide whether the assistant can answer the user's message directly without using skills, tools, or planning.
 Return JSON only. Do not return markdown.
 
@@ -2659,7 +2659,7 @@ func (a *Agent) decideNextStep(ctx context.Context, userID int64, lang string, s
 	currentTurnCtx := a.buildCurrentTurnContext(userID, lang, state.Goal)
 	activeTaskCtx := a.buildActiveTaskStateContext(userID, lang)
 
-	systemPrompt := `You are the step selector for NOFXi.
+	systemPrompt := `You are the step selector for ` + branding.PersonaName() + `.
 Return JSON only. Do not return markdown.
 
 You are operating in ReAct mode: Thought -> Action -> Observation.
@@ -2857,7 +2857,7 @@ func (a *Agent) createExecutionPlan(ctx context.Context, userID int64, lang, use
 		activeTaskCtx = ""
 	}
 
-	systemPrompt := prependNOFXiAdvisorPreamble(`You are the planning module for NOFXi.
+	systemPrompt := prependPersonaAdvisorPreamble("You are the planning module for " + branding.PersonaName() + `.
 Return JSON only. Do not return markdown.
 
 Create a minimal safe execution plan using these step types only:
@@ -3500,7 +3500,7 @@ func (a *Agent) executeReasonStep(ctx context.Context, userID int64, lang, goal 
 	startedAt := time.Now()
 	resp, err := a.aiClient.CallWithRequest(&mcp.Request{
 		Messages: []mcp.Message{
-			mcp.NewSystemMessage("You are the reasoning module for NOFXi. Return one short paragraph only. No markdown, no bullet list."),
+			mcp.NewSystemMessage("You are the reasoning module for " + branding.PersonaName() + ". Return one short paragraph only. No markdown, no bullet list."),
 			mcp.NewUserMessage(fmt.Sprintf("Language: %s\nGoal: %s\nReasoning task: %s\nObservations JSON: %s\nPersistent preferences: %s\nTask state: %s", lang, goal, step.Instruction, string(obsJSON), a.buildPersistentPreferencesContext(userID), buildTaskStateContext(a.getTaskState(userID)))),
 		},
 		Ctx: stageCtx,
@@ -3748,7 +3748,7 @@ func (a *Agent) thinkAndActLegacyWithStore(ctx context.Context, storeUserID stri
 		userPrompt = preferencesCtx + "\n\n---\n" + userPrompt
 	}
 	if enrichment != "" {
-		userPrompt = text + "\n\n---\n[NOFXi System Context - real-time data for reference]\n" + enrichment
+		userPrompt = text + "\n\n---\n[" + branding.PersonaName() + " System Context - real-time data for reference]\n" + enrichment
 		if preferencesCtx != "" {
 			userPrompt = preferencesCtx + "\n\n---\n" + userPrompt
 		}

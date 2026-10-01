@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // W-DEATH-REREAD (2026-09-18, owner ruling 12:3x CT "fix all") tests: the knob,

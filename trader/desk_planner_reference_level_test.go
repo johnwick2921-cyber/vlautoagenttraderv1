@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // M2.1 tail (CTO, 2026-09-23): the live desk strip logged

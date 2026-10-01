@@ -2,7 +2,7 @@
 // Runs pinned kernel functions over closed retained minute prefixes. Checkpoints
 // are measurable alternatives, NOT claims about historical callbacks or fills.
 package main
-import("encoding/json";"encoding/csv";"os";"fmt";"strconv";"sort";"strings";"math";"nofx/kernel";"nofx/market")
+import("encoding/json";"encoding/csv";"os";"fmt";"strconv";"sort";"strings";"math";"vl/kernel";"vl/market")
 type Life struct { Time int64 `json:"time_ms"`; Date string `json:"date"`; Session string `json:"session"`; Version int `json:"version"`; Event string `json:"event"` }
 type Plan struct { PlanID string `json:"plan_id"`; Version int `json:"version"`; Start int64 `json:"start"`; End int64 `json:"end"`; Born int64 `json:"born"`; Doc kernel.PlanDoc `json:"doc"` }
 func must(e error){if e!=nil{panic(e)}}

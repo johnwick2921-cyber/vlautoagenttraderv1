@@ -1,6 +1,6 @@
 package kernel
 
-import "nofx/logger"
+import "vl/logger"
 
 // LogRegimeBootLedger (Cutover 2, regime wave 2026-08-21) prints one line per
 // regime knob at boot — VALUE + SOURCE — so the boot block self-documents what

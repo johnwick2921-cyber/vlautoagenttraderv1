@@ -71,7 +71,7 @@ func mint() []byte {
 
 func TestUpdateAuthCensusFoldsSiblingFileConstants(t *testing.T) {
 	root := t.TempDir()
-	writeCensusFile(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	writeCensusFile(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	writeCensusFile(t, root, "kernel/zz_frag.go", fragFile)
 	writeCensusFile(t, root, "kernel/zz_rel.go", relFile)
 	writeCensusFile(t, root, "kernel/zz_mint.go", mintFile)
@@ -97,7 +97,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // read uses the exported constant of ANOTHER package — a SelectorExpr the
@@ -110,7 +110,7 @@ func read() []byte {
 
 func TestUpdateAuthCensusFoldsExportedConstantsOfAnotherPackage(t *testing.T) {
 	root := t.TempDir()
-	writeCensusFile(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+	writeCensusFile(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 	writeCensusFile(t, root, "kernel/zz_frag.go", fragFile)
 	writeCensusFile(t, root, "kernel/zz_rel.go", relFile)
 	writeCensusFile(t, root, "api/zz_read.go", apiReaderFile)

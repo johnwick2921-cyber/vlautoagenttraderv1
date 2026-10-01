@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/mcp"
-	"nofx/store"
+	"vl/mcp"
+	"vl/store"
 )
 
 type fakeAIClient struct {

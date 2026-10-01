@@ -6,5 +6,5 @@
 KILLED — a pin caught it.
      --- FAIL: TestStructuralStopF1F2ProductionArmCycle (0.52s)
      FAIL
-     FAIL	nofx/trader	0.531s
+     FAIL	vl/trader	0.531s
      FAIL

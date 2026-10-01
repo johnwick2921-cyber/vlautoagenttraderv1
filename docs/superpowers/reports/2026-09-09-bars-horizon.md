@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # BARS HORIZON — a count is not a horizon
 
 **Branch** `fix/bars-horizon` · **base** `origin/dev` @ **`6a8e14c9`** (rebased THREE times — `05125bd6` → `8dfe6bc1` → `27e062ea` → `6a8e14c9`; see SPEC FRESHNESS). `git merge-base HEAD origin/dev` = `6a8e14c9` = the dev tip, so the branch is a strict fast-forward ahead of dev and is **not merged**.
-**Session** bars-horizon-2bdef526/nofx-07[aa8e26] · **worktree** `/home/hoang/nofx-barshorizon`
+**Session** bars-horizon-2bdef526/vl-07[aa8e26] · **worktree** `/home/hoang/vl-barshorizon`
 **Status** pushed, green, **NOT deployed and NOT merged** (A3).
 **Rounds** built → 3 reviewers → **REPAIRED (this round, 2026-09-09 evening)**.
 **Head** — the code freeze is `54a7bf25` (the history join below); report-only
@@ -636,7 +637,7 @@ the live shape exactly:
         09-08 17:00    29500.2500 29511.7500 29498.0000 29505.2500 14628.00      <- current
 ```
 
-**GREEN:** `ok  nofx/kernel  0.028s`
+**GREEN:** `ok  vl/kernel  0.028s`
 
 **MUTATIONS** (each: the exact line changed, then the failure text):
 
@@ -681,7 +682,7 @@ shipped otherwise:
     bars_store_depth_test.go:188: an ask above the ring ceiling survives: "5m", 3000 in [trader/auto_trader_planner.go]
 ```
 
-**GREEN:** `ok  nofx/trader  0.117s`
+**GREEN:** `ok  vl/trader  0.117s`
 
 | # | line changed | result |
 |---|---|---|
@@ -708,7 +709,7 @@ separately that the reported count is not the ask. **Class 89.**
     bar_rehydrate_test.go:102: rehydrated 0 bars, want 4 — the placeholder must be dropped, not stored
 ```
 
-**GREEN:** `ok  nofx/provider/ninjatrader  0.006s`
+**GREEN:** `ok  vl/provider/ninjatrader  0.006s`
 
 | # | line changed | result |
 |---|---|---|
@@ -744,7 +745,7 @@ tape back — which additionally proves store rows (already open-stamped by
     read_facts_horizon_test.go:127: buildReadFactRow(: 0 production call sites (A29)
 ```
 
-**GREEN:** `ok  nofx/trader  0.050s` · `ok  nofx/store  0.161s`
+**GREEN:** `ok  vl/trader  0.050s` · `ok  vl/store  0.161s`
 
 | # | line changed | result |
 |---|---|---|
@@ -803,7 +804,7 @@ kept). Both REDs are the reviewers' findings, reproduced first-hand:
         ### 15m — HELD 12 of 12 requested rows · all held rows COMPLETE
 ```
 
-**GREEN after the fixes:** `ok  nofx/kernel  2.126s`
+**GREEN after the fixes:** `ok  vl/kernel  2.126s`
 
 #### MUTATIONS — round 2 (each row: the exact line changed, then the failure)
 
@@ -828,7 +829,7 @@ kept). Both REDs are the reviewers' findings, reproduced first-hand:
 **ONE ROUND-2 MUTATION PASSED, AND IT IS RECORDED RATHER THAN HIDDEN (A8).**
 
 - **M11b** — `const rvBaselineMinBarsPerDay = 200` → `100` in
-  `kernel/regime_baseline.go`, run against D3-F: **`ok  nofx/trader  0.014s`**.
+  `kernel/regime_baseline.go`, run against D3-F: **`ok  vl/trader  0.014s`**.
   The D3-F fixture builds nine FULL 23-hour session-days, so every day clears
   both thresholds and neither the day count nor the per-day RV moves. This is
   the pin behaving correctly, not a hole: the completeness threshold is a
@@ -1075,7 +1076,7 @@ never unblock a refusal.
 
    ```
    GET /api/health   → {"revision":"27e062eab5d5","status":"ok"}
-   ps                → PID 368964  /home/hoang/nofx/nofx-bin  started 18:14:23 CT
+   ps                → PID 368964  /home/hoang/vl/vl-bin  started 18:14:23 CT
    deploy/RELEASE    → 27e062ea
    ```
 
@@ -1092,7 +1093,7 @@ never unblock a refusal.
    BEFORE the boot (Boot-5 ordering). See §SCOPE.
 5. **A pre-existing FE test failure**, unrelated to this wave and present on the
    untouched tree: `web/src/guide/GuidePage.test.tsx` fails in a worktree with
-   `Error: Denied ID /home/hoang/nofx-barshorizon/branding/product.txt?raw` —
+   `Error: Denied ID /home/hoang/vl-barshorizon/branding/product.txt?raw` —
    vite's `fs.allow` root does not cover the worktree path. **Re-verified
    pre-existing at repair time** by stashing the ONLY FE edit
    (`web/src/guide/content/weeklyBias.ts`) and re-running the full suite:

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-26 · Bar Persistence — The Unblock (dispatch report)
 
 **PR:** [#77](https://github.com/johnwick2921-cyber/nofx/pull/77) · **Branch:** `feat/bar-persistence`

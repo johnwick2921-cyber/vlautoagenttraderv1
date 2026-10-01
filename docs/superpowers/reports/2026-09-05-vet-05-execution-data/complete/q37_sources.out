@@ -254,7 +254,7 @@ trader/auto_trader_clock.go:766: 	// EVERY exit path (AI close, NT8 OCO, EOD-fla
 trader/auto_trader_clock.go:767: 	// hook lives here and not in one of them.
 trader/auto_trader_clock.go:768: 	at.excursionOnClose(p)
 trader/exit_mechs_suspend.go:10:
-trader/exit_mechs_suspend.go:11: 	ntTrader "nofx/trader/ninjatrader"
+trader/exit_mechs_suspend.go:11: 	ntTrader "vl/trader/ninjatrader"
 trader/exit_mechs_suspend.go:12: )
 trader/exit_mechs_suspend.go:13:
 trader/exit_mechs_suspend.go:14: // ── 0B (2026-09-02) — BE+40 AND THE ATR TRAIL ARE SUSPENDED ─────────────────

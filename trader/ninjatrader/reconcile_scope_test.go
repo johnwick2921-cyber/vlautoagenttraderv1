@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // W117-F F7 (ports #117 23c24c6d): missing-account evidence must stay scoped to

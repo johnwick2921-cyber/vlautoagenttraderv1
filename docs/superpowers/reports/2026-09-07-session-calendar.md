@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SESSION CALENDAR — a shortened session is a TRADING session
 
 **Wave:** session calendar (takeover) · **Branch:** `fix/session-calendar`
-**Lane:** `sessioncal-ee7f9468/nofx-db[ca9c60]` · **Date:** 2026-09-07
+**Lane:** `sessioncal-ee7f9468/vl-db[ca9c60]` · **Date:** 2026-09-07
 **Booted:** `5457ac5a` at 20:39:39 CT, pid 3058590 · **Marker:** `af3472ee`
 
 ---
@@ -30,7 +31,7 @@ referenced them. The missing half was the wiring.
 
 Step 0 stops two lanes writing one wave. It has no detector for both lanes
 yielding to each other, which is what happened: I stood down at 10:01 on the
-owner's instruction, and a peer (`nofx-2c`) pointed out the branch had declared
+owner's instruction, and a peer (`vl-2c`) pointed out the branch had declared
 itself superseded 11 minutes *before* I ever read it.
 
 ## 2. C1–C5 verified, and three premises CORRECTED
@@ -38,7 +39,7 @@ itself superseded 11 minutes *before* I ever read it.
 | # | claim | verdict |
 |---|---|---|
 | C1 | `isCMEHoliday` treats Labor Day as a full closure | **CONFIRMED** — comment quoted above |
-| C2 | 156 overrun warnings | **CORRECTED: 165** in `nofx_2026-09-06.log`; 182 across both boot logs. All `3m0.0XXs > 2m0s`, min `3m0.009s`, max `3m0.159s` |
+| C2 | 156 overrun warnings | **CORRECTED: 165** in `vl_2026-09-06.log`; 182 across both boot logs. All `3m0.0XXs > 2m0s`, min `3m0.009s`, max `3m0.159s` |
 | C2 | log volume ~733 → ~81 lines/hour | **NOT REPRODUCED.** Real collapse 1283 → 171 → ~141/h loop-only (9.1×) |
 | C3 | the warning fires by construction | **CONFIRMED** — 3-min backoff (`const cmeClosedBackoff`, hard literal) vs `ScanInterval` = **2 min** from the DB (`scan_interval_minutes=2`, no env fallback) |
 | C4 | most CME holidays are early closes | **CONFIRMED**, and the sources were already in the repo (§3) |
@@ -125,7 +126,7 @@ rule alone, no status note · **E4** all five unestablished rows refuse AND are
 named on both surfaces · **E6** fixed-clock, repeated evaluation, no hidden
 `time.Now()` · **E7** A29 below.
 
-**Claim pins 10 → 17** (`deploy/nofx-claim-test.sh`): `CLAIM_RE` tightened to
+**Claim pins 10 → 17** (`deploy/vl-claim-test.sh`): `CLAIM_RE` tightened to
 require the routable composite form with `[unlisted]` accepted; the two
 historical bare-session claims relabelled LEGACY and expected to FAIL; seven
 ROUTE cases added including the real 2026-09-07 collision message.
@@ -161,7 +162,7 @@ the flat comparison silently stopped matching. Hence **two** helpers —
 
 ## 8. CUTOVER
 
-Suite at the merged HEAD in a clean clone named `nofx`: **28/28, 0 FAIL**.
+Suite at the merged HEAD in a clean clone named `vl`: **28/28, 0 FAIL**.
 `GUIDE_BUILT_REV` read from the binary's `vcs.revision` (`vcs.modified=false`),
 **then** dist rebuilt — new rev ×1 in the bundle, stale rev ×0. `tsc` clean.
 
@@ -234,11 +235,11 @@ by `/api/desk` (JWT-protected) and is not logged, so this lane could not read it
 ## 11. Rollback
 
 ```
-mv nofx-bin nofx-bin.failed.5457ac5a \
-  && mv nofx-bin.old.b4195e6f.20260907-204500 nofx-bin \
-  && printf '%s' "b4195e6f" > deploy/RELEASE && kill -9 $(pgrep -f '/home/hoang/nofx/nofx-bin')
+mv vl-bin vl-bin.failed.5457ac5a \
+  && mv vl-bin.old.b4195e6f.20260907-204500 vl-bin \
+  && printf '%s' "b4195e6f" > deploy/RELEASE && kill -9 $(pgrep -f '/home/hoang/vl/vl-bin')
 ```
-Backups: `~/nofx-backups/sessioncal-2026-09-07/` — binary, RELEASE, `data.db`.
+Backups: `~/vl-backups/sessioncal-2026-09-07/` — binary, RELEASE, `data.db`.
 
 ## 12. An operator error, recorded
 

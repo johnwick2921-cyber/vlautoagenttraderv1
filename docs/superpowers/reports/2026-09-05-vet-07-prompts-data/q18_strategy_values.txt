@@ -30,7 +30,7 @@
 /ai_config/indicators/rsi_periods = [14]
 /ai_config/indicators/atr_periods = [14]
 /ai_config/indicators/boll_periods = [20]
-/ai_config/indicators/nofxos_api_key = <redacted>
+/ai_config/indicators/vlos_api_key = <redacted>
 /ai_config/indicators/enable_quant_data = False
 /ai_config/indicators/enable_quant_oi = False
 /ai_config/indicators/enable_quant_netflow = False
