@@ -1082,7 +1082,20 @@ dry_run() {
 # =============================================================================
 # main
 # =============================================================================
-RUN_START="$(date +%s)"
+# RUN_START is the FILE-CLOCK instant this process began, taken from a mark
+# file's mtime — the same coarse kernel clock the boot-line freshness checks
+# read from log files. Realtime (date +%s) MUST NOT be compared against file
+# mtimes: ~0.42% of writes get an mtime in the previous second relative to a
+# realtime read (CTO probe 2026-09-30), which fails good boots forever.
+# The mark is NOT created in dry-run mode: a dry run must change nothing on
+# disk (TestDryRunChangesNothing hashes the HOME tree), and RUN_START is
+# never read there.
+if [ "$MODE" != "dry" ]; then
+  RUN_MARK="${VL_MIGRATE_RUN_MARK:-$(mkt)}"
+  RUN_START="$(stat -c %Y "$RUN_MARK" 2>/dev/null || echo 0)"
+else
+  RUN_START=0
+fi
 
 if [ "$MODE" = "rollback" ]; then
   do_rollback
@@ -1097,7 +1110,7 @@ step0
 write_state
 say "state file written: $STATE_FILE"
 
-STEP3_MARK="$(mkt)"
+STEP3_MARK="${VL_MIGRATE_STEP3_MARK:-$(mkt)}"
 STEP3_EPOCH=0
 # the capture pattern: errexit is OFF only around this one call, so the
 # function's own subshell keeps its set -e and its first failure is the rc
@@ -1117,7 +1130,10 @@ if [ "$steps_rc" != 0 ]; then
   say "ERR in steps 1–5 — automatic rollback"
   if do_rollback; then exit 1; else say "ROLLBACK FAILED — a human must look now" >&2; exit 2; fi
 fi
-STEP3_EPOCH="$(cat "$STEP3_MARK" 2>/dev/null || echo 0)"
+# STEP3_EPOCH is the mark file's MTIME, not its content: the freshness checks
+# below compare file-clock to file-clock. The content (date +%s written at the
+# top of step 3) is kept only as a debugging hint and is NEVER read here.
+STEP3_EPOCH="$(stat -c %Y "$STEP3_MARK" 2>/dev/null || echo 0)"
 rm -f "$STEP3_MARK" 2>/dev/null || true
 
 if ! verify_legs "forward"; then

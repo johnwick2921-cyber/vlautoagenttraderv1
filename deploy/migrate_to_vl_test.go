@@ -399,6 +399,15 @@ bootwrite(){
   if [ -n "$m" ] && [ "$(printf '%s' "$m" | cut -c1-12)" = "$BOT_SHA12" ]; then
     echo "BOOT INTEGRITY OK — rev $BOT_SHA12" >> "data/vl_$d.log"
     echo "$BOT_SHA12" > "$FAKE_STATE/health_rev.txt"
+    if [ -n "${BOT_SKEW_MARK:-}" ]; then
+      # JOB 8 fixture: pin the log's mtime to the step-3 mark's mtime while the
+      # mark's CONTENT is realtime+2. File-clock vs file-clock compares equal
+      # and passes; reading the content (the pre-item-8 bug) compares strictly
+      # later and fails. Deterministic by construction — no second-boundary
+      # races.
+      printf '%s' "$(($(date +%s)+2))" > "$BOT_SKEW_MARK"
+      touch -r "$BOT_SKEW_MARK" "data/vl_$d.log"
+    fi
   else
     echo "BOOT INTEGRITY REFUSED — marker '$(printf '%s' "$m" | cut -c1-12)'" >> "data/vl_$d.log"
     echo "$OLD12" > "$FAKE_STATE/health_rev.txt"
@@ -1532,6 +1541,27 @@ func TestForwardDelayedBootReachesDoneWithoutRollback(t *testing.T) {
 	if strings.Contains(out, "automatic rollback") {
 		t.Fatalf("a boot that comes up in seconds must not roll back\n%s", out)
 	}
+}
+
+// TestForwardBootLinePassesWithLogMtimeEqualToTheStepMark (JOB 8): the CTO's
+// two-clock probe found ~0.42% of writes get an mtime in the PREVIOUS second
+// relative to a realtime read. Deterministic fixture: the fake bot rewrites the
+// step-3 mark with realtime+2 and pins the log's mtime to the mark's mtime.
+// File-clock vs file-clock compares equal and MUST pass; the pre-item-8
+// realtime epoch (mutant m8: cat the mark's content) compares strictly later
+// and MUST fail.
+func TestForwardBootLinePassesWithLogMtimeEqualToTheStepMark(t *testing.T) {
+	fe := newFakeEnv(t)
+	mark := filepath.Join(t.TempDir(), "step3mark")
+	out, code := runWithEnv(t, fe, []string{
+		"VL_MIGRATE_STEP3_MARK=" + mark,
+		"BOT_SKEW_MARK=" + mark,
+	}, fe.argsForward()...)
+	if code != 0 {
+		t.Fatalf("exit %d\n%s", code, out)
+	}
+	mustContain(t, out, "boot line OK after")
+	mustNotContain(t, out, "BOOT INTEGRITY leg FAIL")
 }
 
 // TestRollbackDelayedOldBootSaysDone: after a failed verify the rollback's old
