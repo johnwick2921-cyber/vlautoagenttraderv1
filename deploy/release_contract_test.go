@@ -25,34 +25,24 @@ func repoFile(t *testing.T, rel string) string {
 	return string(b)
 }
 
-// PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7) — this repo is NEVER a release
-// source. No partner CI run may ever create a release or tag in
-// johnwick2921-cyber/nofx. The only permitted trigger is a manual
-// workflow_dispatch, and BOTH jobs carry `if: ${{ false }}` so even a manual
-// dispatch cannot run them. This test asserts exactly that: the workflow has
-// NO trigger that can fire.
-func TestReleaseWorkflowHasNoTriggerThatCanFire(t *testing.T) {
+// The trigger is the whole safety story: a release is cut from a TAG that a
+// human approved, never from a push to a branch.
+func TestReleaseWorkflowTriggersOnTagAndNeverOnPushToDev(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
-	if !strings.Contains(y, "workflow_dispatch:") {
-		t.Fatalf("release.yml must keep workflow_dispatch as its ONLY trigger key")
+	if !strings.Contains(y, "tags:") || !strings.Contains(y, "v*") {
+		t.Fatalf("release.yml must trigger on a v* TAG")
 	}
-	for _, forbidden := range []string{"push:", "tags:", "branches:", "pull_request:", "schedule:", "workflow_call:", "workflow_run:", "repository_dispatch:"} {
+	for _, forbidden := range []string{"branches:", "- dev", "pull_request:"} {
 		if strings.Contains(y, forbidden) {
-			t.Fatalf("release.yml must have NO trigger that can fire — found %q", forbidden)
+			t.Fatalf("release.yml must NEVER trigger on %q — a release is cut from an approved tag", forbidden)
 		}
 	}
-	// Both jobs must be permanently disabled; count the `if: ${{ false }}`
-	// occurrences and the job declarations to make sure every job carries one.
-	jobCount := len(regexp.MustCompile(`(?m)^  [a-z]+:$`).FindAllString(y, -1))
-	ifCount := strings.Count(y, "if: ${{ false }}")
-	if jobCount == 0 || ifCount < jobCount {
-		t.Fatalf("every job must carry `if: ${{ false }}`: %d jobs, %d if-guards", jobCount, ifCount)
+	if !strings.Contains(y, "environment:") || !strings.Contains(y, "release") {
+		t.Fatalf("release.yml must run in the protected 'release' Environment (owner = required reviewer)")
 	}
 }
 
-// The binary must be provably built from clean, tagged source — the inert
-// body is kept byte-identical to the source tree so these guarantees remain
-// pinned even though the workflow can never run.
+// The binary must be provably built from clean, tagged source.
 func TestReleaseWorkflowEnforcesCleanVcsStampAndTheGuideRev(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	if !strings.Contains(y, "vcs.modified") {
@@ -63,35 +53,18 @@ func TestReleaseWorkflowEnforcesCleanVcsStampAndTheGuideRev(t *testing.T) {
 	}
 }
 
-// The artifact repository must be the partner's own base, and the nofx repo
-// name must never appear anywhere in the workflow.
-func TestReleaseWorkflowPublishesOnlyUnderThePartnerRepoAndNeverNofx(t *testing.T) {
+// The artifact repository is an OPEN OWNER DECISION. The fail-closed default is
+// THIS repo; the partner repo must never be reachable by accident.
+func TestReleaseWorkflowDefaultsToThisRepoAndNeverThePartner(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	if !strings.Contains(y, "RELEASE_REPO") {
 		t.Fatalf("the artifact target must be ONE variable, RELEASE_REPO, so the owner changes it in one line")
 	}
-	if strings.Contains(y, "johnwick2921-cyber/nofx") {
-		t.Fatalf("the nofx repo must NEVER appear in the partner release workflow")
+	if !strings.Contains(y, "johnwick2921-cyber/vlautoagenttraderv1") {
+		t.Fatalf("RELEASE_REPO must DEFAULT to this (partner) repo")
 	}
-	if !strings.Contains(y, "vlautoagenttraderv1") {
-		t.Fatalf("RELEASE_REPO must name the partner's own github.repository base")
-	}
-}
-
-// PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7, checker fold): the install script's
-// REPO_URL default must name the partner repo — partner machines build the
-// updater from the partner repo, never from nofx. The CHECKER MUTANT report
-// (DS-102/DS-105) proved a mutant restoring the nofx default turned NO test
-// red (updater_worker_install_test.go always overrides
-// NOFX_UPDATER_BUILD_REPO, and nothing read REPO_URL). This test reads the
-// production script directly, so the mutant turns it RED.
-func TestInstallUpdaterWorkerRepoUrlDefaultsToThePartnerRepo(t *testing.T) {
-	s := repoFile(t, "deploy/install-updater-worker.sh")
-	if !strings.Contains(s, "https://github.com/johnwick2921-cyber/vlautoagenttraderv1") {
-		t.Fatalf("install-updater-worker.sh REPO_URL default must name the partner repo (vlautoagenttraderv1)")
-	}
-	if strings.Contains(s, "johnwick2921-cyber/nofx") {
-		t.Fatalf("install-updater-worker.sh must NEVER name the nofx repo as the REPO_URL default")
+	if strings.Contains(y, "RELEASE_REPO: johnwick2921-cyber/nofx") {
+		t.Fatalf("the nofx source repo must never appear in the release workflow")
 	}
 }
 
@@ -475,7 +448,7 @@ func TestCutoverInstallsTheNewBinaryItWasGiven(t *testing.T) {
 	}
 	// MOVED WITH THE CHANGE (CLASS 239). These used to assert that cutover.sh
 	// ITSELF greps `vcs.revision=$NEW_SHA` out of `go version -m` and stages a
-	// `nofx-bin.new`. v7 delegates both to cmd/nofx-activate, so the shell no
+	// `vl-bin.new`. v7 delegates both to cmd/vl-activate, so the shell no
 	// longer contains those strings — and asserting them would now be pinning
 	// the OLD implementation rather than the guarantee.
 	//
@@ -489,11 +462,11 @@ func TestCutoverInstallsTheNewBinaryItWasGiven(t *testing.T) {
 	//
 	// What this test can still guarantee is that the shell DELEGATES rather
 	// than growing a second implementation, which is the drift v7 exists to end.
-	if !strings.Contains(sh, "nofx-activate") {
-		t.Fatalf("cutover.sh must delegate the proof to cmd/nofx-activate, not reimplement it")
+	if !strings.Contains(sh, "vl-activate") {
+		t.Fatalf("cutover.sh must delegate the proof to cmd/vl-activate, not reimplement it")
 	}
 	if !strings.Contains(sh, "verify -release") {
-		t.Fatalf("cutover.sh must PROVE the new binary (nofx-activate verify) before anything is touched")
+		t.Fatalf("cutover.sh must PROVE the new binary (vl-activate verify) before anything is touched")
 	}
 }
 
@@ -532,6 +505,15 @@ func TestCutoverRefusesWithoutAPassingInstallationGate(t *testing.T) {
 	}
 }
 
+// interpolationRefused returns the offending header form when sh interpolates
+// a cutover token into a curl Authorization header, else "". ANY expansion
+// that names CUTOVER_TOKEN is refused (RENAME-R1a: the NOFX_ and VL_ forms,
+// and any future name — the token must never ride argv).
+func interpolationRefused(sh string) string {
+	re := regexp.MustCompile(`Authorization: Bearer \$\{[A-Z0-9_]*CUTOVER_TOKEN\}`)
+	return re.FindString(sh)
+}
+
 func TestCutoverTokenNeverRidesAProcessArgv(t *testing.T) {
 	sh := repoFile(t, "deploy/cutover.sh")
 	// Findings [25]/[29]: the token was interpolated into curl's -H header, i.e.
@@ -539,8 +521,8 @@ func TestCutoverTokenNeverRidesAProcessArgv(t *testing.T) {
 	// lifetime — while the script's own refusal text says "never pass it on the
 	// command line". The fold: a 0600 header file, curl -H @file, removed on
 	// every exit path.
-	if strings.Contains(sh, "Authorization: Bearer ${NOFX_CUTOVER_TOKEN}") {
-		t.Fatalf("the token must never be interpolated into curl's argv — it rides a header FILE")
+	if m := interpolationRefused(sh); m != "" {
+		t.Fatalf("the token must never be interpolated into curl's argv — it rides a header FILE (%s)", m)
 	}
 	if !strings.Contains(sh, `-H "@$TOKEN_HDR"`) {
 		t.Fatalf("curl must receive the header via -H @file")
@@ -553,6 +535,23 @@ func TestCutoverTokenNeverRidesAProcessArgv(t *testing.T) {
 	}
 }
 
+// RENAME-R1a: the refusal covers the VL_ form too — narrowing it back to the
+// literal NOFX_ form must fail THIS test (the mutant list's item 11).
+func TestCutoverTokenInterpolationRefusalCoversAnyCUTOVER_TOKENName(t *testing.T) {
+	for _, line := range []string{
+		"curl -H \"Authorization: Bearer ${VL_CUTOVER_TOKEN}\" http://x",
+		"curl -H \"Authorization: Bearer ${NOFX_CUTOVER_TOKEN}\" http://x",
+		"curl -H \"Authorization: Bearer ${SOME_OTHER_CUTOVER_TOKEN}\" http://x",
+	} {
+		if interpolationRefused(line) == "" {
+			t.Fatalf("the interpolation %q must be refused", line)
+		}
+	}
+	if interpolationRefused("curl -H \"Authorization: Bearer ${TOKEN}\" http://x") != "" {
+		t.Fatalf("a non-CUTOVER_TOKEN expansion is not this refusal's business")
+	}
+}
+
 func TestCutoverNeverInstructsRollbackForAPreInstallFailure(t *testing.T) {
 	sh := repoFile(t, "deploy/cutover.sh")
 	// Finding [24]: v6 ran `cp ... || { rollback; die }` — a staging failure
@@ -561,13 +560,13 @@ func TestCutoverNeverInstructsRollbackForAPreInstallFailure(t *testing.T) {
 	// plan must split the failure space: before anything moved, REFUSE with
 	// no restart and NO rollback; only after the install began may the
 	// rollback command be named.
-	if strings.Contains(sh, "on ANY failure: nofx-activate rollback") {
+	if strings.Contains(sh, "on ANY failure: vl-activate rollback") {
 		t.Fatalf("a pre-install failure must NOT route to rollback — nothing was touched, the healthy bot must not be restarted (finding [24])")
 	}
 	if !strings.Contains(sh, "NO rollback runs") {
 		t.Fatalf("the plan must say a pre-install failure REFUSES with NO rollback")
 	}
-	if !strings.Contains(sh, "failure AFTER nofx-activate began installing") {
+	if !strings.Contains(sh, "failure AFTER vl-activate began installing") {
 		t.Fatalf("rollback must be named only for a failure AFTER the install began")
 	}
 }
@@ -642,7 +641,7 @@ func TestCutoverDistinguishesAnUnstampedBinaryFromAWrongOne(t *testing.T) {
 	sh := repoFile(t, "deploy/cutover.sh")
 	// MOVED WITH THE CHANGE (CLASS 239). Both refusals now live in
 	// internal/activation.Stage, which cutover.sh reaches through
-	// `nofx-activate verify`. The DISTINCTION is the guarantee — an unstamped
+	// `vl-activate verify`. The DISTINCTION is the guarantee — an unstamped
 	// binary and a wrong-revision binary send the operator to different
 	// places, and a refusal that names the wrong cause sends them to fix
 	// something that is not broken — so it is pinned where it now lives:
@@ -662,7 +661,7 @@ func TestCutoverDistinguishesAnUnstampedBinaryFromAWrongOne(t *testing.T) {
 	if !strings.Contains(lib, "is stamped, but with revision") {
 		t.Fatalf("a stamped-but-wrong binary must get a DIFFERENT message than an unstamped one")
 	}
-	if !strings.Contains(sh, "nofx-activate") {
+	if !strings.Contains(sh, "vl-activate") {
 		t.Fatalf("cutover.sh must reach those refusals by delegating, not by reimplementing them")
 	}
 }
@@ -723,5 +722,48 @@ func TestManifestSeparatesOwnerDataFromProgramArtifacts(t *testing.T) {
 	}
 	if !strings.Contains(m, "template-only") {
 		t.Fatal("owner data must be marked as shipped-as-template, never installed over an existing file")
+	}
+}
+
+// D1-FOLD (DS-105): a post-R1b archive that holds ONLY the vl updater binaries
+// must still stage them — OPTIONAL accepts both name pairs (R5 removes the
+// nofx pair). Dropping the vl entries must fail THIS test.
+func TestPackagerStagesAnArchiveHoldingOnlyVlUpdaterBinaries(t *testing.T) {
+	src := t.TempDir()
+	for _, p := range []string{"nofx-bin", "LICENSE", "ninjascript/x.cs", "ninjascript/vltrader_tcp_PROTOCOL.md", "web/dist/index.html",
+		"updater/vl-updater", "updater/vl-updater-bootstrap"} {
+		full := filepath.Join(src, p)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte("x"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.MkdirAll(filepath.Join(src, "deploy"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	stage := filepath.Join(t.TempDir(), "stage")
+	if out, err := runScript(t, "deploy/release/package.sh", src, stage, strings.Repeat("e", 40)); err != nil {
+		t.Fatalf("package failed: %v\n%s", err, out)
+	}
+	for _, want := range []string{"updater/vl-updater", "updater/vl-updater-bootstrap"} {
+		if _, err := os.Stat(filepath.Join(stage, want)); err != nil {
+			t.Fatalf("the archive dropped %s: %v", want, err)
+		}
+	}
+}
+
+// TestInstallUpdaterWorkerRepoUrlDefaultsToThePartnerRepo is the PARTNER
+// CARVE-OUT (C3): in this fork the updater-worker build repo must default to
+// the partner repo, never the nofx source repo. Mutant fold: flipping the
+// default back to /nofx must make this test RED.
+func TestInstallUpdaterWorkerRepoUrlDefaultsToThePartnerRepo(t *testing.T) {
+	s := repoFile(t, "deploy/install-updater-worker.sh")
+	if !strings.Contains(s, "https://github.com/johnwick2921-cyber/vlautoagenttraderv1") {
+		t.Fatalf("install-updater-worker.sh REPO_URL default must name the partner repo")
+	}
+	if strings.Contains(s, "https://github.com/johnwick2921-cyber/nofx") {
+		t.Fatalf("install-updater-worker.sh REPO_URL default must never name the nofx source repo")
 	}
 }
