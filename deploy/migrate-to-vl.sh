@@ -459,12 +459,16 @@ steps_1_5() {
     [ -f "$src" ] || stepdie "the DB at $src does not exist — refusing a backup that would create an empty file"
     dest="$HOME/$o-backups/pre-vl-rename-$TS/data.db"
     mkdir -p "$(dirname "$dest")"
-    receipt="$("$RELEASE_DIR/vl-activate" backup -db "$src" -dest "$dest" 2>/dev/null || true)"
+    receipt_err="$(mkt)"
+    receipt="$("$RELEASE_DIR/vl-activate" backup -db "$src" -dest "$dest" 2>"$receipt_err" || true)"
     ok="$(printf '%s' "$receipt" | jq -r '.ok // false' 2>/dev/null || echo false)"
-    integ="$(printf '%s' "$receipt" | jq -r '.integrity_check // ""' 2>/dev/null || true)"
-    bytes="$(printf '%s' "$receipt" | jq -r '.bytes // 0' 2>/dev/null || echo 0)"
-    if [ "$ok" != "true" ] || [ "$integ" != "ok" ] || [ "$bytes" -le 0 ] 2>/dev/null; then
-      stepdie "the DB backup receipt is not ok:true + integrity_check=ok + bytes>0 (got ok=$ok integrity=$integ bytes=$bytes) — refusing"
+    integ="$(printf '%s' "$receipt" | jq -r '.evidence.integrity_check // ""' 2>/dev/null || true)"
+    bytes="$(printf '%s' "$receipt" | jq -r '.evidence.bytes // ""' 2>/dev/null || true)"
+    if [ "$ok" != "true" ] || [ "$integ" != "ok" ] \
+       || ! printf '%s' "$bytes" | grep -Eq '^[0-9]+$' || [ "$bytes" -le 0 ] 2>/dev/null; then
+      err_json="$(printf '%s' "$receipt" | jq -r '.err // empty' 2>/dev/null || true)"
+      err_tail="$([ -s "$receipt_err" ] && tail -n 5 "$receipt_err" 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g' || true)"
+      stepdie "the DB backup receipt is not ok:true + evidence.integrity_check=ok + numeric evidence.bytes>0 (got ok=$ok integrity=$integ bytes='$bytes' err='${err_json:-none}' stderr='${err_tail:-none}') — refusing"
     fi
     say "DB backed up to $dest (bytes=$bytes)"
 
