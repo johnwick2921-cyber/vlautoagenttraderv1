@@ -9,7 +9,7 @@ import (
 // W11 — AIConfigFingerprint is a stable, deterministic hash of ONLY the indicator
 // config that reaches the futures prompt: the toggles, the configured periods, and
 // kline timeframes. It intentionally EXCLUDES the crypto-only fields (the legacy
-// quant/ranking feeds were deleted in D2-DEAD item 12) because
+// ranking feeds were deleted in D2-DEAD item 12) because
 // they never affect the futures prompt.
 //
 // Determinism: json.Marshal emits struct fields in declaration order; ,omitempty

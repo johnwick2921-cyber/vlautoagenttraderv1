@@ -3,7 +3,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 <p align="center">
   <strong>你的个人 AI 交易助手。</strong><br/>
-  <strong>任何市场。任何模型。用 USDC 付费，无需 API Key。</strong>
+
 </p>
 
 <p align="center">
@@ -12,8 +12,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 <p align="center">
   <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go" alt="Go"></a>
   <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react" alt="React"></a>
-  <a href="https://x402.org"><img src="https://img.shields.io/badge/x402-USDC%20Payments-2775CA?style=flat" alt="x402"></a>
-  <a href="https://claw402.ai"><img src="https://img.shields.io/badge/Claw402-AI%20Gateway-FF6B35?style=flat" alt="Claw402"></a>
 </p>
 
 <p align="center">
@@ -32,9 +30,9 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 VL Intelligent 是一个开源的**自主式** AI 交易助手。与需要手动配置模型、管理 API Key、接入数据源的传统 AI 工具不同 —— VL Intelligent 的 AI **自主感知市场、自选模型、自动获取数据**。零人工干预。你只需设定策略，AI 负责一切。
 
-**完全自主**：AI 自行决定使用哪个模型、获取什么市场数据、何时交易。无需手动配置模型，无需管理各种服务的 API Key。只需充值 USDC 钱包，一键启动。
 
-核心差异：**内置 [x402](https://x402.org) 微支付协议**。无需 API Key，充值 USDC 钱包即可按需付费。钱包就是你的身份。
+
+
 
 打开 **http://127.0.0.1:3000**，完成。
 
@@ -54,30 +52,11 @@ VL Intelligent 是一个开源的**自主式** AI 交易助手。与需要手动
 
 ---
 
-## x402 如何工作
-
-传统流程：注册账号 → 购买额度 → 获取 API Key → 管理配额 → 轮换密钥。
-
-x402 流程：
-
-```
-请求 → 402（返回价格）→ 钱包签名 USDC → 重试 → 完成
-```
-
-无需注册。无需 API Key。无需预付费。一个钱包，所有模型。
-
-### 内置 x402 提供商
-
-| 提供商 | 链 | 模型 |
-| <img src="../../../web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base | GPT-5.4、Claude Opus、DeepSeek、Qwen、Grok、Gemini、Kimi — 15+ 模型 |
-
----
-
 ## 功能概览
 
 | 功能 | 描述 |
 | **多 AI** | DeepSeek、Qwen、GPT、Claude、Gemini、Grok、Kimi、MiniMax — 随时切换 |
-| **多交易所** | Binance、Bybit、OKX、Bitget、KuCoin、Gate、Hyperliquid、Aster、Lighter |
+
 | **策略工作室** | 可视化构建器 — 币种来源、指标、风控 |
 | **AI 竞赛** | AI 实时竞争，排行榜排名 |
 | **Telegram Agent** | 与交易助手对话 — 流式输出、工具调用、记忆 |
@@ -87,23 +66,6 @@ x402 流程：
 ### 市场
 
 加密货币 · 美股 · 外汇 · 贵金属
-
-### 交易所 (CEX)
-
-| 交易所 | 状态 | 注册 (手续费折扣) |
-| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [注册](https://www.binance.com/join?) |
-| <img src="../../../web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [注册](https://partner.bybit.com/b/83856) |
-| <img src="../../../web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [注册](https://www.okx.com/join/1865360) |
-| <img src="../../../web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [注册](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
-| <img src="../../../web/public/exchange-icons/kucoin.svg" width="20" height="20" style="vertical-align: middle;"/> **KuCoin** | ✅ | [注册](https://www.kucoin.com/r/broker/CXEV7XKK) |
-| <img src="../../../web/public/exchange-icons/gate.svg" width="20" height="20" style="vertical-align: middle;"/> **Gate** | ✅ | [注册](https://www.gatenode.xyz/share/VQBGUAxY) |
-
-### 交易所 (Perp-DEX)
-
-| 交易所 | 状态 | 注册 (手续费折扣) |
-| <img src="../../../web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [注册](https://app.hyperliquid.xyz/join/AITRADING) |
-| <img src="../../../web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [注册](https://www.asterdex.com/en/referral/fdfc0e) |
-| <img src="../../../web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [注册](https://app.lighter.xyz/?referral=68151432) |
 
 ### AI 模型 (API Key 模式)
 
@@ -116,10 +78,6 @@ x402 流程：
 | <img src="../../../web/public/icons/grok.svg" width="20" height="20" style="vertical-align: middle;"/> **Grok** | ✅ | [获取 API Key](https://console.x.ai) |
 | <img src="../../../web/public/icons/kimi.svg" width="20" height="20" style="vertical-align: middle;"/> **Kimi** | ✅ | [获取 API Key](https://platform.moonshot.cn) |
 | <img src="../../../web/public/icons/minimax.svg" width="20" height="20" style="vertical-align: middle;"/> **MiniMax** | ✅ | [获取 API Key](https://platform.minimaxi.com) |
-
-### AI 模型 (x402 模式 — 无需 API Key)
-
-15+ 模型通过 [Claw402](https://claw402.ai) 接入 — 只需一个 USDC 钱包
 
 ---
 
@@ -148,7 +106,7 @@ cd web && npm install && npm run dev  # 前端 (新终端)
 
 **进阶模式**：
 
-1. **AI** — 添加 API Key 或配置 x402 钱包
+
 2. **交易所** — 连接交易所 API 凭证
 3. **策略** — 在策略工作室构建
 4. **交易员** — 组合 AI + 交易所 + 策略

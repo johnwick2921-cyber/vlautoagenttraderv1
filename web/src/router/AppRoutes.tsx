@@ -18,7 +18,6 @@ import { ResetPasswordPage } from '../components/auth/ResetPasswordPage'
 import { SetupPage } from '../components/modals/SetupPage'
 import { AITradersPage } from '../components/trader/AITradersPage'
 import { FAQPage } from '../pages/FAQPage'
-import { BeginnerOnboardingPage } from '../pages/BeginnerOnboardingPage'
 import { AgentChatPage } from '../pages/AgentChatPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { StrategyStudioPage } from '../pages/StrategyStudioPage'
@@ -40,7 +39,6 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { useSystemConfig } from '../hooks/useSystemConfig'
 import { t } from '../i18n/translations'
 import { api } from '../lib/api'
-import { getUserMode } from '../lib/onboarding'
 import type {
   AccountInfo,
   DecisionRecord,
@@ -191,11 +189,7 @@ function AppChrome({
   )
 }
 
-function TradersRoute({
-  showBeginnerOnboarding = false,
-}: {
-  showBeginnerOnboarding?: boolean
-}) {
+function TradersRoute() {
   const navigate = useNavigate()
   const { user, token } = useAuth()
   const { data: traders } = useSWR<TraderInfo[]>(
@@ -208,11 +202,7 @@ function TradersRoute({
   )
 
   return (
-    <AppChrome
-      currentPage="traders"
-      animateContent
-      extraContent={showBeginnerOnboarding ? <BeginnerOnboardingPage /> : null}
-    >
+    <AppChrome currentPage="traders" animateContent>
       <AITradersPage
         onTraderSelect={(traderId) => {
           const trader = traders?.find((item) => item.trader_id === traderId)
@@ -524,11 +514,7 @@ export function AppRoutes() {
           path={ROUTES.welcome}
           element={
             isAuthenticated ? (
-              getUserMode() === 'beginner' ? (
-                <TradersRoute showBeginnerOnboarding />
-              ) : (
-                <Navigate to={ROUTES.traders} replace />
-              )
+              <Navigate to={ROUTES.traders} replace />
             ) : (
               <Navigate to={ROUTES.login} replace />
             )

@@ -95,7 +95,7 @@ import (
 // market.futuresOIFunding (absent, no network), pinned by
 // TestAIOpenSendHalfMakesNoBinanceCall and the market source guard. The stub
 // stays, belt and braces: newDupWire still routes every client
-// market.NewAPIClient builds through its own seam (hook.SET_HTTP_CLIENT) to a
+// market builds clients through its own seam (hook.SET_HTTP_CLIENT) to a
 // RoundTripper that fails at once — so a future outbound call on this path
 // costs microseconds here instead of the fixture's 60 s budgets (the latch's
 // book-age bound and the server's TCPHeartbeatAckTimeout) — and restores the
@@ -247,7 +247,7 @@ var (
 // gets back, at once.
 var errDupOffline = errors.New("dup fixture: outbound HTTP is stubbed offline")
 
-// dupOffline is the RoundTripper behind every client market.NewAPIClient
+// dupOffline is the RoundTripper behind every client the market seam
 // builds while a dup fixture is up. It never dials: it records the host and
 // fails immediately.
 type dupOffline struct {
@@ -269,7 +269,7 @@ func (o *dupOffline) seen() []string {
 }
 
 // stubOutboundHTTP installs dupOffline through market's own client seam
-// (hook.SET_HTTP_CLIENT, consulted by market.NewAPIClient on every call) for
+// (hook.SET_HTTP_CLIENT, consulted on every call) for
 // the test's lifetime, and restores whatever was registered before — nested
 // fixtures (S5's rounds) unwind in t.Cleanup's LIFO order. It is registered
 // FIRST in newDupWire so it is restored LAST, after every server and producer

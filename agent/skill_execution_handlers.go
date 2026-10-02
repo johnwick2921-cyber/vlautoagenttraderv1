@@ -18,7 +18,6 @@ var (
 	firstIntegerPattern = regexp.MustCompile(`\d+`)
 	firstFloatPattern   = regexp.MustCompile(`\d+(?:\.\d+)?`)
 	timeframeTokenRE    = regexp.MustCompile(`(?i)\b\d{1,2}[mhdw]\b`)
-	coinSymbolTokenRE   = regexp.MustCompile(`(?i)^(?:xyz:)?[a-z0-9._-]{2,20}(?:usdt|usd|-usdc)?$`)
 	quotedContentRE     = regexp.MustCompile(`[“"]([^“”"]{1,200})[”"]`)
 )
 
@@ -49,13 +48,6 @@ func detectCatalogField(text string, catalog []entityFieldMeta) string {
 	lower := strings.ToLower(strings.TrimSpace(text))
 	if lower == "" {
 		return ""
-	}
-	if strings.Contains(lower, "api key index") || strings.Contains(lower, "lighter api key index") {
-		for _, meta := range catalog {
-			if meta.Key == "lighter_api_key_index" {
-				return meta.Key
-			}
-		}
 	}
 	bestKey := ""
 	bestLen := -1
@@ -152,51 +144,6 @@ func displayCatalogFieldName(field, lang string) string {
 			return "测试网"
 		}
 		return "testnet"
-	case "hyperliquid_wallet_addr":
-		if lang == "zh" {
-			return "Hyperliquid 钱包地址"
-		}
-		return "Hyperliquid wallet address"
-	case "hyperliquid_unified_account":
-		if lang == "zh" {
-			return "Hyperliquid Unified Account"
-		}
-		return "Hyperliquid unified account"
-	case "aster_user":
-		if lang == "zh" {
-			return "Aster User"
-		}
-		return "Aster user"
-	case "aster_signer":
-		if lang == "zh" {
-			return "Aster Signer"
-		}
-		return "Aster signer"
-	case "aster_private_key":
-		if lang == "zh" {
-			return "Aster 私钥"
-		}
-		return "Aster private key"
-	case "lighter_wallet_addr":
-		if lang == "zh" {
-			return "Lighter 钱包地址"
-		}
-		return "Lighter wallet address"
-	case "lighter_private_key":
-		if lang == "zh" {
-			return "Lighter 私钥"
-		}
-		return "Lighter private key"
-	case "lighter_api_key_private_key":
-		if lang == "zh" {
-			return "Lighter API Key 私钥"
-		}
-		return "Lighter API key private key"
-	case "lighter_api_key_index":
-		if lang == "zh" {
-			return "Lighter API Key Index"
-		}
-		return "Lighter API key index"
 	default:
 		if lang == "zh" {
 			return field
@@ -1541,31 +1488,6 @@ func (a *Agent) executeExchangeManagementAction(storeUserID string, userID int64
 		if value := testnetRaw; value != "" {
 			payload["testnet"] = value == "true"
 		}
-		if value := defaultIfEmpty(patch.HyperliquidWalletAddr, fieldValue(session, "hyperliquid_wallet_addr")); value != "" {
-			payload["hyperliquid_wallet_addr"] = value
-		}
-		if value := defaultIfEmpty(patch.AsterUser, fieldValue(session, "aster_user")); value != "" {
-			payload["aster_user"] = value
-		}
-		if value := defaultIfEmpty(patch.AsterSigner, fieldValue(session, "aster_signer")); value != "" {
-			payload["aster_signer"] = value
-		}
-		if value := defaultIfEmpty(patch.AsterPrivateKey, fieldValue(session, "aster_private_key")); value != "" {
-			payload["aster_private_key"] = value
-		}
-		if value := defaultIfEmpty(patch.LighterWalletAddr, fieldValue(session, "lighter_wallet_addr")); value != "" {
-			payload["lighter_wallet_addr"] = value
-		}
-		if value := defaultIfEmpty(patch.LighterAPIKeyPrivateKey, fieldValue(session, "lighter_api_key_private_key")); value != "" {
-			payload["lighter_api_key_private_key"] = value
-		}
-		if patch.LighterAPIKeyIndex != nil {
-			payload["lighter_api_key_index"] = *patch.LighterAPIKeyIndex
-		} else if value := fieldValue(session, "lighter_api_key_index"); value != "" {
-			if parsed, err := strconv.Atoi(value); err == nil {
-				payload["lighter_api_key_index"] = parsed
-			}
-		}
 		if session.Action == "update_status" {
 			delete(payload, "account_name")
 		}
@@ -1605,6 +1527,7 @@ func (a *Agent) executeExchangeManagementAction(storeUserID string, userID int64
 			asString(payload["aster_private_key"]),
 			asString(payload["lighter_wallet_addr"]),
 			asString(payload["lighter_api_key_private_key"]),
+			asString(payload["nt_data_dir"]),
 		); err != nil {
 			a.saveSkillSession(userID, session)
 			return formatValidationFeedback(lang, "exchange", err)
@@ -2175,9 +2098,9 @@ func (a *Agent) executeStrategyConfigUpdate(storeUserID string, userID int64, la
 	setSkillDAGStep(&session, "collect_config_patch")
 	a.saveSkillSession(userID, session)
 	if lang == "zh" {
-		return "你可以直接说想怎么改策略配置，比如“选币来源改成固定币种 BTCUSDT，最低置信度 80”。我会按当前策略类型的产品模板生成 config_patch 后再更新。"
+		return "你可以直接说想怎么改策略配置，比如“选币来源改成固定币种 MNQ，最低置信度 80”。我会按当前策略类型的产品模板生成 config_patch 后再更新。"
 	}
-	return "Tell me how you want to change the strategy config, for example: set coin source to static coins BTCUSDT and minimum confidence to 80. I will turn it into a config_patch for the current strategy type before updating."
+	return "Tell me how you want to change the strategy config, for example: set coin source to static coins MNQ and minimum confidence to 80. I will turn it into a config_patch for the current strategy type before updating."
 }
 
 func (a *Agent) loadStrategyConfigForUpdate(storeUserID, strategyID string) (*store.Strategy, store.StrategyConfig, error) {
@@ -2503,16 +2426,16 @@ func formatTraderDiagnosisEvidence(lang string, ev traderDiagnosisEvidence) stri
 		case hasAmountTooSmall:
 			summary := fmt.Sprintf("%s 不是没运行。最近它有尝试开 %s 的单，但账户资金太小，算出来的开仓金额", traderName, primarySymbol)
 			if amount > 0 {
-				summary += fmt.Sprintf("约 %.2f USDT", amount)
+				summary += fmt.Sprintf("约 $%.2f", amount)
 			}
 			summary += "，低于系统最小下单要求"
 			if minimum > 0 {
-				summary += fmt.Sprintf(" %.2f USDT", minimum)
+				summary += fmt.Sprintf(" $%.2f", minimum)
 			}
 			summary += "，所以这笔单被拦下了。"
 			lines = append(lines, summary)
 			if totalEquity > 0 && maxBTCETHPositionValue > 0 {
-				lines = append(lines, fmt.Sprintf("当前账户权益约 %.2f USDT，按策略风控算出来的单笔仓位上限约 %.2f USDT，容易达不到最小下单金额。", totalEquity, maxBTCETHPositionValue))
+				lines = append(lines, fmt.Sprintf("当前账户权益约 $%.2f，按策略风控算出来的单笔仓位上限约 $%.2f，容易达不到最小下单金额。", totalEquity, maxBTCETHPositionValue))
 			}
 			if latestWait {
 				lines = append(lines, "另外，最近也有一些周期是 AI 主动选择等待，说明并不是系统完全没跑。")

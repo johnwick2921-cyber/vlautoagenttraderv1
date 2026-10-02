@@ -43,7 +43,7 @@ github.com/nautechsystems/nautilus_trader · LGPL v3 · 21k+ stars · bi-weekly 
 - 50+ built-in indicators (auto-updated by engine on every bar/tick)
 - All order types — market, limit, stop, stop-limit, trailing, bracket, OCO, MIT, LIT
 - Risk engine — pre-trade checks (max order size, position, notional, leverage)
-- Native data adapters — Databento (yours), IB, Binance, Bybit, OKX, Coinbase, Tardis
+- Native data adapters — Databento (yours), IB, NinjaTrader, Tardis
 - Backtest + paper + live engines share identical strategy code
 - Account types — Cash, Margin (for futures), Betting
 - Persistent state via Redis (optional)

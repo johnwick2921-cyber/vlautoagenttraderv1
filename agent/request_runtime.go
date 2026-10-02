@@ -26,7 +26,6 @@ func (a *Agent) requestRuntime(storeUserID string) *Agent {
 		traderManager: owner.traderManager,
 		store:         owner.store,
 		config:        owner.config,
-		sentinel:      owner.sentinel,
 		brain:         owner.brain,
 		scheduler:     owner.scheduler,
 		logger:        owner.logger,

@@ -18,7 +18,6 @@ import (
 	"regexp"
 	"strings"
 
-	"vl/config"
 	"vl/trader"
 
 	"github.com/gin-gonic/gin"
@@ -61,10 +60,8 @@ func (s *Server) effectiveVenue(c *gin.Context, userID, strategyID string) strin
 			return t
 		}
 	}
-	if cfg := config.Get(); cfg != nil && cfg.TradingMode == "futures" {
-		return "ninjatrader"
-	}
-	return ""
+	// C2 — futures-only build: the default venue is always ninjatrader.
+	return "ninjatrader"
 }
 
 func (s *Server) handleStrategyEffective(c *gin.Context) {

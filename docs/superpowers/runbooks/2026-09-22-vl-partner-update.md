@@ -103,3 +103,14 @@ this tree is `0b45081d` exactly, verified by blob-sha match table). Partner-mach
    `deploy/release_contract_test.go` (partner assertions),
    `deploy/install-updater-worker.sh` (`REPO_URL` defaults to the partner repo),
    `deploy/RELEASE` (names the partner build commit), this runbook.
+
+## Crypto removal sync (`sync/vl-ebb726977-crypto-20261002`, DS-106, 2026-10-02)
+
+Stacks on the R2 sync (#15). Tree = nofx `ebb726977ef67c71cf6493a39886e74c005a3077`
+(PR #291, release v2026.10.01.1, booted 23:46:58 CT 2026-10-01). Partner-machine steps
+(after #15's are done):
+
+1. **Pull**, then build at the commit-of-build named in `deploy/RELEASE`.
+2. **AddOn: NO .cs change in this wave** — `git diff 0b45081d ebb726977 -- ninjascript/`
+   is empty [A].
+3. **One SIM order check** at the next market open; report the boot line to the CTO.

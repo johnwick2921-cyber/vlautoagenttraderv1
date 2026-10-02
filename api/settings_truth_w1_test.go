@@ -192,8 +192,11 @@ func newW1TruthServer(t *testing.T, strategyJSON string) (*Server, *manager.Trad
 	if err := st.AIModel().Create(w1User, "m-w1", "m", "deepseek", true, "sk-test-not-a-real-key", ""); err != nil {
 		t.Fatalf("ai model: %v", err)
 	}
-	exID, err := st.Exchange().Create(w1User, "binance", "Default", true,
-		"test-key", "test-secret", "", false, "", true, "", "", "", "", "", "", 0, "", "", 0)
+	// A ninjatrader exchange row: its trader seats as the offline CSV transport
+	// (no NT8 TCP dial, no network side effect) — all the manager needs.
+	exID, err := st.Exchange().Create(w1User, "ninjatrader", "Default", true,
+		"", "", "", false,
+		filepath.Join(t.TempDir(), "nt-data"), "MNQ", 1)
 	if err != nil {
 		t.Fatalf("exchange: %v", err)
 	}
@@ -205,6 +208,7 @@ func newW1TruthServer(t *testing.T, strategyJSON string) (*Server, *manager.Trad
 		t.Fatalf("trader: %v", err)
 	}
 	tm := manager.NewTraderManager()
+	t.Setenv("NT_TRANSPORT", "csv") // offline transport: no NT8 TCP dial in tests
 	if err := tm.LoadUserTradersFromStore(st, w1User); err != nil {
 		t.Fatalf("load traders: %v", err)
 	}

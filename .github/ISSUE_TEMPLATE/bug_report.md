@@ -102,7 +102,7 @@ Paste backend logs here (last 50-100 lines around the error)
 - **Node.js Version:** [run: `node -v`]
 
 **Trading Setup:**
-- **Exchange:** [Binance / Hyperliquid / Aster]
+- **Exchange:** [NinjaTrader 8]
 - **Account Type:** [Main Account / Subaccount]
 - **Position Mode:** [Hedge Mode (Dual) / One-way Mode] ← **Important for trading bugs!**
 - **AI Model:** [DeepSeek / Qwen / Custom]
@@ -152,7 +152,7 @@ Paste backend logs here (last 50-100 lines around the error)
 ## 📝 Quick Tips for Faster Resolution
 
 **For Trading Issues:**
-1. ✅ Check Binance position mode: Go to Futures → ⚙️ Preferences → Position Mode → Must be **Hedge Mode**
+1. ✅ Check the NT8 AddOn connection: boot line transport=TCP wired, bars=<NT8 BarCache>
 2. ✅ Verify API permissions: Futures trading must be enabled
 3. ✅ Check decision logs in `decision_logs/{trader_id}/` for AI reasoning
 

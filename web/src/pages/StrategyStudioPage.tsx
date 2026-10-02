@@ -842,7 +842,7 @@ export function StrategyStudioPage() {
   const currentAIConfig = editingConfig ? getAIConfig(editingConfig) : null
 
   // The strategy's active instrument drives whether the editors show crypto-only
-  // UI (leverage tiers, USDT labels, funding-rate). A CME futures symbol in the
+  // UI (leverage tiers, value-currency labels, funding-rate). A CME futures symbol in the
   // coin source (e.g. MNQ) hides those; a crypto symbol keeps them. Derived from
   // the first static coin — the same field the Go engine reads to pick the
   // futures vs. crypto prompt (api/strategy preview passes static_coins[0]).

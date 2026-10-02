@@ -34,9 +34,9 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 A Prompt is the "work instruction" you give to the AI trader, determining how the AI analyzes the market and makes trading decisions.
 
-### Three Usage Methods
 
-#### Method 1: Use Official Templates (Recommended for Beginners)
+
+
 
 **Steps**:
 1. Choose an official template ([Conservative](#conservative-strategy) / [Balanced](#balanced-strategy) / [Aggressive](#aggressive-strategy))
@@ -46,7 +46,7 @@ A Prompt is the "work instruction" you give to the AI trader, determining how th
 **Suitable for**: Beginners who want to start quickly
 **Time required**: 2 minutes
 
-#### Method 2: Add Custom Strategy on Top of Official Template (Recommended)
+
 
 **Steps**:
 1. Keep `prompts/default.txt` unchanged
@@ -63,7 +63,7 @@ Final Prompt = Official Base Strategy (Risk Control + Format) + Your Custom Stra
 **Suitable for**: Intermediate users who want to keep risk controls but add their own ideas
 **Time required**: 10-30 minutes
 
-#### Method 3: Complete Customization (Advanced)
+
 
 **Steps**:
 1. Write a complete Prompt (including all risk control rules)
@@ -128,11 +128,11 @@ Entry conditions: Confidence ≥ 85, multiple indicator convergence.
 
 - Risk-reward ratio ≥ 1:3
 - Maximum 3 positions simultaneously
-- Leverage limits (BTC/ETH 20x, altcoins 5x)
+
 - Margin usage rate ≤ 90%
 
-⚠️ **Methods 1 & 2**: These constraints are automatically added and cannot be overridden
-⚠️ **Method 3**: You must include these constraints in your Prompt
+
+
 
 #### 3. Output Format (Automatically Added by System)
 
@@ -141,14 +141,14 @@ Requires AI to output decisions using XML tags and JSON format
 **Example Output**:
 ```xml
 <reasoning>
-BTC broke support, MACD death cross, volume increased...
+
 </reasoning>
 
 <decision>
 ```json
 [
   {
-    "symbol": "BTCUSDT",
+
     "action": "open_short",
     "leverage": 10,
     "position_size_usd": 5000,
@@ -169,19 +169,19 @@ You **don't need** to request data in the Prompt; the system automatically trans
 - Current time, running cycle
 - Account equity, balance, P&L
 - All position details
-- BTC market conditions
+
 - Complete technical data for candidate coins
 - Sharpe ratio performance metrics
 
 ❌ **You Don't Need to Write**:
 ```
-Please analyze BTC price and MACD...  # System already provides
+
 Please tell me current positions...   # System already provides
 ```
 
 ✅ **You Should Write**:
 ```
-Focus on BTC trend as market indicator
+
 When MACD death cross and volume increases, consider shorting opportunities
 ```
 
@@ -210,8 +210,8 @@ Time: 2025-01-15 10:30:00 UTC | Cycle: #142 | Runtime: 426 minutes
 
 | Field Name | Description | Unit | Example |
 |---------|------|------|------|
-| **Equity** | Total account assets | USDT | 1250.50 |
-| **Balance** | Available balance | USDT | 850.30 |
+
+
 | **Balance %** | Available/Equity | % | 68.0% |
 | **P&L** | Total P&L percentage | % | +15.2% |
 | **Margin** | Margin usage rate | % | 32.0% |
@@ -234,26 +234,26 @@ Consider reducing positions when Margin usage exceeds 80%
 
 | Field Name | Description | Unit | Calculation | Example |
 |---------|------|------|----------|------|
-| **Symbol** | Trading pair | - | - | BTCUSDT |
+
 | **Side** | Long/Short | - | - | LONG |
-| **Entry** | Opening price | USDT | - | 95000.00 |
-| **Current** | Mark price | USDT | - | 96500.00 |
+
+
 | **P&L %** | Unrealized P&L % | % | w/ leverage | +2.38% |
-| **P&L Amount** | Unrealized P&L | USDT | Actual USD | +59.50 |
+
 | **Peak %** | Historical peak P&L% | % | w/ leverage | +5.00% |
 | **Leverage** | Leverage multiple | x | - | 5 |
-| **Margin** | Used margin | USDT | - | 500.00 |
-| **Liquidation** | Liquidation price | USDT | - | 88000.00 |
+
+
 | **Duration** | Holding time | min/hour | Calculated | 2h 35min |
 
 ⚠️ **Important Distinctions**:
 - **P&L %** = Return with leverage (5x leverage, 1% price change = 5% P&L)
-- **P&L Amount** = Actual dollars gained/lost (e.g., +59.50 USDT)
+
 - **Peak %** = Highest P&L % achieved during holding (for drawdown calculation)
 
 **Actual Output Example**:
 ```
-1. BTCUSDT LONG | Entry 95000.0000 Current 96500.0000 | P&L +2.38% | P&L Amount +59.50 USDT | Peak % 5.00% | Leverage 5x | Margin 500 | Liquidation 88000.0000 | Duration 2h 35min
+
 ```
 
 **Prompt Reference Examples (✅ Correct)**:
@@ -292,11 +292,11 @@ If Drawdown exceeds 50%, significant profit giveback, consider reducing position
 
 ---
 
-### BTC Market Data
+
 
 | Field Name | Description | Unit | Example |
 |---------|------|------|------|
-| **BTC Price** | Current price | USDT | 96500.00 |
+
 | **1h Change** | 1-hour change | % | +1.25% |
 | **4h Change** | 4-hour change | % | -2.15% |
 | **MACD** | MACD indicator | - | 0.0024 |
@@ -304,14 +304,14 @@ If Drawdown exceeds 50%, significant profit giveback, consider reducing position
 
 **Actual Output Example**:
 ```
-BTC: 96500.00 (1h: +1.25%, 4h: -2.15%) | MACD: 0.0024 | RSI: 62.50
+
 ```
 
 **Prompt Reference Example**:
 ```
-BTC as market indicator:
-- If BTC 4h Change < -5%, market turning bearish, be cautious on altcoin longs
-- If BTC MACD death cross and RSI < 30, potential oversold bounce
+
+
+
 ```
 
 ---
@@ -381,7 +381,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage
 
 ### Hard Constraints (Non-overridable Rules)
 
-The following constraints are enforced by the system. **Methods 1 & 2** automatically add them; **Method 3** requires you to include them:
+
 
 #### 1. Risk-Reward Ratio
 **Requirement**: Must be ≥ 1:3 (risk 1% for 3%+ reward)
@@ -401,19 +401,19 @@ The following constraints are enforced by the system. **Methods 1 & 2** automati
 
 #### 3. Single Position Size
 **Requirement**:
-- Altcoins: 0.8~1.5x account equity
-- BTC/ETH: 5~10x account equity
 
-**Example** (Account equity 1000 USDT):
+
+
+
 ```
-✅ Altcoin position: 800~1500 USDT
-✅ BTC/ETH position: 5000~10000 USDT
+
+
 ```
 
 #### 4. Leverage Limits
 **Requirement**:
-- Altcoins: Maximum 5x leverage
-- BTC/ETH: Maximum 20x leverage
+
+
 
 ⚠️ **Strictly Enforced**: Decisions exceeding limits will be rejected
 
@@ -424,8 +424,8 @@ The following constraints are enforced by the system. **Methods 1 & 2** automati
 
 #### 6. Minimum Opening Amount
 **Requirement**:
-- General coins: ≥ 12 USDT
-- BTC/ETH: ≥ 60 USDT
+
+
 
 **Reason**: Exchange minimum notional value + safety margin
 
@@ -455,7 +455,7 @@ Your analysis...
 ```json
 [
   {
-    "symbol": "BTCUSDT",
+
     "action": "open_short",
     "leverage": 10,
     "position_size_usd": 5000,
@@ -497,14 +497,14 @@ Your analysis...
 ```json
 // Wrong
 {
-  "symbol": "BTCUSDT",
+
   "action": "open_long",  // Open long
   "confidence": 80  // Only necessary fields
 }
 
 // Correct
 {
-  "symbol": "BTCUSDT",
+
   "action": "open_long",
   "confidence": 85
 }
@@ -581,7 +581,7 @@ Entry conditions (must all be met):
 - Confidence ≥ 85 (high certainty)
 - Multiple indicator convergence (at least 3 indicators support)
 - Risk-reward ratio ≥ 1:4 (take-profit space 4x+ stop-loss)
-- Clear BTC trend (as market indicator)
+
 - Positions < 2 (quality > quantity)
 
 Avoid low-quality signals:
@@ -595,8 +595,8 @@ Avoid low-quality signals:
 Single position: 0.5x account equity (smaller than system default)
 Maximum positions: 2 coins (1 less than system default)
 Leverage usage:
-- Altcoins: 3x leverage (lower than system limit)
-- BTC/ETH: 10x leverage (lower than system limit)
+
+
 
 # Stop-Loss/Take-Profit (Strict)
 
@@ -631,7 +631,7 @@ Remember:
 
 #### Usage
 
-**Method 1: Replace Default Template**
+
 ```bash
 # Backup original
 cp prompts/default.txt prompts/default.txt.bak
@@ -641,7 +641,7 @@ cp prompts/default.txt prompts/default.txt.bak
 docker-compose restart
 ```
 
-**Method 2: Web Interface Custom**
+
 1. Copy above template
 2. Paste in web interface "Custom Prompt"
 3. Set `override_base_prompt = false`
@@ -711,7 +711,7 @@ Revenge trading: Immediately doubling down after loss to "get even"
 
 Analysis paralysis: Over-waiting for perfect signal, missing opportunities
 
-Ignoring correlation: BTC often leads altcoins, must observe BTC first
+
 
 Over-leverage: Amplifies returns but also amplifies losses
 
@@ -734,12 +734,12 @@ Complete data available:
 - Raw sequences: 3-min price sequence (MidPrices array) + 4-hour candle sequence
 - Technical sequences: EMA20 sequence, MACD sequence, RSI7 sequence, RSI14 sequence
 - Capital sequences: Volume sequence, Open Interest (OI) sequence, funding rate
-- Filter markers: AI500 score / OI_Top ranking (if marked)
 
-Analysis methods (fully autonomous):
+
+
 - Freely use sequence data, you can but not limited to trend analysis, pattern recognition, support/resistance, Fibonacci, volatility bands
 - Multi-dimensional cross-validation (price + volume + OI + indicators + sequence patterns)
-- Use methods you deem most effective to discover high-certainty opportunities
+
 - Combined confidence ≥ 75 to enter
 
 Avoid low-quality signals:
@@ -865,14 +865,14 @@ Scenarios to try:
 # Position Management (Aggressive)
 
 Single position:
-- Altcoins: 1.2~1.5x account equity (near limit)
-- BTC/ETH: 8~10x account equity (near limit)
+
+
 
 Maximum positions: 3 coins
 
 Leverage usage:
-- Altcoins: 4~5x leverage (near limit)
-- BTC/ETH: 15~20x leverage (near limit)
+
+
 
 # Stop-Loss/Take-Profit (Flexible)
 
@@ -894,9 +894,9 @@ Sharpe > 0.7: Stay aggressive, can full position
 
 # Special Strategies
 
-BTC strong trend following:
-- BTC 4h Change > +5%: Prioritize long strong altcoins
-- BTC 4h Change < -5%: Quick short or cash out observe
+
+
+
 
 Short-term volatility capture:
 - Price volatility >3% in short time (15min), consider reverse trade
@@ -1253,13 +1253,13 @@ docker logs vl-trader | grep "User Prompt"
 **Step 2: Confirm Field Exists**
 Check if fields you want to reference exist in actual output:
 ```
-✅ Exists: "P&L Amount +59.50 USDT" → Can reference "P&L Amount"
+
 ❌ Doesn't exist: Don't see "KDJ" → Cannot reference KDJ indicator
 ```
 
 **Step 3: Match Natural Language Labels**
 ```
-Output: "P&L +2.38% | P&L Amount +59.50 USDT | Peak % 5.00%"
+
 
 ✅ Correct reference: "P&L %", "P&L Amount", "Peak %"
 ❌ Wrong reference: "pnl_pct", "unrealized_pnl", "peak_pnl"
@@ -1285,7 +1285,7 @@ unrealized_pnl, peak_pnl_pct, margin_used, leverage, holding_duration
 
 **Code Output** (engine.go:387-390):
 ```
-P&L +2.38% | P&L Amount +59.50 USDT | Peak % 5.00%
+
 ```
 
 **Prompt Reference**:
@@ -1306,7 +1306,7 @@ P&L +2.38% | P&L Amount +59.50 USDT | Peak % 5.00%
 - ✅ Adjust entry condition parameters
 
 **Medium Impact (Cautious)**:
-- ⚠️ Modify field reference method
+
 - ⚠️ Modify calculation formulas
 
 **High Impact (Dangerous)**:
@@ -1355,10 +1355,10 @@ Your custom Prompt must include:
 # Hard Constraints
 1. Risk-reward ratio ≥ 1:3
 2. Maximum 3 positions
-3. Single position: Altcoin 0.8-1.5x equity, BTC/ETH 5-10x equity
-4. Leverage: Altcoin ≤5x, BTC/ETH ≤20x
+
+
 5. Margin usage ≤ 90%
-6. Minimum opening: General ≥12U, BTC/ETH ≥60U
+
 
 # Output Format
 Use <reasoning> and <decision> tags:
@@ -1423,9 +1423,9 @@ Chain of thought analysis
 
 **Common Causes**:
 - Risk-reward ratio < 1:3
-- Leverage exceeds limits (Altcoin >5x, BTC/ETH >20x)
+
 - Position size out of range
-- Opening amount too small (<12 USDT or BTC/ETH <60 USDT)
+
 
 **Solution**:
 - Emphasize hard constraint requirements in Prompt
@@ -1493,7 +1493,7 @@ When encountering issues, please provide the following information:
 ```
 Problem Description: [Briefly describe the issue]
 
-Usage Method: [Method 1/2/3]
+
 
 Prompt Content:
 ```

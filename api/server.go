@@ -128,10 +128,6 @@ func (s *Server) setupRoutes() {
 		// System config (no authentication required, for frontend to determine admin mode/registration status)
 		s.route(api, "GET", "/config", "Get system configuration", s.handleGetSystemConfig)
 
-		// Wallet validation (no authentication required — used by frontend config form)
-		api.POST("/wallet/validate", s.handleWalletValidate)
-		api.POST("/wallet/generate", s.handleWalletGenerate)
-
 		// Crypto related endpoints (no authentication required, not exposed to bot)
 		api.GET("/crypto/config", s.cryptoHandler.HandleGetCryptoConfig)
 		api.GET("/crypto/public-key", s.cryptoHandler.HandleGetPublicKey)
@@ -193,8 +189,6 @@ func (s *Server) setupRoutes() {
 			s.route(protected, "POST", "/logout", "Logout (blacklist token)", s.handleLogout)
 			// Mint a short-lived single-use SSE ticket for the live bar stream (Stage 4).
 			s.route(protected, "POST", "/v1/bars/stream-ticket", "Mint a short-lived SSE stream ticket", s.handleBarsStreamTicket)
-			s.route(protected, "POST", "/onboarding/beginner", "Prepare beginner claw402 wallet and default model", s.handleBeginnerOnboarding)
-			s.route(protected, "GET", "/onboarding/beginner/current", "Get current beginner claw402 wallet", s.handleCurrentBeginnerWallet)
 			// P2-12 (audit 0926-system): owner-only one-time code the Telegram
 			// chat must send back before its first /start may bind.
 			s.routeWithSchema(protected, "POST", "/telegram/bind-code", "Issue a one-time Telegram bind code (owner-only)",
@@ -264,7 +258,7 @@ Only include fields you want to change.`,
 				s.handleSyncBalance)
 			s.routeWithSchema(protected, "POST", "/traders/:id/close-position", "Force-close an open position",
 				`:id = trader_id from GET /api/my-traders.
-Body: {"symbol":"<string, e.g. BTCUSDT — must match an open position symbol from GET /api/positions>"}`,
+Body: {"symbol":"<string, e.g. MNQ — must match an open position symbol from GET /api/positions>"}`,
 				s.handleClosePosition)
 			s.routeWithSchema(protected, "PUT", "/traders/:id/competition", "Toggle competition leaderboard visibility",
 				`:id = trader_id from GET /api/my-traders.
@@ -298,25 +292,18 @@ Creates a NEW independently-addressable row (unique id) so a provider can hold m
 
 			// Exchange configuration
 			s.routeWithSchema(protected, "GET", "/exchanges", "List exchange accounts",
-				`Returns: [{"id":"<EXACT id — use this as exchange_id when creating/updating a trader>","exchange_type":"<e.g. okx, binance>","account_name":"<user label>","enabled":<bool>}]
+				`Returns: [{"id":"<EXACT id — use this as exchange_id when creating/updating a trader>","exchange_type":"<string>","account_name":"<user label>","enabled":<bool>}]
 CRITICAL: Always use the "id" field for exchange_id. Do not use "exchange_type" as an id.`,
 				s.handleGetExchangeConfigs)
 			s.routeWithSchema(protected, "GET", "/exchanges/account-state", "Get connection and balance state for each exchange account",
-				`Returns: {"states":{"<exchange_id>":{"status":"ok|disabled|missing_credentials|invalid_credentials|permission_denied|unavailable","display_balance":"<string>","total_equity":<number>,"available_balance":<number>,"asset":"USDT|USDC","checked_at":"<RFC3339>","error_code":"<string>","error_message":"<string>"}}}
+				`Returns: {"states":{"<exchange_id>":{"status":"ok|disabled|missing_credentials|invalid_credentials|permission_denied|unavailable","display_balance":"<string>","total_equity":<number>,"available_balance":<number>,"asset":"USD","checked_at":"<RFC3339>","error_code":"<string>","error_message":"<string>"}}}
 Use this endpoint to show balance and health in the exchange list without depending on traders.`,
 				s.handleGetExchangeAccountStates)
 			s.routeWithSchema(protected, "POST", "/exchanges", "Create a new exchange account",
-				`Body: {"exchange_type":"<string>","account_name":"<string, user label>","enabled":true,"api_key":"<string>","secret_key":"<string>","passphrase":"<string, required for okx/gate/kucoin>"}
-exchange_type values: "binance","bybit","okx","bitget","gate","kucoin","indodax" (CEX) | "hyperliquid","aster","lighter" (DEX)
-Required fields by exchange:
-  binance/bybit/bitget/indodax: api_key + secret_key
-  okx/gate/kucoin: api_key + secret_key + passphrase
-  hyperliquid: hyperliquid_wallet_addr
-  aster: aster_user + aster_signer + aster_private_key
-  lighter: lighter_wallet_addr + lighter_private_key + lighter_api_key_private_key + lighter_api_key_index`,
+				`Body: {"exchange_type":"<string>","account_name":"<string, user label>","enabled":true,"api_key":"<string>","secret_key":"<string>","passphrase":"<string>"}`,
 				s.handleCreateExchange)
 			s.routeWithSchema(protected, "PUT", "/exchanges", "Update an existing exchange account configuration",
-				`Body: {"id":"<EXACT id from GET /api/exchanges>","exchange_type":"<string>","account_name":"<string>","enabled":<bool>,"api_key":"<string>","secret_key":"<string>","passphrase":"<string, for okx/gate/kucoin>"}
+				`Body: {"id":"<EXACT id from GET /api/exchanges>","exchange_type":"<string>","account_name":"<string>","enabled":<bool>,"api_key":"<string>","secret_key":"<string>","passphrase":"<string>"}
 Use this to enable/disable an exchange or update API credentials. The "id" field is required to identify which exchange to update.`,
 				s.handleUpdateExchangeConfigs)
 			s.routeWithSchema(protected, "DELETE", "/exchanges/:id", "Delete exchange account",
@@ -357,12 +344,12 @@ CRITICAL: Always use the "id" field for strategy_id.`,
 			// from the STORED row, never the ClampLimits'd copy the GET above serves.
 			s.route(protected, "GET", "/strategies/:id/effective", "Effective value + origin + scope per strategy setting (?session=NY|ASIA|LONDON, ?venue=)", s.handleStrategyEffective)
 			s.routeWithSchema(protected, "POST", "/strategies", "Create a new trading strategy",
-				`Body: {"name":"<string, required>","description":"<string, optional>","lang":"zh|en","config":<StrategyConfig object, OPTIONAL — if omitted the system applies complete working defaults automatically (static coin list, all standard indicators, standard risk control)>}
-IMPORTANT: For most use cases just POST {"name":"<name>"} — the backend fills everything in. Only include "config" when the user explicitly requests custom settings (specific coins, custom leverage, custom timeframes).
+				`Body: {"name":"<string, required>","description":"<string, optional>","lang":"zh|en","config":<StrategyConfig object, OPTIONAL — if omitted the system applies complete working defaults automatically (static symbol list, all standard indicators, standard risk control)>}
+IMPORTANT: For most use cases just POST {"name":"<name>"} — the backend fills everything in. Only include "config" when the user explicitly requests custom settings (specific symbols, custom leverage, custom timeframes).
 
 StrategyConfig fields:
-  coin_source.source_type: "static"(fixed coin list) | "hyper_all"(all Hyperliquid perp coins) | "hyper_main"(top Hyperliquid by 24h volume)
-  coin_source.static_coins: ["BTCUSDT","ETHUSDT"] — only when source_type="static"
+  coin_source.source_type: "static" (fixed symbol list)
+  coin_source.static_coins: ["MNQ"] — only when source_type="static"
   indicators.klines.primary_timeframe: "1m"|"3m"|"5m"|"15m"|"1h"|"4h" — scalping→"5m", trend/swing→"1h"/"4h"
   indicators.klines.primary_count: number of candles (20-100)
   indicators.klines.enable_multi_timeframe: true for trend/swing analysis
@@ -380,13 +367,9 @@ StrategyConfig fields:
   indicators.rsi_periods: [7,14] default
   indicators.atr_periods: [14] default
   indicators.boll_periods: [20] default
-  risk_control.max_positions: max simultaneous positions (1=single coin, 3=diversified, 5=wide)
-  risk_control.btc_eth_max_leverage: BTC/ETH leverage (conservative:3-5, moderate:5-10, aggressive:10-20)
-  risk_control.altcoin_max_leverage: altcoin leverage (usually lower than BTC leverage)
-  risk_control.btc_eth_max_position_value_ratio: max position size as multiple of equity (default 5)
-  risk_control.altcoin_max_position_value_ratio: default 1
+  risk_control.max_positions: max simultaneous positions (1=single symbol, 3=diversified, 5=wide)
   risk_control.max_margin_usage: 0.5-0.95 (default 0.9 = use up to 90% margin)
-  risk_control.min_position_size: minimum USDT per trade (default 12)
+  risk_control.min_position_size: minimum USD per trade (default 12)
   risk_control.min_risk_reward_ratio: minimum profit/loss ratio required (default 3 = 3:1)
   risk_control.min_confidence: minimum AI confidence to open position (default 75, range 60-90)
   prompt_sections.role_definition: describe the AI's trading persona and goal
@@ -707,9 +690,7 @@ func (s *Server) handleGetSystemConfig(c *gin.Context) {
 		// RunningRevision is the vcs.revision embedded in THIS binary — bug
 		// reports can now be checked against the running rev without a shell
 		// (master-audit v1 finding 5.6).
-		"revision":         kernel.RunningRevision(),
-		"btc_eth_leverage": 10,
-		"altcoin_leverage": 5,
+		"revision": kernel.RunningRevision(),
 		// SANDBOX (isolated demo instance) → the UI paints a permanent banner so a
 		// sandbox can never be mistaken for the live system. false in production.
 		"sandbox": SandboxMode(),

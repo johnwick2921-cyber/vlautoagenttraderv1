@@ -66,9 +66,9 @@ func TestGetDecisionsToolReturnsRecentTraderDecisionEvidence(t *testing.T) {
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 	traderCfg := &store.Trader{
-		ID:                  "trader-claw402",
+		ID:                  "trader-mnq-t",
 		UserID:              "default",
-		Name:                "claw402",
+		Name:                "mnq-t",
 		AIModelID:           "model-1",
 		ExchangeID:          "exchange-1",
 		InitialBalance:      6.21,
@@ -84,10 +84,10 @@ func TestGetDecisionsToolReturnsRecentTraderDecisionEvidence(t *testing.T) {
 		Timestamp:           time.Now().Add(-3 * time.Minute),
 		Success:             true,
 		AIRequestDurationMs: 12095,
-		CandidateCoins:      []string{"BTCUSDT"},
-		ExecutionLog:        []string{"AI call duration: 12095 ms", "✓ BTCUSDT wait succeeded"},
+		CandidateCoins:      []string{"MNQ"},
+		ExecutionLog:        []string{"AI call duration: 12095 ms", "✓ MNQ wait succeeded"},
 		Decisions: []store.DecisionAction{{
-			Symbol:  "BTCUSDT",
+			Symbol:  "MNQ",
 			Action:  "wait",
 			Success: true,
 		}},
@@ -99,17 +99,17 @@ func TestGetDecisionsToolReturnsRecentTraderDecisionEvidence(t *testing.T) {
 		CycleNumber:         151,
 		Timestamp:           time.Now(),
 		Success:             false,
-		ErrorMessage:        "Failed to get AI decision: failed to parse AI response: decision validation failed: decision #1 validation failed: BTCUSDT opening amount too small (28.00 USDT), must be ≥60.00 USDT",
+		ErrorMessage:        "Failed to get AI decision: failed to parse AI response: decision validation failed: decision #1 validation failed: MNQ opening amount too small (28.00 USDT), must be ≥60.00 USDT",
 		AIRequestDurationMs: 25878,
-		CandidateCoins:      []string{"BTCUSDT"},
+		CandidateCoins:      []string{"MNQ"},
 		ExecutionLog:        []string{"AI call duration: 25878 ms"},
-		DecisionJSON:        `[{"symbol":"BTCUSDT","action":"open_short","position_size_usd":28}]`,
+		DecisionJSON:        `[{"symbol":"MNQ","action":"open_short","position_size_usd":28}]`,
 	}); err != nil {
 		t.Fatalf("seed rejected decision: %v", err)
 	}
 
-	raw := a.toolGetDecisions("default", `{"trader_name":"claw402","limit":2}`)
-	for _, want := range []string{"claw402", "BTCUSDT", "wait", "wait succeeded", "opening amount too small", "must be ≥60.00 USDT"} {
+	raw := a.toolGetDecisions("default", `{"trader_name":"mnq-t","limit":2}`)
+	for _, want := range []string{"mnq-t", "MNQ", "wait", "wait succeeded", "opening amount too small", "must be ≥60.00 USDT"} {
 		if !strings.Contains(raw, want) {
 			t.Fatalf("expected decision evidence %q in tool response, got: %s", want, raw)
 		}
@@ -124,9 +124,9 @@ func TestTraderDiagnosisReadsDecisionsInsteadOfAskingUserForScreenshot(t *testin
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 	traderCfg := &store.Trader{
-		ID:                  "trader-claw402",
+		ID:                  "trader-mnq-t",
 		UserID:              "default",
-		Name:                "claw402",
+		Name:                "mnq-t",
 		AIModelID:           "model-1",
 		ExchangeID:          "exchange-1",
 		InitialBalance:      6.21,
@@ -142,10 +142,10 @@ func TestTraderDiagnosisReadsDecisionsInsteadOfAskingUserForScreenshot(t *testin
 		Timestamp:           time.Now(),
 		Success:             true,
 		AIRequestDurationMs: 13249,
-		CandidateCoins:      []string{"BTCUSDT"},
-		ExecutionLog:        []string{"AI call duration: 13249 ms", "✓ BTCUSDT wait succeeded"},
+		CandidateCoins:      []string{"MNQ"},
+		ExecutionLog:        []string{"AI call duration: 13249 ms", "✓ MNQ wait succeeded"},
 		Decisions: []store.DecisionAction{{
-			Symbol:  "BTCUSDT",
+			Symbol:  "MNQ",
 			Action:  "wait",
 			Success: true,
 		}},
@@ -153,8 +153,8 @@ func TestTraderDiagnosisReadsDecisionsInsteadOfAskingUserForScreenshot(t *testin
 		t.Fatalf("seed decision: %v", err)
 	}
 
-	reply := a.handleTraderDiagnosisSkill("default", "zh", "为什么我的claw402交易员一直不开单呢")
-	for _, want := range []string{"claw402 是运行的", "主动选择等待", "入场标准", "该怎么办"} {
+	reply := a.handleTraderDiagnosisSkill("default", "zh", "为什么我的mnq-t交易员一直不开单呢")
+	for _, want := range []string{"mnq-t 是运行的", "主动选择等待", "入场标准", "该怎么办"} {
 		if !strings.Contains(reply, want) {
 			t.Fatalf("expected diagnosis to include %q, got: %s", want, reply)
 		}
@@ -174,9 +174,9 @@ func TestTraderDiagnosisAmountTooSmallUsesUserFacingCauseAndAction(t *testing.T)
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 	traderCfg := &store.Trader{
-		ID:                  "trader-claw402",
+		ID:                  "trader-mnq-t",
 		UserID:              "default",
-		Name:                "claw402",
+		Name:                "mnq-t",
 		AIModelID:           "model-1",
 		ExchangeID:          "exchange-1",
 		InitialBalance:      6.21,
@@ -191,17 +191,17 @@ func TestTraderDiagnosisAmountTooSmallUsesUserFacingCauseAndAction(t *testing.T)
 		CycleNumber:         2,
 		Timestamp:           time.Now(),
 		Success:             false,
-		ErrorMessage:        "Failed to get AI decision: failed to parse AI response: decision validation failed: decision #1 validation failed: BTCUSDT opening amount too small (28.00 USDT), must be ≥60.00 USDT",
+		ErrorMessage:        "Failed to get AI decision: failed to parse AI response: decision validation failed: decision #1 validation failed: MNQ opening amount too small (28.00 USDT), must be ≥60.00 USDT",
 		AIRequestDurationMs: 25878,
-		CandidateCoins:      []string{"BTCUSDT"},
+		CandidateCoins:      []string{"MNQ"},
 		ExecutionLog:        []string{"AI call duration: 25878 ms"},
-		DecisionJSON:        `[{"symbol":"BTCUSDT","action":"open_short","position_size_usd":28}]`,
+		DecisionJSON:        `[{"symbol":"MNQ","action":"open_short","position_size_usd":28}]`,
 	}); err != nil {
 		t.Fatalf("seed decision: %v", err)
 	}
 
-	reply := a.handleTraderDiagnosisSkill("default", "zh", "为什么我的claw402交易员一直不开单呢")
-	for _, want := range []string{"不是没运行", "账户资金太小", "开仓金额约 28.00 USDT", "最小下单要求 60.00 USDT", "增加账户资金", "不能手动修改"} {
+	reply := a.handleTraderDiagnosisSkill("default", "zh", "为什么我的mnq-t交易员一直不开单呢")
+	for _, want := range []string{"不是没运行", "账户资金太小", "开仓金额约 $28.00", "最小下单要求 $60.00", "增加账户资金", "不能手动修改"} {
 		if !strings.Contains(reply, want) {
 			t.Fatalf("expected diagnosis to include %q, got: %s", want, reply)
 		}
@@ -219,13 +219,13 @@ func TestTraderDiagnosisUsesLLMToReasonOverCollectedEvidence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create store: %v", err)
 	}
-	llm := &staticAIClient{response: "claw402 的最终原因是账户资金太小，最近想开 BTCUSDT 空单但金额低于最小下单要求。该怎么办：增加账户资金，或换更适合小资金的策略/标的。"}
+	llm := &staticAIClient{response: "mnq-t 的最终原因是账户资金太小，最近想开 MNQ 空单但金额低于最小下单要求。该怎么办：增加账户资金，或换更适合小资金的策略/标的。"}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 	a.SetAIClient(llm)
 	traderCfg := &store.Trader{
-		ID:                  "trader-claw402",
+		ID:                  "trader-mnq-t",
 		UserID:              "default",
-		Name:                "claw402",
+		Name:                "mnq-t",
 		AIModelID:           "model-1",
 		ExchangeID:          "exchange-1",
 		InitialBalance:      6.21,
@@ -240,14 +240,14 @@ func TestTraderDiagnosisUsesLLMToReasonOverCollectedEvidence(t *testing.T) {
 		CycleNumber:    3,
 		Timestamp:      time.Now(),
 		Success:        false,
-		ErrorMessage:   "BTCUSDT opening amount too small (28.00 USDT), must be ≥60.00 USDT",
-		CandidateCoins: []string{"BTCUSDT"},
-		DecisionJSON:   `[{"symbol":"BTCUSDT","action":"open_short","position_size_usd":28}]`,
+		ErrorMessage:   "MNQ opening amount too small (28.00 USDT), must be ≥60.00 USDT",
+		CandidateCoins: []string{"MNQ"},
+		DecisionJSON:   `[{"symbol":"MNQ","action":"open_short","position_size_usd":28}]`,
 	}); err != nil {
 		t.Fatalf("seed decision: %v", err)
 	}
 
-	reply := a.handleTraderDiagnosisSkill("default", "zh", "为什么我的claw402交易员一直不开单呢")
+	reply := a.handleTraderDiagnosisSkill("default", "zh", "为什么我的mnq-t交易员一直不开单呢")
 	if reply != llm.response {
 		t.Fatalf("expected LLM diagnosis response, got: %s", reply)
 	}
@@ -255,7 +255,7 @@ func TestTraderDiagnosisUsesLLMToReasonOverCollectedEvidence(t *testing.T) {
 		t.Fatalf("expected LLM request to be captured")
 	}
 	prompt := llm.lastRequest.Messages[1].Content
-	for _, want := range []string{"Evidence JSON", "claw402", "BTCUSDT", "opening amount too small", "decision_json"} {
+	for _, want := range []string{"Evidence JSON", "mnq-t", "MNQ", "opening amount too small", "decision_json"} {
 		if !strings.Contains(prompt, want) {
 			t.Fatalf("expected LLM evidence prompt to include %q, got: %s", want, prompt)
 		}
@@ -284,9 +284,8 @@ func TestStrategyDomainPrimerKeepsSourceCountsWithinEditorBounds(t *testing.T) {
 		},
 	})
 	for _, want := range []string{
-		"AI500/OI Top/OI Low 选币数量范围 1～10",
+		"static_coins 最多 10 个",
 		"没有 mixed/混合模式",
-		"BTC/ETH 最大杠杆 1～20",
 		"min_confidence 50～100",
 	} {
 		if !strings.Contains(primer, want) {
@@ -371,7 +370,7 @@ func TestHydrateCreateTraderSlotReferencesNormalizesExchangeIDFromVisibleName(t 
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 
-	exchangeID, err := st.Exchange().Create("default", "okx", "小偶", true, "api-test", "secret-test", "pass", false, "", false, "", "", "", "", "", "", 0, "", "", 0)
+	exchangeID, err := st.Exchange().Create("default", "ninjatrader", "小偶", true, "", "", "", false, "/tmp/nt-fixture", "MNQ", 1)
 	if err != nil {
 		t.Fatalf("seed exchange: %v", err)
 	}
@@ -736,7 +735,7 @@ func TestBuildTraderCreateMissingPromptListsAllMissingSlots(t *testing.T) {
 	if err := st.AIModel().UpdateWithName("default", "default_deepseek", "DeepSeek AI", true, "sk-test-12345", "", "deepseek-chat"); err != nil {
 		t.Fatalf("seed model: %v", err)
 	}
-	exchangeID, err := st.Exchange().Create("default", "okx", "OKX 主账户", true, "api-test", "secret-test", "pass", false, "", false, "", "", "", "", "", "", 0, "", "", 0)
+	exchangeID, err := st.Exchange().Create("default", "ninjatrader", "OKX 主账户", true, "", "", "", false, "/tmp/nt-fixture", "MNQ", 1)
 	if err != nil {
 		t.Fatalf("seed exchange: %v", err)
 	}
@@ -826,7 +825,7 @@ func TestStrategyCreateUsesConfigPatch(t *testing.T) {
 		"strategy_type": "ai_trading",
 		"coin_source": map[string]any{
 			"source_type":  "static",
-			"static_coins": []any{"BTCUSDT"},
+			"static_coins": []any{"MNQ"},
 			"use_ai500":    false,
 			"use_oi_low":   true,
 			"oi_low_limit": 1,
@@ -848,7 +847,7 @@ func TestStrategyCreateUsesConfigPatch(t *testing.T) {
 			"trading_frequency": "每天最多 2-4 笔，避免过度交易。",
 			"entry_standards":   "只在 BTC 下跌趋势确认时考虑做空，禁止把做多作为主方向。",
 		},
-		"custom_prompt": "BTC 趋势做空策略：仅关注 BTCUSDT，趋势向下且反弹受阻时才考虑开空。",
+		"custom_prompt": "BTC 趋势做空策略：仅关注 MNQ，趋势向下且反弹受阻时才考虑开空。",
 	}
 	rawPatch, _ := json.Marshal(patch)
 	session := skillSession{
@@ -884,7 +883,7 @@ func TestStrategyCreateUsesConfigPatch(t *testing.T) {
 	if err := json.Unmarshal([]byte(created.Config), &cfg); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
 	}
-	if cfg.CoinSource.SourceType != "static" || len(cfg.CoinSource.StaticCoins) != 1 || cfg.CoinSource.StaticCoins[0] != "BTCUSDT" {
+	if cfg.CoinSource.SourceType != "static" || len(cfg.CoinSource.StaticCoins) != 1 || cfg.CoinSource.StaticCoins[0] != "MNQ" {
 		t.Fatalf("expected BTC static coin source, got %+v", cfg.CoinSource)
 	}
 	if cfg.RiskControl.MaxPositions != 3 || cfg.RiskControl.MinConfidence != 80 {
@@ -1174,7 +1173,7 @@ func TestStrategyCreateConfirmationFillsMissingGridDefaults(t *testing.T) {
 		Fields: map[string]string{
 			"name":                        "餐巾纸",
 			"strategy_type":               "grid_trading",
-			"symbol":                      "BTCUSDT",
+			"symbol":                      "MNQ",
 			"awaiting_final_confirmation": "true",
 		},
 	}
@@ -1237,7 +1236,7 @@ func TestStrategyCreateReadyConfigRequiresFinalConfirmation(t *testing.T) {
 	patch := map[string]any{
 		"strategy_type": "grid_trading",
 		"grid_config": map[string]any{
-			"symbol":                  "BTCUSDT",
+			"symbol":                  "MNQ",
 			"grid_count":              20,
 			"total_investment":        200,
 			"leverage":                2,
@@ -1266,7 +1265,7 @@ func TestStrategyCreateReadyConfigRequiresFinalConfirmation(t *testing.T) {
 	if !blocked {
 		t.Fatalf("expected ready strategy create config to require final confirmation")
 	}
-	if !strings.Contains(reply, "确认后我再创建") || !strings.Contains(reply, "BTCUSDT") || !strings.Contains(reply, "20") {
+	if !strings.Contains(reply, "确认后我再创建") || !strings.Contains(reply, "MNQ") || !strings.Contains(reply, "20") {
 		t.Fatalf("expected final confirmation summary, got: %s", reply)
 	}
 
@@ -1286,7 +1285,7 @@ func TestStrategyCreateConfirmationForcesSynchronousExecutionRoute(t *testing.T)
 		"ai_config": map[string]any{
 			"coin_source": map[string]any{
 				"source_type":  "static",
-				"static_coins": []any{"BTCUSDT"},
+				"static_coins": []any{"MNQ"},
 			},
 			"indicators": map[string]any{
 				"klines": map[string]any{
@@ -1351,7 +1350,7 @@ func TestStrategyCreateConfirmationForcesExecutionWithoutPriorPromptPhrase(t *te
 		"ai_config": map[string]any{
 			"coin_source": map[string]any{
 				"source_type":  "static",
-				"static_coins": []any{"BTCUSDT"},
+				"static_coins": []any{"MNQ"},
 			},
 			"indicators": map[string]any{
 				"klines": map[string]any{
@@ -1410,7 +1409,7 @@ func TestUnifiedPlannedAgentCannotStealActiveStrategyCreateConfirmation(t *testi
 		"ai_config": map[string]any{
 			"coin_source": map[string]any{
 				"source_type":  "static",
-				"static_coins": []any{"BTCUSDT"},
+				"static_coins": []any{"MNQ"},
 			},
 			"indicators": map[string]any{
 				"klines": map[string]any{
@@ -1594,7 +1593,7 @@ func TestStrategyCreateOptionsQuestionExplainsCurrentMissingField(t *testing.T) 
 		SkillName:  "strategy_management",
 		ActionName: "create",
 		CollectedFields: map[string]any{
-			"name":          "AI500高频交易",
+			"name":          "MNQ高频交易",
 			"strategy_type": "ai_trading",
 		},
 	}
@@ -1602,7 +1601,7 @@ func TestStrategyCreateOptionsQuestionExplainsCurrentMissingField(t *testing.T) 
 	if !blocked {
 		t.Fatalf("expected options question to be handled")
 	}
-	for _, want := range []string{"static", "hyper_all", "hyper_main"} {
+	for _, want := range []string{"static"} {
 		if !strings.Contains(reply, want) {
 			t.Fatalf("expected source options to include %q, got: %s", want, reply)
 		}
@@ -1614,7 +1613,7 @@ func TestStrategyCreateOptionsQuestionExplainsCurrentMissingField(t *testing.T) 
 
 func TestStrategyCreateMissingFieldsIncludeInlineOptions(t *testing.T) {
 	reply := formatStrategyCreateConfigNeeded("zh", "source_type,primary_timeframe,btceth_max_leverage,min_confidence,trading_frequency")
-	for _, want := range []string{"static", "hyper_all", "hyper_main", "1m", "1h", "1～20", "50～100", "每天最多"} {
+	for _, want := range []string{"static", "1m", "1h", "1～20", "50～100", "每天最多"} {
 		if !strings.Contains(reply, want) {
 			t.Fatalf("expected missing-field prompt to include option/range %q, got: %s", want, reply)
 		}
@@ -1722,7 +1721,7 @@ func TestStrategyCreateConfirmationUsesModelRepairForPriorStyleProposal(t *testi
 		t.Fatalf("create store: %v", err)
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
-	a.SetAIClient(&staticAIClient{response: `{"route":"execute_skill","extracted_data":{"config_patch":{"strategy_type":"ai_trading","ai_config":{"coin_source":{"source_type":"static","static_coins":["BTCUSDT"]},"indicators":{"klines":{"primary_timeframe":"1m","primary_count":20,"selected_timeframes":["1m","5m","15m"],"enable_multi_timeframe":true,"enable_raw_klines":true},"enable_volume":true,"enable_oi":true,"enable_funding_rate":true},"risk_control":{"btc_eth_max_leverage":5,"altcoin_max_leverage":5,"min_confidence":75,"min_risk_reward_ratio":3},"prompt_sections":{"trading_frequency":"高频但不过度交易：目标每小时 1-3 笔；单笔持仓通常 10-30 分钟。","entry_standards":"只在短周期趋势、成交量/OI、资金费率形成共振时入场。"}}}}}`})
+	a.SetAIClient(&staticAIClient{response: `{"route":"execute_skill","extracted_data":{"config_patch":{"strategy_type":"ai_trading","ai_config":{"coin_source":{"source_type":"static","static_coins":["MNQ"]},"indicators":{"klines":{"primary_timeframe":"1m","primary_count":20,"selected_timeframes":["1m","5m","15m"],"enable_multi_timeframe":true,"enable_raw_klines":true},"enable_volume":true,"enable_oi":true,"enable_funding_rate":true},"risk_control":{"btc_eth_max_leverage":5,"altcoin_max_leverage":5,"min_confidence":75,"min_risk_reward_ratio":3},"prompt_sections":{"trading_frequency":"高频但不过度交易：目标每小时 1-3 笔；单笔持仓通常 10-30 分钟。","entry_standards":"只在短周期趋势、成交量/OI、资金费率形成共振时入场。"}}}}}`})
 
 	userID := int64(42)
 	session := newActiveSkillSession(userID, "strategy_management", "create")
@@ -1755,8 +1754,8 @@ func TestStrategyCreateConfirmationUsesModelRepairForPriorStyleProposal(t *testi
 	if err := json.Unmarshal([]byte(strategies[0].Config), &cfg); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
 	}
-	if cfg.CoinSource.SourceType != "static" || len(cfg.CoinSource.StaticCoins) != 1 || cfg.CoinSource.StaticCoins[0] != "BTCUSDT" || cfg.Indicators.Klines.PrimaryTimeframe != "1m" {
-		t.Fatalf("expected model-repaired static BTCUSDT 1m strategy, got %+v", cfg)
+	if cfg.CoinSource.SourceType != "static" || len(cfg.CoinSource.StaticCoins) != 1 || cfg.CoinSource.StaticCoins[0] != "MNQ" || cfg.Indicators.Klines.PrimaryTimeframe != "1m" {
+		t.Fatalf("expected model-repaired static MNQ 1m strategy, got %+v", cfg)
 	}
 }
 
@@ -1829,7 +1828,7 @@ func TestManageStrategyToolCreateRequiresConfirmation(t *testing.T) {
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 
-	resp := a.toolManageStrategy("default", `{"action":"create","name":"未确认网格","lang":"zh","config":{"strategy_type":"grid_trading","grid_config":{"symbol":"BTCUSDT","total_investment":200,"use_atr_bounds":true}}}`)
+	resp := a.toolManageStrategy("default", `{"action":"create","name":"未确认网格","lang":"zh","config":{"strategy_type":"grid_trading","grid_config":{"symbol":"MNQ","total_investment":200,"use_atr_bounds":true}}}`)
 	if !strings.Contains(resp, "requires_confirmation") {
 		t.Fatalf("expected tool create to require confirmation, got: %s", resp)
 	}
@@ -1843,7 +1842,7 @@ func TestManageStrategyToolCreateRequiresConfirmation(t *testing.T) {
 		}
 	}
 
-	resp = a.toolManageStrategy("default", `{"action":"create","name":"已确认网格","lang":"zh","confirmed":true,"allow_clamped_update":true,"config":{"strategy_type":"grid_trading","grid_config":{"symbol":"BTCUSDT","total_investment":200,"use_atr_bounds":true}}}`)
+	resp = a.toolManageStrategy("default", `{"action":"create","name":"已确认网格","lang":"zh","confirmed":true,"allow_clamped_update":true,"config":{"strategy_type":"grid_trading","grid_config":{"symbol":"MNQ","total_investment":200,"use_atr_bounds":true}}}`)
 	if strings.Contains(resp, `"error"`) {
 		t.Fatalf("expected confirmed create to succeed, got: %s", resp)
 	}
@@ -1859,7 +1858,7 @@ func TestStrategyCreateGridPatchInfersStrategyType(t *testing.T) {
 
 	patch := map[string]any{
 		"grid_config": map[string]any{
-			"symbol":               "BTCUSDT",
+			"symbol":               "MNQ",
 			"grid_count":           20,
 			"total_investment":     200,
 			"leverage":             2,
@@ -1899,7 +1898,7 @@ func TestStrategyCreateGridPatchInfersStrategyType(t *testing.T) {
 			break
 		}
 	}
-	if cfg.StrategyType != "grid_trading" || cfg.GridConfig == nil || cfg.GridConfig.Symbol != "BTCUSDT" {
+	if cfg.StrategyType != "grid_trading" || cfg.GridConfig == nil || cfg.GridConfig.Symbol != "MNQ" {
 		t.Fatalf("expected grid patch to infer grid_trading, got %+v", cfg)
 	}
 }

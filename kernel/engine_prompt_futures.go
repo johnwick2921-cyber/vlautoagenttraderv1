@@ -86,7 +86,7 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	pvInt := fmt.Sprintf("%g", inst.PointValue)
 
 	// NB: we deliberately do NOT prepend the crypto GetSchemaPrompt here — it
-	// describes USDT-perp fields and would re-introduce the crypto framing this
+	// describes perp fields and would re-introduce the crypto framing this
 	// prompt exists to avoid. The market data in the user prompt is
 	// self-describing (current_price + OHLCV timeframe tables).
 

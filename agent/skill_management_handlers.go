@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 
 	"vl/store"
@@ -171,7 +170,7 @@ func hasExplicitManagementDomainCue(text, domain string) bool {
 	case "trader":
 		return containsAny(lower, []string{"交易员", "trader", "agent"})
 	case "exchange":
-		return containsAny(lower, []string{"交易所", "exchange", "okx", "binance", "bybit", "gate", "kucoin", "hyperliquid"})
+		return containsAny(lower, []string{"交易所", "exchange"})
 	case "model":
 		return containsAny(lower, []string{"模型", "model"})
 	case "strategy":
@@ -762,9 +761,9 @@ func strategyCreateFieldInlineHint(lang, field string) string {
 	if lang != "zh" {
 		switch field {
 		case "source_type":
-			return "Coin source: static / hyper_all / hyper_main"
+			return "Coin source: static"
 		case "static_coins":
-			return "Static coins: up to 10 symbols, e.g. BTCUSDT, ETHUSDT"
+			return "Static coins: up to 10 symbols"
 		case "primary_timeframe":
 			return "Primary timeframe: 1m / 3m / 5m / 15m / 30m / 1h / 2h / 4h / 6h / 8h / 12h / 1d / 3d / 1w"
 		case "selected_timeframes":
@@ -780,11 +779,11 @@ func strategyCreateFieldInlineHint(lang, field string) string {
 		case "entry_standards":
 			return "Entry standards: free text, e.g. enter only when trend and risk/reward align"
 		case "symbol":
-			return "Symbol: BTCUSDT / ETHUSDT / SOLUSDT / BNBUSDT / XRPUSDT / DOGEUSDT"
+			return "Symbol: MNQ"
 		case "grid_count":
 			return "Grid count: 5-50"
 		case "total_investment":
-			return "Total investment: user's capital/margin budget, minimum 100 USDT; not leveraged notional exposure"
+			return "Total investment: user's capital/margin budget, minimum 100 USD; not leveraged notional exposure"
 		case "leverage":
 			return "Grid leverage: 1-5"
 		case "distribution":
@@ -802,9 +801,9 @@ func strategyCreateFieldInlineHint(lang, field string) string {
 	}
 	switch field {
 	case "source_type":
-		return "选币来源：static（固定币种）/ hyper_all（Hyperliquid 全部合约）/ hyper_main（Hyperliquid 24h 成交量 Top）"
+		return "选币来源：static（固定币种）"
 	case "static_coins":
-		return "静态币种：最多 10 个，例如 BTCUSDT、ETHUSDT"
+		return "静态币种：最多 10 个"
 	case "primary_timeframe":
 		return "主周期：1m / 3m / 5m / 15m / 30m / 1h / 2h / 4h / 6h / 8h / 12h / 1d / 3d / 1w"
 	case "selected_timeframes":
@@ -822,11 +821,11 @@ func strategyCreateFieldInlineHint(lang, field string) string {
 	case "entry_standards":
 		return "开仓标准：文本，例如“趋势明确、成交量配合、风险收益合理才开仓”"
 	case "symbol":
-		return "交易对：BTCUSDT / ETHUSDT / SOLUSDT / BNBUSDT / XRPUSDT / DOGEUSDT"
+		return "交易对：MNQ"
 	case "grid_count":
 		return "网格数量：5～50"
 	case "total_investment":
-		return "总投入：用户实际投入/保证金预算，最低 100 USDT；不是杠杆后的名义仓位"
+		return "总投入：用户实际投入/保证金预算，最低 100 美元；不是杠杆后的名义仓位"
 	case "leverage":
 		return "杠杆：1～5 倍"
 	case "distribution":
@@ -856,7 +855,7 @@ func formatStrategyCreateFieldOptionsReply(lang, text, missingKind string) strin
 	if lang != "zh" {
 		switch field {
 		case "source_type":
-			return "Coin source options: static, hyper_all, or hyper_main. Pick one and I will continue filling the AI strategy template."
+			return "Coin source options: static. Pick one and I will continue filling the AI strategy template."
 		case "primary_timeframe", "selected_timeframes":
 			return "Timeframe options: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w."
 		}
@@ -866,7 +865,7 @@ func formatStrategyCreateFieldOptionsReply(lang, text, missingKind string) strin
 	case "strategy_type":
 		return "策略类型只有两个：\n- AI 策略：让 AI 根据行情和策略规则判断开平仓。\n- 网格策略：在价格区间内按网格低买高卖。\n你直接回复“AI 策略”或“网格策略”就行。"
 	case "source_type":
-		return "AI 策略的选币来源：\n- static：你指定固定币种，比如 BTCUSDT、ETHUSDT。\n- hyper_all：Hyperliquid 全部永续合约自动选币。\n- hyper_main：Hyperliquid 24h 成交量 Top 选币。\n你选一个，我继续填模板。"
+		return "AI 策略的选币来源：\n- static：你指定固定币种，比如 BTCUSDT、ETHUSDT。\n Top 选币。\n你选一个，我继续填模板。"
 	case "primary_timeframe":
 		return "主周期可选：1m、3m、5m、15m、30m、1h、2h、4h、6h、8h、12h、1d、3d、1w。高频一般偏 1m/3m/5m，稳健一点可以用 15m/1h。"
 	case "selected_timeframes":
@@ -882,11 +881,11 @@ func formatStrategyCreateFieldOptionsReply(lang, text, missingKind string) strin
 	case "entry_standards":
 		return "开仓标准是文本规则，例如“只在趋势明确、成交量配合、风险收益合理时开仓”。你也可以说“你帮我写一版稳健开仓标准”。"
 	case "symbol":
-		return "网格交易对可选：BTCUSDT、ETHUSDT、SOLUSDT、BNBUSDT、XRPUSDT、DOGEUSDT。"
+		return "网格交易对可选：MNQ。"
 	case "grid_count":
 		return "网格数量范围是 5～50。数量越多越密，交易更频繁；数量越少，每格空间更大。"
 	case "total_investment":
-		return "网格总投入是用户实际投入/保证金预算，不是杠杆后的名义仓位；最小 100 USDT，按 100 USDT 步进。"
+		return "网格总投入是用户实际投入/保证金预算，不是杠杆后的名义仓位；最小 100 美元，按 100 美元 步进。"
 	case "leverage":
 		return "网格杠杆范围是 1～5 倍。稳健一般用 1 倍。"
 	case "distribution":
@@ -1077,7 +1076,7 @@ func formatStrategyCreateFinalConfirmation(lang string, session skillSession, cf
 				fmt.Sprintf("- 发布后配置可见：%t", fieldValue(session, "config_visible") != "false"),
 				fmt.Sprintf("- 交易对：%s", defaultIfEmpty(grid.Symbol, "未设置")),
 				fmt.Sprintf("- 网格数量：%d", grid.GridCount),
-				fmt.Sprintf("- 总投入：%.2f USDT", grid.TotalInvestment),
+				fmt.Sprintf("- 总投入：$%.2f", grid.TotalInvestment),
 				fmt.Sprintf("- 杠杆：%d倍", grid.Leverage),
 			)
 			if grid.UseATRBounds {
@@ -1112,7 +1111,7 @@ func formatStrategyCreateFinalConfirmation(lang string, session skillSession, cf
 				fmt.Sprintf("- BTC/ETH 单币仓位上限（System enforced）：账户权益 %.2f 倍", cfg.RiskControl.BTCETHMaxPositionValueRatio),
 				fmt.Sprintf("- 山寨币单币仓位上限（System enforced）：账户权益 %.2f 倍", cfg.RiskControl.AltcoinMaxPositionValueRatio),
 				fmt.Sprintf("- 最大保证金使用率（AI 提示，非代码强制）：%.0f%%", cfg.RiskControl.MaxMarginUsage*100),
-				fmt.Sprintf("- 最小开仓金额（System enforced）：%.2f USDT", cfg.RiskControl.MinPositionSize),
+				fmt.Sprintf("- 最小开仓金额（System enforced）：$%.2f", cfg.RiskControl.MinPositionSize),
 				fmt.Sprintf("- 角色定义：%s", compactSummaryText(cfg.PromptSections.RoleDefinition)),
 				fmt.Sprintf("- 交易频率规则：%s", compactSummaryText(cfg.PromptSections.TradingFrequency)),
 				fmt.Sprintf("- 开仓标准：%s", compactSummaryText(cfg.PromptSections.EntryStandards)),
@@ -1130,7 +1129,7 @@ func formatStrategyCreateFinalConfirmation(lang string, session skillSession, cf
 			"- Type: grid strategy",
 			fmt.Sprintf("- Symbol: %s", defaultIfEmpty(grid.Symbol, "unset")),
 			fmt.Sprintf("- Grid count: %d", grid.GridCount),
-			fmt.Sprintf("- Total investment: %.2f USDT", grid.TotalInvestment),
+			fmt.Sprintf("- Total investment: $%.2f", grid.TotalInvestment),
 			fmt.Sprintf("- Leverage: %dx", grid.Leverage),
 		)
 	} else {
@@ -1270,36 +1269,6 @@ func formatExchangeCreateDraftSummary(lang string, session skillSession) string 
 			fmt.Sprintf("- 测试网：%t（未指定时默认 false）", testnet),
 		}
 		switch exType {
-		case "binance", "bybit", "gate", "indodax":
-			lines = append(lines,
-				fmt.Sprintf("- 已提供 API Key：%t", fieldValue(session, "api_key") != ""),
-				fmt.Sprintf("- 已提供 Secret：%t", fieldValue(session, "secret_key") != ""),
-			)
-		case "okx", "bitget", "kucoin":
-			lines = append(lines,
-				fmt.Sprintf("- 已提供 API Key：%t", fieldValue(session, "api_key") != ""),
-				fmt.Sprintf("- 已提供 Secret：%t", fieldValue(session, "secret_key") != ""),
-				fmt.Sprintf("- 已提供 Passphrase：%t", fieldValue(session, "passphrase") != ""),
-			)
-		case "hyperliquid":
-			lines = append(lines,
-				fmt.Sprintf("- 已提供 API Key：%t", fieldValue(session, "api_key") != ""),
-				fmt.Sprintf("- Hyperliquid 钱包地址：%s", defaultIfEmpty(fieldValue(session, "hyperliquid_wallet_addr"), "未设置")),
-			)
-		case "aster":
-			lines = append(lines,
-				fmt.Sprintf("- Aster User：%s", defaultIfEmpty(fieldValue(session, "aster_user"), "未设置")),
-				fmt.Sprintf("- Aster Signer：%s", defaultIfEmpty(fieldValue(session, "aster_signer"), "未设置")),
-				fmt.Sprintf("- 已提供 Aster 私钥：%t", fieldValue(session, "aster_private_key") != ""),
-			)
-		case "lighter":
-			lines = append(lines,
-				fmt.Sprintf("- Lighter 钱包地址：%s", defaultIfEmpty(fieldValue(session, "lighter_wallet_addr"), "未设置")),
-				fmt.Sprintf("- 已提供 Lighter API Key 私钥：%t", fieldValue(session, "lighter_api_key_private_key") != ""),
-			)
-			if value := fieldValue(session, "lighter_api_key_index"); value != "" {
-				lines = append(lines, fmt.Sprintf("- Lighter API Key Index：%s", value))
-			}
 		default:
 			lines = append(lines,
 				fmt.Sprintf("- 已提供 API Key：%t", fieldValue(session, "api_key") != ""),
@@ -1317,36 +1286,6 @@ func formatExchangeCreateDraftSummary(lang string, session skillSession) string 
 		fmt.Sprintf("- Testnet: %t (defaults to false if omitted)", testnet),
 	}
 	switch exType {
-	case "binance", "bybit", "gate", "indodax":
-		lines = append(lines,
-			fmt.Sprintf("- API key provided: %t", fieldValue(session, "api_key") != ""),
-			fmt.Sprintf("- Secret provided: %t", fieldValue(session, "secret_key") != ""),
-		)
-	case "okx", "bitget", "kucoin":
-		lines = append(lines,
-			fmt.Sprintf("- API key provided: %t", fieldValue(session, "api_key") != ""),
-			fmt.Sprintf("- Secret provided: %t", fieldValue(session, "secret_key") != ""),
-			fmt.Sprintf("- Passphrase provided: %t", fieldValue(session, "passphrase") != ""),
-		)
-	case "hyperliquid":
-		lines = append(lines,
-			fmt.Sprintf("- API key provided: %t", fieldValue(session, "api_key") != ""),
-			fmt.Sprintf("- Hyperliquid wallet address: %s", defaultIfEmpty(fieldValue(session, "hyperliquid_wallet_addr"), "not set")),
-		)
-	case "aster":
-		lines = append(lines,
-			fmt.Sprintf("- Aster user: %s", defaultIfEmpty(fieldValue(session, "aster_user"), "not set")),
-			fmt.Sprintf("- Aster signer: %s", defaultIfEmpty(fieldValue(session, "aster_signer"), "not set")),
-			fmt.Sprintf("- Aster private key provided: %t", fieldValue(session, "aster_private_key") != ""),
-		)
-	case "lighter":
-		lines = append(lines,
-			fmt.Sprintf("- Lighter wallet address: %s", defaultIfEmpty(fieldValue(session, "lighter_wallet_addr"), "not set")),
-			fmt.Sprintf("- Lighter API key private key provided: %t", fieldValue(session, "lighter_api_key_private_key") != ""),
-		)
-		if value := fieldValue(session, "lighter_api_key_index"); value != "" {
-			lines = append(lines, fmt.Sprintf("- Lighter API key index: %s", value))
-		}
 	default:
 		lines = append(lines,
 			fmt.Sprintf("- API key provided: %t", fieldValue(session, "api_key") != ""),
@@ -1732,39 +1671,6 @@ func (a *Agent) describeExchange(storeUserID, lang string, target *EntityReferen
 		credentialLinesEn = append(credentialLinesEn, fmt.Sprintf("- %s: %t", labelEn, present))
 	}
 	switch exchange.ExchangeType {
-	case "binance", "bybit", "gate", "indodax":
-		addCredentialLine("API Key", "API key present", exchange.HasAPIKey)
-		addCredentialLine("Secret", "Secret present", exchange.HasSecretKey)
-	case "okx", "bitget", "kucoin":
-		addCredentialLine("API Key", "API key present", exchange.HasAPIKey)
-		addCredentialLine("Secret", "Secret present", exchange.HasSecretKey)
-		addCredentialLine("Passphrase", "Passphrase present", exchange.HasPassphrase)
-	case "hyperliquid":
-		addCredentialLine("API Key", "API key present", exchange.HasAPIKey)
-		credentialLinesZh = append(credentialLinesZh, fmt.Sprintf("- Hyperliquid 钱包地址：%s", defaultIfEmpty(exchange.HyperliquidWalletAddr, "未设置")))
-		credentialLinesEn = append(credentialLinesEn, fmt.Sprintf("- Hyperliquid wallet address: %s", defaultIfEmpty(exchange.HyperliquidWalletAddr, "not set")))
-	case "aster":
-		credentialLinesZh = append(credentialLinesZh,
-			fmt.Sprintf("- Aster User：%s", defaultIfEmpty(exchange.AsterUser, "未设置")),
-			fmt.Sprintf("- Aster Signer：%s", defaultIfEmpty(exchange.AsterSigner, "未设置")),
-			fmt.Sprintf("- Aster 私钥：%t", exchange.HasAsterPrivateKey),
-		)
-		credentialLinesEn = append(credentialLinesEn,
-			fmt.Sprintf("- Aster user: %s", defaultIfEmpty(exchange.AsterUser, "not set")),
-			fmt.Sprintf("- Aster signer: %s", defaultIfEmpty(exchange.AsterSigner, "not set")),
-			fmt.Sprintf("- Aster private key present: %t", exchange.HasAsterPrivateKey),
-		)
-	case "lighter":
-		credentialLinesZh = append(credentialLinesZh,
-			fmt.Sprintf("- Lighter 钱包地址：%s", defaultIfEmpty(exchange.LighterWalletAddr, "未设置")),
-			fmt.Sprintf("- Lighter API Key 私钥：%t", exchange.HasLighterAPIKey),
-			fmt.Sprintf("- Lighter API Key Index：%d", exchange.LighterAPIKeyIndex),
-		)
-		credentialLinesEn = append(credentialLinesEn,
-			fmt.Sprintf("- Lighter wallet address: %s", defaultIfEmpty(exchange.LighterWalletAddr, "not set")),
-			fmt.Sprintf("- Lighter API key private key present: %t", exchange.HasLighterAPIKey),
-			fmt.Sprintf("- Lighter API key index: %d", exchange.LighterAPIKeyIndex),
-		)
 	default:
 		addCredentialLine("API Key", "API key present", exchange.HasAPIKey)
 		addCredentialLine("Secret", "Secret present", exchange.HasSecretKey)
@@ -1818,12 +1724,6 @@ func (a *Agent) describeModel(storeUserID, lang string, target *EntityReference)
 			fmt.Sprintf("- URL：%s", defaultIfEmpty(model.CustomAPIURL, "未设置")),
 			fmt.Sprintf("- Model Name：%s", defaultIfEmpty(model.CustomModelName, "未设置")),
 		}
-		if strings.TrimSpace(model.WalletAddress) != "" {
-			lines = append(lines, fmt.Sprintf("- 钱包地址：%s", model.WalletAddress))
-		}
-		if strings.TrimSpace(model.BalanceUSDC) != "" {
-			lines = append(lines, fmt.Sprintf("- 钱包余额：%s USDC", model.BalanceUSDC))
-		}
 		return strings.Join(lines, "\n"), true
 	}
 	lines := []string{
@@ -1833,12 +1733,6 @@ func (a *Agent) describeModel(storeUserID, lang string, target *EntityReference)
 		fmt.Sprintf("- API key present: %t", model.HasAPIKey),
 		fmt.Sprintf("- URL: %s", defaultIfEmpty(model.CustomAPIURL, "not set")),
 		fmt.Sprintf("- Model name: %s", defaultIfEmpty(model.CustomModelName, "not set")),
-	}
-	if strings.TrimSpace(model.WalletAddress) != "" {
-		lines = append(lines, fmt.Sprintf("- Wallet address: %s", model.WalletAddress))
-	}
-	if strings.TrimSpace(model.BalanceUSDC) != "" {
-		lines = append(lines, fmt.Sprintf("- Wallet balance: %s USDC", model.BalanceUSDC))
 	}
 	return strings.Join(lines, "\n"), true
 }
@@ -1972,40 +1866,25 @@ func (a *Agent) handleExchangeCreateSkill(storeUserID string, userID int64, lang
 	if fieldValue(session, "secret_key") == "" {
 		missing = append(missing, displayCatalogFieldName("secret_key", lang))
 	}
-	switch exType {
-	case "okx":
-		if fieldValue(session, "passphrase") == "" {
-			missing = append(missing, displayCatalogFieldName("passphrase", lang))
-		}
-	case "hyperliquid":
-		if fieldValue(session, "hyperliquid_wallet_addr") == "" {
-			missing = append(missing, "Hyperliquid Wallet")
-		}
-	}
 	if len(missing) > 0 {
 		setSkillDAGStep(&session, "resolve_exchange_type")
 		a.saveSkillSession(userID, session)
 		if lang == "zh" {
 			reply := "要创建交易所配置，还缺这些字段：" + formatMissingFieldList(lang, missing) + "。"
 			if exType == "" {
-				reply += "\n例如：OKX、Binance、Bybit。"
+				reply += "\n例如：ninjatrader。"
 			}
 			return reply
 		}
 		return "One more thing: please tell me these details: " + formatMissingFieldList(lang, missing) + "."
 	}
 	validator := exchangeConfigValidator{
-		exchangeType:            exType,
-		enabled:                 fieldValue(session, "enabled") == "true",
-		apiKey:                  fieldValue(session, "api_key"),
-		secretKey:               fieldValue(session, "secret_key"),
-		passphrase:              fieldValue(session, "passphrase"),
-		hyperliquidWalletAddr:   fieldValue(session, "hyperliquid_wallet_addr"),
-		asterUser:               fieldValue(session, "aster_user"),
-		asterSigner:             fieldValue(session, "aster_signer"),
-		asterPrivateKey:         fieldValue(session, "aster_private_key"),
-		lighterWalletAddr:       fieldValue(session, "lighter_wallet_addr"),
-		lighterAPIKeyPrivateKey: fieldValue(session, "lighter_api_key_private_key"),
+		exchangeType: exType,
+		enabled:      fieldValue(session, "enabled") == "true",
+		apiKey:       fieldValue(session, "api_key"),
+		secretKey:    fieldValue(session, "secret_key"),
+		passphrase:   fieldValue(session, "passphrase"),
+		ntDataDir:    fieldValue(session, "nt_data_dir"),
 	}
 	if err := validator.Validate(); err != nil {
 		a.saveSkillSession(userID, session)
@@ -2023,7 +1902,7 @@ func (a *Agent) handleExchangeCreateSkill(storeUserID string, userID int64, lang
 		"exchange_type": exType,
 		"account_name":  accountName,
 	}
-	for _, field := range []string{"api_key", "secret_key", "passphrase", "hyperliquid_wallet_addr", "aster_user", "aster_signer", "aster_private_key", "lighter_wallet_addr", "lighter_api_key_private_key"} {
+	for _, field := range []string{"api_key", "secret_key", "passphrase", "nt_data_dir", "nt_instrument_name"} {
 		if value := fieldValue(session, field); value != "" {
 			args[field] = value
 		}
@@ -2033,11 +1912,6 @@ func (a *Agent) handleExchangeCreateSkill(storeUserID string, userID int64, lang
 	}
 	if value := fieldValue(session, "testnet"); value != "" {
 		args["testnet"] = value == "true"
-	}
-	if value := fieldValue(session, "lighter_api_key_index"); value != "" {
-		if parsed, err := strconv.Atoi(value); err == nil {
-			args["lighter_api_key_index"] = parsed
-		}
 	}
 	raw, _ := json.Marshal(args)
 	resp := a.toolManageExchangeConfig(storeUserID, string(raw))
@@ -2252,14 +2126,14 @@ func formatCreatedStrategyReply(lang, name string, cfg store.StrategyConfig, war
 				"- 类型：网格策略",
 				fmt.Sprintf("- 交易对：%s", defaultIfEmpty(grid.Symbol, "未设置")),
 				fmt.Sprintf("- 网格数量：%d", grid.GridCount),
-				fmt.Sprintf("- 总投入：%.2f USDT", grid.TotalInvestment),
+				fmt.Sprintf("- 总投入：$%.2f", grid.TotalInvestment),
 				fmt.Sprintf("- 杠杆：%d倍", grid.Leverage),
 				fmt.Sprintf("- 分布方式：%s", defaultIfEmpty(grid.Distribution, "未设置")),
 			)
 			if grid.UseATRBounds {
 				lines = append(lines, fmt.Sprintf("- 价格范围：ATR 自动计算（倍数 %.2f）", grid.ATRMultiplier))
 			} else {
-				lines = append(lines, fmt.Sprintf("- 价格范围：%.2f ～ %.2f USDT", grid.LowerPrice, grid.UpperPrice))
+				lines = append(lines, fmt.Sprintf("- 价格范围：$%.2f ～ $%.2f", grid.LowerPrice, grid.UpperPrice))
 			}
 			lines = append(lines,
 				fmt.Sprintf("- 最大回撤：%.2f%%", grid.MaxDrawdownPct),
@@ -2288,14 +2162,14 @@ func formatCreatedStrategyReply(lang, name string, cfg store.StrategyConfig, war
 			"- Type: grid strategy",
 			fmt.Sprintf("- Symbol: %s", defaultIfEmpty(grid.Symbol, "unset")),
 			fmt.Sprintf("- Grid count: %d", grid.GridCount),
-			fmt.Sprintf("- Total investment: %.2f USDT", grid.TotalInvestment),
+			fmt.Sprintf("- Total investment: $%.2f", grid.TotalInvestment),
 			fmt.Sprintf("- Leverage: %dx", grid.Leverage),
 			fmt.Sprintf("- Distribution: %s", defaultIfEmpty(grid.Distribution, "unset")),
 		)
 		if grid.UseATRBounds {
 			lines = append(lines, fmt.Sprintf("- Price range: ATR auto bounds (multiplier %.2f)", grid.ATRMultiplier))
 		} else {
-			lines = append(lines, fmt.Sprintf("- Price range: %.2f - %.2f USDT", grid.LowerPrice, grid.UpperPrice))
+			lines = append(lines, fmt.Sprintf("- Price range: $%.2f - $%.2f", grid.LowerPrice, grid.UpperPrice))
 		}
 	} else {
 		lines = append(lines,

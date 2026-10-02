@@ -64,12 +64,12 @@ Merge commit: `ae8ac8e3`. All three refs (main, nq, pr3) converged.
 - 1 MODIFY/DELETE (CompetitionPage.tsx — kept deletion)
 
 Three CTO-locked decisions preserved:
-- **Decision A** — skip wallet onboarding feature (incoming from main).
-  Verified: zero `getBeginnerWallet` references in production bundle.
+- **Decision A** — skip the crypto-era onboarding feature (incoming from main).
+  Verified: zero beginner-flow references in production bundle.
 - **Decision B** — keep-ours Block 7 + 32 in ModelConfigModal.tsx
-  (BlockRun grid). Verified: 10 `BlockRun` references in minified bundle.
+  (crypto grid feature). Verified: 10 references in minified bundle.
 - **Decision C** — keep-theirs Block 12 only
-  (`DEFAULT_CLAW402_MODEL` constant). Verified at L14 + L545.
+  (crypto payment model constant). Verified at L14 + L545.
 
 Incidental fixes during merge:
 - main.go duplicate-import (telemetry) removed
@@ -82,7 +82,7 @@ Post-merge verification:
 - go build ./... → exit 0
 - Playwright DOM: Task 11 (nav clean) PASS; Task 16 (no bare VL on
   /agent or home) PASS; Task 14 ModelConfigModal DOM auth-gated, verified
-  via static-bundle scan (BlockRun present, wallet UI absent)
+  via static-bundle scan (crypto grid present, onboarding UI absent)
 - All 10 Plan 1 critical files byte-stable on main (V1 subagent verify)
 
 Tag: `v1.0-plan1` placed at `ae8ac8e3`.

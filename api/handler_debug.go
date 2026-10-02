@@ -22,7 +22,7 @@ func runtimeSymbolsEnabled() bool {
 // ntFromQuery resolves the request's trader to the NT8 TCP trader (shared by
 // the P5.3 symbol endpoints; mirrors the debug-handler pattern).
 func (s *Server) ntFromQuery(c *gin.Context) (*ntTrader.TCPTrader, bool) {
-	if cfg := config.Get(); cfg == nil || cfg.TradingMode != "futures" {
+	if cfg := config.Get(); cfg == nil {
 		SafeBadRequest(c, "futures-mode only")
 		return nil, false
 	}
@@ -110,7 +110,7 @@ func (s *Server) handleNTSymbolsRemove(c *gin.Context) {
 // (trading) symbol is refused at the TCP-server layer, so this can never tear
 // down the live trader's feed. Bars-only — no order/position path involved.
 func (s *Server) handleNTBarsUnsubscribe(c *gin.Context) {
-	if cfg := config.Get(); cfg == nil || cfg.TradingMode != "futures" {
+	if cfg := config.Get(); cfg == nil {
 		SafeBadRequest(c, "bars unsubscribe is futures-mode only")
 		return
 	}
@@ -147,7 +147,7 @@ func (s *Server) handleNTBarsUnsubscribe(c *gin.Context) {
 // — a debug harness so the operator can see a real position + balance move on
 // the dashboard without depending on an AI decision.
 func (s *Server) handleNTTestTrade(c *gin.Context) {
-	if cfg := config.Get(); cfg == nil || cfg.TradingMode != "futures" {
+	if cfg := config.Get(); cfg == nil {
 		SafeBadRequest(c, "test trade is futures-mode only")
 		return
 	}

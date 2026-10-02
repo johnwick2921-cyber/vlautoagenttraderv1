@@ -2,8 +2,8 @@ package agent
 
 import (
 	"fmt"
-	"vl/branding"
 	"strings"
+	"vl/branding"
 
 	"vl/store"
 
@@ -126,27 +126,15 @@ var setupMessages = map[string]map[string]string{
 	},
 	"ask_exchange": {
 		"zh": "🏦 *选择你的交易所*\n\n" +
-			"1️⃣ Binance（币安）\n" +
-			"2️⃣ OKX（欧易）\n" +
-			"3️⃣ Bybit\n" +
-			"4️⃣ Bitget\n" +
-			"5️⃣ Gate\n" +
-			"6️⃣ KuCoin（库币）\n" +
-			"7️⃣ Hyperliquid\n\n" +
+			"1️⃣ NinjaTrader 8（CME 期货）\n\n" +
 			"发送数字或名称选择：",
 		"en": "🏦 *Choose your exchange*\n\n" +
-			"1️⃣ Binance\n" +
-			"2️⃣ OKX\n" +
-			"3️⃣ Bybit\n" +
-			"4️⃣ Bitget\n" +
-			"5️⃣ Gate\n" +
-			"6️⃣ KuCoin\n" +
-			"7️⃣ Hyperliquid\n\n" +
+			"1️⃣ NinjaTrader 8 (CME futures)\n\n" +
 			"Send number or name:",
 	},
 	"invalid_exchange": {
-		"zh": "❓ 没有识别到交易所。请发送数字 1-7 或交易所名称。",
-		"en": "❓ Exchange not recognized. Send a number 1-7 or exchange name.",
+		"zh": "❓ 没有识别到交易所。请发送数字 1 或交易所名称。",
+		"en": "❓ Exchange not recognized. Send a number 1 or exchange name.",
 	},
 	"ask_secret": {
 		"zh": "🔑 收到 API Key。\n\n现在请发送你的 *API Secret*：",

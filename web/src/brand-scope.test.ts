@@ -290,6 +290,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, it } from 'vitest'
+// CRYPTO REMOVAL (owner order 2026-09-30; CR-A 7497a02d3): go.mod re-pinned 2026-10-01 — crypto SDK requires dropped
 import baseline from './test/brand-scope-baseline.json'
 
 function verifyScope(path: string, bytes: Buffer, expected: string) {
@@ -362,13 +363,32 @@ it('preserves every existing TypeScript import target in changed files', async (
   // five other files keep importing it) — and is preserved; a target that
   // vanished from the module is rejected.
   const headTargets = new Set<string>()
-  for (const f of git(['ls-files', '--', '*.ts', '*.tsx'])
-    .trim()
-    .split('\n')
-    .filter(Boolean)) {
+  const headFiles = new Set(
+    git(['ls-files', '--', '*.ts', '*.tsx']).trim().split('\n').filter(Boolean)
+  )
+  for (const f of headFiles) {
     for (const t of targets(readFileSync(resolve('..', f), 'utf8')))
       headTargets.add(t)
   }
+  // EXPLICIT removal pins for the crypto wave (file+specifier, with the
+  // commit that removed each):
+  const removedByCryptoWave = new Set<string>([
+    'web/src/components/trader/ExchangeConfigModal.tsx\u0000../modals/TwoStageKeyModal', // CR-C b7 (secure-key modal usage cut)
+    'web/src/components/trader/ExchangeConfigModal.tsx\u0000./Tooltip', // CR-C b7 (only the cut sections used it)
+    'web/src/components/trader/ModelConfigModal.tsx\u0000qrcode.react', // CR-C b6 (claw402 QR flow)
+    // CR-C b1 f30c26ab8 deleted the wallet-onboarding files (OnboardingModeSelector,
+    // lib/onboarding, BeginnerOnboardingPage) and MarketTicker; these are the
+    // importers it orphaned, pinned one by one:
+    'web/src/components/auth/LoginPage.tsx\u0000./OnboardingModeSelector',
+    'web/src/components/auth/LoginPage.tsx\u0000../../lib/onboarding',
+    'web/src/components/common/HeaderBar.tsx\u0000../../lib/onboarding',
+    'web/src/components/modals/SetupPage.tsx\u0000../auth/OnboardingModeSelector',
+    'web/src/components/modals/SetupPage.tsx\u0000../../lib/onboarding',
+    'web/src/contexts/AuthContext.tsx\u0000../lib/onboarding',
+    'web/src/pages/AgentChatPage.tsx\u0000../components/agent/MarketTicker',
+    'web/src/router/AppRoutes.tsx\u0000../pages/BeginnerOnboardingPage',
+    'web/src/router/AppRoutes.tsx\u0000../lib/onboarding',
+  ])
   for (const path of git(['diff', '--name-only', base, '--', '*.ts', '*.tsx'])
     .trim()
     .split('\n')
@@ -379,9 +399,19 @@ it('preserves every existing TypeScript import target in changed files', async (
     } catch {
       continue
     }
-    const current = targets(readFileSync(resolve('..', path), 'utf8'))
+    let current: string[]
+    try {
+      current = targets(readFileSync(resolve('..', path), 'utf8'))
+    } catch {
+      // the file no longer exists at head (deleted by a merged wave) — its old
+      // import targets have nothing left to preserve
+      continue
+    }
     for (const target of targets(old)) {
       if (current.includes(target) || headTargets.has(target)) continue
+      // owner-ordered crypto removal (2026-09-30 wave) — pinned pairs,
+      // never a loosened rule:
+      if (removedByCryptoWave.has(`${path}\u0000${target}`)) continue
       expect(current, `${path}: existing import target ${target}`).toContain(
         target
       )

@@ -2,11 +2,11 @@ package trader
 
 import (
 	"fmt"
+	"strings"
+	"time"
 	"vl/kernel"
 	"vl/logger"
 	"vl/market"
-	"strings"
-	"time"
 )
 
 // futuresMaxNotionalLeverage mirrors kernel.futuresMaxNotionalLeverage: the
@@ -244,12 +244,6 @@ func (at *AutoTrader) ClearPeakPnLCache(symbol, side string) {
 // Risk Control Helpers
 // ============================================================================
 
-// isBTCETH checks if a symbol is BTC or ETH
-func isBTCETH(symbol string) bool {
-	symbol = strings.ToUpper(symbol)
-	return strings.HasPrefix(symbol, "BTC") || strings.HasPrefix(symbol, "ETH")
-}
-
 // enforcePositionValueRatio checks and enforces position value ratio limits (CODE ENFORCED)
 // Returns the adjusted position size (capped if necessary) and whether the position was capped
 // positionSizeUSD: the original position size in USD
@@ -274,11 +268,6 @@ func (at *AutoTrader) enforcePositionValueRatio(positionSizeUSD float64, equity 
 		if maxPositionValueRatio <= 0 {
 			maxPositionValueRatio = futuresMaxNotionalLeverage
 		}
-	case isBTCETH(symbol):
-		maxPositionValueRatio = riskControl.BTCETHMaxPositionValueRatio
-		if maxPositionValueRatio <= 0 {
-			maxPositionValueRatio = 5.0 // Default: 5x for BTC/ETH
-		}
 	default:
 		maxPositionValueRatio = riskControl.AltcoinMaxPositionValueRatio
 		if maxPositionValueRatio <= 0 {
@@ -291,7 +280,7 @@ func (at *AutoTrader) enforcePositionValueRatio(positionSizeUSD float64, equity 
 
 	// Check if position size exceeds limit
 	if positionSizeUSD > maxPositionValue {
-		logger.Infof("  ⚠️ [RISK CONTROL] Position %.2f USDT exceeds limit (equity %.2f × %.1fx = %.2f USDT max for %s), capping",
+		logger.Infof("  ⚠️ [RISK CONTROL] Position %.2f USD exceeds limit (equity %.2f × %.1fx = %.2f USD max for %s), capping",
 			positionSizeUSD, equity, maxPositionValueRatio, maxPositionValue, symbol)
 		return maxPositionValue, true
 	}
@@ -307,11 +296,11 @@ func (at *AutoTrader) enforceMinPositionSize(positionSizeUSD float64) error {
 
 	minSize := at.config.StrategyConfig.RiskControl.MinPositionSize
 	if minSize <= 0 {
-		minSize = 12 // Default: 12 USDT
+		minSize = 12 // Default: 12 USD
 	}
 
 	if positionSizeUSD < minSize {
-		return fmt.Errorf("❌ [RISK CONTROL] Position %.2f USDT below minimum (%.2f USDT)", positionSizeUSD, minSize)
+		return fmt.Errorf("❌ [RISK CONTROL] Position %.2f USD below minimum (%.2f USD)", positionSizeUSD, minSize)
 	}
 	return nil
 }

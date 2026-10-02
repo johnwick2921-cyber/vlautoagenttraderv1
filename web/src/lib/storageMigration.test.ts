@@ -4,7 +4,6 @@ import {
   VL_AGENT_CHAT_DRAFT_PREFIX,
   VL_AGENT_CHAT_PREFIX,
   VL_BEGINNER_ONBOARDING_COMPLETED_KEY,
-  VL_BEGINNER_WALLET_ADDRESS_KEY,
   VL_LEGACY_KEYS_LEFT_KEY,
   VL_MIGRATED_AT_KEY,
   VL_USER_MODE_KEY,
@@ -99,13 +98,11 @@ describe('storageMigration', () => {
   it('migrates every scalar key', () => {
     const storage = createStorage()
     storage.setItem('nofx_user_mode', 'advanced')
-    storage.setItem('nofx_beginner_wallet_address', '0xabc')
     storage.setItem('nofx_beginner_onboarding_completed', 'true')
 
     runStorageMigration(storage)
 
     expect(storage.getItem(VL_USER_MODE_KEY)).toBe('advanced')
-    expect(storage.getItem(VL_BEGINNER_WALLET_ADDRESS_KEY)).toBe('0xabc')
     expect(storage.getItem(VL_BEGINNER_ONBOARDING_COMPLETED_KEY)).toBe('true')
     expect(countLegacyKeys(storage)).toBe(0)
   })
@@ -233,7 +230,7 @@ describe('storageMigration', () => {
     expect(storage.getItem(VL_LEGACY_KEYS_LEFT_KEY)).toBe('0')
     expect(storage.getItem(VL_MIGRATED_AT_KEY)).not.toBeNull()
 
-    storage.setItem('nofx_beginner_wallet_address', '0x1')
+    storage.setItem('nofx_beginner_onboarding_completed', 'true')
     runStorageMigration(storage)
     // migratedAt is written once, never overwritten — but with a legacy key
     // present it is not written again; the earlier value stays.

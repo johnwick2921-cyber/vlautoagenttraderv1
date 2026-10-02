@@ -3,9 +3,9 @@ package store
 import (
 	"fmt"
 	"math"
-	"vl/logger"
 	"strings"
 	"time"
+	"vl/logger"
 )
 
 // PositionBuilder handles position creation and updates with support for:
@@ -143,7 +143,7 @@ func (pb *PositionBuilder) handleClose(
 
 	const QUANTITY_TOLERANCE = 0.0001
 
-	// Calculate realized PnL if not provided (some exchanges like Lighter don't return it)
+	// Calculate realized PnL if not provided (some venues don't return it)
 	if realizedPnL == 0 && position.EntryPrice > 0 {
 		if side == "LONG" {
 			realizedPnL = (price - position.EntryPrice) * quantity

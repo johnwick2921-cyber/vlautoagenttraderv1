@@ -53,8 +53,6 @@ Welcome to the VL documentation! This page helps you find the right documentatio
 | [Code of Conduct](../CODE_OF_CONDUCT.md) | Community guidelines | 社区行为准则 |
 | [Security Policy](../SECURITY.md) | Report security vulnerabilities | 报告安全漏洞 |
 | [Bounty Guide](community/bounty-guide.md) | How to post bounty tasks | 如何发布悬赏任务 |
-| [Hyperliquid Bounty](community/bounty-hyperliquid.md) | Hyperliquid integration bounty | Hyperliquid 集成悬赏 |
-| [Aster Bounty](community/bounty-aster.md) | Aster DEX integration bounty | Aster DEX 集成悬赏 |
 
 **Get Involved:**
 - 💬 [Telegram Community](upstream telegram link (removed in the VL rename))

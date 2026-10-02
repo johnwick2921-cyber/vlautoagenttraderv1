@@ -9,8 +9,6 @@ export interface AIModel {
   customModelName?: string
   thinkingMode?: string
   reasoningEffort?: string
-  walletAddress?: string
-  balanceUsdc?: string
 }
 
 export interface TelegramConfig {
@@ -22,33 +20,17 @@ export interface TelegramConfig {
 
 export interface Exchange {
   id: string // UUID (empty for supported exchange templates)
-  exchange_type: string // "binance", "bybit", "okx", "hyperliquid", "aster", "lighter"
+  exchange_type: string
   account_name: string // User-defined account name
   name: string // Display name
-  type: 'cex' | 'dex'
   enabled: boolean
   has_api_key?: boolean
   has_secret_key?: boolean
   has_passphrase?: boolean
   apiKey?: string
   secretKey?: string
-  passphrase?: string // OKX specific
+  passphrase?: string
   testnet?: boolean
-  // Hyperliquid specific
-  hyperliquidWalletAddr?: string
-  has_hyperliquid_secret?: boolean
-  // Aster specific
-  asterUser?: string
-  asterSigner?: string
-  has_aster_private_key?: boolean
-  asterPrivateKey?: string
-  // LIGHTER specific
-  lighterWalletAddr?: string
-  has_lighter_private_key?: boolean
-  has_lighter_api_key_private_key?: boolean
-  lighterPrivateKey?: string
-  lighterApiKeyPrivateKey?: string
-  lighterApiKeyIndex?: number
 }
 
 export type ExchangeAccountStatus =
@@ -76,25 +58,13 @@ export interface ExchangeAccountStateResponse {
 }
 
 export interface CreateExchangeRequest {
-  exchange_type: string // "binance", "bybit", "okx", "hyperliquid", "aster", "lighter", "ninjatrader"
+  exchange_type: string
   account_name: string // User-defined account name
   enabled: boolean
   api_key?: string
   secret_key?: string
   passphrase?: string
   testnet?: boolean
-  hyperliquid_wallet_addr?: string
-  aster_user?: string
-  aster_signer?: string
-  aster_private_key?: string
-  lighter_wallet_addr?: string
-  lighter_private_key?: string
-  lighter_api_key_private_key?: string
-  lighter_api_key_index?: number
-  // NinjaTrader specific
-  nt_data_dir?: string
-  nt_instrument_name?: string
-  nt_default_contract_qty?: number
 }
 
 export interface CreateTraderRequest {
@@ -114,8 +84,6 @@ export interface CreateTraderRequest {
   custom_prompt?: string
   override_base_prompt?: boolean
   system_prompt_template?: string
-  use_ai500?: boolean
-  use_oi_top?: boolean
 }
 
 export interface UpdateModelConfigRequest {
@@ -140,17 +108,6 @@ export interface UpdateExchangeConfigRequest {
       secret_key: string
       passphrase?: string
       testnet?: boolean
-      // Hyperliquid 特定字段
-      hyperliquid_wallet_addr?: string
-      // Aster 特定字段
-      aster_user?: string
-      aster_signer?: string
-      aster_private_key?: string
-      // LIGHTER 特定字段
-      lighter_wallet_addr?: string
-      lighter_private_key?: string
-      lighter_api_key_private_key?: string
-      lighter_api_key_index?: number
       // NinjaTrader specific
       nt_data_dir?: string
       nt_instrument_name?: string
@@ -167,17 +124,8 @@ export interface BeginnerOnboardingResponse {
   provider: string
   default_model: string
   configured_model_id: string
-  balance_usdc: string
   env_saved: boolean
   env_path?: string
   reused_existing: boolean
   env_warning?: string
-}
-
-export interface CurrentBeginnerWalletResponse {
-  found: boolean
-  address?: string
-  balance_usdc?: string
-  source?: string
-  claw402_status?: string
 }

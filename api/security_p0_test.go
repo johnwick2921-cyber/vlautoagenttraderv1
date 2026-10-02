@@ -182,7 +182,7 @@ func TestRegisterDoesNotAdoptOrphanCredentials(t *testing.T) {
 	}
 	orphanExchange := &store.Exchange{
 		ID: uuid.New().String(), UserID: ghostUserID,
-		Name: "victim binance", ExchangeType: "binance", APIKey: "VICTIM-EXCHANGE-KEY",
+		Name: "victim ninjatrader", ExchangeType: "ninjatrader", NTDataDir: "/tmp/victim-nt-data",
 	}
 	if err := db.Create(orphanExchange).Error; err != nil {
 		t.Fatalf("seed orphan exchange: %v", err)
@@ -214,8 +214,8 @@ func TestRegisterDoesNotAdoptOrphanCredentials(t *testing.T) {
 	}
 	exchanges, _ := s.store.Exchange().List(newUser.ID)
 	for _, e := range exchanges {
-		if string(e.APIKey) == "VICTIM-EXCHANGE-KEY" {
-			t.Fatalf("REGRESSION: the new user inherited the previous owner's exchange API key (exchange %q)", e.Name)
+		if e.NTDataDir == "/tmp/victim-nt-data" {
+			t.Fatalf("REGRESSION: the new user inherited the previous owner's exchange row (exchange %q)", e.Name)
 		}
 	}
 

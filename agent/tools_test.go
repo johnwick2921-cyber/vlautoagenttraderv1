@@ -7,29 +7,11 @@ func TestIsStockSymbol(t *testing.T) {
 		sym  string
 		want bool
 	}{
-		// Known crypto base symbols — must NOT be detected as stock
-		{"BTC", false},
-		{"ETH", false},
-		{"SOL", false},
-		{"BNB", false},
-		{"XRP", false},
-		{"DOGE", false},
-		{"ADA", false},
-		{"AVAX", false},
-		{"DOT", false},
-		{"LINK", false},
-		{"PEPE", false},
-		{"SHIB", false},
-		{"TRUMP", false},
-		{"USDT", false},
-		{"USDC", false},
-		{"W", false}, // single letter crypto
-
-		// Crypto pairs — must NOT be stock
-		{"BTCUSDT", false},
-		{"ETHUSDT", false},
-		{"SOLUSDT", false},
-		{"DOGEUSDT", false},
+		// CME futures symbols — must NOT be detected as stock
+		{"MNQ", false},
+		{"mnq", false},
+		{"ES", false},
+		{"MNQU6", false},
 
 		// Real stock tickers — must be detected as stock
 		{"AAPL", true},
@@ -47,7 +29,7 @@ func TestIsStockSymbol(t *testing.T) {
 		{"JPM", true}, // 3 letters
 
 		// Mixed / edge cases
-		{"btc", false},    // lowercase crypto
+		{"btc", true},     // legacy crypto ticker — now just a 3-letter ticker
 		{"aapl", true},    // lowercase stock (uppercased internally)
 		{"BTC123", false}, // not pure letters
 		{"123456", false}, // digits

@@ -24,8 +24,7 @@ VL is on a mission to become the **Universal AI Trading Operating System** for a
 
 - **Credential Management**
   - [ ] Implement AES-256 encryption for API keys in database
-  - [ ] Add encryption for private keys (Hyperliquid, Aster)
-  - [ ] Use hardware security module (HSM) support for production
+    - [ ] Use hardware security module (HSM) support for production
   - [ ] Implement key rotation mechanism
   - [ ] Add audit logging for all credential access
 
@@ -71,45 +70,6 @@ VL is on a mission to become the **Universal AI Trading Operating System** for a
   - [ ] Risk assessment integration in AI reasoning
   - [ ] Market regime detection (trend, mean-reversion, high volatility)
   - [ ] Cross-validation with technical indicators
-
-#### 1.3 Exchange Integration Expansion
-**Goal:** Support more CEX and popular perp-DEX, both spot and futures
-
-- **Centralized Exchanges (CEX)**
-  - [ ] **OKX** - Futures + Spot trading
-  - [ ] **Bybit** - Futures + Spot trading
-  - [ ] **Bitget** - Futures + Spot trading
-  - [ ] **Gate.io** - Futures + Spot trading
-  - [ ] **KuCoin** - Futures + Spot trading
-  - [ ] Unified CEX interface for easy addition of new exchanges
-
-- **Decentralized Perpetual Exchanges (Perp-DEX)**
-  - [x] **Hyperliquid** (Ethereum L1) - High-performance orderbook DEX (✅ Supported)
-  - [x] **Aster** (Multi-chain) - Binance-compatible API DEX (✅ Supported)
-  - [ ] **Lighter** (Arbitrum) - Gasless orderbook DEX with off-chain matching
-  - [ ] **EdgeX** (Multi-chain) - Professional derivatives DEX
-  - [ ] Unified DEX interface for consistent integration
-  - [ ] Enhanced Hyperliquid integration (testnet support, advanced order types)
-  - [ ] Enhanced Aster integration (cross-chain support, wallet management)
-
-- **Spot + Futures Support**
-  - [ ] Dual-mode trading (spot arbitrage, futures hedging)
-  - [ ] Cross-exchange arbitrage detection
-  - [ ] Unified position tracking across spot and futures
-  - [ ] Auto-conversion between spot and perpetual strategies
-
-- **Exchange Infrastructure**
-  - [ ] **Trading Data Analysis API Integration** (In-house developed)
-    - [ ] AI500 integration - In-house AI-powered coin selection model
-    - [ ] OI (Open Interest) Analysis - Real-time open interest tracking and anomaly detection
-    - [ ] NetFlow Analysis - On-chain fund flow analysis for market sentiment
-    - [ ] Market sentiment aggregator - Combine multiple data sources for enhanced AI decision making
-    - [ ] Custom indicator API - Support for proprietary technical indicators
-  - [ ] Automatic precision handling (quantity, price decimals)
-  - [ ] Order type abstraction (market, limit, stop-loss, take-profit)
-  - [ ] Unified error handling and retry logic
-  - [ ] WebSocket support for real-time data
-  - [ ] Rate limit management per exchange
 
 #### 1.4 Project Structure Refactoring
 **Goal:** Clear hierarchy, high cohesion, low coupling, easy to extend and maintain

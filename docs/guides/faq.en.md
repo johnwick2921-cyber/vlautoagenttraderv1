@@ -8,12 +8,9 @@ Quick answers to common questions. For detailed troubleshooting, see [Troublesho
 ## General Questions
 
 ### What is VL?
-VL is an AI-powered cryptocurrency trading bot that uses large language models (LLMs) to make trading decisions on futures markets.
+VL is an AI-powered trading bot that uses large language models (LLMs) to make trading decisions on futures markets.
 
 ### Which exchanges are supported?
-- ✅ Binance Futures
-- ✅ Hyperliquid
-- 🚧 More exchanges coming soon
 
 ### Is VL profitable?
 AI trading is **experimental** and **not guaranteed** to be profitable. Always start with small amounts and never invest more than you can afford to lose.
@@ -33,13 +30,6 @@ Yes! VL supports running multiple traders with different configurations, AI mode
 
 ### Do I need coding experience?
 No! VL has a web UI for all configuration. However, basic command line knowledge helps with setup and troubleshooting.
-
-### How do I get API keys?
-1. **Binance**: Account → API Management → Create API → Enable Futures
-2. **Hyperliquid**: Visit [Hyperliquid App](https://app.hyperliquid.xyz/) → API Settings
-
-### Should I use a subaccount?
-**Recommended**: Yes, use a subaccount dedicated to VL for better risk isolation. However, note that some subaccounts have restrictions (e.g., 5x max leverage on Binance).
 
 ---
 
@@ -68,22 +58,6 @@ Default: **3 positions**. This is a soft limit defined in the AI prompt, not har
 ---
 
 ## Technical Issues
-
-### Binance Position Mode Error (code=-4061)
-
-**Error**: `Order's position side does not match user's setting`
-
-**Solution**: Switch to **Hedge Mode** (双向持仓)
-1. Login to [Binance Futures](https://www.binance.com/en/futures/BTCUSDT)
-2. Click **⚙️ Preferences** (top right)
-3. Select **Position Mode** → **Hedge Mode**
-4. ⚠️ Close all positions first
-
-**Why**: VL uses `PositionSide(LONG/SHORT)` which requires Hedge Mode.
-
-See [Issue #202](upstream github link (removed in the VL rename)) and [Troubleshooting Guide](TROUBLESHOOTING.md#-only-opening-short-positions-issue-202).
-
----
 
 ### Backend won't start / Port already in use
 

@@ -259,9 +259,9 @@ func GetBoxData(symbol string) (*BoxData, error) {
 	var err error
 
 	if IsXyzDexAsset(symbol) {
-		klines, err = getKlinesFromHyperliquid(symbol, "1h", LongBoxPeriod)
+		klines, err = getKlinesFromCryptoDex(symbol, "1h", LongBoxPeriod)
 	} else {
-		klines, err = getKlinesFromCoinAnk(symbol, "1h", LongBoxPeriod)
+		klines, err = getKlinesFromCryptoFeed(symbol, "1h", LongBoxPeriod)
 	}
 
 	if err != nil {

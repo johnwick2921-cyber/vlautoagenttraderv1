@@ -1356,7 +1356,7 @@ func (t *TCPTrader) positionMap(symbol, side string, qty, entry float64, uPnLOve
 	sd := upperSideStr(side)
 
 	// Futures: contract point value (MNQ=$2/pt). positionAmt is signed (short < 0)
-	// per the Binance convention GetAccountInfo expects.
+	// per the account-snapshot convention GetAccountInfo expects.
 	pv := market.FuturesPointValue(symbol)
 	if pv <= 0 {
 		pv = 1
@@ -1407,7 +1407,7 @@ func (t *TCPTrader) positionMap(symbol, side string, qty, entry float64, uPnLOve
 		"unrealized_pnl_pct": uPnLPct,
 		"liquidation_price":  0.0,
 		"margin_used":        0.0,
-		// camelCase — read by AutoTrader.GetAccountInfo (Binance-style margin calc)
+		// camelCase — read by AutoTrader.GetAccountInfo (the account-snapshot margin calc)
 		"positionAmt":      signedQty,
 		"entryPrice":       entry,
 		"markPrice":        mark,

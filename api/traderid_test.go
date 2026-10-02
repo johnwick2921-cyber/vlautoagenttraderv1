@@ -11,7 +11,7 @@ import (
 // TestTraderIDUniqueness Test traderID uniqueness (fixes Issue #893)
 // Verify that unique traderIDs can be generated even with the same exchange and AI model
 func TestTraderIDUniqueness(t *testing.T) {
-	exchangeID := "binance"
+	exchangeID := "ninjatrader"
 	aiModelID := "gpt-4"
 
 	// Simulate creating 100 traders simultaneously (with same parameters)
@@ -48,7 +48,7 @@ func generateTraderID(exchangeID, aiModelID string) string {
 // isValidTraderIDFormat Verify traderID format matches expected format
 func isValidTraderIDFormat(traderID, expectedExchange, expectedModel string) bool {
 	// Format: exchange_model_uuid
-	// Example: binance_gpt-4_a1b2c3d4-e5f6-7890-abcd-ef1234567890
+	// Example: ninjatrader_gpt-4_a1b2c3d4-e5f6-7890-abcd-ef1234567890
 	parts := strings.Split(traderID, "_")
 	if len(parts) < 3 {
 		return false
@@ -75,9 +75,9 @@ func TestTraderIDFormat(t *testing.T) {
 		exchangeID string
 		aiModelID  string
 	}{
-		{"Binance + GPT-4", "binance", "gpt-4"},
-		{"Hyperliquid + Claude", "hyperliquid", "claude-3"},
-		{"OKX + Qwen", "okx", "qwen-2.5"},
+		{"NinjaTrader + GPT-4", "ninjatrader", "gpt-4"},
+		{"Alpaca + Claude", "alpaca", "claude-3"},
+		{"Twelvedata + Qwen", "twelvedata", "qwen-2.5"},
 	}
 
 	for _, tt := range tests {
@@ -110,7 +110,7 @@ func TestTraderIDNoCollision(t *testing.T) {
 
 	// Simulate high concurrency scenario
 	for i := 0; i < iterations; i++ {
-		id := generateTraderID("binance", "gpt-4")
+		id := generateTraderID("ninjatrader", "gpt-4")
 		if uniqueIDs[id] {
 			t.Fatalf("Collision detected after %d iterations: %s", i+1, id)
 		}

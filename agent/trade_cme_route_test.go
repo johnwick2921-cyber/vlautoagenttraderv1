@@ -160,13 +160,14 @@ func TestChatCMEEntryResolvesOnlyTheOneNT8TraderOfItsInstrument(t *testing.T) {
 		t.Fatalf("two running MNQ NT8 traders must refuse (fail-closed), never pick one: sel=%v err=%v", sel, err)
 	}
 
-	// Stocks and crypto resolve exactly as before.
+	// Stocks resolve exactly as before; legacy crypto tickers carry no special
+	// routing in the futures-only build.
 	withRoster(t, stock, crypto)
 	if want, sel, _, err := a.resolveTradeExecutionContext(&TradeAction{Symbol: chatTradeSymbol("AAPL")}); err != nil || !want || sel != stock {
 		t.Fatalf("AAPL must still resolve to the stock trader: stock=%v sel=%v err=%v", want, sel, err)
 	}
-	if want, sel, _, err := a.resolveTradeExecutionContext(&TradeAction{Symbol: chatTradeSymbol("btc")}); err != nil || want || sel != crypto {
-		t.Fatalf("BTC must still resolve to the crypto trader: stock=%v sel=%v err=%v", want, sel, err)
+	if want, sel, _, err := a.resolveTradeExecutionContext(&TradeAction{Symbol: chatTradeSymbol("MNQ")}); err == nil || want || sel != nil {
+		t.Fatalf("MNQ with no running MNQ NT8 trader must refuse: stock=%v sel=%v err=%v", want, sel, err)
 	}
 }
 
@@ -179,20 +180,11 @@ func TestCMESymbolsAreNeverStocks(t *testing.T) {
 	}
 	for raw, want := range map[string]string{
 		"mnq": "MNQ", "MNQ": "MNQ", "MNQU6": "MNQ", "MNQ.c.0": "MNQ", "MNQ 06-26": "MNQ", "es": "ES",
-		// Unchanged for stocks and crypto.
-		"AAPL": "AAPL", "btc": "BTCUSDT", "ETHUSDT": "ETHUSDT",
+		// Unchanged for stocks; legacy crypto tickers keep their base form (no quote appending).
+		"AAPL": "AAPL", "btc": "BTC", "ETHUSDT": "ETHUSDT",
 	} {
 		if got := chatTradeSymbol(raw); got != want {
 			t.Errorf("chatTradeSymbol(%q) = %q, want %q", raw, got, want)
 		}
-	}
-	// The watchlist and the crypto-only snapshot keep treating MNQ exactly as
-	// they did while it was (wrongly) a stock: no USDT, no crypto fetch.
-	if got := normalizeWatchSymbol("mnq"); got != "MNQ" {
-		t.Errorf("normalizeWatchSymbol(mnq) = %q, want MNQ", got)
-	}
-	a, _ := routeAgent()
-	if got := a.toolGetMarketSnapshot(`{"symbol":"MNQ"}`); !strings.Contains(got, "crypto symbols only") {
-		t.Errorf("get_market_snapshot must refuse a CME symbol (crypto only), got %s", got)
 	}
 }

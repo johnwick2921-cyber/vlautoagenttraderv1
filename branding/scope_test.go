@@ -39,6 +39,57 @@ func importTargets(source []byte) (map[string]bool, error) {
 	return targets, nil
 }
 
+// cryptoRemovalDeletedGoFileAllowlist — the crypto-removal wave (GO item 1)
+// deletes whole directories (prefix rule below, derived from the guard's
+// C4 DeletedImportPrefixes) plus exactly these three files outside them.
+// A deleted .go file that is NOT on this list and NOT under a C4 prefix still
+// fails the pin — this is an explicit removal allowlist, never a loosened rule.
+var cryptoRemovalDeletedGoFileAllowlist = []string{
+	"agent/agent_model_selection_test.go",  // CTO fix-list item 4 (07:43 mail): helper went with the wallet family
+	"agent/market_snapshot_test.go",        // deleted with the crypto market-snapshot surface (integration b7334aa51)
+	"agent/model_create_flow_test.go",      // claw402 model-create flow tests (provider gone with DS-108's catalog cut — CR-A 0425864b0)
+	"agent/model_provider_catalog_test.go", // claw402 provider-catalog tests (same catalog cut)
+	"agent/model_wallet_fastpath.go",       // wallet-family fastpath (wallet family C4)
+	"agent/sentinel.go",                    // CTO written ruling 10:41: fapi.binance.com watcher, zero futures function
+	"api/handler_wallet.go",                // wallet-family handler, GO item 1 (C4 family)
+	"api/onboarding_owner_test.go",         // CTO fix-list item 3 (07:43 mail): same
+	"market/api_client.go",                 // plan C4 whole-file DELETE (CTO 11:14: moves to DS-101)
+	"market/historical.go",                 // crypto historical klines surface (CR-A wave)
+	"trader/testutil/test_suite.go",        // crypto fixtures, zero importers (DS-101 step2, written CTO ruling)
+}
+
+// cryptoDeletedGoFile reports whether a deleted .go file is covered by the
+// crypto-removal deletion allowlist: under a C4 deleted directory or named.
+func cryptoDeletedGoFile(path string) bool {
+	for _, p := range cryptoRemovalDeletedGoFileAllowlist {
+		if path == p {
+			return true
+		}
+	}
+	for _, dir := range DeletedImportPrefixes {
+		if path == dir || strings.HasPrefix(path, dir+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// cryptoDeletedTarget reports whether a REMOVED vl/… import target is covered
+// by the same C4 deletion (its directory went with the wave — a legitimate
+// removal, not a drift).
+func cryptoDeletedTarget(target string) bool {
+	if !strings.HasPrefix(target, modulePrefix()+"/") {
+		return false
+	}
+	rest := strings.TrimPrefix(target, modulePrefix()+"/")
+	for _, dir := range DeletedImportPrefixes {
+		if rest == dir || strings.HasPrefix(rest, dir+"/") {
+			return true
+		}
+	}
+	return false
+}
+
 // preserveImports protects the vl/ namespace: a vl/… import target the
 // base file had must not disappear by RENAME (nofx/X → vl/X). W-EXEC-TRUTH W0
 // (CTO ruling on M1): a target that left THIS file but is still imported by
@@ -58,6 +109,9 @@ func preserveImports(before, after []byte, stillImported func(string) bool) erro
 	for target := range old {
 		if !strings.HasPrefix(target, modulePrefix()+"/") || current[target] {
 			continue
+		}
+		if cryptoDeletedTarget(target) {
+			continue // C4 crypto-removal: the directory went with the wave
 		}
 		if stillImported != nil && stillImported(target) && !renamedInto(target, current) {
 			continue // moved to another file, not renamed
@@ -157,6 +211,9 @@ func TestExistingGoImportTargetsPreserved(t *testing.T) {
 		} // a new file has no pre-existing import targets
 		after, err := os.ReadFile(filepath.Join(root, path))
 		if err != nil {
+			if os.IsNotExist(err) && cryptoDeletedGoFile(path) {
+				continue // explicit C4 crypto-removal deletion, allowlisted
+			}
 			t.Fatal(err)
 		}
 		if err := preserveImports(before, after, headImports); err != nil {
@@ -176,6 +233,25 @@ func TestImportScopeAllowsObsoleteStandardLibraryRemoval(t *testing.T) {
 	after := []byte("package p; import \"vl/config\"")
 	if err := preserveImports(before, after, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// C4 crypto-removal: a target whose directory the wave deleted may vanish
+// with no other importer (the explicit removal allowlist, never loosened).
+func TestImportScopeAllowsC4DeletedTarget(t *testing.T) {
+	before := []byte("package p; import \"vl/wallet\"")
+	after := []byte("package p")
+	if err := preserveImports(before, after, func(string) bool { return false }); err != nil {
+		t.Fatalf("a C4-deleted target must be allowed to vanish: %v", err)
+	}
+}
+
+// and a non-C4 vl/… removal is still refused even with the allowlist present.
+func TestImportScopeStillRejectsNonC4Removal(t *testing.T) {
+	before := []byte("package p; import \"vl/config\"")
+	after := []byte("package p")
+	if err := preserveImports(before, after, func(string) bool { return false }); err == nil {
+		t.Fatal("removing vl/config is not a C4 deletion and must be rejected")
 	}
 }
 

@@ -41,7 +41,7 @@ These are correct as stated:
 7. **v1.5.6 fix**: per-connection write mutex + per-write `SetWriteDeadline` — matches the actual fix exactly.
 8. **ADR-007 byte-identical contract** binds `tcp_server.go`, `tcp_framing.go`, `VLTraderTCPClient.cs` — matches `docs/adr/ADR-007-plan1-critical-file-integrity.md`.
 9. **"Warn-and-continue on unknown frame type"** safety valve — matches `tcp_server.go` readLoop default branch.
-10. **N11 root cause**: Balanced Strategy using dead `ai500` coin source returns HTTP 402 (x402 paywall) and starves the trader. Fix: `coin_source=static` + `["NQ.c.0"]`. Matches the 2026-05-28 plan-doc post-mortem.
+10. **N11 root cause**: Balanced Strategy using a dead crypto coin-pool source returns HTTP 402 (crypto payment paywall) and starves the trader. Fix: `coin_source=static` + `["NQ.c.0"]`. Matches the 2026-05-28 plan-doc post-mortem.
 11. **Bar cache keyed by `symbol|timeframe`** — matches `market/data.go` structure.
 12. **Indicator set** (EMA/MACD/RSI/ATR/Bollinger) — matches `market/data_indicators.go` exports.
 13. **GORM models** (`exchange.go`, `strategy.go`, `position.go`, `decision.go`) — matches `store/`.

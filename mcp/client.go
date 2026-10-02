@@ -10,13 +10,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptrace"
-	"vl/safe"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+	"vl/safe"
 )
 
 const (
@@ -63,22 +63,17 @@ var (
 
 // TokenUsage represents token usage from AI API response
 type TokenUsage struct {
-	Provider         string // payment channel: "claw402" or native provider name
+	Provider         string // native provider name
 	Model            string
 	PromptTokens     int
 	CompletionTokens int
 	TotalTokens      int
 }
 
-// Channel returns the payment channel category for telemetry.
-// Returns "claw402" or "native" based on the provider.
+// Channel returns the telemetry channel category (native providers only — the
+// the payment channel was removed with the payment family.
 func (u TokenUsage) Channel() string {
-	switch u.Provider {
-	case ProviderClaw402:
-		return "claw402"
-	default:
-		return "native"
-	}
+	return "native"
 }
 
 // Client AI API configuration
