@@ -49,7 +49,7 @@ Big bundled builds went sideways before. The discipline that works: each section
 
 # 3. The diagnosis — proof the page is a disconnected shell
 
-Established by a full-page read-only pass (9 analyst maps + a live browser pass in both MNQ-futures and BTCUSDT-crypto modes + code re-verification of every headline). Four concrete proofs the page shows one thing while the bot does another:
+Established by a full-page read-only pass (9 analyst maps + a live browser pass in both MNQ-futures and legacy crypto modes + code re-verification of every headline). Four concrete proofs the page shows one thing while the bot does another:
 
 | **What the page shows** | **What actually happens (hidden in code)** | **Verdict** |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ Why futures can't just reuse the crypto controls — the things that are genuine
 
 ## Phase 4 — Indicators (futures-appropriate data)
 
-**The fake: **a futures strategy shows the crypto data block (AI500 / OI-Ranking / NetFlow / Price-Ranking + a dead key) and a funding-rate toggle — none apply to futures.
+**The fake: **a futures strategy shows the crypto data block (coin-ranking / funding sources + a dead key) and a funding-rate toggle — none apply to futures.
 **Show the truth: **keep the universal blocks (EMA/MACD/RSI/ATR/Bollinger, OHLCV, the 14 timeframes, Volume, OI). For futures, the funding-rate concept doesn't exist; the crypto ranking providers have no single-instrument analogue. Surface the truth (futures uses OHLCV + daily OI; no funding) without re-creating the reverted gate/hide pattern — confirm the approach at the deep-dive.
 **Verify real: **a futures strategy shows futures-appropriate indicators; the funding toggle is gone; crypto byte-identical.
 *Code anchors: *IndicatorEditor · parked Layer-3: real microstructure (VWAP / volume-profile / DOM / COT)
@@ -136,7 +136,7 @@ Why futures can't just reuse the crypto controls — the things that are genuine
 
 ## 6.2 Decided (settled this session)
 
-- **Capstone gating reverted **— the page no longer hides leverage/USDT/funding per-instrument; we surface truth rather than hide.
+- **Capstone gating reverted **— the page no longer hides leverage/crypto-unit/funding per-instrument; we surface truth rather than hide.
 - **Default edit-lock stays **— it protects a shared fallback; use Duplicate-to-edit (Phase 6 adds the hint).
 - **No relabel that regresses crypto **— keep crypto-clear labels (e.g. BTC/ETH / Altcoin tiers) where renaming would obscure meaning.
 

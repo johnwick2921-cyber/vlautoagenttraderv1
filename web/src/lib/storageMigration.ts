@@ -15,7 +15,6 @@
 //  - a failure on one key never aborts the others.
 
 export const VL_USER_MODE_KEY = 'vl.userMode'
-export const VL_BEGINNER_WALLET_ADDRESS_KEY = 'vl.beginnerWalletAddress'
 export const VL_BEGINNER_ONBOARDING_COMPLETED_KEY =
   'vl.beginnerOnboardingCompleted'
 export const VL_AGENT_CHAT_KEY = 'vl.agentChat'
@@ -37,7 +36,6 @@ export function vlAgentChatDraftKey(userId?: string): string {
 // equality (the bare key is a prefix of the other two).
 const LEGACY_SCALAR_KEYS: ReadonlyArray<readonly [string, string]> = [
   ['nofx_user_mode', VL_USER_MODE_KEY],
-  ['nofx_beginner_wallet_address', VL_BEGINNER_WALLET_ADDRESS_KEY],
   ['nofx_beginner_onboarding_completed', VL_BEGINNER_ONBOARDING_COMPLETED_KEY],
 ]
 const LEGACY_CHAT_BASE = 'nofxi-agent-chat'

@@ -14,7 +14,7 @@ VL 是一个支持加密货币和美股市场的全栈 AI 交易平台：
 - **后端:** Go (Gin 框架, SQLite)
 - **前端:** React/TypeScript (Vite, TailwindCSS)
 - **AI 模型:** DeepSeek, Qwen, OpenAI (GPT-5.2), Claude, Gemini, Grok, Kimi
-- **交易所:** Binance, Bybit, OKX, Hyperliquid, Aster, Lighter
+- **交易所:** NinjaTrader 8（CME 期货，模拟盘执行）
 
 ---
 
@@ -63,7 +63,7 @@ VL 是一个支持加密货币和美股市场的全栈 AI 交易平台：
 
 #### 策略模块
 完整的策略配置系统，包括：
-- 币种来源选择（静态列表、AI500 币池、OI 排行）
+- 币种来源选择（静态列表）
 - 市场数据指标（K线、EMA、MACD、RSI、ATR）
 - 提示词构建（系统提示词、用户提示词、分段配置）
 - AI 响应解析和决策执行
@@ -101,7 +101,6 @@ vl/
 | 包 | 用途 |
 |---------|---------|
 | `gin-gonic/gin` | HTTP API 框架 |
-| `adshao/go-binance` | Binance API 客户端 |
 | `markcheno/go-talib` | 技术指标计算 |
 | `golang-jwt/jwt` | JWT 认证 |
 

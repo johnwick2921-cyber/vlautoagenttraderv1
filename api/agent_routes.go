@@ -34,9 +34,6 @@ func (s *Server) RegisterAgentHandler(h *agent.WebHandler) {
 		req := c.Request.WithContext(ctx)
 		h.HandleChatStream(c.Writer, req)
 	})
-	// Public endpoints — read-only market data
+	// Public endpoints — read-only agent health
 	s.router.GET("/api/agent/health", gin.WrapF(h.HandleHealth))
-	s.router.GET("/api/agent/klines", gin.WrapF(h.HandleKlines))
-	s.router.GET("/api/agent/ticker", gin.WrapF(h.HandleTicker))
-	s.router.GET("/api/agent/tickers", gin.WrapF(h.HandleTickers))
 }

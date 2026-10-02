@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"vl/branding"
 	"strings"
 )
 
@@ -27,12 +26,9 @@ func buildSkillDomainPrimer(lang, skillName string) string {
 				"- provider 指模型厂商，不是交易所类型。",
 				"- 关键字段：" + strings.Join(fields, "、"),
 				"- 候选 provider：" + modelProviderSummaryList(lang),
-				"- 推荐 provider：claw402。claw402 是 " + branding.PersonaName() + " 官方推荐方案，按次付费，使用 Base 链 EVM 钱包 + USDC 支付。",
-				"- 如果用户不确定选哪个 provider，可以优先推荐 claw402 并说明其优势，但绝不能替用户自动选中 claw402；必须先展示完整 provider 选项并让用户自己选择。",
+				"- 推荐 provider：优先推荐 API Key 计费的官方方案。",
 				"- 如果 provider 还没选定，下一步必须先让用户从完整 provider 列表里选一个，不能先收集 API Key、钱包私钥或其他凭证。",
 				"- 普通 provider（openai/deepseek/claude 等）通常要填 API Key；custom_model_name 和 custom_api_url 可以留空走默认值。",
-				"- claw402 需要钱包私钥，custom_model_name 留空时默认 deepseek。",
-				"- blockrun-base / blockrun-sol 走钱包私钥模式，不需要 custom_api_url，custom_model_name 默认 auto。",
 			}, "\n")
 		}
 		return strings.Join([]string{
@@ -41,12 +37,9 @@ func buildSkillDomainPrimer(lang, skillName string) string {
 			"- provider means the model vendor, not an exchange venue.",
 			"- Key fields: " + strings.Join(fields, ", "),
 			"- Supported providers: " + modelProviderSummaryList(lang),
-			"- Recommended provider: claw402. claw402 is the " + branding.PersonaName() + " recommended pay-per-use option that uses a Base chain wallet + USDC.",
-			"- If the user is unsure which provider to pick, you may recommend claw402 and explain its advantages, but you must not auto-select claw402 for them. Show the full provider options first and let the user choose.",
+			"- Recommended provider: the official API-key billing option.",
 			"- If provider is still missing, the next step must be to ask the user to choose one from the full provider list. Do not ask for an API key, wallet private key, or other credentials before the provider is chosen.",
 			"- Standard providers (openai/deepseek/claude etc.) usually require an API key; `custom_model_name` and `custom_api_url` can be omitted to use defaults.",
-			"- claw402 uses a wallet private key and defaults to `deepseek` if `custom_model_name` is omitted.",
-			"- blockrun-base / blockrun-sol use wallet private keys, do not need `custom_api_url`, and default to `auto`.",
 		}, "\n")
 	case "exchange_management":
 		fields := []string{
@@ -111,7 +104,7 @@ func buildSkillDomainPrimer(lang, skillName string) string {
 				"### 策略配置领域约束",
 				"- 本领域只处理策略模板。",
 				"- strategy_type 选项：ai_trading、grid_trading。",
-				"- 用户提到 AI500、OI Top、OI Low、静态币种/固定币种这类选币来源时，属于 ai_trading。",
+				"- 用户提到静态币种/固定币种这类选币来源时，属于 ai_trading。",
 				"- 策略类型确定后，只能使用当前类型的产品编辑页模板。",
 				"- 策略类型未确定时，只判断类型，不要展示或混合任一分支的具体配置字段。",
 				"- 关键字段：" + strings.Join(fields, "、"),
@@ -121,7 +114,7 @@ func buildSkillDomainPrimer(lang, skillName string) string {
 			"### Strategy Config Domain Guard",
 			"- This domain only handles strategy templates.",
 			"- strategy_type options: ai_trading, grid_trading.",
-			"- AI500, OI Top, OI Low, and static coin-source requests imply ai_trading.",
+			"- Static coin-source requests imply ai_trading.",
 			"- Once strategy_type is known, use only that product editor template.",
 			"- Before strategy_type is known, only determine the type; do not show or mix concrete fields from either branch.",
 			"- Key fields: " + strings.Join(fields, ", "),
@@ -145,22 +138,22 @@ func buildSkillDomainPrimerForSession(lang string, session skillSession) string 
 			return strings.Join([]string{
 				"### AI 策略模板",
 				"- 只使用 ai_trading 模板：strategy_type + ai_config + publish_config。",
-				"- config_patch 必须使用产品 schema 原值，不要使用展示文案：strategy_type=ai_trading；source_type 只能是 static、ai500、oi_top、oi_low；没有 mixed/混合模式。",
+				"- config_patch 必须使用产品 schema 原值，不要使用展示文案：strategy_type=ai_trading；source_type 只能是 static；没有 mixed/混合模式。",
 				"- 时间周期必须输出为产品枚举字符串，例如 1m、3m、5m、15m、1h；selected_timeframes 必须是字符串数组，例如 [\"1m\",\"5m\",\"15m\"]，不要输出 JSON 字符串。",
-				"- AI500/OI Top/OI Low 选币数量范围 1～10；static_coins 最多 10 个；selected_timeframes 最多 4 个；primary_count 10～30。",
-				"- BTC/ETH 最大杠杆 1～20；山寨币最大杠杆 1～20；min_confidence 50～100；min_risk_reward_ratio 1～10。",
+				"- static_coins 最多 10 个；selected_timeframes 最多 4 个；primary_count 10～30。",
+				"- min_confidence 50～100；min_risk_reward_ratio 1～10。",
 				"- AI 策略创建方案不要展示或询问非 AI 模板字段：投入金额、每笔固定投入、止损、日亏损限制、最大回撤、网格字段。",
 			}, "\n")
 		case "grid_trading":
 			return strings.Join([]string{
 				"### 网格策略模板",
 				"- 只使用 grid_trading 模板：strategy_type + grid_config + publish_config；config_patch 必须使用产品 schema 原值，strategy_type=grid_trading。",
-				"- 交易对选项：BTCUSDT、ETHUSDT、SOLUSDT、BNBUSDT、XRPUSDT、DOGEUSDT。",
+				"- 交易对选项：MNQ。",
 				"- grid_count 5～50；total_investment 最小 100；leverage 1～5；atr_multiplier 1～5。",
 				"- total_investment 是用户实际投入/保证金预算，不是杠杆后的名义仓位；最大名义仓位约等于 total_investment × leverage。用户说“投入/总投入/本金/保证金”时默认映射到 total_investment。",
 				"- max_drawdown_pct 5～50；stop_loss_pct 1～20；daily_loss_limit_pct 1～30；direction_bias_ratio 0.55～0.90。",
 				"- 没有实时行情工具结果时，不要猜当前价格或手动价格上下界；推荐 use_atr_bounds=true 的 ATR 自动边界。",
-				"- 如果用户让你选择/推荐剩余网格参数，价格区间默认写入 use_atr_bounds=true；不要反问用户手动价格区间，也不要编造“当前 BTC/ETH 在某价附近”。",
+				"- 如果用户让你选择/推荐剩余网格参数，价格区间默认写入 use_atr_bounds=true；不要反问用户手动价格区间，也不要编造“当前 MNQ 在某价附近”。",
 			}, "\n")
 		}
 	}
@@ -169,22 +162,22 @@ func buildSkillDomainPrimerForSession(lang string, session skillSession) string 
 		return strings.Join([]string{
 			"### AI Strategy Template",
 			"- Use only ai_trading: strategy_type + ai_config + publish_config.",
-			"- config_patch must use product schema raw values, not display labels: strategy_type=ai_trading; source_type is only static, ai500, oi_top, or oi_low; no mixed mode.",
+			"- config_patch must use product schema raw values, not display labels: strategy_type=ai_trading; source_type is only static; no mixed mode.",
 			"- Timeframes must be product enum strings such as 1m, 3m, 5m, 15m, 1h; selected_timeframes must be a JSON string array such as [\"1m\",\"5m\",\"15m\"], not a JSON-encoded string.",
-			"- AI500/OI source counts 1-10; static_coins at most 10; selected_timeframes at most 4; primary_count 10-30.",
-			"- BTC/ETH leverage 1-20; altcoin leverage 1-20; min_confidence 50-100; min_risk_reward_ratio 1-10.",
+			"- static_coins at most 10; selected_timeframes at most 4; primary_count 10-30.",
+			"- min_confidence 50-100; min_risk_reward_ratio 1-10.",
 			"- Do not show or ask for non-AI-template fields in AI strategy drafts: investment amount, fixed per-trade amount, stop loss, daily loss limit, max drawdown, or grid fields.",
 		}, "\n")
 	case "grid_trading":
 		return strings.Join([]string{
 			"### Grid Strategy Template",
 			"- Use only grid_trading: strategy_type + grid_config + publish_config; config_patch must use product schema raw values with strategy_type=grid_trading.",
-			"- Symbol options: BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT.",
+			"- Symbol options: MNQ.",
 			"- grid_count 5-50; total_investment >=100; leverage 1-5; atr_multiplier 1-5.",
 			"- total_investment is the user's actual capital/margin budget, not leveraged notional exposure; maximum notional exposure is approximately total_investment * leverage. When the user says investment, capital, amount to put in, or margin, map it to total_investment by default.",
 			"- max_drawdown_pct 5-50; stop_loss_pct 1-20; daily_loss_limit_pct 1-30; direction_bias_ratio 0.55-0.90.",
 			"- Without fresh market data, do not guess the current price or manual upper/lower prices; recommend ATR auto bounds with use_atr_bounds=true.",
-			"- If the user asks you to choose/recommend the remaining grid parameters, default the price range to use_atr_bounds=true; do not ask for manual price bounds or invent statements like the current BTC/ETH price is near a value.",
+			"- If the user asks you to choose/recommend the remaining grid parameters, default the price range to use_atr_bounds=true; do not ask for manual price bounds or invent statements like the current MNQ price is near a value.",
 		}, "\n")
 	}
 	return buildSkillDomainPrimer(lang, session.Name)

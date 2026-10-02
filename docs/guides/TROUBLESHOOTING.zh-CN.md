@@ -20,38 +20,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 ### 1. 交易问题
 
-#### ❌ 只开空单，不开多单 (Issue #202)
-
-**症状:** AI 只开空仓，从不开多仓，即使市场看涨。
-
-**根本原因:** 币安账户处于**单向持仓模式**而非**双向持仓模式**。
-
-**解决方案:**
-1. 登录 [币安合约交易](https://www.binance.com/zh-CN/futures/BTCUSDT)
-2. 点击右上角 **⚙️ 偏好设置**
-3. 选择 **持仓模式**
-4. 切换为 **双向持仓** (Hedge Mode)
-5. ⚠️ **重要:** 切换前必须先平掉所有持仓
-
-**为什么会这样:**
-- 代码使用 `PositionSide(LONG)` 和 `PositionSide(SHORT)` 参数
-- 这些参数只在双向持仓模式下有效
-- 在单向持仓模式下，订单会失败或只有一个方向有效
-
-**关于子账户:**
-- 部分币安子账户可能没有权限更改持仓模式
-- 使用主账户或联系币安客服开通此权限
-
----
-
-#### ❌ 订单错误: `code=-4061` 持仓方向不匹配
-
-**错误信息:** `Order's position side does not match user's setting`
-
-**解决方案:** 同上 - 切换到双向持仓模式。
-
----
-
 #### ❌ 杠杆错误: `子账户限制最高5倍杠杆`
 
 **症状:** 尝试使用 >5倍杠杆时订单失败。
@@ -65,20 +33,19 @@ names rewritten to vl on 2026-09-30 (VL rename)
      "altcoin_leverage": 5
    }
    ```
-3. 或使用主账户（支持最高 50倍 BTC/ETH，20倍山寨币）
+
 
 ---
 
 #### ❌ 持仓无法执行
 
 **检查以下内容:**
-1. **API 权限**:
-   - 进入币安 → API 管理
-   - 确认"启用合约"已勾选
-   - 检查 IP 白名单（如果启用）
+1. **NT8 连接**:
+   - 确认 NinjaTrader AddOn 已连接（启动行 transport: TCP wired）
+   - 检查 📊 行情启动行显示 bars=<NT8 BarCache>
 
 2. **账户余额**:
-   - 确保合约钱包中有足够的 USDT
+   - 确保 SIM 账户有足够的可用保证金
    - 检查保证金使用率未达到 100%
 
 3. **交易对状态**:
@@ -274,77 +241,6 @@ VL_BACKEND_PORT=8081
 
 ---
 
-#### ❌ 交易所 API 错误
-
-**常见错误:**
-- `code=-1021, msg=Timestamp for this request is outside of the recvWindow`
-- `invalid signature`
-- `timestamp` 错误
-
-**根本原因:**
-系统时间不准确，与币安服务器时间相差超过允许范围（通常是 5 秒）。
-
-**解决方案 1: 同步系统时间（推荐）**
-
-```bash
-# 方法 1: 使用 ntpdate (最常用)
-sudo ntpdate pool.ntp.org
-
-# 方法 2: 使用其他 NTP 服务器
-sudo ntpdate -s time.nist.gov
-sudo ntpdate -s ntp.aliyun.com  # 阿里云 NTP (中国大陆快)
-
-# 方法 3: 启用自动时间同步 (Linux)
-sudo timedatectl set-ntp true
-
-# 验证时间是否正确
-date
-# 应该显示正确的当前时间
-```
-
-**Docker 环境特别注意:**
-
-如果使用 Docker，容器时间可能与宿主机不同步：
-
-```bash
-# 检查容器时间
-docker exec vl-backend date
-
-# 如果时间错误，重启 Docker 服务
-sudo systemctl restart docker
-
-# 或在 docker-compose.yml 中添加时区设置
-environment:
-  - TZ=Asia/Shanghai  # 或您的时区
-```
-
-**解决方案 2: 验证 API 密钥**
-
-如果时间同步后仍有错误：
-
-1. **检查 API 密钥:**
-   - 未过期
-   - 有正确权限（已启用合约）
-   - IP 白名单包含您的服务器 IP
-
-2. **重新生成 API 密钥:**
-   - 登录币安 → API 管理
-   - 删除旧密钥
-   - 创建新密钥
-   - 更新 VL 配置
-
-**解决方案 3: 检查速率限制**
-
-币安有严格的 API 速率限制：
-
-- **每分钟请求数限制**
-- 减少交易员数量
-- 增加决策间隔时间（例如从 1 分钟改为 3-5 分钟）
-
-**相关 Issue:** [#60](upstream github link (removed in the VL rename))
-
----
-
 ### 4. 前端问题
 
 #### ❌ UI 不更新 / 显示旧数据
@@ -478,7 +374,7 @@ ls -lt decision_logs/your_trader_id/ | head -10
 cat decision_logs/your_trader_id/$(ls -t decision_logs/your_trader_id/ | head -1) | jq .
 
 # 搜索特定交易对
-grep -r "BTCUSDT" decision_logs/your_trader_id/
+grep -r "MNQ" decision_logs/your_trader_id/
 
 # 查找执行交易的决策
 grep -r '"action": "open_' decision_logs/your_trader_id/

@@ -17,10 +17,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 └─────────────────────────────────────────────────────────────────┘
 
 1. 币种选择 (GetCandidateCoins)
-   ├─ Static (静态列表)
-   ├─ AI500 Pool (AI评分池)
-   ├─ OI Top (持仓增长榜)
-   └─ Mixed (混合模式)
+   └─ Static (静态列表)
         ↓
 2. 数据组装 (buildTradingContext)
    ├─ 账户余额 → equity, available, unrealizedPnL
@@ -43,7 +40,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
         ↓
 4. 用户提示词 (BuildUserPrompt)
    ├─ 系统状态 (时间, 周期号)
-   ├─ BTC市场概览
+
    ├─ 账户信息
    ├─ 当前持仓 (含技术指标)
    ├─ 候选币种 (完整市场数据)
@@ -96,67 +93,6 @@ if config.CoinSource.SourceType == "static" {
 - **配置:** `StrategyConfig.CoinSource.StaticCoins`
 - **用途:** 手动指定交易币种
 - **标签:** `["static"]`
-
-### 1.2 AI500 币种池 (CoinPool)
-
-```go
-// decision/engine.go:405-406, 456-474
-func (e *StrategyEngine) getCoinPoolCoins(limit int) []CandidateCoin {
-    coins, err := e.provider.GetTopRatedCoins(limit)
-    // ...
-    for _, coin := range coins {
-        result = append(result, CandidateCoin{
-            Symbol:  coin.Symbol,
-            Sources: []string{"ai500"},
-        })
-    }
-}
-```
-
-- **API:** `config.CoinSource.CoinPoolAPIURL` (默认: `upstream website link (removed in the VL rename)`)
-- **用途:** 获取 AI 评分最高的 N 个币种
-- **标签:** `["ai500"]`
-
-### 1.3 OI Top 币种 (持仓增长榜)
-
-```go
-// decision/engine.go:408-409, 476-498
-func (e *StrategyEngine) getOITopCoins() []CandidateCoin {
-    positions, err := e.provider.GetOITopPositions()
-    // ...
-    for _, pos := range positions {
-        result = append(result, CandidateCoin{
-            Symbol:  pos.Symbol,
-            Sources: []string{"oi_top"},
-        })
-    }
-}
-```
-
-- **API:** `config.CoinSource.OITopAPIURL`
-- **用途:** 获取持仓量增长最快的币种
-- **标签:** `["oi_top"]`
-
-### 1.4 混合模式 (Mixed)
-
-```go
-// decision/engine.go:411-449
-if config.CoinSource.SourceType == "mixed" {
-    if config.CoinSource.UseCoinPool {
-        // 添加 AI500 币种
-    }
-    if config.CoinSource.UseOITop {
-        // 添加 OI Top 币种
-    }
-    if len(config.CoinSource.StaticCoins) > 0 {
-        // 添加静态币种
-    }
-    // 去重合并，保留多来源标签
-}
-```
-
-- **特点:** 同时使用多个数据源
-- **标签示例:** `["ai500", "oi_top"]` (双信号币种)
 
 ---
 
@@ -243,7 +179,7 @@ if config.Indicators.EnableQuantData {
 **数据结构:**
 ```go
 QuantData {
-    Netflow {
+
         Institution: {Future, Spot},  // 机构资金流
         Personal: {Future, Spot}      // 散户资金流
     },
@@ -306,7 +242,7 @@ maxPositions := config.RiskControl.MaxPositions           // 默认: 3
 altcoinMaxRatio := config.RiskControl.AltcoinMaxPositionValueRatio  // 默认: 1.0
 btcethMaxRatio := config.RiskControl.BTCETHMaxPositionValueRatio    // 默认: 5.0
 maxMarginUsage := config.RiskControl.MaxMarginUsage       // 默认: 90%
-minPositionSize := config.RiskControl.MinPositionSize     // 默认: 12 USDT
+minPositionSize := config.RiskControl.MinPositionSize     // 默认: 12 USD
 ```
 
 **AI引导 (建议值):**
@@ -329,7 +265,7 @@ minConfidence := config.RiskControl.MinConfidence            // 默认: 75
 ```json
 [
   {
-    "symbol": "BTCUSDT",
+    "symbol": "MNQ",
     "action": "open_long",
     "leverage": 5,
     "position_size_usd": 100.00,
@@ -356,7 +292,7 @@ minConfidence := config.RiskControl.MinConfidence            // 默认: 75
 
 ```
 1. 系统状态          [时间, 周期号, 运行时长]
-2. BTC市场概览      [价格, 涨跌幅, MACD, RSI]
+
 3. 账户信息          [权益, 余额%, 盈亏%, 保证金%, 持仓数]
 4. 最近成交          [最近10笔已平仓交易]
 5. 当前持仓          [详细持仓数据 + 技术指标]
@@ -374,30 +310,30 @@ Account: Equity 1000.00 | Balance 800.00 (80.0%) | PnL +5.5% | Margin 20.0% | Po
 ### 4.3 持仓信息格式
 
 ```
-1. BTCUSDT LONG | Entry 68000.0000 Current 69500.0000
-   Qty 0.0100 | Position Value $695.00
-   PnL +2.21% | Amount +$15.00
-   Peak PnL +3.50% | Leverage 5x
-   Margin $139.00 | Liquidation Price 55000.0000
+1. MNQ LONG | Entry 20500.0000 Current 20600.0000
+   Qty 1 | Position Value $20600.00
+   PnL +0.98% | Amount +$200.00
+   Peak PnL +1.50% | Leverage 1x
+   Margin $850.00 | Liquidation Price 19380.0000
    Holding Duration 2 hours 30 minutes
 
-   Market: price=69500, ema20=68800, macd=150.5, rsi7=62.3
-   OI: Latest=15000000, Avg=14500000
-   Funding Rate: 0.0100%
+   Market: price=20600, ema20=20480, macd=38.5, rsi7=62.3
+   OI: n/a（期货路径无外部市场数据）
+   Funding Rate: n/a
 ```
 
 ### 4.4 候选币种格式
 
 ```
-### 1. ETHUSDT (AI500+OI_Top dual signal)
+### 1. MNQ（静态来源）
 
-current_price = 3500.00, current_ema20 = 3450.00, current_macd = 25.5, current_rsi7 = 58.0
+current_price = 20600.00, current_ema20 = 20480.00, current_macd = 38.5, current_rsi7 = 58.0
 
-Open Interest: Latest: 8500000.00 Average: 8200000.00
-Funding Rate: 0.0050
+Open Interest: n/a
+Funding Rate: n/a
 
 === 5M TIMEFRAME (oldest → latest) ===
-Prices: [3480, 3485, 3490, 3495, 3500]
+Prices: [20580, 20585, 20590, 20595, 20600]
 Volumes: [1000, 1200, 1100, 1300, 1150]
 EMA20: [3470, 3475, 3478, 3482, 3485]
 MACD: [20.1, 21.5, 22.8, 24.0, 25.5]
@@ -554,14 +490,14 @@ func validateDecisions(decisions []Decision, equity, leverage, ratio float64) er
 ```go
 // decision/engine.go:128-143
 type Decision struct {
-    Symbol          string   // 交易对: "BTCUSDT"
+    Symbol          string   // 交易对: "MNQ"
     Action          string   // "open_long", "open_short", "close_long", "close_short", "hold", "wait"
     Leverage        int      // 杠杆倍数
-    PositionSizeUSD float64  // 仓位价值 (USDT)
+    PositionSizeUSD float64  // 仓位价值 (USD)
     StopLoss        float64  // 止损价格
     TakeProfit      float64  // 止盈价格
     Confidence      int      // 置信度 0-100
-    RiskUSD         float64  // 最大风险 (USDT)
+    RiskUSD         float64  // 最大风险 (USD)
     Reasoning       string   // 决策理由
 }
 ```
@@ -662,7 +598,7 @@ at.store.Decision().LogDecision(record)
 | **决策验证** | `decision/engine.go:1480-1602` | `validateDecisions()` |
 | **风控执行** | `trader/auto_trader.go:1769-1851` | `enforceMaxPositions()`, `enforcePositionValueRatio()` |
 | **策略配置** | `store/strategy.go` | `StrategyConfig`, `RiskControlConfig` |
-| **数据提供者** | `provider/data_provider.go` | `GetAI500Data()`, `GetOITopPositions()` |
+| **数据提供者** | `provider/ninjatrader/` | NT8 TCP 行情桥（无外部币种数据） |
 
 ---
 
@@ -675,13 +611,8 @@ at.store.Decision().LogDecision(record)
 type StrategyConfig struct {
     // 币种来源
     CoinSource struct {
-        SourceType     string   // "static", "coinpool", "oi_top", "mixed"
+        SourceType     string   // "static"（加密货币来源已移除）
         StaticCoins    []string // 静态币种列表
-        UseCoinPool    bool     // 是否使用AI500
-        UseOITop       bool     // 是否使用OI排行
-        CoinPoolLimit  int      // AI500获取数量
-        CoinPoolAPIURL string   // AI500 API地址
-        OITopAPIURL    string   // OI排行 API地址
     }
 
     // 技术指标

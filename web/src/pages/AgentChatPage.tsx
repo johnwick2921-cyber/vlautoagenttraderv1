@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   PanelRightClose,
   PanelRightOpen,
-  TrendingUp,
-  Wallet,
   Bot,
   Bookmark,
   ChevronDown,
@@ -12,7 +10,6 @@ import {
 } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
-import { MarketTicker } from '../components/agent/MarketTicker'
 import { PositionsPanel } from '../components/agent/PositionsPanel'
 import { TraderStatusPanel } from '../components/agent/TraderStatusPanel'
 import { WelcomeScreen } from '../components/agent/WelcomeScreen'
@@ -193,14 +190,8 @@ export function AgentChatPage() {
 
   const sidebarSections = [
     {
-      key: 'market' as const,
-      icon: <TrendingUp size={14} />,
-      title: language === 'zh' ? '市场行情' : 'Market',
-      component: <MarketTicker />,
-    },
-    {
       key: 'positions' as const,
-      icon: <Wallet size={14} />,
+      icon: <Bot size={14} />,
       title: language === 'zh' ? '持仓' : 'Positions',
       component: <PositionsPanel />,
     },

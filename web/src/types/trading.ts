@@ -123,8 +123,6 @@ export interface TraderInfo {
   strategy_id?: string
   strategy_name?: string
   custom_prompt?: string
-  use_ai500?: boolean
-  use_oi_top?: boolean
   system_prompt_template?: string
 }
 
@@ -167,8 +165,6 @@ export interface TraderConfigData {
   custom_prompt?: string
   override_base_prompt?: boolean
   system_prompt_template?: string
-  use_ai500?: boolean
-  use_oi_top?: boolean
 }
 
 // Position History Types

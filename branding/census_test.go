@@ -44,7 +44,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 33, phase: "R4", reason: "transitional — re-pinned at final"},
 	},
 	"web/src/lib/storageMigration.test.ts": {
-		{count: 33, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 32, phase: "final", reason: "wallet-key migration row removed with the wallet family (integration)"},
 	},
 	"docs/superpowers/reports/2026-09-12-structural-stop/evidence/github-checks.json": {
 		{count: 26, phase: "R4", reason: "transitional — re-pinned at final"},
@@ -194,7 +194,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 6, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"web/src/lib/storageMigration.ts": {
-		{count: 6, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 5, phase: "final", reason: "wallet-key migration row removed with the wallet family (integration)"},
 	},
 	"deploy/vl-claim.sh": {
 		{count: 5, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -611,7 +611,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"manager/trader_manager.go": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 0, phase: "final", reason: "DS-103 cut landed — zero residual hits"},
 	},
 	"scripts/sandbox-down.sh": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -623,7 +623,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"store/strategy_futures_indicators_test.go": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 0, phase: "final", reason: "fixture cut landed — zero residual hits"},
 	},
 	"store/testdata/settings_truth_rows.json": {
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},

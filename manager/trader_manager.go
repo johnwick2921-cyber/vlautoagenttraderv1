@@ -3,16 +3,16 @@ package manager
 import (
 	"context"
 	"fmt"
+	"os"
+	"sort"
+	"sync"
+	"time"
 	"vl/config"
 	"vl/kernel"
 	"vl/logger"
 	"vl/safe"
 	"vl/store"
 	"vl/trader"
-	"os"
-	"sort"
-	"sync"
-	"time"
 )
 
 func traderLogTag(traderID, traderName string) string {
@@ -566,7 +566,7 @@ func (tm *TraderManager) LoadTradersFromStore(st *store.Store) error {
 			continue
 		}
 
-		// Add to TraderManager (ai500APIURL/oiTopAPIURL already obtained from strategy config)
+		// Add to TraderManager
 		err = tm.addTraderFromStore(traderCfg, aiModelCfg, exchangeCfg, st)
 		if err != nil {
 			logger.Warnf("%s failed to add trader: %v", traderLogTag(traderCfg.ID, traderCfg.Name), err)
@@ -636,25 +636,21 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		return fmt.Errorf("trader %s has no strategy configured", traderCfg.Name)
 	}
 
-	// Build AutoTraderConfig (ai500APIURL/oiTopAPIURL obtained from strategy config, used in StrategyEngine)
+	// Build AutoTraderConfig
 	traderConfig := trader.AutoTraderConfig{
-		ID:                    traderCfg.ID,
-		Name:                  traderCfg.Name,
-		AIModel:               aiModelCfg.Provider,
-		AIModelID:             aiModelCfg.ID,
-		Exchange:              exchangeCfg.ExchangeType, // Exchange type: binance/bybit/okx/etc
-		ExchangeID:            exchangeCfg.ID,           // Exchange account UUID (for multi-account)
-		BinanceAPIKey:         "",
-		BinanceSecretKey:      "",
-		HyperliquidPrivateKey: "",
-		HyperliquidTestnet:    exchangeCfg.Testnet,
-		UseQwen:               aiModelCfg.Provider == "qwen",
-		DeepSeekKey:           "",
-		QwenKey:               "",
-		CustomAPIURL:          aiModelCfg.CustomAPIURL,
-		CustomModelName:       aiModelCfg.CustomModelName,
-		ScanInterval:          time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
-		CadenceMode:           traderCfg.CadenceMode,
+		ID:              traderCfg.ID,
+		Name:            traderCfg.Name,
+		AIModel:         aiModelCfg.Provider,
+		AIModelID:       aiModelCfg.ID,
+		Exchange:        exchangeCfg.ExchangeType,
+		ExchangeID:      exchangeCfg.ID, // Exchange account UUID (for multi-account)
+		UseQwen:         aiModelCfg.Provider == "qwen",
+		DeepSeekKey:     "",
+		QwenKey:         "",
+		CustomAPIURL:    aiModelCfg.CustomAPIURL,
+		CustomModelName: aiModelCfg.CustomModelName,
+		ScanInterval:    time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
+		CadenceMode:     traderCfg.CadenceMode,
 		// 4.3 — limit-then-market flatten knobs (dormant 0/0 = market flatten).
 		LimitCloseTicks:        config.Get().LimitCloseTicks,
 		LimitCloseMarketAfterS: config.Get().LimitCloseMarketAfterS,
@@ -677,44 +673,6 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 
 	// Set API keys based on exchange type (convert EncryptedString to string)
 	switch exchangeCfg.ExchangeType {
-	case "binance":
-		traderConfig.BinanceAPIKey = string(exchangeCfg.APIKey)
-		traderConfig.BinanceSecretKey = string(exchangeCfg.SecretKey)
-	case "bybit":
-		traderConfig.BybitAPIKey = string(exchangeCfg.APIKey)
-		traderConfig.BybitSecretKey = string(exchangeCfg.SecretKey)
-	case "okx":
-		traderConfig.OKXAPIKey = string(exchangeCfg.APIKey)
-		traderConfig.OKXSecretKey = string(exchangeCfg.SecretKey)
-		traderConfig.OKXPassphrase = string(exchangeCfg.Passphrase)
-	case "bitget":
-		traderConfig.BitgetAPIKey = string(exchangeCfg.APIKey)
-		traderConfig.BitgetSecretKey = string(exchangeCfg.SecretKey)
-		traderConfig.BitgetPassphrase = string(exchangeCfg.Passphrase)
-	case "gate":
-		traderConfig.GateAPIKey = string(exchangeCfg.APIKey)
-		traderConfig.GateSecretKey = string(exchangeCfg.SecretKey)
-	case "kucoin":
-		traderConfig.KuCoinAPIKey = string(exchangeCfg.APIKey)
-		traderConfig.KuCoinSecretKey = string(exchangeCfg.SecretKey)
-		traderConfig.KuCoinPassphrase = string(exchangeCfg.Passphrase)
-	case "hyperliquid":
-		traderConfig.HyperliquidPrivateKey = string(exchangeCfg.APIKey)
-		traderConfig.HyperliquidWalletAddr = exchangeCfg.HyperliquidWalletAddr
-		traderConfig.HyperliquidUnifiedAcct = exchangeCfg.HyperliquidUnifiedAcct
-	case "aster":
-		traderConfig.AsterUser = exchangeCfg.AsterUser
-		traderConfig.AsterSigner = exchangeCfg.AsterSigner
-		traderConfig.AsterPrivateKey = string(exchangeCfg.AsterPrivateKey)
-	case "lighter":
-		traderConfig.LighterPrivateKey = string(exchangeCfg.LighterPrivateKey)
-		traderConfig.LighterWalletAddr = exchangeCfg.LighterWalletAddr
-		traderConfig.LighterAPIKeyPrivateKey = string(exchangeCfg.LighterAPIKeyPrivateKey)
-		traderConfig.LighterAPIKeyIndex = exchangeCfg.LighterAPIKeyIndex
-		traderConfig.LighterTestnet = exchangeCfg.Testnet
-	case "indodax":
-		traderConfig.IndodaxAPIKey = string(exchangeCfg.APIKey)
-		traderConfig.IndodaxSecretKey = string(exchangeCfg.SecretKey)
 	case "ninjatrader":
 		// CME futures via NT8 CSV bridge. No API key — uses a filesystem path
 		// shared with NinjaTrader (see provider/ninjatrader + trader/ninjatrader).
@@ -737,8 +695,6 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		// For other providers (grok, openai, claude, gemini, kimi, etc.), use CustomAPIKey
 		traderConfig.CustomAPIKey = string(aiModelCfg.APIKey)
 	}
-
-	traderConfig.Claw402WalletKey = resolveTraderDataWalletKey(st, traderCfg.UserID, aiModelCfg)
 
 	// Create trader instance
 	at, err := trader.NewAutoTrader(traderConfig, st, traderCfg.UserID)
@@ -774,28 +730,4 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 	}
 
 	return nil
-}
-
-func resolveTraderDataWalletKey(st *store.Store, userID string, selectedModel *store.AIModel) string {
-	// Fast path: selected model is itself a claw402 model.
-	if selectedModel != nil && selectedModel.Provider == "claw402" {
-		if walletKey := string(selectedModel.APIKey); walletKey != "" {
-			return walletKey
-		}
-	}
-
-	if st == nil {
-		return ""
-	}
-
-	// Fallback: find any configured claw402 model for this user so that paid
-	// NofxAI data sources work even when a non-claw402 model (e.g. deepseek) is
-	// selected as the AI brain.
-	preferredID := ""
-	walletKey, err := st.AIModel().ResolveClaw402WalletKey(userID, preferredID)
-	if err != nil {
-		logger.Warnf("⚠️ Failed to load claw402 wallet for trader data routing: %v", err)
-		return ""
-	}
-	return walletKey
 }

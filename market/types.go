@@ -124,7 +124,7 @@ type LongerTermData struct {
 	RSI14Values   []float64
 }
 
-// Binance API response structure
+// API response structure
 type ExchangeInfo struct {
 	Symbols []SymbolInfo `json:"symbols"`
 }

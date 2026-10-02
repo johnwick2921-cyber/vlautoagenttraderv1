@@ -95,7 +95,7 @@ func TestToolManageExchangeConfigCreateDefaultsToEnabledLikeManualPage(t *testin
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 
-	resp := a.toolManageExchangeConfig("default", `{"action":"create","exchange_type":"binance","account_name":"Binance Main","api_key":"api-test-123456","secret_key":"secret-test-123456"}`)
+	resp := a.toolManageExchangeConfig("default", `{"action":"create","exchange_type":"ninjatrader","account_name":"NinjaTrader Main","nt_data_dir":"/tmp/nt-fixture","nt_instrument_name":"MNQ"}`)
 	if strings.Contains(resp, `"error"`) {
 		t.Fatalf("expected create to succeed, got: %s", resp)
 	}
@@ -120,9 +120,9 @@ func TestToolManageExchangeConfigCreateRejectsIncompleteDraft(t *testing.T) {
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 
-	resp := a.toolManageExchangeConfig("default", `{"action":"create","exchange_type":"okx","account_name":"OKX Main","api_key":"api-test-123456","secret_key":"secret-test-123456"}`)
-	if !strings.Contains(resp, `"error"`) || !strings.Contains(resp, "passphrase") {
-		t.Fatalf("expected incomplete create to be rejected with missing passphrase, got: %s", resp)
+	resp := a.toolManageExchangeConfig("default", `{"action":"create","exchange_type":"ninjatrader","account_name":"NinjaTrader Main"}`)
+	if !strings.Contains(resp, `"error"`) || !strings.Contains(resp, "nt_data_dir") {
+		t.Fatalf("expected incomplete create to be rejected with missing nt_data_dir, got: %s", resp)
 	}
 
 	exchanges, err := st.Exchange().List("default")
@@ -229,7 +229,7 @@ func TestToolManageStrategyRejectsFixedMinPositionSizeUpdates(t *testing.T) {
 	}
 
 	resp := a.toolManageStrategy("default", `{"action":"update","strategy_id":"strategy-fixed-min-position","config":{"risk_control":{"min_position_size":20}}}`)
-	if !strings.Contains(resp, "固定值 12 USDT") {
+	if !strings.Contains(resp, "固定值 12 USD") {
 		t.Fatalf("expected fixed min position size rejection, got: %s", resp)
 	}
 
@@ -255,12 +255,12 @@ func TestExchangeSkillOptionSummaryMatchesManualPage(t *testing.T) {
 	a := New(nil, st, DefaultConfig(), slog.Default())
 
 	summary := a.exchangeSkillOptionSummary("zh")
-	for _, expected := range []string{"Binance", "Bybit", "OKX", "Bitget", "Gate", "KuCoin", "Hyperliquid", "Aster", "Lighter", "Indodax"} {
+	for _, expected := range []string{"NinjaTrader"} {
 		if !strings.Contains(summary, expected) {
 			t.Fatalf("expected option %q in summary, got: %s", expected, summary)
 		}
 	}
-	for _, hidden := range []string{"Alpaca", "Forex", "Metals"} {
+	for _, hidden := range []string{"Alpaca", "Forex", "Metals", "Binance", "OKX"} {
 		if strings.Contains(summary, hidden) {
 			t.Fatalf("did not expect hidden manual-page option %q in summary: %s", hidden, summary)
 		}
@@ -278,15 +278,15 @@ func TestLoadExchangeOptionsHidesInvisibleExchangeRows(t *testing.T) {
 	if err := store.DB().Create(&store.Exchange{
 		ID:           "hidden-exchange",
 		UserID:       "default",
-		ExchangeType: "okx",
+		ExchangeType: "ninjatrader",
 		AccountName:  "123413",
-		Name:         "OKX Futures",
-		Type:         "cex",
+		Name:         "NinjaTrader",
+		Type:         "futures",
 		Enabled:      false,
 	}).Error; err != nil {
 		t.Fatalf("seed legacy hidden exchange: %v", err)
 	}
-	if _, err := st.Exchange().Create("default", "okx", "我的主力OKX账户", true, "api-test", "secret-test", "pass-test", false, "", false, "", "", "", "", "", "", 0, "", "", 0); err != nil {
+	if _, err := st.Exchange().Create("default", "ninjatrader", "我的主力NT账户", true, "", "", "", false, "/tmp/nt-fixture", "MNQ", 1); err != nil {
 		t.Fatalf("create visible exchange: %v", err)
 	}
 
@@ -294,7 +294,7 @@ func TestLoadExchangeOptionsHidesInvisibleExchangeRows(t *testing.T) {
 	if len(options) != 1 {
 		t.Fatalf("expected only the visible exchange option, got %+v", options)
 	}
-	if options[0].Name != "我的主力OKX账户" {
+	if options[0].Name != "我的主力NT账户" {
 		t.Fatalf("expected visible exchange name, got %+v", options)
 	}
 }
@@ -307,31 +307,17 @@ func TestDescribeExchangeIncludesTypeSpecificVisibleFields(t *testing.T) {
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
 
-	hyperID, err := st.Exchange().Create("default", "hyperliquid", "Dex Pro", true, "hyper-api-key", "", "", true, "0xabc", true, "", "", "", "", "", "", 0, "", "", 0)
+	ntID, err := st.Exchange().Create("default", "ninjatrader", "NT Sim", true, "", "", "", false, "/tmp/nt-fixture", "MNQ", 1)
 	if err != nil {
-		t.Fatalf("seed hyperliquid exchange: %v", err)
+		t.Fatalf("seed ninjatrader exchange: %v", err)
 	}
-	detail, ok := a.describeExchange("default", "zh", &EntityReference{ID: hyperID})
+	detail, ok := a.describeExchange("default", "zh", &EntityReference{ID: ntID})
 	if !ok {
-		t.Fatal("expected describeExchange to resolve hyperliquid config")
+		t.Fatal("expected describeExchange to resolve ninjatrader config")
 	}
-	for _, expected := range []string{"交易所配置“Dex Pro”详情", "交易所：hyperliquid", "账户名：Dex Pro", "API Key：true", "Hyperliquid 钱包地址：0xabc"} {
+	for _, expected := range []string{"交易所配置“NT Sim”详情", "交易所：ninjatrader", "账户名：NT Sim", "API Key：false", "已启用：true"} {
 		if !strings.Contains(detail, expected) {
-			t.Fatalf("expected hyperliquid detail to contain %q, got: %s", expected, detail)
-		}
-	}
-
-	lighterID, err := st.Exchange().Create("default", "lighter", "Lighter Main", false, "", "", "", false, "", true, "", "", "", "wallet-1", "", "lighter-secret", 7, "", "", 0)
-	if err != nil {
-		t.Fatalf("seed lighter exchange: %v", err)
-	}
-	detail, ok = a.describeExchange("default", "zh", &EntityReference{ID: lighterID})
-	if !ok {
-		t.Fatal("expected describeExchange to resolve lighter config")
-	}
-	for _, expected := range []string{"交易所：lighter", "Lighter 钱包地址：wallet-1", "Lighter API Key 私钥：true", "Lighter API Key Index：7"} {
-		if !strings.Contains(detail, expected) {
-			t.Fatalf("expected lighter detail to contain %q, got: %s", expected, detail)
+			t.Fatalf("expected ninjatrader detail to contain %q, got: %s", expected, detail)
 		}
 	}
 }
@@ -345,7 +331,7 @@ func TestSkillVisibleFieldSummaryForExchangeUsesReadableNames(t *testing.T) {
 	a := New(nil, st, DefaultConfig(), slog.Default())
 
 	summary := a.skillVisibleFieldSummary("default", "zh", "exchange_management", "update")
-	for _, expected := range []string{"交易所类型", "账户名", "API Key", "Secret", "Passphrase", "Hyperliquid 钱包地址", "Aster User", "Lighter API Key 私钥", "Lighter API Key Index"} {
+	for _, expected := range []string{"交易所类型", "账户名", "API Key", "Secret", "Passphrase", "测试网"} {
 		if !strings.Contains(summary, expected) {
 			t.Fatalf("expected field label %q in summary, got: %s", expected, summary)
 		}
@@ -463,7 +449,7 @@ func TestToolUpdateTraderRejectsRenameOutsideManualPanel(t *testing.T) {
 	if err := st.AIModel().UpdateWithName("default", "default_deepseek", "DeepSeek", true, "sk-test-12345", "", "deepseek-chat"); err != nil {
 		t.Fatalf("seed model: %v", err)
 	}
-	exchangeID, err := st.Exchange().Create("default", "binance", "Main", true, "api-test", "secret-test", "", false, "", false, "", "", "", "", "", "", 0, "", "", 0)
+	exchangeID, err := st.Exchange().Create("default", "ninjatrader", "Main", true, "", "", "", false, "/tmp/nt-fixture", "MNQ", 1)
 	if err != nil {
 		t.Fatalf("seed exchange: %v", err)
 	}
@@ -515,7 +501,7 @@ func TestToolCreateTraderResponseHidesLegacyTraderTuningFields(t *testing.T) {
 	if err := st.AIModel().UpdateWithName("default", "default_deepseek", "DeepSeek", true, "sk-test-12345", "", "deepseek-chat"); err != nil {
 		t.Fatalf("seed model: %v", err)
 	}
-	exchangeID, err := st.Exchange().Create("default", "binance", "Main", true, "api-test", "secret-test", "", false, "", false, "", "", "", "", "", "", 0, "", "", 0)
+	exchangeID, err := st.Exchange().Create("default", "ninjatrader", "Main", true, "", "", "", false, "/tmp/nt-fixture", "MNQ", 1)
 	if err != nil {
 		t.Fatalf("seed exchange: %v", err)
 	}
@@ -566,7 +552,7 @@ func TestToolCreateTraderAutoReadsInitialBalanceFromExchange(t *testing.T) {
 	if err := st.AIModel().UpdateWithName("default", "default_deepseek", "DeepSeek", true, "sk-test-12345", "", "deepseek-chat"); err != nil {
 		t.Fatalf("seed model: %v", err)
 	}
-	exchangeID, err := st.Exchange().Create("default", "binance", "Main", true, "api-test", "secret-test", "", false, "", false, "", "", "", "", "", "", 0, "", "", 0)
+	exchangeID, err := st.Exchange().Create("default", "ninjatrader", "Main", true, "", "", "", false, "/tmp/nt-fixture", "MNQ", 1)
 	if err != nil {
 		t.Fatalf("seed exchange: %v", err)
 	}

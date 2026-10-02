@@ -97,6 +97,12 @@ the state file and the exact recovery commands.
   the rollback; R5 removes them.
 - NT8: the owner copies the AddOn, presses F5 and fully restarts NT8 (the
   `VL_BUILD_ID` changed); see the plan's R3 section.
+- **Updates re-enroll (boot sheet S1).** Run once after the boot:
+  `<release-dir>/updater/vl-updater-bootstrap --install-dir /home/hoang/vl enroll --replace <email>`
+  The MAC domain changed with the rename — until this runs, the Updates page
+  answers 403.
+- The whole run asks for sudo exactly ONCE: the step-0 `sudo -v`.
+- Steps S2 and S5–S7 live in the CTO's boot sheet, not in this runbook.
 
 ## Accepted residue (stated, on purpose)
 

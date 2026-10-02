@@ -1,18 +1,15 @@
 package kernel
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
-	"vl/config"
 	"vl/logger"
 	"vl/market"
 	"vl/provider/databento"
-	"vl/provider/hyperliquid"
 	"vl/security"
 	"vl/store"
 )
@@ -52,7 +49,7 @@ type AccountInfo struct {
 // CandidateCoin candidate coin (from coin pool)
 type CandidateCoin struct {
 	Symbol  string   `json:"symbol"`
-	Sources []string `json:"sources"` // Sources: "static", "hyper_all" and/or "hyper_main"
+	Sources []string `json:"sources"` // Sources: "static" (legacy pool types collapse to static on load)
 }
 
 // TradingStats trading statistics (for AI input)
@@ -328,10 +325,7 @@ func (e *StrategyEngine) SetPromptSnapshotMs(ms int64) { e.promptSnapshotMs = ms
 // route through (CTO F2).
 func (e *StrategyEngine) SetVenue(venue string) { e.venue = venue }
 
-func NewStrategyEngine(config *store.StrategyConfig, claw402WalletKey ...string) *StrategyEngine {
-	// claw402WalletKey retained for caller compatibility; the legacy data-provider
-	// routing went with that provider (D2-DEAD item 12).
-	_ = claw402WalletKey
+func NewStrategyEngine(config *store.StrategyConfig) *StrategyEngine {
 	return &StrategyEngine{
 		config: config,
 	}
@@ -367,7 +361,6 @@ func (e *StrategyEngine) GetConfig() *store.StrategyConfig {
 // GetCandidateCoins gets candidate coins based on strategy configuration
 func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 	var candidates []CandidateCoin
-	symbolSources := make(map[string][]string)
 
 	coinSource := e.config.CoinSource
 
@@ -393,84 +386,6 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 			})
 		}
 
-		return e.filterExcludedCoins(candidates), nil
-
-	case "hyper_all":
-		// All Hyperliquid perp coins
-		if !coinSource.UseHyperAll {
-			logger.Infof("⚠️  source_type is 'hyper_all' but use_hyper_all is false, falling back to static coins")
-			for _, symbol := range coinSource.StaticCoins {
-				symbol = market.Normalize(symbol)
-				candidates = append(candidates, CandidateCoin{
-					Symbol:  symbol,
-					Sources: []string{"static"},
-				})
-			}
-			return e.filterExcludedCoins(candidates), nil
-		}
-		coins, err := e.getHyperAllCoins()
-		if err != nil {
-			return nil, err
-		}
-		return e.filterExcludedCoins(coins), nil
-
-	case "hyper_main":
-		// Top N Hyperliquid coins by 24h volume
-		if !coinSource.UseHyperMain {
-			logger.Infof("⚠️  source_type is 'hyper_main' but use_hyper_main is false, falling back to static coins")
-			for _, symbol := range coinSource.StaticCoins {
-				symbol = market.Normalize(symbol)
-				candidates = append(candidates, CandidateCoin{
-					Symbol:  symbol,
-					Sources: []string{"static"},
-				})
-			}
-			return e.filterExcludedCoins(candidates), nil
-		}
-		coins, err := e.getHyperMainCoins(coinSource.HyperMainLimit)
-		if err != nil {
-			return nil, err
-		}
-		return e.filterExcludedCoins(coins), nil
-
-	case "mixed":
-		if coinSource.UseHyperAll {
-			hyperCoins, err := e.getHyperAllCoins()
-			if err != nil {
-				logger.Infof("⚠️  Failed to get Hyperliquid All coins: %v", err)
-			} else {
-				for _, coin := range hyperCoins {
-					symbolSources[coin.Symbol] = append(symbolSources[coin.Symbol], "hyper_all")
-				}
-			}
-		}
-
-		if coinSource.UseHyperMain {
-			hyperMainCoins, err := e.getHyperMainCoins(coinSource.HyperMainLimit)
-			if err != nil {
-				logger.Infof("⚠️  Failed to get Hyperliquid Main coins: %v", err)
-			} else {
-				for _, coin := range hyperMainCoins {
-					symbolSources[coin.Symbol] = append(symbolSources[coin.Symbol], "hyper_main")
-				}
-			}
-		}
-
-		for _, symbol := range coinSource.StaticCoins {
-			symbol = market.Normalize(symbol)
-			if _, exists := symbolSources[symbol]; !exists {
-				symbolSources[symbol] = []string{"static"}
-			} else {
-				symbolSources[symbol] = append(symbolSources[symbol], "static")
-			}
-		}
-
-		for symbol, sources := range symbolSources {
-			candidates = append(candidates, CandidateCoin{
-				Symbol:  symbol,
-				Sources: sources,
-			})
-		}
 		return e.filterExcludedCoins(candidates), nil
 
 	default:
@@ -504,54 +419,8 @@ func (e *StrategyEngine) filterExcludedCoins(candidates []CandidateCoin) []Candi
 	return filtered
 }
 
-// getHyperAllCoins returns all available Hyperliquid perpetual coins
-func (e *StrategyEngine) getHyperAllCoins() ([]CandidateCoin, error) {
-	ctx := context.Background()
-	symbols, err := hyperliquid.GetAllCoinSymbols(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Hyperliquid coins: %w", err)
-	}
-
-	var candidates []CandidateCoin
-	for _, symbol := range symbols {
-		// Add USDT suffix for compatibility
-		normalizedSymbol := market.Normalize(symbol + "USDT")
-		candidates = append(candidates, CandidateCoin{
-			Symbol:  normalizedSymbol,
-			Sources: []string{"hyper_all"},
-		})
-	}
-	logger.Infof("✅ Loaded %d Hyperliquid coins (hyper_all)", len(candidates))
-	return candidates, nil
-}
-
-// getHyperMainCoins returns top N Hyperliquid coins by 24h volume
-func (e *StrategyEngine) getHyperMainCoins(limit int) ([]CandidateCoin, error) {
-	if limit <= 0 {
-		limit = 20
-	}
-
-	ctx := context.Background()
-	symbols, err := hyperliquid.GetMainCoinSymbols(ctx, limit)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Hyperliquid main coins: %w", err)
-	}
-
-	var candidates []CandidateCoin
-	for _, symbol := range symbols {
-		// Add USDT suffix for compatibility
-		normalizedSymbol := market.Normalize(symbol + "USDT")
-		candidates = append(candidates, CandidateCoin{
-			Symbol:  normalizedSymbol,
-			Sources: []string{"hyper_main"},
-		})
-	}
-	logger.Infof("✅ Loaded %d Hyperliquid main coins (hyper_main) by 24h volume", len(candidates))
-	return candidates, nil
-}
-
 // ============================================================================
-// External & Quant Data
+// External Data
 // ============================================================================
 
 // FetchMarketData fetches market data based on strategy configuration
@@ -657,16 +526,13 @@ func detectLanguage(text string) Language {
 
 // ShouldSkipDecisionCycle reports whether the AI decision cycle should be
 // skipped because the CME futures market is currently closed. Returns true
-// only when TradingMode == "futures" AND IsCMEOpen(time.Now()) == false.
-// In crypto mode this is always false (24/7 markets).
+// ShouldSkipDecisionCycle reports whether the whole decision cycle should be
+// skipped because the CME futures market is closed (futures-only build, C2).
 //
 // Callers (e.g. GetFullDecisionWithStrategy in engine_analysis.go) should
 // invoke this at the top of each decision cycle BEFORE any expensive work
 // like fetching klines or building prompts.
 func ShouldSkipDecisionCycle() bool {
-	if config.Get().TradingMode != "futures" {
-		return false
-	}
 	if IsCMEOpen(time.Now()) {
 		return false
 	}
@@ -683,16 +549,10 @@ func ShouldSkipDecisionCycle() bool {
 // ShouldBlockEntryForExpiry reports whether new entries for the given CME
 // futures contract should be blocked because the contract is within 5 days
 // of its quarterly expiry. The second return value is the resolved days-
-// until-expiry (or -1 when not in futures mode).
-//
-// In crypto mode this is always (false, -1) — crypto has no expiry.
-// Unparseable symbols pass through (days=999) so they never trigger the
-// block — a deliberately permissive fallback that prefers false negatives
-// over false positives.
+// until-expiry. Unparseable symbols pass through (days=999) so they never
+// trigger the block — a deliberately permissive fallback that prefers false
+// negatives over false positives.
 func ShouldBlockEntryForExpiry(symbol string, now time.Time) (bool, int) {
-	if config.Get().TradingMode != "futures" {
-		return false, -1
-	}
 	days := databento.DaysUntilExpiry(symbol, now)
 	return days >= 0 && days <= 5, days
 }

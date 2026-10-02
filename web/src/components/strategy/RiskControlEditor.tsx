@@ -83,7 +83,7 @@ interface RiskControlEditorProps {
   disabled?: boolean
   language: string
   // CME futures (e.g. MNQ) size by contract count, not exchange leverage, and
-  // settle in USD — so the crypto leverage tiers are hidden and "USDT" → "USD".
+  // settle in USD — so the leverage tiers are hidden and the value currency shows "USD".
   isFutures?: boolean
   // W1 (g) — the server's effective rows for the SAVED strategy (GET
   // /api/strategies/:id/effective). Optional: absent → no chips, and a row the
@@ -739,7 +739,7 @@ export function RiskControlEditor({
                 {/* User-set + code-enforced. ClampLimits bounds this to [10,1000]
                     on save AND at decision time; the trader gate
                     (enforceMinPositionSize) plus the kernel reject-floor (12 gen /
-                    60 BTC-ETH, engine_position.go) remain as defense-in-depth, so
+                    the kernel reject-floor (engine_position.go) remains as defense-in-depth, so
                     a user value only ever RAISES the effective minimum — never
                     below the floor. The onChange clamp keeps shown == saved. */}
                 <input
@@ -766,7 +766,7 @@ export function RiskControlEditor({
                   }}
                 />
                 <span className="ml-1" style={{ color: '#848E9C' }}>
-                  USDT
+                  USD
                 </span>
                 <span className="text-xs" style={{ color: '#848E9C' }}>
                   user-set · enforced

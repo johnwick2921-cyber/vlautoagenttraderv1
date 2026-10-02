@@ -200,11 +200,9 @@ export interface PublishStrategyConfig {
 
 // Grid trading specific configuration
 export interface GridStrategyConfig {
-  // Trading pair (e.g., "BTCUSDT")
   symbol: string
   // Number of grid levels (5-50)
   grid_count: number
-  // Total investment in USDT
   total_investment: number
   // Leverage (1-20)
   leverage: number
@@ -233,12 +231,9 @@ export interface GridStrategyConfig {
 }
 
 export interface CoinSourceConfig {
-  source_type: 'static' | 'hyper_all' | 'hyper_main' | 'mixed'
+  source_type: 'static'
   static_coins?: string[]
   excluded_coins?: string[] // 排除的币种列表
-  use_hyper_all: boolean
-  use_hyper_main: boolean
-  hyper_main_limit?: number
 }
 
 export interface IndicatorConfig {

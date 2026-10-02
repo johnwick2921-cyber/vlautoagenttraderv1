@@ -12,7 +12,7 @@ interface GridConfigEditorProps {
 
 // Default grid configuration
 export const defaultGridConfig: GridStrategyConfig = {
-  symbol: 'BTCUSDT',
+  symbol: 'MNQ',
   grid_count: 10,
   total_investment: 1000,
   leverage: 5,
@@ -81,14 +81,7 @@ export function GridConfigEditor({
               disabled={disabled}
               className="w-full px-3 py-2 rounded"
               style={inputStyle}
-              options={[
-                { value: 'BTCUSDT', label: 'BTC/USDT' },
-                { value: 'ETHUSDT', label: 'ETH/USDT' },
-                { value: 'SOLUSDT', label: 'SOL/USDT' },
-                { value: 'BNBUSDT', label: 'BNB/USDT' },
-                { value: 'XRPUSDT', label: 'XRP/USDT' },
-                { value: 'DOGEUSDT', label: 'DOGE/USDT' },
-              ]}
+              options={[{ value: 'MNQ', label: 'MNQ' }]}
             />
           </div>
 

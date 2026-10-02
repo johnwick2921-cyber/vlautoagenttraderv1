@@ -111,8 +111,8 @@ func TestFuturesPointValue(t *testing.T) {
 		{"ZF", 1000.0},
 		{"ZT", 2000.0},
 		// Monthly contract-code recognition (energy lists all 12 months).
-		{"NGF6", 10000.0},  // F = January
-		{"MCLZ6", 100.0},   // Z = December (MCL wins over CL — longest root)
+		{"NGF6", 10000.0}, // F = January
+		{"MCLZ6", 100.0},  // Z = December (MCL wins over CL — longest root)
 		// Non-futures / unknown → 0 (caller must not divide by it).
 		{"BTCUSDT", 0},
 		{"TSLA", 0},
@@ -159,25 +159,20 @@ func TestFuturesPointValue_MicroMiniDivergence(t *testing.T) {
 	}
 }
 
-func TestNormalize_Crypto_UnchangedByTask12(t *testing.T) {
-	// Sanity: crypto path must be byte-unchanged. If this test fails,
-	// the Task 12 branch leaked into the crypto path.
+func TestNormalize_XyzAssets_Unchanged(t *testing.T) {
+	// xyz dex assets keep their xyz: prefix path (the crypto suffix-append
+	// tail left with the crypto venues; separators are still normalized).
 	cases := []struct {
 		in, want string
 	}{
-		{"btc", "BTCUSDT"},
-		{"BTC", "BTCUSDT"},
-		{"BTCUSDT", "BTCUSDT"},
-		{"eth", "ETHUSDT"},
-		{"SOL", "SOLUSDT"},
-		// xyz dex assets keep their xyz: prefix path.
 		{"TSLA", "xyz:TSLA"},
 		{"AAPL", "xyz:AAPL"},
+		{"xyz:TSLA", "xyz:TSLA"},
 	}
 	for _, c := range cases {
 		got := Normalize(c.in)
 		if got != c.want {
-			t.Errorf("Normalize(%q) = %q, want %q (crypto/xyz path must be unchanged by Task 12)", c.in, got, c.want)
+			t.Errorf("Normalize(%q) = %q, want %q (xyz path must be unchanged)", c.in, got, c.want)
 		}
 	}
 }

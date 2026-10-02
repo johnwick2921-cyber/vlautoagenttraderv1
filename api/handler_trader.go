@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	maxManualBTCETHLeverage = 20
-	maxManualAltLeverage    = 20
+	maxManualAltLeverage = 20
 )
 
 // AI trader management related structures
@@ -34,14 +33,10 @@ type CreateTraderRequest struct {
 	IsCrossMargin       *bool   `json:"is_cross_margin"`     // Pointer type, nil means use default value true
 	ShowInCompetition   *bool   `json:"show_in_competition"` // Pointer type, nil means use default value true
 	// The following fields are kept for backward compatibility, new version uses strategy config
-	BTCETHLeverage       int    `json:"btc_eth_leverage"`
-	AltcoinLeverage      int    `json:"altcoin_leverage"`
 	TradingSymbols       string `json:"trading_symbols"`
 	CustomPrompt         string `json:"custom_prompt"`
 	OverrideBasePrompt   bool   `json:"override_base_prompt"`
 	SystemPromptTemplate string `json:"system_prompt_template"` // System prompt template name
-	UseAI500             bool   `json:"use_ai500"`
-	UseOITop             bool   `json:"use_oi_top"`
 }
 
 // UpdateTraderRequest Update trader request
@@ -57,8 +52,6 @@ type UpdateTraderRequest struct {
 	IsCrossMargin       *bool   `json:"is_cross_margin"`
 	ShowInCompetition   *bool   `json:"show_in_competition"`
 	// The following fields are kept for backward compatibility, new version uses strategy config
-	BTCETHLeverage       int    `json:"btc_eth_leverage"`
-	AltcoinLeverage      int    `json:"altcoin_leverage"`
 	TradingSymbols       string `json:"trading_symbols"`
 	CustomPrompt         string `json:"custom_prompt"`
 	OverrideBasePrompt   bool   `json:"override_base_prompt"`
@@ -76,16 +69,6 @@ func traderCreationRequestError(reason string) string {
 	return formatTraderCreationError(reason, "请检查你刚刚填写的内容后，再重新提交")
 }
 
-func validateTraderLeverageRange(btcEthLeverage, altcoinLeverage int) (string, string) {
-	if btcEthLeverage < 0 || btcEthLeverage > maxManualBTCETHLeverage {
-		return traderCreationRequestError("BTC/ETH 杠杆倍数需要在 1 到 20 倍之间"), "trader.create.invalid_btc_eth_leverage"
-	}
-	if altcoinLeverage < 0 || altcoinLeverage > maxManualAltLeverage {
-		return traderCreationRequestError("山寨币杠杆倍数需要在 1 到 20 倍之间"), "trader.create.invalid_altcoin_leverage"
-	}
-	return "", ""
-}
-
 func exchangeDisplayName(exchange *store.Exchange) string {
 	if exchange == nil {
 		return "所选交易所账户"
@@ -100,56 +83,9 @@ func exchangeDisplayName(exchange *store.Exchange) string {
 }
 
 func missingExchangeFields(exchange *store.Exchange) []string {
-	if exchange == nil {
-		return nil
-	}
-
-	var missing []string
-	switch exchange.ExchangeType {
-	case "binance", "bybit", "gate", "indodax":
-		if exchange.APIKey == "" {
-			missing = append(missing, "API Key")
-		}
-		if exchange.SecretKey == "" {
-			missing = append(missing, "Secret Key")
-		}
-	case "okx", "bitget", "kucoin":
-		if exchange.APIKey == "" {
-			missing = append(missing, "API Key")
-		}
-		if exchange.SecretKey == "" {
-			missing = append(missing, "Secret Key")
-		}
-		if exchange.Passphrase == "" {
-			missing = append(missing, "Passphrase")
-		}
-	case "hyperliquid":
-		if exchange.APIKey == "" {
-			missing = append(missing, "私钥")
-		}
-		if strings.TrimSpace(exchange.HyperliquidWalletAddr) == "" {
-			missing = append(missing, "钱包地址")
-		}
-	case "aster":
-		if strings.TrimSpace(exchange.AsterUser) == "" {
-			missing = append(missing, "Aster User")
-		}
-		if strings.TrimSpace(exchange.AsterSigner) == "" {
-			missing = append(missing, "Aster Signer")
-		}
-		if exchange.AsterPrivateKey == "" {
-			missing = append(missing, "Aster Private Key")
-		}
-	case "lighter":
-		if strings.TrimSpace(exchange.LighterWalletAddr) == "" {
-			missing = append(missing, "钱包地址")
-		}
-		if exchange.LighterAPIKeyPrivateKey == "" {
-			missing = append(missing, "API Key Private Key")
-		}
-	}
-
-	return missing
+	// No venue requires API credentials any more (NinjaTrader SIM only); kept
+	// as a seam in case a future venue adds required fields.
+	return nil
 }
 
 func mapStringPairs(kv ...string) map[string]string {
@@ -188,7 +124,7 @@ func validateExchangeForTraderCreation(exchange *store.Exchange) (string, string
 	}
 
 	switch exchange.ExchangeType {
-	case "binance", "bybit", "okx", "bitget", "gate", "kucoin", "hyperliquid", "aster", "lighter", "indodax", "ninjatrader":
+	case "ninjatrader":
 		return "", "", nil
 	default:
 		return formatTraderCreationError(
@@ -218,14 +154,10 @@ func classifyTraderSetupReason(reason string) (string, string) {
 	case strings.Contains(lower, "failed to parse private key"),
 		(strings.Contains(lower, "invalid hex character") && strings.Contains(lower, "private key")):
 		return "trader.reason.private_key_invalid", "私钥格式不正确，系统无法识别"
-	case strings.Contains(lower, "failed to initialize hyperliquid trader"):
-		return "trader.reason.hyperliquid_init_failed", "Hyperliquid 账户初始化失败，请确认私钥、主钱包地址和 Agent Wallet 配置是否正确"
-	case strings.Contains(lower, "failed to initialize aster trader"):
-		return "trader.reason.aster_init_failed", "Aster 账户初始化失败，请确认 Aster User、Signer 和私钥是否正确"
 	case strings.Contains(lower, "failed to get meta information"):
 		return "trader.reason.exchange_meta_unavailable", "系统暂时无法从交易所读取账户元信息"
-	case strings.Contains(lower, "security check failed") && strings.Contains(lower, "agent wallet balance too high"):
-		return "trader.reason.hyperliquid_agent_balance_too_high", "Hyperliquid Agent Wallet 余额过高，不符合当前安全要求"
+	case strings.Contains(lower, "security check failed"):
+		return "trader.reason.security_check_failed", "账户安全校验未通过"
 	case strings.Contains(lower, "failed to initialize account"):
 		return "trader.reason.exchange_account_init_failed", "交易所账户初始化失败，请确认钱包地址和 API Key 是否匹配"
 	case strings.Contains(lower, "unsupported trading platform"):
@@ -345,25 +277,8 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		return
 	}
 
-	// Validate leverage values against the same limits exposed by manual user config.
-	if errMsg, errCode := validateTraderLeverageRange(req.BTCETHLeverage, req.AltcoinLeverage); errMsg != "" {
-		SafeBadRequestWithDetails(c, errMsg, errCode, nil)
-		return
-	}
-
-	// Validate trading symbol format
-	if req.TradingSymbols != "" {
-		symbols := strings.Split(req.TradingSymbols, ",")
-		for _, symbol := range symbols {
-			symbol = strings.TrimSpace(symbol)
-			if symbol != "" && !strings.HasSuffix(strings.ToUpper(symbol), "USDT") {
-				SafeBadRequestWithDetails(c, traderCreationRequestError(
-					fmt.Sprintf("交易对 %s 的格式不正确，目前只支持以 USDT 结尾的合约交易对", symbol),
-				), "trader.create.invalid_symbol", mapStringPairs("symbol", symbol))
-				return
-			}
-		}
-	}
+	// (crypto symbol-format validation removed with the crypto venues —
+	// futures symbols like MNQ come from the exchange row's instrument name.)
 
 	model, err := s.store.AIModel().Get(userID, req.AIModelID)
 	if err != nil {
@@ -428,16 +343,6 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 	showInCompetition := true // Default to show in competition
 	if req.ShowInCompetition != nil {
 		showInCompetition = *req.ShowInCompetition
-	}
-
-	// Set leverage default values
-	btcEthLeverage := 10 // Default value
-	altcoinLeverage := 5 // Default value
-	if req.BTCETHLeverage > 0 {
-		btcEthLeverage = req.BTCETHLeverage
-	}
-	if req.AltcoinLeverage > 0 {
-		altcoinLeverage = req.AltcoinLeverage
 	}
 
 	// Set system prompt template default value
@@ -516,11 +421,7 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		ExchangeID:           req.ExchangeID,
 		StrategyID:           req.StrategyID, // Associated strategy ID (new version)
 		InitialBalance:       actualBalance,  // Use actual queried balance
-		BTCETHLeverage:       btcEthLeverage,
-		AltcoinLeverage:      altcoinLeverage,
 		TradingSymbols:       req.TradingSymbols,
-		UseAI500:             req.UseAI500,
-		UseOITop:             req.UseOITop,
 		CustomPrompt:         req.CustomPrompt,
 		OverrideBasePrompt:   req.OverrideBasePrompt,
 		SystemPromptTemplate: systemPromptTemplate,
@@ -613,11 +514,6 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		return
 	}
 
-	if errMsg, errCode := validateTraderLeverageRange(req.BTCETHLeverage, req.AltcoinLeverage); errMsg != "" {
-		SafeBadRequestWithDetails(c, errMsg, errCode, nil)
-		return
-	}
-
 	// Set default values
 	isCrossMargin := existingTrader.IsCrossMargin // Keep original value
 	if req.IsCrossMargin != nil {
@@ -627,16 +523,6 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 	showInCompetition := existingTrader.ShowInCompetition // Keep original value
 	if req.ShowInCompetition != nil {
 		showInCompetition = *req.ShowInCompetition
-	}
-
-	// Set leverage default values
-	btcEthLeverage := req.BTCETHLeverage
-	altcoinLeverage := req.AltcoinLeverage
-	if btcEthLeverage <= 0 {
-		btcEthLeverage = existingTrader.BTCETHLeverage // Keep original value
-	}
-	if altcoinLeverage <= 0 {
-		altcoinLeverage = existingTrader.AltcoinLeverage // Keep original value
 	}
 
 	// Set scan interval, allow updates
@@ -685,15 +571,18 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 
 	// Update trader configuration
 	traderRecord := &store.Trader{
-		ID:                   traderID,
-		UserID:               userID,
-		Name:                 req.Name,
-		AIModelID:            req.AIModelID,
-		ExchangeID:           req.ExchangeID,
-		StrategyID:           strategyID, // Associated strategy ID
-		InitialBalance:       initialBalance,
-		BTCETHLeverage:       btcEthLeverage,
-		AltcoinLeverage:      altcoinLeverage,
+		ID:             traderID,
+		UserID:         userID,
+		Name:           req.Name,
+		AIModelID:      req.AIModelID,
+		ExchangeID:     req.ExchangeID,
+		StrategyID:     strategyID, // Associated strategy ID
+		InitialBalance: initialBalance,
+		// P0 CAPS (CTO ruling 10-01 10:5x): these columns are live futures
+		// risk caps in the crypto-named storage — preserve the stored values
+		// on every update (C1: never write 0 over the owner's configured caps).
+		BTCETHLeverage:       existingTrader.BTCETHLeverage,
+		AltcoinLeverage:      existingTrader.AltcoinLeverage,
 		TradingSymbols:       req.TradingSymbols,
 		CustomPrompt:         req.CustomPrompt,
 		OverrideBasePrompt:   req.OverrideBasePrompt,

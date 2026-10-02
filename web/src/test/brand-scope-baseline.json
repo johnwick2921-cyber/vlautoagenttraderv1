@@ -9,7 +9,7 @@
   "deploy/systemd-user/vl-backup.timer": "cf616dea5f6f84ea4b7d1d77ce8525efb6feff7c9180d958f9dcd29a44b4e05f",
   "deploy/systemd-user/vl-clock-guard.service": "d34e2f4da01e5743430b5ce17a118fde06754c483e648fb3dd46cb51511517e7",
   "deploy/systemd-user/vl-clock-guard.timer": "94a659eb112e6bd4fa089d891916bce9172d37bc82b94456164211fa42287947",
-  "go.mod": "46768fa8c3ca7e295ade8237334b0653b6876ec7d332cbedc1d3c30f1a6fe635",
+  "go.mod": "333ba3d39d489c921667a2222dda51247059e4f48bbb243ad3d01c1d8fb754b7",
   "logger/logger.go": "7409af084ddaacd31cd2fd32d71d6cb71018be4aafd5391ccfe7ebfd9389df22",
   "ninjascript/VLTraderTCPClient.cs": "4a0c7c4ab4f9d80cbdbd2e45a376fe9a11b299661e2819864ae0912a46b8db10",
   "provider/ninjatrader/tcp_framing.go": "35f1af13e05b8efcbf06992e0fc8c6f8ed240ea66a2b0b54d98261f79ae96d70",

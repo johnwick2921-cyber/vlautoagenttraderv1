@@ -9,7 +9,6 @@ import (
 	"vl/logger"
 	"vl/market"
 	"vl/mcp"
-	_ "vl/mcp/payment"
 	_ "vl/mcp/provider"
 	"vl/store"
 
@@ -611,11 +610,9 @@ func (s *Server) handlePreviewPrompt(c *gin.Context) {
 		"system_prompt":  systemPrompt,
 		"prompt_variant": req.PromptVariant,
 		"config_summary": gin.H{
-			"coin_source":      req.Config.CoinSource.SourceType,
-			"primary_tf":       req.Config.Indicators.Klines.PrimaryTimeframe,
-			"btc_eth_leverage": req.Config.RiskControl.BTCETHMaxLeverage,
-			"altcoin_leverage": req.Config.RiskControl.AltcoinMaxLeverage,
-			"max_positions":    req.Config.RiskControl.MaxPositions,
+			"coin_source":   req.Config.CoinSource.SourceType,
+			"primary_tf":    req.Config.Indicators.Klines.PrimaryTimeframe,
+			"max_positions": req.Config.RiskControl.MaxPositions,
 		},
 	})
 }
@@ -799,13 +796,7 @@ func (s *Server) runRealAITest(userID, modelID, systemPrompt, userPrompt string)
 		aiClient = mcp.NewClient()
 	}
 
-	// Payment providers ignore custom URL
-	switch provider {
-	case "claw402":
-		aiClient.SetAPIKey(apiKey, "", model.CustomModelName)
-	default:
-		aiClient.SetAPIKey(apiKey, model.CustomAPIURL, model.CustomModelName)
-	}
+	aiClient.SetAPIKey(apiKey, model.CustomAPIURL, model.CustomModelName)
 	mcp.ApplyThinking(aiClient, model.ThinkingMode, model.ReasoningEffort)
 
 	// Call AI API

@@ -8,9 +8,9 @@ import (
 )
 
 // MarketDataBootLine — W-NO-BINANCE A. Replaces main.go's literal
-// "📊 Using CoinAnk API for all market data (WebSocket cache disabled)", which
+// "📊 Using the removed crypto API for all market data (WebSocket cache disabled)", which
 // was false on the futures path (audit H20: futures reads the NT8 BarCache,
-// never CoinAnk) and said nothing about the Binance OI/funding calls every AI
+// never the removed provider) and said nothing about the crypto OI/funding calls every AI
 // open made. Every field is READ: the trader counts from the loaded traders
 // (the NT8 exchange IS the futures path), bars from whether the NT8 bar
 // provider is wired, and oi/funding from market.FuturesOIFundingBootLine over

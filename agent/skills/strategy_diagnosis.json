@@ -10,7 +10,7 @@
   ],
   "dynamic_rules": [
     "策略没生效时，先区分：只是策略模板未被交易员绑定，还是交易员已绑定但运行结果不符合预期。",
-    "若候选币为空，检查 source_type/static_coins/AI500/OI 榜单/排除币/量化数据开关，不要直接归因为模型问题。",
+    "若候选币为空，检查 source_type/static_coins/排除币/量化数据开关，不要直接归因为模型问题。",
     "若 AI 一直 hold/wait，先检查 min_confidence、min_risk_reward_ratio、提示词是否过于保守、行情是否满足入场条件，再判断是否需要放宽策略。",
     "若交易员绑定了策略但没有下单，应与 trader_diagnosis 协作区分策略无信号、风控拦截和交易所下单失败。",
     "策略诊断必须区分可编辑策略字段和 System enforced 字段。AI 智能策略里的 max_positions、btceth_max_position_value_ratio、altcoin_max_position_value_ratio、max_margin_usage、min_position_size 只能解释，不能建议用户修改。",

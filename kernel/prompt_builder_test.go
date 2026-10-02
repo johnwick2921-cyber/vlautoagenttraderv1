@@ -117,7 +117,7 @@ func TestPromptBuilder(t *testing.T) {
 		}
 
 		// 验证包含持仓信息
-		if !strings.Contains(userPromptZH, "PIPPINUSDT") {
+		if !strings.Contains(userPromptZH, "MNQ") {
 			t.Error("User prompt should contain position symbol")
 		}
 
@@ -347,8 +347,8 @@ func TestFormatDecisionExample(t *testing.T) {
 			t.Error("Example should be a JSON array")
 		}
 
-		if !strings.Contains(example, "BTCUSDT") {
-			t.Error("Example should contain BTCUSDT")
+		if !strings.Contains(example, "MNQ") {
+			t.Error("Example should contain MNQ")
 		}
 	})
 
@@ -421,7 +421,7 @@ func createTestContext() *Context {
 		},
 		Positions: []PositionInfo{
 			{
-				Symbol:           "PIPPINUSDT",
+				Symbol:           "MNQ",
 				Side:             "long",
 				EntryPrice:       0.4888,
 				MarkPrice:        0.4937,
@@ -437,7 +437,7 @@ func createTestContext() *Context {
 		},
 		RecentOrders: []RecentOrder{
 			{
-				Symbol:       "PIPPINUSDT",
+				Symbol:       "MNQ",
 				Side:         "long",
 				EntryPrice:   0.4756,
 				ExitPrice:    0.4862,

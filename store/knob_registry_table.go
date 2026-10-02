@@ -70,7 +70,6 @@ var knobRegistry = map[string]KnobEntry{
 	"headers":                               {Path: "headers", Status: KnobLive, Consumers: []string{"kernel/engine.go:795"}, Note: ""},
 	"hold_discipline":                       {Path: "hold_discipline", Status: KnobLive, Consumers: []string{"trader/auto_trader_orders.go:84"}, Note: ""},
 	"htf_veto":                              {Path: "htf_veto", Status: KnobCandidate, Consumers: nil, Note: "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."},
-	"hyper_main_limit":                      {Path: "hyper_main_limit", Status: KnobLive, Consumers: []string{"kernel/engine.go:527"}, Note: ""},
 	"id":                                    {Path: "id", Status: KnobLive, Consumers: []string{"kernel/plan_confirm.go:372"}, Note: ""},
 	"indicators":                            {Path: "indicators", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:328"}, Note: ""},
 	"is_active":                             {Path: "is_active", Status: KnobLive, Consumers: []string{"api/handler_user.go:411"}, Note: ""},
@@ -166,8 +165,6 @@ var knobRegistry = map[string]KnobEntry{
 	"url":                                   {Path: "url", Status: KnobLive, Consumers: []string{"kernel/engine.go:778"}, Note: ""},
 	"usage_pct":                             {Path: "usage_pct", Status: KnobLive, Consumers: []string{"api/strategy.go:385"}, Note: ""},
 	"use_atr_bounds":                        {Path: "use_atr_bounds", Status: KnobLive, Consumers: []string{"trader/auto_trader_grid.go:304"}, Note: ""},
-	"use_hyper_all":                         {Path: "use_hyper_all", Status: KnobLive, Consumers: []string{"kernel/engine.go:497"}, Note: ""},
-	"use_hyper_main":                        {Path: "use_hyper_main", Status: KnobLive, Consumers: []string{"kernel/engine.go:516"}, Note: ""},
 	"use_maker_only":                        {Path: "use_maker_only", Status: KnobLive, Consumers: []string{"trader/auto_trader_grid_orders.go:127"}, Note: ""},
 	"user_id":                               {Path: "user_id", Status: KnobLive, Consumers: []string{"trader/auto_trader_planner.go:61"}, Note: ""},
 	"wake_min_interval_min": {Path: "wake_min_interval_min", Status: KnobFolded, Consumers: []string{

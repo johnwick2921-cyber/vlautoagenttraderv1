@@ -5,6 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
 	nofxiagent "vl/agent"
 	"vl/api"
 	"vl/auth"
@@ -17,19 +23,12 @@ import (
 	"vl/logger"
 	"vl/manager"
 	"vl/mcp"
-	_ "vl/mcp/payment"
 	_ "vl/mcp/provider"
 	"vl/researchsnapshot"
 	"vl/store"
 	"vl/telegram"
 	"vl/telemetry"
 	"vl/trader"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"strings"
-	"syscall"
-	"time"
 
 	"github.com/google/uuid"
 	"vl/internal/envcompat"
@@ -244,14 +243,14 @@ func main() {
 	}
 
 	// WebSocket market monitor is NO LONGER USED
-	// Crypto K-lines come from CoinAnk; the CME futures path reads the NT8
-	// BarCache only (see the 📊 market data boot line after trader load).
+	// The CME futures path reads the NT8 BarCache only (see the 📊 market
+	// data boot line after trader load).
 	// Commented out to reduce unnecessary connections:
 	// go market.NewWSMonitor(150).Start(nil)
 	// logger.Info("📊 WebSocket market monitor started")
 	// time.Sleep(500 * time.Millisecond)
-	// W-NO-BINANCE A: the "📊 Using CoinAnk API for all market data" literal that
-	// stood here was false on the futures path (audit H20). The READ line
+	// W-NO-BINANCE A: the old market-data-source literal that stood here was
+	// false on the futures path (audit H20). The READ line
 	// (trader.MarketDataBootLine) prints after the traders load, below.
 
 	// Create TraderManager

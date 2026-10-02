@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Your personal AI trading assistant.</strong><br/>
-  <strong>Any market. Any model. Pay with USDC, not API keys.</strong>
+  <strong>Any market. Any model.</strong>
 </p>
 
 > **Operator's manual + full UI reference (verified against code):**
@@ -11,8 +11,6 @@
 <p align="center">
   <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go" alt="Go"></a>
   <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react" alt="React"></a>
-  <a href="https://x402.org"><img src="https://img.shields.io/badge/x402-USDC%20Payments-2775CA?style=flat" alt="x402"></a>
-  <a href="https://claw402.ai"><img src="https://img.shields.io/badge/Claw402-AI%20Gateway-FF6B35?style=flat" alt="Claw402"></a>
 </p>
 
 <p align="center">
@@ -29,9 +27,8 @@
 
 VL Intelligent is an open-source **autonomous** AI trading assistant. Unlike traditional AI tools that require you to manually configure models, manage API keys, and wire up data sources — VL Intelligent's AI **perceives markets, selects models, and fetches data entirely on its own**. Zero human intervention. You set the strategy, the AI handles everything else.
 
-**Fully autonomous**: The AI decides which model to use, what market data to pull, when to trade — all by itself. No manual model configuration. No juggling API keys for different services. Just fund a USDC wallet and let it run.
+**Fully autonomous**: The AI decides which model to use, what market data to pull, when to trade — all by itself. No manual model configuration.
 
-What makes it different: **built-in [x402](https://x402.org) micropayments**. No API keys. Fund a USDC wallet and pay per request. Your wallet is your identity.
 
 ---
 
@@ -49,30 +46,10 @@ What makes it different: **built-in [x402](https://x402.org) micropayments**. No
 
 ---
 
-## How x402 Works
-
-Traditional flow: register account → buy credits → get API key → manage quota → rotate keys.
-
-x402 flow:
-
-```
-Request → 402 (here's the price) → wallet signs USDC → retry → done
-```
-
-No accounts. No API keys. No prepaid credits. One wallet, every model.
-
-### Built-in x402 Providers
-
-| Provider                                                                                                                           | Chain | Models                                                                |
-| <img src="web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base  | GPT-5.4, Claude Opus, DeepSeek, Qwen, Grok, Gemini, Kimi — 15+ models |
-
----
-
 ## What It Does
 
 | Feature             | Description                                                               |
 | **Multi-AI**        | DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi, MiniMax — switch anytime |
-| **Multi-Exchange**  | Binance, Bybit, OKX, Bitget, KuCoin, Gate, Hyperliquid, Aster, Lighter    |
 | **Strategy Studio** | Visual builder — coin sources, indicators, risk controls                  |
 | **AI Competition**  | AIs compete in real-time, leaderboard ranks performance                   |
 | **Telegram Agent**  | Chat with your trading assistant — streaming, tool calling, memory        |
@@ -81,23 +58,6 @@ No accounts. No API keys. No prepaid credits. One wallet, every model.
 ### Markets
 
 Crypto · US Stocks · Forex · Metals
-
-### Exchanges (CEX)
-
-| Exchange                                                                                                              | Status | Register (Fee Discount)                                                              |
-| <img src="web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** |   ✅   | [Register](https://www.binance.com/join)                                 |
-| <img src="web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit**     |   ✅   | [Register](https://partner.bybit.com/b/83856)                                        |
-| <img src="web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX**         |   ✅   | [Register](https://www.okx.com/join/1865360)                                         |
-| <img src="web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget**   |   ✅   | [Register](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
-| <img src="web/public/exchange-icons/kucoin.svg" width="20" height="20" style="vertical-align: middle;"/> **KuCoin**   |   ✅   | [Register](https://www.kucoin.com/r/broker/CXEV7XKK)                                 |
-| <img src="web/public/exchange-icons/gate.svg" width="20" height="20" style="vertical-align: middle;"/> **Gate**       |   ✅   | [Register](https://www.gatenode.xyz/share/VQBGUAxY)                                  |
-
-### Exchanges (Perp-DEX)
-
-| Exchange                                                                                                                      | Status | Register (Fee Discount)                                 |
-| <img src="web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** |   ✅   | [Register](https://app.hyperliquid.xyz/join/AITRADING)  |
-| <img src="web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX**         |   ✅   | [Register](https://www.asterdex.com/en/referral/fdfc0e) |
-| <img src="web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter**         |   ✅   | [Register](https://app.lighter.xyz/?referral=68151432)  |
 
 ### AI Models (API Key Mode)
 
@@ -110,10 +70,6 @@ Crypto · US Stocks · Forex · Metals
 | <img src="web/public/icons/grok.svg" width="20" height="20" style="vertical-align: middle;"/> **Grok**           |   ✅   | [Get API Key](https://console.x.ai)                 |
 | <img src="web/public/icons/kimi.svg" width="20" height="20" style="vertical-align: middle;"/> **Kimi**           |   ✅   | [Get API Key](https://platform.moonshot.cn)         |
 | <img src="web/public/icons/minimax.svg" width="20" height="20" style="vertical-align: middle;"/> **MiniMax**     |   ✅   | [Get API Key](https://platform.minimaxi.com)        |
-
-### AI Models (x402 Mode — No API Key)
-
-15+ models via [Claw402](https://claw402.ai) — just a USDC wallet
 
 ---
 
@@ -182,7 +138,7 @@ cd web && npm install && npm run dev  # frontend (new terminal)
 
 **Advanced mode**:
 
-1. **AI** — Add API keys or configure x402 wallet
+1. **AI** — Add API keys
 2. **Exchange** — Connect exchange API credentials
 3. **Strategy** — Build in Strategy Studio
 4. **Trader** — Combine AI + Exchange + Strategy
@@ -218,14 +174,14 @@ Everything through the web UI at **http://127.0.0.1:3000**.
     ├──────────┴──────────┴──────────┴────────────────┤
     │               MCP AI Client Layer                │
     │    ┌───────────┐  ┌───────────┐  ┌───────────┐  │
-    │    │  API Key   │  │   x402    │  │           │  │
-    │    │ DeepSeek   │  │ Claw402   │  │           │  │
+    │    │  API Key   │  │           │  │           │  │
+    │    │ DeepSeek   │  │           │  │           │  │
     │    │ GPT,Claude │  │           │  │           │  │
     │    └───────────┘  └───────────┘  └───────────┘  │
     ├─────────────────────────────────────────────────┤
     │             Exchange Connectors                   │
-    │  Binance · Bybit · OKX · Bitget · KuCoin · Gate  │
-    │      Hyperliquid · Aster DEX · Lighter            │
+    │                                                   │
+    │                                                   │
     └─────────────────────────────────────────────────┘
 ```
 

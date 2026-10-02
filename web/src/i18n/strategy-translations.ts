@@ -8,47 +8,17 @@
 // ============================================================================
 export const coinSource = {
   sourceType: {
-    zh: '数据源类型（static / hyper_all / hyper_main / mixed）',
-    en: 'Source Type (static | hyper_all | hyper_main | mixed)',
-    es: 'Tipo de fuente (static | hyper_all | hyper_main | mixed)',
+    zh: '数据源类型（static）',
+    en: 'Source Type (static)',
+    es: 'Tipo de fuente (static)',
   },
   static: { zh: '静态列表', en: 'Static List', es: 'Lista Estática' },
-  hyperAll: {
-    zh: 'Hyperliquid 全市场',
-    en: 'Hyperliquid All',
-    es: 'Hyperliquid All',
-  },
-  hyperMain: {
-    zh: 'Hyperliquid 主市场',
-    en: 'Hyperliquid Main',
-    es: 'Hyperliquid Main',
-  },
-  mixed: {
-    zh: '混合（全市场 + 主市场）',
-    en: 'Mixed (All + Main)',
-    es: 'Mixto (All + Main)',
-  },
   staticCoins: {
     zh: '静态币种列表',
     en: 'Static Coin List',
     es: 'Lista Estática de Monedas',
   },
   addCoin: { zh: '添加品种', en: 'Add Symbol', es: 'Agregar Símbolo' },
-  useHyperAll: {
-    zh: '使用 Hyperliquid 全市场币',
-    en: 'Use Hyperliquid All coins',
-    es: 'Usar monedas Hyperliquid All',
-  },
-  useHyperMain: {
-    zh: '使用 Hyperliquid 主市场币（24h 成交量 Top N）',
-    en: 'Use Hyperliquid Main coins (top N by 24h volume)',
-    es: 'Usar monedas Hyperliquid Main (top N por volumen 24h)',
-  },
-  hyperMainLimit: {
-    zh: '主市场最大数量（默认 20）',
-    en: 'Hyperliquid Main max count (default 20)',
-    es: 'Máximo Main (default 20)',
-  },
   staticDesc: {
     zh: '静态币种列表 — 仅当数据源类型为 static 时使用',
     en: 'Static coin list — used only when Source Type = static',
@@ -67,24 +37,14 @@ export const coinSource = {
     es: 'Símbolos Excluidos',
   },
   excludedCoinsDesc: {
-    zh: '从所有币种来源中过滤（static、Hyperliquid All/Main）',
-    en: 'Filtered out from all coin sources (static, Hyperliquid All/Main)',
-    es: 'Filtradas de todas las fuentes (static, Hyperliquid All/Main)',
+    zh: '从所有品种来源中过滤（static）',
+    en: 'Filtered out from all coin sources (static)',
+    es: 'Filtradas de todas las fuentes (static)',
   },
   addExcludedCoin: {
     zh: '添加排除',
     en: 'Add Excluded',
     es: 'Agregar Excluida',
-  },
-  hyperAllDesc: {
-    zh: 'Hyperliquid 全部永续合约对',
-    en: 'All available Hyperliquid perp pairs',
-    es: 'Todos los pares perp de Hyperliquid',
-  },
-  hyperMainDesc: {
-    zh: 'Hyperliquid 24h 成交量 Top N',
-    en: 'Hyperliquid top N by 24h volume',
-    es: 'Hyperliquid top N por volumen 24h',
   },
   oiIncreaseShort: { zh: 'OI增', en: 'OI↑', es: 'OI↑' },
   oiDecreaseShort: { zh: 'OI减', en: 'OI↓', es: 'OI↓' },
@@ -125,9 +85,9 @@ export const gridConfig = {
     es: 'Seleccionar par para grid trading',
   },
   totalInvestment: {
-    zh: '投资金额 (USDT)',
-    en: 'Investment (USDT)',
-    es: 'Inversión (USDT)',
+    zh: '投资金额',
+    en: 'Investment',
+    es: 'Inversión',
   },
   totalInvestmentDesc: {
     zh: '网格策略的总投资金额',
@@ -447,11 +407,11 @@ export const riskControl = {
     es: 'Tamaño Mínimo',
   },
   minPositionSizeDesc: {
-    zh: 'USDT 最小名义价值',
-    en: 'Minimum notional value in USDT',
-    es: 'Valor mínimo en USDT',
+    zh: '最小名义价值',
+    en: 'Minimum notional value',
+    es: 'Valor mínimo',
   },
-  // CME futures settle in USD — shown instead of the USDT description above.
+  // CME futures settle in USD — the futures variant below replaces the legacy crypto-perp description.
   minPositionSizeDescFutures: {
     zh: 'USD 最小名义价值',
     en: 'Minimum notional value in USD',
@@ -743,12 +703,6 @@ export const indicator = {
     en: 'OI and market sentiment data',
     es: 'OI y sentimiento de mercado',
   },
-  quantData: { zh: '量化数据', en: 'Quant Data', es: 'Datos Quant' },
-  quantDataDesc: {
-    zh: '资金流向、大户动向',
-    en: 'Netflow, whale movements',
-    es: 'Netflow, ballenas',
-  },
   timeframes: { zh: '时间周期', en: 'Timeframes', es: 'Marcos de Tiempo' },
   timeframesDesc: {
     zh: '选择 K 线分析周期，★ 为主周期（双击设置）',
@@ -840,27 +794,6 @@ export const indicator = {
     en: 'Shows coins with OI increase/decrease, helps identify capital flow',
     es: 'Identificar flujo de capital',
   },
-  netflowRanking: { zh: '资金流向', en: 'NetFlow', es: 'Flujo de Fondos' },
-  netflowRankingDesc: {
-    zh: '机构/散户资金流向',
-    en: 'Institution/retail fund flow',
-    es: 'Institucional/Retail',
-  },
-  netflowRankingNote: {
-    zh: '显示机构资金流入/流出排行，散户动向对比，发现聪明钱信号',
-    en: 'Shows institution inflow/outflow ranking, retail flow comparison, Smart Money signals',
-    es: 'Señales de Smart Money',
-  },
-  priceRanking: {
-    zh: '涨跌幅排行',
-    en: 'Price Ranking',
-    es: 'Ranking de Precios',
-  },
-  priceRankingDesc: {
-    zh: '涨跌幅排行榜',
-    en: 'Gainers/losers ranking',
-    es: 'Ganadores/Perdedores',
-  },
   priceRankingNote: {
     zh: '显示涨幅/跌幅排行，结合资金流和持仓变化分析趋势强度',
     en: 'Shows top gainers/losers, combined with fund flow and OI for trend analysis',
@@ -915,7 +848,6 @@ export const chartTabs = {
   stocks: { zh: '美股', en: 'Stocks', es: 'Acciones' },
   forex: { zh: '外汇', en: 'Forex', es: 'Forex' },
   metals: { zh: '金属', en: 'Metals', es: 'Metales' },
-  hyperliquid: { zh: 'HL', en: 'HL', es: 'HL' },
   ninjatrader: { zh: 'NT', en: 'NT', es: 'NT' },
 }
 

@@ -13,25 +13,11 @@ import (
 	"vl/logger"
 	"vl/market"
 	"vl/mcp"
-	_ "vl/mcp/payment"
 	_ "vl/mcp/provider"
 	ntwire "vl/provider/ninjatrader"
 	"vl/store"
 	"vl/telemetry"
-	"vl/trader/aster"
-	"vl/trader/binance"
-	"vl/trader/bitget"
-	"vl/trader/bybit"
-	"vl/trader/gate"
-	"vl/trader/hyperliquid"
-	"vl/trader/indodax"
-	"vl/trader/kucoin"
-	"vl/trader/lighter"
 	ntTrader "vl/trader/ninjatrader"
-	"vl/trader/okx"
-	"vl/wallet"
-
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func (at *AutoTrader) logTag() string {
@@ -264,7 +250,7 @@ type AutoTraderConfig struct {
 	AIModelID string
 
 	// Trading platform selection
-	Exchange   string // Exchange type: "binance", "bybit", "okx", "bitget", "gate", "hyperliquid", "aster", "lighter", "indodax", or "ninjatrader"
+	Exchange   string // Exchange type: "ninjatrader" (futures-only build)
 	ExchangeID string // Exchange account UUID (for multi-account support)
 
 	// Binance API configuration
@@ -373,7 +359,7 @@ type AutoTrader struct {
 	id                string // Trader unique identifier
 	name              string // Trader display name
 	aiModel           string // AI model name
-	exchange          string // Trading platform type (binance/bybit/etc)
+	exchange          string // Trading platform type ("ninjatrader")
 	exchangeID        string // Exchange account UUID
 	showInCompetition bool   // Whether to show in competition page
 	config            AutoTraderConfig
@@ -481,7 +467,6 @@ type AutoTrader struct {
 	lastBalanceSyncTime   time.Time       // Last balance sync time
 	userID                string          // User ID
 	gridState             *GridState      // Grid trading state (only used when StrategyType == "grid_trading")
-	claw402WalletAddr     string          // Claw402 wallet address (derived from private key at start)
 	consecutiveAIFailures int             // Consecutive AI call failures
 	safeMode              bool            // Safe mode: no new positions, protect existing ones
 	safeModeReason        string          // Why safe mode was activated
@@ -689,13 +674,7 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	// stale-bar discard in runCycle is the second half of the guarantee.
 	applyDecisionCallTimeout(mcpClient, config.Exchange)
 
-	// Payment providers (claw402) ignore customURL
-	switch aiModel {
-	case "claw402":
-		mcpClient.SetAPIKey(apiKey, "", config.CustomModelName)
-	default:
-		mcpClient.SetAPIKey(apiKey, customURL, config.CustomModelName)
-	}
+	mcpClient.SetAPIKey(apiKey, customURL, config.CustomModelName)
 	logger.Infof("🤖 [%s] Using %s AI", config.Name, aiModel)
 
 	if config.CustomAPIURL != "" || config.CustomModelName != "" {
@@ -704,14 +683,14 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 
 	// Set default trading platform
 	if config.Exchange == "" {
-		config.Exchange = "binance"
+		config.Exchange = "ninjatrader"
 	}
 
 	// CTO F2 (critic G1), fail-closed at the SOURCE: the NinjaTrader venue
 	// trades CME futures only. A trader configured on it with a non-CME symbol
-	// (its NT8 symbol or a strategy static coin) is REFUSED here — named, never
-	// started — instead of reading that symbol from a crypto source every
-	// cycle (CoinAnk exchange=Binance + Binance OI/funding).
+	// (its NT8 symbol or a strategy static symbol) is REFUSED here — named,
+	// never started — instead of reading that symbol from an outside source
+	// every cycle.
 	if strings.EqualFold(strings.TrimSpace(config.Exchange), "ninjatrader") {
 		if bad := nonCMESymbolsForNT8(config); len(bad) > 0 {
 			return nil, fmt.Errorf("refused: trader %q is on the NinjaTrader venue but trades %s — not CME futures symbols; this trader does not load", config.Name, strings.Join(bad, ","))
@@ -730,57 +709,6 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	logger.Infof("📊 [%s] Position mode: %s", config.Name, marginModeStr)
 
 	switch config.Exchange {
-	case "binance":
-		logger.Infof("🏦 [%s] Using Binance Futures trading", config.Name)
-		trader = binance.NewFuturesTrader(config.BinanceAPIKey, config.BinanceSecretKey, userID)
-	case "bybit":
-		logger.Infof("🏦 [%s] Using Bybit Futures trading", config.Name)
-		trader = bybit.NewBybitTrader(config.BybitAPIKey, config.BybitSecretKey)
-	case "okx":
-		logger.Infof("🏦 [%s] Using OKX Futures trading", config.Name)
-		trader = okx.NewOKXTrader(config.OKXAPIKey, config.OKXSecretKey, config.OKXPassphrase)
-	case "bitget":
-		logger.Infof("🏦 [%s] Using Bitget Futures trading", config.Name)
-		trader = bitget.NewBitgetTrader(config.BitgetAPIKey, config.BitgetSecretKey, config.BitgetPassphrase)
-	case "gate":
-		logger.Infof("🏦 [%s] Using Gate.io Futures trading", config.Name)
-		trader = gate.NewGateTrader(config.GateAPIKey, config.GateSecretKey)
-	case "kucoin":
-		logger.Infof("🏦 [%s] Using KuCoin Futures trading", config.Name)
-		trader = kucoin.NewKuCoinTrader(config.KuCoinAPIKey, config.KuCoinSecretKey, config.KuCoinPassphrase)
-	case "hyperliquid":
-		logger.Infof("🏦 [%s] Using Hyperliquid trading", config.Name)
-		trader, err = hyperliquid.NewHyperliquidTrader(config.HyperliquidPrivateKey, config.HyperliquidWalletAddr, config.HyperliquidTestnet, config.HyperliquidUnifiedAcct)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize Hyperliquid trader: %w", err)
-		}
-	case "aster":
-		logger.Infof("🏦 [%s] Using Aster trading", config.Name)
-		trader, err = aster.NewAsterTrader(config.AsterUser, config.AsterSigner, config.AsterPrivateKey)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize Aster trader: %w", err)
-		}
-	case "lighter":
-		logger.Infof("🏦 [%s] Using LIGHTER trading", config.Name)
-
-		if config.LighterWalletAddr == "" || config.LighterAPIKeyPrivateKey == "" {
-			return nil, fmt.Errorf("Lighter requires wallet address and API Key private key")
-		}
-
-		// Lighter only supports mainnet (testnet disabled)
-		trader, err = lighter.NewLighterTraderV2(
-			config.LighterWalletAddr,
-			config.LighterAPIKeyPrivateKey,
-			config.LighterAPIKeyIndex,
-			false, // Always use mainnet for Lighter
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize LIGHTER trader: %w", err)
-		}
-		logger.Infof("✓ LIGHTER trader initialized successfully")
-	case "indodax":
-		logger.Infof("🏦 [%s] Using Indodax Spot trading", config.Name)
-		trader = indodax.NewIndodaxTrader(config.IndodaxAPIKey, config.IndodaxSecretKey)
 	case "ninjatrader":
 		logger.Infof("🏦 [%s] Using NinjaTrader (transport via NT_TRANSPORT env, CME futures via SIM)", config.Name)
 		if config.NinjaTraderDataDir == "" {
@@ -850,7 +778,7 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		}
 		if foundBalance > 0 {
 			config.InitialBalance = foundBalance
-			logger.Infof("✓ [%s] Auto-fetched initial balance: %.2f USDT", config.Name, foundBalance)
+			logger.Infof("✓ [%s] Auto-fetched initial balance: %.2f", config.Name, foundBalance)
 			// Save to database so it persists across restarts
 			if st != nil {
 				if err := st.Trader().UpdateInitialBalance(userID, config.ID, foundBalance); err != nil {
@@ -998,85 +926,11 @@ func (at *AutoTrader) Run() error {
 	at.logInfof("⚙️  Scan interval: %v", at.config.ScanInterval)
 	logger.Info("🤖 AI will make full decisions on leverage, position size, stop loss/take profit, etc.")
 
-	// Pre-launch checks for claw402 users
-	at.runPreLaunchChecks()
 	at.monitorWg.Add(1)
 	defer at.monitorWg.Done()
 
 	// Start drawdown monitoring
 	at.startDrawdownMonitor()
-
-	// Start Lighter order sync if using Lighter exchange
-	if at.exchange == "lighter" {
-		if lighterTrader, ok := at.trader.(*lighter.LighterTraderV2); ok && at.store != nil {
-			lighterTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 Lighter order+position sync enabled (every 30s)")
-		}
-	}
-
-	// Start Hyperliquid order sync if using Hyperliquid exchange
-	if at.exchange == "hyperliquid" {
-		if hyperliquidTrader, ok := at.trader.(*hyperliquid.HyperliquidTrader); ok && at.store != nil {
-			hyperliquidTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 Hyperliquid order+position sync enabled (every 30s)")
-		}
-	}
-
-	// Start Bybit order sync if using Bybit exchange
-	if at.exchange == "bybit" {
-		if bybitTrader, ok := at.trader.(*bybit.BybitTrader); ok && at.store != nil {
-			bybitTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 Bybit order+position sync enabled (every 30s)")
-		}
-	}
-
-	// Start OKX order sync if using OKX exchange
-	if at.exchange == "okx" {
-		if okxTrader, ok := at.trader.(*okx.OKXTrader); ok && at.store != nil {
-			okxTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 OKX order+position sync enabled (every 30s)")
-		}
-	}
-
-	// Start Bitget order sync if using Bitget exchange
-	if at.exchange == "bitget" {
-		if bitgetTrader, ok := at.trader.(*bitget.BitgetTrader); ok && at.store != nil {
-			bitgetTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 Bitget order+position sync enabled (every 30s)")
-		}
-	}
-
-	// Start Aster order sync if using Aster exchange
-	if at.exchange == "aster" {
-		if asterTrader, ok := at.trader.(*aster.AsterTrader); ok && at.store != nil {
-			asterTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 Aster order+position sync enabled (every 30s)")
-		}
-	}
-
-	// Start Binance order sync if using Binance exchange
-	if at.exchange == "binance" {
-		if binanceTrader, ok := at.trader.(*binance.FuturesTrader); ok && at.store != nil {
-			binanceTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 Binance order+position sync enabled (every 30s)")
-		}
-	}
-
-	// Start Gate order sync if using Gate exchange
-	if at.exchange == "gate" {
-		if gateTrader, ok := at.trader.(*gate.GateTrader); ok && at.store != nil {
-			gateTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 Gate order+position sync enabled (every 30s)")
-		}
-	}
-
-	// Start KuCoin order sync if using KuCoin exchange
-	if at.exchange == "kucoin" {
-		if kucoinTrader, ok := at.trader.(*kucoin.KuCoinTrader); ok && at.store != nil {
-			kucoinTrader.StartOrderSync(at.id, at.exchangeID, at.exchange, at.store, 30*time.Second)
-			at.logInfof("🔄 KuCoin order+position sync enabled (every 30s)")
-		}
-	}
 
 	// Start NinjaTrader close-sync (TCP transport only). NT closes positions
 	// broker-side via the OCO bracket and has no order-sync, so this records
@@ -1325,66 +1179,6 @@ func calculatePnLPercentage(unrealizedPnl, marginUsed float64) float64 {
 		return (unrealizedPnl / marginUsed) * 100
 	}
 	return 0.0
-}
-
-// runPreLaunchChecks performs pre-launch checks for claw402 users (wallet balance, runway estimate)
-func (at *AutoTrader) runPreLaunchChecks() {
-	if !store.IsClaw402Config(at.config.AIModel) {
-		return
-	}
-
-	logger.Info("🔍 Running pre-launch checks (claw402)...")
-
-	// Derive wallet address from CustomAPIKey (which is the private key for claw402)
-	if at.config.CustomAPIKey != "" {
-		// Try to derive address using go-ethereum
-		addr := deriveWalletAddress(at.config.CustomAPIKey)
-		if addr != "" {
-			at.claw402WalletAddr = addr
-			logger.Infof("💳 [%s] Claw402 wallet: %s", at.name, addr)
-
-			// Query USDC balance
-			balance, err := wallet.QueryUSDCBalance(addr)
-			if err != nil {
-				logger.Warnf("⚠️ [%s] Could not query USDC balance: %v", at.name, err)
-			} else {
-				// Estimate runway
-				scanMinutes := int(at.config.ScanInterval.Minutes())
-				modelName := at.config.CustomModelName
-				if modelName == "" {
-					modelName = "deepseek"
-				}
-				dailyCost, runway := store.EstimateRunway(balance, modelName, scanMinutes)
-				logger.Infof("💰 [%s] USDC Balance: $%.2f | Daily AI cost: ~$%.2f | Runway: ~%.1f days",
-					at.name, balance, dailyCost, runway)
-
-				if balance < 1.0 {
-					logger.Warnf("⚠️ [%s] Low USDC balance! Consider topping up.", at.name)
-				}
-				if balance <= 0 {
-					logger.Errorf("🚨 [%s] USDC balance is ZERO — AI calls will fail!", at.name)
-				}
-			}
-		}
-	}
-
-	logger.Info("✅ Pre-launch checks complete")
-}
-
-// deriveWalletAddress derives an Ethereum address from a hex private key
-func deriveWalletAddress(privateKeyHex string) string {
-	// Remove 0x prefix if present
-	if len(privateKeyHex) > 2 && privateKeyHex[:2] == "0x" {
-		privateKeyHex = privateKeyHex[2:]
-	}
-
-	privateKey, err := crypto.HexToECDSA(privateKeyHex)
-	if err != nil {
-		return ""
-	}
-
-	address := crypto.PubkeyToAddress(privateKey.PublicKey)
-	return address.Hex()
 }
 
 // shouldWarnOverrun decides whether a finished cycle deserves the scan-interval

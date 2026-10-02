@@ -221,13 +221,7 @@ func allowedFieldSpecsForSkillSession(session skillSession, lang string) []llmFl
 		add(&out, "passphrase", displayCatalogFieldName("passphrase", lang), false)
 		add(&out, "testnet", displayCatalogFieldName("testnet", lang), false)
 		add(&out, "enabled", displayCatalogFieldName("enabled", lang), false)
-		add(&out, "hyperliquid_wallet_addr", displayCatalogFieldName("hyperliquid_wallet_addr", lang), false)
-		add(&out, "aster_user", displayCatalogFieldName("aster_user", lang), false)
-		add(&out, "aster_signer", displayCatalogFieldName("aster_signer", lang), false)
-		add(&out, "aster_private_key", displayCatalogFieldName("aster_private_key", lang), false)
-		add(&out, "lighter_wallet_addr", displayCatalogFieldName("lighter_wallet_addr", lang), false)
-		add(&out, "lighter_api_key_private_key", displayCatalogFieldName("lighter_api_key_private_key", lang), false)
-		add(&out, "lighter_api_key_index", displayCatalogFieldName("lighter_api_key_index", lang), false)
+
 	case "trader_management":
 		if strings.HasPrefix(session.Action, "update") {
 			add(&out, "update_field", displayCatalogFieldName("update_field", lang), false)
@@ -246,9 +240,9 @@ func allowedFieldSpecsForSkillSession(session skillSession, lang string) []llmFl
 	case "strategy_management":
 		if session.Action == "create" || session.Action == "update_config" {
 			if session.Action == "create" {
-				add(&out, "strategy_type", "Strategy type. Use ai_trading for AI strategies, including AI500/OI/static coin-source requests; use grid_trading only for grid strategy requests.", false)
+				add(&out, "strategy_type", "Strategy type. Use ai_trading for AI strategies, including static coin-source requests; use grid_trading only for grid strategy requests.", false)
 			}
-			configPatchDescription := "Partial StrategyConfig JSON patch inferred from the user's strategy intent. Use exact product schema values, not display labels: source_type must be one of static, ai500, oi_top, oi_low; strategy_type must be ai_trading or grid_trading; selected_timeframes must be a JSON array of strings, not a JSON-encoded string."
+			configPatchDescription := "Partial StrategyConfig JSON patch inferred from the user's strategy intent. Use exact product schema values, not display labels: source_type must be static; strategy_type must be ai_trading or grid_trading; selected_timeframes must be a JSON array of strings, not a JSON-encoded string."
 			switch explicitStrategyCreateType(session) {
 			case "grid_trading":
 				configPatchDescription += " Current strategy_type is grid_trading: use only top-level strategy_type, grid_config, publish_config, and language. Do not output ai_config or AI fields such as coin_source, indicators, risk_control, timeframes, confidence, or prompt_sections."
@@ -422,14 +416,6 @@ func providerExplicitlyMentionedInText(provider, text string) bool {
 	}
 	spec, _ := modelProviderSpecByID(provider)
 	candidates := []string{provider, strings.ToLower(strings.TrimSpace(spec.DisplayName))}
-	switch provider {
-	case "blockrun-base":
-		candidates = append(candidates, "blockrun", "blockrun base", "base wallet")
-	case "blockrun-sol":
-		candidates = append(candidates, "blockrun", "blockrun sol", "solana wallet")
-	case "claw402":
-		candidates = append(candidates, "claw 402")
-	}
 	for _, candidate := range candidates {
 		candidate = strings.TrimSpace(candidate)
 		if candidate != "" && strings.Contains(lower, candidate) {

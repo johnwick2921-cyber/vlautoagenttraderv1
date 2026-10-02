@@ -923,15 +923,14 @@ const coinSource: KnobSpec[] = [
   {
     label: 'Source type',
     where: 'Strategy → Coin source → Source Type',
-    what: 'Which symbol universe the engine trades from: static (the list below) | hyper_all (Hyperliquid all markets) | hyper_main (Hyperliquid main markets) | mixed (hyper_all and hyper_main together — each enabled half contributes its coins, labelled by source). An empty stored value reads "static".',
+    what: 'Which symbol universe the engine trades from: static (the list below). Any non-static value falls back to static. An empty stored value reads "static".',
     trader:
       'The engine fetches candidates ONLY from the chosen source; static is the fallback list inside every branch.',
     consumer:
-      'kernel/engine.go — the SourceType switch over the strategyConfigSchema enum (static / hyper_all / hyper_main / mixed); default "static" when empty.',
-    range: 'static | hyper_all | hyper_main | mixed',
+      'kernel/engine.go — the SourceType switch over the strategyConfigSchema enum; default "static" when empty.',
+    range: 'static',
     systemDefault: 'static (empty string reads static)',
-    recommended:
-      'static for CME futures (MNQ); crypto per your data-source preference.',
+    recommended: 'static for CME futures (MNQ) — the only live source.',
     whenToTouch: 'To change which universe feeds the strategy.',
     perSession: 'No.',
   },
@@ -951,7 +950,7 @@ const coinSource: KnobSpec[] = [
   {
     label: 'Excluded coins',
     where: 'Strategy → Coin source → Excluded',
-    what: 'Symbols filtered out of the candidate set from ALL sources (static, hyper_all, hyper_main). The filter applies to every branch result.',
+    what: 'Symbols filtered out of the candidate set from the static source. The filter applies to every branch result.',
     trader:
       'An excluded symbol never reaches the engine as a candidate, whatever the source.',
     consumer:
@@ -959,7 +958,7 @@ const coinSource: KnobSpec[] = [
     range: 'comma-separated symbols',
     systemDefault: 'empty (nothing excluded)',
     recommended: 'Exclude symbols you never want the strategy to touch.',
-    whenToTouch: 'When a symbol must be banned from all sources.',
+    whenToTouch: 'When a symbol must be banned from the candidate set.',
     perSession: 'No.',
   },
 ]
@@ -1131,7 +1130,7 @@ const grid: KnobSpec[] = [
   {
     label: 'Trading pair',
     where: 'Strategy → Grid → Symbol',
-    what: 'The grid trading pair (e.g. BTCUSDT).',
+    what: 'The grid trading pair symbol.',
     trader: 'The market the grid engine trades.',
     consumer: 'store/strategy.go:1862 GridStrategyConfig.Symbol.',
     range: 'symbol string',
@@ -1155,10 +1154,10 @@ const grid: KnobSpec[] = [
   {
     label: 'Total investment',
     where: 'Strategy → Grid → Investment',
-    what: 'Total investment in USDT for the grid.',
+    what: 'Total investment for the grid.',
     trader: 'The whole grid is sized from this number.',
     consumer: 'store/strategy.go:1866 TotalInvestment.',
-    range: 'USDT amount',
+    range: 'amount',
     systemDefault: '0',
     recommended: 'Only what you can afford to grid.',
     whenToTouch: 'To resize the grid.',
@@ -1724,7 +1723,7 @@ export const settings: GuideSection = {
     },
     {
       kind: 'p',
-      text: 'The beginner claw402 onboarding route is owner-only (the first-created account, no machine tokens) and is refused outright on the futures build — claw402 is crypto-era. The boot line now prints the JWT secret state truthfully: configured (custom) or INSECURE DEFAULT with a warning.',
+      text: 'The beginner onboarding route is owner-only (the first-created account, no machine tokens). The boot line now prints the JWT secret state truthfully: configured (custom) or INSECURE DEFAULT with a warning.',
     },
   ],
 }

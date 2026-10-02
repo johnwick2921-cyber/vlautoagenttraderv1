@@ -74,7 +74,6 @@ The trader_id format observed in queries: `1ef40f05_8ef641a7-815c-4bb5-9798-b070
 - **State (10):** `showCreateModal`, `showEditModal`, `showModelModal`, `showExchangeModal`, `showTelegramModal`, `editingModel`, `editingExchange`, `editingTrader`, `allModels`, `allExchanges`, `supportedModels`, `visibleTraderAddresses: Set<string>`, `visibleExchangeAddresses: Set<string>`, `copiedId`.
 - **SWR:** `useSWR<TraderInfo[]>('traders', api.getTraders, { refreshInterval: 5000 })`.
 - **Effects (2):** initial config load on auth ready; `window.addEventListener('agent-config-refresh', …)` (same pattern as SettingsPage — agent tool edits propagate without remount).
-- **Derived data:** `configuredModels` filters `allModels` by `enabled || customApiUrl`. `configuredExchanges` filters by `enabled` (and the legacy aster/hyperliquid id check at line 140-145 — this checks `e.id === 'aster'` which is a leftover from when ids were the type name; with UUID ids today this branch can no longer fire).
 - **Trader status counts:** `enabledModels.length`, `enabledExchanges.length` displayed at the top "1 ACTIVE_NODES / 1/1 ACTIVE" widget.
 
 ### `DashboardRoute` (route component)
@@ -100,22 +99,15 @@ The trader_id format observed in queries: `1ef40f05_8ef641a7-815c-4bb5-9798-b070
 - **Helpers (top of file, lines 30-95):**
   - `getModelDisplayName(modelId)` — id → display name (DeepSeek / Qwen / Claude / uppercase fallback)
   - `getExchangeDisplayNameFromList(exchangeId, exchanges)` — UUID → "TYPE - account_name"
-  - `getExchangeTypeFromList(exchangeId, exchanges)` — UUID → lowercase exchange_type, defaults to `'binance'` (chart fallback)
-  - `isPerpDexExchange(exchangeType)` — hyperliquid|lighter|aster
-  - `getWalletAddress(exchange)` — branch by exchange_type
   - `truncateAddress(address, startLen=6, endLen=4)`
-- **State (~10):** `closingPosition`, `selectedChartSymbol`, `chartUpdateKey`, `chartSectionRef`, `showWalletAddress`, `copiedAddress`, `dashboardTab: 'overview' | 'decisions'`, `positionsPageSize`, `positionsCurrentPage`.
 - **Derived computed at top of function body:**
   - `currentExchange = exchanges?.find(e => e.id === selectedTrader?.exchange_id)`
-  - `walletAddress = getWalletAddress(currentExchange)`
   - `isPerpDex = isPerpDexExchange(currentExchange?.exchange_type)`
   - `isFutures = currentExchange?.exchange_type?.toLowerCase() === 'ninjatrader'` (Plan 4.3)
-  - `currencyUnit = isFutures ? 'USD' : 'USDT'` (Plan 4.3)
   - `paginatedPositions = positions?.slice(...)` — page-size-bounded slice
 - **Conditional renders (Plan 4.3 NT branches):**
   - `<th>Leverage</th>` + `<td>{pos.leverage}x</td>` — both wrapped in `{!isFutures && …}` ([line 755-762, 845-849](web/src/pages/TraderDashboardPage.tsx#L755-L849))
   - `<th>Liq</th>` + `<td>{formatPrice(pos.liquidation_price)}</td>` — both wrapped in `{!isFutures && …}` ([line 769-776, 864-868](web/src/pages/TraderDashboardPage.tsx#L769-L868))
-  - 3× `<StatCard unit={currencyUnit}>` (line 559, 572, 588) — Plan 4.3 conditional USD/USDT
 - **Early-exit renders:**
   - `tradersError` → "Connection Failed" empty state ([line 254-294](web/src/pages/TraderDashboardPage.tsx#L254-L294))
   - `traders && traders.length === 0` → "Empty dashboard" CTA pointing to /traders ([line 297-337](web/src/pages/TraderDashboardPage.tsx#L297-L337))
@@ -143,12 +135,9 @@ The trader_id format observed in queries: `1ef40f05_8ef641a7-815c-4bb5-9798-b070
 - **File:** [web/src/components/charts/ChartTabs.tsx](web/src/components/charts/ChartTabs.tsx) (435 LOC)
 - **Props:** `{ traderId, selectedSymbol?, updateKey?, exchangeId?, isFutures? }`
 - **Module constants:**
-  - `MARKET_CONFIG` ([line 28-70](web/src/components/charts/ChartTabs.tsx#L28-L70)) — 5 market types: `hyperliquid`, `crypto`, `stocks`, `forex`, `metals`. **No `futures` entry — NT exchanges fall through to `crypto` default.** This is the documented Plan 4.4 gap.
   - `INTERVALS` ([line 72-80](web/src/components/charts/ChartTabs.tsx#L72-L80)) — 1m/5m/15m/30m/1h/4h/1d
-- **`getMarketTypeFromExchange()`** (line 83-89) — only matches `hyperliquid`; everything else → `crypto`. Means `ninjatrader` exchanges hit the crypto path with `defaultSymbol='BTCUSDT'`, defeating Plan 4.4 chart spec.
 - **State (8):** `activeTab: 'equity' | 'kline'`, `chartSymbol`, `interval`, `symbolInput`, `marketType`, `availableSymbols`, `showDropdown`, `searchFilter`.
 - **Effect:** auto-switch market type when `exchangeId` prop changes ([line 112-115](web/src/components/charts/ChartTabs.tsx#L112-L115)).
-- **Backend call:** `GET /api/symbols?exchange=<exchange>` when `marketConfig.hasDropdown===true` (only Hyperliquid currently).
 
 ### Sub-component: `DecisionCard`
 - **File:** [web/src/components/trader/DecisionCard.tsx](web/src/components/trader/DecisionCard.tsx) (481 LOC)
@@ -191,7 +180,6 @@ The trader_id format observed in queries: `1ef40f05_8ef641a7-815c-4bb5-9798-b070
   - Trader Header: avatar, name "mnq sIM TEST", ID prefix, Emergency Flat button (red), Trader Selector dropdown
   - Metadata line: `AI Model: DeepSeek` (blue pill), `Exchange: NINJATRADER - Simtest`, `Strategy: Balanced Strategy`, `Cycles: 4`, `Runtime: <not yet rendered, ref e284 empty>`
   - Debug bar: `SYSTEM_STATUS::ONLINE`, `LAST_UPDATE::6:50:50 PM`, `EQ::50000.00`, `PNL::0.00`
-  - **4 StatCards:** Total Equity `50000.00 USD` (▼ 0.00%), Available Balance `50000.00 USD / 100.0% Free`, Total P&L `+0.00 USD ▲ +0.00%`, Positions `0 ACTIVE / Margin: 0.0%`. **Plan 4.3 working — all four cards show USD, not USDT.**
   - Tab switcher: `Overview` / `Decisions`
   - Below: Chart tabs + Positions table (empty: "no positions") + Recent Decisions panel on right + Position History at bottom
 
@@ -257,10 +245,8 @@ Clean — only the global favicon 404. No React key warnings (Plan 4.9 fix confi
 ### `GET /api/klines?symbol=…&interval=…&limit=…&exchange=…` → `handleKlines`
 - File: [api/handler_klines.go](api/handler_klines.go)
 - **Page 4 trigger:** ChartTabs → AdvancedChart fires this when activeTab='kline'.
-- **Known gap (Plan 4.5):** no NT/Databento branch — returns 500 for `exchange=ninjatrader`. Currently masked because ChartTabs maps NT to `binance` exchange by fallback, so a Binance kline is fetched when a NT trader is selected (wrong symbol, wrong data).
 
 ### `GET /api/symbols?exchange=…` → `handleSymbols`
-- Returns `{symbols: [{symbol, name, category}]}` — only Hyperliquid actually populates the dropdown (`MARKET_CONFIG.hyperliquid.hasDropdown=true`)
 - Known gap: returns 400 "Unsupported exchange" for NT
 
 ### `GET /api/traders/:id/grid-risk` → `handleGetGridRiskInfo`
@@ -284,7 +270,6 @@ Clean — only the global favicon 404. No React key warnings (Plan 4.9 fix confi
 
 | Gap | Plan | File:line | Symptom | Scope |
 |---|---|---|---|---|
-| K-line chart shows Binance BTCUSDT for NT traders | Plan 4.4 | `ChartTabs.tsx:28-70, 83-89`; `handler_klines.go:48-78` | Selecting an NT trader and switching to K-line tab shows wrong data | ~720 LOC across Go, C#, frontend per Plan 4.4 deep spec |
 | `/api/klines` 500 for `exchange=ninjatrader` | Plan 4.5 | `api/handler_klines.go` | Backend dependency for Plan 4.4 chart route | ~120 LOC, 60 min |
 | `/api/symbols` 400 for `exchange=ninjatrader` | Plan 4.5 | `api/handler_symbols.go` | Symbol dropdown disabled for NT | bundled in Plan 4.5 |
 | NT balance is $50k mock | Plan 4.11 | `trader/ninjatrader/trader.go:161-162` | Total Equity card always shows 50000.00 USD; doesn't reflect real NT account state | ~150 LOC + C# AddOn extension, 2 hr |
@@ -301,7 +286,6 @@ Clean — only the global favicon 404. No React key warnings (Plan 4.9 fix confi
 | Trader name `mnq sIM TEST` has odd casing + trailing space producing slug `mnq sIM TEST -1ef4` | data (user-created) + `AppRoutes.tsx:48-51` slug builder | Cosmetic | Slug works correctly; no fix needed, but worth knowing |
 | Trader header shows `Strategy: Balanced Strategy` — confirms the seeded "balanced" strategy is what's running | runtime confirmation | Info | n/a |
 | Footer GitHub/Twitter/Telegram links have `href=""` (empty) — clicking does nothing | `SiteFooter.tsx` | Minor | 10-min: either populate or remove |
-| ChartTabs `MARKET_CONFIG.crypto.defaultSymbol='BTCUSDT'` is used as the fallback for NT — wrong default for NQ | `ChartTabs.tsx:38-44` + `getMarketTypeFromExchange` line 83-89 | Plan 4.4 prerequisite | Add `futures` market type entry + `getMarketTypeFromExchange("ninjatrader") → 'futures'` |
 
 ### Open questions
 

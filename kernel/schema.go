@@ -64,7 +64,6 @@ var DataDictionary = map[string]map[string]BilingualFieldDef{
 		"Equity": {
 			NameZH:    "总权益",
 			NameEN:    "Total Equity",
-			Unit:      "USDT",
 			FormulaZH: "可用余额 + 未实现盈亏",
 			FormulaEN: "Available Balance + Unrealized PnL",
 			DescZH:    "账户的实际净值，包含所有持仓的浮动盈亏",
@@ -73,7 +72,6 @@ var DataDictionary = map[string]map[string]BilingualFieldDef{
 		"Balance": {
 			NameZH:    "可用余额",
 			NameEN:    "Available Balance",
-			Unit:      "USDT",
 			FormulaZH: "初始资金 + 已实现盈亏",
 			FormulaEN: "Initial Capital + Realized PnL",
 			DescZH:    "可用于开新仓位的资金，不包括已用保证金",
@@ -103,21 +101,18 @@ var DataDictionary = map[string]map[string]BilingualFieldDef{
 		"Entry": {
 			NameZH: "进场价",
 			NameEN: "Entry Price",
-			Unit:   "USDT",
 			DescZH: "开仓时的平均价格",
 			DescEN: "Average price when opening position",
 		},
 		"Exit": {
 			NameZH: "出场价",
 			NameEN: "Exit Price",
-			Unit:   "USDT",
 			DescZH: "平仓时的平均价格",
 			DescEN: "Average price when closing position",
 		},
 		"Profit": {
 			NameZH:    "已实现盈亏",
 			NameEN:    "Realized PnL",
-			Unit:      "USDT",
 			FormulaZH: "(出场价 - 进场价) / 进场价 × 杠杆 × 仓位价值",
 			FormulaEN: "(Exit Price - Entry Price) / Entry Price × Leverage × Position Value",
 			DescZH:    "已平仓交易的实际盈亏，包含手续费。正值=盈利，负值=亏损",
@@ -177,7 +172,6 @@ var DataDictionary = map[string]map[string]BilingualFieldDef{
 		"Margin": {
 			NameZH:    "占用保证金",
 			NameEN:    "Margin Used",
-			Unit:      "USDT",
 			FormulaZH: "仓位价值 / 杠杆",
 			FormulaEN: "Position Value / Leverage",
 			DescZH:    "该仓位锁定的保证金金额",
@@ -186,7 +180,6 @@ var DataDictionary = map[string]map[string]BilingualFieldDef{
 		"LiqPrice": {
 			NameZH: "强平价格",
 			NameEN: "Liquidation Price",
-			Unit:   "USDT",
 			DescZH: "价格触及此值时会被强制平仓。0.0000表示无爆仓风险",
 			DescEN: "Price at which position will be force-closed. 0.0000 = no liquidation risk",
 		},
@@ -203,14 +196,12 @@ var DataDictionary = map[string]map[string]BilingualFieldDef{
 		"OI": {
 			NameZH: "持仓量",
 			NameEN: "Open Interest",
-			Unit:   "USDT",
 			DescZH: "未平仓合约的总价值。持仓量增加=资金流入，减少=资金流出",
 			DescEN: "Total value of open contracts. Increasing OI = capital inflow, decreasing = outflow",
 		},
 		"OIChange": {
 			NameZH: "持仓量变化",
 			NameEN: "OI Change",
-			Unit:   "USDT & %",
 			DescZH: "1小时内持仓量的变化。用于判断市场真实资金流向",
 			DescEN: "OI change in 1 hour. Used to determine real capital flow direction",
 		},

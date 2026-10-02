@@ -55,13 +55,10 @@ describe('ChartTabs composition modes', () => {
     rerender(<ChartTabs traderId="test" selectedAccount="SimB" marketOnly />)
     expect(screen.getByTestId('market')).toHaveAttribute('data-account', 'SimB')
   })
-  it('offers all six markets through the same mobile selection path', async () => {
+  it('offers the remaining market through the same mobile selection path', async () => {
     render(<ChartTabs traderId="test" exchangeId="ninjatrader" marketOnly />)
     const select = screen.getByRole('combobox', { name: 'Market Chart' })
-    expect(screen.getAllByRole('option')).toHaveLength(6)
-    fireEvent.change(select, { target: { value: 'crypto' } })
-    expect(await screen.findByText('BTCUSDT')).toBeInTheDocument()
     fireEvent.change(select, { target: { value: 'ninjatrader' } })
-    expect(await screen.findByText('MNQ')).toBeInTheDocument()
+    expect((await screen.findAllByText('MNQ')).length).toBeGreaterThan(0)
   })
 })

@@ -284,13 +284,6 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	sb.WriteString(fmt.Sprintf("Time: %s | Period: #%d | Runtime: %d minutes\n\n",
 		ctx.CurrentTime, ctx.CallCount, ctx.RuntimeMinutes))
 
-	// BTC market
-	if btcData, hasBTC := ctx.MarketDataMap["BTCUSDT"]; hasBTC {
-		sb.WriteString(fmt.Sprintf("BTC: %.2f (1h: %s, 4h: %s) | MACD: %.4f | RSI: %.2f\n\n",
-			btcData.CurrentPrice, market.PctOrNA(btcData.PriceChange1h, true), market.PctOrNA(btcData.PriceChange4h, true),
-			btcData.CurrentMACD, btcData.CurrentRSI7))
-	}
-
 	// Account information
 	sb.WriteString(fmt.Sprintf("Account: Equity %.2f | Balance %.2f (%.1f%%) | PnL %+.2f%% | Margin %.1f%% | Positions %d\n\n",
 		ctx.Account.TotalEquity,
@@ -485,28 +478,11 @@ func (e *StrategyEngine) formatPositionInfo(index int, pos PositionInfo, ctx *Co
 func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 	if len(sources) > 1 {
 		// Multiple signal source combination
-		hasHyperAll := false
-		hasHyperMain := false
-		for _, s := range sources {
-			switch s {
-			case "hyper_all":
-				hasHyperAll = true
-			case "hyper_main":
-				hasHyperMain = true
-			}
-		}
-		if hasHyperAll || hasHyperMain {
-			return " (Hyperliquid)"
-		}
 		return " (Multiple sources)"
 	} else if len(sources) == 1 {
 		switch sources[0] {
 		case "static":
 			return " (Manual selection)"
-		case "hyper_all":
-			return " (Hyperliquid All)"
-		case "hyper_main":
-			return " (Hyperliquid Top20)"
 		}
 	}
 	return ""

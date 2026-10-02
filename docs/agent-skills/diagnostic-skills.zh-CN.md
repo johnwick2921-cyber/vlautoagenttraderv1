@@ -88,14 +88,10 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 ### 特殊规则
 
-- OKX 除 API Key 和 Secret 外，还需要 passphrase
-- Bybit 永续/合约交易需要合约权限
 - 不建议开启提现权限
 
 ### 参考文档
 
-- `docs/getting-started/okx-api.md`
-- `docs/getting-started/bybit-api.md`
 
 ## skill_exchange_api_diagnosis
 
@@ -111,7 +107,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 1. 系统时间是否同步
 2. API Key / Secret 是否正确
-3. 是否遗漏额外字段，如 OKX passphrase
+3. 是否遗漏额外字段
 4. IP 白名单是否包含当前服务器
 5. 是否启用了交易或合约权限
 6. 密钥是否过期或已重建
@@ -119,7 +115,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 ### 已知实现事实
 
 - 时间不同步是 `invalid signature` / `timestamp` 的高频根因，见 `docs/guides/TROUBLESHOOTING.zh-CN.md`
-- OKX 的 passphrase 缺失会导致签名相关问题，见 `docs/getting-started/okx-api.md`
 
 ### 输出格式
 
@@ -161,15 +156,14 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 ### 优先排查
 
-1. 账户模式是否匹配，例如 Binance 是否为 Hedge Mode
+1. NT8 连接是否正常（TCP 桥接已接线、AddOn 已重新编译并重启）
 2. 是否为子账户杠杆限制
 3. 合约权限是否开启
 4. 余额、保证金、可交易 symbol 是否满足条件
 
 ### 已知实现事实
 
-- Binance 在 One-way Mode 下，可能出现 `position side mismatch` 或单边行为
-- 某些子账户杠杆上限较低，超过限制会直接失败
+- NT8 ATM 策略会阻断 OnOrderUpdate/OnExecutionUpdate 事件——managed 与 ATM 只能二选一
 - 这些问题在 `docs/guides/TROUBLESHOOTING.md` 已有明确说明
 
 ## skill_strategy_diagnosis

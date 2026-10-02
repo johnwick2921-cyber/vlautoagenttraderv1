@@ -8,14 +8,7 @@ import type {
 } from '../../types'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { t } from '../../i18n/translations'
-import {
-  Pencil,
-  Plus,
-  X as IconX,
-  Sparkles,
-  ExternalLink,
-  UserPlus,
-} from 'lucide-react'
+import { Pencil, Plus, X as IconX, Sparkles } from 'lucide-react'
 import { httpClient } from '../../lib/httpClient'
 import { VlSelect } from '../ui/select'
 
@@ -37,30 +30,6 @@ function getStrategyAIConfig(strategy: Strategy) {
   )
 }
 
-// 交易所注册链接配置
-const EXCHANGE_REGISTRATION_LINKS: Record<
-  string,
-  { url: string; hasReferral?: boolean }
-> = {
-  binance: {
-    url: 'https://www.binance.com/join',
-    hasReferral: true,
-  },
-  okx: { url: 'https://www.okx.com/join/1865360', hasReferral: true },
-  bybit: { url: 'https://partner.bybit.com/b/83856', hasReferral: true },
-  hyperliquid: {
-    url: 'https://app.hyperliquid.xyz/join/AITRADING',
-    hasReferral: true,
-  },
-  aster: {
-    url: 'https://www.asterdex.com/en/referral/fdfc0e',
-    hasReferral: true,
-  },
-  lighter: {
-    url: 'https://app.lighter.xyz/?referral=68151432',
-    hasReferral: true,
-  },
-}
 // 表单内部状态类型
 interface FormState {
   trader_id?: string
@@ -315,35 +284,6 @@ export function TraderConfigModal({
                           : ''),
                     }))}
                   />
-                  {/* Exchange Registration Link */}
-                  {formData.exchange_id &&
-                    (() => {
-                      // Find the selected exchange to get its type
-                      const selectedExchange = availableExchanges.find(
-                        (e) => e.id === formData.exchange_id
-                      )
-                      const exchangeType =
-                        selectedExchange?.exchange_type?.toLowerCase() || ''
-                      const regLink = EXCHANGE_REGISTRATION_LINKS[exchangeType]
-                      if (!regLink) return null
-                      return (
-                        <a
-                          href={regLink.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#848E9C] hover:text-[#F0B90B] transition-colors"
-                        >
-                          <UserPlus className="w-3.5 h-3.5" />
-                          <span>{t('noExchangeAccount', language)}</span>
-                          {regLink.hasReferral && (
-                            <span className="px-1.5 py-0.5 bg-[#F0B90B]/10 text-[#F0B90B] rounded text-[10px]">
-                              {t('discount', language)}
-                            </span>
-                          )}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )
-                    })()}
                 </div>
               </div>
             </div>
@@ -426,14 +366,7 @@ export function TraderConfigModal({
                             {t('coinSource', language)}:{' '}
                             {aiConfig.coin_source.source_type === 'static'
                               ? '固定币种'
-                              : aiConfig.coin_source.source_type === 'hyper_all'
-                                ? 'Hyper All'
-                                : aiConfig.coin_source.source_type ===
-                                    'hyper_main'
-                                  ? 'Hyper Main'
-                                  : aiConfig.coin_source.source_type === 'mixed'
-                                    ? 'Mixed'
-                                    : '-'}
+                              : '-'}
                           </div>
                           <div>
                             {t('marginLimit', language)}:{' '}

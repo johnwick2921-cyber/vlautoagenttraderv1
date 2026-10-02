@@ -41,7 +41,7 @@ export function formatPrice(price: number | undefined | null, minDecimals = 2): 
     // 正常价格
     decimals = 4
   } else {
-    // 大价格 (如 BTC)
+    // 大价格
     decimals = 2
   }
 

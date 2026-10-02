@@ -205,14 +205,26 @@ mp(){ cat "$ST/mainpid/$1" 2>/dev/null || echo 0; }
 usr=0
 if [ "${1:-}" = "--user" ]; then usr=1; shift; fi
 cmd="${1:-}"
+# The REAL bot appends to its log continuously, so its log mtime keeps advancing
+# past the migration script's RUN_START mark. The fixture bot does not run during
+# the already-migrated re-run, so the fake systemctl models that: whenever the
+# script asks about unit vl, refresh the vl log's mtime. This keeps the re-run's
+# file-clock vs file-clock freshness check (item 8) deterministic — without it a
+# second boundary between the fixture's pre-write and RUN_MARK makes the log look
+# stale forever (TestRerunAlreadyMigratedBranch failed 1/15 at 90.63 s).
+vl_touch(){
+  for f in "$HOME/vl/data/vl_"*.log; do [ -f "$f" ] && touch "$f"; done
+}
 case "$cmd" in
   cat)
     shift
+    case "$1" in vl|vl.service) vl_touch ;; esac
     for n in "$1" "$1.service"; do
       if [ -f "$(unit_file "$n")" ]; then cat "$(unit_file "$n")"; exit 0; fi
     done
     exit 1 ;;
   is-active)
+    case "$2" in vl|vl.service) vl_touch ;; esac
     is_active "$2" && exit 0 || exit 1 ;;
   show)
     u="${@: -1}"
