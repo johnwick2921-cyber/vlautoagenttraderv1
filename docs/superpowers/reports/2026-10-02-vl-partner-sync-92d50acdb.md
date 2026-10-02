@@ -11,7 +11,7 @@
   test-isolation guard
   `internal/updaterbootstrap/home_isolation_guard_test.go` (nofx blob
   `8178a19f4078…`, commit `a0470035a` ancestor of `92d50acdb` [A]) — present
-  and byte-identical in the partner tree. The 9 remaining differences are the
+  and byte-identical in the partner tree. The 10 remaining differences are the
   partner carve-outs below — every path, blob sha, and reason.
 
 ## Match table (the ONLY differences)
@@ -27,6 +27,7 @@
 | internal/updatersource/source.go | 447b9b640c90 | 5053fb7b13eb | ONE-line carve-out: `ReleaseRepo = "johnwick2921-cyber/vlautoagenttraderv1"`; the rest is nofx's P-A implementation byte-for-byte |
 | docs/superpowers/reports/2026-09-22-vl-partner-verification.md | — | 6942ad5673c4 | partner-only doc (prior sync verification report) |
 | docs/superpowers/runbooks/2026-09-22-vl-partner-update.md | — | c74d36977c99 | partner-only doc (partner update runbook) |
+| branding/census_test.go | 3771c9ef830f | 77fef831eda3 | partner tree carries partner-only token uses — CTO ruling 2026-10-02: 7 rows re-pinned to exact post-sync actuals, censusCeiling = exact table sum 1206 (no slack); nofx-side census untouched |
 
 ## Gates
 

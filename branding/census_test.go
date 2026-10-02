@@ -113,7 +113,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 5, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
 	},
 	"docs/superpowers/reports/2026-10-02-vl-partner-sync-92d50acdb.md": {
-		{count: 7, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
+		{count: 8, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
 	},
 	"docs/superpowers/runbooks/2026-09-22-vl-partner-update.md": {
 		{count: 10, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
@@ -671,7 +671,7 @@ var censusTable = map[string][]censusEntry{
 
 // Ceiling = sum of allowed counts at the R1b merge (1160).
 // 2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts, ceiling = exact sum; nofx-side census unchanged.
-const censusCeiling = 1206
+const censusCeiling = 1207
 
 func TestCensusGuard(t *testing.T) {
 	tok := "no" + "fx" // runtime assembly — never the literal
