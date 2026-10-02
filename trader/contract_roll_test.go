@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // P3 (ledger-close 2026-08-19) — contract-roll gate for continuous "MNQ".

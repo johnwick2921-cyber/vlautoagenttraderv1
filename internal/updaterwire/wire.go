@@ -2,13 +2,13 @@
 // the updater worker: a unix socket at <data>/updater/worker.sock carrying
 // newline-delimited, typed JSON frames with a FIXED verb set
 // {status, install, cancel-before-boundary, resume}. Anything else is
-// rejected. resume (M4 3b-B) is the attended `nofx-updater resume <job>`:
+// rejected. resume (M4 3b-B) is the attended `vl-updater resume <job>`:
 // only the updater CLI builds one (TestOnlyTheUpdaterCLIBuildsAResume), never
 // the app.
 //
 // This package is the codec, the id allow-lists, the socket path, and the
 // app-side Dial. The worker side (Listen/Serve) lives in
-// nofx/internal/updaterwire/wireserver so that an import-direction census can
+// vl/internal/updaterwire/wireserver so that an import-direction census can
 // prove the trading app never links it.
 //
 // Wire format, one frame per line, at most MaxFrameBytes before the newline:
@@ -56,7 +56,7 @@ const (
 	VerbInstall              Verb = "install"
 	VerbCancelBeforeBoundary Verb = "cancel-before-boundary"
 	// VerbResume continues a job the worker parked for an attended step
-	// (nt8_updated: the owner's F5). Built only by cmd/nofx-updater.
+	// (nt8_updated: the owner's F5). Built only by cmd/vl-updater.
 	VerbResume Verb = "resume"
 )
 
@@ -123,7 +123,7 @@ func NewCancelBeforeBoundary(jobID string) Request {
 	return Request{Verb: VerbCancelBeforeBoundary, Cancel: &CancelPayload{JobID: jobID}}
 }
 
-// NewResume builds a resume request. Only cmd/nofx-updater may call it
+// NewResume builds a resume request. Only cmd/vl-updater may call it
 // (TestOnlyTheUpdaterCLIBuildsAResume).
 func NewResume(jobID string) Request {
 	return Request{Verb: VerbResume, Resume: &ResumePayload{JobID: jobID}}

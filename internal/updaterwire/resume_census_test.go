@@ -14,23 +14,23 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // ── M4 3b-B U2: a resume is built ONLY by the attended updater CLI ─────────
 //
 // resume continues a job the worker parked for an attended step (the owner's
 // F5 at nt8_updated); dispatch §0: it "resumes only on an attended
-// `nofx-updater resume <job>`". The app never sends one: the API side hands
+// `vl-updater resume <job>`". The app never sends one: the API side hands
 // off an install and reads status, nothing else. So the names that BUILD a
 // resume request may appear in exactly two directories:
 //
 //   - internal/updaterwire — the wire package, which defines them;
-//   - cmd/nofx-updater     — the CLI the owner types the job id into.
+//   - cmd/vl-updater     — the CLI the owner types the job id into.
 //
 // Both are EXACT directories, never prefixes (CTO ruling 1790258770876:
-// census admissions extend by exact names): cmd/nofx-updaterx, a
-// subdirectory of cmd/nofx-updater and internal/updaterwire/wireserver are
+// census admissions extend by exact names): cmd/vl-updaterx, a
+// subdirectory of cmd/vl-updater and internal/updaterwire/wireserver are
 // all outside.
 //
 // "Build" is judged by NAME, fail closed: any reference to NewResume,
@@ -49,7 +49,7 @@ var resumeBuilders = map[string]bool{"NewResume": true, "VerbResume": true, "Res
 // files may name a resume builder, each with its reason.
 var resumeAdmittedDirs = map[string]string{
 	resumeWireDir: "the wire package defines the resume verb",
-	resumeCLIDir:  "the attended `nofx-updater resume <job>` CLI (M4 3b-B dispatch §0/§3) — the only sender",
+	resumeCLIDir:  "the attended `vl-updater resume <job>` CLI (M4 3b-B dispatch §0/§3) — the only sender",
 }
 
 // resumeWireDir is where the builders must be DEFINED; the census checks they
@@ -60,7 +60,7 @@ const resumeWireDir = "internal/updaterwire"
 // imported, so nothing else can reach a builder through it (U2 verifier
 // defect 3). Any other package name there is an offender, and the file is
 // judged like any file outside.
-const resumeCLIDir = "cmd/nofx-updater"
+const resumeCLIDir = "cmd/vl-updater"
 
 // resumeFrameRe matches a hand-spelled resume frame (or a fragment of one)
 // inside a string literal. Case-insensitive, because json.Unmarshal into a
@@ -596,8 +596,8 @@ func resumeBuilderCensus(root string) (resumeCensus, error) {
 }
 
 // PIN (M4 3b-B U2, dispatch §0/§3): over the REAL tree, nothing but the wire
-// package and cmd/nofx-updater names a resume builder or spells a resume
-// frame. At this head cmd/nofx-updater does not exist yet, so this proves no
+// package and cmd/vl-updater names a resume builder or spells a resume
+// frame. At this head cmd/vl-updater does not exist yet, so this proves no
 // OTHER package references them; the admitted set is that exact directory.
 //
 // The name carries "Census" so the standard gate
@@ -627,10 +627,10 @@ func TestOnlyTheUpdaterCLIBuildsAResumeCensus(t *testing.T) {
 		}
 	}
 	if len(c.offenders) > 0 {
-		t.Fatalf("a resume is built only by the attended updater CLI (cmd/nofx-updater); the app never sends one:\n%s", strings.Join(c.offenders, "\n"))
+		t.Fatalf("a resume is built only by the attended updater CLI (cmd/vl-updater); the app never sends one:\n%s", strings.Join(c.offenders, "\n"))
 	}
-	if _, err := os.Stat(filepath.Join(root, "cmd", "nofx-updater")); err != nil {
-		t.Logf("cmd/nofx-updater absent at this head (%v): no package in the tree builds a resume", err)
+	if _, err := os.Stat(filepath.Join(root, "cmd", "vl-updater")); err != nil {
+		t.Logf("cmd/vl-updater absent at this head (%v): no package in the tree builds a resume", err)
 	}
 }
 
@@ -648,7 +648,7 @@ func resumeCensusOf(t *testing.T, files map[string]string) resumeCensus {
 	t.Helper()
 	root := t.TempDir()
 	all := map[string]string{
-		"go.mod":                       "module nofx\n\ngo 1.25\n",
+		"go.mod":                       "module vl\n\ngo 1.25\n",
 		"internal/updaterwire/wire.go": resumeCensusWireGo,
 	}
 	for r, b := range files {
@@ -673,7 +673,7 @@ func resumeCensusOf(t *testing.T, files map[string]string) resumeCensus {
 // resumeCensusImp is a one-file body importing the wire package as name
 // ("" = its own name, "." = dot import).
 func resumeCensusImp(pkg, name, use string) string {
-	return "package " + pkg + "\n\nimport " + name + " \"nofx/internal/updaterwire\"\n\n" + use + "\n"
+	return "package " + pkg + "\n\nimport " + name + " \"vl/internal/updaterwire\"\n\n" + use + "\n"
 }
 
 // resumeJSONU spells a JSON unicode escape (backslash, u, four hex) at run
@@ -720,8 +720,8 @@ func TestResumeBuilderCensusSeesEveryForm(t *testing.T) {
 	// positive controls: the admitted directories, and a handler that
 	// dispatches on the payload pointer
 	for _, ok := range []struct{ name, rel, body string }{
-		{"the CLI", "cmd/nofx-updater/main.go", imp("main", "", "func main() {\n\t_ = updaterwire.NewResume(\"job-0001abcd\")\n\t_ = updaterwire.Request{Verb: updaterwire.VerbResume, Resume: &updaterwire.ResumePayload{}}\n}")},
-		{"the CLI, a second file", "cmd/nofx-updater/resume.go", imp("main", "uw", "const frame = `{\"v\":1,\"verb\":\"resume\",\"payload\":{}}`\n\nvar _ = uw.VerbResume")},
+		{"the CLI", "cmd/vl-updater/main.go", imp("main", "", "func main() {\n\t_ = updaterwire.NewResume(\"job-0001abcd\")\n\t_ = updaterwire.Request{Verb: updaterwire.VerbResume, Resume: &updaterwire.ResumePayload{}}\n}")},
+		{"the CLI, a second file", "cmd/vl-updater/resume.go", imp("main", "uw", "const frame = `{\"v\":1,\"verb\":\"resume\",\"payload\":{}}`\n\nvar _ = uw.VerbResume")},
 		{"the wire package itself, a pinned declaration", "internal/updaterwire/more.go", "package updaterwire\n\nfunc EncodeRequest(r Request) ([]byte, error) {\n\tif r.Verb == VerbResume {\n\t\treturn []byte(`{\"verb\":\"resume\"}`), nil\n\t}\n\treturn nil, nil\n}\n"},
 		{"a handler reading the payload pointer", "internal/updaterworker/socket.go", imp("updaterworker", "", "func isResume(r updaterwire.Request) bool { return r.Resume != nil }")},
 		{"an unrelated resume word", "agent/x.go", "package agent\n\nvar words = []string{\"resume\", \"continue\"}\n"},
@@ -742,8 +742,8 @@ func TestResumeBuilderCensusSeesEveryForm(t *testing.T) {
 		{"dot import", "api/resume.go", imp("api", ".", `var _ = NewResume("job-0001abcd")`), "names updaterwire.NewResume"},
 		{"hand-spelled frame", "api/resume.go", "package api\n\nconst f = `{\"v\":1, \"verb\" : \"resume\",\"payload\":{\"job_id\":\"job-0001abcd\"}}`\n", "spells a resume frame"},
 		{"escaped frame", "api/resume.go", "package api\n\nconst f = \"{\\\"verb\\\":\\\"resume\\\"}\"\n", "spells a resume frame"},
-		{"name-prefix sibling of the CLI", "cmd/nofx-updaterx/main.go", imp("main", "", ctor), "names updaterwire.NewResume"},
-		{"subdirectory of the CLI", "cmd/nofx-updater/sub/x.go", imp("sub", "", ctor), "names updaterwire.NewResume"},
+		{"name-prefix sibling of the CLI", "cmd/vl-updaterx/main.go", imp("main", "", ctor), "names updaterwire.NewResume"},
+		{"subdirectory of the CLI", "cmd/vl-updater/sub/x.go", imp("sub", "", ctor), "names updaterwire.NewResume"},
 		{"the worker-side wire subpackage", "internal/updaterwire/wireserver/x.go", imp("wireserver", "", ctor), "names updaterwire.NewResume"},
 		{"the trading app", "trader/x.go", imp("trader", "", ctor), "names updaterwire.NewResume"},
 	}
@@ -821,7 +821,7 @@ func TestResumeCensusSeesEveryResumeFieldWrite(t *testing.T) {
 		frame = "spells a resume frame"
 	)
 	file := func(pkg, body string) string {
-		return "package " + pkg + "\n\nimport (\n\t\"bytes\"\n\t\"encoding/json\"\n\n\t\"nofx/internal/updaterwire\"\n)\n\n" +
+		return "package " + pkg + "\n\nimport (\n\t\"bytes\"\n\t\"encoding/json\"\n\n\t\"vl/internal/updaterwire\"\n)\n\n" +
 			"var _, _ = bytes.NewReader, json.Unmarshal\n\n" + body + "\n"
 	}
 	for _, tc := range []struct {
@@ -871,7 +871,7 @@ func TestResumeCensusSeesEveryResumeFieldWrite(t *testing.T) {
 		{"the app sends by value", "api/updates.go", file("api", "func send(c *updaterwire.Client) (updaterwire.Response, error) {\n\treturn c.Do(updaterwire.NewInstall(\"rel\", \"job-0001abcd\"))\n}")},
 		{"a relay", "api/relay.go", file("api", "func relay(b []byte) ([]byte, error) {\n\tr, err := updaterwire.DecodeRequest(b)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn updaterwire.EncodeRequest(r)\n}")},
 		{"decoding something else", "api/other.go", file("api", "func f(b []byte, r updaterwire.Request) (int, error) {\n\tvar n int\n\terr := json.Unmarshal(b, &n)\n\t_ = r.Verb\n\treturn n, err\n}")},
-		{"the CLI", "cmd/nofx-updater/main.go", file("main", "func main() {\n\tvar r updaterwire.Request\n\t_ = json.Unmarshal(nil, &r.Resume)\n\t_ = json.Unmarshal(nil, &r)\n\t_ = updaterwire.Request{Resume: r.Resume}\n}")},
+		{"the CLI", "cmd/vl-updater/main.go", file("main", "func main() {\n\tvar r updaterwire.Request\n\t_ = json.Unmarshal(nil, &r.Resume)\n\t_ = json.Unmarshal(nil, &r)\n\t_ = updaterwire.Request{Resume: r.Resume}\n}")},
 	} {
 		t.Run("admitted "+ok.name, func(t *testing.T) {
 			wantResumeOffenders(t, resumeCensusOf(t, map[string]string{ok.rel: ok.body}), ok.rel)
@@ -879,26 +879,26 @@ func TestResumeCensusSeesEveryResumeFieldWrite(t *testing.T) {
 	}
 }
 
-// PIN (U2 verifier defect 3, probe2.out G1): cmd/nofx-updater is admitted
+// PIN (U2 verifier defect 3, probe2.out G1): cmd/vl-updater is admitted
 // because a main package cannot be imported. Any other package name there
-// could be (nu "nofx/cmd/nofx-updater"), wrapping a builder for the app, so
+// could be (nu "vl/cmd/vl-updater"), wrapping a builder for the app, so
 // the file is an offender itself and is judged like any file outside.
 func TestResumeCensusAdmitsOnlyPackageMainInTheCLIDir(t *testing.T) {
-	const notMain = "package nofxupdater (the CLI directory admits only package main)"
+	const notMain = "package vlupdater (the CLI directory admits only package main)"
 	t.Run("G1: an importable wrapper the app calls", func(t *testing.T) {
 		c := resumeCensusOf(t, map[string]string{
-			"cmd/nofx-updater/lib.go": "package nofxupdater\n\nimport \"nofx/internal/updaterwire\"\n\nfunc R(j string) updaterwire.Request { return updaterwire.NewResume(j) }\n",
-			"api/x.go":                "package api\n\nimport nu \"nofx/cmd/nofx-updater\"\n\nvar _ = nu.R(\"job-0001abcd\")\n",
+			"cmd/vl-updater/lib.go": "package vlupdater\n\nimport \"vl/internal/updaterwire\"\n\nfunc R(j string) updaterwire.Request { return updaterwire.NewResume(j) }\n",
+			"api/x.go":                "package api\n\nimport nu \"vl/cmd/vl-updater\"\n\nvar _ = nu.R(\"job-0001abcd\")\n",
 		})
-		wantResumeOffenders(t, c, "cmd/nofx-updater/lib.go", notMain, "names updaterwire.NewResume")
+		wantResumeOffenders(t, c, "cmd/vl-updater/lib.go", notMain, "names updaterwire.NewResume")
 	})
 	t.Run("a non-main package naming no builder", func(t *testing.T) {
-		c := resumeCensusOf(t, map[string]string{"cmd/nofx-updater/lib.go": "package nofxupdater\n\nfunc R() {}\n"})
-		wantResumeOffenders(t, c, "cmd/nofx-updater/lib.go", notMain)
+		c := resumeCensusOf(t, map[string]string{"cmd/vl-updater/lib.go": "package vlupdater\n\nfunc R() {}\n"})
+		wantResumeOffenders(t, c, "cmd/vl-updater/lib.go", notMain)
 	})
 	t.Run("admitted package main", func(t *testing.T) {
-		c := resumeCensusOf(t, map[string]string{"cmd/nofx-updater/main.go": resumeCensusImp("main", "", "func main() { _ = updaterwire.NewResume(\"job-0001abcd\") }")})
-		wantResumeOffenders(t, c, "cmd/nofx-updater/main.go")
+		c := resumeCensusOf(t, map[string]string{"cmd/vl-updater/main.go": resumeCensusImp("main", "", "func main() { _ = updaterwire.NewResume(\"job-0001abcd\") }")})
+		wantResumeOffenders(t, c, "cmd/vl-updater/main.go")
 	})
 }
 
@@ -998,7 +998,7 @@ func TestResumeCensusSeesEveryRequestShape(t *testing.T) {
 		convert = "converts to an updaterwire.Request"
 	)
 	file := func(body string) string {
-		return "package api\n\nimport (\n\t\"encoding/json\"\n\n\t\"nofx/internal/updaterwire\"\n)\n\nvar _ = json.Unmarshal\n\n" + body + "\n"
+		return "package api\n\nimport (\n\t\"encoding/json\"\n\n\t\"vl/internal/updaterwire\"\n)\n\nvar _ = json.Unmarshal\n\n" + body + "\n"
 	}
 	fill := "\tp := r0.Resume\n\t_ = json.Unmarshal([]byte(`{\"job_id\":\"`+job+`\"}`), &p)\n"
 	build := func(pre, ret string) string {

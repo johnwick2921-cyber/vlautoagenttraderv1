@@ -1,6 +1,6 @@
 from pathlib import Path
 import json,re,csv,hashlib,statistics,tiktoken
-D=Path('/home/hoang/nofx-vet-07-complete/docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data');S=Path('/home/hoang/nofx-analysis/vet-07-complete-0905')
+D=Path('/home/hoang/vl-vet-07-complete/docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data');S=Path('/home/hoang/vl-analysis/vet-07-complete-0905')
 P=(D/'planner-132-actual.txt').read_text(); current=P.replace('legal ONLY on fvg_entry|reject|breakdown_continue|breakup_continue (sweep_reclaim arms only via wait_confirm; breakout_retest|reclaim|hold|acceptance NEVER arm)','legal ONLY on reclaim|reject|fvg_entry|breakdown_continue|breakup_continue (sweep_reclaim arms only via wait_confirm; hold|acceptance|breakout_retest NEVER arm)').replace('≥ 1.0× the current 5m ATR','≥ 1.5× the current 5m ATR')
 assert current!=P
 (D/'planner-132-current-contract-replay.txt').write_text(current)

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Planner chart frontend deployment — September 22, 2026
 
 Owner authorized fix and deployment in this thread. PR #179 is merged.
@@ -11,7 +12,7 @@ Owner authorized fix and deployment in this thread. PR #179 is merged.
 
 ## Validation
 
-Clean clone: `/tmp/planner-chart-release-20260922/nofx`, at the merged HEAD.
+Clean clone: `/tmp/planner-chart-release-20260922/vl`, at the merged HEAD.
 `go test ./...` passed. Frontend: 77 files / 495 tests passed.
 TypeScript/Vite production build passed. Regression tests first reproduced
 the discarded-response defect before applying the one-line fix.

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // P1.3 (ledger-close 2026-08-19) — the early-warning tier is decided by a pure

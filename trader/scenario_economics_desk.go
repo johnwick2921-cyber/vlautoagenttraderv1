@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func (at *AutoTrader) deskScenarioEconomics(now time.Time) DeskLine {

@@ -1,6 +1,6 @@
 """Independent compliant re-derivation. READ-ONLY."""
 import sqlite3,math,json,datetime,csv
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True); c.row_factory=sqlite3.Row
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True); c.row_factory=sqlite3.Row
 c.execute('PRAGMA query_only=ON')
 ERA=1786770000000; END=1788584400000
 def ct(ms): return datetime.datetime.fromtimestamp(ms/1000,datetime.timezone(datetime.timedelta(hours=-5))).strftime('%Y-%m-%d %H:%M:%S')

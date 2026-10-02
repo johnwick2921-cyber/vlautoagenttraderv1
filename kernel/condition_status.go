@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // SHADOW DEMOTION (0C, owner ruling 2026-08-31) — per-condition live|shadow

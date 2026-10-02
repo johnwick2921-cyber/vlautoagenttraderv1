@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/telemetry"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // ── CANCEL-CONFIRMATION (2026-09-06) ─────────────────────────────────────────

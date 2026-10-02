@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Structural stop and first-zone target
 
 **Owner correction after this boot:** the owner meant the existing DAILY loss limit. The added mandatory per-trade cap is superseded by [the daily-loss correction](2026-09-13-structural-stop-daily-loss.md). The measurements and original boot receipts below remain historical evidence.
@@ -43,7 +44,7 @@ Binding Round 22 status, also included verbatim in the Guide:
 
 > [I]/[T] a codeable research candidate, not a validated replacement. No external evidence fixes its buffer or proves that it will turn the losing book positive.
 
-[A] Branch **`fix/structural-stop`** was claimed from the accepted `origin/dev` tip **`e81602bb5c4bacb237ae2921e0188f8aa1d752bf`**. Remote claim verified by `ls-remote`: **`11e4475cd9875e0a7c6ac85f44a35ba9e8abfed5`**. Composite session: `structuralstop-22fba7ca/Codex[unlisted]`. The isolated worktree is `/tmp/nofx-structural-stop-20260912`; the main checkout was not edited. A subsequent fetch still found the accepted dev tip and the original claim on this branch.
+[A] Branch **`fix/structural-stop`** was claimed from the accepted `origin/dev` tip **`e81602bb5c4bacb237ae2921e0188f8aa1d752bf`**. Remote claim verified by `ls-remote`: **`11e4475cd9875e0a7c6ac85f44a35ba9e8abfed5`**. Composite session: `structuralstop-22fba7ca/Codex[unlisted]`. The isolated worktree is `/tmp/vl-structural-stop-20260912`; the main checkout was not edited. A subsequent fetch still found the accepted dev tip and the original claim on this branch.
 
 [A] Runtime evidence at acceptance: health revision `400ea26c12c8`, executable revision **`400ea26c12c8b6daa7069d14a88eddfe1c9297e5`**, `vcs.modified=false`, executable MD5 **`93e8bd17fe2d86a928e41a76768b1fae`**, systemd restart policy `on-failure`. No binary swap, restart, live config write or account mutation has occurred in this dispatch.
 
@@ -276,13 +277,13 @@ The arm seam supplies the same existing `now` for records, CME-day keys and canc
 
 [A] Before measurements, an SQLite online backup was taken from a **read-only source connection** at **2026-09-12 19:11:36 CT**. Size **1,236,602,880 bytes**, SHA-256 **`c264a1e0cde4b105a8b78c8b95fe94b9ab2d3baf86ace5b9436e87e13b2496ca`**; `PRAGMA integrity_check` returned `ok`. No live DB/config/account write was made.
 
-A second byte-verified copy of the database, frozen event cache, complete sweep and captured input log cohort is preserved under **`/home/hoang/nofx-backups/structural-stop-20260912/`**, outside the temporary worktree. [Backup verification manifest](2026-09-12-structural-stop/evidence/backup-verification.json). The database and large raw cache are private local backups, not committed research artifacts. The report, full cohort index, geometry decisions, trade outcomes, harness, verification logs and source manifest are versioned together.
+A second byte-verified copy of the database, frozen event cache, complete sweep and captured input log cohort is preserved under **`/home/hoang/vl-backups/structural-stop-20260912/`**, outside the temporary worktree. [Backup verification manifest](2026-09-12-structural-stop/evidence/backup-verification.json). The database and large raw cache are private local backups, not committed research artifacts. The report, full cohort index, geometry decisions, trade outcomes, harness, verification logs and source manifest are versioned together.
 
 **A15 status: candidate verified offline; NOT MERGED, NOT DEPLOYED, no new live-surface proof.** The first new-geometry live composition and first refusal are still awaited after any authorized boot. A suite is not substituted for those events. Until then, do not label the candidate shipped or claim that current live plans already contain the new map/record.
 
-The dispatch explicitly requires **owner GO after E4** before merge and boot. No GO is assumed from the earlier request to finish and verify the work. After GO: refresh dev/spec freshness; census both checklist heading formats with `uniq -c` and allocate at merge, never reserve; scrutinize `git diff --stat origin/dev`; merge and run the full suite/goldens/Vitest/tsc at merged HEAD; build in a clean clone named `nofx`, stamp Guide source then dist from the actual source revision and verify `vcs.modified=false`.
+The dispatch explicitly requires **owner GO after E4** before merge and boot. No GO is assumed from the earlier request to finish and verify the work. After GO: refresh dev/spec freshness; census both checklist heading formats with `uniq -c` and allocate at merge, never reserve; scrutinize `git diff --stat origin/dev`; merge and run the full suite/goldens/Vitest/tsc at merged HEAD; build in a clean clone named `vl`, stamp Guide source then dist from the actual source revision and verify `vcs.modified=false`.
 
-The deploy-only main tree then requires the helper-owned lock and fresh five-leg gate. Leg 4 must use `TerminalArmStateSQL()`; an unreadable leg fails. Confirm restart policy, flat position, no planner read in flight and the authorized session window. Quote any resting arm and the sweep outcome. Write RELEASE before swap; **move**, never copy, the old binary to `nofx-bin.old.<actual-held-revision>` after reading its embedded revision; verify new built/running-file MD5 before the kill. Only then perform the authorized restart. Read boot integrity, verify five references and MD5, collect the first composition and refusal numbers, push the release marker, and release the lock.
+The deploy-only main tree then requires the helper-owned lock and fresh five-leg gate. Leg 4 must use `TerminalArmStateSQL()`; an unreadable leg fails. Confirm restart policy, flat position, no planner read in flight and the authorized session window. Quote any resting arm and the sweep outcome. Write RELEASE before swap; **move**, never copy, the old binary to `vl-bin.old.<actual-held-revision>` after reading its embedded revision; verify new built/running-file MD5 before the kill. Only then perform the authorized restart. Read boot integrity, verify five references and MD5, collect the first composition and refusal numbers, push the release marker, and release the lock.
 
 Rollback remains a concrete gate-time procedure because the binary's then-held revision must be measured, not guessed from today's revision. Preserve both binaries and RELEASE metadata. If new boot/integrity fails, under the same lock and flat gate move the failed binary aside, restore the verified old image and matching release marker, restart via the verified service policy, and verify health/executable/MD5 against the preserved values. There is no destructive schema migration in this wave. Do not restore an old trading database over new fills merely to roll back code.
 
@@ -361,7 +362,7 @@ Class 126 was assigned from the all-format census (previous maximum 125).
 [A] GitHub candidate checks: **25 SUCCESS, 1 SKIPPED, 0 FAILURE**. The skipped
 job is multi-architecture manifest publishing for the PR, not a test bypass.
 [Exact CI receipt](2026-09-12-structural-stop/evidence/github-checks.json).
-On the exact merged HEAD in clean clone `/tmp/structural-stop-release-build/nofx`:
+On the exact merged HEAD in clean clone `/tmp/structural-stop-release-build/vl`:
 **full Go suite including goldens PASS; 63 frontend files / 429 tests PASS;
 TypeScript PASS**.
 [Go](2026-09-12-structural-stop/evidence/logs/go-merged-final.log),
@@ -377,7 +378,7 @@ RELEASE and Guide SOURCE are stamped from that actual binary revision; their
 presence on dev denotes the prepared release, not a running-image claim.
 
 [A] Fresh online pre-cutover backup at 00:05:57 CT:
-`/home/hoang/nofx-backups/structural-stop-20260912/release-20260913/pre-cutover.db`,
+`/home/hoang/vl-backups/structural-stop-20260912/release-20260913/pre-cutover.db`,
 1,236,660,224 bytes, SQLite integrity_check `ok`, SHA256
 `f5904181390f857bbaaede8a33159a5f22e34cb6dbd5d5476dcc0b3900576f46`.
 A verified source bundle and CI receipt are preserved beside it. Live database,
@@ -429,7 +430,7 @@ arms and no in-flight read to interrupt.
 
 [A] RELEASE and its committed value preceded the swap. The old binary was
 **moved**, not copied, to
-`/home/hoang/nofx-backups/structural-stop-20260912/release-20260913/nofx-bin.old.400ea26c12c8b6daa7069d14a88eddfe1c9297e5`;
+`/home/hoang/vl-backups/structural-stop-20260912/release-20260913/vl-bin.old.400ea26c12c8b6daa7069d14a88eddfe1c9297e5`;
 its embedded revision was read before naming the backup, and old MD5 was
 `93e8bd17fe2d86a928e41a76768b1fae`. Old dist and release/Guide source are preserved
 beside it. New binary and UI were moved into place at **00:20:55 CT**; revision,
@@ -442,7 +443,7 @@ success at **00:21:42 CT**, within the required 90 seconds. No timer, unattended
 deployment or rollback was used.
 [Restart receipt](2026-09-12-structural-stop/evidence/restart-request.json).
 
-> 09-13 00:21:42 [INFO] nofx/main.go:295 🔐 BOOT INTEGRITY OK — rev 4127979f2fcc · built 2026-09-13T05:10:17Z · expected 4127979f2fcc · goldens PASS
+> 09-13 00:21:42 [INFO] vl/main.go:295 🔐 BOOT INTEGRITY OK — rev 4127979f2fcc · built 2026-09-13T05:10:17Z · expected 4127979f2fcc · goldens PASS
 
 [A] The actual resolved stop/target boot line reads:
 

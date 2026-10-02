@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # INVALIDATION-WIRED (checklist class 59)
 
 **Branch:** `fix/invalidation-wired` off `75d923eb` (deployed rev `528edd78`)
 **Commits:** `d2805408` · `c52c98e2` (+ this report) · pushed
 **Checklist:** entry **59** — renumbered 57 → 59 AT MERGE by the integrator
-(nofx-52): 57 went to a magic-epoch class that merged first. PART 1 is 50–59.
+(vl-52): 57 went to a magic-epoch class that merged first. PART 1 is 50–59.
 **Boot line:** `🛡 arm gate: invalidation-wired=on · armed-under surfaces=on …`
 **Status:** MOSTLY LIVE. `beb42e04` merged into dev and shipped as rev
 `f478ed88`, booted 2026-09-03 11:10:33 CT (marker `67ff5e9c`, zero ERRO). The
@@ -238,7 +239,7 @@ refusal line, and the next open position's card showing its armed-under version.
 Three sessions untangled this. My first account of it was wrong three times, and
 each correction came from a peer reading my claim against the code.
 
-**Source for the baseline evidence:** nofx-89's audit,
+**Source for the baseline evidence:** vl-89's audit,
 `docs/superpowers/reports/2026-09-01-full-system-audit.md` on branch
 `docs/full-system-audit-0901` @ **`5a2da9ce`** — the A6 revision. A5.3 is
 withdrawn there and carries an inline pointer so the superseded paragraph cannot
@@ -263,7 +264,7 @@ and it carries its own denominator.
 `trader_positions` **row ids**, not a count and never a ratio. The baseline
 finding is: on 2026-09-01, **two** armed fills went unstamped — ids 584 and 586
 — out of six closed rows that session-day (581–586). The chat figure came from
-nofx-89 misreading their own row ids; the committed report was always correct.
+vl-89 misreading their own row ids; the committed report was always correct.
 I then published it without checking that `armed_orders` holds 36 rows in
 total, which would have caught it in one query. My subsequent framing — "a
 positions-era figure I repeated" — was also wrong: it was a row-id pair, not an
@@ -275,9 +276,9 @@ order of magnitude, and it makes the deterministic reading STRONGER. A race
 producing 2 one day and 3 the next is unremarkable; a small, persistent,
 every-day number is exactly what a fold-insensitive miss looks like.
 
-**C2 — `;stamp_pending` transience.** nofx-52: the marker is trimmed in
+**C2 — `;stamp_pending` transience.** vl-52: the marker is trimmed in
 `reconcile.go`, no row carries it now, so the defect is visible only in
-`fill_quantity`. nofx-89: their report line 493 read `armed_orders` 24 and 28 as
+`fill_quantity`. vl-89: their report line 493 read `armed_orders` 24 and 28 as
 `filled ;stamp_pending` at 16:40 CT against fills at 08:37:08 and 13:33:06 —
 carries of roughly **8 hours and 3 hours**. Both are true. The trim is
 **eventual, not prompt**: verified now, rows 24 and 28 have empty
@@ -285,7 +286,7 @@ carries of roughly **8 hours and 3 hours**. Both are true. The trim is
 that made `fill_quantity` look like the only symptom.
 
 **C3 — RETRACTED: close-sync does NOT lose a priced close.** I wrote that
-`GetOpenPositionByAccountSymbol` was on a live money-loss path. nofx-52 checked
+`GetOpenPositionByAccountSymbol` was on a live money-loss path. vl-52 checked
 and it is not: `close_sync.go:87-89` sets `side` to `"LONG"`/`"SHORT"` via
 `strings.EqualFold` **before** the call, so it passes uppercase and matches the
 uppercase rows; `reconcile.go:153-157` and `tcp_trader.go:601` normalise too.
@@ -323,7 +324,7 @@ rather than intermittent. Fixed with `UPPER(side)=UPPER(?)` (664ab6b7).
 
 This is **class 28, canonical casing** — "one canonicalizer per identifier,
 called where the value ENTERS, never at each comparison" — backfilled into
-PART 1 by nofx-52 hours before this finding landed on it. Three call sites
+PART 1 by vl-52 hours before this finding landed on it. Three call sites
 normalise by hand; one storage path does not; the mismatch sat between two
 tables.
 
@@ -345,7 +346,7 @@ rows read D with full lineage, and both code lines quoted.
 #### CORRECTION — my mechanism was wrong; the predicate matches a SUBSET
 
 I wrote "the reset predicate looks for a grade that path never produces". Wrong,
-and nofx-89 caught it. `GradeAdherence` sets `base = "D"` for an uncited close
+and vl-89 caught it. `GradeAdherence` sets `base = "D"` for an uncited close
 and then applies penalties over `gradeLetters = {A,B,C,D,F}`:
 
 ```go
@@ -385,7 +386,7 @@ graded while `Cited` was false.
 ```
 
 **582 cannot discriminate — and the reason is sharper than "explicable".**
-nofx-89 read it as proof that the `armed_entry` path grades before it stamps.
+vl-89 read it as proof that the `armed_entry` path grades before it stamps.
 With `plan_matched=0`, two hypotheses give the same letter: base **C**
 ("direction mismatched") minus one penalty is D, and a grade-before-stamp gives
 base **D** (`!Cited`) with no penalty, also D. **The two are observationally
@@ -393,13 +394,13 @@ identical on that row.** It cannot discriminate in either direction, so the
 armed-path question is **untested, not exonerated** — a wrong answer closes the
 question.
 
-**Where the four DO sit — nofx-89's own reversal.** With 582 excluded, all four
+**Where the four DO sit — vl-89's own reversal.** With 582 excluded, all four
 impossible-D rows are `source=reconcile` (verified: `reconcile 4`). Their A5.3
 headline was "this is not a reconcile-path problem"; the corrected evidence
 points the other way. Stated as **absence of a counter-example, not proof** —
 the one `armed_entry` D row is precisely the undecidable one.
 
-#### A trap in my own discriminator (nofx-89's catch)
+#### A trap in my own discriminator (vl-89's catch)
 
 The ladder argument alone is not a safe predicate. Run it without a lineage
 clause and it returns **five**:
@@ -418,7 +419,7 @@ trade.
 
 My 4-in-71 is right because my query carried the lineage clause, but anyone
 re-deriving the count from the ladder reasoning alone lands on **five and quotes
-a test row as a live defect**. nofx-89's §D-3 flags the same seam contaminating
+a test row as a live defect**. vl-89's §D-3 flags the same seam contaminating
 `store/position_query.go`'s unfiltered counts, so this is that class recurring in
 a new query rather than a one-off. Denominator independently confirmed at 71.
 
@@ -432,7 +433,7 @@ under-reports plan-following by 4 in 71 — not 7.
 
 #### The five §F1 ids are three different failure states
 
-nofx-89's "25% blind" was correct when measured and is now three states behind
+vl-89's "25% blind" was correct when measured and is now three states behind
 one number:
 
 | ids | state |
@@ -443,7 +444,7 @@ one number:
 
 A single ratio is what hid this.
 
-#### Two cautions for whoever fixes it (nofx-52's, both right)
+#### Two cautions for whoever fixes it (vl-52's, both right)
 
 - **Do not widen the predicate to `"D"`.** A genuinely uncited close *should* be
   D — 580 is exactly that. Key on lineage, not on the letter.
@@ -455,7 +456,7 @@ Out of this wave's footprint (adherence belongs to the grader). Remediating
 existing rows is a DB write and needs the owner's authorisation.
 
 **Line-number note:** the reset reads `reconcile.go:588` in this branch and
-`:576` in nofx-52's tree — same statement, and my branch adds lines above it.
+`:576` in vl-52's tree — same statement, and my branch adds lines above it.
 Quoting the statement rather than the number is the durable citation:
 `if p.Status == "CLOSED" && p.AdherenceGrade == "F"`.
 
@@ -471,7 +472,7 @@ as a fact. I quoted it as my "live proof" of mechanism 1 and it is not proof of
 anything beyond `pos == nil`. A misdiagnosis compiled into a log line is
 expensive: it sent me looking for a timing bug and hid a deterministic one.
 
-### 9.5 The law, stated harder (nofx-89's wording)
+### 9.5 The law, stated harder (vl-89's wording)
 
 A write on a branch almost nothing takes is not merely the equivalent of an
 unperformed read — **it is worse, because it produces a green proof.** Row 35
@@ -519,7 +520,7 @@ regrade a test seam and promote two closes that earned their D:
 | 582 | `matched=0` → base C, "direction mismatched", −1 penalty — D is correct |
 
 Every clause of `stuckAdherenceWhere` exists because one of those rows proves
-it. nofx-47 reached the same four independently and told the owner.
+it. vl-47 reached the same four independently and told the owner.
 
 **It CLEARS the grade; it never writes one.** W5 regrades with the lineage in
 hand — the same mechanism `RepairArmedLineage` uses, so there is no second
@@ -557,7 +558,7 @@ Guard any re-derivation with the lineage clause — see the 572 trap above.
 `TestMaybeWakePlannerOnLevelEventsThrottleDedupe` failed on `origin/dev` at
 `62fd368d`, verified in a clean worktree of dev itself. I first reported it as
 unrelated to this branch. **It is not unrelated — it is a consequence of the
-class-47 cutoffs I built**, and I traced it after nofx-47 called it a time bomb.
+class-47 cutoffs I built**, and I traced it after vl-47 called it a time bomb.
 
 The test injects a fixed clock into its FIXTURE and called the production entry
 point, which reads `time.Now()`. Harmless while the cutoffs only WARNED. The
@@ -573,7 +574,7 @@ So the deploy lane's "27 ok / 0 FAIL" at `f478ed88` was **honest when taken**
 and the identical command failed the same afternoon. Reproducible in one
 direction, so re-running never surfaces it.
 
-Two of us mis-diagnosed it first: nofx-47 blamed the fixture's bar dates (real,
+Two of us mis-diagnosed it first: vl-47 blamed the fixture's bar dates (real,
 but the 15m zone path gates on `FormedAtMs` vs plan birth, both
 fixture-controlled), and reasoned from a stale timestamp believing it was 11:30
 when it was 14:47.
@@ -583,7 +584,7 @@ and delegates to `maybeWakePlannerOnLevelEventsAt(now, …)`. Production is
 unchanged; the test states its own clock. Recorded as **checklist class 60**,
 because the general shape is bigger than one test.
 
-#### The standing check nofx-47 asked for, run
+#### The standing check vl-47 asked for, run
 
 Scanned every `*_test.go` that builds a fixed `time.Date` clock and calls an
 `AutoTrader` entry point that reads `time.Now()` — eight sites. Then asked the

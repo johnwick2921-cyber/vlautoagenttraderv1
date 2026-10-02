@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── PLANNER A6 — a born-dead / flip-met retry re-sights the model on the

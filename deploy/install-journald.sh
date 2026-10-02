@@ -19,7 +19,7 @@ echo "== before =="
 journalctl --disk-usage || true
 
 mkdir -p "$DROPIN_DIR"
-install -m 0644 "$REPO/deploy/journald-nofx.conf" "$DROPIN_DIR/nofx.conf"
+install -m 0644 "$REPO/deploy/journald-vl.conf" "$DROPIN_DIR/vl.conf"
 # /var/log/journal already exists here, but create it to be safe on a fresh box.
 mkdir -p /var/log/journal
 systemd-tmpfiles --create --prefix /var/log/journal 2>/dev/null || true

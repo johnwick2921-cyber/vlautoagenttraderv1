@@ -5,7 +5,7 @@ package updateauth
 // property it pins; each was run and refused the attack it describes.
 //
 // The three triage findings M3-RT-F1..F3 were RED here (gated on
-// NOFX_M3_OPEN_FINDINGS) until the fix commit removed the gate; they are
+// VL_M3_OPEN_FINDINGS) until the fix commit removed the gate; they are
 // now ordinary pins.
 
 import (

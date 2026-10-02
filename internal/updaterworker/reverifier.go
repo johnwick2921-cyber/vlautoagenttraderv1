@@ -24,11 +24,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // NewReleaseReverifier is the production Reverifier for the installation t
-// (cmd/nofx-updater's newReverifier). It touches no file: the verdict and the
+// (cmd/vl-updater's newReverifier). It touches no file: the verdict and the
 // allowed-signers file are read at each call.
 func NewReleaseReverifier(t Target) (Reverifier, error) {
 	if !filepath.IsAbs(t.DataDir) || !filepath.IsAbs(t.InstallDir) {
@@ -65,7 +65,7 @@ func (r releaseReverifier) Verdict(releaseID string) (Verdict, error) {
 		// verdict is written once — so the old verdict goes first, by hand.
 		vpath, perr := updaterjob.VerdictPath(r.dataDir, releaseID)
 		if perr != nil {
-			return Verdict{}, fmt.Errorf("%w: the verdict for %s names the release dir %s, not %s under the current NOFX_RELEASE_DIR (and its path: %w)", ErrReleaseRoot, releaseID, v.ReleaseDir, want, perr)
+			return Verdict{}, fmt.Errorf("%w: the verdict for %s names the release dir %s, not %s under the current VL_RELEASE_DIR (and its path: %w)", ErrReleaseRoot, releaseID, v.ReleaseDir, want, perr)
 		}
 		// d1 (U4G defect 1): when the moved-TO directory ALREADY EXISTS (the
 		// operator moved the directory, not just the knob), the re-fetch step
@@ -75,12 +75,12 @@ func (r releaseReverifier) Verdict(releaseID string) (Verdict, error) {
 		// point out that not moving the directory at all keeps the verdict
 		// valid.
 		if _, werr := os.Lstat(want); werr == nil {
-			return Verdict{}, fmt.Errorf("%w: the verdict for %s names the release dir %s, not %s under the current NOFX_RELEASE_DIR, and %s ALREADY EXISTS — "+
-				"to use this release there: (1) move %s aside first (mv it elsewhere), or do not move the release directory at all (this verdict is still valid where it is); (2) then remove the old verdict by hand: rm %s (3) and re-fetch it: nofx-updater --install-dir %s fetch %s",
+			return Verdict{}, fmt.Errorf("%w: the verdict for %s names the release dir %s, not %s under the current VL_RELEASE_DIR, and %s ALREADY EXISTS — "+
+				"to use this release there: (1) move %s aside first (mv it elsewhere), or do not move the release directory at all (this verdict is still valid where it is); (2) then remove the old verdict by hand: rm %s (3) and re-fetch it: vl-updater --install-dir %s fetch %s",
 				ErrReleaseRoot, releaseID, v.ReleaseDir, want, want, want, vpath, r.installDir, releaseID)
 		}
-		return Verdict{}, fmt.Errorf("%w: the verdict for %s names the release dir %s, not %s under the current NOFX_RELEASE_DIR — "+
-			"to use this release there: (1) remove the old verdict by hand: rm %s (2) then re-fetch it: nofx-updater --install-dir %s fetch %s",
+		return Verdict{}, fmt.Errorf("%w: the verdict for %s names the release dir %s, not %s under the current VL_RELEASE_DIR — "+
+			"to use this release there: (1) remove the old verdict by hand: rm %s (2) then re-fetch it: vl-updater --install-dir %s fetch %s",
 			ErrReleaseRoot, releaseID, v.ReleaseDir, want, vpath, r.installDir, releaseID)
 	}
 	return mirrorVerdict(v), nil

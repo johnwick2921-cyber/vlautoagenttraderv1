@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"testing"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 func TestRedTeamChainAtTheProductionRouter(t *testing.T) {

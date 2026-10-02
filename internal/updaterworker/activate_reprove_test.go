@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // PIN (#206 review fold, runner.go:275): the activate and rollback kills used

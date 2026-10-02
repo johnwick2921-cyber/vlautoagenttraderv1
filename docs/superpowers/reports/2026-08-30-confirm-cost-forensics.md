@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Confirm-Cost Forensics — did waiting for close-confirms lose the owner money?
 
 **Date:** 2026-08-30 · **Scope:** the full confirm-bearing campaign on our tape (plans 2026-08-15 → 2026-08-28, MNQ futures, SIM)
-**Data:** read-only. DB copy `/tmp/nofx-cc-db/data.db` (`.backup` of live); bars/plans/positions/arms/decisions re-read fresh this run (R1). All replay math recomputed from raw 1m bars by my own bucketing — no stored verdicts trusted (R2). Money is `pnl_corrected` for actual fills (R7). All replays on 1m bars; intrabar stop+target ambiguity resolved AGAINST the trade (R9). Every table states its n.
+**Data:** read-only. DB copy `/tmp/vl-cc-db/data.db` (`.backup` of live); bars/plans/positions/arms/decisions re-read fresh this run (R1). All replay math recomputed from raw 1m bars by my own bucketing — no stored verdicts trusted (R2). Money is `pnl_corrected` for actual fills (R7). All replays on 1m bars; intrabar stop+target ambiguity resolved AGAINST the trade (R9). Every table states its n.
 
 **Verdict (one line):** **confirms NET-COST ≈ $681** over 30 MET entries — mechanical close-drift dominated by `2x5m_close` (−$330) and `1x5m_close` (−$352) — with only one protection case (+$128) and **zero** missed winners on the tape.
 

@@ -3,8 +3,8 @@ package trader
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 	"strings"
 	"time"
 )

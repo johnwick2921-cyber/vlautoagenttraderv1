@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // TestE8ScenarioDirectionReadsBaseIgnoringLaterOverlay (WAVE 1a-plan P2

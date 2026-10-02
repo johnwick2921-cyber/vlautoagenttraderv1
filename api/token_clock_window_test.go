@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
+	"vl/auth"
 
 	"github.com/golang-jwt/jwt/v5"
 )

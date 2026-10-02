@@ -1,17 +1,8 @@
 import { useState } from 'react'
-import {
-  Plus,
-  X,
-  Database,
-  TrendingUp,
-  TrendingDown,
-  List,
-  Ban,
-  Zap,
-} from 'lucide-react'
+import { Plus, X, Database, TrendingUp, List, Ban, Layers } from 'lucide-react'
 import type { CoinSourceConfig } from '../../types'
 import { coinSource, ts } from '../../i18n/strategy-translations'
-import { NofxSelect } from '../ui/select'
+import { VlSelect } from '../ui/select'
 import { isCMEFutures } from '../../lib/instrument'
 
 interface CoinSourceEditorProps {
@@ -32,15 +23,15 @@ export function CoinSourceEditor({
 
   const sourceTypes = [
     { value: 'static', icon: List, color: '#848E9C' },
-    { value: 'ai500', icon: Database, color: '#F0B90B' },
-    { value: 'oi_top', icon: TrendingUp, color: '#0ECB81' },
-    { value: 'oi_low', icon: TrendingDown, color: '#F6465D' },
+    { value: 'hyper_all', icon: Database, color: '#F0B90B' },
+    { value: 'hyper_main', icon: TrendingUp, color: '#0ECB81' },
+    { value: 'mixed', icon: Layers, color: '#a855f7' },
   ] as const
 
-  // CME futures (e.g. MNQ) only use the Static symbol list — AI500 / OI rankings
-  // are crypto-only data feeds (and would make the engine fetch crypto data
-  // instead of trading MNQ). Hide them on futures (DISPLAY only — saved data is
-  // untouched) and treat the displayed type as Static there. Crypto shows all 4.
+  // CME futures (e.g. MNQ) only use the Static symbol list — Hyperliquid coin
+  // sources are crypto-only data feeds (and would make the engine fetch crypto
+  // data instead of trading MNQ). Hide them on futures (DISPLAY only — saved
+  // data is untouched) and treat the displayed type as Static there.
   const isFutures = isCMEFutures(config.static_coins?.[0])
   const visibleSourceTypes = isFutures
     ? sourceTypes.filter((s) => s.value === 'static')
@@ -189,32 +180,25 @@ export function CoinSourceEditor({
     })
   }
 
-  // NofxOS badge component
-  const NofxOSBadge = () => (
-    <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
-      NofxOS
-    </span>
-  )
-
   return (
     <div className="space-y-6">
       {/* Venue badge — Studio Phase 3: a futures strategy must SHOW its real
           venue instead of a crypto "Static List" source (Strategy-Studio plan).
           Display only; the backend infers the venue from the symbol. */}
       {isFutures && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-nofx-gold/30 bg-nofx-gold/10">
-          <Database className="w-4 h-4 text-nofx-gold" />
-          <span className="text-xs font-medium text-nofx-gold">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-vl-neo-gold/30 bg-vl-neo-gold/10">
+          <Database className="w-4 h-4 text-vl-neo-gold" />
+          <span className="text-xs font-medium text-vl-neo-gold">
             NinjaTrader · CME futures
           </span>
-          <span className="text-[10px] text-nofx-text-muted ml-auto">
+          <span className="text-[10px] text-vl-neo-text-muted ml-auto">
             real-time bars + SIM execution via the NT8 TCP bridge
           </span>
         </div>
       )}
       {/* Source Type Selector */}
       <div>
-        <label className="block text-sm font-medium mb-3 text-nofx-text">
+        <label className="block text-sm font-medium mb-3 text-vl-neo-text">
           {ts(coinSource.sourceType, language)}
         </label>
         <div className="grid grid-cols-4 gap-2">
@@ -231,15 +215,15 @@ export function CoinSourceEditor({
               disabled={disabled}
               className={`p-4 rounded-lg border transition-all ${
                 effectiveSourceType === value
-                  ? 'ring-2 ring-nofx-gold bg-nofx-gold/10'
-                  : 'hover:bg-white/5 bg-nofx-bg'
-              } border-nofx-gold/20`}
+                  ? 'ring-2 ring-vl-neo-gold bg-vl-neo-gold/10'
+                  : 'hover:bg-white/5 bg-vl-neo-bg'
+              } border-vl-neo-gold/20`}
             >
               <Icon className="w-6 h-6 mx-auto mb-2" style={{ color }} />
-              <div className="text-sm font-medium text-nofx-text">
+              <div className="text-sm font-medium text-vl-neo-text">
                 {ts(coinSource[value as keyof typeof coinSource], language)}
               </div>
-              <div className="text-xs mt-1 text-nofx-text-muted">
+              <div className="text-xs mt-1 text-vl-neo-text-muted">
                 {ts(
                   coinSource[`${value}Desc` as keyof typeof coinSource],
                   language
@@ -253,14 +237,14 @@ export function CoinSourceEditor({
       {/* Static Coins - only for static mode */}
       {effectiveSourceType === 'static' && (
         <div>
-          <label className="block text-sm font-medium mb-3 text-nofx-text">
+          <label className="block text-sm font-medium mb-3 text-vl-neo-text">
             {ts(coinSource.staticCoins, language)}
           </label>
           <div className="flex flex-wrap gap-2 mb-3">
             {(config.static_coins || []).map((coin) => (
               <span
                 key={coin}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm bg-nofx-bg-lighter text-nofx-text"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm bg-vl-neo-bg-lighter text-vl-neo-text"
               >
                 {coin}
                 {!disabled && (
@@ -282,11 +266,11 @@ export function CoinSourceEditor({
                 onChange={(e) => setNewCoin(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddCoin()}
                 placeholder="e.g. MNQ, ES, BTC, ETH"
-                className="flex-1 px-4 py-2 rounded-lg bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                className="flex-1 px-4 py-2 rounded-lg bg-vl-neo-bg border border-vl-neo-gold/20 text-vl-neo-text"
               />
               <button
                 onClick={handleAddCoin}
-                className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors bg-nofx-gold text-black hover:bg-yellow-500"
+                className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors bg-vl-neo-gold text-black hover:bg-yellow-500"
               >
                 <Plus className="w-4 h-4" />
                 {ts(coinSource.addCoin, language)}
@@ -299,19 +283,19 @@ export function CoinSourceEditor({
       {/* Excluded Coins */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <Ban className="w-4 h-4 text-nofx-danger" />
-          <label className="text-sm font-medium text-nofx-text">
+          <Ban className="w-4 h-4 text-vl-neo-danger" />
+          <label className="text-sm font-medium text-vl-neo-text">
             {ts(coinSource.excludedCoins, language)}
           </label>
         </div>
-        <p className="text-xs mb-3 text-nofx-text-muted">
+        <p className="text-xs mb-3 text-vl-neo-text-muted">
           {ts(coinSource.excludedCoinsDesc, language)}
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
           {(config.excluded_coins || []).map((coin) => (
             <span
               key={coin}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm bg-nofx-danger/15 text-nofx-danger"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm bg-vl-neo-danger/15 text-vl-neo-danger"
             >
               {coin}
               {!disabled && (
@@ -325,7 +309,7 @@ export function CoinSourceEditor({
             </span>
           ))}
           {(config.excluded_coins || []).length === 0 && (
-            <span className="text-xs italic text-nofx-text-muted">
+            <span className="text-xs italic text-vl-neo-text-muted">
               {ts(coinSource.excludedNone, language)}
             </span>
           )}
@@ -338,11 +322,11 @@ export function CoinSourceEditor({
               onChange={(e) => setNewExcludedCoin(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddExcludedCoin()}
               placeholder="e.g. MNQ, ES, BTC, ETH"
-              className="flex-1 px-4 py-2 rounded-lg text-sm bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+              className="flex-1 px-4 py-2 rounded-lg text-sm bg-vl-neo-bg border border-vl-neo-gold/20 text-vl-neo-text"
             />
             <button
               onClick={handleAddExcludedCoin}
-              className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm bg-nofx-danger text-white hover:bg-red-600"
+              className="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm bg-vl-neo-danger text-white hover:bg-red-600"
             >
               <Ban className="w-4 h-4" />
               {ts(coinSource.addExcludedCoin, language)}
@@ -351,177 +335,94 @@ export function CoinSourceEditor({
         )}
       </div>
 
-      {/* AI500 Options - only for ai500 mode */}
-      {effectiveSourceType === 'ai500' && (
-        <div className="p-4 rounded-lg bg-nofx-gold/5 border border-nofx-gold/20">
+      {/* Hyperliquid All options — for hyper_all or mixed */}
+      {(effectiveSourceType === 'hyper_all' ||
+        effectiveSourceType === 'mixed') && (
+        <div className="p-4 rounded-lg bg-vl-neo-gold/5 border border-vl-neo-gold/20">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-nofx-gold" />
-              <span className="text-sm font-medium text-nofx-text">
-                AI500 {ts(coinSource.dataSourceConfig, language)}
+              <Database className="w-4 h-4 text-vl-neo-gold" />
+              <span className="text-sm font-medium text-vl-neo-text">
+                {ts(coinSource.hyperAll, language)}{' '}
+                {ts(coinSource.dataSourceConfig, language)}
               </span>
-              <NofxOSBadge />
             </div>
           </div>
-
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.use_ai500}
-                onChange={(e) =>
-                  !disabled &&
-                  onChange({ ...config, use_ai500: e.target.checked })
-                }
-                disabled={disabled}
-                className="w-5 h-5 rounded accent-nofx-gold"
-              />
-              <span className="text-nofx-text">
-                {ts(coinSource.useAI500, language)}
-              </span>
-            </label>
-
-            {config.use_ai500 && (
-              <div className="flex items-center gap-3 pl-8">
-                <span className="text-sm text-nofx-text-muted">
-                  {ts(coinSource.ai500Limit, language)}:
-                </span>
-                <NofxSelect
-                  value={config.ai500_limit || 3}
-                  onChange={(val) =>
-                    !disabled &&
-                    onChange({ ...config, ai500_limit: parseInt(val) || 3 })
-                  }
-                  disabled={disabled}
-                  options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({
-                    value: n,
-                    label: String(n),
-                  }))}
-                  className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
-                />
-              </div>
-            )}
-
-            <p className="text-xs pl-8 text-nofx-text-muted">
-              {ts(coinSource.nofxosNote, language)}
-            </p>
-          </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.use_hyper_all}
+              onChange={(e) =>
+                !disabled &&
+                onChange({ ...config, use_hyper_all: e.target.checked })
+              }
+              disabled={disabled}
+              className="w-5 h-5 rounded accent-vl-neo-gold"
+            />
+            <span className="text-vl-neo-text">
+              {ts(coinSource.useHyperAll, language)}
+            </span>
+          </label>
+          <p className="text-xs pl-8 text-vl-neo-text-muted mt-1">
+            {ts(coinSource.hyperAllDesc, language)}
+          </p>
         </div>
       )}
 
-      {/* OI Top Options - only for oi_top mode */}
-      {effectiveSourceType === 'oi_top' && (
-        <div className="p-4 rounded-lg bg-nofx-success/5 border border-nofx-success/20">
+      {/* Hyperliquid Main options — for hyper_main or mixed */}
+      {(effectiveSourceType === 'hyper_main' ||
+        effectiveSourceType === 'mixed') && (
+        <div className="p-4 rounded-lg bg-vl-neo-success/5 border border-vl-neo-success/20">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-nofx-success" />
-              <span className="text-sm font-medium text-nofx-text">
-                {ts(coinSource.oiIncreaseTitle, language)}{' '}
+              <TrendingUp className="w-4 h-4 text-vl-neo-success" />
+              <span className="text-sm font-medium text-vl-neo-text">
+                {ts(coinSource.hyperMain, language)}{' '}
                 {ts(coinSource.dataSourceConfig, language)}
               </span>
-              <NofxOSBadge />
             </div>
           </div>
-
           <div className="space-y-3">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                checked={config.use_oi_top}
+                checked={config.use_hyper_main}
                 onChange={(e) =>
                   !disabled &&
-                  onChange({ ...config, use_oi_top: e.target.checked })
+                  onChange({ ...config, use_hyper_main: e.target.checked })
                 }
                 disabled={disabled}
-                className="w-5 h-5 rounded accent-nofx-success"
+                className="w-5 h-5 rounded accent-vl-neo-success"
               />
-              <span className="text-nofx-text">
-                {ts(coinSource.useOITop, language)}
+              <span className="text-vl-neo-text">
+                {ts(coinSource.useHyperMain, language)}
               </span>
             </label>
-
-            {config.use_oi_top && (
+            {config.use_hyper_main && (
               <div className="flex items-center gap-3 pl-8">
-                <span className="text-sm text-nofx-text-muted">
-                  {ts(coinSource.oiTopLimit, language)}:
+                <span className="text-sm text-vl-neo-text-muted">
+                  {ts(coinSource.hyperMainLimit, language)}:
                 </span>
-                <NofxSelect
-                  value={config.oi_top_limit || 3}
+                <VlSelect
+                  value={config.hyper_main_limit || 20}
                   onChange={(val) =>
                     !disabled &&
-                    onChange({ ...config, oi_top_limit: parseInt(val) || 3 })
+                    onChange({
+                      ...config,
+                      hyper_main_limit: parseInt(val) || 20,
+                    })
                   }
                   disabled={disabled}
-                  options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({
+                  options={[5, 10, 15, 20, 30, 50].map((n) => ({
                     value: n,
                     label: String(n),
                   }))}
-                  className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                  className="px-3 py-1.5 rounded bg-vl-neo-bg border border-vl-neo-gold/20 text-vl-neo-text"
                 />
               </div>
             )}
-
-            <p className="text-xs pl-8 text-nofx-text-muted">
-              {ts(coinSource.nofxosNote, language)}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* OI Low Options - only for oi_low mode */}
-      {effectiveSourceType === 'oi_low' && (
-        <div className="p-4 rounded-lg bg-nofx-danger/5 border border-nofx-danger/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-nofx-danger" />
-              <span className="text-sm font-medium text-nofx-text">
-                {ts(coinSource.oiDecreaseTitle, language)}{' '}
-                {ts(coinSource.dataSourceConfig, language)}
-              </span>
-              <NofxOSBadge />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.use_oi_low}
-                onChange={(e) =>
-                  !disabled &&
-                  onChange({ ...config, use_oi_low: e.target.checked })
-                }
-                disabled={disabled}
-                className="w-5 h-5 rounded accent-red-500"
-              />
-              <span className="text-nofx-text">
-                {ts(coinSource.useOILow, language)}
-              </span>
-            </label>
-
-            {config.use_oi_low && (
-              <div className="flex items-center gap-3 pl-8">
-                <span className="text-sm text-nofx-text-muted">
-                  {ts(coinSource.oiLowLimit, language)}:
-                </span>
-                <NofxSelect
-                  value={config.oi_low_limit || 3}
-                  onChange={(val) =>
-                    !disabled &&
-                    onChange({ ...config, oi_low_limit: parseInt(val) || 3 })
-                  }
-                  disabled={disabled}
-                  options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({
-                    value: n,
-                    label: String(n),
-                  }))}
-                  className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
-                />
-              </div>
-            )}
-
-            <p className="text-xs pl-8 text-nofx-text-muted">
-              {ts(coinSource.nofxosNote, language)}
+            <p className="text-xs text-vl-neo-text-muted">
+              {ts(coinSource.hyperMainDesc, language)}
             </p>
           </div>
         </div>

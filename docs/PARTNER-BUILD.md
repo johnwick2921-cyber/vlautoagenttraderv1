@@ -1,4 +1,5 @@
-# Building nofx on a machine without a C compiler (partner mirror)
+names rewritten to vl on 2026-09-30 (VL rename)
+# Building vl on a machine without a C compiler (partner mirror)
 
 **Wave:** W-CGOFREE-SQLITE-UPSTREAM (2026-09-17). Not a knob — no guide entry.
 
@@ -9,7 +10,7 @@ mirror "Binnie") build with the `cgofree` tag, which swaps BOTH sqlite backends
 for pure-Go equivalents:
 
 ```
-go build -tags cgofree -o nofx-bin .
+go build -tags cgofree -o vl-bin .
 go test  -tags cgofree ./store/... ./researchsnapshot/...
 ```
 
@@ -37,17 +38,17 @@ markers on disk (uncommitted), THEN build the dist — only the build gets the t
 
 ```
 git checkout HEAD -- deploy/RELEASE web/src/guide/types.ts     # drop the previous on-disk re-arm
-git checkout main && git pull --ff-only origin main             # partner main (a mirror of nofx's running tree)
-go build -tags cgofree -o nofx-bin.new . && go version -m nofx-bin.new | grep vcs.modified=false
+git checkout main && git pull --ff-only origin main             # partner main (a mirror of vl's running tree)
+go build -tags cgofree -o vl-bin.new . && go version -m vl-bin.new | grep vcs.modified=false
 HEAD_SHA=$(git rev-parse HEAD)
 echo -n "$HEAD_SHA" > deploy/RELEASE                             # BOOT INTEGRITY compares the binary rev to this
 sed -i "s/^export const GUIDE_BUILT_REV = '[0-9a-f]*'/export const GUIDE_BUILT_REV = '$HEAD_SHA'/" web/src/guide/types.ts
 (cd web && npm run build)                                        # the 🖥 line must read bundle-rev == binary rev
-mv -n nofx-bin nofx-bin.old.$(go version -m nofx-bin | awk -F= '/vcs.revision/{print substr($2,1,8)}') && mv nofx-bin.new nofx-bin
+mv -n vl-bin vl-bin.old.$(go version -m vl-bin | awk -F= '/vcs.revision/{print substr($2,1,8)}') && mv vl-bin.new vl-bin
 ```
 
 Then restart the bot the way that machine runs it (systemd where it exists;
-Binnie has no sudo and runs `setsid nohup ./nofx-bin &`, so stop the old pid and
+Binnie has no sudo and runs `setsid nohup ./vl-bin &`, so stop the old pid and
 relaunch). Proofs to paste: `BOOT INTEGRITY OK — rev X · expected X · goldens
 PASS`, `🖥 … bundle-rev=X matches the binary`, `hello handshake OK`, positions
 `count=0`. The full step-by-step with rc checks is the CTO's

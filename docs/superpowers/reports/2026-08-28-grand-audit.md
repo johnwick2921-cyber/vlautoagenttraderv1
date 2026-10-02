@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Grand Audit — SEP-3 class cold re-proof of the fix ledger
 
 - **Date:** 2026-08-28, 07:28–08:28 CT
 - **Deployed rev under audit:** `2738d158` (PID 3441452, boot 07:39:16 CT) — hotfix that added the `RepairArmedLineage` call.
 - **Dev tip:** `e44a66a8` (audit report + cutover record).
-- **Audit tree:** `~/nofx-grand` worktree @ `2738d158`, branch `docs/grand-audit` (read-only on live DB, `mode=ro`).
+- **Audit tree:** `~/vl-grand` worktree @ `2738d158`, branch `docs/grand-audit` (read-only on live DB, `mode=ro`).
 - **Method:** Part A = 22 cold re-proofs, rules R1–R9 (fresh CT-stamped evidence, independent math, twin-path long/short, file:line per claim, R6 statuses, `pnl_corrected`, trader binding, 1m-bar MPM).
 
 ---

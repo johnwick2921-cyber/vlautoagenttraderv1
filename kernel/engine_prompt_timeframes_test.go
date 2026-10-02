@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // TestFormatKlineTimeframes_Golden locks the "Available Data" timeframe summary

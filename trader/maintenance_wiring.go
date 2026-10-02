@@ -1,6 +1,6 @@
 package trader
 
-import ntTrader "nofx/trader/ninjatrader"
+import ntTrader "vl/trader/ninjatrader"
 
 // wireNT8Maintenance installs the installation maintenance hold on one NT8
 // TCP trader. It is the ONLY production call site of these four setters, and

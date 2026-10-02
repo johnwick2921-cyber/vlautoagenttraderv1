@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL Day-Plan — wire-up train (fixes the audit's 10 dead wires)
 
 **LINE 1 — ALL 10 WIRES DONE + GREEN (W1..W10). Full suite 26 pkgs green, goldens
@@ -42,10 +43,10 @@ Plans stamped the provider alias `deepseek`, not an exact string (§125 violatio
 
 ## ⏫ DEPLOY NOW (owner, before Sunday 17:00 CT — Go touched, rebuild+restart):
 ```bash
-cd /home/hoang/nofx && git pull && go build -o nofx-bin ./... && echo BUILD OK
-kill -9 $(pgrep -f nofx-bin)   # systemd Restart=on-failure respawns the new binary
+cd /home/hoang/vl && git pull && go build -o vl-bin ./... && echo BUILD OK
+kill -9 $(pgrep -f vl-bin)   # systemd Restart=on-failure respawns the new binary
 ```
-(`sudo systemctl restart nofx` is classifier-blocked; SIGKILL is the deploy per
+(`sudo systemctl restart vl` is classifier-blocked; SIGKILL is the deploy per
 CLAUDE.md. Do it in the flat/CME-closed weekend window. No AddOn F5 — no `.cs`
 changed.) This makes Monday's 08:25 read fire correctly + exact model pinned.
 
@@ -152,8 +153,8 @@ untouched, additive throughout. HEAD `0f79fb4f`.
 
 ## ⏫ DEPLOY (owner, before Mon 08:00 CT — second rebuild, Go-only, no AddOn F5):
 ```bash
-cd /home/hoang/nofx && git pull && go build -o nofx-bin ./... && echo BUILD OK
-kill -9 $(pgrep -f nofx-bin)   # systemd Restart=on-failure respawns the new binary
+cd /home/hoang/vl && git pull && go build -o vl-bin ./... && echo BUILD OK
+kill -9 $(pgrep -f vl-bin)   # systemd Restart=on-failure respawns the new binary
 ```
 Do it in the flat/CME-closed window. No `.cs` changed → no NT8 restart. This
 activates W3–W10 (W1+W2 already deployed pre-Sun-17:00). All new behavior is

@@ -1,6 +1,6 @@
 #!/bin/bash
 # q02 — which cut yields the dispatch's "227 rows entry_time >= 2026-08-15"? and pin the CT epoch.
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 S() { echo "--- $1"; sqlite3 "$DB" "$2"; }
 python3 - <<'PY'
 import datetime, zoneinfo

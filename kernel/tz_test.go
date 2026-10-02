@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // P0 timezone (owner rule 2026-08-19) — CT is canonical everywhere. These

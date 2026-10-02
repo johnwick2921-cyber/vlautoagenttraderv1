@@ -14,7 +14,7 @@ import (
 )
 
 // PIN (U4F verify note 5, the one-canonicalizer canon): internal/updaterworker
-// and cmd/nofx-updater have ONE containment helper, PathWithin. An AST scan of
+// and cmd/vl-updater have ONE containment helper, PathWithin. An AST scan of
 // their non-test code finds every containment-by-text shape —
 //   - a filepath.Rel result compared (== / !=) with a string literal starting
 //     with "..", or handed to strings.HasPrefix;
@@ -25,7 +25,7 @@ import (
 // so a scan that sees nothing cannot pass by being blind.
 func TestContainmentCensusOneHelper(t *testing.T) {
 	var got []string
-	for _, root := range []string{".", filepath.Join("..", "..", "cmd", "nofx-updater")} {
+	for _, root := range []string{".", filepath.Join("..", "..", "cmd", "vl-updater")} {
 		err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err

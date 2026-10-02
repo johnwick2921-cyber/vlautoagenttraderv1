@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	"nofx/internal/holdcli"
+	"vl/internal/holdcli"
 )
 
 func main() { os.Exit(holdcli.Run(os.Args[1:], os.Stdout, os.Stderr)) }

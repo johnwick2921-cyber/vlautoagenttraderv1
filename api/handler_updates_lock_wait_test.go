@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
+	"vl/internal/updateauth"
 )
 
 func holdSeenLock(t *testing.T, dataDir string) (release func()) {

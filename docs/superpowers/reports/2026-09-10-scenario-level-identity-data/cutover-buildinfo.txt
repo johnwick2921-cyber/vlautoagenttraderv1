@@ -1,6 +1,6 @@
-/tmp/identity-cutover/nofx-bin: go1.25.3
-	path	nofx
-	mod	nofx	v0.0.0-20260910235546-cd8f99780eaf	
+/tmp/identity-cutover/vl-bin: go1.25.3
+	path	vl
+	mod	vl	v0.0.0-20260910235546-cd8f99780eaf	
 	dep	github.com/adshao/go-binance/v2	v2.8.9	h1:NX+4u/LgEmrjTS7OMWU+9ZgfHKFM61RPhnr9/SqWPhc=
 	dep	github.com/antihax/optional	v1.0.0	h1:xK2lYat7ZLaVVcIuj82J8kIro4V6kDe0AUDFboUCwcg=
 	dep	github.com/armon/go-radix	v1.0.0	h1:F4z6KzEeeQIMeLFa97iZU6vupzoecKdU5TX24SNppXI=

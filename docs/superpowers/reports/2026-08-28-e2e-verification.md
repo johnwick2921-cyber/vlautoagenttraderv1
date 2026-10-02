@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # E2E PIPELINE VERIFICATION — every wire (2026-08-27/28)
 
-Read-only campaign in the isolated worktree `~/nofx-e2e` at the RUNNING rev
+Read-only campaign in the isolated worktree `~/vl-e2e` at the RUNNING rev
 `6fc09ad39fba` (boot 14:29:14 CT, PID 3055713) on branch `docs/e2e-verify`.
 Main tree untouched. All prices from stored 1m bars reimplemented in
 `scripts/e2e_recompute.py` (R2 — never calls the functions under test).
@@ -57,7 +58,7 @@ residual delta, but not zero.
   NTP=synced → headroom ~45s ✓.
 - 1.6 DB: 0 busy/locked events since 14:29; WAL ✓; data.db 586MB / WAL 5.5MB;
   backup timer last success 05:00:14 CT ✓.
-- 1.7 systemd: nofx + nofx-clock-guard.timer + nofx-backup.timer active ✓.
+- 1.7 systemd: vl + vl-clock-guard.timer + vl-backup.timer active ✓.
   journald volume: **~19,000 lines / 5 min post-cutover** (A-1) → retention
   projection ~hours, NOT ≥7 days.
 - 1.8 boot three-way: `BOOT INTEGRITY OK — rev 6fc09ad39fba +dirty · expected
@@ -197,7 +198,7 @@ From the script (08-27 NY session):
   .tsx:180` — cosmetic, still pending the next FE pass (C).
 - 11.4 process: 20 OPEN PRs (oldest 7 days) · dev tip 43bb60cb ahead of
   running by FE+docs (expected) · stashes: none in main tree (level-truth
-  consumed) · worktrees: main dev, e2e (this), recheck, /tmp/nofx-dev-check
+  consumed) · worktrees: main dev, e2e (this), recheck, /tmp/vl-dev-check
   (STALE detached a52de628 — cleanable) · partner PR #2 open.
 - 11.5 canon laws present in CLAUDE.md: WORKTREE LAW :134 · NO UNATTENDED
   DEPLOYS :140 · SIM-only :146 ✓.

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // W1b E12(a) — THE WIRE NEVER ROUNDS A STOP TOWARD THE ENTRY.

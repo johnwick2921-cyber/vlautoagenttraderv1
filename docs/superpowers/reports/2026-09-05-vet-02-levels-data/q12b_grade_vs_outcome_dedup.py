@@ -2,7 +2,7 @@
 """q12b: same as q12 but ONE row per (session-day, label, price): the EARLIEST plan version that seated it starts the scan.
 Removes the re-plan duplication (249 versions over ~51 plan-sessions)."""
 import sqlite3, json, math, collections, datetime, csv
-exec(open('/home/hoang/nofx-analysis/vet-02-0905/q11_replay.py').read().split("# group bars by session day")[0])
+exec(open('/home/hoang/vl-analysis/vet-02-0905/q11_replay.py').read().split("# group bars by session day")[0])
 by_sd=collections.OrderedDict()
 for b in bars: by_sd.setdefault(sess_day(b['t']),[]).append(b)
 sdays=sorted(by_sd)

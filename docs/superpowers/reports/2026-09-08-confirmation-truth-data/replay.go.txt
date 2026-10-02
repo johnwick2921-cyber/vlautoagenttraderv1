@@ -1,5 +1,5 @@
 package main
-import("encoding/json";"fmt";"os";"sort";"strings";"time";"nofx/kernel";"nofx/market")
+import("encoding/json";"fmt";"os";"sort";"strings";"time";"vl/kernel";"vl/market")
 type Plan struct{RowID int `json:"rowid"`;ID string `json:"plan_id"`;Version int `json:"version"`;Birth int64 `json:"birth_ms"`;Session string `json:"session"`;Date string `json:"trade_date"`;Doc struct{Scenarios []kernel.PlanScenario `json:"scenarios"`} `json:"doc"`}
 type Bar struct{T int64 `json:"open_time_ms"`;O,H,L,C,V float64}
 type Decision struct{ID int `json:"id"`;PlanID string `json:"plan_id"`;Version int `json:"version"`;Now int64 `json:"snapshot_ms"`;Lines []string `json:"confirm_lines"`}

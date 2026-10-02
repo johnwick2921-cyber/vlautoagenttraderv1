@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ── W-ONE-BUTTON M2 site 4 — the broker-layer entry permit ─────────────────

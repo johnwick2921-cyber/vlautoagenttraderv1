@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SPEC — TREE GUARD: alarm when the deploy tree stops matching what shipped
 
 Status: **SPEC ONLY — not built, not installed.** Owner approved speccing it 2026-09-02 as its own small wave.
@@ -5,7 +6,7 @@ Author: Fable (session fable-class45) · Scope: one wave, no cutover, no bot cha
 
 ## Why this exists
 
-On 2026-09-02 at 08:46:33–34 the main tree `/home/hoang/nofx` lost the following shipped
+On 2026-09-02 at 08:46:33–34 the main tree `/home/hoang/vl` lost the following shipped
 code, silently, for ~3h20m until it was found by accident at 12:03:
 
 | removed | shipped by |
@@ -28,7 +29,7 @@ code, silently, for ~3h20m until it was found by accident at 12:03:
    a Save All over six stale tabs, independently enumerated by a second session.
 
 The tree survived only because nobody built or committed from it during those hours. The
-worktree law and `~/nofx-main.lock` both govern **agents**; an editor is not an agent, so
+worktree law and `~/vl-main.lock` both govern **agents**; an editor is not an agent, so
 neither could have prevented this and neither will prevent the next one. The mitigation the
 owner must do by hand (close/revert those tabs) is not enforceable from the repo. What IS
 enforceable is **detection**: this guard.
@@ -45,7 +46,7 @@ mutating the deploy tree, which is the disease, not the cure. It reports; a huma
 |---|---|---|---|
 | 1 | `git -C <tree> status --porcelain` | non-empty | the 08:46 class, caught within one tick |
 | 2 | shipped-symbol canary: `composeArmStop`, `CorrectedPnL`, `normalizeArmLegs`, `IncArmRefusal`, `IncStopUnanchored`, `ArmNormalizations` each grep-present | any missing | catches the same loss even if someone COMMITS it, which check 1 would then call clean |
-| 3 | `deploy/RELEASE` vs `go version -m nofx-bin` `vcs.revision` | mismatch | the A19 class — twice today a marker carried a stale RELEASE while a different rev ran |
+| 3 | `deploy/RELEASE` vs `go version -m vl-bin` `vcs.revision` | mismatch | the A19 class — twice today a marker carried a stale RELEASE while a different rev ran |
 | 4 | HEAD vs `origin/dev` | behind by > N commits (suggest 20) or > 6 h | the tree sat 4 h behind on 09-02 with nobody noticing |
 
 Check 2 is the one that would have caught today's incident *even after a commit*, and it is
@@ -56,7 +57,7 @@ the reason this guard is worth building rather than just trusting porcelain.
 A cutover legitimately dirties the tree (the RELEASE write before the kill, per A19). So:
 
 ```
-deploy/nofx-lock.sh check      # 0 free · 1 held-fresh · 2 held-stale
+deploy/vl-lock.sh check      # 0 free · 1 held-fresh · 2 held-stale
 
 held-fresh (rc 1): checks 1 and 3 downgrade to INFO
                    ("dirty under lock <task> held by <session> — expected")
@@ -68,9 +69,9 @@ free       (rc 0): ALARM
 This makes the lock earn a second job: it is the declaration that dirt is intentional. A
 dirty tree with **no lock at all** is exactly the 08:46 signature.
 
-**Updated 2026-09-03 (class 70).** This section originally read *"if ~/nofx-main.lock
+**Updated 2026-09-03 (class 70).** This section originally read *"if ~/vl-main.lock
 exists AND its pid is alive (kill -0)"*. There is no pid any more. The lock is an atomic
-`mkdir ~/nofx-main.lock.d` recording session · task · acquired · expiry · heartbeat, and
+`mkdir ~/vl-main.lock.d` recording session · task · acquired · expiry · heartbeat, and
 liveness is the heartbeat's age, because a pid answered "does some process exist" when the
 question was "is the owner still working". A guard that asked `kill -0` would have
 mis-answered in both directions on 2026-09-03: it would have called a working owner gone,
@@ -80,20 +81,20 @@ and it would have called a silently-replaced lock healthy.
 
 Follow the established no-sudo ops surface (`deploy/install-db-backup.sh`,
 `deploy/install-clock-guard.sh`): a plain script plus a `systemd --user` timer, linger
-already enabled. **No change to `nofx-bin`, therefore no cutover, no flat gate, no owner GO
+already enabled. **No change to `vl-bin`, therefore no cutover, no flat gate, no owner GO
 for the deploy.**
 
 ```
-deploy/nofx-tree-guard.sh                  the checks, read-only
-deploy/systemd-user/nofx-tree-guard.service
-deploy/systemd-user/nofx-tree-guard.timer  OnUnitActiveSec=60s (a git status is ~5 ms)
+deploy/vl-tree-guard.sh                  the checks, read-only
+deploy/systemd-user/vl-tree-guard.service
+deploy/systemd-user/vl-tree-guard.timer  OnUnitActiveSec=60s (a git status is ~5 ms)
 deploy/install-tree-guard.sh               install + enable --now, mirroring install-db-backup.sh
 ```
 
 **Alarm channels**, in order of usefulness:
 
-1. `journalctl --user -u nofx-tree-guard` — WARN/ERROR lines, always.
-2. A state file (`~/nofx-backups/tree-guard/state`) holding the last verdict, so the next
+1. `journalctl --user -u vl-tree-guard` — WARN/ERROR lines, always.
+2. A state file (`~/vl-backups/tree-guard/state`) holding the last verdict, so the next
    boot or any agent can read "was the tree ever dirty since the last deploy?" without
    scraping logs.
 3. **Not** the bot's alert table: `data/data.db` is read-only to anything not explicitly
@@ -116,7 +117,7 @@ deploy/install-tree-guard.sh               install + enable --now, mirroring ins
 
 The editor can still overwrite the tree at any moment; this guard shortens the discovery
 window from hours to a minute, it does not close the hole. The only real fix is to stop
-opening `/home/hoang/nofx` in an editor and open worktrees instead. That is an owner action
+opening `/home/hoang/vl` in an editor and open worktrees instead. That is an owner action
 and no repo change substitutes for it. Say so in the Guide entry, plainly.
 
 ## Estimated size

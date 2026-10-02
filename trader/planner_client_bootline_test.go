@@ -3,7 +3,7 @@ package trader
 import (
 	"strings"
 
-	"nofx/mcp"
+	"vl/mcp"
 	"testing"
 )
 

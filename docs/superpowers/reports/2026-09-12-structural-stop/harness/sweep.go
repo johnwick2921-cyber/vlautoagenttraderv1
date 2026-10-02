@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"nofx/kernel"
-	"nofx/store"
-	"nofx/trader"
-	nt "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/store"
+	"vl/trader"
+	nt "vl/trader/ninjatrader"
 	"os"
 )
 

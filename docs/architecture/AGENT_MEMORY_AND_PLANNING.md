@@ -1,8 +1,9 @@
-# NOFXi Agent Memory And Planning Design
+names rewritten to vl on 2026-09-30 (VL rename)
+# VLi Agent Memory And Planning Design
 
 ## Purpose
 
-This document explains how the current NOFXi agent handles:
+This document explains how the current VLi agent handles:
 
 - short-term conversation memory
 - durable task memory

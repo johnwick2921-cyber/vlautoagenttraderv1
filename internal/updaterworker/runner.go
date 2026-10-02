@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // ── the runner ──────────────────────────────────────────────────────────────
@@ -314,7 +314,7 @@ func (w *Worker) advance(ctx context.Context, j updaterjob.Job) (parked bool, er
 // or it IS the release, Install stays absent and the preflight refuses with
 // the reason (U1 fold: install and release SHAs differ).
 func (w *Worker) installIntent(j updaterjob.Job) func(k *updaterjob.Job) {
-	bin := filepath.Join(w.cfg.Target.InstallDir, "nofx-bin")
+	bin := w.cfg.Target.InstallBinaryPath()
 	rev, _, err := w.host.BuildInfo(bin)
 	return func(k *updaterjob.Job) {
 		if err != nil || !isSHA40(rev) || (k.Release != nil && rev == k.Release.SHA) {
@@ -326,14 +326,14 @@ func (w *Worker) installIntent(j updaterjob.Job) func(k *updaterjob.Job) {
 }
 
 // backupIntent: the DB backup file and the job-scoped snapshot of the install
-// halves (103's Snapshot layout: <dest>/{nofx-bin,web/dist,RELEASE}), both
+// halves (103's Snapshot layout: <dest>/{vl-bin,web/dist,RELEASE}), both
 // under <BackupRoot>/<job>/, persisted BEFORE backup_done's effect.
 func (w *Worker) backupIntent(j updaterjob.Job) func(k *updaterjob.Job) {
 	return func(k *updaterjob.Job) {
 		dir := filepath.Join(w.cfg.BackupRoot, k.JobID)
 		k.BackupPath = filepath.Join(dir, "data.db")
 		if k.Install != nil {
-			snap := snapshotRelease(filepath.Join(dir, "install"), k.Install.SHA)
+			snap := snapshotRelease(filepath.Join(dir, "install"), k.Install.SHA, filepath.Base(k.Install.Binary))
 			k.Snapshot = &snap
 		}
 	}
@@ -346,7 +346,11 @@ func (w *Worker) backupIntent(j updaterjob.Job) func(k *updaterjob.Job) {
 // second must still count).
 func (w *Worker) setBootWatch(k *updaterjob.Job) {
 	since := w.host.Now().Truncate(time.Second)
-	path := w.predictedLog(since)
+	bin := "nofx-bin" // R5 removes: no release yet means the install's name
+	if k.Release != nil {
+		bin = k.Release.Binary
+	}
+	path := w.predictedLog(since, bin)
 	off := fileSize(path)
 	k.LogPath, k.LogOffset, k.WatchSince = path, &off, &since
 }
@@ -365,7 +369,11 @@ func (w *Worker) rollbackIntent(ctx context.Context, j updaterjob.Job) func(k *u
 		}
 	}
 	since := w.host.Now().Truncate(time.Second)
-	path := w.predictedLog(since)
+	bin := "nofx-bin" // R5 removes: the snapshot's own binary name
+	if j.Snapshot != nil {
+		bin = j.Snapshot.Binary
+	}
+	path := w.predictedLog(since, bin)
 	off := fileSize(path)
 	return func(k *updaterjob.Job) {
 		if id.PID > 0 {
@@ -387,11 +395,22 @@ func (w *Worker) currentIdentityRetry(ctx context.Context) (Identity, bool) {
 	}
 }
 
-// predictedLog is <install>/data/nofx_<local date of t>.log — the bot's
+// logPrefixForBinary is the log prefix of the binary that will run: vl_ when
+// it is vl-bin, else nofx_ — the prefix comes from the BINARY, never from
+// which file happens to exist (R5 removes the vl branch).
+func logPrefixForBinary(binPath string) string {
+	if filepath.Base(binPath) == "vl-bin" {
+		return "vl_"
+	}
+	return "nofx_"
+}
+
+// predictedLog is <install>/data/<prefix><local date of t>.log — the bot's
 // logger names its file by its BOOT date in its own local zone (logger.go),
-// and the worker refuses to run with TZ set so its zone is the bot's.
-func (w *Worker) predictedLog(t time.Time) string {
-	return filepath.Join(w.cfg.Target.LogDir, "nofx_"+t.In(time.Local).Format("2006-01-02")+".log")
+// and the worker refuses to run with TZ set so its zone is the bot's. The
+// prefix is chosen from the binary that will run (logPrefixForBinary).
+func (w *Worker) predictedLog(t time.Time, binPath string) string {
+	return filepath.Join(w.cfg.Target.LogDir, logPrefixForBinary(binPath)+t.In(time.Local).Format("2006-01-02")+".log")
 }
 
 // fileSize is the size of path, 0 when absent (a log the new boot creates).
@@ -432,7 +451,7 @@ func (w *Worker) resumeFromPark(ctx context.Context, j updaterjob.Job) (updaterj
 			return err
 		}
 		if err != nil {
-			k.Blocker = clipText("resume refused: " + err.Error() + " — fix it, then nofx-updater resume " + k.JobID)
+			k.Blocker = clipText("resume refused: " + err.Error() + " — fix it, then vl-updater resume " + k.JobID)
 			return nil
 		}
 		k.ResumedAt = &now

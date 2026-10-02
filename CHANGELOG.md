@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Changelog
 
-> **This file is upstream-NOFX vestige (last upstream entry `[3.0.0] 2025-10-30`)
+> **This file is upstream-VL vestige (last upstream entry `[3.0.0] 2025-10-30`)
 > and is no longer maintained as the change log for this fork.**
 >
 > The canonical change log for the VL / NQ futures work on this fork is:

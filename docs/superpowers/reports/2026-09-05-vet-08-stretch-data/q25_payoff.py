@@ -1,5 +1,5 @@
 import sqlite3, math, json, datetime
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 era=int(datetime.datetime(2026,8,15,5,0).timestamp()*1000)
 rows=c.execute("""SELECT id, source, side, entry_price, exit_price, entry_time, pnl_corrected, mae, mfe, plan_session, entry_order_id
  FROM trader_positions WHERE entry_time>=? AND source<>'e7_farside_test' AND pnl_corrected IS NOT NULL ORDER BY entry_time""",(era,)).fetchall()

@@ -1,6 +1,6 @@
 # ADVERSARIAL VERIFICATION — arm 37 (NY S3 short 29543.75, signal 43512e1d) "closest approach 9.50 pts / never traded through while live"
-# All times CT (UTC-5). DB opened read-only: sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"
-# Source rev read: /home/hoang/nofx-2day04 (dev tip, deployed 530009ff / boot 7)
+# All times CT (UTC-5). DB opened read-only: sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro"
+# Source rev read: /home/hoang/vl-2day04 (dev tip, deployed 530009ff / boot 7)
 what,value,evidence
 arm37_created_at_CT,2026-09-03 11:58:33.110688496,"armed_orders.created_at (stored -05:00)"
 arm37_updated_at_raw,2026-09-03 17:15:01.127106542+00:00,"armed_orders.updated_at is stored in UTC (+00:00) — NOT CT"
@@ -28,8 +28,8 @@ peer_tz_math_check,1788455700000 == 1788455700000,"strftime*1000+5*3600000 == (s
 first_bar_after_cancel_with_h_ge_entry,2026-09-03 12:51:00,"h=29545.75"
 gap_1215_01_to_1251_00,35m59s,"but 12:51:00 is the bar OPEN; the touch instant is unknown within [12:51:00,12:52:00) => gap is >=35m59s"
 # ---- the cited NT8 ack line is misread ----
-summary_line_1,09-03 12:00:33 frames=1 initialized=1,"data/nofx_2026-09-03.log:4979"
-summary_line_2,09-03 12:15:01 frames=4 accepted=1 working=1 cancelpending=1 submitted=1,"data/nofx_2026-09-03.log:5261 — the ONLY two such lines on 09-03"
+summary_line_1,09-03 12:00:33 frames=1 initialized=1,"data/vl_2026-09-03.log:4979"
+summary_line_2,09-03 12:15:01 frames=4 accepted=1 working=1 cancelpending=1 submitted=1,"data/vl_2026-09-03.log:5261 — the ONLY two such lines on 09-03"
 counter_scope,"global,cumulative,untimestamped","armed_executor.go:1078-1105: package-level atomics, Swap(0) on print, throttled 1/60s, printed from onArmedOrderUpdate on frame receipt"
 reconstruction,"12:00:33 batch=[initialized,submitted,accepted,working] (only frame 1 printed); 12:15:01 batch=[cancelpending,cancelled] (frame 1 printed w/ 3 leftovers)","explains frames=4 with 4 distinct states exactly; [B]"
 implication,"3 of the 4 counts on the 12:15:01 line are LEFTOVERS from the 12:00:33 drain — the line carries no timestamps and does not prove the order was working at 12:15",

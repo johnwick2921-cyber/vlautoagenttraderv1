@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
+	nt "vl/provider/ninjatrader"
 )
 
 // ── D5 — A POSITION WITHOUT PROTECTION (2026-09-07) ──────────────────────────

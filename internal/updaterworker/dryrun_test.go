@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterjob"
+	"vl/internal/updaterwire"
 )
 
 // waitStop polls the job file (real time; the runner's own waits are on the

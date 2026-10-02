@@ -4,7 +4,7 @@ exactly as Round 23's hold_of), rate, Wilson 95% CI, first-5 episode ids."""
 import collections, hashlib, json, math, os, subprocess, time
 
 P_NULL = 0.5067  # D1' IID calibration (Round 23 HANDOVER §1)
-R23 = "/home/hoang/nofx-r101/docs/superpowers/research/2026-09-16-round-23/out-s4"
+R23 = "/home/hoang/vl-r101/docs/superpowers/research/2026-09-16-round-23/out-s4"
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out-r24")
 _SHA_CACHE = os.path.join(OUT, "input-sha256.json")

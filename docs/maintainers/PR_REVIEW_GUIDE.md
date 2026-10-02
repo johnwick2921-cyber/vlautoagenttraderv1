@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 🔍 PR Review Guide for Maintainers
 
 **Language:** [English](PR_REVIEW_GUIDE.md) | [中文](PR_REVIEW_GUIDE.zh-CN.md)
 
-This guide is for NOFX maintainers reviewing pull requests.
+This guide is for VL maintainers reviewing pull requests.
 
 ---
 

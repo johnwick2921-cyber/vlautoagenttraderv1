@@ -225,7 +225,7 @@ func (c *DayPlanConfig) ReplanCapFor(session string) int {
 		"target_chain is GUIDANCE for the executor AI (which sets the actual take_profit) — it is validated for reachability at write time but never enforced at execution (D2 ruling). " +
 		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets
 ### boot-8 line
-09-04 07:38:40 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev 4f47ed2c2543 · built 2026-09-04T12:35:20Z · expected 4f47ed2c2543 · goldens PASS
-09-04 08:30:11 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev 70af663dcb6f · built 2026-09-04T13:16:34Z · expected 70af663d · goldens PASS
-09-04 10:53:10 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev ebe07d5f366a · built 2026-09-04T15:49:56Z · expected ebe07d5f · goldens PASS
-09-04 13:25:47 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev 36648655cfe0 · built 2026-09-04T18:22:30Z · expected 36648655 · goldens PASS
+09-04 07:38:40 [INFO] vl/main.go:291 🔐 BOOT INTEGRITY OK — rev 4f47ed2c2543 · built 2026-09-04T12:35:20Z · expected 4f47ed2c2543 · goldens PASS
+09-04 08:30:11 [INFO] vl/main.go:291 🔐 BOOT INTEGRITY OK — rev 70af663dcb6f · built 2026-09-04T13:16:34Z · expected 70af663d · goldens PASS
+09-04 10:53:10 [INFO] vl/main.go:291 🔐 BOOT INTEGRITY OK — rev ebe07d5f366a · built 2026-09-04T15:49:56Z · expected ebe07d5f · goldens PASS
+09-04 13:25:47 [INFO] vl/main.go:291 🔐 BOOT INTEGRITY OK — rev 36648655cfe0 · built 2026-09-04T18:22:30Z · expected 36648655 · goldens PASS

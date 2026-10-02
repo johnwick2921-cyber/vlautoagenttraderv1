@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // TestDeskGuardrailRequiresBOTHToggles — class 82, caught before it bit.

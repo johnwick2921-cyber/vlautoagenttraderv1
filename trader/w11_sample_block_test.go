@@ -3,8 +3,8 @@ package trader
 import (
 	"testing"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // realDailyMNQ — 20 real MNQ daily bars (07-20..08-14, Globex full-session, from

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Entry-Mechanics Full Wave — E1–E9 + acceptance-rule ADDENDUM (2026-08-30)
 
-**Branch:** `feat/entry-mechanics` (off `dev` @ `a9aa9a04`; worktree `~/nofx-entry`, LOCKED — single active dispatch)
+**Branch:** `feat/entry-mechanics` (off `dev` @ `a9aa9a04`; worktree `~/vl-entry`, LOCKED — single active dispatch)
 **Mode:** full fix (owner override — not staged). NO code deployed. Parked for the owner's "go cutover" per the D-rule.
 **Scope:** E1 15m removal · E2 per-condition entry law · E3 breakdown floor relax · E4 sweep-reclaim split entry · E5 1m-MSS · E6 time_hold · E7 stop-entry orders · E8 shadow A/B logger · E9 guide+UI+knobs · ADDENDUM acceptance-rule migration (knob census 39a0481e).
 
@@ -106,7 +107,7 @@ Everything is parked as ONE branch (`feat/entry-mechanics`). Cutover decision:
 
 **Flat-gate (all-origin, split-aware):** DB OPEN positions = 0 · DB non-terminal armed = 0 (zero arms ⇒ zero legs, no confirm mid-track) · API positions `[]` (authed) · NT8 snapshots Sim101 count=0 + SimAccount1 count=0.
 
-**Swap:** `mv nofx-bin nofx-bin.prev` (rollback `36c0c681` kept in `~/nofx-backups/cutover-entry/`) → `cp nofx-bin.next` → `kill -9 482741` 17:10:42 → systemd relaunch PID 726053 17:10:47.
+**Swap:** `mv vl-bin vl-bin.prev` (rollback `36c0c681` kept in `~/vl-backups/cutover-entry/`) → `cp vl-bin.next` → `kill -9 482741` 17:10:42 → systemd relaunch PID 726053 17:10:47.
 
 **Boot checklist (all quoted):**
 - `🔐 BOOT INTEGRITY OK — rev 9ca53e873a1b · built 2026-08-30T22:09:49Z · expected 9ca53e873a1b · goldens PASS`
@@ -125,7 +126,7 @@ Everything is parked as ONE branch (`feat/entry-mechanics`). Cutover decision:
 
 Two minutes after the clean boot, the 15-min watch tripped: **`panic: runtime error: index out of range [5] with length 4`** in `kernel.ShadowABForScenario` (shadow_ab.go:122) via `logShadowAB ← maybeManageArmedOrders ← runCycle`. Root cause: the E8 close-rule fill mapped the 5m bucket back to the 1m bar with `bucket_index × 5` — wrong when the plan window starts mid-bucket or spans <5 bars (the ASIA v1 window was 4 bars crossing a 5m boundary). A report-only path took the trading loop down.
 
-**Rollback (tested, 17:14:49):** restored `nofx-bin.prev` (rev 23243670, md5 36c0c681) + `deploy/RELEASE=23243670af35` → boot 17:14:53 PID 728177 `🔐 BOOT INTEGRITY OK — rev 23243670af35 · goldens PASS`. The bot was flat the whole time; ASIA v1 + weekly v2 rows intact. The DB migrations from the new binary (armed_orders leg columns + 3-col index, acceptance_rule 5m_close, ab_confirm_log) are compatible with the old binary — 15+ min clean on the rollback.
+**Rollback (tested, 17:14:49):** restored `vl-bin.prev` (rev 23243670, md5 36c0c681) + `deploy/RELEASE=23243670af35` → boot 17:14:53 PID 728177 `🔐 BOOT INTEGRITY OK — rev 23243670af35 · goldens PASS`. The bot was flat the whole time; ASIA v1 + weekly v2 rows intact. The DB migrations from the new binary (armed_orders leg columns + 3-col index, acceptance_rule 5m_close, ab_confirm_log) are compatible with the old binary — 15+ min clean on the rollback.
 
 **Fix (dev `cd1d1de3`, marker v3 `4509ca9f`):** bucket→bar mapping by OpenTime (`barIdxForBucket`) + `recover()` at the `logShadowAB` seam (a report-only path may degrade to a warning, never a panic) + regression fixture `TestShadowABWindowCrossingFiveMBoundary` reproducing the exact 4-bar boundary-crossing shape (would have panicked the OLD code) + AUDIT-CHECKLIST class 23 appended. Full gates: go 27/27 ok. Binary rebuilt: `vcs.revision=cd1d1de3 · modified=false`, md5 `676c3b18` — **attempt #2 is one swap away, awaiting the owner's re-ack.**
 

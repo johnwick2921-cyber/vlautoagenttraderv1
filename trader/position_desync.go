@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // P0 hotfix (2026-08-19) — POSITION-STATE RECONCILIATION AT THE SKIP GATE.

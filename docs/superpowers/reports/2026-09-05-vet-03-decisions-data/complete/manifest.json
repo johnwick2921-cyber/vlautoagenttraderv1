@@ -2,7 +2,7 @@
   "base": "488ce82748ca570804240630677c90d3055f128e",
   "branch": "docs/vet-03-0905-complete",
   "generated_utc": "2026-09-05T23:10:36.858862+00:00",
-  "db_uri": "file:/home/hoang/nofx/data/data.db?mode=ro",
+  "db_uri": "file:/home/hoang/vl/data/data.db?mode=ro",
   "query_only": true,
   "read_transactions": true,
   "primary_n": 58,

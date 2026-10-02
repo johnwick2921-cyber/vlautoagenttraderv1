@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // S2 — timeframe-aware freshness tests (2026-09-16). Parity rule (canon 53):

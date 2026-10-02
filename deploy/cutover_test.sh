@@ -45,7 +45,7 @@ mkdir -p "$STAMP_REPO/m"
   printf 'package main\nfunc main() {}\n' > main.go
   git add -A
   git -c user.email=fixture@test -c user.name=fixture commit -qm stamp )
-BIN="$WORK/nofx-bin"
+BIN="$WORK/vl-bin"
 ( cd "$STAMP_REPO/m" && go build -o "$BIN" . ) \
   || { echo "FAIL: cannot build the stamped fixture binary"; exit 1; }
 SHA="$(go version -m "$BIN" 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i ~ /^vcs.revision=/){sub(/^vcs.revision=/,"",$i); print $i; exit}}')"
@@ -54,14 +54,14 @@ SHORT="${SHA:0:12}"
 OTHER="$(printf 'd%s' "$SHA" | cut -c1-40)"   # same length, different value
 
 mkdir -p "$WORK/inst"
-cp "$BIN" "$WORK/inst/nofx-bin"
+cp "$BIN" "$WORK/inst/vl-bin"
 # the dist preflight greps the bundle for the sha being installed
 mkdir -p "$WORK/inst/web/dist"
 printf 'fixture bundle carrying %s\n' "$SHA" > "$WORK/inst/web/dist/index.js"
 export NOFX_INSTALL="$WORK/inst"
 export NOFX_CUTOVER_TOKEN="DS102-SECRETMARKER-NOT-A-TOKEN"
 check_hdr_gone() { # the token header file must not survive any exit path
-  n=$(ls /tmp/nofx-cutover-hdr.* 2>/dev/null | wc -l)
+  n=$(ls /tmp/vl-cutover-hdr.* 2>/dev/null | wc -l)
   check "$1" "$n" "0"
 }
 
@@ -187,7 +187,11 @@ run_cutover
 check "F7 rc is 0" "$RC" "0"
 has   "F7 pre-install failure = refuse, bot untouched" "$OUT" "NO rollback runs"
 has   "F7 rollback only AFTER the install began" "$OUT" "failure AFTER"
-hasnt "F7 no unconditional rollback instruction" "$OUT" "on ANY failure: nofx-activate rollback"
+hasnt "F7 no unconditional rollback instruction" "$OUT" "on ANY failure: vl-activate rollback"
+
+echo "== F8: the unit default is vl (D2-OPS item 7) =="
+UNIT_LINE="$(grep -o 'UNIT="${VL_UNIT:-${NOFX_UNIT:-[a-z]*}}"' "$CUTOVER_SH")"
+check "F8 UNIT default is vl" "$UNIT_LINE" 'UNIT="${VL_UNIT:-${NOFX_UNIT:-vl}}"'
 
 printf '\n== %d pass / %d fail ==\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1

@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"time"
 
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterwire"
 )
 
 // SchemaVersion is the job file's "schema". A reader refuses any other value.

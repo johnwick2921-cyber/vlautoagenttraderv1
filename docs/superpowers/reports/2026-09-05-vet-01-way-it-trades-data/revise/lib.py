@@ -1,5 +1,5 @@
 import math,csv,sqlite3
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 def con():
     return sqlite3.connect(DB,uri=True)
 def wilson(k,n,z=1.96):

@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ── ONE SETUP — the gap the first boot found, closed (owner ruling 2026-09-11) ─

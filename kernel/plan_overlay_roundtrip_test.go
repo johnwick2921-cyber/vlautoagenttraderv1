@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // P5.1 — the OVERLAY ROUND-TRIP: an owner appends an RFC-6902 overlay to a stored

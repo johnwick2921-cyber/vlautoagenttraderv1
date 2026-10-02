@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // 1m-MSS (E5, entry-mechanics wave 2026-08-30) — the new confirm primitive.

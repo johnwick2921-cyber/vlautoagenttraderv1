@@ -6,7 +6,7 @@ con_=con(); cur=con_.cursor()
 cur.execute("""SELECT id,side,entry_price,entry_time,exit_price,exit_time,pnl_corrected
  FROM trader_positions WHERE entry_time>=1786770000000 AND source<>'e7_farside_test' AND pnl_corrected IS NOT NULL ORDER BY id""")
 pos={r[0]:dict(id=r[0],side=r[1].lower(),ep=r[2],et=r[3],xp=r[4],xt=r[5],pnl=r[6]) for r in cur.fetchall()}
-csvr={int(r['id']):r for r in csv.DictReader(open('/home/hoang/nofx-analysis/vet-01-0905/q21_trades_final.csv'))}
+csvr={int(r['id']):r for r in csv.DictReader(open('/home/hoang/vl-analysis/vet-01-0905/q21_trades_final.csv'))}
 for pid,p in pos.items():
     r=csvr[pid]
     p['stop']=float(r['stop_pts']) if r['stop_pts'] else None

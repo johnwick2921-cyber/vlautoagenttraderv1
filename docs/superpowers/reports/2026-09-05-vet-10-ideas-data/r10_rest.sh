@@ -1,4 +1,4 @@
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "== N2 armed rows 104/105 =="
 sqlite3 "$DB" "select id, leg_index, leg_count, kind, condition, entry_px, state, version, armed_under_version, scenario from armed_orders where id in (104,105,102,101,99);"
 echo "== N4 refused open_short 09-03 20:35-21:13 =="

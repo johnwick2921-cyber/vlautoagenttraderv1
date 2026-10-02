@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // plan-lifecycle wave (2026-08-27) — flip/death HYSTERESIS tests.

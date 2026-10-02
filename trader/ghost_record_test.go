@@ -6,7 +6,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func TestStampGuardrailSkip_TellsTheTruth(t *testing.T) {

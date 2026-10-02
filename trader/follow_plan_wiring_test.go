@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // TestFollowPlanBiasFoldsOverlay (WAVE 1a-plan P2) — followPlanBias reads the

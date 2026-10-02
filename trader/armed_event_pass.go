@@ -6,10 +6,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W3 D14 — the live-bar armed pass ───────────────────────────

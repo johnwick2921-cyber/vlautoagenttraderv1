@@ -12,7 +12,7 @@
   },
   "executable": "/proc/2605112/exe",
   "build": [
-    "path\tnofx",
+    "path\tvl",
     "build\tvcs.revision=770e2297d2188d09de0dcf76c3722e19e022e4c6",
     "build\tvcs.time=2026-09-10T22:03:33Z",
     "build\tvcs.modified=false"

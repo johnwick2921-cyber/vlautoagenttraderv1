@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // A2 (fail-register wave) — the rule evaluates AS AUTHORED (anatomy FAIL F4:

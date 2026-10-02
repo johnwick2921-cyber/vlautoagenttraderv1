@@ -18,10 +18,10 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/provider/ninjatrader"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/logger"
+	"vl/provider/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 
 	"github.com/gin-gonic/gin"
 )

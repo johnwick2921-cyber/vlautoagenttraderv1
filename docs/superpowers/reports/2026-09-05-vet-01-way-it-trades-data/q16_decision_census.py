@@ -1,6 +1,6 @@
 import sqlite3, json
 from collections import Counter, defaultdict
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 act=Counter(); byday=defaultdict(Counter); rce=Counter(); refuse=Counter(); n=0
 for ts,dj,rc,el in con.execute("SELECT timestamp, decision_json, risk_check_error, execution_log FROM decision_records WHERE timestamp>='2026-08-19'"):
     n+=1

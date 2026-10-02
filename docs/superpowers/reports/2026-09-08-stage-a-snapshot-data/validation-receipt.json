@@ -1,6 +1,6 @@
 {
   "tested_revision": "2a96cf63278f7c836d55e14c5a02597f80280292",
-  "clean_clone": "/tmp/stage-a-build/nofx",
+  "clean_clone": "/tmp/stage-a-build/vl",
   "checks": {
     "full-go.log": {
       "exit_code": 0,

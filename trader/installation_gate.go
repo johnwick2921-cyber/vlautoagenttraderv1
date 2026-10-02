@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-ONE-BUTTON M2 — THE INSTALLATION-WIDE GATE ───────────────────────────
@@ -32,8 +32,11 @@ import (
 //	                  vacuous "not an NT8 trader — not applicable" pass.
 //	addon_ack         the CURRENT connection acked THIS job, held, recently
 //	addon_census      the AddOn's census (all accounts, CTO ruling Q1): taken,
-//	                  no connected non-SIM connection, no position and no
-//	                  working order of any action on any account
+//	                  every connection settled, no position and no working
+//	                  order of any action on any account — a connected
+//	                  non-SIM (live) connection is ALLOWED when every account
+//	                  is flat (owner ruling 2026-09-28); the updater never
+//	                  disconnects anything
 //	ledger_exposure   no placed/unconfirmed armed row and no unresolved Picture
 //	                  send for ANY trader id, loaded or not (canonical arm-state
 //	                  predicates); authorized-but-unplaced arms are informational
@@ -323,7 +326,7 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 		case a.Accounts == nil:
 			return false, "accounts were not enumerated (absent is not empty)"
 		}
-		nonSim, unsettled, positions, working := 0, 0, 0, 0
+		nonSim, unsettled := 0, 0
 		for _, c := range a.Connections {
 			if c.Connected && !c.Sim {
 				nonSim++
@@ -332,24 +335,45 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 				unsettled++ // M2.1: Connecting / ConnectionLost — its accounts cannot be vouched for
 			}
 		}
+		// UPDATER-FLAT-LIVE-OK (owner ruling 2026-09-28): the census counts
+		// positions/working per SIM vs non-SIM (live) account, so a refusal
+		// NAMES where the exposure lives. A connected non-SIM connection no
+		// longer fails BY ITSELF — flat is flat, and the updater never
+		// disconnects anything.
+		simPos, livePos, simWork, liveWork := 0, 0, 0, 0
 		for _, ac := range a.Accounts {
-			positions += ac.Positions
-			working += ac.Working
+			if ac.Sim {
+				simPos += ac.Positions
+				simWork += ac.Working
+			} else {
+				livePos += ac.Positions
+				liveWork += ac.Working
+			}
 		}
+		positions, working := simPos+livePos, simWork+liveWork
 		detail := fmt.Sprintf("connections=%d connected_non_SIM=%d accounts=%d positions=%d working=%d",
 			len(a.Connections), nonSim, len(a.Accounts), positions, working)
 		var why []string
-		if nonSim > 0 {
-			why = append(why, fmt.Sprintf("%d connected non-SIM connection(s)", nonSim))
-		}
 		if unsettled > 0 {
 			why = append(why, fmt.Sprintf("%d connection(s) in a transitional state (neither Connected nor Disconnected)", unsettled))
 		}
-		if positions > 0 {
-			why = append(why, fmt.Sprintf("%d open position(s)", positions))
+		if livePos > 0 {
+			why = append(why, fmt.Sprintf("%d open position(s) on a non-SIM (live) account", livePos))
 		}
-		if working > 0 {
-			why = append(why, fmt.Sprintf("%d working order(s) of any action", working))
+		if liveWork > 0 {
+			why = append(why, fmt.Sprintf("%d working order(s) on a non-SIM (live) account", liveWork))
+		}
+		if simPos > 0 {
+			why = append(why, fmt.Sprintf("%d open position(s) on a SIM account", simPos))
+		}
+		if simWork > 0 {
+			why = append(why, fmt.Sprintf("%d working order(s) on a SIM account", simWork))
+		}
+		// D0: the flat-allowed suffix is the PASS path's own claim — it is
+		// appended only when the verdict passes (positions == 0 AND working
+		// == 0 AND every connection settled), never beside a refusal.
+		if len(why) == 0 && nonSim > 0 {
+			detail += fmt.Sprintf(" — %d connected non-SIM connection(s), all accounts flat — allowed (owner ruling 2026-09-28)", nonSim)
 		}
 		if len(why) > 0 {
 			return false, strings.Join(why, "; ") + " — " + detail

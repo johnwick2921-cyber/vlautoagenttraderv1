@@ -1,6 +1,6 @@
 from pathlib import Path
 import subprocess,json,hashlib,math
-R=Path('/tmp/nofx-repo-understanding-20260913');D=R/'docs/superpowers/reports/2026-09-13-repo-understanding';files=[f for f in subprocess.check_output(['git','ls-files','-z'],cwd=R).decode().split('\0') if f]
+R=Path('/tmp/vl-repo-understanding-20260913');D=R/'docs/superpowers/reports/2026-09-13-repo-understanding';files=[f for f in subprocess.check_output(['git','ls-files','-z'],cwd=R).decode().split('\0') if f]
 def istest(f):return any(s in f for s in ['_test.go','.test.','.spec.','/testdata/','/fixtures/'])
 def category(f):
  if f.startswith('docs/'):return 'research-tools'

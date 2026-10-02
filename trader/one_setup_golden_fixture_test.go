@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── ONE SETUP — THE ARM-PATH GOLDEN FIXTURE ─────────────────────────────────

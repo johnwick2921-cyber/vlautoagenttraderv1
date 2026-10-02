@@ -1,14 +1,14 @@
 services:
   # Backend service (API and core logic)
-  nofx:
+  vl:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.backend
-    container_name: nofx-trading
+    container_name: vl-trading
     restart: unless-stopped
     stop_grace_period: 30s  # Allow the app 30 seconds for graceful shutdown
     ports:
-      - "${NOFX_BACKEND_PORT:-8080}:8080"
+      - "${VL_BACKEND_PORT:-8080}:8080"
       - "6060:6060"  # pprof profiling
     volumes:
       - ./.env:/app/.env
@@ -20,7 +20,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - AI_MAX_TOKENS=8000
     networks:
-      - nofx-network
+      - vl-network
     healthcheck:
       # CLASS 251: 127.0.0.1, NOT localhost — busybox resolves localhost to
       # [::1] and the API binds 127.0.0.1:8080 (IPv4 only) since the 08-15 P0
@@ -33,7 +33,7 @@ services:
       start_period: 60s
 
   # Frontend service (static serving and proxy)
-  nofx-frontend:
+  vl-frontend:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.frontend
@@ -41,14 +41,14 @@ services:
         # CLASS 250: the `:?` form makes compose REFUSE with this message rather
         # than build a guide whose revision nobody can check.
         VITE_GUIDE_BUILT_REV: ${VITE_GUIDE_BUILT_REV:?set to the 40-hex sha being built}
-    container_name: nofx-frontend
+    container_name: vl-frontend
     restart: unless-stopped
     ports:
-      - "${NOFX_FRONTEND_PORT:-3000}:80"
+      - "${VL_FRONTEND_PORT:-3000}:80"
     networks:
-      - nofx-network
+      - vl-network
     depends_on:
-      - nofx
+      - vl
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
@@ -57,5 +57,5 @@ services:
       start_period: 5s
 
 networks:
-  nofx-network:
+  vl-network:
     driver: bridge

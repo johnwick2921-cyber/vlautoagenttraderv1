@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // G4 (regime wave, 2026-08-21) — TRANSITION STAND-DOWN state machine. Runs per

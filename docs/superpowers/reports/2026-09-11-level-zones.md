@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Level zones — boot verified at 13:58:32 CT, running 6c96683c
 
 ## C1 — the owner's four lines, traced first
@@ -53,7 +54,7 @@ this limitation remains explicit. The dispatch is the user attachment
 Audited code paths have an empty diff against that running SHA.
 Branch `fix/level-zones`, accepted dev tip
 `616b52a9def4042ce40308deba46529723ba01d7`; isolated locked worktree
-`/tmp/nofx-level-zones`. Claim session `level-zones-fdf096e7/root[unlisted]`.
+`/tmp/vl-level-zones`. Claim session `level-zones-fdf096e7/root[unlisted]`.
 
 Playbook: `docs/superpowers/AUDIT-CHECKLIST.md`; apply provenance, sample IDs,
 no inferred zeros, binding, call-site evidence, and merged-head validation.
@@ -322,7 +323,7 @@ The model now has one zone ENTRY SHORTLIST, while the older score/identity
 reference rows remain available without presenting a competing shortlist.
 
 [A] `go test ./...` is **FAIL**, solely on these two test failures in
-`nofx/trader`; kernel (including Stage A parity), store, API, deploy and the
+`vl/trader`; kernel (including Stage A parity), store, API, deploy and the
 other listed packages pass:
 
 - `TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced`
@@ -330,14 +331,14 @@ other listed packages pass:
 
 Feature suite logs: `book age 35m0s exceeds the 1m0s bound`.
 **A/B on unchanged RUNNING SOURCE** in clean clone
-`/tmp/level-zones-baseline/nofx`, detached at
+`/tmp/level-zones-baseline/vl`, detached at
 `802fb00b09e51f9801e8d4fbd1bf156c86865d95`:
 
 ```sh
 go test ./trader -run '^(TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced|TestLiveConditionPlacesOnLoopback)$' -count=1
 ```
 
-Both fail again, `nofx/trader 4.403s`, now showing `book age 30m0s exceeds the
+Both fail again, `vl/trader 4.403s`, now showing `book age 30m0s exceeds the
 1m0s bound`. [A] `shadowWireHarness` seeds `OrderSnapshots().PutAt(...,
 time.Now())`; both tests then run the arm manager at `armTestClock(t, at)`.
 That helper searches forward/backward in five-minute steps to escape blocked
@@ -464,9 +465,9 @@ retain their wall-clock provider. No production line is part of this correction.
 | `TestLiveConditionPlacesOnLoopback` | FAIL (2.17s): `book age 30m0s exceeds the 1m0s bound`; `live condition did NOT place — regression in the arm seam` | PASS (0.93s): nonempty signal reaches the loopback wire |
 
 [A] The unchanged-source before run was at 13:01 CT in
-`/tmp/level-zones-baseline/nofx`, HEAD exactly the running SHA above, initially
+`/tmp/level-zones-baseline/vl`, HEAD exactly the running SHA above, initially
 porcelain-clean. The identical test-only patch was then applied there; the two
-tests passed together (`nofx/trader 2.489s`). Thus these are **pre-existing fixture
+tests passed together (`vl/trader 2.489s`). Thus these are **pre-existing fixture
 failures, not regressions introduced by level zones**. Feature before-run age
 was 35 minutes; baseline age was 30 minutes because the real clock advanced;
 both failures are the identical stale-book predicate, not identical elapsed age.
@@ -474,7 +475,7 @@ The freshness refusal remains intact. Test patch and concise output receipts:
 [clock patch](2026-09-11-level-zones-evidence/arm-fixture-clock.patch),
 [after on running production source](2026-09-11-level-zones-evidence/arm-fixture-after.txt).
 
-The first corrected feature run also passed (`nofx/trader 0.733s`). Full suite,
+The first corrected feature run also passed (`vl/trader 0.733s`). Full suite,
 remaining call-removal mutations, merged-head validation and deployment evidence
 are recorded below as they complete. No cutover has occurred at this entry;
 A7's next permitted window is 14:45–16:30 CT. The owner's GO stands, subject to
@@ -483,7 +484,7 @@ the deployment lock and this lane's fresh five-leg gate at cutover.
 
 ### Validation after the authorized fixture correction
 
-[A] `go test ./...` PASS, exit 0, including `nofx/trader 223.667s`.
+[A] `go test ./...` PASS, exit 0, including `vl/trader 223.667s`.
 The two arm fixture files are the only Go diff against the preceding feature
 commit `5e81db95c1ac9788fd26caa23fa4bfaee119dfff`; the production delta for
 this correction is empty. No Stage A golden changed. Earlier full frontend
@@ -504,7 +505,7 @@ restored after every run. [Exact changes and verdicts](2026-09-11-level-zones-ev
 suite. Test job `34631884981` shows the branding Go history guard exiting 128;
 the frontend job explicitly reports `fatal: bad object
 954f11b15f2e7615678f7d2b708c47895faebf1e`, and Vite denies
-`/home/runner/work/nofx/nofx/branding/product.txt?raw`. The relevant workflow,
+`/home/runner/work/vl/vl/branding/product.txt?raw`. The relevant workflow,
 branding guard and Vite configuration have no diff in this wave. These are
 reported setup surfaces, not reasons to weaken the guards. The summarized log initially hid the cause of coverage run `34631884694`.
 Retrieving the complete job log establishes it: the same two named arm fixtures
@@ -518,7 +519,7 @@ No CI configuration or dependency changes are included in this wave.
 
 [A] Final focused race check: `go test -race ./trader -run
 '^(TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced|TestLiveConditionPlacesOnLoopback)$'
--count=1` PASS (`nofx/trader 1.768s`). The full regular suite passed before the
+-count=1` PASS (`vl/trader 1.768s`). The full regular suite passed before the
 mutations, and every mutation restored its source. A final running-process
 read still returns health revision `802fb00b09e5`, PID3366586, executable
 `vcs.revision=802fb00b09e51f9801e8d4fbd1bf156c86865d95`,
@@ -529,7 +530,7 @@ read still returns health revision `802fb00b09e5`, PID3366586, executable
 merge or binary swap occurred, and no kill is offered outside the window. The
 owner's GO remains authorized. At cutover: acquire the free lock with its own
 bounded keeper, merge current dev, run the merged-head suite in a clean clone
-named `nofx`, derive the Guide revision from that binary before rebuilding dist,
+named `vl`, derive the Guide revision from that binary before rebuilding dist,
 then perform this lane's fresh five-leg gate and RELEASE → mv → VERIFY → print
 the resolved owner-run kill. A gate measured now would not be a fresh cutover
 gate for that later window. Boot and first-plan live proof remain unmeasured.
@@ -558,7 +559,7 @@ already described running `802fb00b`; they are not new code in this cutover.
 [A] PR #104 merged as `6c96683c704f9a9ea5267af0ea33f0c5df631261`, with checklist
 class 123 assigned from the fresh all-format census (previous ceiling 122).
 Main fast-forwarded under the lock. The separate clean clone
-`/tmp/level-zones-build/nofx` checked out that exact merged HEAD. Full
+`/tmp/level-zones-build/vl` checked out that exact merged HEAD. Full
 `go test ./...` PASS there; frontend 62 files / 427 tests PASS; `tsc --noEmit`
 PASS. Only then was the binary built. Its embedded revision is
 `6c96683c704f9a9ea5267af0ea33f0c5df631261`, `vcs.modified=false`, md5
@@ -587,7 +588,7 @@ changed only the time window and who executed the kill.
 [Exact final gate](2026-09-11-level-zones-evidence/pre-kill-gate.json).
 
 [A] RELEASE and its committed HEAD value were already `6c96683c` before the
-swap. The old binary was moved to `nofx-bin.old.802fb00b`, verified to hold
+swap. The old binary was moved to `vl-bin.old.802fb00b`, verified to hold
 `802fb00b09e51f9801e8d4fbd1bf156c86865d95`, md5
 `bf71fabd7336ec2ecc183d22f048bb83`. Old dist is preserved at
 `/tmp/level-zones-build/dist.old.802fb00b`. New binary and dist were moved into
@@ -612,11 +613,11 @@ intentional; the five binary references above agree.
 ### Actual boot lines, read from the new process
 
 ```text
-09-11 13:58:32 [INFO] nofx/main.go:295 🔐 BOOT INTEGRITY OK — rev 6c96683c704f · built 2026-09-11T18:49:47Z · expected 6c96683c · goldens PASS
+09-11 13:58:32 [INFO] vl/main.go:295 🔐 BOOT INTEGRITY OK — rev 6c96683c704f · built 2026-09-11T18:49:47Z · expected 6c96683c · goldens PASS
 09-11 13:58:32 [INFO] trader/auto_trader.go:44 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🗺 zones: width=max(wick,k×ATR) k=0.5[I] · merge=0.5×ATR5m[I] max-width=1×ATR5m[I] broad>1×ATR5m[I] (also standalone above max-width) round-width=2pt[I] · families capped=3[I] · rank=[touches,round,families,distance] weights=[1,1,1,1][I] htf-mult=removed-from-zone-order (score unchanged) · cap=12[O] · detected/merged/context/NULL-width=n/a (resolver=BuildLevelZones per read) · trader=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 bound-strategy=a5b7662e-7bf7-49bb-9f09-7efa48f95ac8 · session cap re-resolved each read; no backfill
 09-11 13:58:33 [INFO] trader/auto_trader.go:44 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 cutover safety (class 33): gate legs=5 · leg4=ledger (no snapshot yet) · boot sweep cancelled 0 pre-boot arm(s) (0 authorized-but-never-placed left for this process)
-09-11 13:58:33 [INFO] nofx/main.go:297 🗄 research snapshot: schema=1 · objects=5 · rows today market=UNKNOWN candidate=UNKNOWN plan=UNKNOWN scenario=UNKNOWN exec=UNKNOWN · null-fields=UNKNOWN · dropped=0 · added latency p50=UNKNOWN
-09-11 13:58:33 [INFO] nofx/main.go:312 🖥 ui: served-by=go-static build=2026-09-11T18:55:43Z
+09-11 13:58:33 [INFO] vl/main.go:297 🗄 research snapshot: schema=1 · objects=5 · rows today market=UNKNOWN candidate=UNKNOWN plan=UNKNOWN scenario=UNKNOWN exec=UNKNOWN · null-fields=UNKNOWN · dropped=0 · added latency p50=UNKNOWN
+09-11 13:58:33 [INFO] vl/main.go:312 🖥 ui: served-by=go-static build=2026-09-11T18:55:43Z
 ```
 
 [A] The zones line names bound strategy
@@ -642,7 +643,7 @@ is evidence for the implementation, not a substitute for that live read.
 [A] Lane provenance remains the merge section above: this lane's PR104 plus
 the already-merged read-only research PR105; this lane built and gated their
 merged head, not all of their source. Full merged-head Go suite PASS
-(`nofx/trader 188.857s`), vitest427/427, tsc PASS. The two clock-fixture
+(`vl/trader 188.857s`), vitest427/427, tsc PASS. The two clock-fixture
 FAIL→PASS receipts on unchanged running source are pre-existing corrections,
 not regressions attributable to this wave. No production arm/gate line changed.
 

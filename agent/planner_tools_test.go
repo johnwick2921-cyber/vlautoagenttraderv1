@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"nofx/mcp"
+	"vl/mcp"
 )
 
 func TestPlannerToolsForMarketIntentAreTrimmed(t *testing.T) {

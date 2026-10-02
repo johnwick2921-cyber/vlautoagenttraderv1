@@ -3,7 +3,7 @@ package ninjatrader
 import (
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // TestGetPositions_NonActiveBoundAccount_SeesOwnPosition locks the Go side of the

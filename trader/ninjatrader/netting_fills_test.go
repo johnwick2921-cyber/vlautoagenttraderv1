@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // Class 27 (2026-08-31 netting-orphan) — exit reconstruction tests.

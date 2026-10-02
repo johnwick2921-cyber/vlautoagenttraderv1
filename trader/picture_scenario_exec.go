@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W5 (Builder B) — THE SHARED EXECUTOR RUNS A PICTURE SCENARIO ─

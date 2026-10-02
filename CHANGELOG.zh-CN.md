@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 更新日志
 
-NOFX 项目的所有重要更改都将记录在此文件中。
+VL 项目的所有重要更改都将记录在此文件中。
 
 本文件格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
@@ -30,7 +31,7 @@ NOFX 项目的所有重要更改都将记录在此文件中。
 
 **系统完全重新设计 - 基于 Web 的配置平台**
 
-这是一个**重大破坏性更新**，将 NOFX 从基于静态配置的系统完全转变为现代化的 Web 交易平台。
+这是一个**重大破坏性更新**，将 VL 从基于静态配置的系统完全转变为现代化的 Web 交易平台。
 
 #### 数据库驱动架构
 - SQLite 集成，取代静态 JSON 配置
@@ -196,7 +197,6 @@ NOFX 项目的所有重要更改都将记录在此文件中。
 - [文档](docs/README.md)
 - [贡献指南](CONTRIBUTING.md)
 - [安全策略](SECURITY.md)
-- [GitHub 仓库](https://github.com/NoFxAiOS/nofx)
 
 ---
 

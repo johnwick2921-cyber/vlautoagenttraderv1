@@ -2,8 +2,8 @@ package trader
 
 import (
 	"fmt"
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 	"strings"
 	"time"
 )

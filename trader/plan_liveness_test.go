@@ -3,13 +3,13 @@ package trader
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/store"
+	"vl/store"
 	"strings"
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // Gate-level pin: the production recorder and gate resolver must agree on

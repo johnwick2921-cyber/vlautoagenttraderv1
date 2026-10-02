@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/levelidentity"
-	"nofx/market"
+	"vl/levelidentity"
+	"vl/market"
 )
 
 func TestIdentityE1ParserKeepsAuthoredID(t *testing.T) {

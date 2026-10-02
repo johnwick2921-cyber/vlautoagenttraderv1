@@ -94,7 +94,7 @@ export default function HeaderBar({
           className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
         >
           <img src="/icons/vl.svg" alt="VL" className="w-7 h-7" />
-          <span className="text-lg font-bold text-nofx-gold">
+          <span className="text-lg font-bold text-vl-neo-gold">
             {PERSONA_NAME}
           </span>
         </div>
@@ -167,14 +167,14 @@ export default function HeaderBar({
                     key={tab.page}
                     onClick={() => handleNavClick(tab)}
                     className={`text-sm font-bold transition-all duration-300 relative focus:outline-2 focus:outline-yellow-500 px-3 py-2 rounded-lg
-                    ${resolvedCurrentPage === tab.page ? 'text-nofx-gold' : 'text-nofx-text-muted hover:text-nofx-gold'}`}
+                    ${resolvedCurrentPage === tab.page ? 'text-vl-neo-gold' : 'text-vl-neo-text-muted hover:text-vl-neo-gold'}`}
                   >
                     {resolvedCurrentPage === tab.page && (
-                      <span className="absolute inset-0 rounded-lg bg-nofx-gold/15 -z-10" />
+                      <span className="absolute inset-0 rounded-lg bg-vl-neo-gold/15 -z-10" />
                     )}
                     {tab.label}
                     {tab.badge && (
-                      <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-nofx-gold/20 text-nofx-gold font-semibold uppercase align-top relative -top-1">
+                      <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-vl-neo-gold/20 text-vl-neo-gold font-semibold uppercase align-top relative -top-1">
                         {tab.badge}
                       </span>
                     )}
@@ -193,24 +193,24 @@ export default function HeaderBar({
                 <div className="relative" ref={userDropdownRef}>
                   <button
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2 px-3 py-2 rounded transition-colors bg-nofx-bg-lighter border border-nofx-gold/20 hover:bg-white/5"
+                    className="flex items-center gap-2 px-3 py-2 rounded transition-colors bg-vl-neo-bg-lighter border border-vl-neo-gold/20 hover:bg-white/5"
                   >
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-nofx-gold text-black">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-vl-neo-gold text-black">
                       {user.email[0].toUpperCase()}
                     </div>
-                    <span className="text-sm text-nofx-text-muted">
+                    <span className="text-sm text-vl-neo-text-muted">
                       {user.email}
                     </span>
-                    <ChevronDown className="w-4 h-4 text-nofx-text-muted" />
+                    <ChevronDown className="w-4 h-4 text-vl-neo-text-muted" />
                   </button>
 
                   {userDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 rounded-lg shadow-lg overflow-hidden z-50 bg-nofx-bg-lighter border border-nofx-gold/20">
-                      <div className="px-3 py-2 border-b border-nofx-gold/20">
-                        <div className="text-xs text-nofx-text-muted">
+                    <div className="absolute right-0 top-full mt-2 w-48 rounded-lg shadow-lg overflow-hidden z-50 bg-vl-neo-bg-lighter border border-vl-neo-gold/20">
+                      <div className="px-3 py-2 border-b border-vl-neo-gold/20">
+                        <div className="text-xs text-vl-neo-text-muted">
                           {t('loggedInAs', language)}
                         </div>
-                        <div className="text-sm font-medium text-nofx-text-muted">
+                        <div className="text-sm font-medium text-vl-neo-text-muted">
                           {user.email}
                         </div>
                       </div>
@@ -219,7 +219,7 @@ export default function HeaderBar({
                           navigateInApp(ROUTES.settings)
                           setUserDropdownOpen(false)
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-white/5 text-nofx-text-muted hover:text-white"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-white/5 text-vl-neo-text-muted hover:text-white"
                       >
                         <Settings className="w-3.5 h-3.5" />
                         Settings
@@ -230,7 +230,7 @@ export default function HeaderBar({
                             userMode === 'beginner' ? 'advanced' : 'beginner'
                           )
                         }
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-white/5 text-nofx-text-muted hover:text-white"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-white/5 text-vl-neo-text-muted hover:text-white"
                       >
                         <Settings className="w-3.5 h-3.5" />
                         {userMode === 'beginner'
@@ -247,7 +247,7 @@ export default function HeaderBar({
                             onLogout()
                             setUserDropdownOpen(false)
                           }}
-                          className="w-full px-3 py-2 text-sm font-semibold transition-colors hover:opacity-80 text-center bg-nofx-danger/20 text-nofx-danger"
+                          className="w-full px-3 py-2 text-sm font-semibold transition-colors hover:opacity-80 text-center bg-vl-neo-danger/20 text-vl-neo-danger"
                         >
                           {t('exitLogin', language)}
                         </button>
@@ -264,7 +264,7 @@ export default function HeaderBar({
                   <button
                     type="button"
                     onClick={() => navigateInApp(ROUTES.login)}
-                    className="px-3 py-2 text-sm font-medium transition-colors rounded text-nofx-text-muted hover:text-white"
+                    className="px-3 py-2 text-sm font-medium transition-colors rounded text-vl-neo-text-muted hover:text-white"
                   >
                     {t('signIn', language)}
                   </button>
@@ -276,7 +276,7 @@ export default function HeaderBar({
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded transition-colors text-nofx-text-muted hover:bg-white/5"
+                className="flex items-center gap-2 px-3 py-2 rounded transition-colors text-vl-neo-text-muted hover:bg-white/5"
               >
                 <span className="text-lg">
                   {language === 'zh' ? '🇨🇳' : language === 'id' ? '🇮🇩' : '🇺🇸'}
@@ -285,14 +285,14 @@ export default function HeaderBar({
               </button>
 
               {languageDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-32 rounded-lg shadow-lg overflow-hidden z-50 bg-nofx-bg-lighter border border-nofx-gold/20">
+                <div className="absolute right-0 top-full mt-2 w-32 rounded-lg shadow-lg overflow-hidden z-50 bg-vl-neo-bg-lighter border border-vl-neo-gold/20">
                   <button
                     onClick={() => {
                       onLanguageChange?.('zh')
                       setLanguageDropdownOpen(false)
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 transition-colors text-nofx-text-muted hover:text-white
-                      ${language === 'zh' ? 'bg-nofx-gold/10' : 'hover:bg-white/5'}`}
+                    className={`w-full flex items-center gap-2 px-3 py-2 transition-colors text-vl-neo-text-muted hover:text-white
+                      ${language === 'zh' ? 'bg-vl-neo-gold/10' : 'hover:bg-white/5'}`}
                   >
                     <span className="text-base">🇨🇳</span>
                     <span className="text-sm">中文</span>
@@ -302,8 +302,8 @@ export default function HeaderBar({
                       onLanguageChange?.('en')
                       setLanguageDropdownOpen(false)
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 transition-colors text-nofx-text-muted hover:text-white
-                      ${language === 'en' ? 'bg-nofx-gold/10' : 'hover:bg-white/5'}`}
+                    className={`w-full flex items-center gap-2 px-3 py-2 transition-colors text-vl-neo-text-muted hover:text-white
+                      ${language === 'en' ? 'bg-vl-neo-gold/10' : 'hover:bg-white/5'}`}
                   >
                     <span className="text-base">🇺🇸</span>
                     <span className="text-sm">English</span>
@@ -313,8 +313,8 @@ export default function HeaderBar({
                       onLanguageChange?.('id')
                       setLanguageDropdownOpen(false)
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 transition-colors text-nofx-text-muted hover:text-white
-                      ${language === 'id' ? 'bg-nofx-gold/10' : 'hover:bg-white/5'}`}
+                    className={`w-full flex items-center gap-2 px-3 py-2 transition-colors text-vl-neo-text-muted hover:text-white
+                      ${language === 'id' ? 'bg-vl-neo-gold/10' : 'hover:bg-white/5'}`}
                   >
                     <span className="text-base">🇮🇩</span>
                     <span className="text-sm">Bahasa</span>
@@ -328,7 +328,7 @@ export default function HeaderBar({
         {/* Mobile Menu Button */}
         <motion.button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden text-nofx-text-muted hover:text-white"
+          className="md:hidden text-vl-neo-text-muted hover:text-white"
           whileTap={{ scale: 0.9 }}
         >
           {mobileMenuOpen ? (
@@ -422,17 +422,17 @@ export default function HeaderBar({
                         transition={{ delay: 0.1 + i * 0.05 }}
                         onClick={() => handleMobileNavClick(tab)}
                         className={`text-2xl font-black tracking-tight text-left flex items-center gap-3
-                        ${resolvedCurrentPage === tab.page ? 'text-nofx-gold' : 'text-zinc-500'}`}
+                        ${resolvedCurrentPage === tab.page ? 'text-vl-neo-gold' : 'text-zinc-500'}`}
                       >
                         {resolvedCurrentPage === tab.page && (
                           <motion.div
                             layoutId="active-indicator"
-                            className="w-1.5 h-1.5 rounded-full bg-nofx-gold"
+                            className="w-1.5 h-1.5 rounded-full bg-vl-neo-gold"
                           />
                         )}
                         {tab.label}
                         {tab.badge && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-nofx-gold/20 text-nofx-gold font-semibold uppercase align-middle relative -top-1">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-vl-neo-gold/20 text-vl-neo-gold font-semibold uppercase align-middle relative -top-1">
                             {tab.badge}
                           </span>
                         )}
@@ -512,7 +512,7 @@ export default function HeaderBar({
                           navigateInApp(ROUTES.login)
                           setMobileMenuOpen(false)
                         }}
-                        className="flex items-center justify-center bg-nofx-gold text-black rounded-lg font-bold text-sm hover:bg-yellow-400 transition-colors"
+                        className="flex items-center justify-center bg-vl-neo-gold text-black rounded-lg font-bold text-sm hover:bg-yellow-400 transition-colors"
                       >
                         {t('signIn', language)}
                       </button>

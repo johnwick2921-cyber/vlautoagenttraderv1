@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // F10 (port of #117 da2f76c9) — STALE OR ABSENT EVIDENCE CANNOT AUTHORIZE.

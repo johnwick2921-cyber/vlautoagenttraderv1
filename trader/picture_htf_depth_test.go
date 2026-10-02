@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W4 / D21 — the evaluator must KNOW it has enough history.

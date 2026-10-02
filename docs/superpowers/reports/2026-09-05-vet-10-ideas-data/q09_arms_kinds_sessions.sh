@@ -1,5 +1,5 @@
 #!/bin/bash
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "--- armed_orders kind x condition x state (non-test)"
 sqlite3 "$DB" "select coalesce(kind,'NULL') kind, coalesce(condition,'NULL') cond, state, count(*) from armed_orders where session not like 'TEST%' group by 1,2,3 order by 1,2,3"
 echo "--- arms in ASIA/LONDON after 0B (09-02 07:49 CT), by state"

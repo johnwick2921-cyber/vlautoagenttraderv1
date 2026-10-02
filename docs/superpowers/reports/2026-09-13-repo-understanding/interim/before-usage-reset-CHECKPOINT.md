@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Saved checkpoint — incomplete audit
 
 20 of 30 scoped reviews have complete reports: assignments 1–20. Their
@@ -38,7 +39,7 @@ Current planner prompt and advisory feasibility warnings still treat the legacy
 ATR stop floor as universal. Reject fades now use frozen structural geometry.
 The source discrepancy is verified; no before/after regression has run. The
 prepared test is saved outside the branch at
-`/tmp/nofx-repository-audit-checkpoint-20260913/pending-tests/structural_prompt_contract_test.go`.
+`/tmp/vl-repository-audit-checkpoint-20260913/pending-tests/structural_prompt_contract_test.go`.
 No corresponding production change was made. Do not restore a mandatory
 per-trade loss cap: the owner clarified DAILY loss controls.
 

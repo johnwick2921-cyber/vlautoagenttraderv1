@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial verify — armGateVerdict (peer claim: DEAD + class-53 test-shape defect)
 
-Rev checked: worktree /home/hoang/nofx-conform HEAD acd92e26; lines re-derived at deployed
+Rev checked: worktree /home/hoang/vl-conform HEAD acd92e26; lines re-derived at deployed
 rev 70af663d and dev tip 492d2067 — :1305 (decl) and :430 (production call) are IDENTICAL at
 all three revs.
 
@@ -25,7 +26,7 @@ all three revs.
    `legs = []kernel.PlanArmLeg{{Entry: sc.Arm.Entry, Stop: sc.Arm.Stop, Target: sc.Arm.Target, ...}}`
    whenever `len(sc.Arm.Legs) == 0`. [A]
 3. MEASURED (A17/A21): the single-arm shape is the shape production PASSES, not a retired one.
-   `sqlite3 file:/home/hoang/nofx/data/data.db?mode=ro "select leg_count,count(*) from armed_orders group by 1"`
+   `sqlite3 file:/home/hoang/vl/data/data.db?mode=ro "select leg_count,count(*) from armed_orders group by 1"`
    -> leg_count 0 = 34 rows, leg_count 2 = 4 rows, n=38. 34/38 (89%) of every armed row the
    system has ever written is the "legacy" single-arm shape. [A]
 4. By design, too: kernel/plan_doc.go:1210 `normalizeArmLegs` COLLAPSES any non-sweep_reclaim

@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // B2 (T6) — the unified policy: thresholds per state, any-TF fallback kills

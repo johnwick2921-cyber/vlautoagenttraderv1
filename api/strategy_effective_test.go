@@ -14,12 +14,12 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/auth"
-	"nofx/config"
-	"nofx/kernel"
-	"nofx/manager"
-	"nofx/store"
-	"nofx/trader"
+	"vl/auth"
+	"vl/config"
+	"vl/kernel"
+	"vl/manager"
+	"vl/store"
+	"vl/trader"
 )
 
 const effUser = "u-effective"
@@ -396,7 +396,6 @@ func TestEffectiveClampAtSaveErasesOriginPin(t *testing.T) {
 func TestEffectiveRedactsSecrets(t *testing.T) {
 	s, st, tok := newEffectiveServer(t)
 	effPutStrategy(t, st, "sec", effUser, `{"strategy_type":"ai_trading","ai_config":{"indicators":{
-		"nofxos_api_key":"PLANTED-KEY-9c1f",
 		"external_data_sources":[{"name":"feed","type":"api","url":"https://h.example/?apikey=PLANTED-URL-77","method":"GET",
 			"headers":{"Authorization":"Bearer PLANTED-HDR-42"}}]}}}`)
 	rec := effDo(t, s, tok, http.MethodGet, "/api/strategies/sec/effective", "")
@@ -409,7 +408,7 @@ func TestEffectiveRedactsSecrets(t *testing.T) {
 	var r effResp
 	_ = json.Unmarshal(rec.Body.Bytes(), &r)
 	for _, k := range r.Settings {
-		if strings.HasSuffix(k.Path, "nofxos_api_key") || strings.Contains(k.Path, "external_data_sources.headers") || strings.Contains(k.Path, "external_data_sources.url") {
+		if strings.Contains(k.Path, "external_data_sources.headers") || strings.Contains(k.Path, "external_data_sources.url") {
 			if k.Effective != trader.EffectiveRedacted || (k.Stored.Present && string(k.Stored.Value) != `"redacted"`) {
 				t.Fatalf("secret row not redacted: %+v", k)
 			}

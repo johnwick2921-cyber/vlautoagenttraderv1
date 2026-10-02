@@ -1,6 +1,6 @@
 #!/bin/bash
 # q01 — re-measure every store premise in the dispatch GROUND TRUTH
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 S() { sqlite3 -header "$DB" "$1"; }
 echo "## row counts"
 for t in trader_positions armed_orders plans plan_lifecycle_log touch_outcomes candidate_pool trade_excursions decision_records ab_confirm_log nt8_order_snapshots bars planner_rejected_prompts planner_read_facts level_state level_stats touch_episodes trader_fills trader_orders; do

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Audit — NQ Trading via Databento + NinjaTrader Implementation Plan
 
 **Audited:** 2026-05-22 (v4 re-audit)
@@ -18,7 +19,7 @@ So: Plan 1.5 is the right long-game architecture and a genuine improvement, but 
 
 
 **Plan file:** `docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md`
-**Method:** Claims checked against the live working tree at `/home/hoang/nofx` and the upstream `J0shusmc/Claude-Trader-NinjaTrader` README.
+**Method:** Claims checked against the live working tree at `/home/hoang/vl` and the upstream `J0shusmc/Claude-Trader-NinjaTrader` README.
 
 ---
 

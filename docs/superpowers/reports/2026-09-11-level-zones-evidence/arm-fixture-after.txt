@@ -5,4 +5,4 @@ Only the attached two-file _test.go patch applied.
 === RUN   TestLiveConditionPlacesOnLoopback
 --- PASS: TestLiveConditionPlacesOnLoopback (0.93s)
 PASS
-ok  	nofx/trader	2.489s
+ok  	vl/trader	2.489s

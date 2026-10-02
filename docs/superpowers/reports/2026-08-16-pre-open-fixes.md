@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # PRE-OPEN FIXES — the 3 conditions gating Monday's CONDITIONAL-GO
 
 **LINE 1 — MONDAY CONDITIONS CLEARED.** P1 boot integrity ✓ · P2 dark-regime alert +
@@ -27,7 +28,7 @@ have cost more context than it saved.
 Startup now asserts the binary against the intended release **and** re-renders the
 three prompt goldens **embedded in the same binary** (`go:embed`) — a right-revision
 binary can still be wrong if a prompt builder drifted. Intended release =
-`NOFX_EXPECTED_REVISION` or `deploy/RELEASE` (prefix match, so a short sha works).
+`VL_EXPECTED_REVISION` or `deploy/RELEASE` (prefix match, so a short sha works).
 Failure ⇒ **entries refused for every trader**, loud P0, everything else read-only.
 Closes/holds are never gated (`isBootIntegrityGatedAction`, asserted by test) so a
 refused process can still bring a position flat. **Declaring nothing is not a
@@ -99,18 +100,18 @@ credentials and won't forge a token. DOM assertions accompanied both screenshots
 
 ## DEPLOY HANDOFF
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git pull
-go build -o nofx-bin . && echo BUILD OK
-sudo systemctl restart nofx
-go version -m ./nofx-bin | grep vcs.revision     # must match the sha you just pulled
+go build -o vl-bin . && echo BUILD OK
+sudo systemctl restart vl
+go version -m ./vl-bin | grep vcs.revision     # must match the sha you just pulled
 ```
 **In the boot log you should now see exactly one new line:**
 ```
 🔐 BOOT INTEGRITY OK — rev <sha> · built <time> · expected <unset> · goldens PASS
 ```
 `expected <unset>` is correct today — the assertion is inert until you opt in. **To
-arm it**, put the sha in `deploy/RELEASE` (or export `NOFX_EXPECTED_REVISION`) as part
+arm it**, put the sha in `deploy/RELEASE` (or export `VL_EXPECTED_REVISION`) as part
 of the deploy; a mismatch then prints `REFUSED` and blocks entries instead of trading
 on a stale binary. Note `vcs.modified=true` is expected here (untracked scratch files)
 and is not a failure.

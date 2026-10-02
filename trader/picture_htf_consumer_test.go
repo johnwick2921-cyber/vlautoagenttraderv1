@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	ntTrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // P2-15 RED→GREEN — the picture-HTF consumer goroutine must EXIT on the

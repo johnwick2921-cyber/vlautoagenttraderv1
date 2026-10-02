@@ -3,7 +3,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // Bars are chronological and CLOSED iff CloseTime < nowMs. Helper builds one.

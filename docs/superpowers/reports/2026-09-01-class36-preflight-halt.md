@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # CLASS 36 — planner preflight: scheduled reads bypass the freshness check during the halt and weekend
 
-Date: 2026-09-01 · Owner: hoang · Agent: Fable 5 · Worktree: `../nofx-class36` (branch `fix/class36-preflight-halt`)
+Date: 2026-09-01 · Owner: hoang · Agent: Fable 5 · Worktree: `../vl-class36` (branch `fix/class36-preflight-halt`)
 Evidence tiers: **[A]** directly verified · **[B]** inferred from strong evidence · **[C]** speculation.
 
 ## STATUS
@@ -8,10 +9,10 @@ Evidence tiers: **[A]** directly verified · **[B]** inferred from strong eviden
 | Item | State |
 |---|---|
 | Code | **MERGED to dev @ `17efeea9`** (fast-forward from `795f67f7`, pushed) |
-| Build | clean clone `--no-local` at `17efeea9`, `vcs.modified=false`, built 2026-09-01T22:52:57Z, sha256 `d2f724a92ce3db45…`, 70,859,424 bytes — **STAGED as `~/nofx/nofx-bin.next` at 17:59:30 CT** (main tree fast-forwarded to dev `b2c2ff92`, porcelain empty) |
+| Build | clean clone `--no-local` at `17efeea9`, `vcs.modified=false`, built 2026-09-01T22:52:57Z, sha256 `d2f724a92ce3db45…`, 70,859,424 bytes — **STAGED as `~/vl/vl-bin.next` at 17:59:30 CT** (main tree fast-forwarded to dev `b2c2ff92`, porcelain empty) |
 | Marker | `7089d271` — `deploy/RELEASE` + `GUIDE_BUILT_REV` = `17efeea9…` (one marker, park record in its message) |
-| Cutover | **DONE 18:01:06 CT on owner GO** — `🔐 BOOT INTEGRITY OK — rev 17efeea9 · expected 17efeea9 · goldens PASS` 18:01:11, PID 1941026, new `🗓 preflight:` boot line present (see CUTOVER section); rollback `nofx-bin.prev.boot` kept |
-| Lock (A2) | `~/nofx-main.lock` is held by `pid=1906840` (`planner-api-failure-0901`, expiry 21:35 CT) — `kill -0` → ALIVE at 17:41, 17:49 and 17:53 CT. **Not cleared.** All work ran in the worktree; the main tree was never touched (porcelain empty, quoted 17:41 CT) |
+| Cutover | **DONE 18:01:06 CT on owner GO** — `🔐 BOOT INTEGRITY OK — rev 17efeea9 · expected 17efeea9 · goldens PASS` 18:01:11, PID 1941026, new `🗓 preflight:` boot line present (see CUTOVER section); rollback `vl-bin.prev.boot` kept |
+| Lock (A2) | `~/vl-main.lock` is held by `pid=1906840` (`planner-api-failure-0901`, expiry 21:35 CT) — `kill -0` → ALIVE at 17:41, 17:49 and 17:53 CT. **Not cleared.** All work ran in the worktree; the main tree was never touched (porcelain empty, quoted 17:41 CT) |
 
 ---
 
@@ -22,7 +23,7 @@ Evidence tiers: **[A]** directly verified · **[B]** inferred from strong eviden
 - Call site: `trader/auto_trader_planner.go:878` inside `runPlannerReadWithTriggerClaimedCtx`, after the claim (`claimPlannerRead`) and the F6 clock-hold, before the client resolve. Every planner trigger class passes through it. The executor never calls it (`grep plannerPreflight(` → the definition and this one site). Other gates on the same path: the in-flight claim (`:840-845`), the F6 clock-hold (`:852-859`, defers on a *future*-stamped tape, sign-aware).
 - The executor's halt block is separate and untouched: `trader/auto_trader_loop.go:937-947` `cmeSessionClosedSkip()` → `kernel.IsCMEOpen(time.Now())` idles the whole decision cycle; entries are also refused by `sessionGateDecision` outside a window.
 
-**C2 · Today's refusal (data/nofx_2026-09-01.log) [A]:**
+**C2 · Today's refusal (data/vl_2026-09-01.log) [A]:**
 ```
 09-01 16:31:05 [ERRO] … 🛑 planner_preflight_refused session=ASIA trade_date=2026-09-01 reason=stale_bars_1865s — refusing to call the LLM with no market data …
 09-01 16:33:05 [ERRO] … 🛑 planner_preflight_refused session=ASIA trade_date=2026-09-01 reason=stale_bars_1985s …
@@ -80,7 +81,7 @@ Evidence tiers: **[A]** directly verified · **[B]** inferred from strong eviden
 [ERRO] ⛔ planner preflight refused level_event: no_bars (session=ASIA trade_date=2026-08-18) — refusing to call the LLM with no market data (the 0-scenario fail-closed stub class); the read window retries next cycle
 [ERRO] ⛔ planner preflight refused death_replan: stale_bars_1800s (session=ASIA trade_date=2026-09-01) …
 ```
-Class 32's `🗓 session read fired during halt (…) — authoring from last stored bars (newest 5m …, age …m)` line still prints at fire time (INFO). The bypass line is WARN on purpose: INFO is journald-suppressed and absent from `log_events`, so the positive outcome is visible in the journal and the UI's log surface, not only in `data/nofx_*.log`.
+Class 32's `🗓 session read fired during halt (…) — authoring from last stored bars (newest 5m …, age …m)` line still prints at fire time (INFO). The bypass line is WARN on purpose: INFO is journald-suppressed and absent from `log_events`, so the positive outcome is visible in the journal and the UI's log surface, not only in `data/vl_*.log`.
 
 **D6 — idempotence.** Unchanged guards, both exercised: the plan-store dedupe (`maybeRunSessionReadsAt` skips when a row exists for the session-day) and the in-flight claim `🗓️ planner read for <key> already in flight — skipping duplicate call.` (`planner.go:840-845`; the weekly has its own `📅 WEEKLY READ already in flight … skipping duplicate call.`). E7 fires the read at 16:30 and re-evaluates at 16:32/16:40/16:50 with a frozen tape → exactly one version.
 
@@ -99,7 +100,7 @@ Class 32's `🗓 session read fired during halt (…) — authoring from last st
 09-01 17:45:54 [ERRO] [trader_id=t1] 🛑 planner_preflight_refused session=ASIA trade_date=2026-09-01 reason=stale_bars_1800s — refusing to call the LLM …
 --- FAIL: TestClass36PinAsiaHalt (5.17s)
     class36_pin_test.go:60: CLASS 36: the scheduled ASIA read fired at 16:30 but the planner call was never MADE — the preflight refused it on staleness during the halt (stale_bars_*); the plan must be on the desk before 17:00
-FAIL	nofx/trader	5.177s
+FAIL	vl/trader	5.177s
 ```
 **GREEN on `17efeea9`:**
 ```
@@ -116,17 +117,17 @@ FAIL	nofx/trader	5.177s
 **E7 · `TestClass36ScheduledReadFiresOnceInHalt`** — PASS. **E8 · `TestClass36LondonAndNYUnchangedWithLiveBars`** — LONDON 01:30 and NY 08:00 with a 1-minute-old tape land as `<S>_scheduled_read`, no bypass line. PASS. Plus `TestClass36LineBuilders`, `TestClass36TriggerClassTable`.
 Adjacent suites still green: `TestClass32*` (4), `TestP0BAsiaRead*` (2), `TestPlannerPreflight` (its three calls now pass `level_event`, a non-scheduled class — the assertions are about the check itself), `TestSundayAsiaDeferred`, `TestWeekly*`.
 
-**E9 ·** `go test ./...` → **26 packages ok**, the only failure being the Sunday fixture's own date (fixed; `nofx/trader` then `ok 27.167s` in full); `go test ./kernel -run Golden` → **PASS**; `vitest run` → **37 files / 295 tests passed**; `tsc --noEmit` clean; `go vet ./trader` clean.
+**E9 ·** `go test ./...` → **26 packages ok**, the only failure being the Sunday fixture's own date (fixed; `vl/trader` then `ok 27.167s` in full); `go test ./kernel -run Golden` → **PASS**; `vitest run` → **37 files / 295 tests passed**; `tsc --noEmit` clean; `go vet ./trader` clean.
 
 ---
 
 ## F — CUTOVER STATE
 
 - **F1** merged to dev `17efeea9`; clean-clone build quoted above (`vcs.modified=false`).
-- **F2/F3** NOT yet run: the flat-gate quadruple, in-flight check and session window are quoted at cutover time, fresh. The binary sits in scratch (`<scratchpad>/clone36/nofx-bin.next`) and is copied to `~/nofx/nofx-bin.next` only once the main-tree lock is mine; `nofx-bin.prev.boot` is refreshed at swap time.
+- **F2/F3** NOT yet run: the flat-gate quadruple, in-flight check and session window are quoted at cutover time, fresh. The binary sits in scratch (`<scratchpad>/clone36/vl-bin.next`) and is copied to `~/vl/vl-bin.next` only once the main-tree lock is mine; `vl-bin.prev.boot` is refreshed at swap time.
 - **F4** *** OWNER GO REQUIRED. *** Owner unavailable = HOLD.
 - **F5** on GO: swap + `kill -9`, then quote the boot checklist — rev, `🔐 BOOT INTEGRITY OK`, goldens PASS, the session-reads line, the conditions line, the validator-hints line, `🧮 replan budget` (class 35) and the NEW `🗓 preflight:` line.
-- **Rollback (exact):** `cd /home/hoang/nofx && mv nofx-bin nofx-bin.bad.17efeea9 && cp nofx-bin.prev.boot nofx-bin && printf 'ec6632f9de41060b52398f41f9ffbbf840814c40' > deploy/RELEASE && kill -9 $(pgrep -f '^/home/hoang/nofx/nofx-bin$')` (then revert the marker on dev if the rollback sticks).
+- **Rollback (exact):** `cd /home/hoang/vl && mv vl-bin vl-bin.bad.17efeea9 && cp vl-bin.prev.boot vl-bin && printf 'ec6632f9de41060b52398f41f9ffbbf840814c40' > deploy/RELEASE && kill -9 $(pgrep -f '^/home/hoang/vl/vl-bin$')` (then revert the marker on dev if the rollback sticks).
 - **F7 — the TRUE live proof has not occurred (A20).** It is the next scheduled read inside a halt: **ASIA at 16:30 CT on 2026-09-02** and the **weekly at 16:30 CT on Sunday 2026-09-06**. Until then E1/E2 are the fixture proof. Follow-up owed at ~16:35 CT 2026-09-02: quote the read start timestamp, the `🗓 preflight bypass (class 36)` line, and the `PLAN written … ASIA v1` time — the plan must be on the desk before 17:00.
 
 ## A15 — what the owner will still see wrong
@@ -146,7 +147,7 @@ Commits on dev: `17efeea9` (fix + tests + guide + checklist) · `7089d271` marke
 
 - **GO received 18:00 CT.** Lock re-acquired (pid 1860416, no holder present). Gates at 18:00:23 CT: window OK (outside 16:45–17:10); DB OPEN 0, armed 0, API positions `[]`, open-orders `[]`, NT8 `positions snapshot account=Sim101 count=0` — **but `replan_in_flight: true`**: a level_event wake re-read on the ASIA chain was on `planner attempt 3/3` since 17:53:33. **Held per A6.**
 - **Read landed 18:00:41 CT:** `📐 planner attempt 3/3 parse/schema rejected: arm legs on breakdown_continue …` → `🚨 PLANNER FAIL-CLOSED 2026-09-01 ASIA` → `🗓️ PLAN written 2026-09-01 ASIA v2 (… lifecycle no_trade)`; `replan_in_flight` → false. No claim after it. Gates re-quoted 18:00:53 CT: DB OPEN 0, armed 0, positions `[]`, open-orders `[]`, NT8 `count=0` (18:00:52), ASIA `armed: {}`.
-- **Swap 18:01:06 CT:** `cp nofx-bin nofx-bin.prev.boot` · `mv nofx-bin nofx-bin.old.ec6632f9` · `mv nofx-bin.next nofx-bin` (rev check `17efeea9` first) · `kill -9 1908258`.
+- **Swap 18:01:06 CT:** `cp vl-bin vl-bin.prev.boot` · `mv vl-bin vl-bin.old.ec6632f9` · `mv vl-bin.next vl-bin` (rev check `17efeea9` first) · `kill -9 1908258`.
 - **Boot checklist (F5), 5 s after the kill, 18:01:11 CT:**
   `🔐 BOOT INTEGRITY OK — rev 17efeea9fc59 · built 2026-09-01T22:52:57Z · expected 17efeea9fc59 · goldens PASS`
   `🗓 session reads (owner ruling 2026-08-31, open−30): ASIA 16:30 · LONDON 01:30 · NY 08:00 CT — windows/flats unchanged; Sunday weekly 16:30 → ASIA follows`
@@ -156,6 +157,6 @@ Commits on dev: `17efeea9` (fix + tests + guide + checklist) · `7089d271` marke
   `🧮 replan budget: recorded-counter (class 35) — spends: death_replan, owner_reread · free: …`
   **`🗓 preflight: scheduled reads bypass freshness in halt/weekend (class 36); executor halt-block unchanged (cmeSessionClosedSkip / IsCMEOpen)`** ← NEW
   `🎛 entry law: bd_min_closes=1 bd_min_disp_atr=1.00 mss_min_disp_atr=0.50 …` · `📐 NT8 instrument_info MNQ (MNQ 09-26): point_value=2 tick=0.25 — matches table ✓`
-  Exactly ONE PID: `1941026`. `go version -m nofx-bin` → `vcs.revision=17efeea9fc5909473a40e60418428b521a2f1574`. Feed re-warmed: `received frame type=bars_historical` ×2 at 18:01:30; newest MNQ 1m bar `2026-09-01 18:00:00 CT`. `[ERRO]`/panic lines since boot: **0**. Positions after boot: `[]`. ASIA via API on the new binary: v2 no_trade, `replans_left 4/4` (class 35 intact), `replan_in_flight false`.
-- **Rollback (still valid):** `mv nofx-bin nofx-bin.bad.17efeea9 && cp nofx-bin.prev.boot nofx-bin && printf 'ec6632f9de41060b52398f41f9ffbbf840814c40' > deploy/RELEASE && kill -9 1941026`.
+  Exactly ONE PID: `1941026`. `go version -m vl-bin` → `vcs.revision=17efeea9fc5909473a40e60418428b521a2f1574`. Feed re-warmed: `received frame type=bars_historical` ×2 at 18:01:30; newest MNQ 1m bar `2026-09-01 18:00:00 CT`. `[ERRO]`/panic lines since boot: **0**. Positions after boot: `[]`. ASIA via API on the new binary: v2 no_trade, `replans_left 4/4` (class 35 intact), `replan_in_flight false`.
+- **Rollback (still valid):** `mv vl-bin vl-bin.bad.17efeea9 && cp vl-bin.prev.boot vl-bin && printf 'ec6632f9de41060b52398f41f9ffbbf840814c40' > deploy/RELEASE && kill -9 1941026`.
 - **Not yet proven live (A20/F7):** no scheduled read has run inside a halt on this binary yet. The proving events are **ASIA 16:30 CT 2026-09-02** (expect `🗓 session read fired during halt (ASIA)` + `🗓 preflight bypass (class 36) …` + `PLAN written … ASIA v1` before 17:00) and the **Sunday 2026-09-06 16:30 CT weekly** (expect `📅 WEEKLY READ starting` from the wall-clock path, then the ASIA read). Follow-up owed at ~16:35 CT 2026-09-02.

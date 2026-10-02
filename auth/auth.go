@@ -227,7 +227,7 @@ func signToken(userID, email, scope string) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Expires in 24 hours
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "nofxAI",
+			Issuer:    "vlAI",
 		},
 	}
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // TestRunDailyPrunesOnlyTheFourTables pins P2-1 at the production function:

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/kernel"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── 0B (2026-09-02) — EXIT SANITY ────────────────────────────────────────────

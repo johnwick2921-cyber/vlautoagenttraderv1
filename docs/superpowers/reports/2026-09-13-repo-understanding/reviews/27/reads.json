@@ -180,7 +180,7 @@
         ]
       ],
       "sha256": "df8a2044ac1d7861fc40e98f3ad933c0518e868fb832a8378e60ea163801a789",
-      "notes": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto NofxOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly."
+      "notes": "Backend-supported timeframe selector withlocalfallback, multi-perioddraft parseonblur, softcountwarning. ensureRawKlines callsparentonChange duringrender even disabled. Doubleclick primary also fires toggle clicks and setPrimarydoesnotensuremembership. PeriodparseInt acceptsnumericprefix no uppercount bound. Crypto VLOS presentkeylabeledconnected withoutprobe; staticdeprecateddefaultkey retained. Quant childclick can bubble parenttoggle despiteonChange stopPropagation; verify Reacteventroute. Futureshidescryptofeeds/OI/funding correctly."
     },
     {
       "path": "web/src/pages/StrategyStudioPage.tsx",

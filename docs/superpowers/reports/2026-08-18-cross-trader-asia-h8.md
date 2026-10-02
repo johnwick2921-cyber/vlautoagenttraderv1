@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-08-18 — P0-A cross-trader governance + P0-B ASIA clock + P1 H8 residuals
 
 **LINE 1:** Was any decision governed by the wrong trader's plan? **YES — exactly 3** (the `15m` trader's decision cycles since 08-14 carried `hoang`'s plan block in the prompt; all 13 stored plan rows belong to hoang, 15m wrote none). Also documented live at 08:31 today by the watch session (both traders' prompts got the NY plan via the global provider). Now impossible by construction. Commits: `99fd67e1` (P0-A) · `1e8cc591` (P0-B) · `91748082` (P1), pushed; binary built at `91748082`, `deploy/RELEASE` armed. Restart + hard reload are the owner's steps.
@@ -28,4 +29,4 @@ Sites `:156, 670, 918, 1271, 1740` converted from the raw registry flag to the t
 
 ## Deploy handoff (mandatory order, executed)
 
-`git pull` (pushed `6cc9ce11..91748082` first) → `go build -o nofx-bin .` ✅ → `git rev-parse HEAD > deploy/RELEASE` ✅ (`91748082…`) → **owner: `sudo systemctl restart nofx`** → `cd web && npm run build` ✅ + hard reload. Restart at a flat/safe window only; verify with the BOOT INTEGRITY line (expected == rev).
+`git pull` (pushed `6cc9ce11..91748082` first) → `go build -o vl-bin .` ✅ → `git rev-parse HEAD > deploy/RELEASE` ✅ (`91748082…`) → **owner: `sudo systemctl restart vl`** → `cd web && npm run build` ✅ + hard reload. Restart at a flat/safe window only; verify with the BOOT INTEGRITY line (expected == rev).

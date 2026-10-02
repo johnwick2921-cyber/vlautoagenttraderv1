@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DR — Disaster Recovery Runbook
 
 Five failure scenarios, each with **detect → mitigate → verify**. See plan doc Task 33.
@@ -5,27 +6,27 @@ Five failure scenarios, each with **detect → mitigate → verify**. See plan d
 ## 1. DB corruption
 
 **Detect**
-- SQLite error on startup: `database disk image is malformed` in `/tmp/nofx.log`.
+- SQLite error on startup: `database disk image is malformed` in `/tmp/vl.log`.
 - Unexpected `NULL`s in `decisions` / `positions` rows that previously had values.
 - `sqlite3 data/data.db "PRAGMA integrity_check"` returns anything other than `ok`.
 
 **Mitigate**
 ```bash
-pkill -TERM -f nofx-bin
+pkill -TERM -f vl-bin
 cp data/data.db.bak.<latest-timestamp> data/data.db
 ```
 
 Replay missing decisions from the NT-side fills file as needed:
 
 ```bash
-cat /mnt/c/Users/<u>/NofxTrader/data/trades_taken.csv
+cat /mnt/c/Users/<u>/VLTrader/data/trades_taken.csv
 # Reconstruct decisions row-by-row in sqlite3 if rebuilding the audit trail
 ```
 
 Restart:
 
 ```bash
-./nofx-bin > /tmp/nofx.log 2>&1 &
+./vl-bin > /tmp/vl.log 2>&1 &
 ```
 
 **Verify**
@@ -56,7 +57,7 @@ If position is open and SL/TP missing, place them manually in NT before letting 
 
 **Detect**
 - HTTP 401/500 from Databento in the Go log.
-- Freshness gate trips with `HealthStale` repeatedly: `grep "Plan 3 T22: stale data" /tmp/nofx.log`.
+- Freshness gate trips with `HealthStale` repeatedly: `grep "Plan 3 T22: stale data" /tmp/vl.log`.
 
 **Mitigate**
 - Engine refuses new entries on stale data per Plan 3 Task 22 — that is the correct behaviour. Existing positions remain managed by NT-side SL/TP (set at entry time).
@@ -92,7 +93,7 @@ networkingMode=mirrored
 Then `wsl --shutdown` and relaunch WSL. Also verify `/mnt/c/` is writable from Linux side:
 
 ```bash
-touch /mnt/c/Users/<u>/NofxTrader/data/.ping && rm /mnt/c/Users/<u>/NofxTrader/data/.ping
+touch /mnt/c/Users/<u>/VLTrader/data/.ping && rm /mnt/c/Users/<u>/VLTrader/data/.ping
 ```
 
 **Verify**
@@ -112,8 +113,8 @@ curl http://localhost:8080/   # from Windows host: responds with HTTP 200 / dash
 openssl rand -base64 64                # generate new secret
 # update JWT_SECRET= in .env
 sqlite3 data/data.db "UPDATE users SET last_session_token = NULL;"
-pkill -TERM -f nofx-bin
-./nofx-bin > /tmp/nofx.log 2>&1 &
+pkill -TERM -f vl-bin
+./vl-bin > /tmp/vl.log 2>&1 &
 ```
 
 **Verify**

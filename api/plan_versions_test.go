@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // ITEM 15 — the plain-language diff the owner reads to understand WHY a re-plan

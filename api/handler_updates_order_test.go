@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
-	"nofx/store"
+	"vl/internal/updateauth"
+	"vl/store"
 )
 
 func TestInstallStagesRunInOrderAndEachRefusalStopsTheNext(t *testing.T) {

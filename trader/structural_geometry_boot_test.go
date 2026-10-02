@@ -1,8 +1,8 @@
 package trader
 
 import (
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 	"strings"
 	"testing"
 	"time"

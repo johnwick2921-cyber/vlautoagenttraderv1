@@ -1,8 +1,8 @@
 // Package updaterbootstrap is the attended, local CLI for W-ONE-BUTTON M3
-// update authorization. cmd/updater-bootstrap is a thin main over Run.
+// update authorization. cmd/vl-updater-bootstrap is a thin main over Run.
 //
-//	updater-bootstrap [--install-dir <dir>] enroll [--replace] <email>
-//	updater-bootstrap [--install-dir <dir>] authorize <release_id>
+//	vl-updater-bootstrap [--install-dir <dir>] enroll [--replace] <email>
+//	vl-updater-bootstrap [--install-dir <dir>] authorize <release_id>
 //
 // enroll binds the installation's update administrator to the app user whose
 // email is EXACTLY <email> (the predicate login uses) and writes
@@ -54,13 +54,13 @@ import (
 	"strings"
 	"time"
 
-	"nofx/internal/installpath"
-	"nofx/internal/updateauth"
+	"vl/internal/installpath"
+	"vl/internal/updateauth"
 
 	// See the note in internal/activation/steps.go: a library never imports a
 	// driver directly. This package and that one are linked together by the M4
 	// worker, so between them they were two registrants in one binary.
-	_ "nofx/store/sqlitedriver"
+	_ "vl/store/sqlitedriver"
 )
 
 // Seams (tests only): root refusal, the attended check and the clock.
@@ -84,13 +84,13 @@ func DBFileFor(installDir string) string {
 	return installpath.DBFile(installDir, installpath.DBPath(installpath.DotEnvGetenv(installDir)))
 }
 
-const usage = "usage: updater-bootstrap [--install-dir d] enroll [--replace] <email> | authorize <release_id>"
+const usage = "usage: vl-updater-bootstrap [--install-dir d] enroll [--replace] <email> | authorize <release_id>"
 
 // Run executes the CLI and returns the exit code: 0 ok, 1 refused/failed,
 // 2 usage or a precondition (root, DB_PATH diverges or .env unreadable, no
 // bot DB, not attended).
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	top := flag.NewFlagSet("updater-bootstrap", flag.ContinueOnError)
+	top := flag.NewFlagSet("vl-updater-bootstrap", flag.ContinueOnError)
 	top.SetOutput(stderr)
 	wd, _ := os.Getwd()
 	installDir := top.String("install-dir", wd, "the bot's WorkingDirectory (its .env and DB_PATH decide the data dir)")
@@ -178,7 +178,7 @@ func resolveTarget(installDir string) (target, error) {
 			"  DB_PATH=%q in this process's environment -> %s\n"+
 			"  the installation: %s -> %s\n"+
 			"A bot started from %s with no DB_PATH in its own environment (the shipped systemd unit sets none) uses %s, so this command would act on a database the bot does not use; nothing was written.\n"+
-			"Unset it and re-run (env -u DB_PATH updater-bootstrap ...). If the bot really runs on %s, make %s say so first",
+			"Unset it and re-run (env -u DB_PATH vl-updater-bootstrap ...). If the bot really runs on %s, make %s say so first",
 			o.ProcessValue, procFile, t.source, t.dbFile, installDir, t.dbFile, procFile, o.DotEnvFile)
 	}
 	t.source += fmt.Sprintf("; this process's DB_PATH=%q names the same file", o.ProcessValue)
@@ -218,7 +218,7 @@ func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
 
 func preconditions(installDir string, stdin io.Reader, stderr io.Writer) (target, int) {
 	if geteuid() == 0 {
-		fmt.Fprintln(stderr, "refusing to run as root: run updater-bootstrap as the bot's own user (a root-owned data/updater locks the bot out)")
+		fmt.Fprintln(stderr, "refusing to run as root: run vl-updater-bootstrap as the bot's own user (a root-owned data/updater locks the bot out)")
 		return target{}, 2
 	}
 	tgt, err := resolveTarget(installDir)
@@ -231,7 +231,7 @@ func preconditions(installDir string, stdin io.Reader, stderr io.Writer) (target
 		return target{}, 2
 	}
 	if !isTerminal(stdin) {
-		fmt.Fprintln(stderr, "refusing: updater-bootstrap is attended — run it in a terminal (stdin is not a TTY)")
+		fmt.Fprintln(stderr, "refusing: vl-updater-bootstrap is attended — run it in a terminal (stdin is not a TTY)")
 		return target{}, 2
 	}
 	return tgt, 0

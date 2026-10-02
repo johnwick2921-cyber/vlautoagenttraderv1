@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 11 DEAD CONTROLS FOUND — 11 FIXED, 0 LEFT DEAD (6 missing *features* sized, not built)
 
 122 controls walked (6 auditors + my own re-verification of every claim). Commits `bc360a38` · `d396201e` · `e943f9c3`. All evidence **[A]** = read the file / ran it.
@@ -30,18 +31,18 @@ Plan-history view **S–M** (endpoint + api client exist, no component) · force
 
 ## VERIFY
 
-Config-truth 4-step on all 6 new fields — they survive **both** halves of the hand-rolled codec (`day_plan.sessions[].enable` etc.) and reach their consumers. **8 new Go tests + 9 new vitest**; full Go suite green; FE 177/178 — the single failure (`RegistrationDisabled` "NoFx Logo" alt text) and the `e2e/gate.spec.ts` collection error are **pre-existing**, untouched here. Goldens unchanged (no prompt-shape edit). Playwright, after a **hard reload**: all three toggles render with accessible names, ASIA persists on with the 🔸 chip, LONDON stays off, `last_entry=12:15`, `eod_flat=15:30` with the drift warning firing — `shots/2026-08-17-w15-controls-after-reload.png`. (The 🔸 renders as tofu in headless Chrome; same glyph the shipped `OverrideRow` uses.)
+Config-truth 4-step on all 6 new fields — they survive **both** halves of the hand-rolled codec (`day_plan.sessions[].enable` etc.) and reach their consumers. **8 new Go tests + 9 new vitest**; full Go suite green; FE 177/178 — the single failure (`RegistrationDisabled` "VL Logo" alt text) and the `e2e/gate.spec.ts` collection error are **pre-existing**, untouched here. Goldens unchanged (no prompt-shape edit). Playwright, after a **hard reload**: all three toggles render with accessible names, ASIA persists on with the 🔸 chip, LONDON stays off, `last_entry=12:15`, `eod_flat=15:30` with the drift warning firing — `shots/2026-08-17-w15-controls-after-reload.png`. (The 🔸 renders as tofu in headless Chrome; same glyph the shipped `OverrideRow` uses.)
 
 Defaults are unchanged everywhere: no override → the shipped value, no cap → no block, no `?session=` → the live session.
 
 ## OWNER — DEPLOY
 
 ```bash
-cd /home/hoang/nofx && git pull
-go build -o nofx-bin . && cd web && npm run build && cd ..
-kill -9 $(pgrep -f '^\./nofx-bin$')        # systemd Restart=on-failure relaunches
+cd /home/hoang/vl && git pull
+go build -o vl-bin . && cd web && npm run build && cd ..
+kill -9 $(pgrep -f '^\./vl-bin$')        # systemd Restart=on-failure relaunches
 git rev-parse HEAD > /tmp/rel && { cat deploy/RELEASE | grep '^#'; cat /tmp/rel; } > deploy/RELEASE.new && mv deploy/RELEASE.new deploy/RELEASE
-journalctl -u nofx --since '2 min ago' | grep 'BOOT INTEGRITY'
+journalctl -u vl --since '2 min ago' | grep 'BOOT INTEGRITY'
 ```
 
 Re-arming `deploy/RELEASE` **after** deploying is required — the boot assertion refuses trading on a mismatch. Then flip the ASIA/LONDON toggles only if you actually want those sessions; they stay off otherwise.

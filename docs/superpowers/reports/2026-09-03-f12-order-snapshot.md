@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # F12 — the NT8 order-snapshot frame + AddOn build_id
 
 **Branch** `fix/f12-order-snapshot` @ `c84bd247` (off `origin/dev` 955d4ac8)
@@ -83,11 +84,11 @@ byte-identical).
 **RED**, before any implementation:
 
 ```
-# nofx/provider/ninjatrader [nofx/provider/ninjatrader.test]
+# vl/provider/ninjatrader [vl/provider/ninjatrader.test]
 order_snapshot_test.go:38:12: undefined: ParseOrderSnapshot
 order_snapshot_test.go:101:7:  undefined: NewOrderSnapshotCache
 ...
-# nofx/trader
+# vl/trader
 f12_leg4_test.go:31:9:  undefined: Leg4FromBrokerAt
 f12_leg4_test.go:141:16: undefined: OverrideAllowedAt
 ```
@@ -205,7 +206,7 @@ reason.
 ## 10 — PROVEN (added 2026-09-03 21:30 CT)
 
 **F1** — the Go half rode combined boot 5 (`4d846e26`, PID 365128, 21:19:00 CT),
-merged and booted by nofx-63. The transition state printed exactly as specified,
+merged and booted by vl-63. The transition state printed exactly as specified,
 NAMED rather than silent:
 
 ```

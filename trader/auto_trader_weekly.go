@@ -18,10 +18,10 @@ import (
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
+	"vl/telemetry"
 )
 
 const weeklySystemPrompt = "You are a disciplined CME index-futures weekly-bias reasoner. Output ONLY the single JSON object requested — no prose outside the JSON."

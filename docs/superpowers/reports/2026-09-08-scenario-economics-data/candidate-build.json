@@ -2,7 +2,7 @@
   "built_at_ct": "2026-09-08T16:24:38.541385-05:00",
   "revision": "95e7b420df0960edc67a91ff2a719fe105f441ae",
   "vcs.modified": "false",
-  "clone": "/tmp/nofx-scenario-economics-build/nofx",
+  "clone": "/tmp/vl-scenario-economics-build/vl",
   "suite_head": "95e7b420df0960edc67a91ff2a719fe105f441ae",
   "go_suite_exit": 0,
   "vitest_files": 53,

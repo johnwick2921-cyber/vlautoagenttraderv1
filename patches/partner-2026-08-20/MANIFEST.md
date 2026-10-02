@@ -1,8 +1,8 @@
 # Partner Patch Bundle — MANIFEST 2026-08-20
 
 - **Target fork:** `johnwick2921-cyber/vlautoagenttraderv1` (branch `main`)
-- **Source repo:** nofx — sync point `3624a2a4` (Part A complete, 2026-08-13) == partner HEAD `2bf3342d`
-- **Bundle endpoint:** nofx `17cd52e2` (the deployed revision; HEAD adds only two docs commits)
+- **Source repo:** vl — sync point `3624a2a4` (Part A complete, 2026-08-13) == partner HEAD `2bf3342d`
+- **Bundle endpoint:** vl `17cd52e2` (the deployed revision; HEAD adds only two docs commits)
 - **Series:** `patches/partner-2026-08-20/0001..0264` (264 patches, 263 commits + 1 supplement)
 - **Apply method (standing rule):** owner delivers the folder; partner runs
   `git am --3way patches/partner-2026-08-20/*.patch` from his `main` at `2bf3342d`.
@@ -13,7 +13,7 @@
 | Check | Result |
 |---|---|
 | `git am --3way` on all 265 patch files | **265 applied / 0 three-way fallbacks / 0 conflicts** |
-| Tree vs nofx HEAD (all code paths) | identical; 0 unexpected file differences |
+| Tree vs vl HEAD (all code paths) | identical; 0 unexpected file differences |
 | `go build ./...` | PASS |
 | `go vet ./...` | PASS |
 | `go test ./... -count=1` | PASS (all packages ok, 0 FAIL) |
@@ -40,7 +40,7 @@
 
 Grepped every final `.patch` for: `sk-…` API keys, `AKIA…`, `LFE`, owner
 username `hoang`, `/home/hoang` paths, `DESKTOP-S4IA601`, owner prompt-box text
-(`Focus On Quality…`), legacy `cm_…` nofxos key, owner UUIDs, SQL `INSERT INTO`,
+(`Focus On Quality…`), legacy `cm_…` vlos key, owner UUIDs, SQL `INSERT INTO`,
 DB dumps, and anything under `docs/superpowers/`.
 
 - All secret/credential patterns: **0 hits**.
@@ -328,7 +328,7 @@ Conflicts column is proven **N** for the full series by the apply-test above.
 | 263 | `0263-5bc5c945.patch` | `5bc5c945` | =?UTF-8?q?fix(pnl):=20missing=20telemetry=20import=20?= | N |
 | 264 | `0264-17cd52e2.patch` | `17cd52e2` | =?UTF-8?q?fix(pnl):=20every=20remaining=20aggregate=20rea?= | N |
 
-| 264 | `0264-supplement-faqdata.patch` | — | supplement: add `web/src/data/faqData.ts` — your fork's FAQ components already import it but the data file was never committed to your history (nofx has had it since 2026-03-15); without it your FE build fails TS2307 | N |
+| 264 | `0264-supplement-faqdata.patch` | — | supplement: add `web/src/data/faqData.ts` — your fork's FAQ components already import it but the data file was never committed to your history (vl has had it since 2026-03-15); without it your FE build fails TS2307 | N |
 
 ## Rewritten / path-limited patches (10 + 1 supplement)
 
@@ -340,9 +340,9 @@ code content is identical to the original commit:
 - `0077-a8af893b`, `0080-bc360a38` — `deploy/RELEASE` hunks dropped (boot integrity + session toggle code retained).
 - `0078-66ccb500` — `docs/VL-DAYPLAN-FULL-SPEC.md` hunk dropped (your fork never received that file).
 - `0075-a6f39d7b` — `.gitignore` hunk dropped (your fork's ignore file is yours).
-- clock-guard patch — deploy script paths genericized (`$HOME/nofx`, `%h/nofx`) from the source machine's absolute paths.
+- clock-guard patch — deploy script paths genericized (`$HOME/vl`, `%h/vl`) from the source machine's absolute paths.
 - `0001-8e8591a8`, `0066-205b1753`, `0195-85ec608f` — test fixtures neutralized (trader names replaced with `zeta`).
-- **`0264-supplement-faqdata.patch`** — synthetic patch adding the missing FAQ data file (content identical to nofx HEAD, pre-scanned clean).
+- **`0264-supplement-faqdata.patch`** — synthetic patch adding the missing FAQ data file (content identical to vl HEAD, pre-scanned clean).
 
 ## Classification of every commit since the sync point (354 total)
 
@@ -350,7 +350,7 @@ code content is identical to the original commit:
 |---|---|---|
 | PROPAGATE (in the series) | 264* | all non-doc code: day-plan campaign, final-bundle phases, wire fixes, PnL integrity, UI repairs — everything in the upgrade guide |
 | OWNER-ONLY (not sent) | 89 | `docs/superpowers/` worklogs/reports/plans, root `.md` worklogs, `docs/` specs, screenshots, `deploy/RELEASE` markers — zero code |
-| PARTNER-DIVERGENT | 0 | no nofx commit touches `web/src/data/faqData.ts` or any other path your fork modified independently (verified against `2bf3342d`) |
+| PARTNER-DIVERGENT | 0 | no vl commit touches `web/src/data/faqData.ts` or any other path your fork modified independently (verified against `2bf3342d`) |
 | EXCLUDED (Rule H) | 1 | `7e152559` `cmd/decisive-test` forensic tool — hardcodes a model UUID read from the owner's live DB |
 
 \*264 = 263 source commits + 1 supplement patch.
@@ -715,4 +715,4 @@ hash | date | area | one-line | bucket
 | `a491dc70` | 2026-08-20 | docs | docs: V4 soak verdict — 30-min clean, phantom daily-loss would-trip line GONE, corrected sum live in | OWNER-ONLY |
 
 ---
-*Generated 2026-08-20 · read-only on nofx · owner delivers to the partner.*
+*Generated 2026-08-20 · read-only on vl · owner delivers to the partner.*

@@ -10,7 +10,7 @@
 # it is the part that still works when gitleaks is not installed, and it covers
 # the files this repo has actually leaked or nearly leaked before: .env is
 # WRITTEN at runtime by api/handler_onboarding.go, data/ holds the live SQLite
-# database, and ~/nofx-backups/ holds copies of both.
+# database, and ~/vl-backups/ holds copies of both.
 #
 # Exit 0 = clean. Non-zero = REFUSED, with every offending path named on stdout.
 set -uo pipefail

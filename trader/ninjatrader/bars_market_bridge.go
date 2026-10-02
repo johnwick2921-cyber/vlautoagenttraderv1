@@ -3,10 +3,10 @@ package ninjatrader
 import (
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	ntwire "nofx/provider/ninjatrader"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // wireFuturesBarsProvider connects the live NT8 BarCache to the market

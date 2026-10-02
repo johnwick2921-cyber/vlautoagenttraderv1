@@ -12,11 +12,11 @@ import (
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
-	"nofx/trader"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
+	"vl/trader"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/store"
+	"vl/auth"
+	"vl/store"
 )
 
 func TestBotRefreshFailingClosedOnAUserChangeActsForNobody(t *testing.T) {

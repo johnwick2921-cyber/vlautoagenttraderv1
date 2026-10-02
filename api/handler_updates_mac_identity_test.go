@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
-	"nofx/store"
+	"vl/internal/updateauth"
+	"vl/store"
 )
 
 func TestInstallMACIsBoundToTheEnrolledAdminIdentity(t *testing.T) {
@@ -31,7 +31,7 @@ func TestInstallMACIsBoundToTheEnrolledAdminIdentity(t *testing.T) {
 	// admin.json now names B; device.key is unchanged (no enroll ran).
 	// The H1/H2 belt recomputes the binding at the gate, so the fixture
 	// computes the SAME HMAC Enroll would have minted: hex-HMAC-SHA256 of
-	// "nofx-updater/password-binding/v1\x00" + user_id + "\x00" + hash
+	// "vl-updater/password-binding/v1\x00" + user_id + "\x00" + hash
 	// under device.key (the production call site PasswordStillBound compares
 	// against it).
 	key, err := updateauth.LoadDeviceKey(e.dataDir)
@@ -39,7 +39,7 @@ func TestInstallMACIsBoundToTheEnrolledAdminIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := hmac.New(sha256.New, key)
-	m.Write([]byte("nofx-updater/password-binding/v1\x00" + updOtherID + "\x00" + "x"))
+	m.Write([]byte("vl-updater/password-binding/v1\x00" + updOtherID + "\x00" + "x"))
 	b, _ := json.Marshal(map[string]string{"user_id": updOtherID, "email": updOtherEmail, "enrolled_at": past.Format(time.RFC3339), "password_binding": hex.EncodeToString(m.Sum(nil))})
 	if err := os.WriteFile(updateauth.AdminPath(e.dataDir), b, 0o600); err != nil {
 		t.Fatal(err)

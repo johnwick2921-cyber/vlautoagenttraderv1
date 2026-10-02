@@ -19,8 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/crypto/sha3"
 
-	"nofx/mcp"
-	"nofx/safe"
+	"vl/mcp"
+	"vl/safe"
 )
 
 // x402WarnLast rate-limits the per-cycle 402 retry noise (F5, LONDON-FORENSICS
@@ -544,7 +544,6 @@ func X402BuildRequest(url string, jsonData []byte) (*http.Request, error) {
 		return nil, fmt.Errorf("fail to build request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Client-ID", "nofx")
 	return req, nil
 }
 

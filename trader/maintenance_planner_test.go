@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // ── W-ONE-BUTTON M2 site 5 — planner claims are refused while held ─────────

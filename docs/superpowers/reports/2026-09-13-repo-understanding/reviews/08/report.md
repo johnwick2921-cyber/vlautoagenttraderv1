@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 08 — kernel engine, clocks, calendars and risk understanding
 
-Base **63968be62e44db2fb07a92883e02127b9064b0be**. Read-only worktree `/tmp/nofx-understanding-execution-20260913`; pwd/revision verified and initial porcelain status empty. 31 assigned source files, 7,721 lines, **all read manually in full**, 230 named functions catalogued. Inline callbacks are attached to their enclosing functions. Source hashes match the assignment manifest. No production/source/config/DB changes, tests, external calls, or runtime incident probes were performed. Artifacts alone were written under `/tmp/nofx-review-08`.
+Base **63968be62e44db2fb07a92883e02127b9064b0be**. Read-only worktree `/tmp/vl-understanding-execution-20260913`; pwd/revision verified and initial porcelain status empty. 31 assigned source files, 7,721 lines, **all read manually in full**, 230 named functions catalogued. Inline callbacks are attached to their enclosing functions. Source hashes match the assignment manifest. No production/source/config/DB changes, tests, external calls, or runtime incident probes were performed. Artifacts alone were written under `/tmp/vl-review-08`.
 
 Evidence: **[A]** means exact source read or local inventory observation; **[B]** is inferred consequence; **[C]** unresolved hypothesis. Static source behavior is not runtime deployment proof. Findings below are PROVEN only at the stated static boundary; operational outcomes remain UNVERIFIED.
 

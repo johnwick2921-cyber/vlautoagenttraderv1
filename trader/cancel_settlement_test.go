@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // E3 — A CANCEL THAT CANNOT BE CONFIRMED IS NEVER PROMOTED.

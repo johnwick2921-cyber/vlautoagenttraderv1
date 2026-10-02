@@ -1,7 +1,7 @@
 package store
 
 import (
-	"nofx/levelidentity"
+	"vl/levelidentity"
 	"strings"
 	"testing"
 	"time"

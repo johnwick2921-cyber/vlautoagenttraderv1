@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // P6 (2026-08-17) — THE OWNER RESET. Distinct from ⟳ Re-read: a re-read spends

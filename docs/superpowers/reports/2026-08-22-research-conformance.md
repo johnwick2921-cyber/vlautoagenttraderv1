@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # RESEARCH CONFORMANCE + PIPELINE + MATH/WIRING AUDIT — 2026-08-22
 
 Branch: `audit/research-conformance` · Base: deployed `50ef497c` (regime wave
@@ -13,7 +14,7 @@ Cutover 2) · Report + `docs/PIPELINE-MAP.md` + fix commits.
   Build-Plan-v3, Final-Build-Plan-v5, Implementation-Plan) + PLAN-CARD md +
   FULL-SPEC md + config-mockup html.
 - 0.2 **Running binary == 50ef497c** ✓ (`deploy/RELEASE` = `50ef497c…`,
-  `go version -m nofx-bin` vcs.revision = `50ef497c…`; two boots since cutover,
+  `go version -m vl-bin` vcs.revision = `50ef497c…`; two boots since cutover,
   both print `🔐 BOOT INTEGRITY OK — rev 50ef497c5353 +dirty … goldens PASS`
   and the 6 `🛡️ regime ledger` lines each).
 - 0.3 Touched-file plan: TBD at start — reconciled below (§5). Changes shipped:

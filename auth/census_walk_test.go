@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // Class 258 inside M3's own auth censuses (found by the M3 class finalizer):
@@ -28,13 +28,13 @@ func TestMintCensusesSeeNestedSkipNamedDirs(t *testing.T) {
 		}
 	}
 	const (
-		unscoped = "import \"nofx/auth\"\n\nfunc m() { _, _ = auth.GenerateJWT(\"u\", \"e\") }\n"
+		unscoped = "import \"vl/auth\"\n\nfunc m() { _, _ = auth.GenerateJWT(\"u\", \"e\") }\n"
 		direct   = "import \"github.com/golang-jwt/jwt/v5\"\n\nfunc m() { _ = jwt.NewWithClaims(nil, nil) }\n"
 	)
 	for _, dir := range append([]string{"api"}, censuswalk.NestedProbeDirs()...) { // api = positive control
 		t.Run(dir, func(t *testing.T) {
 			root := t.TempDir()
-			write(root, "go.mod", "module nofx\n\ngo 1.25\n")
+			write(root, "go.mod", "module vl\n\ngo 1.25\n")
 			pkg := "package " + censuswalk.PackageName(dir) + "\n\n"
 			write(root, dir+"/unscoped.go", pkg+unscoped)
 			write(root, dir+"/direct.go", pkg+direct)

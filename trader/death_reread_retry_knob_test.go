@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // FIX-PLANNER (2026-09-26) item 4 — the death-re-read self-backoff knob. The

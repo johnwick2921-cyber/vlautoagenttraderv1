@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // runToEnd installs and drives the job; a park is resumed once (after the

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DAY-PLAN CAMPAIGN — P3 · PLANNER CORE (checkpoint: P3.3 done, P3 3/6)
 
-**Date:** 2026-08-15 · **Repo:** /home/hoang/nofx · **Branch:** main
+**Date:** 2026-08-15 · **Repo:** /home/hoang/vl · **Branch:** main
 **Range:** `cad1dc2f` → `5d06b063` · 1 feature commit (P3.3)
 **Contract:** [docs/VL-DAYPLAN-FULL-SPEC.md](../../VL-DAYPLAN-FULL-SPEC.md)
 

@@ -56,7 +56,7 @@
 09-04 10:52:00 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=04b3e307-eb7f-4bc8-88fe-7088dff9f6
 09-04 10:52:00 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S2 cancelled — no order_update for 15m (reconnect/reconcile)
 09-04 10:52:00 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=7 cancelpending=1 cancelled=1 cancelsubmitted=1 initialized=1 submitted=2 accepted=1
-09-04 10:53:10 [INFO] nofx/main.go:44 ║           🚀 NOFX - AI-Powered Trading System              ║
+09-04 10:53:10 [INFO] vl/main.go:44 ║           🚀 VL - AI-Powered Trading System              ║
 09-04 10:53:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDO
 09-04 10:53:10 [INFO] trader/auto_trader.go:833 🚀 AI-driven automatic trading system started
 09-04 10:53:10 [INFO] kernel/regime_ledger.go:15 🛡️ regime ledger: flip-eval freshness cap=90000ms (env FLIP_EVAL_MAX_STALE_S, default 90s)
@@ -64,10 +64,10 @@
 09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:23 🚀 planner speed wave (2026-08-31): retry=repair stream=on stream_idle=30s stream_total=1200s (class 37: planner ceiling split from the HTTP ceiling) ttfb=on — reasoning/mo
 09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:26 🪢 netting-orphan wave (class 27, 2026-08-31): netting-flat cancels brackets (C# sweep + Go desync cancel_order) · exit reconstruction from the netting fill (never exit=entr
 09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:49 🛡 cutover safety (class 33): flat gate legs=5 (db_open_positions · api_positions · nt8_positions_snapshot · working_orders · planner_in_flight) via GET /api/cutover-gate
-09-04 10:53:10 [INFO] nofx/main.go:340 ⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce, fast-market≥1.5×ATR exempt) cross-session=on stale-arm-expiry=on (class 47) — cutoffs govern LEVEL_EVENT/structure_mss wakes ONLY; sc
-09-04 10:53:10 [INFO] nofx/main.go:343 🛡 arm gate: invalidation-wired=on · armed-under surfaces=on — the evaluator's own ≈invalidated verdict REFUSES an arm (same function as the display path; unresolved = pass + a line),
-09-04 10:53:10 [INFO] nofx/main.go:431 🎛 entry law: bd_min_closes=1 bd_min_disp_atr=1.00 mss_min_disp_atr=0.50 accept_hold_min=10 stop_entry_offset_ticks=2 retest_wait_bars=6 stop_entry_seam=ON
-09-04 10:53:10 [INFO] nofx/main.go:473 📌 Tip: Use Ctrl+C to stop the system
+09-04 10:53:10 [INFO] vl/main.go:340 ⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce, fast-market≥1.5×ATR exempt) cross-session=on stale-arm-expiry=on (class 47) — cutoffs govern LEVEL_EVENT/structure_mss wakes ONLY; sc
+09-04 10:53:10 [INFO] vl/main.go:343 🛡 arm gate: invalidation-wired=on · armed-under surfaces=on — the evaluator's own ≈invalidated verdict REFUSES an arm (same function as the display path; unresolved = pass + a line),
+09-04 10:53:10 [INFO] vl/main.go:431 🎛 entry law: bd_min_closes=1 bd_min_disp_atr=1.00 mss_min_disp_atr=0.50 accept_hold_min=10 stop_entry_offset_ticks=2 retest_wait_bars=6 stop_entry_seam=ON
+09-04 10:53:10 [INFO] vl/main.go:473 📌 Tip: Use Ctrl+C to stop the system
 09-04 10:53:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed_orders=on place_band=100t stale_working=15m test_seam=off arm_rr=2.0 (gate
 09-04 10:53:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛰 planner client: tries=3 backoff=2s→15s→45s keepalive_set=30s observed=n/a watc
 09-04 10:53:10 [ERRO] kernel/clock_health.go:115 🚨 CLOCK EARLY-WARNING [session-roll:NY]: |drift| 49016ms exceeds CLOCK_WARN_MS 30000ms (tolerance 60000ms not yet breached) — fix WSL2 time-sync NOW, before staleness verdicts

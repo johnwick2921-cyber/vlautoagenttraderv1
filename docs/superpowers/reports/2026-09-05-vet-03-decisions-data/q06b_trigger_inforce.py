@@ -1,6 +1,6 @@
 # q06b: trigger-fired with each version's IN-FORCE window [created, min(next version created, session end)], all versions; plus FIRST version per session-day (window to session end)
 import sqlite3, json, collections, datetime, bisect, math, csv
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 rows=con.execute("SELECT plan_id, version, trade_date, session, lifecycle, trigger_reason, doc, created_at FROM plans WHERE session IN ('ASIA','LONDON','NY') ORDER BY trade_date, session, version").fetchall()
 CT=datetime.timezone(datetime.timedelta(hours=-5))
 def parse_ts(s):
@@ -45,7 +45,7 @@ def run(mode):
     print(f'## mode={mode}: fired {k}/{n} = {k/n:.3f} Wilson {wilson(k,n)} · no ref_price: {sum(noref.values())} {dict(noref)} · no bars: {nobars}')
     for c,cc in sorted(bycond.items(), key=lambda x:-sum(x[1].values())):
         t=sum(cc.values()); print(f'   {c}: {cc["FIRED"]}/{t} Wilson {wilson(cc["FIRED"],t)}')
-    with open(f'/home/hoang/nofx-analysis/vet-03-0905/q06b_trigger_{mode}.csv','w',newline='') as f:
+    with open(f'/home/hoang/vl-analysis/vet-03-0905/q06b_trigger_{mode}.csv','w',newline='') as f:
         w=csv.writer(f); w.writerow(['trade_date','session','version','scenario','condition','direction','ref_price','fired','first_touch_ct','window_start_ct','window_end_ct','window_min']); w.writerows(out)
     return out
 o=run('inforce'); run('first')

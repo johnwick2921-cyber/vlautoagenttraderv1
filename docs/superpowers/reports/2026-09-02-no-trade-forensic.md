@@ -1,10 +1,11 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # WHY NO TRADE — every entry opportunity since 09-02 10:37 CT, attributed
 
 **READ-ONLY · no lock · no changes.** Owner: hoang · window: 09-02 10:37 CT → 09-03 ~07:45 CT.
-Tree: worktree `~/nofx-notrade`, branch `docs/no-trade-forensic-0903`, base `b5b29ac3`.
+Tree: worktree `~/vl-notrade`, branch `docs/no-trade-forensic-0903`, base `b5b29ac3`.
 CSV: `docs/superpowers/reports/exports/2026-09-02-no-trade/opportunities.csv`.
 Sources: `bars` table (read-only), `armed_orders`, `decision_records`, `plans`, journals
-`data/nofx_2026-09-02.log` + `nofx_2026-09-03.log` (51,413 lines in window).
+`data/vl_2026-09-02.log` + `vl_2026-09-03.log` (51,413 lines in window).
 Evidence tiers: [A] verified · [B] inferred.
 
 ---

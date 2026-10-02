@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # FINAL BUNDLE — watcher · trailing profit · discard-burn · post-exit rescan · honest logs · planner UI · wire-fixes
 
 **Date:** 2026-08-19 · **Branch:** `feat/final-bundle` (base = deployed `f6447076`, verified: RELEASE == running binary's expected rev at start) · **Deployed:** `1d67a675` 16:05 CT.
@@ -10,7 +11,7 @@ Shipped all six phases + the 8 wire-fixes: honest logs (WARN promotion + journal
 
 | Phase | Commits | Tests | Deviations |
 |---|---|---|---|
-| 1 Honest logs | `05bbca7b` | `TestOwnerVisibleLinesAreWarnOrLouder` (source contract) + prior db_sink suite | **1.1 apply is owner-gated**: `sudo -n` requires a password (proven in-run); `deploy/journald-nofx.conf` extended with `RateLimitIntervalSec=30`/`RateLimitBurst=200000` (measured flood ~58k/min → 3× headroom); owner applies with `sudo bash deploy/install-journald.sh`. Substitution per tool rules: the WARN→log_events path is journald-independent and is the owner-visibility fix that already took effect. Desync + feed alerts were already ERROR-level (no change needed — noted, not drive-by-touched) |
+| 1 Honest logs | `05bbca7b` | `TestOwnerVisibleLinesAreWarnOrLouder` (source contract) + prior db_sink suite | **1.1 apply is owner-gated**: `sudo -n` requires a password (proven in-run); `deploy/journald-vl.conf` extended with `RateLimitIntervalSec=30`/`RateLimitBurst=200000` (measured flood ~58k/min → 3× headroom); owner applies with `sudo bash deploy/install-journald.sh`. Substitution per tool rules: the WARN→log_events path is journald-independent and is the owner-visibility fix that already took effect. Desync + feed alerts were already ERROR-level (no change needed — noted, not drive-by-touched) |
 | 2 Discard-burn | `6c5ef518` | dodge timing (spec example 40s/70s→41s) · ring avg · re-eval pass/refuse (SL breach, drift, ATR-unavailable fail-safe) · classify (waits free / closes conservative) · reason-string stability | 2.3 status honesty implemented FRONTEND-side (tri-state badge): `Success=false` on guardrail_skip is itself a deliberate prior fix (ghost-record bug) — flipping the DB semantic would regress it; the dishonesty was the display conflation. ℹ️ for clean skips, ❌ reserved for real failures/`verdict_hint=feed\|clock` |
 | 3 Watcher | `2625a04d` (+`7bcefb5d` fmt) | rails R1/R2/R3 matrix · recovery clears episode · one-step downgrade + hold window · mode resolution · env knobs · observer parse (enum, action-ignored, unparseable) · **structural no-wire test** (forbidden identifiers in the watcher file) | Structural rail is a source-contract test (forbidden broker identifiers), not AST — same class as the repo's tz-guard precedent |
 | 3B Trailing | `8f7edd1b` (+`6c734afb` stub deletion) | LONG/SHORT ratchet math (points, 4×-ticks trap asserted) · pullback holds · BE floor wins · idempotence · arming modes · defaults + disabled-zero-execution · **codec round-trip** (the five fields survive ai_config nesting both ways) | Reuses `MoveStopToBreakeven(side, price)` verbatim — it is already a generic tick-rounding stop-move with the B1 stop-widen ban (renaming it would be a drive-by) |
@@ -25,12 +26,12 @@ Shipped all six phases + the 8 wire-fixes: honest logs (WARN promotion + journal
 | 6.7 backfill | `39e99c39` | store suite; **live result: 516 recovered / 0 unrecoverable / 516 candidates** | Rollback (documented, NOT executed): markers via `UPDATE trader_positions SET entry_confidence=0 WHERE entry_confidence=-1` (none exist); full = C1 backup |
 | 6.8 sweep | `1312fb79` | full build + store/api suites | Removed only the provably-unreferenced (dead fn `AutoStartRunningTraders`, 2 dead config loads); RISK_MAX_* env loads + 8 dead trader columns = deprecation comments only (fields still parsed by API CRUD) — ambiguous removals in found-not-fixed |
 
-**Found-not-fixed:** (a) Studio Save-button UX that let the owner believe a toggle was saved; (b) RISK_MAX_NOTIONAL_USD/RISK_MAX_CONTRACTS_PER_ORDER full removal (their struct fields are referenced by CheckPreTrade's signature); (c) the 8 dead trader columns' physical removal (SQLite migration risk); (d) `e2e/gate.spec.ts` collection error + "NoFx logo" vitest — pre-existing pair, untouched.
+**Found-not-fixed:** (a) Studio Save-button UX that let the owner believe a toggle was saved; (b) RISK_MAX_NOTIONAL_USD/RISK_MAX_CONTRACTS_PER_ORDER full removal (their struct fields are referenced by CheckPreTrade's signature); (c) the 8 dead trader columns' physical removal (SQLite migration risk); (d) `e2e/gate.spec.ts` collection error + "VL logo" vitest — pre-existing pair, untouched.
 
 ## 3 · Cutover record
 
 - **Flat-window proof:** position #524 CLOSED 12:21:31 CT (`+$273.50`, reason=sync — the breakeven-protected short WON); at 16:04 CT the bot logged `🌙 CME closed (daily break) — next open 17:00 CDT`; zero open rows.
-- **Order followed:** branch pushed → `go build -o nofx-bin .` → `git rev-parse HEAD > deploy/RELEASE` (`1d67a675053688d728f996a5ac44316dd18802ac`) → `kill -9 20199` (systemd Restart=on-failure relaunch; sudo-less deploy per standing rule — the systemd-restart step is exactly this mechanism here).
+- **Order followed:** branch pushed → `go build -o vl-bin .` → `git rev-parse HEAD > deploy/RELEASE` (`1d67a675053688d728f996a5ac44316dd18802ac`) → `kill -9 20199` (systemd Restart=on-failure relaunch; sudo-less deploy per standing rule — the systemd-restart step is exactly this mechanism here).
 - **Old→new:** `f6447076` PID 20199 → `1d67a675` PID 53834 (final PID after E5 flips: **54324**).
 - **Boot proof:** `16:05:01 🔐 BOOT INTEGRITY OK — rev 1d67a6750536 +dirty · built 2026-08-19T21:04:22Z · expected 1d67a6750536 · goldens PASS`; `✅ Trader auto-started successfully`.
 - AddOn re-ACK: NT8 reconnected to the new process (wire resumed; no C# change shipped).
@@ -54,7 +55,7 @@ Process half: `log-shipping active`, `clock-guard [boot] … last_status=OK ntp_
 ```
 Five deferrals in the first 41 minutes, every kicked cycle landing at close+1s. One supersession in-window: a **superseded_wait** — quiet ℹ️ discard (free), zero WARN, zero alert, zero "Failed". Zero `stale_reeval` refusals (no superseded entries yet), zero legacy discards.
 
-**E5 — mode flip [RUNTIME]:** DB `position_mode='bracket_only'` + restart → boot `position_mode=bracket_only (source: db)`; flip back → `position_mode=ai_watch (source: db)`; same rev both boots. (The in-position 🧘-line half of E5 needs an open position — impossible in the closed window; the branch behavior is unit-proven byte-identical, and the mode RESOLUTION is proven live both directions.) DB writes backed up first (`~/nofx-backups/final-bundle-e5/pre-e5.db`), WHERE-scoped, authorized by the E5 step.
+**E5 — mode flip [RUNTIME]:** DB `position_mode='bracket_only'` + restart → boot `position_mode=bracket_only (source: db)`; flip back → `position_mode=ai_watch (source: db)`; same rev both boots. (The in-position 🧘-line half of E5 needs an open position — impossible in the closed window; the branch behavior is unit-proven byte-identical, and the mode RESOLUTION is proven live both directions.) DB writes backed up first (`~/vl-backups/final-bundle-e5/pre-e5.db`), WHERE-scoped, authorized by the E5 step.
 
 **E6 — soak:** §5 (first 41 live minutes; the collection timer runs to 18:06 CT — an addendum commit follows only if the remainder materially changes the numbers).
 
@@ -79,7 +80,7 @@ Five deferrals in the first 41 minutes, every kicked cycle landing at close+1s. 
 
 ## 6 · Regression proof
 
-Full `go test ./... -count=1`: **27 packages ok, 0 FAIL** (remainder no-test packages). Named suites re-run green: timegates/stale/gate-order/desync/breakeven/intrade/skip (trader) + stale/gate/clock (kernel). FE: vitest **257 passed / 1 failed** — the failure is the documented pre-existing "NoFx logo" case (+ the pre-existing e2e collection error); `npm run build` clean. `go vet ./...` clean.
+Full `go test ./... -count=1`: **27 packages ok, 0 FAIL** (remainder no-test packages). Named suites re-run green: timegates/stale/gate-order/desync/breakeven/intrade/skip (trader) + stale/gate/clock (kernel). FE: vitest **257 passed / 1 failed** — the failure is the documented pre-existing "VL logo" case (+ the pre-existing e2e collection error); `npm run build` clean. `go vet ./...` clean.
 
 ## 7 · Diff accounting
 
@@ -96,7 +97,7 @@ Full `go test ./... -count=1`: **27 packages ok, 0 FAIL** (remainder no-test pac
 | `trailing_enabled/_atr_mult/_atr_period/_arm/_arm_points` | OFF / 2.0 / 14 / after_breakeven / — | `strategies.config → ai_config.risk_control.*` (the correct nest) | Y (documented) |
 | `POST_EXIT_RESCAN` / `POST_EXIT_DELAY_MS` | on / 2000 | env | Y |
 
-**Migrations (all additive, gorm AutoMigrate, idempotent):** `traders.position_mode` · `decision_records.cycle_type/cycle_trigger/watch_json` · new table `watch_assessments` · 6.7 backfill (flag `backfill_entry_confidence_done`). Rollbacks (documented, NOT executed): columns/table are additive — rollback = ignore (no reader in the old binary); backfill markers `UPDATE trader_positions SET entry_confidence=0 WHERE entry_confidence=-1` (0 rows currently); full restore = `~/nofx-backups/` (C1 timer + `final-bundle-e5/pre-e5.db`).
+**Migrations (all additive, gorm AutoMigrate, idempotent):** `traders.position_mode` · `decision_records.cycle_type/cycle_trigger/watch_json` · new table `watch_assessments` · 6.7 backfill (flag `backfill_entry_confidence_done`). Rollbacks (documented, NOT executed): columns/table are additive — rollback = ignore (no reader in the old binary); backfill markers `UPDATE trader_positions SET entry_confidence=0 WHERE entry_confidence=-1` (0 rows currently); full restore = `~/vl-backups/` (C1 timer + `final-bundle-e5/pre-e5.db`).
 
 ## 8 · Owner decision queue
 

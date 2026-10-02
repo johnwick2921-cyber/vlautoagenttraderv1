@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # NQ Trading via Databento + NinjaTrader — Implementation Plan
 
 > **2026-08-06 — Full tunable inventory + bug sweep (read-only) + 3 casing/label fixes.**
-> Shipped (nofx `3c6d8695`, vlauto `72c73b3`; both pushed):
+> Shipped (vl `3c6d8695`, vlauto `72c73b3`; both pushed):
 > - `c99e3d74` drawdown-monitor side-casing (P&L sign + emergency-close switch) — same
 >   uppercase-NT8-side class as the breakeven fix `d3d60c32`.
 > - `17ccc96d` reconcile-before-open flattened the WRONG side of a long orphan
@@ -409,7 +410,7 @@ with no risk of trading the wrong contract in the meantime.
 - **Project C — Strategy UI futures-awareness (Stage 1 / Stage 2)** — LAST.
 - **Deferred backlog (unchanged):** `GE` delisted by CME June 2023 (dead
   root, not a bug); security batch (jwt default secret, tokenless reset
-  endpoints — "sec later"); `nofx→VL` rename (last).
+  endpoints — "sec later"); `vl→VL` rename (last).
 
 ## Current State (2026-05-30, session-verified)
 
@@ -566,7 +567,7 @@ AddOn update). **Q1 DECIDED: the AI uses ALL selected TFs (no cap).**
     futures decisions skip. **THE critical fix.** Plus the universal
     'Symbol Source' rename + help text.
   - **P2 🟠 — TAB3 indicator gating** (add a `variant` prop; hide
-    funding/OI/NetFlow/NofxOS for futures — also stops crypto vocab leaking
+    funding/OI/NetFlow/VLOS for futures — also stops crypto vocab leaking
     into the futures prompt via the shared `writeAvailableIndicators`) +
     **TAB6 add a 'Futures' variant** to BOTH the preview and AI-Test selects
     (`StrategyStudioPage.tsx:1198-1206` / `:1306-1314` — the futures prompt
@@ -610,7 +611,7 @@ AddOn update). **Q1 DECIDED: the AI uses ALL selected TFs (no cap).**
 - **Misc deferred:** live chart-tick verify at RTH (Sun ~17:00 CT); security
   batch (override `jwt_secret` default
   `'default-jwt-secret-change-in-production'`, `/api/exchanges` unauth
-  exposure — the named upstream CVE-class issue); nofx->VL full rename (LAST);
+  exposure — the named upstream CVE-class issue); vl->VL full rename (LAST);
   `ALLOW_LIVE_ACCOUNTS` toggle (default false).
 - **Pre-existing flaky test** `TestMaybeResetDaily` (UTC-day-boundary), not
   ours.
@@ -618,7 +619,7 @@ AddOn update). **Q1 DECIDED: the AI uses ALL selected TFs (no cap).**
 ### Environment / tooling
 
 - **CodeGraphContext (CGC) is now INDEXED for this repo** (FalkorDB Lite, `cgc`
-  CLI; nofx in `cgc list`). Hard Rule 0's tool order — CGC-first, then
+  CLI; vl in `cgc list`). Hard Rule 0's tool order — CGC-first, then
   grep/Read — is fully available going forward. (Earlier passes ran without it
   and fell back to grep/Read; that limitation no longer applies.) See the
   CodeGraphContext tooling blockquote near the Playwright block above for the
@@ -651,8 +652,8 @@ AddOn update). **Q1 DECIDED: the AI uses ALL selected TFs (no cap).**
 ### New rules logged this session (see also "Locked Data Architecture Decisions")
 
 - **NEW HARD RULE — STALE GO BINARY.** After ANY wire / parser / Go change,
-  `go build` + restart `./nofx-bin`. The tell is `unknown frame type type=X`
-  in `/tmp/backend.log` (the TCP slog sink — NOT `data/nofx_*.log`). This is
+  `go build` + restart `./vl-bin`. The tell is `unknown frame type type=X`
+  in `/tmp/backend.log` (the TCP slog sink — NOT `data/vl_*.log`). This is
   the twin of the NT8 AddOn `cp` -> Documents-AddOns -> F5 -> full-restart
   rule. A stale Go binary silently drops new frame types and is why the
   balance fix appeared not to work until rebuild.
@@ -762,7 +763,7 @@ C# compiles ONLY from `/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom/Add
 
 > **Agent tooling available in this repo (registered 2026-05-25; hardened 2026-05-26):**
 > A Playwright MCP server is registered in `~/.claude.json` for project
-> `/home/hoang/nofx`. When you spawn agents that need to verify the React
+> `/home/hoang/vl`. When you spawn agents that need to verify the React
 > frontend (Settings page exchange config form, Dashboard column rendering,
 > Strategy Studio variant gating, etc.), use the `mcp__playwright__*` tools
 > to drive a headless Chromium against `http://localhost:3000` after
@@ -809,7 +810,7 @@ C# compiles ONLY from `/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom/Add
 
 > **CodeGraphContext (cgc) — query-before-read code graph (registered 2026-05-30):**
 > CodeGraphContext 0.4.0 is installed at `~/.local/bin/cgc` and registered as an
-> MCP server in `~/.claude.json` for project `/home/hoang/nofx` (local scope —
+> MCP server in `~/.claude.json` for project `/home/hoang/vl` (local scope —
 > NOT a committed `.mcp.json`). Use the `mcp__cgc__*` tools to query code
 > structure BEFORE blindly reading files — e.g. `analyze_code_relationships`
 > (find_callers / find_callees / find_all_callers / call_chain / class_hierarchy
@@ -820,9 +821,9 @@ C# compiles ONLY from `/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom/Add
 > - **Backend: FalkorDB Lite** — embedded, NO Docker required (this WSL2 distro
 >   has no Docker; FalkorDB/Neo4j server backends are therefore NOT used).
 >   `cgc doctor` is the health check.
-> - **Index:** `nofx` is indexed (1872 files). Refresh after code changes with
+> - **Index:** `vl` is indexed (1872 files). Refresh after code changes with
 >   `cgc index . --force` (plain `cgc index .` skips an already-indexed repo);
->   `cgc watch /home/hoang/nofx` auto-updates on save. The index is local graph
+>   `cgc watch /home/hoang/vl` auto-updates on save. The index is local graph
 >   state, not in git.
 > - **Registration (re-apply on a fresh machine):**
 >   ```bash
@@ -833,13 +834,13 @@ C# compiles ONLY from `/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom/Add
 >   registration; the CLI (`cgc query`, `cgc analyze`, `cgc find`) works
 >   immediately regardless.
 
-**Goal:** Get the nofx bot to fetch NQ futures OHLCV from Databento, ask the AI for a trade decision in futures-native vocabulary, write that decision to a CSV signal file, and have NinjaTrader (running on the user's Windows host with the open-source `claudetrader.cs` strategy attached to an MNQ chart) execute that decision in SIM mode — then tail the fills CSV back into the bot's database.
+**Goal:** Get the vl bot to fetch NQ futures OHLCV from Databento, ask the AI for a trade decision in futures-native vocabulary, write that decision to a CSV signal file, and have NinjaTrader (running on the user's Windows host with the open-source `claudetrader.cs` strategy attached to an MNQ chart) execute that decision in SIM mode — then tail the fills CSV back into the bot's database.
 
 **Architecture:** Three independent layers wired through narrow interfaces.
 
 ```
 ┌──── WSL2 (Linux) ────────────────────────────┐    ┌── Windows ──┐
-│  nofx-bin (Go)                               │    │             │
+│  vl-bin (Go)                               │    │             │
 │                                              │    │  NinjaTrader 8
 │  trader/auto_trader_loop.go                  │    │  + claudetrader.cs
 │    │                                         │    │  (modified copy)
@@ -855,16 +856,16 @@ C# compiles ONLY from `/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom/Add
 │                                              │    │  │
 └──────────────────────────────────────────────┘    │  │
                                                     │  ▼  files at
-                                                    │  C:\Users\<u>\NofxTrader\data\
+                                                    │  C:\Users\<u>\VLTrader\data\
                                                     │  ├─ trade_signals.csv  (Go writes, NT reads)
                                                     │  └─ trades_taken.csv   (NT writes, Go reads)
                                                     └─────────────
 ```
 
-WSL2 reaches Windows files via `/mnt/c/Users/<windows_username>/NofxTrader/data/`. Same files, two views. No sockets, no daemon.
+WSL2 reaches Windows files via `/mnt/c/Users/<windows_username>/VLTrader/data/`. Same files, two views. No sockets, no daemon.
 
 **Tech Stack:**
-- Go (existing `nofx` codebase)
+- Go (existing `vl` codebase)
 - Databento Historical REST API (`https://hist.databento.com/v0/`) with HTTP Basic auth
 - `claudetrader.cs` (open-source NinjaScript from `https://github.com/J0shusmc/Claude-Trader-NinjaTrader`) — modified copy with our file paths
 - NinjaTrader 8 (Windows desktop app) with SIM connection
@@ -879,7 +880,7 @@ The system already has rich per-trader configuration via the **Exchange**, **Str
 - **NinjaTrader is added as a new exchange type** in [store/exchange.go](store/exchange.go) (joining `binance`, `bybit`, `hyperliquid`, etc.). Per-account NT data dir lives on the Exchange row, not in global env vars.
 - **NQ symbols use the existing static-coin-source mode** at [kernel/engine.go:437-442](kernel/engine.go#L437) — `CoinSource.SourceType="static"`, `StaticCoins=["NQ.c.0"]`. No engine fork needed.
 - **The futures prompt template is selected via the existing `PromptVariant` field** ([api/strategy.go:551](api/strategy.go#L551) already supports `req.PromptVariant`). NQ traders set `PromptVariant="futures"`.
-- **Data feed override:** when the engine sees `ExchangeType=="ninjatrader"`, it routes K-line fetches through Databento instead of nofxos/coinank. This is a small branch in `kernel/engine.go` data-fetch, not a top-level mode switch.
+- **Data feed override:** when the engine sees `ExchangeType=="ninjatrader"`, it routes K-line fetches through Databento instead of vlos/coinank. This is a small branch in `kernel/engine.go` data-fetch, not a top-level mode switch.
 - **Symbol normalization fix:** [market.Normalize()](market/data.go) currently appends `USDT`. It needs a futures-aware path that detects CME symbol patterns (e.g., `NQ.c.0`, `MNQ`, `NQM6`) and skips the suffix. See Task NEW.
 
 **Verified facts (from reading `claudetrader.cs` directly):**
@@ -919,7 +920,7 @@ The system already has rich per-trader configuration via the **Exchange**, **Str
 - `main.go` — wire `provider/databento.DefaultClient` initialization on startup
 
 **Modified externally (Windows side):**
-- `claudetrader.cs` — change hardcoded paths from `C:\Users\Joshua\Documents\Projects\Claude Trader\data\` to `C:\Users\<user>\NofxTrader\data\` (or whatever path the user picks, via NT strategy parameter)
+- `claudetrader.cs` — change hardcoded paths from `C:\Users\Joshua\Documents\Projects\Claude Trader\data\` to `C:\Users\<user>\VLTrader\data\` (or whatever path the user picks, via NT strategy parameter)
 
 ---
 
@@ -957,16 +958,16 @@ In NinjaTrader:
 Decide on a path on your Windows host that both NT and the Go bot will use. Recommended:
 
 ```
-Windows path:    C:\Users\<your-windows-username>\NofxTrader\data\
-WSL2 path:       /mnt/c/Users/<your-windows-username>/NofxTrader/data/
+Windows path:    C:\Users\<your-windows-username>\VLTrader\data\
+WSL2 path:       /mnt/c/Users/<your-windows-username>/VLTrader/data/
 ```
 
-Create the directory. From Windows: open Explorer, navigate to `C:\Users\<you>\`, right-click → New Folder → `NofxTrader`, then inside it create `data`.
+Create the directory. From Windows: open Explorer, navigate to `C:\Users\<you>\`, right-click → New Folder → `VLTrader`, then inside it create `data`.
 
 From WSL2, confirm visibility:
 
 ```bash
-ls -la "/mnt/c/Users/<your-windows-username>/NofxTrader/data/"
+ls -la "/mnt/c/Users/<your-windows-username>/VLTrader/data/"
 ```
 
 Expected: empty directory listing (no errors).
@@ -976,7 +977,7 @@ Expected: empty directory listing (no errors).
 From WSL2:
 
 ```bash
-DATA_DIR="/mnt/c/Users/<your-windows-username>/NofxTrader/data"
+DATA_DIR="/mnt/c/Users/<your-windows-username>/VLTrader/data"
 printf "DateTime,Direction,Entry_Price,Stop_Loss,Take_Profit\n" > "$DATA_DIR/trade_signals.csv"
 printf "DateTime,Direction,Entry_Price\n" > "$DATA_DIR/trades_taken.csv"
 ls -la "$DATA_DIR/"
@@ -986,9 +987,9 @@ Expected: both files exist with their header rows.
 
 - [ ] **Step 0.6: Install and configure claudetrader.cs in NT**
 
-1. From your Windows host, clone the repo: `git clone https://github.com/J0shusmc/Claude-Trader-NinjaTrader.git C:\NofxTrader\bridge` (or anywhere convenient).
-2. Open `C:\NofxTrader\bridge\ninjascripts\claudetrader.cs` in any text editor.
-3. Find lines 34, 35, 86, 87, 98, 99 — replace `C:\Users\Joshua\Documents\Projects\Claude Trader\data\` with `C:\Users\<your-windows-username>\NofxTrader\data\` everywhere.
+1. From your Windows host, clone the repo: `git clone https://github.com/J0shusmc/Claude-Trader-NinjaTrader.git C:\VLTrader\bridge` (or anywhere convenient).
+2. Open `C:\VLTrader\bridge\ninjascripts\claudetrader.cs` in any text editor.
+3. Find lines 34, 35, 86, 87, 98, 99 — replace `C:\Users\Joshua\Documents\Projects\Claude Trader\data\` with `C:\Users\<your-windows-username>\VLTrader\data\` everywhere.
 4. Save.
 5. Copy the file to `Documents\NinjaTrader 8\bin\Custom\Strategies\claudetrader.cs`.
 6. In NinjaTrader: Tools → Edit NinjaScript → Strategy → find `ClaudeTrader` → click Compile (F5). You should see "0 errors" in the output panel.
@@ -998,8 +999,8 @@ Expected: both files exist with their header rows.
 On your MNQ 12-26 chart in NT:
 1. Strategies tab → click + → select `ClaudeTrader`.
 2. Set parameters:
-   - `Signals File Path`: `C:\Users\<your-windows-username>\NofxTrader\data\trade_signals.csv`
-   - `Trades Log File Path`: `C:\Users\<your-windows-username>\NofxTrader\data\trades_taken.csv`
+   - `Signals File Path`: `C:\Users\<your-windows-username>\VLTrader\data\trade_signals.csv`
+   - `Trades Log File Path`: `C:\Users\<your-windows-username>\VLTrader\data\trades_taken.csv`
    - `File Check Interval`: `2`
    - `Contract Quantity`: `1` ← starting safe; we'll raise this later after validation
 3. Click Apply, then Enable. Look at NT's Output window: you should see `ClaudeTrader Initialized - Monitoring signals every 2 seconds`.
@@ -1009,7 +1010,7 @@ On your MNQ 12-26 chart in NT:
 This is the most important step in the entire plan. From WSL2:
 
 ```bash
-DATA_DIR="/mnt/c/Users/<your-windows-username>/NofxTrader/data"
+DATA_DIR="/mnt/c/Users/<your-windows-username>/VLTrader/data"
 # Make sure NT is open, SIM connected, ClaudeTrader running on MNQ chart
 DT=$(date +"%m/%d/%Y %H:%M:%S")
 # Pick a price near current MNQ market — check NT chart. Replace 21500 with current ish.
@@ -1027,12 +1028,12 @@ If this doesn't happen, **stop here and debug NT setup before continuing**. Noth
 
 - [ ] **Step 0.9: Commit the .env values**
 
-Once Steps 0.1-0.8 all pass, add the env vars to `/home/hoang/nofx/.env`:
+Once Steps 0.1-0.8 all pass, add the env vars to `/home/hoang/vl/.env`:
 
 ```
 DATABENTO_API_KEY=db-XXXXXXXXXXXXXXXXXXXXXXXXXX
 DATABENTO_DATASET=GLBX.MDP3
-NINJATRADER_DATA_DIR=/mnt/c/Users/<your-windows-username>/NofxTrader/data
+NINJATRADER_DATA_DIR=/mnt/c/Users/<your-windows-username>/VLTrader/data
 TRADING_MODE=futures
 ```
 
@@ -1056,7 +1057,7 @@ DatabentoAPIKey  string
 DatabentoDataset string  // e.g., "GLBX.MDP3"
 
 // NinjaTrader (CSV bridge for execution)
-NinjaTraderDataDir string  // e.g., "/mnt/c/Users/<u>/NofxTrader/data"
+NinjaTraderDataDir string  // e.g., "/mnt/c/Users/<u>/VLTrader/data"
 
 // Trading mode: "crypto" (default, original behavior) or "futures"
 TradingMode string
@@ -1084,7 +1085,7 @@ Append to `.env.example`:
 TRADING_MODE=crypto                                          # set to "futures" to enable NQ path
 DATABENTO_API_KEY=                                           # https://databento.com/portal/keys
 DATABENTO_DATASET=GLBX.MDP3                                  # CME Globex
-NINJATRADER_DATA_DIR=                                        # e.g., /mnt/c/Users/<u>/NofxTrader/data
+NINJATRADER_DATA_DIR=                                        # e.g., /mnt/c/Users/<u>/VLTrader/data
 ```
 
 - [ ] **Step 1.4: Build, verify no compile errors**
@@ -1092,7 +1093,7 @@ NINJATRADER_DATA_DIR=                                        # e.g., /mnt/c/User
 Run:
 
 ```bash
-cd /home/hoang/nofx && go build ./... 2>&1 | head -20
+cd /home/hoang/vl && go build ./... 2>&1 | head -20
 ```
 
 Expected: no output (build success).
@@ -1100,7 +1101,7 @@ Expected: no output (build success).
 - [ ] **Step 1.5: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add config/config.go .env.example
 git commit -m "feat(config): add Databento + NinjaTrader config fields"
 ```
@@ -1118,7 +1119,7 @@ git commit -m "feat(config): add Databento + NinjaTrader config fields"
 
 - [ ] **Step 2.1: Define the Bar type and signature in a new file**
 
-Create `/home/hoang/nofx/provider/databento/historical.go`:
+Create `/home/hoang/vl/provider/databento/historical.go`:
 
 ```go
 package databento
@@ -1249,7 +1250,7 @@ func scaledFloat(s string) (float64, error) {
 
 - [ ] **Step 2.2: Write the parser test FIRST**
 
-Create `/home/hoang/nofx/provider/databento/historical_test.go`:
+Create `/home/hoang/vl/provider/databento/historical_test.go`:
 
 ```go
 package databento
@@ -1313,7 +1314,7 @@ func TestParseOHLCVResponse_MalformedLine(t *testing.T) {
 - [ ] **Step 2.3: Run tests, verify all pass**
 
 ```bash
-cd /home/hoang/nofx && go test ./provider/databento/... -run TestParseOHLCV -v
+cd /home/hoang/vl && go test ./provider/databento/... -run TestParseOHLCV -v
 ```
 
 Expected: `--- PASS` for all three. If any fails, fix the parser.
@@ -1327,7 +1328,7 @@ package main
 
 import (
 	"fmt"
-	"nofx/provider/databento"
+	"vl/provider/databento"
 	"os"
 	"time"
 )
@@ -1352,7 +1353,7 @@ func main() {
 Run it:
 
 ```bash
-cd /home/hoang/nofx && go run /tmp/db_smoke.go
+cd /home/hoang/vl && go run /tmp/db_smoke.go
 ```
 
 Expected: ~25-30 lines of 1-minute NQ bars from the last half hour. If you get an error mentioning "401", your API key is wrong; if "402", the endpoint or schema is wrong; if "no bars", check the time range hits a session-open window.
@@ -1360,7 +1361,7 @@ Expected: ~25-30 lines of 1-minute NQ bars from the last half hour. If you get a
 - [ ] **Step 2.5: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add provider/databento/historical.go provider/databento/historical_test.go
 git commit -m "feat(databento): add GetOHLCV historical client"
 rm /tmp/db_smoke.go
@@ -1378,7 +1379,7 @@ rm /tmp/db_smoke.go
 
 - [ ] **Step 3.1: Write the failing test**
 
-Create `/home/hoang/nofx/provider/databento/resolve_test.go`:
+Create `/home/hoang/vl/provider/databento/resolve_test.go`:
 
 ```go
 package databento
@@ -1423,14 +1424,14 @@ func TestParseResolveResponse_NotFound(t *testing.T) {
 - [ ] **Step 3.2: Run the test and verify failure**
 
 ```bash
-cd /home/hoang/nofx && go test ./provider/databento/... -run TestParseResolve -v
+cd /home/hoang/vl && go test ./provider/databento/... -run TestParseResolve -v
 ```
 
 Expected: build error / compile failure ("parseResolveResponse" undefined). That's the failing state.
 
 - [ ] **Step 3.3: Implement the resolver**
 
-Create `/home/hoang/nofx/provider/databento/resolve.go`:
+Create `/home/hoang/vl/provider/databento/resolve.go`:
 
 ```go
 package databento
@@ -1494,7 +1495,7 @@ func parseResolveResponse(body []byte, symbol string) (string, error) {
 - [ ] **Step 3.4: Run tests and verify pass**
 
 ```bash
-cd /home/hoang/nofx && go test ./provider/databento/... -v
+cd /home/hoang/vl && go test ./provider/databento/... -v
 ```
 
 Expected: all tests pass.
@@ -1502,7 +1503,7 @@ Expected: all tests pass.
 - [ ] **Step 3.5: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add provider/databento/resolve.go provider/databento/resolve_test.go
 git commit -m "feat(databento): add continuous symbol resolver"
 ```
@@ -1520,20 +1521,20 @@ git commit -m "feat(databento): add continuous symbol resolver"
 - [ ] **Step 4.1: Read the existing Kline shape**
 
 ```bash
-cd /home/hoang/nofx && grep -A 12 "^type Kline struct" market/types.go
+cd /home/hoang/vl && grep -A 12 "^type Kline struct" market/types.go
 ```
 
 Note the fields exactly — they'll inform the mapping in the next step.
 
 - [ ] **Step 4.2: Write the failing test**
 
-Create `/home/hoang/nofx/market/databento_adapter_test.go`:
+Create `/home/hoang/vl/market/databento_adapter_test.go`:
 
 ```go
 package market
 
 import (
-	"nofx/provider/databento"
+	"vl/provider/databento"
 	"testing"
 	"time"
 )
@@ -1578,20 +1579,20 @@ func TestBarsToKlines_Empty(t *testing.T) {
 - [ ] **Step 4.3: Run the test, verify failure**
 
 ```bash
-cd /home/hoang/nofx && go test ./market/... -run TestBarsToKlines -v
+cd /home/hoang/vl && go test ./market/... -run TestBarsToKlines -v
 ```
 
 Expected: compile error ("BarsToKlines undefined").
 
 - [ ] **Step 4.4: Implement the adapter**
 
-Create `/home/hoang/nofx/market/databento_adapter.go`:
+Create `/home/hoang/vl/market/databento_adapter.go`:
 
 ```go
 package market
 
 import (
-	"nofx/provider/databento"
+	"vl/provider/databento"
 )
 
 // BarsToKlines converts Databento bars into the project's canonical Kline shape.
@@ -1621,7 +1622,7 @@ func BarsToKlines(bars []databento.Bar) []Kline {
 - [ ] **Step 4.5: Run tests, verify pass**
 
 ```bash
-cd /home/hoang/nofx && go test ./market/... -run TestBarsToKlines -v
+cd /home/hoang/vl && go test ./market/... -run TestBarsToKlines -v
 ```
 
 Expected: PASS.
@@ -1629,7 +1630,7 @@ Expected: PASS.
 - [ ] **Step 4.6: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add market/databento_adapter.go market/databento_adapter_test.go
 git commit -m "feat(market): add Databento Bar -> Kline adapter"
 ```
@@ -1658,7 +1659,7 @@ DateTime,Direction,Entry_Price,Stop_Loss,Take_Profit
 
 - [ ] **Step 5.1: Define types**
 
-Create `/home/hoang/nofx/provider/ninjatrader/types.go`:
+Create `/home/hoang/vl/provider/ninjatrader/types.go`:
 
 ```go
 package ninjatrader
@@ -1717,7 +1718,7 @@ func (s SignalRow) Validate() error {
 
 - [ ] **Step 5.2: Write the failing test for the writer**
 
-Create `/home/hoang/nofx/provider/ninjatrader/csv_writer_test.go`:
+Create `/home/hoang/vl/provider/ninjatrader/csv_writer_test.go`:
 
 ```go
 package ninjatrader
@@ -1800,14 +1801,14 @@ func TestCSVWriter_WriteSignal_TruncatesPrevious(t *testing.T) {
 - [ ] **Step 5.3: Run tests, verify failure**
 
 ```bash
-cd /home/hoang/nofx && go test ./provider/ninjatrader/... -v
+cd /home/hoang/vl && go test ./provider/ninjatrader/... -v
 ```
 
 Expected: compile failure ("NewCSVWriter undefined").
 
 - [ ] **Step 5.4: Implement the writer**
 
-Create `/home/hoang/nofx/provider/ninjatrader/csv_writer.go`:
+Create `/home/hoang/vl/provider/ninjatrader/csv_writer.go`:
 
 ```go
 package ninjatrader
@@ -1881,7 +1882,7 @@ func (w *CSVWriter) WriteSignal(s SignalRow) error {
 - [ ] **Step 5.5: Run tests, verify pass**
 
 ```bash
-cd /home/hoang/nofx && go test ./provider/ninjatrader/... -v
+cd /home/hoang/vl && go test ./provider/ninjatrader/... -v
 ```
 
 Expected: all 3 tests PASS.
@@ -1891,14 +1892,14 @@ Expected: all 3 tests PASS.
 With NT open, ClaudeTrader running on the MNQ chart in SIM, run:
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 DATA_DIR="$(grep NINJATRADER_DATA_DIR .env | cut -d= -f2)"
 cat > /tmp/nt_smoke.go <<'EOF'
 package main
 
 import (
 	"fmt"
-	"nofx/provider/ninjatrader"
+	"vl/provider/ninjatrader"
 	"os"
 	"time"
 )
@@ -1943,7 +1944,7 @@ If you see this — the Go-side bridge works end-to-end.
 - [ ] **Step 5.7: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add provider/ninjatrader/types.go provider/ninjatrader/csv_writer.go provider/ninjatrader/csv_writer_test.go
 git commit -m "feat(ninjatrader): add CSV signal writer with validation"
 ```
@@ -1960,7 +1961,7 @@ git commit -m "feat(ninjatrader): add CSV signal writer with validation"
 
 - [ ] **Step 6.1: Write the failing tailer test**
 
-Create `/home/hoang/nofx/provider/ninjatrader/csv_tailer_test.go`:
+Create `/home/hoang/vl/provider/ninjatrader/csv_tailer_test.go`:
 
 ```go
 package ninjatrader
@@ -2038,14 +2039,14 @@ func TestCSVTailer_DetectsAppendedRows(t *testing.T) {
 - [ ] **Step 6.2: Run the test, verify failure**
 
 ```bash
-cd /home/hoang/nofx && go test ./provider/ninjatrader/... -run TestCSVTailer -v
+cd /home/hoang/vl && go test ./provider/ninjatrader/... -run TestCSVTailer -v
 ```
 
 Expected: compile failure.
 
 - [ ] **Step 6.3: Implement the tailer**
 
-Create `/home/hoang/nofx/provider/ninjatrader/csv_tailer.go`:
+Create `/home/hoang/vl/provider/ninjatrader/csv_tailer.go`:
 
 ```go
 package ninjatrader
@@ -2163,7 +2164,7 @@ func parseFillRow(line string) (FillRow, error) {
 - [ ] **Step 6.4: Run tests, verify pass**
 
 ```bash
-cd /home/hoang/nofx && go test ./provider/ninjatrader/... -v
+cd /home/hoang/vl && go test ./provider/ninjatrader/... -v
 ```
 
 Expected: all PASS, including the 2-second tailer test.
@@ -2171,7 +2172,7 @@ Expected: all PASS, including the 2-second tailer test.
 - [ ] **Step 6.5: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add provider/ninjatrader/csv_tailer.go provider/ninjatrader/csv_tailer_test.go
 git commit -m "feat(ninjatrader): add CSV fill tailer"
 ```
@@ -2201,14 +2202,14 @@ git commit -m "feat(ninjatrader): add CSV fill tailer"
 - [ ] **Step 7.1: Read the Trader interface to confirm signatures**
 
 ```bash
-cd /home/hoang/nofx && sed -n '43,105p' trader/types/interface.go
+cd /home/hoang/vl && sed -n '43,105p' trader/types/interface.go
 ```
 
 Note the exact method signatures and return types. **The code below assumes specific signatures based on the audit; verify and adjust if any differ.**
 
 - [ ] **Step 7.2: Write the failing test (just the constructor + OpenLong)**
 
-Create `/home/hoang/nofx/trader/ninjatrader/trader_test.go`:
+Create `/home/hoang/vl/trader/ninjatrader/trader_test.go`:
 
 ```go
 package ninjatrader
@@ -2256,7 +2257,7 @@ func TestOpenLong_WritesSignal(t *testing.T) {
 
 - [ ] **Step 7.3: Implement the trader**
 
-Create `/home/hoang/nofx/trader/ninjatrader/trader.go`:
+Create `/home/hoang/vl/trader/ninjatrader/trader.go`:
 
 ```go
 // Package ninjatrader implements the trader.Trader interface by writing
@@ -2270,12 +2271,12 @@ import (
 	"sync"
 	"time"
 
-	"nofx/provider/ninjatrader"
-	"nofx/trader/types"
+	"vl/provider/ninjatrader"
+	"vl/trader/types"
 )
 
 type Config struct {
-	DataDir string // /mnt/c/Users/<u>/NofxTrader/data
+	DataDir string // /mnt/c/Users/<u>/VLTrader/data
 	Symbol  string // e.g. "MNQ" (informational only; NT uses chart's instrument)
 }
 
@@ -2485,7 +2486,7 @@ func keyFor(symbol, side string) string {
 - [ ] **Step 7.4: Run tests, verify pass**
 
 ```bash
-cd /home/hoang/nofx && go test ./trader/ninjatrader/... -v
+cd /home/hoang/vl && go test ./trader/ninjatrader/... -v
 ```
 
 Expected: PASS.
@@ -2493,7 +2494,7 @@ Expected: PASS.
 - [ ] **Step 7.5: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add trader/ninjatrader/trader.go trader/ninjatrader/trader_test.go
 git commit -m "feat(trader): add NinjaTrader Trader impl via CSV bridge"
 ```
@@ -2508,7 +2509,7 @@ git commit -m "feat(trader): add NinjaTrader Trader impl via CSV bridge"
 - [ ] **Step 8.1: Read the switch**
 
 ```bash
-cd /home/hoang/nofx && sed -n '253,320p' trader/auto_trader.go
+cd /home/hoang/vl && sed -n '253,320p' trader/auto_trader.go
 ```
 
 Note the existing pattern — each case constructs a broker-specific struct and assigns to `at.trader`.
@@ -2531,7 +2532,7 @@ Add the import at the top:
 ```go
 import (
     // ... existing ...
-    ninjatrader "nofx/trader/ninjatrader"
+    ninjatrader "vl/trader/ninjatrader"
 )
 ```
 
@@ -2540,7 +2541,7 @@ import (
 - [ ] **Step 8.3: Build and verify**
 
 ```bash
-cd /home/hoang/nofx && go build ./... 2>&1 | head -20
+cd /home/hoang/vl && go build ./... 2>&1 | head -20
 ```
 
 Expected: no output.
@@ -2548,7 +2549,7 @@ Expected: no output.
 - [ ] **Step 8.4: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add trader/auto_trader.go
 git commit -m "feat(trader): register ninjatrader broker in switch"
 ```
@@ -2565,7 +2566,7 @@ git commit -m "feat(trader): register ninjatrader broker in switch"
 
 - [ ] **Step 9.1: Write a golden-file test**
 
-Create `/home/hoang/nofx/kernel/engine_prompt_futures_test.go`:
+Create `/home/hoang/vl/kernel/engine_prompt_futures_test.go`:
 
 ```go
 package kernel
@@ -2630,14 +2631,14 @@ func TestBuildFuturesUserPrompt_IncludesIndicators(t *testing.T) {
 - [ ] **Step 9.2: Run, verify failure**
 
 ```bash
-cd /home/hoang/nofx && go test ./kernel/... -run TestBuildFutures -v
+cd /home/hoang/vl && go test ./kernel/... -run TestBuildFutures -v
 ```
 
 Expected: compile failure.
 
 - [ ] **Step 9.3: Implement**
 
-Create `/home/hoang/nofx/kernel/engine_prompt_futures.go`:
+Create `/home/hoang/vl/kernel/engine_prompt_futures.go`:
 
 ```go
 package kernel
@@ -2769,7 +2770,7 @@ func bollPosition(p, upper, lower float64) string {
 - [ ] **Step 9.4: Run tests, verify pass**
 
 ```bash
-cd /home/hoang/nofx && go test ./kernel/... -run TestBuildFutures -v
+cd /home/hoang/vl && go test ./kernel/... -run TestBuildFutures -v
 ```
 
 Expected: PASS.
@@ -2777,7 +2778,7 @@ Expected: PASS.
 - [ ] **Step 9.5: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add kernel/engine_prompt_futures.go kernel/engine_prompt_futures_test.go
 git commit -m "feat(kernel): add NQ futures prompt template"
 ```
@@ -2793,7 +2794,7 @@ git commit -m "feat(kernel): add NQ futures prompt template"
 
 - [ ] **Step 10.1: Write the smoke runner**
 
-Create `/home/hoang/nofx/cmd/nq_smoke/main.go`:
+Create `/home/hoang/vl/cmd/nq_smoke/main.go`:
 
 ```go
 // Standalone single-cycle runner for the NQ trading slice.
@@ -2810,14 +2811,14 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/provider/databento"
-	"nofx/provider/ninjatrader"
+	"vl/kernel"
+	"vl/market"
+	"vl/provider/databento"
+	"vl/provider/ninjatrader"
 )
 
 func main() {
-	_ = godotenv.Load("/home/hoang/nofx/.env")
+	_ = godotenv.Load("/home/hoang/vl/.env")
 
 	dbKey := os.Getenv("DATABENTO_API_KEY")
 	if dbKey == "" {
@@ -2925,7 +2926,7 @@ func main() {
 Prerequisites: NT is open, ClaudeTrader running on MNQ chart in SIM, all env vars set.
 
 ```bash
-cd /home/hoang/nofx && go run ./cmd/nq_smoke
+cd /home/hoang/vl && go run ./cmd/nq_smoke
 ```
 
 The runner prints the system + user prompts. Hand-fabricate a tiny decision JSON near current MNQ price. Example (if NQ is around 21500):
@@ -2947,7 +2948,7 @@ If all five happen — **the entire chain works end-to-end**. This is the slice 
 - [ ] **Step 10.3: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add cmd/nq_smoke/main.go
 git commit -m "feat(cmd): add NQ end-to-end smoke runner"
 ```
@@ -2975,7 +2976,7 @@ the backend logs.
 
 **Why:** Three pages exist that have no purpose for a single-user NQ trader and add maintenance burden:
 
-1. **Data page** (`/data`) — iframe to `nofxos.ai/dashboard`, now CSP-blocked. NinjaTrader IS the chart view.
+1. **Data page** (`/data`) — iframe to `upstream website link (removed in the VL rename)`, now CSP-blocked. NinjaTrader IS the chart view.
 2. **Strategy Market page** (`/strategy-market`) — community strategy browser showing public crypto strategies. Confusing UX for NQ users; mixing crypto strategies with NQ ones serves nobody.
 3. **Competition / Leaderboard page** (`/competition`) — public competition view ranking crypto traders by P&L. Not relevant for a personal NQ trading setup; also makes the bot send anonymous data to public listings by default.
 
@@ -3135,7 +3136,7 @@ Also remove the three `case` lines in `getCurrentPageForPath()` for `ROUTES.comp
 - [ ] **Step 11.5: Delete the page files**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 rm web/src/pages/DataPage.tsx
 rm web/src/pages/StrategyMarketPage.tsx
 rm web/src/components/trader/CompetitionPage.tsx
@@ -3145,7 +3146,7 @@ rm web/src/components/trader/CompetitionPage.test.tsx
 - [ ] **Step 11.6: Check for orphan references**
 
 ```bash
-cd /home/hoang/nofx && grep -rn "DataPage\|StrategyMarketPage\|CompetitionPage\|ROUTES\.data\|ROUTES\.strategyMarket\|ROUTES\.competition" web/src/ 2>&1 | grep -v node_modules | head -30
+cd /home/hoang/vl && grep -rn "DataPage\|StrategyMarketPage\|CompetitionPage\|ROUTES\.data\|ROUTES\.strategyMarket\|ROUTES\.competition" web/src/ 2>&1 | grep -v node_modules | head -30
 ```
 
 Expected: a small number of i18n keys still reference these page names (e.g., `dataCenter`, `strategyMarket*`, `competition*` in `translations.ts`). These can be deleted as a separate cosmetic pass; the build does not require it.
@@ -3153,7 +3154,7 @@ Expected: a small number of i18n keys still reference these page names (e.g., `d
 - [ ] **Step 11.7: Build the frontend**
 
 ```bash
-cd /home/hoang/nofx/web && npm run build 2>&1 | tail -30
+cd /home/hoang/vl/web && npm run build 2>&1 | tail -30
 ```
 
 Expected: build succeeds with no TypeScript errors. If TS complains about any of the removed page identifiers, locate the remaining reference (likely a stray import or an inline `<Link to={ROUTES.x}>` in a forgotten component) and remove it. The deletion only affects the four files above plus the nav/router infrastructure.
@@ -3161,7 +3162,7 @@ Expected: build succeeds with no TypeScript errors. If TS complains about any of
 - [ ] **Step 11.8: Smoke test in browser**
 
 ```bash
-cd /home/hoang/nofx/web && npm run dev
+cd /home/hoang/vl/web && npm run dev
 ```
 
 Open `http://localhost:3000/`. Verify:
@@ -3173,7 +3174,7 @@ Open `http://localhost:3000/`. Verify:
 - [ ] **Step 11.9: Backend: are there server routes serving these pages?**
 
 ```bash
-cd /home/hoang/nofx && grep -n "/api/competition\|/api/leaderboard\|/api/strategy-market\|/api/public-strategies" api/server.go api/handler_*.go 2>/dev/null
+cd /home/hoang/vl && grep -n "/api/competition\|/api/leaderboard\|/api/strategy-market\|/api/public-strategies" api/server.go api/handler_*.go 2>/dev/null
 ```
 
 If any backend routes exist *specifically* to serve competition data or public-strategy listings (e.g., `GET /api/competition`, `GET /api/strategies/public`), and they're no longer reachable from the UI, you can leave them in place (defensive) or remove them. **For this plan, leave them in place** — removing backend routes is a separate optional cleanup; they don't affect the build.
@@ -3181,7 +3182,7 @@ If any backend routes exist *specifically* to serve competition data or public-s
 - [ ] **Step 11.10: Commit**
 
 ```bash
-cd /home/hoang/nofx
+cd /home/hoang/vl
 git add web/src/components/common/HeaderBar.tsx \
         web/src/router/AppRoutes.tsx \
         web/src/router/paths.ts
@@ -3192,7 +3193,7 @@ git rm web/src/pages/DataPage.tsx \
 git commit -m "refactor(web): remove Data, Strategy Market, and Leaderboard pages
 
 For NQ-trading focus, three crypto-era pages are removed:
-- Data: was an iframe to deprecated nofxos.ai/dashboard (CSP-blocked); NinjaTrader covers chart needs
+- Data: was an iframe to deprecated upstream website link (removed in the VL rename) (CSP-blocked); NinjaTrader covers chart needs
 - Strategy Market: community crypto-strategy browser; not useful for single-user NQ setup
 - Leaderboard: public competition ranking; not relevant for personal use
 
@@ -3548,7 +3549,7 @@ After the existing `aster` form section (around line 720-756) add:
                 type="text"
                 value={ntDataDir}
                 onChange={(e) => setNtDataDir(e.target.value)}
-                placeholder="/mnt/c/Users/<u>/NofxTrader/data"
+                placeholder="/mnt/c/Users/<u>/VLTrader/data"
                 className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded"
             />
         </div>
@@ -3734,22 +3735,22 @@ matters. With a NT trader configured:
 
 ## Task 16: VL brand cleanup + minor fixes
 
-**Why:** v4 audit found SetupPage still says "Welcome to NOFX"; chart watermarks say "NOFX"; agent.go:174 comment is stale; missing Normalize test.
+**Why:** v4 audit found SetupPage still says "Welcome to VL"; chart watermarks say "VL"; agent.go:174 comment is stale; missing Normalize test.
 
 **Files:**
-- Modify: `web/src/pages/SetupPage.tsx` (NOFX → VL in 3 languages)
+- Modify: `web/src/pages/SetupPage.tsx` (VL → VL in 3 languages)
 - Modify: `web/src/components/charts/EquityChart.tsx:321,335` (watermark text)
 - Modify: `web/src/components/charts/AdvancedChart.tsx:1161,1182` (watermark text)
 - Modify: `agent/agent.go:174` (comment example)
 - Test: `market/data_test.go` (TestNormalize_CMEFutures)
 
-- [ ] **Step 1: SetupPage NOFX → VL**
+- [ ] **Step 1: SetupPage VL → VL**
 
-In `web/src/pages/SetupPage.tsx` replace any occurrence of "NOFX" in user-visible copy with "VL". Check 3 language blocks (en, zh, id).
+In `web/src/pages/SetupPage.tsx` replace any occurrence of "VL" in user-visible copy with "VL". Check 3 language blocks (en, zh, id).
 
 - [ ] **Step 2: Chart watermarks**
 
-In `EquityChart.tsx:321,335` and `AdvancedChart.tsx:1161,1182` change watermark text "NOFX" → "VL".
+In `EquityChart.tsx:321,335` and `AdvancedChart.tsx:1161,1182` change watermark text "VL" → "VL".
 
 - [ ] **Step 3: Update stale comment**
 
@@ -3781,14 +3782,14 @@ git commit -m "chore: VL brand cleanup + stale comment + Normalize futures test"
 
 - [ ] **Step 6: Playwright brand assertion**
 
-Catch any "NOFX" string that slipped through:
+Catch any "VL" string that slipped through:
 
 1. mcp__playwright__browser_navigate to /setup
-2. mcp__playwright__browser_get_page_text — search for "NOFX".
+2. mcp__playwright__browser_get_page_text — search for "VL".
    Expected: 0 matches.
 3. mcp__playwright__browser_navigate to a trader dashboard with chart
 4. mcp__playwright__browser_take_screenshot — visually confirm chart
-   watermark reads "VL" not "NOFX"
+   watermark reads "VL" not "VL"
 5. mcp__playwright__browser_console_messages — no errors
 
 ---
@@ -4002,7 +4003,7 @@ detect.
 DECISION: Polling with os.Stat + persisted byte offset, every 250ms.
 
 GO PATTERN:
-- Load lastOffset from /home/hoang/nofx/.state/bars_MNQ_1m.offset
+- Load lastOffset from /home/hoang/vl/.state/bars_MNQ_1m.offset
 - Loop: os.Stat -> if size > lastOffset -> os.Open -> Seek(lastOffset)
   -> read new bytes -> update offset -> save offset
 - Only ingest lines ending in '\n' (handles partial reads where NT
@@ -4181,7 +4182,7 @@ When the Go process dies and restarts, replaying the entire CSV
 from offset 0 is wasteful. Persist last-known-good offset.
 
 CHECKPOINT LOCATION: WSL native filesystem (e.g.
-/home/hoang/nofx/.state/), NOT /mnt/c.
+/home/hoang/vl/.state/), NOT /mnt/c.
 
 REASON: DrvFs does NOT guarantee POSIX rename atomicity across the
 Windows/Linux boundary. ext4 native does. Atomic-rename is the
@@ -4238,7 +4239,7 @@ post-mortem analysis.
 | File I/O pattern | lock(_writeLock) { FileStream(Append, FileShare.Read, WriteThrough) } | Per NT's own multi-threading help guide |
 | Go-side file watching | Polling os.Stat every 250ms + persisted offset | inotify does NOT fire for Windows-side writes on /mnt/c |
 | Dedup key | symbol + bar_open_utc, 24h TTL | Idempotent against historical replay, reconnect, restart |
-| Checkpoint location | WSL native filesystem (/home/hoang/nofx/.state/) | DrvFs does NOT guarantee POSIX rename atomicity |
+| Checkpoint location | WSL native filesystem (/home/hoang/vl/.state/) | DrvFs does NOT guarantee POSIX rename atomicity |
 | Rollover handling | Manual NT re-deploy on roll day; pause trading window around roll | NT support: "NinjaScript strategies are not rolled forward" |
 | Databento role | Historical only — warmup, gap-fill, backtest, archive | Live tier with OHLCV is $1,399/mo annual contract; NT live via prop firm is free and matches execution venue |
 | Latency budget | End-to-end p99 < 500ms (NT bar-close to Go indicator update) | Comfortably achievable with 250ms poll; reassess only if sub-100ms required |
@@ -4249,12 +4250,12 @@ STAGE 0 — Week 1 (Plan 1.5 minimum viable):
 1. Add a BarWriter section to ClaudeTrader.cs using the
    Calculate.OnEachTick + IsFirstTickOfBar + State.Historical guard
    from the NT8 Calculate Mode section above. Emit ONLY 1m bars.
-   Write to C:\Users\hoang\NofxTrader\data\bars_MNQ_1m.csv with
+   Write to C:\Users\hoang\VLTrader\data\bars_MNQ_1m.csv with
    columns: bar_open_utc, wallclock_at_write_utc, open, high, low,
    close, volume.
 2. Add a Go-side tail_csv package that polls
-   /mnt/c/Users/hoang/NofxTrader/data/bars_MNQ_1m.csv every 250ms
-   with persisted offset in /home/hoang/nofx/.state/.
+   /mnt/c/Users/hoang/VLTrader/data/bars_MNQ_1m.csv every 250ms
+   with persisted offset in /home/hoang/vl/.state/.
 3. Aggregate 5m, 15m, H1, H4 in Go using bar_open_utc as the
    canonical key.
 4. Dedup by (symbol, bar_open_utc) with 24h TTL.
@@ -5025,7 +5026,7 @@ _acct.ConnectionStatusUpdate   += ...;   // when broker connection drops/reconne
 - Every NT event carries monotonic `seq`. Go tracks last-seen seq. On reconnect, Go sends `{"action":"RESYNC","last_seq":1042}`. AddOn replays any events newer than that from its ring buffer.
 - TCP keepalive: `socket.SetKeepAlive(true, 10_000, 5_000)` catches OS-level drops in ~15s.
 - Application-level: PING every 1s with 3s timeout, catches hung NT processes.
-- On Go-side connection loss: mark all cached state stale, retry connect with exponential backoff capped at 5s. Surface `bridge_status=disconnected` to NOFX dashboard.
+- On Go-side connection loss: mark all cached state stale, retry connect with exponential backoff capped at 5s. Surface `bridge_status=disconnected` to VL dashboard.
 
 ## Security
 
@@ -5313,7 +5314,7 @@ func TestCalculateWilliamsR_FlatRange(t *testing.T) {
 Run them:
 
 ```bash
-cd /home/hoang/nofx && go test ./market/... -run TestCalculateWilliams -v
+cd /home/hoang/vl && go test ./market/... -run TestCalculateWilliams -v
 ```
 
 Expected: 3 PASS. If any fail, fix the math.
@@ -5372,7 +5373,7 @@ for _, s := range []string{"21500.00", "EMA20", "RSI14", "ATR14", "Bollinger", "
 ### Step W.6: Run and verify
 
 ```bash
-cd /home/hoang/nofx && go test ./... && go run ./cmd/nq_smoke
+cd /home/hoang/vl && go test ./... && go run ./cmd/nq_smoke
 ```
 
 You should see the Williams %R value in the printed user prompt, and the AI now has it in its context. **Total LOC: ~50. Total time: ~30 minutes including reading and tests.**
@@ -5487,7 +5488,7 @@ func TestMeanReversionPrompt_HasMeanRevFraming(t *testing.T) {
 ```
 
 ```bash
-cd /home/hoang/nofx && go test ./kernel/... -run TestMeanRev -v
+cd /home/hoang/vl && go test ./kernel/... -run TestMeanRev -v
 ```
 
 ### Step S.3: Make the engine pick a strategy
@@ -5574,7 +5575,7 @@ go test ./kernel/... -run TestBuildMyVersion -v
 $ code kernel/engine_prompt_myversion.go
 ```
 
-You now have a parallel strategy you can edit freely without breaking the original. Run the original in one trader, your variant in another, compare results in the nofx web UI.
+You now have a parallel strategy you can edit freely without breaking the original. Run the original in one trader, your variant in another, compare results in the vl web UI.
 
 ---
 
@@ -5582,16 +5583,16 @@ You now have a parallel strategy you can edit freely without breaking the origin
 
 The codebase's `TraderManager` already supports multiple traders, each with its own config. After Plan 1, you can:
 
-1. Create Trader A in the nofx web UI: `Strategy=trend`, `Symbol=MNQ`, `AI Model=DeepSeek`, status=Running.
+1. Create Trader A in the vl web UI: `Strategy=trend`, `Symbol=MNQ`, `AI Model=DeepSeek`, status=Running.
 2. Create Trader B: `Strategy=meanrev`, `Symbol=MNQ`, `AI Model=DeepSeek`, status=Running.
 3. Both write to the SAME `trade_signals.csv` (be careful — one ClaudeTrader instance can only handle one position at a time. **For true A/B you need TWO NinjaTrader charts each with its own ClaudeTrader strategy and its own CSV file pair.**)
 
 **Practical recipe for true A/B:**
 - Two MNQ charts in NT, each running ClaudeTrader, configured with two different file paths:
-  - `C:\Users\<u>\NofxTrader\data_A\trade_signals.csv` ← Trader A writes here
-  - `C:\Users\<u>\NofxTrader\data_B\trade_signals.csv` ← Trader B writes here
-- nofx config: per-trader `NinjaTraderDataDir` overrides the global default
-- Run both for a week. Compare P&L in the nofx Dashboard.
+  - `C:\Users\<u>\VLTrader\data_A\trade_signals.csv` ← Trader A writes here
+  - `C:\Users\<u>\VLTrader\data_B\trade_signals.csv` ← Trader B writes here
+- vl config: per-trader `NinjaTraderDataDir` overrides the global default
+- Run both for a week. Compare P&L in the vl Dashboard.
 
 ---
 
@@ -5658,22 +5659,22 @@ No UI development needed. No backend refactor needed. The system is built to let
 
 > Verified by HTTP probe on 2026-05-22.
 
-## Upstream NOFX project (canonical source)
+## Upstream VL project (canonical source)
 
-- **Repository:** https://github.com/NoFxAiOS/nofx (default branch: `dev`, last pushed 2026-05-11)
+- **Repository:** upstream github link (removed in the VL rename) (default branch: `dev`, last pushed 2026-05-11)
 - **Description:** *"Your personal AI trading assistant. Any market. Any model. Pay with USDC, not API keys."*
-- **Local clone:** `/home/hoang/nofx` (this working tree)
+- **Local clone:** `/home/hoang/vl` (this working tree)
 
 ### Architecture documentation (upstream)
 
-Located at https://github.com/NoFxAiOS/nofx/tree/dev/docs/architecture — these are the authoritative module references:
+Located at upstream github link (removed in the VL rename) — these are the authoritative module references:
 
 | Doc | Size | Relevance to this plan |
 |---|---|---|
-| [README.md](https://github.com/NoFxAiOS/nofx/blob/dev/docs/architecture/README.md) | 6.3 KB | Overall system architecture, module map |
-| [STRATEGY_MODULE.md](https://github.com/NoFxAiOS/nofx/blob/dev/docs/architecture/STRATEGY_MODULE.md) | **21.7 KB** | **PRIMARY REFERENCE** — full trading-cycle data flow, prompt construction, risk control. Plan 1's Tasks 4, 9, 10 align with this doc's stages 2 (Data Assembly), 3 (System Prompt), 4 (User Prompt), 6 (AI Parsing). |
-| [AGENT_MEMORY_AND_PLANNING.md](https://github.com/NoFxAiOS/nofx/blob/dev/docs/architecture/AGENT_MEMORY_AND_PLANNING.md) | 11.2 KB | Agent (NOFXi) memory + planning subsystem. Out of scope for this plan but informs future work. |
-| [X402_STREAMING_PAYMENT.md](https://github.com/NoFxAiOS/nofx/blob/dev/docs/architecture/X402_STREAMING_PAYMENT.md) | 12.7 KB | claw402 / x402 micropayment protocol. **Not used by Plan 1** (we bypass claw402 via direct Databento subscription). |
+| [README.md](upstream github link (removed in the VL rename)) | 6.3 KB | Overall system architecture, module map |
+| [STRATEGY_MODULE.md](upstream github link (removed in the VL rename)) | **21.7 KB** | **PRIMARY REFERENCE** — full trading-cycle data flow, prompt construction, risk control. Plan 1's Tasks 4, 9, 10 align with this doc's stages 2 (Data Assembly), 3 (System Prompt), 4 (User Prompt), 6 (AI Parsing). |
+| [AGENT_MEMORY_AND_PLANNING.md](upstream github link (removed in the VL rename)) | 11.2 KB | Agent (VLi) memory + planning subsystem. Out of scope for this plan but informs future work. |
+| [X402_STREAMING_PAYMENT.md](upstream github link (removed in the VL rename)) | 12.7 KB | claw402 / x402 micropayment protocol. **Not used by Plan 1** (we bypass claw402 via direct Databento subscription). |
 
 ### Confirmed alignment with STRATEGY_MODULE.md
 
@@ -5716,7 +5717,7 @@ For Go, Plan 1's approach is correct as a starting point: call the REST API dire
 
 ### **CORRECTION — Upstream docs reference older code structure**
 
-The upstream [STRATEGY_MODULE.md](https://github.com/NoFxAiOS/nofx/blob/dev/docs/architecture/STRATEGY_MODULE.md) cites code at paths like `decision/engine.go:395-403`. **The current codebase does not have a `decision/` folder** — that module was refactored into `kernel/engine.go`. The function names and behavior cited are still accurate; only the file paths drifted. When implementing, find the equivalent in `kernel/`:
+The upstream [STRATEGY_MODULE.md](upstream github link (removed in the VL rename)) cites code at paths like `decision/engine.go:395-403`. **The current codebase does not have a `decision/` folder** — that module was refactored into `kernel/engine.go`. The function names and behavior cited are still accurate; only the file paths drifted. When implementing, find the equivalent in `kernel/`:
 
 | Upstream doc cite | Current local path |
 |---|---|
@@ -5730,9 +5731,9 @@ Other docs may have similar drift. If a cited path doesn't exist, search for the
 ## Quick-reference URLs (all verified)
 
 ```
-Local code:                 /home/hoang/nofx
-Upstream NOFX:              https://github.com/NoFxAiOS/nofx
-Architecture docs:          https://github.com/NoFxAiOS/nofx/tree/dev/docs/architecture
+Local code:                 /home/hoang/vl
+Upstream VL:              upstream github link (removed in the VL rename)
+Architecture docs:          upstream github link (removed in the VL rename)
 NT CSV bridge:              https://github.com/J0shusmc/Claude-Trader-NinjaTrader
 Databento docs portal:      https://databento.com/docs/
 Databento Hist API:         https://hist.databento.com/v0/
@@ -5831,7 +5832,7 @@ if cfg.JWTSecret == "" {
 1. Generate a strong random secret: `openssl rand -base64 64`
 2. Set it in `.env` as `JWT_SECRET=<the random string>`
 3. **Verify by env var, NOT the log line.** The log `🔑 JWT secret configured` at [main.go:90](main.go#L90) fires unconditionally on every startup — it does NOT indicate the default was overridden. Use one of these instead:
-   - `grep "^JWT_SECRET=" /home/hoang/nofx/.env` — must return your generated key, not empty
+   - `grep "^JWT_SECRET=" /home/hoang/vl/.env` — must return your generated key, not empty
    - Add a startup warning in code (recommended): modify [config/config.go:67-69](config/config.go#L67-L69) to log a loud warning when the default value is detected:
      ```go
      if cfg.JWTSecret == "" {
@@ -5843,15 +5844,15 @@ if cfg.JWTSecret == "" {
      ```
    This way the log distinguishes "default in use" (warning) from "real secret loaded" (silent or info).
 
-This is not specific to NQ trading — it's a pre-existing nofx hardening item. Add to Plan 0 (Task 0.10) below if planning a live deploy:
+This is not specific to NQ trading — it's a pre-existing vl hardening item. Add to Plan 0 (Task 0.10) below if planning a live deploy:
 
 - [ ] **Step 0.10: Set JWT_SECRET to a strong random value**
 
 ```bash
-echo "JWT_SECRET=$(openssl rand -base64 64)" >> /home/hoang/nofx/.env
+echo "JWT_SECRET=$(openssl rand -base64 64)" >> /home/hoang/vl/.env
 ```
 
-Confirm: `grep JWT_SECRET /home/hoang/nofx/.env` should show your generated key, NOT the literal "default-jwt-secret-change-in-production".
+Confirm: `grep JWT_SECRET /home/hoang/vl/.env` should show your generated key, NOT the literal "default-jwt-secret-change-in-production".
 
 This is a no-op for LOCAL-ONLY paper trading (bot binds to localhost), but is non-negotiable for any deployment reachable from the internet.
 
@@ -5949,13 +5950,13 @@ Group 6: **End-to-end smoke runner**
 | B8 | `store/visibility.go:5-37` (`MissingRequiredExchangeCredentialFields`) | Add `case "ninjatrader"` requiring `ninja_trader_data_dir` | +5 |
 | B9 | `store/visibility.go:64-80` (`IsVisibleExchange`) | Add `strings.TrimSpace(exchange.NinjaTraderDataDir) != ""` to the OR-chain | +1 |
 | B10 | `manager/trader_manager.go:~700` (`addTraderFromStore` switch) | Add `case "ninjatrader"`: copy `NinjaTraderDataDir` into `AutoTraderConfig` | +5 |
-| B11 | `manager/trader_manager.go` imports | `import ninjatrader "nofx/trader/ninjatrader"` | +1 |
+| B11 | `manager/trader_manager.go` imports | `import ninjatrader "vl/trader/ninjatrader"` | +1 |
 | B12 | `trader/auto_trader.go:111` (`AutoTraderConfig` struct) | Add fields `NinjaTraderDataDir string` + `NinjaTraderSymbol string` | +3 |
 | B13 | `trader/auto_trader.go:60` (Exchange field comment) | Update comment to include `"ninjatrader"` | +0 |
 | B14 | `trader/auto_trader.go:263-315` (broker switch) | Add `case "ninjatrader"`: `trader = ninjatrader.New(...)` | +8 |
 | B15 | `kernel/engine_prompt.go:17` (`BuildSystemPrompt`) | Branch: `if variant == "futures" { return BuildFuturesSystemPrompt(...) }` | +6 |
 | B16 | `kernel/engine_position.go:39` (`validateDecisions`) | Add NQ/MNQ branch: tick-round SL/TP, validate stop distance in points, allow leverage=1 | +30 |
-| B17 | `kernel/engine_analysis.go:91` (`fetchMarketDataWithStrategy`) | Skip `engine.nofxosClient.GetOITopPositions()` when exchange is ninjatrader | +6 |
+| B17 | `kernel/engine_analysis.go:91` (`fetchMarketDataWithStrategy`) | Skip `engine.vlosClient.GetOITopPositions()` when exchange is ninjatrader | +6 |
 | B18 | `kernel/engine.go:NewStrategyEngine` lines 183-225 | (optional) Add `databentoClient` field + initialize when env var set | +12 |
 | B19 | `api/handler_exchange.go:347-354` (validTypes map) | Add `"ninjatrader"` to the map | +1 |
 | B20 | `api/handler_exchange.go:90-107` + `70-87` (request structs) | Add `NinjaTraderDataDir string` field to both request types | +4 |
@@ -6003,7 +6004,7 @@ These are 100% confirmed transferable as-is. **Do not modify these**:
 - `filterExcludedCoins` ([kernel/engine.go:450-473](kernel/engine.go#L450-L473))
 - `CoinSourceConfig` schema ([store/strategy.go:695-721](store/strategy.go#L695-L721))
 
-**Strategy engine — nofxos paths** (no change; bypassed via config):
+**Strategy engine — vlos paths** (no change; bypassed via config):
 - `FetchOIRankingData`, `FetchNetFlowRankingData`, `FetchPriceRankingData` ([kernel/engine.go:778,802,834](kernel/engine.go)) — already return `nil` if the corresponding indicator flag is disabled. NQ strategies just leave them disabled.
 - `getAI500Coins`, `getOITopCoins`, `getOILowCoins`, `getHyperAllCoins`, `getHyperMainCoins` — never called when `SourceType="static"`.
 
@@ -6020,7 +6021,7 @@ These are 100% confirmed transferable as-is. **Do not modify these**:
 
 **Strategy CRUD** (no change):
 - All of [api/strategy.go](api/strategy.go) — accepts arbitrary `StaticCoins` strings without USDT validation.
-- `POST /api/strategies/test-run` works for `SourceType="static"` (skips nofxos calls entirely).
+- `POST /api/strategies/test-run` works for `SourceType="static"` (skips vlos calls entirely).
 - `POST /api/strategies/estimate-tokens` is pure math — works for any prompt.
 
 **Trader CRUD core** (only the broker-switch validation needs an addition; everything else unchanged):
@@ -6170,7 +6171,7 @@ User flow: open Config → add NinjaTrader exchange + verify AI model. Open Stra
 | S1 | `CoinSourceEditor.tsx:69-79` (USDT auto-append) | Skip USDT for CME futures patterns (`NQ.c.0`, `MNQ`, `ES`, etc.) |
 | S2 | same:195-201 (input placeholder) | "BTC, ETH, SOL, NQ.c.0, MNQ..." |
 | S3 | `IndicatorEditor.tsx:658-687` (Market Sentiment) | Hide `enable_funding_rate` + `enable_oi` for futures (prop-controlled) |
-| S4 | `IndicatorEditor.tsx:226-449` (NofxOS sources: AI500/OI/NetFlow/Price ranking) | Hide for futures strategies |
+| S4 | `IndicatorEditor.tsx:226-449` (VLOS sources: AI500/OI/NetFlow/Price ranking) | Hide for futures strategies |
 | S5 | `RiskControlEditor.tsx:72-127` (leverage labels) | Conditional label: "NQ Leverage" for futures vs "BTC/ETH Leverage" for crypto |
 | S6 | `RiskControlEditor.tsx:277` (USDT min position unit) | Conditional unit |
 | S7 | `StrategyStudioPage.tsx:1203-1206 + 1311-1313` (PromptVariant dropdown) | Add `<option value="futures">` in 2 places |
@@ -7115,19 +7116,19 @@ After N=5 consecutive failures, pause the trader for 5 minutes and log to decisi
 // telemetry/metrics.go
 var (
     DecisionsTotal = prometheus.NewCounterVec(
-        prometheus.CounterOpts{Name: "nofx_decisions_total"},
+        prometheus.CounterOpts{Name: "vl_decisions_total"},
         []string{"trader_id", "action", "status"},
     )
     DecisionLatency = prometheus.NewHistogramVec(
-        prometheus.HistogramOpts{Name: "nofx_decision_latency_seconds"},
+        prometheus.HistogramOpts{Name: "vl_decision_latency_seconds"},
         []string{"trader_id"},
     )
     FillLatency = prometheus.NewHistogramVec(
-        prometheus.HistogramOpts{Name: "nofx_fill_latency_seconds"},
+        prometheus.HistogramOpts{Name: "vl_fill_latency_seconds"},
         []string{"exchange"},
     )
     DatabentoErrorsTotal = prometheus.NewCounter(
-        prometheus.CounterOpts{Name: "nofx_databento_errors_total"},
+        prometheus.CounterOpts{Name: "vl_databento_errors_total"},
     )
 )
 ```
@@ -7242,10 +7243,10 @@ Extend `cmd/nq_smoke/main.go` with sub-commands:
 
 Sections to include:
 1. **Pre-flight checks** — env vars set (JWT_SECRET, DATABENTO_API_KEY, NINJATRADER_DATA_DIR), NT8 running on Windows, ClaudeTrader strategy attached to MNQ chart, WSL2 mirrored networking enabled.
-2. **Cold start** — `./nofx-bin > /tmp/nofx.log 2>&1 &` — verify port 8080 listens, log shows "✅ System started successfully".
+2. **Cold start** — `./vl-bin > /tmp/vl.log 2>&1 &` — verify port 8080 listens, log shows "✅ System started successfully".
 3. **Verify trader loads** — `curl localhost:8080/api/traders` returns the configured NT trader. Log shows `📦 Loading trader X (AI Model: deepseek, Exchange: ninjatrader/...)`.
 4. **First-trade smoke** — manual decision via `cmd/nq_smoke/main.go all`, watch for fill appearing in `trades_taken.csv` and in DB `decisions` table.
-5. **Shutdown** — `pkill -TERM -f nofx-bin`; verify no hung file handles via `lsof | grep NofxTrader`.
+5. **Shutdown** — `pkill -TERM -f vl-bin`; verify no hung file handles via `lsof | grep VLTrader`.
 6. **Windows Defender exclusion for the data directory.** Defender's
    real-time scanner can transiently lock files during `os.Rename` from
    the Go side, causing the atomic temp+rename pattern in
@@ -7254,7 +7255,7 @@ Sections to include:
    PowerShell prompt on the Windows host:
 
 ```powershell
-   Add-MpPreference -ExclusionPath "C:\Users\<user>\NofxTrader\data"
+   Add-MpPreference -ExclusionPath "C:\Users\<user>\VLTrader\data"
 ```
 
    Verify the exclusion is active:
@@ -7271,7 +7272,7 @@ Sections to include:
 
 **File:** Create `docs/operations/ROLLBACK.md`
 
-1. **Code rollback** — `git checkout <previous-good-commit> -- .`; `go build -o nofx-bin .`; restart.
+1. **Code rollback** — `git checkout <previous-good-commit> -- .`; `go build -o vl-bin .`; restart.
 2. **Schema rollback** — GORM auto-migrate is additive; for column removal, use a migration file under `store/migrations/`. Always snapshot `data/data.db` to `data/data.db.bak.<timestamp>` before code deploy.
 3. **NT script rollback** — restore prior `claudetrader.cs` from git; rebuild in NT (`F5`).
 4. **Risk wipe** — if rollback follows an unexpected loss, run force-flat (`curl -X POST localhost:8080/api/risk/force-flat -H "Authorization: Bearer $TOKEN"`) before any new trades.
@@ -7281,14 +7282,14 @@ Sections to include:
 **File:** Create `docs/operations/MONITORING.md`
 
 Key dashboards (Grafana / similar):
-- **Decision rate** — `rate(nofx_decisions_total[5m])` — should be ~1/scan_interval
-- **Fill latency** — `histogram_quantile(0.95, nofx_fill_latency_seconds)` — alert if > 30s
-- **Databento errors** — `rate(nofx_databento_errors_total[10m])` — alert if > 0.1/sec
+- **Decision rate** — `rate(vl_decisions_total[5m])` — should be ~1/scan_interval
+- **Fill latency** — `histogram_quantile(0.95, vl_fill_latency_seconds)` — alert if > 30s
+- **Databento errors** — `rate(vl_databento_errors_total[10m])` — alert if > 0.1/sec
 - **Daily PnL** — read from DB; alert if < -$500 (matches `RiskMaxDailyLossUSD`)
 - **CME session health** — alert at 16:00 CT if a trade attempt was logged during the break
 
 Manual checks (no alerting infra yet):
-- `tail -f /tmp/nofx.log | grep -E "ERROR|WARN"`
+- `tail -f /tmp/vl.log | grep -E "ERROR|WARN"`
 - `curl localhost:8080/api/risk/status` — exposes current PnL + position count vs limits
 
 ## Task 33: Document disaster recovery
@@ -7470,7 +7471,7 @@ After Memorial Day closure ended (CME reopen 18:00 ET), pipeline
 exercised end-to-end with a single LONG signal on SIM101:
 
 - Signal: entry=29812.00, sl=29792.00, tp=29842.00 (1.5 R:R)
-- CSV write to /mnt/c/Users/hoang/NofxTrader/data/trade_signals.csv
+- CSV write to /mnt/c/Users/hoang/VLTrader/data/trade_signals.csv
 - NT VLTrader detected signal within ~2 sec
 - Market order placed against MNQ 06-26 contract
 - Filled at 29807.00 (5pt favorable slippage)
@@ -8492,14 +8493,14 @@ add-to-validActions PR.
 ## Branch ground truth (2026-05-28)
 
 The external report's biggest confusion was probing `origin/dev`
-(GitHub-declared default) and finding only upstream crypto NOFX,
+(GitHub-declared default) and finding only upstream crypto VL,
 which led to a chain of "INFERRED, not visible" caveats throughout
 its §12. The clarifying facts:
 
 | Branch | Tip SHA | Contents |
 |---|---|---|
 | `origin/main` (operator's trunk) | `6c3333a6` (and advancing) | **All futures work** — `ninjascript/`, `provider/ninjatrader/tcp_server.go` + `tcp_framing.go`, `kernel/engine_prompt_futures.go`, ADR-007, this canonical plan with the 2026-05-28 NT8 pivot, the 28 `v1.0-*` tags, `CLAUDE.md` files at root + subsystems |
-| `origin/dev` (GitHub default, vestige) | `ab5873e2` | Upstream crypto NOFX. CHANGELOG.md last-updated 2025-11-01. No `ninjascript/`. No C# in language stats |
+| `origin/dev` (GitHub default, vestige) | `ab5873e2` | Upstream crypto VL. CHANGELOG.md last-updated 2025-11-01. No `ninjascript/`. No C# in language stats |
 
 GitHub's UI (language breakdown, default-branch view, "Code" tab
 listing) reflects `dev`. External probes that read those without
@@ -8568,7 +8569,7 @@ design review.
 
 ### CHANGELOG.md pointer-ification
 
-`CHANGELOG.md` is an upstream-NOFX vestige; its last entry is
+`CHANGELOG.md` is an upstream-VL vestige; its last entry is
 `[3.0.0] 2025-10-30` and it has no awareness of the futures work
 or any `v1.0-*` tag on this fork. Replaced in this same PR with a
 one-line pointer to:
@@ -8728,7 +8729,7 @@ Per-page findings against the live app on `origin/main` @ `4f0843e5`:
 - **Strategy Studio.** Save/persist works and the store is
   futures-aware, BUT:
   - symbol picker appends `USDT`;
-  - default config still `ai500`/`nofxos` — **new strategies are
+  - default config still `ai500`/`vlos` — **new strategies are
     born broken** (`store/strategy.go:914`, `store/strategy.go:945`);
   - risk tiers are crypto;
   - the futures prompt is unreachable from the UI.
@@ -8923,7 +8924,7 @@ primary (NinjaTrader) broker.
 - **`ensureRawKlines()` render-time setState anti-pattern**
   (`IndicatorEditor.tsx:106-115`) → spurious unsaved-changes flag;
   Raw-Klines checkbox disabled + always-on (dead control).
-- **"Fill Default" / default-config still writes the dead `NofxOS`/`ai500`
+- **"Fill Default" / default-config still writes the dead `VLOS`/`ai500`
   key** (`IndicatorEditor.tsx:206-218`; `store/strategy.go` default) → new
   strategies born broken. (= the reseed-durable counterpart to the runtime
   N11 flip; **fold into Stage 3**.)
@@ -8968,7 +8969,7 @@ primary (NinjaTrader) broker.
 ## 2026-06-04 — Trade-History P&L: honest "unknown" for reconcile-flat closes (SHIPPED, commit `0c245344`)
 
 **STATUS:** SHIPPED (PART 2 of 2). NT8-only, additive, crypto byte-identical,
-`close_sync` (the real-P&L path) untouched. Go rebuild + `./nofx-bin` restart
+`close_sync` (the real-P&L path) untouched. Go rebuild + `./vl-bin` restart
 done (clean start, 0 "unknown frame type"); FE `tsc` clean.
 
 **Symptom:** Dashboard → Trade History showed AI-decision closes at **P&L = $0**.
@@ -9025,7 +9026,7 @@ collided, nothing swept in.
 ## 2026-06-04 — PART 1: reconcile status-guard stops the overwrite of close-sync's real P&L (SHIPPED, commit `7786d845`)
 
 **STATUS:** SHIPPED. Go-only, no C#. Additive — `close_sync` byte-identical, crypto
-untouched. Go rebuild + `./nofx-bin` restart done (clean, 0 "unknown frame type").
+untouched. Go rebuild + `./vl-bin` restart done (clean, 0 "unknown frame type").
 
 **Root cause (PART-1, log-confirmed — refutes "missed frame"):** the `position_close`
 frame is NOT missed. close-sync **captures the real ×point-value P&L** on it (it
@@ -9263,7 +9264,7 @@ any `account` field — and Go doesn't send one yet, so nothing changes. *(If th
 `account.Connection.Status`, remove that one line — `IsSimAccount` alone still hard-blocks
 live.)*
 
-**Verify:** Go **untouched** (0 `.go` modified → no `nofx-bin` rebuild; pid 98629 from P1
+**Verify:** Go **untouched** (0 `.go` modified → no `vl-bin` rebuild; pid 98629 from P1
 still running, cycle 381, MNQ "wait"). The `.cs` edit is brace-balanced (delta vs HEAD =
 +6/+6 braces, +0 brackets; parens even) — NinjaScript compiles inside NT8 on F5, so the
 compile itself is the user's step. Back-compat handshake with the CURRENT binary is clean
@@ -9321,7 +9322,7 @@ parity needs them.
 **F5** in NT8 → **one clean full NT8 restart**. Until the F5, the running AddOn ignores routing
 — and Go sends no `account` field anyway, so nothing changes.
 
-**Verify:** Go **untouched** (0 `.go` → no `nofx-bin` rebuild). The `.cs` edit is structurally
+**Verify:** Go **untouched** (0 `.go` → no `vl-bin` rebuild). The `.cs` edit is structurally
 balanced (delta vs HEAD = +8/+8 braces, +44/+44 parens, +0 brackets) — NinjaScript compiles
 inside NT8 on F5 (the user's step). Routing is **correct by construction** + verified by the
 deployed-copy grep (`submitAccount.CreateOrder/Submit`, bracket-follows-account, the final
@@ -9375,7 +9376,7 @@ already report correctly today.
 NT8 → one clean full restart**. Until then the running AddOn keeps the P3 binary; Go sends no
 account field, so nothing changes (back-compat).
 
-**Verify:** Go **untouched** (0 `.go` → no `nofx-bin` rebuild). `.cs` structurally balanced (Δ vs
+**Verify:** Go **untouched** (0 `.go` → no `vl-bin` rebuild). `.cs` structurally balanced (Δ vs
 HEAD = +6/+6 braces, +28/+28 parens, +3/+3 brackets) — compiles inside NT8 on F5 (the user's step).
 The close-account resolution + fill/close account tags are **correct by construction** + the
 deployed-copy grep; back-compat (one trader → resolves to Sim101). Cross-account close isn't
@@ -9644,7 +9645,7 @@ And in `web/src/components/strategy/CoinSourceEditor.tsx` (hardcoded): the max-s
 DOGE…" → "e.g. MNQ, ES, BTC, ETH" (shows both futures + crypto).
 **LEFT crypto wording (deliberate, verified):** the Leverage sliders + PVR tiles (crypto-only, already
 hidden on futures via `{!isFutures}`); `minPositionSizeDesc` USDT (already has a `…Futures` USD variant
-chosen by `isFutures`); the `USD/USDT` unit (already `isFutures`-conditional); the AI500 / OI / NofxOS
+chosen by `isFutures`); the `USD/USDT` unit (already `isFutures`-conditional); the AI500 / OI / VLOS
 data-source descriptions (genuinely crypto data providers — neutralizing them would falsely imply they
 serve futures); GridConfig symbol options (grid = a separate strategy type).
 
@@ -9701,7 +9702,7 @@ prompt (the "preview lies" gap). Three additive chunks fixed this:
   the **real futures prompt** (preview == live), not a misleading "balanced".
 
 **Static verify:** `go build ./...` clean; `go vet ./store ./trader` clean; `go test ./store ./trader
-./kernel` all green (incl. the 2 new keystone tests); `tsc --noEmit` 0; FE built; `nofx-bin` rebuilt +
+./kernel` all green (incl. the 2 new keystone tests); `tsc --noEmit` 0; FE built; `vl-bin` rebuilt +
 restarted clean (0 "unknown frame type"; trader `sss` = NinjaTrader/"MNQ SIM Default" auto-started — a
 default strategy with no saved variant → resolves to "futures" via the fallback, byte-identical).
 
@@ -9750,7 +9751,7 @@ preview automatically. The editor already renders the 4 boxes as editable textar
 (StrategyStudioPage.tsx:803, ungated) — there was no "not used on futures" state to fix.
 
 **Static verify:** go build clean; `go test ./store ./trader ./kernel` green (incl. the 2 new golden
-tests); nofx-bin rebuilt + restarted clean (0 "unknown frame type"; trader `sss` = NinjaTrader/"MNQ SIM
+tests); vl-bin rebuilt + restarted clean (0 "unknown frame type"; trader `sss` = NinjaTrader/"MNQ SIM
 Default" auto-started — empty boxes → byte-identical futures prompt). tsc unaffected (no FE change).
 
 **SUNDAY behavior list (market open):** on a futures strategy edit a box (e.g. Entry Standards) → the
@@ -9798,7 +9799,7 @@ for any box-laden strategy assigned to a live futures trader.
   (no crypto line). i18n market/marketFutures/marketCrypto/marketLockedHint (en/zh/id).
 
 **Static verify:** `go build ./...` clean; `go test ./store ./trader ./kernel` green (incl. golden + the
-new tests); `tsc --noEmit` 0; FE built; `nofx-bin` rebuilt + restarted clean (0 "unknown frame type").
+new tests); `tsc --noEmit` 0; FE built; `vl-bin` rebuilt + restarted clean (0 "unknown frame type").
 
 **SUNDAY behavior list (market open):** on a futures strategy — (B) the bot's next decision's "System
 Prompt" (Recent Decisions = ground truth) leads with the CME role, no crypto line, reflects edited
@@ -9834,7 +9835,7 @@ replace the stale crypto data.
   strategies** (均衡/稳健/积极 zh + New×3/Strategy Copy en). Dry-run preview confirmed the exact set;
   applied; **verified against a pre-migration snapshot: 7 rows changed, integrity_ok (every
   non-role/decision field byte-identical), 2 empty "MNQ SIM Default" untouched, 0 crypto boxes remain.**
-  Reversible from `~/nofx-backups/2026-06-06-phase2-D-migration/data.db.PRE-MIGRATION-snapshot`.
+  Reversible from `~/vl-backups/2026-06-06-phase2-D-migration/data.db.PRE-MIGRATION-snapshot`.
 
 **End-to-end proof:** rendering `均衡策略`'s real futures prompt now leads with **"# 你是一个专业的交易AI"**
 (the neutral role, **honored from the box** — A) — crypto? false, 候选币种? false, CME instrument
@@ -9842,7 +9843,7 @@ present. So edit (the box, neutral) == preview (honored). The owner can now type
 the futures AI uses it.
 
 **Static verify:** `go build ./...` clean; `go test ./store ./trader ./kernel` green; `tsc --noEmit` 0;
-FE built; `nofx-bin` rebuilt + restarted clean (0 "unknown frame type", serves the migrated configs).
+FE built; `vl-bin` rebuilt + restarted clean (0 "unknown frame type", serves the migrated configs).
 
 **Note (minor, by design):** for an EMPTY-box strategy (e.g. MNQ SIM Default) the editor shows the
 generic neutral default text while the preview shows the instrument-specific fixed CME role — both
@@ -9878,7 +9879,7 @@ Two display/default FE+seed changes (no enforced behavior change):
   pattern); `coin_source` / `primary_tf` / `max_positions` shown on both. The backend `config_summary`
   is unchanged; the FE filters for display.
 
-**Static verify:** go build/vet/test green; tsc 0; FE built; nofx-bin restarted clean (0 "unknown frame
+**Static verify:** go build/vet/test green; tsc 0; FE built; vl-bin restarted clean (0 "unknown frame
 type"). **SUNDAY:** a futures strategy with the default Role → the bot's next decision's "System Prompt"
 leads with the specific CME role. ADDITIVE; display/default only; crypto + Risk Control + multi-account
 + P&L + chart-TZ + Phase 2 work untouched; live-account block untouched. SIM-only.
@@ -9927,7 +9928,7 @@ Strategy's saved symbol still MNQ (no mutation). tsc 0; build ok; Go untouched. 
 gates/guardrails/prompt/multi-account/P&L/chart-TZ untouched; live-account block untouched. SIM-only.
 
 
-## 2026-06-07 — Strategy Studio Phase 4: timeframe-line fix + futures default indicators + NofxOS hide (commits a7ca000d / 2558ea2c / 0312a828)
+## 2026-06-07 — Strategy Studio Phase 4: timeframe-line fix + futures default indicators + VLOS hide (commits a7ca000d / 2558ea2c / 0312a828)
 
 Three safe chunks (each audit → build → verify → commit), from the Phase-4 Indicators map + the
 timeframe diagnosis. ADDITIVE; indicators/timeframes are prompt-data and NEVER gate a trade
@@ -9945,7 +9946,7 @@ timeframe diagnosis. ADDITIVE; indicators/timeframes are prompt-data and NEVER g
   (byte-identical) + the all-listed behavior, end-to-end through the real method.
 - **(B) ATR/EMA/RSI enabled in the futures new-strategy default (Go — 2558ea2c).** The futures AI got raw
   bars + volume only (EMA/MACD/RSI/ATR/BOLL default OFF). Extracted `applyFuturesIndicatorDefaults()`
-  (the existing NofxOS/ranking disable + the new ATR/EMA/RSI enable) inside `GetDefaultStrategyConfig`'s
+  (the existing VLOS/ranking disable + the new ATR/EMA/RSI enable) inside `GetDefaultStrategyConfig`'s
   `if isFuturesMode()` block — ATR (stop sizing) + EMA (trend) + RSI (momentum) on; MACD/BOLL left off.
   **Defaults-only** (new-strategy template; FE create flow fetches /default-config); existing saved
   strategies NOT mutated (verified: 均衡/稳健/积极/New still volume,oi,funding_rate; MNQ SIM Default
@@ -9953,7 +9954,7 @@ timeframe diagnosis. ADDITIVE; indicators/timeframes are prompt-data and NEVER g
   store/strategy_futures_indicators_test.go. **Recommendation (separate confirm):** to give the owner's
   EXISTING MNQ strategies the same indicators, toggle EMA/RSI/ATR ON per-strategy in the Indicators UI
   (or a one-off, owner-approved DB update) — NOT auto-applied here (no mass-mutation).
-- **(C) NofxOS + crypto-ranking feeds hidden on futures (FE — 0312a828).** The whole NofxOS Data
+- **(C) VLOS + crypto-ranking feeds hidden on futures (FE — 0312a828).** The whole VLOS Data
   Provider section (Quant Data / Quant OI / NetFlow + OI/NetFlow/Price ranking + the API Key field)
   rendered but was inert on futures (crypto-only; disabled by default; claw402 402/404 on CME). Wrapped
   the section in `{!isFutures && (...)}` (the `isCMEFutures(static_coins[0])` → `isFuturesStrategy` flag,
@@ -9962,11 +9963,11 @@ timeframe diagnosis. ADDITIVE; indicators/timeframes are prompt-data and NEVER g
   wrap; the rest is prettier re-indent.)
 
 **Static verify (now):** go build/vet/test (./store ./kernel ./trader) green incl. both new tests +
-existing goldens; tsc 0; `npm run build` ✓; nofx-bin rebuilt + restarted clean in futures mode (0
+existing goldens; tsc 0; `npm run build` ✓; vl-bin rebuilt + restarted clean in futures mode (0
 "unknown frame type" / panic / fatal); bot flat at restart (0 open positions). **SUNDAY (market open):**
 (A) a futures strategy → the bot's next decision's "System Prompt" lists all selected TFs; (B) a NEW
 futures strategy defaults ATR/EMA/RSI ON and they appear in the decision data; (C) Playwright — a futures
-strategy → NofxOS/ranking controls hidden, a crypto strategy → shown. ADDITIVE — old configs
+strategy → VLOS/ranking controls hidden, a crypto strategy → shown. ADDITIVE — old configs
 byte-identical (golden); indicators never gate (low real-money risk); crypto byte-identical except the
 intended timeframe wording; gates/guardrails/multi-account (P1-P4)/P&L/chart-TZ + Phase 2/3 work + the
 live-account block untouched. SIM-only.
@@ -9996,7 +9997,7 @@ carries OHLCV only). Fix mirrors (and extends) the funding-rate treatment:
 **Golden/tests:** kernel/engine_prompt_oi_test.go (OI availability line present IFF EnableOI — futures
 default drops it, crypto byte-identical); store/strategy_futures_indicators_test.go extended (futures
 default → EnableOI false). go build/vet/test (./store ./kernel ./trader ./market) green incl. existing
-goldens; tsc 0; `npm run build` ✓; nofx-bin restarted clean in futures mode (0 "unknown frame type");
+goldens; tsc 0; `npm run build` ✓; vl-bin restarted clean in futures mode (0 "unknown frame type");
 bot flat. OI is prompt-data and NEVER gates (engine_position.go reads zero Indicators.Enable*). The live
 bot (MNQ SIM Default, enable_oi=false) is unaffected today.
 
@@ -10063,7 +10064,7 @@ fixed fields (same calc fns, same `i>=period-1` guards) — golden-tested
 `RSIByPeriod[7/14]==RSI7/14Values`, `ATRByPeriod[14]==ATR14`; `kernel/engine_prompt_emaperiods_test.go`:
 labels + byte-identical legacy fallback). Indicators/periods are prompt-data and NEVER gate
 (engine_position.go reads zero EMA/period — re-confirmed). go build/vet/test (./market ./kernel ./store
-./trader ./api) green incl. all existing goldens; nofx-bin rebuilt + restarted clean (0 "unknown frame
+./trader ./api) green incl. all existing goldens; vl-bin rebuilt + restarted clean (0 "unknown frame
 type"); bot flat at restart.
 
 **Verified LIVE (owner session decision_records, cycle 16):** the active trader's (Hoangvl) decision
@@ -10122,7 +10123,7 @@ NOT persist `is_running=false` — so the reload AUTO-STARTS the trader (`addTra
 NT8 connection are preserved; an open position re-attaches on reload (NT8-side SL/TP guard it during the
 swap). On reload failure the request still succeeds (config saved) + logs — no crash.
 
-go build/vet/test (./api ./store ./kernel ./trader) green; nofx-bin rebuilt + restarted clean (0 errors,
+go build/vet/test (./api ./store ./kernel ./trader) green; vl-bin rebuilt + restarted clean (0 errors,
 flat). **Live-confirmed (partial):** after the new binary loaded, cycle 169's decision prompt shows
 R/R=2.00 + BOLL=[10] — the owner's current saved config (was 3.00/[10,12]). The SAVE-triggered reload
 (save while running → next cycle uses the new value WITHOUT restart) is CODE-verified (proven AI-model
@@ -10150,7 +10151,7 @@ non-"Connected" status. The bar stream is the real proof the feed is up; a TRUE 
 the override expires → the legacy status-based `false` is restored. DEFAULT-ALLOW (empty status) +
 "Connected" behavior unchanged. Golden: provider/ninjatrader/feed_freshness_test.go (5 cases incl.
 fresh-bar-overrides + stale-bar-does-not). go build/vet/test (./provider/ninjatrader ./trader/...) green;
-nofx-bin restarted clean (0 errors). Immediate unblock = a prior bare restart (feedStatus resets to
+vl-bin restarted clean (0 errors). Immediate unblock = a prior bare restart (feedStatus resets to
 default-allow); this commit is the DURABLE fix so a future flap can't re-latch. No prompt/gate/FE change;
 the gate/guardrails/multi-account/live-account block untouched. Propagated to vlautoagenttraderv1. SIM-only.
 
@@ -10315,9 +10316,9 @@ fills attributed per (symbol,account), zero cross-talk, no "exceeds max position
 block holding for ALL symbols. Partner repo sync remains post-P5-verification.
 ## 2026-06-10 — Auto-start on reboot (infra-only; commit 42b93057)
 
-Survives a Windows reboot with zero manual steps. WSL side: systemd units `deploy/nofx.service`
-(./nofx-bin, WorkingDirectory=/home/hoang/nofx so .env+SQLite resolve, Restart=on-failure 5s, log →
-/tmp/backend.log + journalctl) and `deploy/nofx-web.service` (vite :3000), installed by ONE owner
+Survives a Windows reboot with zero manual steps. WSL side: systemd units `deploy/vl.service`
+(./vl-bin, WorkingDirectory=/home/hoang/vl so .env+SQLite resolve, Restart=on-failure 5s, log →
+/tmp/backend.log + journalctl) and `deploy/vl-web.service` (vite :3000), installed by ONE owner
 command `sudo bash deploy/install-autostart.sh` (no passwordless sudo on this box — install is
 owner-run; crash-restart proof lands then). systemd was ALREADY enabled on Ubuntu-24.04 — no
 wsl --shutdown needed. Windows side (docs/AUTOSTART.md): Task Scheduler at-logon task
@@ -10360,7 +10361,7 @@ SHIPPED (FE-only):
 - SWR surfaces pause on hidden tabs by default (refreshWhenHidden=false); the new hook mirrors that
   for raw pollers. Manual refresh buttons unchanged. Editors/forms excluded throughout.
 
-ALSO FIXED (found mid-verify): deploy/nofx.service + nofx-web.service shipped dead-on-arrival —
+ALSO FIXED (found mid-verify): deploy/vl.service + vl-web.service shipped dead-on-arrival —
 systemd's StandardOutput=append:/tmp/...log fails on this WSL2 ("Failed to set up standard output:
 Permission denied", status=209/STDOUT; bot died in 1ms, frontend crash-looped 127×, frontend DOWN from
 ~21:07). Fix: shell redirection in ExecStart (exec ... >> log 2>&1). OWNER ACTION:
@@ -10377,9 +10378,9 @@ rotation recommended. Partner repo sync HELD (P5.4 mid-flight; sync at the next 
 First install crashed BOTH units at stdout setup: append: targets in /tmp + Ubuntu
 fs.protected_regular=2 (denies opening another user's existing file in sticky /tmp) →
 "Failed to set up standard output: Permission denied" → 209/STDOUT, binary never ran
-(1ms), nofx-web looped to 142 restarts, bot DOWN. Recovered live first (rm the offending
+(1ms), vl-web looped to 142 restarts, bot DOWN. Recovered live first (rm the offending
 /tmp file → web unit self-healed; backend via nohup), then redesigned: real logs in
-/var/log/nofx (LogsDirectory=), /tmp/backend.log + /tmp/frontend.log refreshed as
+/var/log/vl (LogsDirectory=), /tmp/backend.log + /tmp/frontend.log refreshed as
 SYMLINKS each start (all tooling + nohup fallback unchanged), StartLimitIntervalSec=0 so
 a failure can loop (journalctl-visible) but never strand the bot dead. Units are now
 placeholder TEMPLATES; the installer detects user/repo/node (nvm-aware) at install time
@@ -10389,12 +10390,12 @@ kill-restart proofs = owner: `sudo bash deploy/install-autostart.sh`.
 
 ## 2026-06-10 — autostart 209 round 2: units go JOURNAL-ONLY (the actual fix)
 
-The /var/log/nofx + root-ExecStartPre redesign ALSO 209'd: StandardOutput= applies to EVERY Exec*
+The /var/log/vl + root-ExecStartPre redesign ALSO 209'd: StandardOutput= applies to EVERY Exec*
 line and the append-file is opened in the forked child BEFORE exec — the pre-step died at stdout
 setup without executing. Root causes stacked: (1) /tmp: fs.protected_regular denies opening another
 user's file in a sticky dir (the /tmp logs flip-flopped owner root↔hoang across attempts);
 (2) any unit-level file sink on this WSL2 systemd risks the same child-setup failure. FIX: journal
-sink only (no file-open in the child → cannot 209) — journalctl -u nofx / -u nofx-web; tooling
+sink only (no file-open in the child → cannot 209) — journalctl -u vl / -u vl-web; tooling
 note: services no longer write /tmp/backend.log (manual nohup fallback still does). Units keep
 StartLimitIntervalSec=0 + Restart=on-failure/5s (never permanently dead). Installer unchanged except
 log hints (already idempotent: stops old units, kills strays, reset-failed, enable --now).
@@ -10458,18 +10459,18 @@ interval, ~55s calls stretch the effective cycle cadence.
 
 ## 2026-06-11 — vlauto mirror prepared + install made fully universal (3ab61978)
 
-Owner decision: vlauto's CONTENTS now mirror nofx main exactly (repo/URL kept; fresh
+Owner decision: vlauto's CONTENTS now mirror vl main exactly (repo/URL kept; fresh
 single-commit history — partner re-clones). Portability commit 3ab61978: nq_smoke's
-hardcoded /home/<user>/nofx/.env → godotenv.Load() cwd; ONBOARDING + the vltrader rename
+hardcoded /home/<user>/vl/.env → godotenv.Load() cwd; ONBOARDING + the vltrader rename
 doc genericized (C:\Users\<you>); INSTALL.md (root) = complete generic setup (packages,
 .env w/ NT_TRANSPORT=tcp, AddOn deploy, autostart). Fresh-clone simulation PASSED (clean
 tree → go build + npm install/build, documented steps only). Mirror commit 75bcb57 in
-vlauto = nofx tree 3ab61978 MINUS internal docs (web/CLAUDE.md, docs/superpowers,
+vlauto = vl tree 3ab61978 MINUS internal docs (web/CLAUDE.md, docs/superpowers,
 docs/internal — root CLAUDE.md was never tracked); builds+tests green there; secret scan
-0 machine names, no private state (only upstream's dead public nofxos key + an obvious
+0 machine names, no private state (only upstream's dead public vlos key + an obvious
 fake test key). Old vlauto main kept as branch backup-pre-mirror-20260611. Force-push =
 owner (classifier blocks me): `cd ~/vlautoagenttraderv1 && git push --force origin main`.
-Side-finding: local nofx history has one unreadable old object (21a15f98…) — HEAD tree
+Side-finding: local vl history has one unreadable old object (21a15f98…) — HEAD tree
 fully intact (archive/build/push fine); deep-clone-from-local fails; origin is the good
 copy.
 

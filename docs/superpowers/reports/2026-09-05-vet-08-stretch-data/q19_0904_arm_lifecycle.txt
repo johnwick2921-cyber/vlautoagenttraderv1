@@ -1,14 +1,14 @@
 2029:09-04 08:02:43 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏱ cycle overran the scan interval (2m5.892s > 2m0s) — next tick delayed, in-flight work 
 3839:09-04 08:30:11 [INFO] kernel/levels_volume_boot.go:26 🪢 netting-orphan wave (class 27, 2026-08-31): netting-flat cancels brackets (C# sweep + Go desync cancel_order) · exit reconstruction from the netting fill (never exit=entry; un
 3846:09-04 08:30:11 [INFO] kernel/levels_volume_boot.go:49 🛡 cutover safety (class 33): flat gate legs=5 (db_open_positions · api_positions · nt8_positions_snapshot · working_orders · planner_in_flight) via GET /api/cutover-gate; leg
-3893:09-04 08:30:11 [INFO] nofx/main.go:473 📌 Tip: Use Ctrl+C to stop the system
+3893:09-04 08:30:11 [INFO] vl/main.go:473 📌 Tip: Use Ctrl+C to stop the system
 3903:09-04 08:30:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed_orders=on place_band=100t stale_working=15m test_seam=off arm_rr=2.0 (gate-at-a
 3922:09-04 08:30:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 cutover safety (class 33): gate legs=5 · leg4=ledger (no snapshot yet) · boot sweep c
 5045:09-04 08:46:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed NY S2 leg 1 short limit 29720.00 SL 29773.61 TP 29601.00 (tick-managed placemen
 6181:09-04 09:02:09 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🚦 entry-gate REFUSED arm NY: entry_gate: scenario S1 invalidated at 2026-09-04 09:00 CT (
 6389:09-04 09:05:14 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ℹ️ superseded_wait — the AI call spanned a 5m close but the decision was wait/hold-onl
 6731:09-04 09:10:08 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed NY S1 leg 1 short limit 29657.38 SL 29720.50 TP 29503.38 (tick-managed placemen
-6733:09-04 09:10:08 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S1 → WORKING limit 29657.38 signal=89339298-8a82-490f-ad06-91b29c81fa33 (band �
+6733:09-04 09:10:08 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S1 → WORKING limit 29657.38 signal=89339298-8a82-490f-ad06-91b29c81fa33 (band �
 7847:09-04 09:26:06 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S1 cancelled — no order_update for 15m (reconnect/reconcile)
 8001:09-04 09:28:06 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=4 cancelpending=1 working=1 submitted=1 accepted=1
 10116:09-04 10:05:00 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed NY S2 leg 1 short limit 29591.02 SL 29645.62 TP 29481.50 (tick-managed placeme
@@ -60,7 +60,7 @@
 13122:09-04 10:52:00 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=7 cancelpending=1 cancelled=1 cancelsubmitted=1 initialized=1 submitted=2 accepted=1
 13307:09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:26 🪢 netting-orphan wave (class 27, 2026-08-31): netting-flat cancels brackets (C# sweep + Go desync cancel_order) · exit reconstruction from the netting fill (never exit=entry; u
 13314:09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:49 🛡 cutover safety (class 33): flat gate legs=5 (db_open_positions · api_positions · nt8_positions_snapshot · working_orders · planner_in_flight) via GET /api/cutover-gate; le
-13347:09-04 10:53:10 [INFO] nofx/main.go:473 📌 Tip: Use Ctrl+C to stop the system
+13347:09-04 10:53:10 [INFO] vl/main.go:473 📌 Tip: Use Ctrl+C to stop the system
 13371:09-04 10:53:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed_orders=on place_band=100t stale_working=15m test_seam=off arm_rr=2.0 (gate-at-
 13407:09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 cutover safety (class 33): gate legs=5 · leg4=broker · boot sweep cancelled 8 pre-bo
 13414:09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed NY S2 leg 1 short limit 29591.02 SL 29645.25 TP 29481.50 (tick-managed placeme

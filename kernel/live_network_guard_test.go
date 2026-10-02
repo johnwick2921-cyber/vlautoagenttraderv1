@@ -6,7 +6,7 @@ package kernel
 // Go-coverage jobs on a slow API; seen on #243 and #255 runs).
 //
 // A test may exercise a live endpoint ONLY as an opt-in integration probe:
-// the offending FILE must carry the NOFX_LIVE_TESTS gate (or call the coinank
+// the offending FILE must carry the VL_LIVE_TESTS gate (or call the coinank
 // liveNetworkGate helper, which is that gate) and run under a bounded context.
 // Everything else dials a fixture/httptest server or is loopback by
 // construction — loopback and variable-built URLs (httptest servers) pass.
@@ -106,7 +106,7 @@ func TestNoTestDialsALiveNetworkHostWithoutTheOptIn(t *testing.T) {
 			return nil
 		}
 		live := false
-		gated := strings.Contains(string(src), "NOFX_LIVE_TESTS")
+		gated := strings.Contains(string(src), "VL_LIVE_TESTS")
 		pos := fset.Position(f.Package)
 		ast.Inspect(f, func(n ast.Node) bool {
 			call, ok := n.(*ast.CallExpr)
@@ -161,7 +161,7 @@ func TestNoTestDialsALiveNetworkHostWithoutTheOptIn(t *testing.T) {
 			return nil
 		}
 		rel, _ := filepath.Rel(root, p)
-		offenders = append(offenders, rel+":"+pos.String()+": test dials a live network host without the NOFX_LIVE_TESTS=1 opt-in (fixture/httptest or the gate)")
+		offenders = append(offenders, rel+":"+pos.String()+": test dials a live network host without the VL_LIVE_TESTS=1 opt-in (fixture/httptest or the gate)")
 		return nil
 	})
 	if err != nil {

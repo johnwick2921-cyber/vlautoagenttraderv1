@@ -1,5 +1,5 @@
 import sqlite3, math, statistics as st
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 c=sqlite3.connect(DB, uri=True)
 rows=c.execute("""SELECT id, source, plan_id, cited_scenario_id, plan_session, plan_band, pnl_corrected, side,
   datetime(entry_time/1000,'unixepoch','-5 hours') ct, close_reason, mae, mfe, entry_price, exit_price, exit_time

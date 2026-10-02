@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // boundFadeORWideK resolves (a)'s k from THE STRATEGY BOUND TO A TRADER — the

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Levels die in `PlanIsDead` (the death check), and NO — the chart gaps are a completely different fault
 
 **LINE 1.** The levels were never missing: v1–v5 of `2026-08-16:ASIA` each held the same 6 good levels and each was killed **on arrival** by `activePlanIsDead`, the re-plan budget ran out, and `writeNoTradePlan` stored a `levels:null` plan as v6 — which the card rendered faithfully. The chart's flat weekend line is **unrelated**: NT8 hands us its own empty-minute placeholder bars. The two share no cause, and the dATR hypothesis linking them is **KILLED** (numbers below).
@@ -42,7 +43,7 @@
 
 ## Owner actions
 
-1. **Deploy** (the only step that activates any of this): `go build -o nofx-bin . && git rev-parse HEAD > deploy/RELEASE` — **mandatory, else the boot assertion refuses trading** — then restart, then `cd web && npm run build` and hard-reload.
+1. **Deploy** (the only step that activates any of this): `go build -o vl-bin . && git rev-parse HEAD > deploy/RELEASE` — **mandatory, else the boot assertion refuses trading** — then restart, then `cd web && npm run build` and hard-reload.
 2. **After the restart the flat line is gone** even without step 3: BarCache is in-process, so a restart empties it, and the ingest filter keeps the placeholders out on re-seed. Friday will then show as an honest **gap**.
 3. **To get Friday's real bars back** (the filter cannot recreate data NT8 destroyed): NT8 → Tools → Historical Data Manager → re-download **MNQ 09-26 and ES 09-26 for 2026-08-14**. It will not self-heal — NT8 believes it already has that day, because an empty day is still a day.
 4. **No AddOn work needed.** Contrary to my earlier note, `7aa521a1` is already live: the deployed `.cs` is byte-identical to the repo, `NinjaTrader.Custom.dll` rebuilt 18:04:36, NT8 restarted 18:07:17.

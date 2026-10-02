@@ -541,8 +541,8 @@
   ],
   "unread": [],
   "instruction_reads": [
-    "/home/hoang/nofx/AGENTS.md",
-    "/tmp/nofx-understanding-review-instructions.md"
+    "/home/hoang/vl/AGENTS.md",
+    "/tmp/vl-understanding-review-instructions.md"
   ],
   "missing_instruction_paths": [
     "kernel/AGENTS.md absent at base"

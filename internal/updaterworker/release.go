@@ -7,7 +7,7 @@ package updaterworker
 // check has passed (brief C6/C7/C8/C9, CTO ruling 1790259689740).
 //
 // The archive (release.yml: `tar -C /tmp/stage -czf <id>.tar.gz .`) carries
-// the staged allow-list (nofx-bin, web/dist/…, deploy/RELEASE, ninjascript/…,
+// the staged allow-list (vl-bin, web/dist/…, deploy/RELEASE, ninjascript/…,
 // LICENSE, optional updater binaries and calendar) plus, at its root, the
 // signed pair manifest.json + manifest.json.sig. FetchRelease:
 //
@@ -27,8 +27,8 @@ package updaterworker
 //     manifest.json self-entry today's release.yml produces is refused (C8);
 //  5. re-hashes EVERY artifacts[] entry (size and sha256) and refuses any
 //     extra, missing or changed file — only the signed pair itself is exempt;
-//  6. requires the layout: nofx-bin, web/dist/index.html and deploy/RELEASE
-//     listed, nofx-bin owner-executable, deploy/RELEASE naming source_sha;
+//  6. requires the layout: vl-bin, web/dist/index.html and deploy/RELEASE
+//     listed, vl-bin owner-executable, deploy/RELEASE naming source_sha;
 //  7. materializes activation's layout in the staging dir: RELEASE (a copy of
 //     deploy/RELEASE), manifest.json = {source_sha, binary_md5 (computed),
 //     signature_verdict "sshsig:release:SHA256:…"}, and the signed pair moved
@@ -71,8 +71,8 @@ import (
 	"syscall"
 	"time"
 
-	"nofx/internal/updaterjob"
-	"nofx/internal/updaterwire"
+	"vl/internal/updaterjob"
+	"vl/internal/updaterwire"
 )
 
 // Refusal classes; each wraps the detail so a test can prove WHICH check refused.
@@ -100,12 +100,15 @@ const (
 	// The signed pair at the archive root (release.yml signs manifest.json there).
 	signedManifestName = "manifest.json"
 	signedSigName      = "manifest.json.sig"
-	// The materialized layout (activation.Resolve: <dir>/{nofx-bin, web/dist,
-	// RELEASE, manifest.json}) plus the signed pair kept under signed/.
+	// The materialized layout (activation.Resolve: <dir>/{vl-bin|nofx-bin,
+	// web/dist, RELEASE, manifest.json}) plus the signed pair kept under
+	// signed/. A release dir holds EXACTLY ONE binary (R5 removes the vl
+	// name).
 	signedDir      = "signed"
 	activationMfst = "manifest.json"
 	releaseMarker  = "RELEASE"
 	archiveMarker  = "deploy/RELEASE"
+	binaryNameVL   = "vl-bin"
 	binaryName     = "nofx-bin"
 	distIndex      = "web/dist/index.html"
 	stagingPrefix  = ".fetch-"
@@ -396,12 +399,16 @@ func rehashDir(releaseDir string, v updaterjob.Verdict) (int, error) {
 	if am.SourceSHA != m.SourceSHA {
 		return 0, fmt.Errorf("%w: manifest.json source_sha %q, the signed manifest's is %q", ErrLayout, am.SourceSHA, m.SourceSHA)
 	}
-	sum, err := md5Of(root, binaryName)
+	bin, err := binaryInRoot(root)
 	if err != nil {
-		return 0, fmt.Errorf("%w: %s: %w", ErrLayout, binaryName, err)
+		return 0, fmt.Errorf("%w: %s", ErrLayout, err)
+	}
+	sum, err := md5Of(root, bin)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %s: %w", ErrLayout, bin, err)
 	}
 	if am.BinaryMD5 != sum {
-		return 0, fmt.Errorf("%w: manifest.json binary_md5 %q, %s hashes to %s", ErrLayout, am.BinaryMD5, binaryName, sum)
+		return 0, fmt.Errorf("%w: manifest.json binary_md5 %q, %s hashes to %s", ErrLayout, am.BinaryMD5, bin, sum)
 	}
 	return len(m.Artifacts), nil
 }
@@ -741,21 +748,45 @@ func rehashTree(root *os.Root, artifacts []Artifact, exempt map[string]bool) err
 	return fmt.Errorf("%w: %s", ErrArtifactMismatch, strings.Join(parts, "; "))
 }
 
+// binaryInRoot returns the staged release's ONE binary name: vl-bin when
+// present, else vl-bin; BOTH present is refused (the dir must hold EXACTLY
+// ONE — R5 removes the vl branch). // R5 removes.
+func binaryInRoot(root *os.Root) (string, error) {
+	vl, vlErr := root.Lstat(binaryNameVL)
+	nfx, nfxErr := root.Lstat(binaryName)
+	vlOK := vlErr == nil && vl.Mode().IsRegular()
+	nfxOK := nfxErr == nil && nfx.Mode().IsRegular()
+	switch {
+	case vlOK && nfxOK:
+		return "", fmt.Errorf("holds BOTH vl-bin and nofx-bin; a release dir must hold exactly one")
+	case vlOK:
+		return binaryNameVL, nil
+	default:
+		// Neither present keeps the old reading (vl-bin); the layout
+		// check fails on the missing binary, as it always did.
+		return binaryName, nil
+	}
+}
+
 // checkArchiveLayout requires what activation needs from the archive half.
 func checkArchiveLayout(root *os.Root, m SignedManifest) error {
 	listed := map[string]bool{}
 	for _, a := range m.Artifacts {
 		listed[a.Path] = true
 	}
-	for _, need := range []string{binaryName, distIndex, archiveMarker} {
+	bin, err := binaryInRoot(root)
+	if err != nil {
+		return fmt.Errorf("%w: %s", ErrLayout, err)
+	}
+	for _, need := range []string{bin, distIndex, archiveMarker} {
 		if !listed[need] {
 			return fmt.Errorf("%w: the manifest lists no %s", ErrLayout, need)
 		}
 	}
 	// the manifest hashes contents, not modes: a binary nobody can execute
 	// would pass every hash and fail only after the activation had killed the bot
-	if fi, err := root.Lstat(binaryName); err != nil || !fi.Mode().IsRegular() || fi.Mode().Perm()&0o100 == 0 {
-		return fmt.Errorf("%w: %s is not an owner-executable regular file (%v, %v)", ErrLayout, binaryName, fi, err)
+	if fi, err := root.Lstat(bin); err != nil || !fi.Mode().IsRegular() || fi.Mode().Perm()&0o100 == 0 {
+		return fmt.Errorf("%w: %s is not an owner-executable regular file (%v, %v)", ErrLayout, bin, fi, err)
 	}
 	marker, err := readRegular(root, archiveMarker, 4096)
 	if err != nil {
@@ -784,9 +815,13 @@ func materialize(root *os.Root, m SignedManifest, sv SignatureVerdict) error {
 	if err := writeEntry(root, releaseMarker, 0o644, bytes.NewReader(marker), int64(len(marker))); err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrLayout, releaseMarker, err)
 	}
-	sum, err := md5Of(root, binaryName)
+	bin, err := binaryInRoot(root)
 	if err != nil {
-		return fmt.Errorf("%w: %s: %w", ErrLayout, binaryName, err)
+		return fmt.Errorf("%w: %s", ErrLayout, err)
+	}
+	sum, err := md5Of(root, bin)
+	if err != nil {
+		return fmt.Errorf("%w: %s: %w", ErrLayout, bin, err)
 	}
 	am, err := json.Marshal(activationManifest{SourceSHA: m.SourceSHA, BinaryMD5: sum, Signature: sv.String()})
 	if err != nil {

@@ -3,8 +3,8 @@ package okx
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/logger"
-	"nofx/trader/types"
+	"vl/logger"
+	"vl/trader/types"
 	"strconv"
 	"strings"
 )

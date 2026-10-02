@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── W-ONE-BUTTON M2 — the installation-wide gate ───────────────────────────
@@ -152,11 +152,14 @@ func TestInstallationGateCensusCases(t *testing.T) {
 		}, "census failed"},
 		"connections not taken": {func(a *ntwire.MaintenanceAckPayload) { a.Connections = nil }, "connections"},
 		"accounts not taken":    {func(a *ntwire.MaintenanceAckPayload) { a.Accounts = nil }, "accounts"},
-		"connected non-SIM":     {func(a *ntwire.MaintenanceAckPayload) { a.Connections[1].Connected = true }, "non-SIM"},
-		"position on any account": {func(a *ntwire.MaintenanceAckPayload) {
+		"position on a LIVE account": {func(a *ntwire.MaintenanceAckPayload) {
+			a.Connections[1].Connected = true // the connected non-SIM connection whose suffix must not survive a refusal
 			a.Accounts = append(a.Accounts, ntwire.CensusAccount{Sim: false, Positions: 1})
-		}, "position"},
-		"working order anywhere": {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Working = 2 }, "working"},
+		}, "open position(s) on a non-SIM (live) account"},
+		"working order on a LIVE account": {func(a *ntwire.MaintenanceAckPayload) {
+			a.Connections[1].Connected = true // the connected non-SIM connection whose suffix must not survive a refusal
+			a.Accounts = append(a.Accounts, ntwire.CensusAccount{Sim: false, Working: 1})
+		}, "working order(s) on a non-SIM (live) account"},
 		// M2.1 (review d): a connection neither Connected nor Disconnected
 		// (Connecting, ConnectionLost …) — its accounts' zeros cannot be trusted.
 		"connection in a transitional state": {func(a *ntwire.MaintenanceAckPayload) { a.Connections[1].Settled = false }, "transitional"},
@@ -170,7 +173,38 @@ func TestInstallationGateCensusCases(t *testing.T) {
 			// The pre-hold census leg shares the content judgment: a census
 			// that names exposure fails BOTH legs (#206 review fold).
 			mustFail(t, g, "addon_census_prehold", c.want)
+			// D0: a REFUSAL must never read "all accounts flat — allowed" —
+			// the suffix belongs to the pass path only.
+			if l, ok := legOf(g, "addon_census"); ok && strings.Contains(l.Detail, "all accounts flat") {
+				t.Fatalf("a refusal detail must not claim all-accounts-flat: %q", l.Detail)
+			}
 		})
+	}
+}
+
+// UPDATER-FLAT-LIVE-OK (owner ruling 2026-09-28): a connected non-SIM (live)
+// connection no longer fails the census BY ITSELF — every account flat (the
+// census proves positions=0 and working=0 across ALL accounts, live included)
+// means the update may proceed. The updater never disconnects anything; only
+// exposure refuses. The detail names the ruling.
+func TestInstallationGateConnectedNonSIMFlatPasses(t *testing.T) {
+	f := newGateFixture(t)
+	f.wire.Rec.Ack.Connections[1].Connected = true // the live connection is up
+	f.wire.Rec.Ack.Accounts = append(f.wire.Rec.Ack.Accounts, ntwire.CensusAccount{Sim: false, Positions: 0, Working: 0})
+	g := f.run()
+	l, ok := legOf(g, "addon_census")
+	if !ok || !l.Pass {
+		t.Fatalf("a connected non-SIM connection with every account flat must PASS the census: %+v", l)
+	}
+	for _, want := range []string{"connected_non_SIM=1", "allowed (owner ruling 2026-09-28)"} {
+		if !strings.Contains(l.Detail, want) {
+			t.Fatalf("detail %q must say %q", l.Detail, want)
+		}
+	}
+	// the pre-hold leg shares censusVerdict — same verdict
+	pl, ok := legOf(g, "addon_census_prehold")
+	if !ok || !pl.Pass {
+		t.Fatalf("the pre-hold census leg must share the verdict: %+v", pl)
 	}
 }
 

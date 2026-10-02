@@ -1,4 +1,4 @@
-export const LEGACY_AGENT_CHAT_STORAGE_KEY = 'nofxi-agent-chat'
+import { vlAgentChatDraftKey, vlAgentChatKey } from './storageMigration'
 
 export function normalizeStorageUserId(value: unknown): string | undefined {
   if (typeof value === 'string') {
@@ -12,11 +12,11 @@ export function normalizeStorageUserId(value: unknown): string | undefined {
 }
 
 export function chatStorageKey(userId?: string) {
-  return `nofxi-agent-chat:${userId || 'guest'}`
+  return vlAgentChatKey(userId)
 }
 
 export function chatDraftStorageKey(userId?: string) {
-  return `nofxi-agent-chat-draft:${userId || 'guest'}`
+  return vlAgentChatDraftKey(userId)
 }
 
 export function getStoredAuthUserId(storage: Storage = window.localStorage) {
@@ -46,7 +46,6 @@ function candidateStorageKeys(userId?: string): string[] {
   if (userId) {
     keys.push(chatStorageKey('guest'))
   }
-  keys.push(LEGACY_AGENT_CHAT_STORAGE_KEY)
   return [...new Set(keys)]
 }
 
@@ -116,22 +115,22 @@ export function prepareAgentMessagesForPersistence<
   })
 }
 
-export function migrateAgentMessages(storage: Storage, userId?: string) {
+// After a login, copy the guest history into the user-specific key when the
+// user key is empty (both are VL keys; the pre-rename migration is the
+// storageMigration module's job, run at import).
+export function migrateGuestMessagesIntoUserKey(
+  storage: Storage,
+  userId?: string
+) {
   if (!userId) return
 
   const targetKey = chatStorageKey(userId)
   const targetMessages = loadMessagesFromKey(storage, targetKey)
   if (targetMessages.length > 0) return
 
-  for (const sourceKey of [
-    chatStorageKey('guest'),
-    LEGACY_AGENT_CHAT_STORAGE_KEY,
-  ]) {
-    const sourceMessages = loadMessagesFromKey(storage, sourceKey)
-    if (sourceMessages.length === 0) continue
-    storage.setItem(targetKey, JSON.stringify(sourceMessages))
-    return
-  }
+  const sourceMessages = loadMessagesFromKey(storage, chatStorageKey('guest'))
+  if (sourceMessages.length === 0) return
+  storage.setItem(targetKey, JSON.stringify(sourceMessages))
 }
 
 export function clearAgentMessages(storage: Storage, userId?: string) {

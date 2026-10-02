@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterworker/releasefixture"
+	"vl/internal/updaterworker/releasefixture"
 )
 
 // ── SSHSIG, cross-checked against the REAL ssh-keygen ─────────────────────────

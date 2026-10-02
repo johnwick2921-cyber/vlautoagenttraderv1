@@ -35,9 +35,9 @@ import (
 	"strings"
 	"time"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
-	"nofx/telemetry"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // contractAction is the adjudication. Like slotAction it is deliberately not a

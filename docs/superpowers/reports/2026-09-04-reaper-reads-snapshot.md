@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # The reaper reads the broker, not silence
 
 **Branch** `fix/reaper-reads-snapshot` · **Status** BUILT AND GREEN, not deployed.
@@ -15,7 +16,7 @@ emitted yet.
 The dispatch's pin — *20 min of order_update silence + a fresh book listing it ⇒
 not reaped* — is therefore proven **on a synthetic fixture only**. The real proof
 is forward: the first time a quiet resting order survives a reap it would
-previously have failed. Verified independently by nofx-47.
+previously have failed. Verified independently by vl-47.
 
 ## The defect
 
@@ -42,7 +43,7 @@ Silence still selects *which rows to ask about*. It never decides.
 forgets to set a verdict does nothing rather than cancelling. The failure mode of
 this class is built into the type, not just the logic.
 
-## Review findings (nofx-47) — both real, both fixed
+## Review findings (vl-47) — both real, both fixed
 
 **1. The defect survived one level inside the fix.** `orderMatchesArm` returns
 false for an empty `SignalID`, so the loop matched nothing and fell through to
@@ -58,7 +59,7 @@ parsing to filter. The **row-level** column is indeed blank on all 1,450 — but
 orders *inside* carry it properly (`{"order_id":"b083ac38…","symbol":"MNQ",…}`),
 which is what `WorkingOrdersFor(symbol)` reads. Verified myself before acting.
 Coding around the blank column would have added a parser for a problem that does
-not exist. nofx-47 corrected their own relay before I could act on it.
+not exist. vl-47 corrected their own relay before I could act on it.
 
 ## Two things confirmed, neither a defect
 
@@ -77,8 +78,8 @@ runs most**, which is worth knowing when reading the logs.
 ## Ownership
 
 The owner dispatched this wave to **two lanes**: to me as "next free CODE lane",
-and to nofx-47 directly. Their empty claim landed 70 s after mine and sits as my
-parent — nothing displaced, and they wrote no code. **nofx-47 has declined it and
+and to vl-47 directly. Their empty claim landed 70 s after mine and sits as my
+parent — nothing displaced, and they wrote no code. **vl-47 has declined it and
 reviewed instead**, and asked that this be stated here so they can confirm it to
 the owner. Sixth misroute in two days.
 

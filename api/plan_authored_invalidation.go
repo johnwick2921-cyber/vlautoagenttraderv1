@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // authoredInvalidationView (W-EXEC-TRUTH W2 A1/A2) is the plan card's

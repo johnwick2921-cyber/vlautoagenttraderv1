@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/levelidentity"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/levelidentity"
+	"vl/market"
+	"vl/store"
 )
 
 // W-GEOMETRY-REFUSAL (2026-09-18) — executor-side tests. (a) the WARN, (b1)

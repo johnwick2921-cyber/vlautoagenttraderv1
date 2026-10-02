@@ -8,7 +8,7 @@
       "type": "file",
       "name": "IndicatorEditor.tsx",
       "filePath": "web/src/components/strategy/IndicatorEditor.tsx",
-      "summary": "Strategy Studio indicator configuration editor: timeframe selection, EMA/BOLL/RSI/ATR period inputs, funding-rate toggle (hidden for CME futures since funding is crypto-only), and a NofxOS API-key section validated via SWR.",
+      "summary": "Strategy Studio indicator configuration editor: timeframe selection, EMA/BOLL/RSI/ATR period inputs, funding-rate toggle (hidden for CME futures since funding is crypto-only), and a VLOS API-key section validated via SWR.",
       "tags": [
         "component",
         "strategy-studio",
@@ -45,7 +45,7 @@
         110,
         1285
       ],
-      "summary": "Main editor mutating IndicatorConfig: timeframes, indicator toggles and periods, futures-aware funding-rate hiding, and NofxOS data-source key management.",
+      "summary": "Main editor mutating IndicatorConfig: timeframes, indicator toggles and periods, futures-aware funding-rate hiding, and VLOS data-source key management.",
       "tags": [
         "component",
         "editor",
@@ -334,7 +334,7 @@
         24,
         517
       ],
-      "summary": "Edits CoinSourceConfig (source mode, coin list add/remove, blacklist) with NofxSelect dropdowns, bilingual strategy translations, and futures-specific behavior via isCMEFutures.",
+      "summary": "Edits CoinSourceConfig (source mode, coin list add/remove, blacklist) with VLSelect dropdowns, bilingual strategy translations, and futures-specific behavior via isCMEFutures.",
       "tags": [
         "component",
         "editor",
@@ -1376,7 +1376,7 @@
     },
     {
       "source": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
-      "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+      "target": "function:web/src/components/ui/select.tsx:VLSelect",
       "type": "contains",
       "direction": "forward",
       "weight": 1.0
@@ -2393,7 +2393,7 @@
     }
   ],
   "corrections": [
-    "Historical IndicatorEditor description calls NofxOS key validated via SWR; current SWR validates timeframe capability only and key badge checks nonempty.",
+    "Historical IndicatorEditor description calls VLOS key validated via SWR; current SWR validates timeframe capability only and key badge checks nonempty.",
     "Historical PeriodInput says range clamp; actual parser filters positive integers without upper bound; backend separately validates periods.",
     "Historical ModelCard says price rendered; current card has provider/name/state only.",
     "Historical TraderConfigModal says initial-balance picker; current form has cadence and position mode, no initial-balance field.",

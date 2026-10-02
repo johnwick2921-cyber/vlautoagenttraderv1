@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"nofx/trader/types"
+	"vl/trader/types"
 	"strconv"
 	"time"
 )

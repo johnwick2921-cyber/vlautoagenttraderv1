@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // ny0904S2Prices are the 21 cycle prices the executor actually saw on
 // 2026-09-04 between 10:05:00 and 10:53:11 CT, one per placement, read from the
-// "📏 arm far … from price X" line in data/nofx_2026-09-04.log. They belong to
+// "📏 arm far … from price X" line in data/vl_2026-09-04.log. They belong to
 // armed_orders ids 38, 62, 65, 67, 70, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91,
 // 93, 95, 97, 99, 101, 102 — NY / v3 / S2 / SHORT, entry_px 29591.02, wire
 // trigger 29590.50 (n=21, and 21 is the INVESTIGATORS' measured submission

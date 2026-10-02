@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W-FLIP-OWNS-THE-BREACH (2026-09-17) ─────────────────────────────────────

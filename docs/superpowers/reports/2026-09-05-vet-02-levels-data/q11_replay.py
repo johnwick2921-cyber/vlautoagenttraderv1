@@ -5,8 +5,8 @@ Delta = mean |close increment| over the trailing 5 completed session days (Detec
 Levels are scanned only from their formation time (lookahead-free). CT = UTC-5.
 """
 import sqlite3, math, json, csv, random, sys, collections
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
-OUT="/home/hoang/nofx-analysis/vet-02-0905/"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
+OUT="/home/hoang/vl-analysis/vet-02-0905/"
 CT=-5*3600
 con=sqlite3.connect(DB, uri=True)
 rows=con.execute("SELECT open_time_ms,o,h,l,c,v FROM bars WHERE symbol='MNQ' AND tf='1m' ORDER BY open_time_ms").fetchall()

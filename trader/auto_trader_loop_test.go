@@ -2,7 +2,7 @@ package trader
 
 import (
 	"fmt"
-	"nofx/trader/types"
+	"vl/trader/types"
 	"sync"
 	"testing"
 	"time"

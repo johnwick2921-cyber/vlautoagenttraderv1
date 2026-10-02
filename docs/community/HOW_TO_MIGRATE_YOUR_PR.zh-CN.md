@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 🔄 如何将你的 PR 迁移到新格式
 
 **语言：** [English](HOW_TO_MIGRATE_YOUR_PR.md) | [中文](HOW_TO_MIGRATE_YOUR_PR.zh-CN.md)
@@ -83,7 +84,7 @@ git push -f origin <your-pr-branch>
 
 ```bash
 # 如果还没添加 upstream，添加它
-git remote add upstream https://github.com/NoFxAiOS/nofx.git
+git remote add upstream upstream github link (removed in the VL rename)
 
 # 获取最新更改
 git fetch upstream
@@ -254,8 +255,8 @@ git push -f origin <your-pr-branch>
 
 **迁移遇到困难？**
 - 在你的 PR 中评论
-- 在 [Telegram](https://t.me/nofx_dev_community) 提问
-- 开启 [Discussion](https://github.com/NoFxAiOS/nofx/discussions)
+- 在 [Telegram](upstream telegram link (removed in the VL rename)) 提问
+- 开启 [Discussion](upstream github link (removed in the VL rename))
 
 **我们在这里帮助你成功！** 🚀
 
@@ -269,4 +270,4 @@ git push -f origin <your-pr-branch>
 3. ✅ 等待维护者审核
 4. ✅ 合并时庆祝！🎉
 
-**感谢你为 NOFX 做出贡献！**
+**感谢你为 VL 做出贡献！**

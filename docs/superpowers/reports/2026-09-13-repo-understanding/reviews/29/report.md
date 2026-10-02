@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Independent repair review — assignment 29
 
-Baseline: `63968be62e44db2fb07a92883e02127b9064b0be`; reviewed repair: `99a06543`. Worktree `/tmp/nofx-understanding-execution-20260913`, detached at repair revision and clean. Scope is all 60 changed files in that diff, their changed-function/context boundaries, and specifically recorded dependency excerpts. This is not a claim to fully reread all unchanged contents of those 60 files or a fabricated baseline assignment count. Common review instructions, canon/checklist and prior assignment context apply. No production edits, live queries, child agents or independently executed tests.
+Baseline: `63968be62e44db2fb07a92883e02127b9064b0be`; reviewed repair: `99a06543`. Worktree `/tmp/vl-understanding-execution-20260913`, detached at repair revision and clean. Scope is all 60 changed files in that diff, their changed-function/context boundaries, and specifically recorded dependency excerpts. This is not a claim to fully reread all unchanged contents of those 60 files or a fabricated baseline assignment count. Common review instructions, canon/checklist and prior assignment context apply. No production edits, live queries, child agents or independently executed tests.
 
 ## Decision and remaining P1
 

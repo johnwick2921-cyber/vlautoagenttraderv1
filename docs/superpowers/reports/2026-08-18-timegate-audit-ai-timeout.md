@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Time-gate audit + AI timeout fix — both zero-trade causes were literals from the NY-only era; 57 gates audited, 8 BUG rows, C# clean
 
 **Deploy integrity (0.1): PASS.** Running binary `bb966a04` vs HEAD `49dd83c9` — the gap was docs-only (zero code files), so all code was current. Now deployed `4ebd779a` (boot integrity OK — rev==expected, goldens PASS).

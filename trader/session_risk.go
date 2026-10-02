@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── SESSION RISK LIMITS (2026-09-09, dispatch 104) ───────────────────────────

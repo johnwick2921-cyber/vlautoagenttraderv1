@@ -2,11 +2,11 @@ package trader
 
 import (
 	"fmt"
-	"nofx/kernel"
+	"vl/kernel"
 	"time"
 
-	"nofx/mcp"
-	"nofx/store"
+	"vl/mcp"
+	"vl/store"
 )
 
 // ── WATCHDOG FIRE RECORDER (owner ruling 2026-09-02) ────────────────────────

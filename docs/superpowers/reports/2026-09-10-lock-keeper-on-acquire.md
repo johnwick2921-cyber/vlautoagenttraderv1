@@ -1,17 +1,18 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Lock keeper on acquire — Section G report
 
-**Wave:** lock keeper on acquire (relayed by lane nofx-07, GO'd by the owner)
+**Wave:** lock keeper on acquire (relayed by lane vl-07, GO'd by the owner)
 **Branch:** `fix/lock-keeper-on-acquire`
 **Landed on dev:** `a4c72ff7` (keeper), then `88d40920` and `97a6525c` (findings 3 and 4 below)
 **Suites at the merged head:** lock 85 pass / 0 fail · claim 17 / 0 · Go 30 ok / 0 fail
-**Scope:** `deploy/nofx-lock.sh`, `deploy/nofx-lock-test.sh`, `AUDIT-CHECKLIST.md`.
+**Scope:** `deploy/vl-lock.sh`, `deploy/vl-lock-test.sh`, `AUDIT-CHECKLIST.md`.
 No Go source, no binary, no boot. SIM untouched.
 
 ---
 
 ## The defect this wave existed to fix
 
-`deploy/nofx-lock.sh acquire` printed, at line 84:
+`deploy/vl-lock.sh acquire` printed, at line 84:
 
 > heartbeat every 120s
 
@@ -46,7 +47,7 @@ STALE alike. `cmd_heartbeat` refused on exactly two conditions: no lock
 directory, and not the holder. **Past its expiry a lock beat happily, forever.**
 Lanes quoted the field in prose as though it bound something.
 
-My first design bounded the keeper's own loop. A peer lane (nofx-ed) read the
+My first design bounded the keeper's own loop. A peer lane (vl-ed) read the
 shipped file and named why that was insufficient: it constrains the keeper THIS
 SCRIPT starts, and every lane had a hand-rolled beater precisely because the tool
 had never started one. The bound moved to `cmd_heartbeat` — the single place a
@@ -189,20 +190,20 @@ review, most of all where it feeds a destructive operation.
 ## Owed / undeliverable
 
 **The landing ping could not be delivered to the lanes that were owed it.** I
-committed to nofx-66: *"You get an explicit ping when it is actually on dev."*
-By the time the keeper landed, `nofx-07`, `nofx-6b`, `nofx-ed`, `nofx-75` and
-`nofx-66` had all ended — nofx-66's socket
+committed to vl-66: *"You get an explicit ping when it is actually on dev."*
+By the time the keeper landed, `vl-07`, `vl-6b`, `vl-ed`, `vl-75` and
+`vl-66` had all ended — vl-66's socket
 (`/run/user/1000/cc-socks/42034.sock`) is gone, and the roster has turned over
 entirely. The debt is recorded here instead of delivered. Anything those lanes
 were told to expect from me is in this report and in classes 101–103.
 
-**Owed to nofx-66 specifically, now undeliverable to them:**
+**Owed to vl-66 specifically, now undeliverable to them:**
 
 - The diffs for lock-script pre-existing defects **1** and **3**. Not written —
   those are the next wave (below).
 - Confirmation when the arm-state SQL fragment lands. Not built.
 
-**nofx-66's standing caution, recorded because it is right and outlives them.**
+**vl-66's standing caution, recorded because it is right and outlives them.**
 On the arm-state fragment: if the SQL fragment is a separate `[]string` or a
 hand-written `IN ('filled',…)` constant sitting beside the switch, *the class has
 been moved, not retired* — two hand-typed lists in one file diverge exactly as
@@ -217,7 +218,7 @@ zero hits in `*.go`, and `isTerminalArmState` remains the sole predicate at
 **untracked** — a local file, not in the repo — so this wave could not ship a
 change to it. Its MAIN-TREE LOCK LAW block still instructs every lane:
 
-> `deploy/nofx-lock.sh heartbeat <session>   # beat every ~2 min as you work`
+> `deploy/vl-lock.sh heartbeat <session>   # beat every ~2 min as you work`
 
 That is now wrong: `acquire` starts the keeper, and a lane running its own beater
 in addition is a second writer of exactly the kind class 102 is about. The line

@@ -1,6 +1,6 @@
 package agent
 
-import "nofx/branding"
+import "vl/branding"
 
 var i18nMessages = map[string]map[string]string{
 	"help": {

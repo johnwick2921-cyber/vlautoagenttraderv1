@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W3 (e) D13 — THE STRICT NUDGE ──────────────────────────────

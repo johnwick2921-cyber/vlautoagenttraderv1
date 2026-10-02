@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W9 — DAY-PLAN CONFIG READERS. The audit found six DayPlanConfig fields that the

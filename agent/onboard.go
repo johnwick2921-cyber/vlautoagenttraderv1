@@ -2,10 +2,10 @@ package agent
 
 import (
 	"fmt"
-	"nofx/branding"
+	"vl/branding"
 	"strings"
 
-	"nofx/store"
+	"vl/store"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"

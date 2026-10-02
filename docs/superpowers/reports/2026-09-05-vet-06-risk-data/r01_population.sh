@@ -1,5 +1,5 @@
 #!/bin/bash
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "=== A. plan_id='UNRESOLVABLE' rows, all-time ==="
 sqlite3 "$DB" "SELECT id, plan_id, source, pnl_corrected, plan_session, datetime(entry_time/1000,'unixepoch','-5 hours') FROM trader_positions WHERE plan_id='UNRESOLVABLE' ORDER BY id;"
 echo "=== B. count + sum ==="

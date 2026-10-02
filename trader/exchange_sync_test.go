@@ -1,13 +1,13 @@
 package trader
 
 import (
-	"nofx/store"
+	"vl/store"
 	"testing"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"nofx/store/sqlitedriver"
+	"vl/store/sqlitedriver"
 )
 
 // TestScenario represents a trading scenario to test

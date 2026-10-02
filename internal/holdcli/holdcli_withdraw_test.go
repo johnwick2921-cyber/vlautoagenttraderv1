@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W0 (f) — `set --withdraw-entries` writes WithdrawEntries into

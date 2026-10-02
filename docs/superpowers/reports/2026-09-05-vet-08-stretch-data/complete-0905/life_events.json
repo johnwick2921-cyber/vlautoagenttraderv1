@@ -5,7 +5,7 @@
     "session": "ASIA",
     "version": 9,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 3018
   },
   {
@@ -14,7 +14,7 @@
     "session": "ASIA",
     "version": 9,
     "event": "REARMED",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 3407
   },
   {
@@ -23,7 +23,7 @@
     "session": "NY",
     "version": 1,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 21037
   },
   {
@@ -32,7 +32,7 @@
     "session": "ASIA",
     "version": 8,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 53407
   },
   {
@@ -41,7 +41,7 @@
     "session": "ASIA",
     "version": 13,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 61821
   },
   {
@@ -50,7 +50,7 @@
     "session": "ASIA",
     "version": 13,
     "event": "REARMED",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 67186
   },
   {
@@ -59,7 +59,7 @@
     "session": "ASIA",
     "version": 15,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 70935
   },
   {
@@ -68,7 +68,7 @@
     "session": "LONDON",
     "version": 1,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 73925
   },
   {
@@ -77,7 +77,7 @@
     "session": "LONDON",
     "version": 1,
     "event": "REARMED",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 75846
   },
   {
@@ -86,7 +86,7 @@
     "session": "LONDON",
     "version": 1,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 81223
   },
   {
@@ -95,7 +95,7 @@
     "session": "NY",
     "version": 1,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-02.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-02.log",
     "line": 84012
   },
   {
@@ -104,7 +104,7 @@
     "session": "NY",
     "version": 7,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-03.log",
     "line": 5250
   },
   {
@@ -113,7 +113,7 @@
     "session": "ASIA",
     "version": 2,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-03.log",
     "line": 17783
   },
   {
@@ -122,7 +122,7 @@
     "session": "ASIA",
     "version": 5,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-03.log",
     "line": 22690
   },
   {
@@ -131,7 +131,7 @@
     "session": "ASIA",
     "version": 7,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-03.log",
     "line": 32215
   },
   {
@@ -140,7 +140,7 @@
     "session": "LONDON",
     "version": 2,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-03.log",
     "line": 33171
   },
   {
@@ -149,7 +149,7 @@
     "session": "LONDON",
     "version": 2,
     "event": "REARMED",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-04.log",
     "line": 272
   },
   {
@@ -158,7 +158,7 @@
     "session": "NY",
     "version": 5,
     "event": "DORMANT",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-04.log",
     "line": 16574
   },
   {
@@ -167,7 +167,7 @@
     "session": "NY",
     "version": 5,
     "event": "REARMED",
-    "source": "/home/hoang/nofx/data/nofx_2026-09-04.log",
+    "source": "/home/hoang/vl/data/vl_2026-09-04.log",
     "line": 16784
   }
 ]

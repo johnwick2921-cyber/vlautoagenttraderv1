@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/censuswalk"
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/internal/censuswalk"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── D2 PINS (wave BARS HORIZON, 2026-09-09) ─────────────────────────────────

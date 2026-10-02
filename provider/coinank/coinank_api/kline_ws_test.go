@@ -3,7 +3,7 @@ package coinank_api
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/provider/coinank/coinank_enum"
+	"vl/provider/coinank/coinank_enum"
 	"testing"
 	"time"
 )

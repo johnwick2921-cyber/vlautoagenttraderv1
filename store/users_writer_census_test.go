@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // ── M3 FOLD-M3-A — the users-table WRITER CENSUS (CTO 1790239512054) ───────
@@ -154,13 +154,13 @@ func TestUsersWriterCensusCatchesEveryWriterShape(t *testing.T) {
 	const storeStore = "package store\n\ntype Store struct{ u *UserStore }\n\nfunc (s *Store) User() *UserStore { return s.u }\n"
 	base := func() string {
 		root := t.TempDir()
-		write(root, "go.mod", "module nofx\n\ngo 1.25\n")
+		write(root, "go.mod", "module vl\n\ngo 1.25\n")
 		write(root, "store/user.go", storeUser)
 		write(root, "store/store.go", storeStore)
-		write(root, "api/handler.go", "package api\n\nimport \"nofx/store\"\n\n"+
+		write(root, "api/handler.go", "package api\n\nimport \"vl/store\"\n\n"+
 			"func who(st *store.Store) { u, _ := st.User().GetByID(\"x\"); _ = u; _ = st.User().Count() }\n\n"+
 			"var help = \"DESTRUCTIVE — delete all users/traders/strategies\"\n")
-		write(root, "telegram/bot.go", "package telegram\n\nimport \"nofx/store\"\n\n"+
+		write(root, "telegram/bot.go", "package telegram\n\nimport \"vl/store\"\n\n"+
 			"func other(db interface{ Create(any) any }) { db.Create(&store.Trader{}) }\n")
 		write(root, "cmd/tool/main.go", "package main\n\nfunc main() {}\n")
 		write(root, "main.go", "package main\n\nfunc main() {}\n")
@@ -181,7 +181,7 @@ func TestUsersWriterCensusCatchesEveryWriterShape(t *testing.T) {
 	}
 	for name, c := range map[string]struct{ rel, body, want string }{
 		"gorm Model(&store.User{}).Update in api": {"api/x.go",
-			"package api\n\nimport \"nofx/store\"\n\nfunc setEmail(db dbish) { db.Model(&store.User{}).Where(\"id = ?\", 1).Update(\"email\", \"e\") }\n",
+			"package api\n\nimport \"vl/store\"\n\nfunc setEmail(db dbish) { db.Model(&store.User{}).Where(\"id = ?\", 1).Update(\"email\", \"e\") }\n",
 			"api/x.go · setEmail · gorm Update"},
 		"gorm Table(\"users\").Updates in telegram": {"telegram/x.go",
 			"package telegram\n\nfunc touch(db dbish) { db.Table(\"users\").Where(\"id = ?\", 1).Updates(map[string]any{\"updated_at\": 1}) }\n",
@@ -196,22 +196,22 @@ func TestUsersWriterCensusCatchesEveryWriterShape(t *testing.T) {
 			"package api\n\nconst q = \"INSERT OR REPLACE INTO users (id) VALUES (?)\"\n",
 			"api/y.go · (package level) · raw SQL INSERT OR REPLACE INTO users"},
 		"db.Save(&user) on a store.User value": {"api/z.go",
-			"package api\n\nimport \"nofx/store\"\n\nfunc resave(db dbish) {\n\tvar user store.User\n\tdb.Save(&user)\n}\n",
+			"package api\n\nimport \"vl/store\"\n\nfunc resave(db dbish) {\n\tvar user store.User\n\tdb.Save(&user)\n}\n",
 			"api/z.go · resave · gorm Save"},
 		"Save on a User parameter": {"telegram/p.go",
-			"package telegram\n\nimport \"nofx/store\"\n\nfunc keep(db dbish, u *store.User) { db.Save(u) }\n",
+			"package telegram\n\nimport \"vl/store\"\n\nfunc keep(db dbish, u *store.User) { db.Save(u) }\n",
 			"telegram/p.go · keep · gorm Save"},
 		"Delete(&store.User{}) inside a closure": {"api/reset.go",
-			"package api\n\nimport \"nofx/store\"\n\ntype Server struct{}\n\nfunc (s *Server) reset(tx func(func(db dbish) error) error) {\n\t_ = tx(func(db dbish) error { db.Delete(&store.User{}); return nil })\n}\n",
+			"package api\n\nimport \"vl/store\"\n\ntype Server struct{}\n\nfunc (s *Server) reset(tx func(func(db dbish) error) error) {\n\t_ = tx(func(db dbish) error { db.Delete(&store.User{}); return nil })\n}\n",
 			"api/reset.go · (*Server).reset · gorm Delete"},
 		"an import alias": {"api/alias.go",
-			"package api\n\nimport st \"nofx/store\"\n\nfunc mk(db dbish) { db.Create(&st.User{ID: \"x\"}) }\n",
+			"package api\n\nimport st \"vl/store\"\n\nfunc mk(db dbish) { db.Create(&st.User{ID: \"x\"}) }\n",
 			"api/alias.go · mk · gorm Create"},
 		"a new caller of UpdatePassword": {"telegram/pw.go",
-			"package telegram\n\nimport \"nofx/store\"\n\nfunc rotate(st *store.Store) { _ = st.User().UpdatePassword(\"id\", \"h\") }\n",
+			"package telegram\n\nimport \"vl/store\"\n\nfunc rotate(st *store.Store) { _ = st.User().UpdatePassword(\"id\", \"h\") }\n",
 			"telegram/pw.go · rotate · calls UserStore.UpdatePassword"},
 		"a caller through a UserStore variable": {"cmd/tool/reg.go",
-			"package main\n\nimport \"nofx/store\"\n\nfunc reg(st *store.Store) {\n\tus := st.User()\n\t_ = us.Create(nil)\n}\n",
+			"package main\n\nimport \"vl/store\"\n\nfunc reg(st *store.Store) {\n\tus := st.User()\n\t_ = us.Create(nil)\n}\n",
 			"cmd/tool/reg.go · reg · calls UserStore.Create"},
 		"a new UserStore writer method": {"store/user_touch.go",
 			"package store\n\nfunc (s *UserStore) Touch(id string) error { return s.db.Model(&User{}).Where(\"id = ?\", id).UpdateColumn(\"updated_at\", 1).Error }\n",
@@ -223,13 +223,13 @@ func TestUsersWriterCensusCatchesEveryWriterShape(t *testing.T) {
 			"package store\n\nfunc seed(db dbish) { db.FirstOrCreate(new(User)) }\n",
 			"store/foc.go · seed · gorm FirstOrCreate"},
 		"fetch through the UserStore, then Save": {"api/fetch.go",
-			"package api\n\nimport \"nofx/store\"\n\ntype Server struct{ store *store.Store; db dbish }\n\nfunc (s *Server) rename(id string) {\n\tu, err := s.store.User().GetByID(id)\n\t_ = err\n\tu.Email = \"x\"\n\ts.db.Save(u)\n}\n",
+			"package api\n\nimport \"vl/store\"\n\ntype Server struct{ store *store.Store; db dbish }\n\nfunc (s *Server) rename(id string) {\n\tu, err := s.store.User().GetByID(id)\n\t_ = err\n\tu.Email = \"x\"\n\ts.db.Save(u)\n}\n",
 			"api/fetch.go · (*Server).rename · gorm Save"},
 		"range over GetAll, then Updates by Model(&u)": {"telegram/all.go",
-			"package telegram\n\nimport \"nofx/store\"\n\nfunc stamp(st *store.Store, db dbish) {\n\tusers, _ := st.User().GetAll()\n\tfor _, u := range users {\n\t\tdb.Model(&u).Updates(map[string]any{\"updated_at\": 1})\n\t}\n}\n",
+			"package telegram\n\nimport \"vl/store\"\n\nfunc stamp(st *store.Store, db dbish) {\n\tusers, _ := st.User().GetAll()\n\tfor _, u := range users {\n\t\tdb.Model(&u).Updates(map[string]any{\"updated_at\": 1})\n\t}\n}\n",
 			"telegram/all.go · stamp · gorm Updates"},
 		"index into GetAll, then Save": {"cmd/tool/first.go",
-			"package main\n\nimport \"nofx/store\"\n\nfunc first(st *store.Store, db dbish) {\n\tusers, _ := st.User().GetAll()\n\tu := users[0]\n\tdb.Save(&u)\n}\n",
+			"package main\n\nimport \"vl/store\"\n\nfunc first(st *store.Store, db dbish) {\n\tusers, _ := st.User().GetAll()\n\tu := users[0]\n\tdb.Save(&u)\n}\n",
 			"cmd/tool/first.go · first · gorm Save"},
 		"a bare User declared by another package": {"agent/u.go",
 			"package agent\n\ntype User struct{ ID string }\n\nfunc save(db dbish) { db.Save(&User{}) }\n",
@@ -245,7 +245,7 @@ func TestUsersWriterCensusCatchesEveryWriterShape(t *testing.T) {
 			"package api\n\nfunc lineSQL(db dbish) { db.Exec(\"UPDATE --epoch\\nusers SET updated_at = 0\") }\n",
 			"api/x.go · lineSQL · raw SQL UPDATE users"},
 		"gorm Association Replace carrying a User": {"api/x.go",
-			"package api\n\nimport \"nofx/store\"\n\nfunc assoc(db dbish) { db.Model(&store.Trader{}).Association(\"Owner\").Replace(&store.User{ID: \"x\"}) }\n",
+			"package api\n\nimport \"vl/store\"\n\nfunc assoc(db dbish) { db.Model(&store.Trader{}).Association(\"Owner\").Replace(&store.User{ID: \"x\"}) }\n",
 			"api/x.go · assoc · gorm Association.Replace"},
 		"Scopes-carried Table(\"users\")": {"api/x.go",
 			"package api\n\nvar usersScope = func(db dbish) dbish { return db.Table(\"users\") }\n\nfunc scoped(db dbish) { db.Scopes(usersScope).Updates(map[string]any{\"updated_at\": 1}) }\n",
@@ -270,7 +270,7 @@ func TestUsersWriterCensusCatchesEveryWriterShape(t *testing.T) {
 	// A new UserStore writer method makes its CALLERS writers too (fixpoint).
 	root := base()
 	write(root, "store/user_touch.go", "package store\n\nfunc (s *UserStore) Touch(id string) error { return s.db.Exec(\"UPDATE users SET updated_at = 1 WHERE id = ?\", id).Error }\n")
-	write(root, "api/touch.go", "package api\n\nimport \"nofx/store\"\n\nfunc poke(st *store.Store) { _ = st.User().Touch(\"id\") }\n")
+	write(root, "api/touch.go", "package api\n\nimport \"vl/store\"\n\nfunc poke(st *store.Store) { _ = st.User().Touch(\"id\") }\n")
 	sites, _, err = usersTableWriters(root)
 	if err != nil {
 		t.Fatal(err)
@@ -281,7 +281,7 @@ func TestUsersWriterCensusCatchesEveryWriterShape(t *testing.T) {
 	// Negative controls: reads, another model's writes and prose that names
 	// the table stay out (the clean base already carries one of each).
 	root = base()
-	write(root, "api/reads.go", "package api\n\nimport \"nofx/store\"\n\n"+
+	write(root, "api/reads.go", "package api\n\nimport \"vl/store\"\n\n"+
 		"func reads(db dbish, st *store.Store) {\n\tvar us []store.User\n\tdb.Model(&store.User{}).Where(\"x\").Find(&us)\n\tdb.Delete(&store.Trader{})\n\t_ = \"failed to delete users: %w\"\n\t_, _ = st.User().GetByID(\"x\")\n}\n")
 	if sites, _, _ := usersTableWriters(root); strings.Join(sites, "\n") != strings.Join(clean, "\n") {
 		t.Fatalf("reads / other models / prose were reported as users writers: %v", sites)
@@ -358,7 +358,7 @@ type usersCensusFile struct {
 	rel     string
 	f       *ast.File
 	inStore bool            // package store: a bare User / UserStore is the store's
-	aliases map[string]bool // the names this file reaches nofx/store by
+	aliases map[string]bool // the names this file reaches vl/store by
 }
 
 // usersTableWriters returns every users-table write site under root as
@@ -393,7 +393,7 @@ func usersTableWriters(root string) (sites []string, walked map[string]int, err 
 		}
 		cf := usersCensusFile{rel: rel, f: f, inStore: f.Name.Name == "store", aliases: map[string]bool{}}
 		for _, im := range f.Imports {
-			if ip, _ := strconv.Unquote(im.Path.Value); ip == "nofx/store" {
+			if ip, _ := strconv.Unquote(im.Path.Value); ip == "vl/store" {
 				switch {
 				case im.Name == nil:
 					cf.aliases["store"] = true

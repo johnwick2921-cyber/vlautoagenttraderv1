@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // CLASS 34 (owner ruling 2026-08-31) — reproduction of tonight: the

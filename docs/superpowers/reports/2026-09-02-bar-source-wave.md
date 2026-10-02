@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Bar-source wave — one resolver, every timeframe persisted, and a calendar that is not ours
 
 **Dispatch:** BAR-SOURCE WAVE, owner hoang, 2026-09-02. Audit basis `2026-09-02-bar-source-audit.md` @ 593dcf9e.
-**Base:** dev at merge. **Live rev at build:** `0465a10b`. Worktree `~/nofx-bars`, no lock held during the build.
+**Base:** dev at merge. **Live rev at build:** `0465a10b`. Worktree `~/vl-bars`, no lock held during the build.
 **Tiers:** [A] verified directly · [B] inferred · [C] speculation.
 
 ## 0. The measurement that set the shape (A23)
@@ -144,7 +145,7 @@ _(filled at swap time — five-leg gate, then the boot checklist with the real �
 ## 7. Rollback
 
 ```
-cp nofx-bin.prev.boot nofx-bin && echo <previous rev> > deploy/RELEASE && kill -9 <MainPID>
+cp vl-bin.prev.boot vl-bin && echo <previous rev> > deploy/RELEASE && kill -9 <MainPID>
 ```
 
 The `convention` column and any newly persisted coarse rows are additive: the previous binary

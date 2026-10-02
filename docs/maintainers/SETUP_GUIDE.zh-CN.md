@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 🚀 PR 管理系统设置指南
 
 **语言：** [English](SETUP_GUIDE.md) | [中文](SETUP_GUIDE.zh-CN.md)
 
-本指南将帮助你为 NOFX 设置和激活完整的 PR 管理系统。
+本指南将帮助你为 VL 设置和激活完整的 PR 管理系统。
 
 ---
 
@@ -103,7 +104,7 @@ jobs:
 ### 步骤 4：创建 GitHub Projects
 
 1. 前往 **Projects → New project**
-2. 创建 **"NOFX Development"** 看板
+2. 创建 **"VL Development"** 看板
    - 模板：Board
    - 添加列：`Backlog`、`Triaged`、`In Progress`、`In Review`、`Done`
    - 添加视图：Sprint、Roadmap、By Area、Priority

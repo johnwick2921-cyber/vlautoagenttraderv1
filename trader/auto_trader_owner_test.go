@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // TestStickyOwnerLevelInPlannerInput proves P3.6-C: an owner level set in one

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // F6 — the backfill on a fixture. Three closed positions: one fully covered by

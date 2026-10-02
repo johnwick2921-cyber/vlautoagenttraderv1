@@ -1,5 +1,5 @@
 import sqlite3, json, math, statistics as st, datetime as dt, collections, csv
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 c=sqlite3.connect(DB, uri=True)
 def wilson(k,n,z=1.96):
     if n==0: return (0,0)
@@ -103,7 +103,7 @@ ints=c.execute("""SELECT id, datetime(timestamp,'-5 hours'), substr(execution_lo
 for r in ints: print("   ",r)
 print("  count 09-03:", len(ints), "since 10:43:", sum(1 for r in ints if r[1]>='2026-09-03 10:43:00'))
 print("  c8c90dcc:", end=' ')
-import subprocess; print(subprocess.run(['git','-C','/home/hoang/nofx-vet-03','log','-1','--format=%h %ci %s','c8c90dcc'],capture_output=True,text=True).stdout.strip())
+import subprocess; print(subprocess.run(['git','-C','/home/hoang/vl-vet-03','log','-1','--format=%h %ci %s','c8c90dcc'],capture_output=True,text=True).stdout.strip())
 
 print("### A5 plans bias_label by date")
 print("  by UTC date:", c.execute("SELECT date(created_at), COUNT(*) FROM plans WHERE doc LIKE '%bias_label%' GROUP BY 1").fetchall())

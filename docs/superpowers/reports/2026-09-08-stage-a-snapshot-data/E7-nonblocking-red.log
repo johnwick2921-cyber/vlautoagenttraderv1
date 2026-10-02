@@ -5,5 +5,5 @@ researchsnapshot/recorder.go:78: default:
 --- FAIL: TestResearchOfferNeverWaitsForWriter (0.01s)
     recorder_test.go:145: offer blocked behind the writer beyond admission budget
 FAIL
-FAIL	nofx/researchsnapshot	0.008s
+FAIL	vl/researchsnapshot	0.008s
 FAIL

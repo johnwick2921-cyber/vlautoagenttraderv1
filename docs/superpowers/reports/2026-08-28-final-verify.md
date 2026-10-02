@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # FINAL VERIFICATION SWEEP v2 — POST-BAR-TRUTH RE-AUDIT
 
 **2026-08-27, 17:00-17:58 CT · READ-ONLY (zero code/config/DB/env changes, no
-restarts) · isolated worktree `/home/hoang/nofx-final` @ running rev
+restarts) · isolated worktree `/home/hoang/vl-final` @ running rev
 `405e1323b176` · branch `docs/final-verify`.** All times CT. R1 fresh evidence
 only (every query/journal line produced this run) · R2 independent math (Python
 recompute from the raw `bars` table, never the engine) · R3 twin paths ·
@@ -14,8 +15,8 @@ R4 file:line · R6 never upgraded a grade.
 ### S-FINDINGS (this run)
 
 - **S-1 — Journald retention is ~3.6 HOURS, not ≥7 days.** Oldest surviving
-  nofx entry: 13:35:21 CT today (measured 17:10 CT); disk at **1.9G of the 2G
-  cap** (`/etc/systemd/journald.conf.d/nofx.conf` `SystemMaxUse=2G`). The
+  vl entry: 13:35:21 CT today (measured 17:10 CT); disk at **1.9G of the 2G
+  cap** (`/etc/systemd/journald.conf.d/vl.conf` `SystemMaxUse=2G`). The
   bar-truth wave's E4 ("71.8 days") is wrong by ~500×. Root cause: a **1.48GB
   single-hour flood** at 13:35-14:35 = `trader/auto_trader.go:43` logging every
   `order_update` frame at INFO (~25k lines in one SECOND at 13:38:17). This is
@@ -185,7 +186,7 @@ counts). Zero closes lost: `ingest_current=0`, `persist_queue=0`, DB
 contiguous.
 
 **1.6 Retention — BROKEN:** oldest entry 13:35:21 CT (measured 17:10);
-1.9G/2G used; config verified (`nofx.conf` SystemMaxUse=2G,
+1.9G/2G used; config verified (`vl.conf` SystemMaxUse=2G,
 RateLimitBurst=200000/30s). 13:35-14:35 = 1.48GB from per-frame order_update
 INFO logs at `trader/auto_trader.go:43` (25,896 lines in one second at
 13:38:17). Post-fix quiet-hour rate 1.4MB/h projects ~15d, but any future
@@ -251,16 +252,16 @@ session plan_mode first).
 
 **5.1 Census:** dev tip `43bb60cb`; running `405e1323`; **FLAG: bar-truth not
 merged into dev** (S-4). Open PRs: 11 (#64,63,62,61,60,56,54,53,52,51,46 —
-unchanged). Worktrees: main (`fix/bar-truth`), `nofx-e2e`
-(`docs/e2e-verify`), `nofx-final` (`docs/final-verify`, this run),
-`nofx-recheck` (`docs/master-recheck`). Stashes: 0.
+unchanged). Worktrees: main (`fix/bar-truth`), `vl-e2e`
+(`docs/e2e-verify`), `vl-final` (`docs/final-verify`, this run),
+`vl-recheck` (`docs/master-recheck`). Stashes: 0.
 **5.2 Canon laws:** CLAUDE.md `WORKTREE LAW` :134 · `NO UNATTENDED DEPLOYS`
 :140 · `SIM-only` :146 · flat-gate all-origin in the deploy canon; the same
-canons recorded in the repo memory file (`/memories/repo/nofx-facts.md`).
-**5.3 Partner PR #2:** still OPEN (`Sync: full tree to nofx dev @eeaffe83
+canons recorded in the repo memory file (`/memories/repo/vl-facts.md`).
+**5.3 Partner PR #2:** still OPEN (`Sync: full tree to vl dev @eeaffe83
 (supersedes PR #1)`).
 **5.4 Dirty-flag account:** `+dirty` = 17 untracked items only — 2 `.env.bak`
-+ 15 `nofx-bin.old.*` binaries. No tracked modifications.
++ 15 `vl-bin.old.*` binaries. No tracked modifications.
 
 ## Evidence scripts committed with this report
 

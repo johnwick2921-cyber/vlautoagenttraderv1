@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // A Go file whose name ends in _<GOOS>, _<GOARCH> or _<GOOS>_<GOARCH> is

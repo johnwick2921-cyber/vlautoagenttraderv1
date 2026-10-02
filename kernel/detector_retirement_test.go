@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	"nofx/market"
+	"vl/market"
 	"os"
 	"path/filepath"
 	"strings"

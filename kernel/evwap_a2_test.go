@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // A2 (mega-research 2026-08-26) — eVWAP re-anchor: 15:00 CT cash close makes

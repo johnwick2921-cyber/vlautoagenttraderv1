@@ -5,7 +5,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"nofx/logger"
+	"vl/logger"
 	"sync"
 
 	"gorm.io/gorm"
@@ -184,12 +184,12 @@ func (s *Store) initTables() error {
 	if err := s.Grid().InitTables(); err != nil {
 		return fmt.Errorf("failed to initialize grid tables: %w", err)
 	}
-		if err := s.TelegramConfig().(*telegramConfigStore).initTables(); err != nil {
-			return fmt.Errorf("failed to initialize telegram config tables: %w", err)
-		}
-		if err := s.RevokedTokens().initTables(); err != nil {
-			return fmt.Errorf("failed to initialize revoked token tables: %w", err)
-		}
+	if err := s.TelegramConfig().(*telegramConfigStore).initTables(); err != nil {
+		return fmt.Errorf("failed to initialize telegram config tables: %w", err)
+	}
+	if err := s.RevokedTokens().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize revoked token tables: %w", err)
+	}
 	if err := s.AICharge().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize AI charge tables: %w", err)
 	}

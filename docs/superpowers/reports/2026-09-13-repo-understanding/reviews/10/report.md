@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 10 — kernel levels and structure
 
-Source review at `63968be62e44db2fb07a92883e02127b9064b0be`, isolated `/tmp/nofx-understanding-surfaces-20260913`; worktree clean before reading. [A] Read all 25 assigned files, 7,199 lines. `functions.json` records 217 named declarations with exact start/end lines and syntax-only call expressions; 31 callbacks are grouped under parents where applicable. `reads.json` distinguishes assigned full reads from additional excerpts. No source/config/DB modifications, test execution, live probes, or deployments. Findings below are source behavior and static risks, not demonstrated incidents.
+Source review at `63968be62e44db2fb07a92883e02127b9064b0be`, isolated `/tmp/vl-understanding-surfaces-20260913`; worktree clean before reading. [A] Read all 25 assigned files, 7,199 lines. `functions.json` records 217 named declarations with exact start/end lines and syntax-only call expressions; 31 callbacks are grouped under parents where applicable. `reads.json` distinguishes assigned full reads from additional excerpts. No source/config/DB modifications, test execution, live probes, or deployments. Findings below are source behavior and static risks, not demonstrated incidents.
 
 Authority: main AGENTS instruction file, tracked CLAUDE-canon, AUDIT-CHECKLIST R1–R10 and classes 64/98. Latest tracked canon supersedes the old hand-heartbeat instruction. No lock operation was needed in this already-provisioned read-only lane. Scope follows the root's claimed dispatch. Owner correction retained: loss control is DAILY; this review proposes no mandatory per-trade cap.
 

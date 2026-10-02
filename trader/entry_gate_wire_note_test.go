@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // W1b FOLD-7 — THE WIRE NOTE MEANS "ROUNDING MOVED A PRICE", NOTHING ELSE.

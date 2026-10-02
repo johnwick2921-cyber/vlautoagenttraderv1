@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/activation"
+	"vl/internal/activation"
 )
 
 // impossiblePID can never name a process: Linux caps pid_max at 2^22
@@ -103,7 +103,7 @@ func TestAdapterDelegatesToActivation(t *testing.T) {
 	t.Run("Backup", func(t *testing.T) {
 		dir := t.TempDir()
 		db, dest := filepath.Join(dir, "data.db"), filepath.Join(dir, "backup", "data.db")
-		h, err := sql.Open("sqlite", db) // store/sqlitedriver's registration, linked via nofx/store
+		h, err := sql.Open("sqlite", db) // store/sqlitedriver's registration, linked via vl/store
 		if err != nil {
 			t.Fatal(err)
 		}

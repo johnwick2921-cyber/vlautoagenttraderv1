@@ -13,7 +13,7 @@
     "sha256": "418b08a44e81fb85f5f79524f0cd18d57d4e89b7d91c9100dc076bc7e82c375f",
     "bytes": 72463328
   },
-  "clone": "/tmp/nofx-scenario-economics-resume/nofx",
+  "clone": "/tmp/vl-scenario-economics-resume/vl",
   "dist": {
     "sha256": {
       "assets/KaTeX_AMS-Regular-BQhdFMY1.woff2": "0cdd387c9590a1a9f9794560022dbb59654a7d86f187aa0c81495ad42d3a7308",

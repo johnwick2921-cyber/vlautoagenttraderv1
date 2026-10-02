@@ -1,8 +1,8 @@
 ADVERSARIAL VERIFY — planner_read_facts.bias_ai/bias_tree/plan_id/version empty
-Run 2026-09-04, worktree /home/hoang/nofx-2day04 @ 8579df0a. DB opened mode=ro only.
+Run 2026-09-04, worktree /home/hoang/vl-2day04 @ 8579df0a. DB opened mode=ro only.
 
 --- 1. Reproduce the row state (WHOLE table, no time window -> no off-by-one possible) ---
-sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT COUNT(*) AS n_total, SUM(CASE WHEN plan_id IS NULL THEN 1 ELSE 0 END) AS pid_null, SUM(CASE WHEN plan_id='' THEN 1 ELSE 0 END) AS pid_empty, SUM(CASE WHEN version=0 THEN 1 ELSE 0 END) AS ver0, SUM(CASE WHEN bias_ai IS NULL THEN 1 ELSE 0 END) AS ai_null, SUM(CASE WHEN bias_ai='' THEN 1 ELSE 0 END) AS ai_empty, SUM(CASE WHEN bias_tree IS NULL THEN 1 ELSE 0 END) AS tree_null, SUM(CASE WHEN bias_tree='' THEN 1 ELSE 0 END) AS tree_empty, SUM(CASE WHEN bias_regime IS NULL OR bias_regime='' THEN 1 ELSE 0 END) AS reg_blank FROM planner_read_facts;"
+sqlite3 -header -column "file:/home/hoang/vl/data/data.db?mode=ro" "SELECT COUNT(*) AS n_total, SUM(CASE WHEN plan_id IS NULL THEN 1 ELSE 0 END) AS pid_null, SUM(CASE WHEN plan_id='' THEN 1 ELSE 0 END) AS pid_empty, SUM(CASE WHEN version=0 THEN 1 ELSE 0 END) AS ver0, SUM(CASE WHEN bias_ai IS NULL THEN 1 ELSE 0 END) AS ai_null, SUM(CASE WHEN bias_ai='' THEN 1 ELSE 0 END) AS ai_empty, SUM(CASE WHEN bias_tree IS NULL THEN 1 ELSE 0 END) AS tree_null, SUM(CASE WHEN bias_tree='' THEN 1 ELSE 0 END) AS tree_empty, SUM(CASE WHEN bias_regime IS NULL OR bias_regime='' THEN 1 ELSE 0 END) AS reg_blank FROM planner_read_facts;"
 -> n_total=17 pid_null=0 pid_empty=17 ver0=17 ai_null=0 ai_empty=17 tree_null=0 tree_empty=17 reg_blank=0   [A] EXACT MATCH to the claim
 
 --- 2. The unnamed FIFTH field is tokens_in ---
@@ -23,7 +23,7 @@ git log --all --format='%h %ci %s' -S 'store.PlannerReadFact{' -- trader/auto_tr
   -> 4659874a 2026-09-02 22:38:48 -0500 fix(void-parity): ... (introduced once, never amended)   [A]
 
 --- 5. Is the DEPLOYED code the same? ---
-md5sum /home/hoang/nofx/trader/auto_trader_planner.go /home/hoang/nofx-2day04/trader/auto_trader_planner.go
+md5sum /home/hoang/vl/trader/auto_trader_planner.go /home/hoang/vl-2day04/trader/auto_trader_planner.go
 -> 251fdf544d38ec37218e513e476dabdb BOTH   [A] deployed binary's source carries the defect
 
 --- 6. REFUTATION of "extraction is therefore impossible": plans.doc.bias_label ---

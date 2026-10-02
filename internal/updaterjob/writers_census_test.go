@@ -11,7 +11,7 @@ package updaterjob
 // and internal/updaterworker names any of the three writers.
 //
 // The scanner asks the GO PARSER for calls and resolves import NAMES by
-// PATH, so alias imports (`fw "nofx/internal/updaterjob"; fw.Write`) and
+// PATH, so alias imports (`fw "vl/internal/updaterjob"; fw.Write`) and
 // var-declared or passed-around values (`var w = updaterjob.Write`) are
 // seen, and string literals are not (the sqlitedriver census's lesson).
 
@@ -42,26 +42,26 @@ func TestJobFileWritersBelongToTheWorker(t *testing.T) {
 	// the synthetic shapes the scanner must see (and not see)
 	shapes := map[string]string{
 		"a plain write": `package x
-import "nofx/internal/updaterjob"
+import "vl/internal/updaterjob"
 func a() error { return updaterjob.Write("/d", updaterjob.Job{}) }`,
 		"an alias-imported write": `package x
-import fw "nofx/internal/updaterjob"
+import fw "vl/internal/updaterjob"
 func a() error { return fw.Write("/d", fw.Job{}) }`,
 		"a var-declared writer value": `package x
-import "nofx/internal/updaterjob"
+import "vl/internal/updaterjob"
 var w = updaterjob.Write`,
 		"a passed writer": `package x
-import "nofx/internal/updaterjob"
+import "vl/internal/updaterjob"
 func a(f func(string, updaterjob.Job) error) {}
 func b() { a(updaterjob.Write) }`,
 		"a New call": `package x
-import "nofx/internal/updaterjob"
+import "vl/internal/updaterjob"
 func a() { updaterjob.New("job", "rel", func() (t time.Time) { return t }) }`,
 		"an Enter transition": `package x
-import "nofx/internal/updaterjob"
+import "vl/internal/updaterjob"
 func a(j updaterjob.Job) { j.Enter(updaterjob.StateRequested, timeNow()) }`,
 		"a READ is not a write": `package x
-import "nofx/internal/updaterjob"
+import "vl/internal/updaterjob"
 func a() { updaterjob.Read("/d", "job") }`,
 	}
 	for name, src := range shapes {
@@ -96,7 +96,7 @@ func a() { updaterjob.Read("/d", "job") }`,
 	probe := filepath.Join(apiDir, "zz_writers_census_probe.go")
 	if err := os.WriteFile(probe, []byte(`package api
 
-import "nofx/internal/updaterjob"
+import "vl/internal/updaterjob"
 
 func zzWritersCensusProbe() error {
 	return updaterjob.Write("/tmp/never", updaterjob.Job{})
@@ -185,7 +185,7 @@ func writerOffendersInFile(name, rel, src string) []string {
 		}
 		imports[p] = n
 	}
-	jname, hasUpdaterjob := imports["nofx/internal/updaterjob"]
+	jname, hasUpdaterjob := imports["vl/internal/updaterjob"]
 	var hits []string
 	pos := func(n ast.Node) string {
 		return fmt.Sprintf("%s: line %d", rel, fset.Position(n.Pos()).Line)

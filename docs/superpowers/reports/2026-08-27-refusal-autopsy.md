@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # REFUSAL AUTOPSY — 2026-08-27 (pulled forward from Sep 3)
 
-**Window:** 2026-08-26 00:00 CT → 2026-08-27 19:25 CT · **READ-ONLY** · worktree `~/nofx-autopsy` @ dev `c9ac2da3` · branch `docs/refusal-autopsy`.
+**Window:** 2026-08-26 00:00 CT → 2026-08-27 19:25 CT · **READ-ONLY** · worktree `~/vl-autopsy` @ dev `c9ac2da3` · branch `docs/refusal-autopsy`.
 **Replay:** `scripts/refusal_autopsy.py` (in this branch) — stored 1m bars only (MPM rule), MNQ $2/pt, pnl_corrected semantics (== raw here; the last-7d Δ is proven 0).
 
 ---

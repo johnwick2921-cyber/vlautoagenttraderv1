@@ -4,7 +4,7 @@ No trading modules imported. UTC parses preserve offsets; Chicago session bounda
 """
 import argparse,sqlite3,json,csv,math,statistics as st,hashlib,datetime as dt,collections as co,bisect,pathlib,re
 from zoneinfo import ZoneInfo
-ap=argparse.ArgumentParser();ap.add_argument('--out',required=True);ap.add_argument('--repo',required=True);ap.add_argument('--db',default='/home/hoang/nofx/data/data.db');a=ap.parse_args()
+ap=argparse.ArgumentParser();ap.add_argument('--out',required=True);ap.add_argument('--repo',required=True);ap.add_argument('--db',default='/home/hoang/vl/data/data.db');a=ap.parse_args()
 out=pathlib.Path(a.out);out.mkdir(parents=True,exist_ok=True);repo=pathlib.Path(a.repo)
 c=sqlite3.connect('file:'+a.db+'?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 CT=ZoneInfo('America/Chicago');UTC=dt.timezone.utc

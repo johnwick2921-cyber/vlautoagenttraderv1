@@ -2,7 +2,8 @@ package kernel
 
 import (
 	"fmt"
-	"nofx/internal/installpath"
+	"vl/internal/envcompat"
+	"vl/internal/installpath"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -85,7 +86,7 @@ func goldensWord(ok bool) string {
 // expectedRevision resolves the intended release: NOFX_EXPECTED_REVISION wins,
 // else the first line of deploy/RELEASE. Empty means "no expectation declared".
 func expectedRevision() string {
-	if v := strings.TrimSpace(os.Getenv("NOFX_EXPECTED_REVISION")); v != "" {
+	if v, _ := envcompat.Env("EXPECTED_REVISION"); strings.TrimSpace(v) != "" { // R5 removes
 		return v
 	}
 	// With NOFX_RELEASE_DIR set, the marker that matters is the ACTIVE

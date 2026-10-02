@@ -1,14 +1,15 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Strategy Studio — Crypto → Universal (Futures / NinjaTrader) Change Map
 
-**Repo:** `/home/hoang/nofx` · **Branch:** `feat/nt8-stage4-chart` · **HEAD at analysis:** `24634b5a` (capstone `8e9b1743` + dashboard fix)
+**Repo:** `/home/hoang/vl` · **Branch:** `feat/nt8-stage4-chart` · **HEAD at analysis:** `24634b5a` (capstone `8e9b1743` + dashboard fix)
 **Date:** 2026-06-02 · **Scope:** read-only deep analysis (no code changed; this report is the only artifact)
-**Method:** 12 per-section sub-agent maps (UnderstandAnything graph → CGC → canonical source at `file:line`) + MAIN re-verification of every headline wire in `/home/hoang/nofx` source + a real-browser crypto-vs-futures pass (MNQ vs BTCUSDT). Screenshots are local artifacts under `.playwright-mcp/` (git-ignored), referenced by name — not committed.
+**Method:** 12 per-section sub-agent maps (UnderstandAnything graph → CGC → canonical source at `file:line`) + MAIN re-verification of every headline wire in `/home/hoang/vl` source + a real-browser crypto-vs-futures pass (MNQ vs BTCUSDT). Screenshots are local artifacts under `.playwright-mcp/` (git-ignored), referenced by name — not committed.
 
 ---
 
 ## 1. Executive summary (for the CTO)
 
-**The product reality.** The company trades **CME index futures (NQ / MNQ)** through a NinjaTrader 8 TCP bridge. The Strategy Studio — the page where a desk builds, previews, tests, and activates an AI trading strategy — was written for **crypto** (USDT pairs, exchange leverage, funding rate, NofxOS/AI500 coin universes). The backend futures engine is already built (recognition, quarterly contract resolver, a dedicated futures system prompt, NT8 real-spec `instrument_info`) and the live MNQ decision path works. The **UI**, however, is only *partially* futures-aware.
+**The product reality.** The company trades **CME index futures (NQ / MNQ)** through a NinjaTrader 8 TCP bridge. The Strategy Studio — the page where a desk builds, previews, tests, and activates an AI trading strategy — was written for **crypto** (USDT pairs, exchange leverage, funding rate, VLOS/AI500 coin universes). The backend futures engine is already built (recognition, quarterly contract resolver, a dedicated futures system prompt, NT8 real-spec `instrument_info`) and the live MNQ decision path works. The **UI**, however, is only *partially* futures-aware.
 
 **The governing rule for every change below is ADDITIVE:** keep every crypto capability **byte-identical**, **add** the futures path, **delete nothing**. Crypto and futures coexist; the instrument decides what renders.
 
@@ -23,8 +24,8 @@
 |---|---|---|---|
 | 1 | **Position-Value-Ratio still shows "BTC/ETH" + "Altcoin" labels on a futures strategy** (capstone gated leverage right next to it but not this block) | `RiskControlEditor.tsx:154-209` | FE-only |
 | 2 | **Prompt Preview / AI Test always renders the CRYPTO system prompt for an MNQ strategy** — the variant dropdown only emits balanced/aggressive/conservative, and the futures prompt requires `variant=="futures"` | `StrategyStudioPage.tsx:1216-1224,1324-1332` → `engine_prompt.go:22` | FE-or-BE |
-| 3 | **Coin Source** shows the three crypto-only data-provider tiles (AI500, OI Increase/Decrease) + NofxOS branding for futures | `CoinSourceEditor.tsx` (no `isFutures` prop) | FE-only |
-| 4 | **Indicators** still shows the whole crypto NofxOS data block (AI500/OI-Ranking/NetFlow/Price-Ranking) + the dead `cm_568c67…` key for futures | `IndicatorEditor.tsx` | FE-only |
+| 3 | **Coin Source** shows the three crypto-only data-provider tiles (AI500, OI Increase/Decrease) + VLOS branding for futures | `CoinSourceEditor.tsx` (no `isFutures` prop) | FE-only |
+| 4 | **Indicators** still shows the whole crypto VLOS data block (AI500/OI-Ranking/NetFlow/Price-Ranking) + the dead `cm_568c67…` key for futures | `IndicatorEditor.tsx` | FE-only |
 | 5 | **Strategy-Type selector** offers "AI Grid Trading" on a futures strategy — grid is crypto-CEX-only and **cannot execute on NT8** | `StrategyStudioPage.tsx:1111-1132` | FE-only (+ optional BE guard) |
 | 6 | **Live prompt-variant is chosen by broker (`exchange=="ninjatrader"`), not by symbol** — a futures symbol on a non-NT8 trader would still get the crypto prompt; the FE uses a *different* signal (`isCMEFutures(static_coins[0])`) | `auto_trader_loop.go:114` vs `StrategyStudioPage.tsx:709` | BE gap |
 | 7 | **Hard R/R gate is hardcoded `≥ 3.0`** and ignores the user's `min_risk_reward_ratio`; the futures prompt advertises the user's value (default 1.5) → compliant futures trades silently rejected | `engine_position.go:133` | BE gap |
@@ -32,7 +33,7 @@
 
 **The good news:** the vast majority of the remaining work is **FE-only conditional gating** that reuses assets that already exist — the `isCMEFutures` recognizer (P1), `market.FuturesPointValue` / `FuturesTickSize` (P1/P3), the futures system prompt (P3), and `instrument_info` specs (P4). No new hardcoded symbols or dollar values are required. A short list of **backend gaps** (#2 BE option, #6, #7, #8, and PromptSections honoring) is itemized in §9. Grid trading is honestly **out of scope** (it has no working NT8 execution path) and should be *parked*, not ported.
 
-**Live-verified at HEAD `24634b5a`:** an MNQ strategy renders Risk Control with **no** leverage tiers, **"Minimum notional value in USD"**, but **still** "BTC/ETH Position Value Ratio" + "Altcoin Position Value Ratio"; Indicators with **no** funding-rate toggle but the **full** NofxOS crypto data block; and a preview variant dropdown of only Balanced/Aggressive/Conservative. Switching the same scratch strategy's coin to BTCUSDT brings the leverage tiers, USDT units, and funding-rate toggle back — confirming the crypto path is intact. (Screenshots: `ss-futures-risk-control.png`, `ss-futures-indicators.png`, `ss-crypto-risk-control.png`, `ss-crypto-indicators.png`.)
+**Live-verified at HEAD `24634b5a`:** an MNQ strategy renders Risk Control with **no** leverage tiers, **"Minimum notional value in USD"**, but **still** "BTC/ETH Position Value Ratio" + "Altcoin Position Value Ratio"; Indicators with **no** funding-rate toggle but the **full** VLOS crypto data block; and a preview variant dropdown of only Balanced/Aggressive/Conservative. Switching the same scratch strategy's coin to BTCUSDT brings the leverage tiers, USDT units, and funding-rate toggle back — confirming the crypto path is intact. (Screenshots: `ss-futures-risk-control.png`, `ss-futures-indicators.png`, `ss-crypto-risk-control.png`, `ss-crypto-indicators.png`.)
 
 ---
 
@@ -97,7 +98,7 @@ The Studio page (`web/src/pages/StrategyStudioPage.tsx`, ~1474 lines) is a 3-col
 - `ClampLimits()` clamps `BTCETHMaxLeverage`/`AltcoinMaxLeverage` into `[1,20]` even for MNQ (`store/strategy.go:81-93`).
 - `StrategyClampWarnings` can emit BTC/ETH + altcoin leverage warnings (`store/strategy.go:544,571-572`).
 - `NormalizeProductSchema` default-fallthrough is `ai500` (crypto) when source is empty (`store/strategy.go:139-178`).
-- `validateStrategyConfig` warns on missing NofxOS key when crypto data sources are on (`api/strategy.go:21-35`).
+- `validateStrategyConfig` warns on missing VLOS key when crypto data sources are on (`api/strategy.go:21-35`).
 
 **(E) Additive plan.** Header UI needs **no change** (already instrument-agnostic). On the BE, gate the leverage clamp + leverage warnings + ai500 default-fallthrough on `market.IsCMEFuturesSymbol(static_coins[0])` so a futures Save isn't crypto-clamped/warned — keep the crypto path byte-identical. *BE gaps (optional; today they are harmless because the gate bypasses the clamped fields for futures).* Optional FE polish: a small "CME futures" badge by the Name.
 
@@ -131,17 +132,17 @@ The Studio page (`web/src/pages/StrategyStudioPage.tsx`, ~1474 lines) is a 3-col
 
 **(A) What / wire.** Picks the instrument(s). Four source types (Static List, AI500, OI Increase, OI Decrease) + add/exclude-coin inputs. Its `static_coins[0]` is the single most load-bearing field: it drives `isFuturesStrategy` (`:709-711`) and the engine candidate set (`kernel/engine.go:263-466 GetCandidateCoins`). `market.Normalize` early-returns CME symbols unchanged (no USDT append) so MNQ survives end-to-end (`market/data.go:595-599`).
 
-**(C) Render.** **Verified live:** for MNQ the editor still shows **all four** source tiles including AI500 / OI Increase / OI Decrease, the NofxOS branding, and the placeholder "BTC, ETH, SOL…". The **only** futures-aware behavior is the USDT-skip on add (capstone).
+**(C) Render.** **Verified live:** for MNQ the editor still shows **all four** source tiles including AI500 / OI Increase / OI Decrease, the VLOS branding, and the placeholder "BTC, ETH, SOL…". The **only** futures-aware behavior is the USDT-skip on add (capstone).
 
 **(D) Crypto assumptions.**
 - USDT auto-append on add (`:127,:162`) — correctly **skipped** for CME roots via `isCMEFutures` (`:122-128,:157-163`) ✅ (this is the capstone's CoinSource scope).
-- Source-type tiles AI500 / OI Increase / OI Decrease (`:33-38,197-225`) + their NofxOS panels (`:331-504`) + NofxOS badge/note (`:182-187`) — crypto-only data providers, **ungated** (no `isFutures` prop).
+- Source-type tiles AI500 / OI Increase / OI Decrease (`:33-38,197-225`) + their VLOS panels (`:331-504`) + VLOS badge/note (`:182-187`) — crypto-only data providers, **ungated** (no `isFutures` prop).
 - Placeholders "BTC, ETH, SOL…" / "BTC, ETH, DOGE…" (`:260,:316`); all coinSource i18n is crypto-framed ("coins"/币种).
 
 **(E) Additive plan.**
 1. Thread `isFutures` into `CoinSourceEditor` (exactly as Indicator/Risk already receive it). *FE-only, enabler.*
 2. When `isFutures`, render only the **Static List** tile (a futures strategy is a single NT8 instrument); the BE static branch already feeds the futures path — no BE change. *FE-only.*
-3. Defensively gate the AI500/OI panels + NofxOS badge behind `!isFutures`. *FE-only.*
+3. Defensively gate the AI500/OI panels + VLOS badge behind `!isFutures`. *FE-only.*
 4. Futures placeholder "MNQ, NQ, ES…" from `cmeFuturesRoots`; futures i18n variant of "coins" → "Contracts". *FE-only.*
 5. Leave USDT-skip as the canonical futures formatting path (already correct). *No change.*
 
@@ -265,8 +266,8 @@ See the **deep-dive in §4** below.
 | 2 Header | nothing | `ClampLimits` leverage clamp + warnings + ai500 default on every futures Save | BE (harmless today) |
 | 3 Token Bar | nothing | no `isFutures`; crypto cost model (funding/quant/ranking/"BTC price") | FE + BE |
 | 4 Type selector | nothing | AI-Grid button clickable for futures (grid is crypto-only, can't run on NT8) | FE (+ opt BE guard) |
-| 5 Coin Source | **USDT-skip on add** ✅ | AI500/OI tiles + NofxOS panels/badge + crypto placeholders/labels ungated | FE |
-| 6 Indicators | **funding-rate toggle hidden; Market-Sentiment subtitle** ✅ | whole NofxOS data block (AI500/OI-Ranking/NetFlow/Price-Ranking) + `cm_568c67…` key ungated | FE |
+| 5 Coin Source | **USDT-skip on add** ✅ | AI500/OI tiles + VLOS panels/badge + crypto placeholders/labels ungated | FE |
+| 6 Indicators | **funding-rate toggle hidden; Market-Sentiment subtitle** ✅ | whole VLOS data block (AI500/OI-Ranking/NetFlow/Price-Ranking) + `cm_568c67…` key ungated | FE |
 | 7 Risk Control | **leverage tiers hidden; USDT→USD unit/desc** ✅ | **PVR BTC/ETH+Altcoin labels (residual)**; Max-Margin-Usage inert; BE min-size error "USDT"; R/R 3.0 hardcode | FE + BE |
 | 8 Prompt Sections | nothing | crypto ZH defaults; **futures builder ignores all 4 sections** | FE + **BE** |
 | 9 Custom Prompt | nothing (already universal) | preview shows crypto wrapper for MNQ (shared w/ §11) | FE/BE (shared) |
@@ -275,7 +276,7 @@ See the **deep-dive in §4** below.
 | 12 Preview/Test | nothing | **previews/tests the CRYPTO prompt for MNQ**; crypto config_summary; crypto data fetch | FE + BE |
 | X1 Backend | nothing (P1-P4 predate it) | variant gated on broker not symbol; env-gated futures default; crypto schema field names persist | BE |
 
-> Indicators (Section 6) was one of the two failed structured sub-agents; its "done/remaining" split is reconstructed from the live render (`ss-futures-indicators.png`: NofxOS block present, funding-rate toggle absent, subtitle "OI and market sentiment data") + capstone diff (`git show 8e9b1743`). The capstone-audit sub-agent also failed; its content is reconstructed from `git show 8e9b1743 --stat` and each surviving agent's per-section "ALREADY DONE" field. See §8 coverage honesty.
+> Indicators (Section 6) was one of the two failed structured sub-agents; its "done/remaining" split is reconstructed from the live render (`ss-futures-indicators.png`: VLOS block present, funding-rate toggle absent, subtitle "OI and market sentiment data") + capstone diff (`git show 8e9b1743`). The capstone-audit sub-agent also failed; its content is reconstructed from `git show 8e9b1743 --stat` and each surviving agent's per-section "ALREADY DONE" field. See §8 coverage honesty.
 
 ---
 
@@ -286,8 +287,8 @@ Ordered by user-visible value ÷ effort. **FE-only** unless flagged. Each item i
 **Tier 1 — high value, FE-only, finishes the capstone's intent**
 1. **Risk Control PVR residual** — gate `:154-209` to crypto + add the futures notional/contract panel. (§5) *FE.*
 2. **Preview/Test futures fidelity** — force `prompt_variant:'futures'` for futures so the desk previews the *real* prompt; gate `config_summary` leverage rows. (§11.E 1+3) *FE force-variant, or small BE gate.*
-3. **Coin Source** — thread `isFutures`; show only Static List + hide AI500/OI/NofxOS for futures; futures placeholder/labels. (§5.E) *FE.*
-4. **Indicators** — gate the NofxOS crypto data block (AI500/OI-Ranking/NetFlow/Price-Ranking + dead key) for futures. (Section 6) *FE.*
+3. **Coin Source** — thread `isFutures`; show only Static List + hide AI500/OI/VLOS for futures; futures placeholder/labels. (§5.E) *FE.*
+4. **Indicators** — gate the VLOS crypto data block (AI500/OI-Ranking/NetFlow/Price-Ranking + dead key) for futures. (Section 6) *FE.*
 5. **Strategy-Type selector** — hide AI-Grid-Trading for futures. (§4.E) *FE.*
 
 **Tier 2 — correctness (backend), real trade impact**
@@ -307,7 +308,7 @@ Ordered by user-visible value ÷ effort. **FE-only** unless flagged. Each item i
 
 **Live-mapped (real browser at HEAD `24634b5a` + canonical `file:line` re-read by MAIN):**
 - **Risk Control** — full futures + crypto render captured (`ss-futures-risk-control.png`, `ss-crypto-risk-control.png`); MAIN re-read `RiskControlEditor.tsx:60-219` confirming the leverage block IS `{!isFutures}`-gated (`:64-152`) and the PVR block is NOT (`:154-209`).
-- **Indicators** — futures + crypto render captured (`ss-futures-indicators.png`, `ss-crypto-indicators.png`): funding-rate toggle hidden / subtitle "OI and market sentiment data" for MNQ; NofxOS block + `cm_568c67…` present in both.
+- **Indicators** — futures + crypto render captured (`ss-futures-indicators.png`, `ss-crypto-indicators.png`): funding-rate toggle hidden / subtitle "OI and market sentiment data" for MNQ; VLOS block + `cm_568c67…` present in both.
 - **Preview variant dropdown** — confirmed Balanced/Aggressive/Conservative only (accessibility snapshot), and MAIN re-read `engine_prompt.go:22-24` (futures requires `variant=="futures"`).
 - **Risk gate** — MAIN re-read `engine_position.go:1-140`: futures branch (`:48-54`), `futuresMaxNotionalLeverage=20` (`:15`), hardcoded R/R `3.0` (`:133`).
 - **Live variant selection** — MAIN re-read `auto_trader_loop.go:113-116` (broker-gated, not symbol-gated).

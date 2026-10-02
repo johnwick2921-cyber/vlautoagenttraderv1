@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // DEFAULTS-SANE: the boot line is READ, never literal — it renders the RESOLVED

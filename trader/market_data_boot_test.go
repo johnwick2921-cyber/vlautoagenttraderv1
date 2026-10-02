@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W-NO-BINANCE A — the 📊 market-data boot line is READ.

@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Assignment 15 — persistence and configuration source review
 
 ## Scope and evidence
 
-[A] Read all **41 assigned source files / 10,001 lines** at `63968be62e44db2fb07a92883e02127b9064b0be` in `/tmp/nofx-understanding-market-20260913`. Initial pwd, HEAD and empty porcelain output verified. Every assigned SHA256 matched the root manifest at artifact generation. `reads.json` records complete assigned reads separately from additional caller/test/rule excerpts. `functions.json` covers **382 named declarations**, their exact start/end lines, and **30 local function literals grouped under enclosing declarations**. Connections in that file are actual AST call expressions and explicitly **not type-resolved call-graph edges**.
+[A] Read all **41 assigned source files / 10,001 lines** at `63968be62e44db2fb07a92883e02127b9064b0be` in `/tmp/vl-understanding-market-20260913`. Initial pwd, HEAD and empty porcelain output verified. Every assigned SHA256 matched the root manifest at artifact generation. `reads.json` records complete assigned reads separately from additional caller/test/rule excerpts. `functions.json` covers **382 named declarations**, their exact start/end lines, and **30 local function literals grouped under enclosing declarations**. Connections in that file are actual AST call expressions and explicitly **not type-resolved call-graph edges**.
 
 This is static source review. No service requests, production DB reads/writes, trading tests, configuration changes, deployment, source edits, or reproducer modifications were performed. **No runtime incident or successful exploit is claimed.** [A] means inspected source or generated inventory; [B] means implications of that source. Historical sample ids quoted in source comments were not re-queried and are not fresh incident evidence.
 

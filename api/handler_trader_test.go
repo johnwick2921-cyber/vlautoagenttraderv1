@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func TestValidateTraderLeverageRangeMatchesManualLimits(t *testing.T) {

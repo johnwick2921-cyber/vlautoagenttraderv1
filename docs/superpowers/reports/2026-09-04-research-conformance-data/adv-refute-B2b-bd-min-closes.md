@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # ADVERSARIAL VERIFY — B2b BD_CONFIRM_CLOSES / BD_MIN_CLOSES  (verdict: peer's headline REFUTED)
 
 Code identical at deployed 70af663d, dev tip 492d2067, worktree HEAD c28fd337
@@ -12,7 +13,7 @@ Code identical at deployed 70af663d, dev tip 492d2067, worktree HEAD c28fd337
 - effect REJECT-at-write, pullback-only — `:260 if !immediate && !st.Leg1Met`. [A]
 - entry path `trader/auto_trader_planner.go:1722` → `kernel.ValidateBreakdownContinueScenarios`
   (`breakdown_continue.go:213`) is real. [A]
-- NOT dead: live reject fires **n=8** (`data/nofx_2026-08-30.log` 3, `2026-09-04.log` 5),
+- NOT dead: live reject fires **n=8** (`data/vl_2026-08-30.log` 3, `2026-09-04.log` 5),
   message renders "(1 confirming close(s) needed)". [A]
 
 ## What does NOT survive

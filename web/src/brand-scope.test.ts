@@ -1,4 +1,22 @@
 // Dispatch 102 freezes load-bearing identifiers, including their surrounding guards.
+// OWNER RULING 2026-09-30 (plan v7 FINAL R1b.10 / Z21, reverses the 09-08
+// Dispatch 102): the protected namespace is now `vl/…`; the old module prefix
+// is forbidden (Go: TestNoOldModuleImport; this file's base stays the
+// pre-rename commit — no TS import target holds the old token).
+// Ops baselines advanced 2026-09-30 for RENAME-R1a (feat/rename-vl-r1a, DS-103,
+// owner ruling 2026-09-29 "dual readers"): three pinned deploy scripts become
+// dual readers by dispatch, not by drift —
+//   deploy/nofx-claim.sh      sha256 99d09313… — VL_SESSION wins over
+//     NOFX_SESSION (the shell twin); the refusal names both keys.
+//   deploy/nofx-db-backup.sh  sha256 10c0cfbf… — D1-FOLD (DS-105): the
+//     prune also handles vl-*.db.gz beside the nofx-*.db.gz it always pruned
+//     (write side stays nofx until the rename boot; R5 removes the nofx prune).
+//     VL_ → NOFX_ → default; DB/DB_RESEARCH defaults use the install-root rule
+//     ($HOME/vl when present, else $HOME/nofx — never /home/hoang).
+//   deploy/nofx-lock.sh       sha256 bb0b09d5… — the five lock envs are the
+//     shell twin; the lock dir defaults to ~/vl-main.lock.d.
+// The protected guards are byte-untouched by all three deltas (R5 removes the
+// NOFX twins later).
 // Auth baseline advanced 2026-09-26 for FIX-SEC (fix/sec-0926-auth, DS-106,
 // audit 0926-system): auth/auth.go adds the TokenBlacklistStore interface +
 // fingerprint (P2-10 persistence behind the memory map) and the
@@ -67,6 +85,12 @@
 //     exported for the Picture floor pins (liveFrameMaxAgeMs → LiveFrameMaxAgeMs
 //     in bar_live_sink.go; tcp_server.go only re-qualifies its WARN field, one
 //     identifier renamed, no guard touched).
+// Bar-feed baseline advanced 2026-09-28 for UPDATER-FLAT-LIVE-OK (DS-103,
+// fix/updater-flat-live-ok): provider/ninjatrader/tcp_framing.go is
+// COMMENT-ONLY — the maintenance_ack census doc records the owner ruling
+// 2026-09-28 (a connected non-SIM connection is allowed when every account is
+// flat; TRADING stays SIM-only, see isAccountTradeable). No identifier
+// renamed, no guard removed, no wire shape changed.
 // Bar-feed baselines advanced 2026-09-10 for two owner-dispatched waves that
 // touched the protected files without renaming an identifier:
 //   provider/ninjatrader/tcp_server.go  @ a53359ce (fix/contract-roll: the
@@ -301,11 +325,12 @@ it('preserves every existing TypeScript import target in changed files', async (
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     })
-  // The base is a nofx commit. A mirror clone (the VL partner repo) does not
-  // carry nofx history, so the pin cannot be evaluated there: skip with the
-  // reason stated instead of failing on `git diff` (bad object). In nofx itself
-  // the commit exists and the check runs unchanged. TypeScript twin of the Go
-  // skip in branding/scope_test.go (TestExistingGoImportTargetsPreserved).
+  // The base is a pre-rename commit (A4-S3 P3-7). A mirror clone (the VL
+  // partner repo) does not carry nofx history, so the pin cannot be evaluated
+  // there: skip with the reason stated instead of failing on `git diff` (bad
+  // object). In nofx itself the commit exists and the check runs unchanged.
+  // TypeScript twin of the Go skip in branding/scope_test.go
+  // (TestExistingGoImportTargetsPreserved).
   let baseIsPresent = true
   try {
     git(['cat-file', '-e', `${base}^{commit}`])
@@ -330,6 +355,20 @@ it('preserves every existing TypeScript import target in changed files', async (
         : []
     )
   }
+  // W-EXEC-TRUTH W0 twin (the Go preserveImports move rule): a target that
+  // left THIS file but is still imported by another tracked file was MOVED —
+  // a legitimate refactor (e.g. the D2-WEB fold deleted the NofxOS Studio
+  // surface and IndicatorEditor.tsx dropped its `../ui/select` import while
+  // five other files keep importing it) — and is preserved; a target that
+  // vanished from the module is rejected.
+  const headTargets = new Set<string>()
+  for (const f of git(['ls-files', '--', '*.ts', '*.tsx'])
+    .trim()
+    .split('\n')
+    .filter(Boolean)) {
+    for (const t of targets(readFileSync(resolve('..', f), 'utf8')))
+      headTargets.add(t)
+  }
   for (const path of git(['diff', '--name-only', base, '--', '*.ts', '*.tsx'])
     .trim()
     .split('\n')
@@ -341,9 +380,11 @@ it('preserves every existing TypeScript import target in changed files', async (
       continue
     }
     const current = targets(readFileSync(resolve('..', path), 'utf8'))
-    for (const target of targets(old))
+    for (const target of targets(old)) {
+      if (current.includes(target) || headTargets.has(target)) continue
       expect(current, `${path}: existing import target ${target}`).toContain(
         target
       )
+    }
   }
 })

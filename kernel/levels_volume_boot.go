@@ -2,7 +2,7 @@ package kernel
 
 import (
 	"fmt"
-	"nofx/logger"
+	"vl/logger"
 )
 
 // LogVolumeWaveBoot (Pack B, owner override 2026-08-26) — the boot-line ledger

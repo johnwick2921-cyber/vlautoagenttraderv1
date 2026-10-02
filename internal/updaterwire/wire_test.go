@@ -45,7 +45,7 @@ func mustReject(t *testing.T, frame string, want error) {
 }
 
 // L4 CHANGE OF AN EXISTING PIN (was TestWireVerbSetIsExactlyThree, M3). The
-// M4 worker's attended `nofx-updater resume <job>` (3b-B dispatch §0/§3,
+// M4 worker's attended `vl-updater resume <job>` (3b-B dispatch §0/§3,
 // brief C14) adds exactly ONE verb, so the count this pin asserts had to
 // change; nothing else did. start_install / cancel are NOT added: install and
 // cancel-before-boundary already are those verbs, and a second spelling of a

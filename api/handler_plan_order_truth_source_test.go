@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
-	"nofx/trader"
+	"vl/kernel"
+	"vl/store"
+	"vl/trader"
 )
 
 // W-EXEC-TRUTH W5 (display) — the plan API's order-truth leg carries the

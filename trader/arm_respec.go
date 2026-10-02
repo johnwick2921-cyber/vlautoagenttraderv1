@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W1b E1 + E2 — a WORKING arm under a plan that re-priced it ─────────────

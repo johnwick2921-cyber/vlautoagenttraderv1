@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── CLASS 45 (2026-09-02) — THE PROMPT FEEDS FORWARD WHAT THE VALIDATOR KNOWS ─

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updateauth"
-	"nofx/store"
+	"vl/internal/updateauth"
+	"vl/store"
 )
 
 const bOther = "second@example.test"

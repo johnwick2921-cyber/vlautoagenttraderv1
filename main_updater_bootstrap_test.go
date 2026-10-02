@@ -10,10 +10,10 @@ import (
 	"time"
 	"unsafe"
 
-	"nofx/config"
-	"nofx/internal/updateauth"
-	"nofx/internal/updaterbootstrap"
-	"nofx/store"
+	"vl/config"
+	"vl/internal/updateauth"
+	"vl/internal/updaterbootstrap"
+	"vl/store"
 )
 
 // W-ONE-BUTTON M3 — the production call-site proof for the enrollment CLI

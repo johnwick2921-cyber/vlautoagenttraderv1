@@ -1,5 +1,5 @@
 import json,csv,hashlib,pathlib
-ROOT=pathlib.Path('/tmp/nofx-understanding-execution-20260913'); OUT=pathlib.Path('/tmp/nofx-review-06'); CAT=pathlib.Path('/tmp/nofx-repo-understanding-20260913/docs/superpowers/reports/2026-09-13-repo-understanding')
+ROOT=pathlib.Path('/tmp/vl-understanding-execution-20260913'); OUT=pathlib.Path('/tmp/vl-review-06'); CAT=pathlib.Path('/tmp/vl-repo-understanding-20260913/docs/superpowers/reports/2026-09-13-repo-understanding')
 a=next(a for a in json.load(open(CAT/'review-plan.json'))['assignments'] if a['id']==6)
 notes={}
 def add(path,body):

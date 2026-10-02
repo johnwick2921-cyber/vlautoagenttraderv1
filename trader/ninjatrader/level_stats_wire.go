@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/safe"
-	"nofx/store"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/safe"
+	"vl/store"
 )
 
 // B4 — LEVEL_STATS nightly evaluation (forward-validation table, Pack B owner

@@ -3,7 +3,7 @@ package ninjatrader
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/researchsnapshot"
+	"vl/researchsnapshot"
 	"time"
 )
 

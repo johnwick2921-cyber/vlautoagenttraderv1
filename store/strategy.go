@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"nofx/config"
-	"nofx/logger"
+	"vl/config"
+	"vl/logger"
 
 	"gorm.io/gorm"
 )
@@ -121,17 +121,6 @@ func (c *StrategyConfig) ValidateIndicatorPeriods() error {
 func (c *StrategyConfig) ClampLimits() {
 	c.NormalizeProductSchema()
 
-	// Clamp coin source limits
-	if c.CoinSource.AI500Limit > MaxCandidateCoins {
-		c.CoinSource.AI500Limit = MaxCandidateCoins
-	}
-	if c.CoinSource.OITopLimit > MaxCandidateCoins {
-		c.CoinSource.OITopLimit = MaxCandidateCoins
-	}
-	if c.CoinSource.OILowLimit > MaxCandidateCoins {
-		c.CoinSource.OILowLimit = MaxCandidateCoins
-	}
-
 	// Clamp static coins
 	if len(c.CoinSource.StaticCoins) > MaxCandidateCoins {
 		c.CoinSource.StaticCoins = c.CoinSource.StaticCoins[:MaxCandidateCoins]
@@ -226,47 +215,19 @@ func (c *StrategyConfig) ClampLimits() {
 }
 
 // NormalizeProductSchema keeps saved strategy JSON aligned with the product
-// editor schema. LLMs may emit user-facing labels such as "AI500"; persistence
+// editor schema. LLMs may emit user-facing labels such as "AI500" (a legacy
+// source that now degrades to static); persistence
 // must use the exact frontend/backend enum values.
 func (c *StrategyConfig) NormalizeProductSchema() {
 	c.StrategyType = normalizeStrategyType(c.StrategyType)
 	c.CoinSource.SourceType = normalizeCoinSourceType(c.CoinSource.SourceType)
-	if c.CoinSource.SourceType == "" {
-		c.CoinSource.SourceType = inferCoinSourceType(c.CoinSource)
-	}
-
 	switch c.CoinSource.SourceType {
-	case "ai500":
-		c.CoinSource.UseAI500 = true
-		c.CoinSource.UseOITop = false
-		c.CoinSource.UseOILow = false
-		if c.CoinSource.AI500Limit <= 0 {
-			c.CoinSource.AI500Limit = 3
-		}
-	case "oi_top":
-		c.CoinSource.UseAI500 = false
-		c.CoinSource.UseOITop = true
-		c.CoinSource.UseOILow = false
-		if c.CoinSource.OITopLimit <= 0 {
-			c.CoinSource.OITopLimit = 3
-		}
-	case "oi_low":
-		c.CoinSource.UseAI500 = false
-		c.CoinSource.UseOITop = false
-		c.CoinSource.UseOILow = true
-		if c.CoinSource.OILowLimit <= 0 {
-			c.CoinSource.OILowLimit = 3
-		}
-	case "static":
-		c.CoinSource.UseAI500 = false
-		c.CoinSource.UseOITop = false
-		c.CoinSource.UseOILow = false
-	default:
-		c.CoinSource.SourceType = "ai500"
-		c.CoinSource.UseAI500 = true
-		if c.CoinSource.AI500Limit <= 0 {
-			c.CoinSource.AI500Limit = 3
-		}
+	case "ai500", "oi_top", "oi_low":
+		// D2-DEAD (item 12): these sources were backed by the deleted legacy
+		// provider; stored rows degrade to the static coin list.
+		c.CoinSource.SourceType = "static"
+	case "":
+		c.CoinSource.SourceType = "static"
 	}
 
 	c.CoinSource.StaticCoins = normalizeSymbols(c.CoinSource.StaticCoins)
@@ -307,21 +268,6 @@ func normalizeCoinSourceType(value string) string {
 		return "static"
 	default:
 		return value
-	}
-}
-
-func inferCoinSourceType(source CoinSourceConfig) string {
-	switch {
-	case len(source.StaticCoins) > 0:
-		return "static"
-	case source.UseAI500:
-		return "ai500"
-	case source.UseOITop:
-		return "oi_top"
-	case source.UseOILow:
-		return "oi_low"
-	default:
-		return "ai500"
 	}
 }
 
@@ -1925,31 +1871,18 @@ type PromptSectionsConfig struct {
 
 // CoinSourceConfig coin source configuration
 type CoinSourceConfig struct {
-	// source type shown in the product editor: "static" | "ai500" | "oi_top" | "oi_low"
+	// source type shown in the product editor: "static" | "hyper_all" | "hyper_main" | "mixed"
 	SourceType string `json:"source_type"`
 	// static coin list (used when source_type = "static")
 	StaticCoins []string `json:"static_coins,omitempty"`
 	// excluded coins list (filtered out from all sources)
 	ExcludedCoins []string `json:"excluded_coins,omitempty"`
-	// whether to use AI500 coin pool
-	UseAI500 bool `json:"use_ai500"`
-	// AI500 coin pool maximum count
-	AI500Limit int `json:"ai500_limit,omitempty"`
-	// whether to use OI Top (OI increase ranking, suitable for long positions)
-	UseOITop bool `json:"use_oi_top"`
-	// OI Top maximum count
-	OITopLimit int `json:"oi_top_limit,omitempty"`
-	// whether to use OI Low (OI decrease ranking, suitable for short positions)
-	UseOILow bool `json:"use_oi_low"`
-	// OI Low maximum count
-	OILowLimit int `json:"oi_low_limit,omitempty"`
 	// whether to use Hyperliquid All coins (all available perp pairs)
 	UseHyperAll bool `json:"use_hyper_all"`
 	// whether to use Hyperliquid Main coins (top N by 24h volume)
 	UseHyperMain bool `json:"use_hyper_main"`
 	// Hyperliquid Main maximum count (default 20)
 	HyperMainLimit int `json:"hyper_main_limit,omitempty"`
-	// Note: API URLs are now built automatically using NofxOSAPIKey from IndicatorConfig
 }
 
 // IndicatorConfig indicator configuration
@@ -1978,30 +1911,6 @@ type IndicatorConfig struct {
 	BOLLPeriods []int `json:"boll_periods,omitempty"` // default [20] - can select multiple timeframes
 	// external data sources
 	ExternalDataSources []ExternalDataSource `json:"external_data_sources,omitempty"`
-
-	// ========== NofxOS Unified API Configuration ==========
-	// Unified API Key for all NofxOS data sources
-	NofxOSAPIKey string `json:"nofxos_api_key,omitempty"`
-
-	// quantitative data sources (capital flow, position changes, price changes)
-	EnableQuantData    bool `json:"enable_quant_data"`    // whether to enable quantitative data
-	EnableQuantOI      bool `json:"enable_quant_oi"`      // whether to show OI data
-	EnableQuantNetflow bool `json:"enable_quant_netflow"` // whether to show Netflow data
-
-	// OI ranking data (market-wide open interest increase/decrease rankings)
-	EnableOIRanking   bool   `json:"enable_oi_ranking"`             // whether to enable OI ranking data
-	OIRankingDuration string `json:"oi_ranking_duration,omitempty"` // duration: 1h, 4h, 24h
-	OIRankingLimit    int    `json:"oi_ranking_limit,omitempty"`    // number of entries (default 10)
-
-	// NetFlow ranking data (market-wide fund flow rankings - institution/personal)
-	EnableNetFlowRanking   bool   `json:"enable_netflow_ranking"`             // whether to enable NetFlow ranking data
-	NetFlowRankingDuration string `json:"netflow_ranking_duration,omitempty"` // duration: 1h, 4h, 24h
-	NetFlowRankingLimit    int    `json:"netflow_ranking_limit,omitempty"`    // number of entries (default 10)
-
-	// Price ranking data (market-wide gainers/losers)
-	EnablePriceRanking   bool   `json:"enable_price_ranking"`             // whether to enable price ranking data
-	PriceRankingDuration string `json:"price_ranking_duration,omitempty"` // durations: "1h" or "1h,4h,24h"
-	PriceRankingLimit    int    `json:"price_ranking_limit,omitempty"`    // number of entries per ranking (default 10)
 }
 
 // KlineConfig K-line configuration
@@ -2171,27 +2080,17 @@ func (s *StrategyStore) initDefaultData() error {
 
 // defaultCoinSource returns the seed coin source for a fresh strategy.
 // Futures mode (TRADING_MODE=futures) seeds the single NT8 instrument as a
-// static coin so a reseeded DB does not revert to the dead ai500 pool (the
-// reseed-durable counterpart to the runtime N11 flip). Crypto mode keeps the
-// ai500 default.
+// static coin. Crypto mode seeds an empty static list — the AI500 pool went
+// with the legacy provider (D2-DEAD item 12), so the operator sets coins.
 func defaultCoinSource() CoinSourceConfig {
 	if cfg := config.Get(); cfg != nil && cfg.TradingMode == "futures" {
 		return CoinSourceConfig{
 			SourceType:  "static",
 			StaticCoins: []string{"MNQ"},
-			AI500Limit:  3,
-			OITopLimit:  3,
-			OILowLimit:  3,
 		}
 	}
 	return CoinSourceConfig{
-		SourceType: "ai500",
-		UseAI500:   true,
-		AI500Limit: 3,
-		UseOITop:   false,
-		OITopLimit: 3,
-		UseOILow:   false,
-		OILowLimit: 3,
+		SourceType: "static",
 	}
 }
 
@@ -2228,24 +2127,6 @@ func GetDefaultStrategyConfig(lang string) StrategyConfig {
 			RSIPeriods:        []int{7, 14},
 			ATRPeriods:        []int{14},
 			BOLLPeriods:       []int{20},
-			// NofxOS unified API key
-			NofxOSAPIKey: "cm_568c67eae410d912c54c",
-			// Quant data
-			EnableQuantData:    true,
-			EnableQuantOI:      true,
-			EnableQuantNetflow: true,
-			// OI ranking data
-			EnableOIRanking:   true,
-			OIRankingDuration: "1h",
-			OIRankingLimit:    10,
-			// NetFlow ranking data
-			EnableNetFlowRanking:   true,
-			NetFlowRankingDuration: "1h",
-			NetFlowRankingLimit:    10,
-			// Price ranking data
-			EnablePriceRanking:   true,
-			PriceRankingDuration: "1h,4h,24h",
-			PriceRankingLimit:    10,
 		},
 		RiskControl: RiskControlConfig{
 			MaxPositions:                 3,   // Max 3 coins simultaneously (CODE ENFORCED)
@@ -2292,8 +2173,8 @@ Only enter positions when multiple signals resonate. Freely use any effective an
 	}
 
 	// CME futures (NT8): tune the indicator DEFAULTS for a new futures strategy —
-	// disable the crypto-only NofxOS/ranking feeds and enable the technical
-	// indicators the futures prompt leans on. Defaults-only (new-strategy
+	// enable the technical indicators the futures prompt leans on (the deleted
+	// crypto-only feeds need no disabling any more). Defaults-only (new-strategy
 	// template); existing saved strategies are never mutated. See helper.
 	if isFuturesMode() {
 		applyFuturesIndicatorDefaults(&config.Indicators)
@@ -2305,10 +2186,8 @@ Only enter positions when multiple signals resonate. Freely use any effective an
 // applyFuturesIndicatorDefaults tunes the indicator defaults for a NEW
 // CME-futures strategy (called only when isFuturesMode()):
 //
-//  1. Disable the crypto-only NofxOS / market-wide ranking feeds — they return
-//     no data for an index-futures instrument and just burn the dead claw402
-//     path (HTTP 402/404) ~4 min/cycle (plan §5310: "NQ strategies just leave
-//     them disabled").
+//  1. Keep Open Interest OFF — it is the Binance crypto-perp feed and the
+//     futures path never reads it (W-NO-BINANCE A).
 //  2. Enable the computed technical indicators the futures prompt actually leans
 //     on — ATR (stop sizing), EMA (trend), RSI (momentum) — which otherwise
 //     default OFF, leaving the futures AI with raw bars + volume only. Periods
@@ -2319,13 +2198,6 @@ Only enter positions when multiple signals resonate. Freely use any effective an
 // GetDefaultStrategyConfig (the new-strategy template) — existing saved
 // strategies are never touched. MACD/BOLL are deliberately left off.
 func applyFuturesIndicatorDefaults(ind *IndicatorConfig) {
-	// (1) crypto-only feeds OFF on futures.
-	ind.EnableQuantData = false
-	ind.EnableQuantOI = false
-	ind.EnableQuantNetflow = false
-	ind.EnableOIRanking = false
-	ind.EnableNetFlowRanking = false
-	ind.EnablePriceRanking = false
 	// Open Interest is the Binance crypto-perp feed too — the futures path never
 	// reads it (W-NO-BINANCE A: OI is absent and renders n/a on MNQ; the NT8
 	// bridge carries OHLCV only). Off by default so a new futures strategy
@@ -2532,12 +2404,19 @@ func (c *StrategyConfig) applyMissingDefaults() {
 	// Coin source: a blank source_type with no static coins and no source flags
 	// means the block was never set. Default the TYPE to "static" — matching the
 	// engine-level guard in GetCandidateCoins (commit abda753d) so the two layers
-	// agree — rather than the crypto ai500 default, which would be wrong for a
+	// agree — rather than a legacy pool default, which would be wrong for a
 	// futures trader. An empty static list then degrades to the upstream
 	// "no candidates" path instead of the unknown-type hard error.
 	if c.CoinSource.SourceType == "" && len(c.CoinSource.StaticCoins) == 0 &&
-		!c.CoinSource.UseAI500 && !c.CoinSource.UseOITop && !c.CoinSource.UseOILow &&
 		!c.CoinSource.UseHyperAll && !c.CoinSource.UseHyperMain {
+		c.CoinSource.SourceType = "static"
+	}
+	// D2-DEAD (item 12): the ai500/oi_top/oi_low coin sources were backed by the
+	// deleted legacy provider. Stored rows still carry those values (the owner's
+	// saved strategies are read, never migrated), so the loader degrades them to
+	// the static coin list here instead of leaving an unknown source_type live.
+	switch c.CoinSource.SourceType {
+	case "ai500", "oi_top", "oi_low":
 		c.CoinSource.SourceType = "static"
 	}
 
@@ -2586,8 +2465,6 @@ type TokenEstimate struct {
 type TokenBreakdown struct {
 	SystemPrompt  int `json:"system_prompt"`
 	MarketData    int `json:"market_data"`
-	RankingData   int `json:"ranking_data"`
-	QuantData     int `json:"quant_data"`
 	FixedOverhead int `json:"fixed_overhead"`
 }
 
@@ -2729,50 +2606,8 @@ func (c *StrategyConfig) EstimateTokens() TokenEstimate {
 
 	breakdown.MarketData = totalMarketChars / 4 // numeric data: ~4 chars per token
 
-	// --- Quant Data ---
-	if c.Indicators.EnableQuantData {
-		quantCharsPerCoin := 0
-		if c.Indicators.EnableQuantOI {
-			quantCharsPerCoin += 300
-		}
-		if c.Indicators.EnableQuantNetflow {
-			quantCharsPerCoin += 300
-		}
-		breakdown.QuantData = (numCoins * quantCharsPerCoin) / 4
-	}
-
-	// --- Ranking Data ---
-	rankingChars := 0
-	if c.Indicators.EnableOIRanking {
-		limit := c.Indicators.OIRankingLimit
-		if limit <= 0 {
-			limit = 10
-		}
-		rankingChars += limit * 60
-	}
-	if c.Indicators.EnableNetFlowRanking {
-		limit := c.Indicators.NetFlowRankingLimit
-		if limit <= 0 {
-			limit = 10
-		}
-		rankingChars += limit * 80
-	}
-	if c.Indicators.EnablePriceRanking {
-		limit := c.Indicators.PriceRankingLimit
-		if limit <= 0 {
-			limit = 10
-		}
-		// Count durations (comma-separated)
-		numDurations := 1
-		if c.Indicators.PriceRankingDuration != "" {
-			numDurations = len(strings.Split(c.Indicators.PriceRankingDuration, ","))
-		}
-		rankingChars += limit * numDurations * 40
-	}
-	breakdown.RankingData = rankingChars / 4
-
 	// --- Total with 15% safety margin ---
-	subtotal := breakdown.SystemPrompt + breakdown.MarketData + breakdown.RankingData + breakdown.QuantData + breakdown.FixedOverhead
+	subtotal := breakdown.SystemPrompt + breakdown.MarketData + breakdown.FixedOverhead
 	total := subtotal * 115 / 100
 
 	// --- Model limits ---
@@ -2838,14 +2673,10 @@ func (c *StrategyConfig) getEffectiveCoinCount() int {
 	switch c.CoinSource.SourceType {
 	case "static":
 		count = len(c.CoinSource.StaticCoins)
-	case "ai500":
-		count = c.CoinSource.AI500Limit
-	case "oi_top":
-		count = c.CoinSource.OITopLimit
-	case "oi_low":
-		count = c.CoinSource.OILowLimit
+	case "hyper_main":
+		count = c.CoinSource.HyperMainLimit
 	default:
-		count = c.CoinSource.AI500Limit
+		count = len(c.CoinSource.StaticCoins)
 	}
 	if count <= 0 {
 		count = 3

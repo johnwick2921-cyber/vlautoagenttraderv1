@@ -1,8 +1,8 @@
 """Extract only execution evidence from raw logs; never write source logs."""
 from pathlib import Path
 import re
-root=Path('/home/hoang/nofx/data'); closes=[]; provenance=[];trace=[];guard=[]
-for p in sorted(root.glob('nofx_2026-*.log')):
+root=Path('/home/hoang/vl/data'); closes=[]; provenance=[];trace=[];guard=[]
+for p in sorted(root.glob('vl_2026-*.log')):
  for n,line in enumerate(p.open(errors='replace'),1):
   clean=re.sub(r'\x1b\[[0-9;]*m','',line).strip()
   if 'NT position closed: MNQ' in clean:

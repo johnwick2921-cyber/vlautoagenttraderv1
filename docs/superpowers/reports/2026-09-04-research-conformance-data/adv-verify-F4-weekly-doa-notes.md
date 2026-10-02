@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial re-verification — F4 weekly DOA breach-at-write guard
 
 Verdict: **peer's non-conformance / DEAD finding CONFIRMED.** I could not refute it. Two
@@ -21,7 +22,7 @@ citation defects in their write-up are corrected below; neither changes the verd
     hits in `trader/invalidation_resolver.go:71` / `store/strategy.go:1340` are the scenario
     arm-gate subsystem, a different rule.
 - Retirement is in the running binary: `git merge-base --is-ancestor 830717dd 70af663d` → **YES**.
-- Their log quote is **verbatim real**: `/home/hoang/nofx/data/nofx_2026-09-02.log:50197`
+- Their log quote is **verbatim real**: `/home/hoang/vl/data/vl_2026-09-02.log:50197`
   `09-02 19:06:24 [WARN] … 📅 WEEKLY READ 2026-08-31 stamped NEUTRAL AT WRITE (F5 DOA) —
   invalidation 29811.75 already crossed by a closed 1h bar`. The emitting code no longer exists
   (`git log -S "NEUTRAL AT WRITE" -- '*.go'` → added 59dc9460, removed 830717dd/654fd1da).
@@ -43,7 +44,7 @@ citation defects in their write-up are corrected below; neither changes the verd
 2. **"2h31m before the class-50 boot" is measured to the COMMIT, not a boot.** 19:06:24 CT →
    `830717dd 2026-09-02 21:38:05 -0500` = 2h31m41s, which is the commit. The first *deployed* rev
    containing 830717dd booted at `09-02 22:37:38 🔐 BOOT INTEGRITY OK — rev 1cee77a87f1d`
-   (nofx_2026-09-02.log:62012) — **3h31m14s** after the firing. Revs booted at 20:42 (575e9c05),
+   (vl_2026-09-02.log:62012) — **3h31m14s** after the firing. Revs booted at 20:42 (575e9c05),
    21:19 (bb8b5419) and 21:32 (56904ec1) do **not** contain it.
 3. **n was never quoted.** "Last live firing" rests on n=1 weekly doc row. Say so.
 

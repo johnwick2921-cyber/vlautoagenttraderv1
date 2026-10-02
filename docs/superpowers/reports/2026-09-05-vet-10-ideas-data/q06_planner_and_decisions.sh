@@ -1,6 +1,6 @@
 #!/bin/bash
 # q06: planner facts, rejected prompts, decision_records cadence + refusals
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "--- planner_read_facts: bias ai vs tree vs regime, tokens_in"
 sqlite3 -header "$DB" "select trade_date, session, version, bias_ai, bias_tree, bias_regime, tokens_in, void_count, round(stop_floor_pts,1) sf, round(atr5m,1) atr, scope_bars from planner_read_facts order by trade_date, session"
 echo "--- agreement counts"

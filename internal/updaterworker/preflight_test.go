@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // Every preflight refusal (brief row 4, C19, C20, C22) ends the job REFUSED

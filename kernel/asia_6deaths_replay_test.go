@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // THE 2026-08-16 ASIA POST-MORTEM — a replay of all six versions.
@@ -16,7 +16,7 @@ import (
 // survives. If a future change resurrects the loop, these six fail.
 //
 // INPUTS, all real:
-//   - Levels + born/died timestamps: `plans` table + journald (unit nofx).
+//   - Levels + born/died timestamps: `plans` table + journald (unit vl).
 //   - Post-reopen bars: captured verbatim from the live NT8 cache via
 //     GET /api/klines (testdata/asia_2026-08-16_reopen_1m.json, 45 bars,
 //     22:01–22:45Z, zero flat bars — the session was genuinely trading).

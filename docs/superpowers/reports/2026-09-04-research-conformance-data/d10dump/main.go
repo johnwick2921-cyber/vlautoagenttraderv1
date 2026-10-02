@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"nofx/expectancy"
-	"nofx/store/sqlitedriver" // the ONE sqlite registration site (DS-102 fold, CTO 1790305899255)
+	"vl/expectancy"
+	"vl/store/sqlitedriver" // the ONE sqlite registration site (DS-102 fold, CTO 1790305899255)
 
 	"gorm.io/gorm"
 	gl "gorm.io/gorm/logger"

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // ── M3 integration (ha2 verify note A, CTO 1790242842706) — the users-table
@@ -23,7 +23,7 @@ import (
 func TestUsersWriterCensusSeesNestedSkipNamedDirs(t *testing.T) {
 	base := func() string {
 		root := t.TempDir()
-		censusWrite(t, root, "go.mod", "module nofx\n\ngo 1.25\n")
+		censusWrite(t, root, "go.mod", "module vl\n\ngo 1.25\n")
 		censusWrite(t, root, "store/user.go", "package store\n\ntype User struct{ ID string }\n\ntype UserStore struct{}\n")
 		return root
 	}

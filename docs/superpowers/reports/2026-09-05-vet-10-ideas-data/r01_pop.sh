@@ -1,4 +1,4 @@
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "== era rows by plan_id UNRESOLVABLE =="
 sqlite3 "$DB" "select id, plan_id, source, plan_session, pnl_corrected, side from trader_positions where entry_time >= strftime('%s','2026-08-15 00:00:00')*1000 and plan_id='UNRESOLVABLE' order by id;"
 echo "== count era, era non-test, non-null pnl =="

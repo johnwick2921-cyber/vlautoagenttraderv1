@@ -6,10 +6,10 @@ import (
 	"strings"
 	"sync"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/safe"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	"vl/safe"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // PICTURE-HTF BROKER STATE (2026-09-20) — the live consumer of RECEIVED

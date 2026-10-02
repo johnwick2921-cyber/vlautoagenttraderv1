@@ -1,5 +1,5 @@
 import io,sys
-P='/home/hoang/nofx-vet-05/docs/superpowers/reports/2026-09-05-vet-05-execution.md'
+P='/home/hoang/vl-vet-05/docs/superpowers/reports/2026-09-05-vet-05-execution.md'
 s=open(P,encoding='utf-8').read()
 E=[]
 def rep(old,new,tag):
@@ -20,7 +20,7 @@ rep("""3. **Repair measurement before changing exits.** The valid performance co
 
 # ---------- EVIDENCE CONTRACT ----------
 rep("""Exclude test source, NULL corrected P&L, unresolved/unresolvable rows and correction notes. **71 era rows, 65 eligible**; excluded position ids **572–574, 576, 577, 579**. NULL excursion fields are excluded only from excursion calculations.""",
-"""Exclude test source (`source='e7_farside_test'`), NULL corrected P&L, and the attribution sentinel `plan_id='UNRESOLVABLE'`. **71 era rows, 58 eligible**; excluded position ids **572, 573, 574** (test seam), **576, 577, 579** (`pnl_corrected` NULL), and **530, 539, 545, 546, 566, 571, 580** (`plan_id='UNRESOLVABLE'`, Σ **−$97.50**). A further **516** all-time rows are pre-era. **CORRECTION, my error [A].** The draft announced this exclusion and did not execute it: `q31_verified.py:19` filters `close_reason` and `pnl_correction_note` and never tests `plan_id`, so all seven sentinel rows sat inside the performance set and every primary figure ran on 65 rows where the rule gives 58. `SELECT id,plan_id,source,pnl_corrected FROM trader_positions WHERE entry_time>=1786770000000 AND plan_id='UNRESOLVABLE'` → 530(+13.0), 539(−84.5), 545(−29.5), 546(−88.5), 566(+97.0), 571(−44.5), 580(+39.5). The arithmetic was right; the population was not. Every figure below is re-cut on **58**; the 65-row cut appears only where labelled **sensitivity**. Re-derivation: `~/nofx-analysis/vet-05-0905/revise/r01_compliant.py` → `r01_compliant.out`. The seven sentinels exactly reconcile the two totals: −563.93 + 97.50 = −466.43.""","contract-pop")
+"""Exclude test source (`source='e7_farside_test'`), NULL corrected P&L, and the attribution sentinel `plan_id='UNRESOLVABLE'`. **71 era rows, 58 eligible**; excluded position ids **572, 573, 574** (test seam), **576, 577, 579** (`pnl_corrected` NULL), and **530, 539, 545, 546, 566, 571, 580** (`plan_id='UNRESOLVABLE'`, Σ **−$97.50**). A further **516** all-time rows are pre-era. **CORRECTION, my error [A].** The draft announced this exclusion and did not execute it: `q31_verified.py:19` filters `close_reason` and `pnl_correction_note` and never tests `plan_id`, so all seven sentinel rows sat inside the performance set and every primary figure ran on 65 rows where the rule gives 58. `SELECT id,plan_id,source,pnl_corrected FROM trader_positions WHERE entry_time>=1786770000000 AND plan_id='UNRESOLVABLE'` → 530(+13.0), 539(−84.5), 545(−29.5), 546(−88.5), 566(+97.0), 571(−44.5), 580(+39.5). The arithmetic was right; the population was not. Every figure below is re-cut on **58**; the 65-row cut appears only where labelled **sensitivity**. Re-derivation: `~/vl-analysis/vet-05-0905/revise/r01_compliant.py` → `r01_compliant.out`. The seven sentinels exactly reconcile the two totals: −563.93 + 97.50 = −466.43.""","contract-pop")
 
 rep("""- Performance row set **P** = `521–571, 575, 578, 580–591`. Each figure below names ids directly or an explicit keyed manifest.""",
 """- Performance row set **P** (n=58) = `521–529, 531–538, 540–544, 547–565, 567–570, 575, 578, 581–591`. Sensitivity set **P65** = `521–571, 575, 578, 580–591`. Each figure below names ids directly or an explicit keyed manifest.""","contract-P")
@@ -33,7 +33,7 @@ rep("""`🛑 arm stop NY S1 leg 1 short: stop 29354.91 (authored 29340.00 WIDENE
 1.5`; `:39` `MinSLTickClearance = 2` (the "beyond 29293.50").""",
 """`🛑 arm stop NY S1 leg 1 short: stop 29354.91 (authored 29340.00 WIDENED) · anchor ONH
 29293.00 → beyond 29293.50 · atr_floor 29354.91 (1.5×ATR5m 46.61) · bound=atr_floor`
-(`nofx_2026-09-02.log:84978`). **CORRECTION, my error [A]:** the draft truncated this line
+(`vl_2026-09-02.log:84978`). **CORRECTION, my error [A]:** the draft truncated this line
 before `atr_floor` and then declared the placement-time ATR unavailable. It is on the record —
 ATR5m **46.61**, floor 1.5 × 46.61 = **69.915 pts**, 29285 + 69.915 = 29354.915 = the composed
 stop — and `bound=atr_floor` says the ATR leg, not the 2-tick anchor clearance, set it. The
@@ -47,7 +47,7 @@ rep("""**order_update → Go [A].** `📡 armed order_update summary (1-line/min
 initialized=1` and `⚡ armed fill S1 @ 29285.00 (entry_class=armed_fill — stale_reeval NOT
 applied)` at **09:05:35** — 102 s after NT8's Filled""",
 """**order_update → Go [A].** `⚡ armed fill S1 @ 29285.00 (entry_class=armed_fill — stale_reeval
-NOT applied)` at **09:05:35** (`nofx_2026-09-02.log:85031`) — 102 s after NT8's Filled. That
+NOT applied)` at **09:05:35** (`vl_2026-09-02.log:85031`) — 102 s after NT8's Filled. That
 line is emitted only inside `onArmedOrderUpdate`'s `"filled"` branch (`armed_executor.go:1216`),
 so a filled frame was demonstrably consumed at that second. **CORRECTION, my error [A]:** the
 draft also offered the `📡 armed order_update summary (1-line/min): frames=1 initialized=1`

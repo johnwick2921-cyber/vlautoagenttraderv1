@@ -7,13 +7,13 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"nofx/logger"
+	"vl/logger"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/elliottech/lighter-go/types"
-	tradertypes "nofx/trader/types"
+	tradertypes "vl/trader/types"
 )
 
 // OpenLong Open long position (implements Trader interface)

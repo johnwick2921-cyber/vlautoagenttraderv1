@@ -3,8 +3,8 @@ package trader
 import (
 	"fmt"
 	"math"
-	"nofx/kernel"
-	"nofx/logger"
+	"vl/kernel"
+	"vl/logger"
 	"time"
 )
 

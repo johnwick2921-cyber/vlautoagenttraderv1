@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/mcp"
-	_ "nofx/mcp/payment"
-	_ "nofx/mcp/provider"
-	"nofx/store"
 	"time"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/mcp"
+	_ "vl/mcp/payment"
+	_ "vl/mcp/provider"
+	"vl/store"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -22,13 +22,6 @@ func validateStrategyConfig(config *store.StrategyConfig) []string {
 	var warnings []string
 	if config.StrategyType == "grid_trading" {
 		return warnings
-	}
-
-	// Validate NofxOS API key if any NofxOS feature is enabled
-	if (config.Indicators.EnableQuantData || config.Indicators.EnableOIRanking ||
-		config.Indicators.EnableNetFlowRanking || config.Indicators.EnablePriceRanking) &&
-		config.Indicators.NofxOSAPIKey == "" {
-		warnings = append(warnings, "NofxOS API key is not configured. NofxOS data sources may not work properly.")
 	}
 
 	return warnings
@@ -651,17 +644,8 @@ func (s *Server) handleStrategyTestRun(c *gin.Context) {
 		req.PromptVariant = "balanced"
 	}
 
-	claw402WalletKey, err := s.resolveStrategyDataWalletKey(userID, req.AIModelID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":       err.Error(),
-			"ai_response": "",
-		})
-		return
-	}
-
 	// Create strategy engine to build prompt
-	engine := kernel.NewStrategyEngine(&req.Config, claw402WalletKey)
+	engine := kernel.NewStrategyEngine(&req.Config)
 
 	// Get candidate coins
 	candidates, err := engine.GetCandidateCoins()
@@ -718,22 +702,6 @@ func (s *Server) handleStrategyTestRun(c *gin.Context) {
 		marketDataMap[coin.Symbol] = data
 	}
 
-	// Fetch quantitative data for each candidate coin
-	symbols := make([]string, 0, len(candidates))
-	for _, c := range candidates {
-		symbols = append(symbols, c.Symbol)
-	}
-	quantDataMap := engine.FetchQuantDataBatch(symbols)
-
-	// Fetch OI ranking data (market-wide position changes)
-	oiRankingData := engine.FetchOIRankingData()
-
-	// Fetch NetFlow ranking data (market-wide fund flow)
-	netFlowRankingData := engine.FetchNetFlowRankingData()
-
-	// Fetch Price ranking data (market-wide gainers/losers)
-	priceRankingData := engine.FetchPriceRankingData()
-
 	// Build real context (for generating User Prompt)
 	testContext := &kernel.Context{
 		CurrentTime:    kernel.FormatCT(time.Now()),
@@ -749,14 +717,10 @@ func (s *Server) handleStrategyTestRun(c *gin.Context) {
 			MarginUsedPct:    0,
 			PositionCount:    0,
 		},
-		Positions:          []kernel.PositionInfo{},
-		CandidateCoins:     candidates,
-		PromptVariant:      req.PromptVariant,
-		MarketDataMap:      marketDataMap,
-		QuantDataMap:       quantDataMap,
-		OIRankingData:      oiRankingData,
-		NetFlowRankingData: netFlowRankingData,
-		PriceRankingData:   priceRankingData,
+		Positions:      []kernel.PositionInfo{},
+		CandidateCoins: candidates,
+		PromptVariant:  req.PromptVariant,
+		MarketDataMap:  marketDataMap,
 	}
 
 	// Build System Prompt (Phase 3 — pass the strategy's symbol; defaults to MNQ).
@@ -851,10 +815,6 @@ func (s *Server) runRealAITest(userID, modelID, systemPrompt, userPrompt string)
 	}
 
 	return response, nil
-}
-
-func (s *Server) resolveStrategyDataWalletKey(userID, selectedModelID string) (string, error) {
-	return s.store.AIModel().ResolveClaw402WalletKey(userID, selectedModelID)
 }
 
 // logConfigDiff renders and persists the per-save resolved-knob diff. Failures

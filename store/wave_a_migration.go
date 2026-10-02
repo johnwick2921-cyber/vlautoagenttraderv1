@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"vl/internal/envcompat"
 )
 
 // ── WAVE A / D1e + D2c — THE RECORD, MIGRATED HONESTLY ───────────────────────
@@ -46,11 +48,11 @@ func WaveARecordMigrateEnabled() bool {
 // BackupBeforeWaveA copies the DB before any guarded write. No backup, no
 // write — the same contract BackupBeforeRegrade enforces.
 func BackupBeforeWaveA(dbPath, stamp string) (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("resolve home: %w", err)
+	root := envcompat.BackupRoot() // R5 removes: vl-backups wins, nofx-backups only when ~/nofx exists
+	if root == "" {
+		return "", fmt.Errorf("resolve home for the backup dir")
 	}
-	dir := filepath.Join(home, "nofx-backups", "wave-a-record")
+	dir := filepath.Join(root, "wave-a-record")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", fmt.Errorf("create backup dir: %w", err)
 	}

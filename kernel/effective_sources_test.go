@@ -6,7 +6,7 @@ package kernel
 import (
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func TestResolveMaxContractsWithSourceParity(t *testing.T) {

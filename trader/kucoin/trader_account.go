@@ -3,7 +3,7 @@ package kucoin
 import (
 	"encoding/json"
 	"fmt"
-	"nofx/logger"
+	"vl/logger"
 	"time"
 )
 

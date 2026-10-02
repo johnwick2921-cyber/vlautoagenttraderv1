@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // T3 — the swing-point detector emits the recent fractal extremes on the 5m and

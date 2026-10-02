@@ -3,7 +3,7 @@ package trader
 import (
 	"sync"
 
-	"nofx/telemetry"
+	"vl/telemetry"
 )
 
 // ── W-ONE-BUTTON M2 site 5 — planner claims are refused while held ─────────

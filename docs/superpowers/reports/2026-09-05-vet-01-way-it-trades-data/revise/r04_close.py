@@ -1,5 +1,5 @@
 import json,sqlite3
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True)
 cur=con.cursor()
 cur.execute("SELECT id,timestamp,decision_json FROM decision_records WHERE date(timestamp,'-5 hours')>='2026-08-18'")
 closes=[]

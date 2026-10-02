@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // TestBootLineReportsTheBOUNDStrategy — the defect this wave shipped and the

@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	"nofx/store"
+	"vl/store"
 	"strings"
 	"testing"
 )

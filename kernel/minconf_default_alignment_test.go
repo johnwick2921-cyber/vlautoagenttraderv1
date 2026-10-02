@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // 6.1 (final-bundle 2026-08-19) — ONE min-confidence default, and the active

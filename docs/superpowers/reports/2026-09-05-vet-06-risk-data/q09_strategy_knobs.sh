@@ -1,6 +1,6 @@
 #!/bin/bash
 # q09 — the BOUND strategy's guardrail knob VALUES (traders.strategy_id -> strategies), never LIMIT 1 (class 9)
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "--- traders (id, name, strategy_id, exchange, is_running) ---"
 sqlite3 "$DB" "SELECT id, name, strategy_id, exchange_id, is_running FROM traders;" 2>&1 | cut -c1-200
 echo "--- strategies columns ---"
@@ -8,7 +8,7 @@ sqlite3 "$DB" "PRAGMA table_info(strategies);" | cut -d'|' -f2 | tr '\n' ' '; ec
 echo "--- bound strategy config: risk-related keys ---"
 python3 - <<'PY'
 import sqlite3, json
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 trs = con.execute("SELECT id, name, strategy_id FROM traders").fetchall()
 for tid, name, sid in trs:
     row = con.execute("SELECT name, config FROM strategies WHERE id=?", (sid,)).fetchone()

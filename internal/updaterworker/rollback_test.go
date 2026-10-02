@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // PIN (dispatch §4(4)): a Watch that never proves the new build rolls back to

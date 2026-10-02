@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W5 (builder A) — a machine-only chain is "no plan" to the

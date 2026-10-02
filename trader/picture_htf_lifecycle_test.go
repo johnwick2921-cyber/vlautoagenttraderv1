@@ -3,8 +3,8 @@ package trader
 import (
 	"testing"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W4 / D25 — a stopped trader keeps receiving frames, and an

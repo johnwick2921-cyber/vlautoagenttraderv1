@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // G1 (CTO review part 2) — the three OrderedOwned skip guards are pinned at the

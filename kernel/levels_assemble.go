@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/logger"
-	"nofx/market"
+	"vl/logger"
+	"vl/market"
 )
 
 // P1.7 — assemble every detector → confluence scorer → the KEY LEVELS prompt

@@ -1,5 +1,5 @@
 import sqlite3, math, statistics as st
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 c=sqlite3.connect(DB,uri=True); c.row_factory=sqlite3.Row
 ERA=1786770000000  # 2026-08-15 00:00 CT
 rows=[dict(r) for r in c.execute(

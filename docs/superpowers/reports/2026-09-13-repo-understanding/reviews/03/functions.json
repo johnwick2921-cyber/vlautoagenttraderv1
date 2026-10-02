@@ -4972,7 +4972,7 @@
         },
         {
           "kind": "observed_call_expression",
-          "expression": "prependNOFXiAdvisorPreamble",
+          "expression": "prependVLiAdvisorPreamble",
           "line": 176,
           "resolution": "syntax-only; not type-resolved"
         },
@@ -14554,7 +14554,7 @@
         },
         {
           "kind": "observed_call_expression",
-          "expression": "prependNOFXiAdvisorPreamble",
+          "expression": "prependVLiAdvisorPreamble",
           "line": 2910,
           "resolution": "syntax-only; not type-resolved"
         },
@@ -15772,7 +15772,7 @@
         },
         {
           "kind": "observed_call_expression",
-          "expression": "prependNOFXiAdvisorPreamble",
+          "expression": "prependVLiAdvisorPreamble",
           "line": 3391,
           "resolution": "syntax-only; not type-resolved"
         },
@@ -17638,7 +17638,7 @@
     },
     {
       "path": "agent/prompt_persona.go",
-      "name": "prependNOFXiAdvisorPreamble",
+      "name": "prependVLiAdvisorPreamble",
       "receiver": "",
       "start_line": 22,
       "end_line": 28,

@@ -3,7 +3,7 @@
 where the 12 sample session-days sit; the share of history in vol regimes the sample never saw."""
 import sqlite3, datetime, zoneinfo, statistics as st, math
 ct = zoneinfo.ZoneInfo("America/Chicago")
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 rows = con.execute("SELECT open_time_ms,o,h,l,c,v FROM bars WHERE symbol='MNQ' AND tf='1d' ORDER BY open_time_ms").fetchall()
 print("1d rows:", len(rows), "first", datetime.datetime.fromtimestamp(rows[0][0]/1000, ct).date(), "last", datetime.datetime.fromtimestamp(rows[-1][0]/1000, ct).date())
 # gaps check

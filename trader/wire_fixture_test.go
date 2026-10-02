@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0b (CTO M7) — a wire fixture waits for the server to

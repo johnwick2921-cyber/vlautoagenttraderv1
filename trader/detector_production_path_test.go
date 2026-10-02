@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // 1B WIRING PROOF (owner ruling 2026-09-03). The pre-existing

@@ -1,5 +1,5 @@
 import pathlib,csv,json,re,math,sqlite3,datetime,zoneinfo,subprocess
-D=pathlib.Path('/home/hoang/nofx-vet-07-complete/docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data'); W=D.parents[3]
+D=pathlib.Path('/home/hoang/vl-vet-07-complete/docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data'); W=D.parents[3]
 def save(n,x):(D/n).write_text(json.dumps(x,indent=2,ensure_ascii=False)+'\n')
 def wi(k,n):
  z=1.96;p=k/n;d=1+z*z/n;h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n));return [round(100*(p+z*z/(2*n)-h)/d,2),round(100*(p+z*z/(2*n)+h)/d,2)]
@@ -9,7 +9,7 @@ for r in rs:
  hit=next((n for n,p in patterns if re.search(p,r['reject_reason'],re.I)),'UNCLASSIFIED');groups.setdefault(hit,[]).append(int(r['id']))
 assert 'UNCLASSIFIED' not in groups,groups
 save('reject-groups.json',[{'rule':k,'n':len(v),'share_of_64':round(100*len(v)/64,3),'wilson95_percent':wi(len(v),64),'ids':v} for k,v in sorted(groups.items(),key=lambda kv:-len(kv[1]))])
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('pragma query_only=on');c.execute('begin')
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('pragma query_only=on');c.execute('begin')
 records=[]
 for rr in c.execute("select id,timestamp,decision_json,execution_log,ai_request_duration_ms,system_prompt from decision_records where datetime(timestamp)>=datetime('2026-08-29 05:00:00') and datetime(timestamp)<datetime('2026-09-05 05:00:00')"):
  try: ds=json.loads(rr['decision_json'])

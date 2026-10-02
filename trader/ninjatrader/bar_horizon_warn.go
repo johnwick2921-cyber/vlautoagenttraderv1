@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/logger"
+	ntwire "vl/provider/ninjatrader"
+	"vl/telemetry"
 )
 
 // ── THE BAR-HORIZON WARN (wave BARS HORIZON, 2026-09-09) ─────────────────────

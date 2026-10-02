@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // TestArmedLifecycleFailureFailsSlotClosed is the P1-E pin (audit 2026-09-26):

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"nofx/mcp"
-	"nofx/mcp/provider"
+	"vl/mcp"
+	"vl/mcp/provider"
 )
 
 // ============================================================

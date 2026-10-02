@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 const futuresEmptyGolden = "testdata/futures_mnq_empty.golden"

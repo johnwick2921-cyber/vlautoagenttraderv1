@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"nofx/config"
-	"nofx/discipline"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/mcp"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/config"
+	"vl/discipline"
+	"vl/logger"
+	"vl/market"
+	"vl/mcp"
+	"vl/store"
+	"vl/telemetry"
 	"regexp"
 	"strings"
 	"time"
@@ -309,22 +309,6 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	var snapshotBars []market.Kline
 	if market.FuturesBarsProvider != nil {
 		snapshotBars = market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount)
-	}
-
-	// Ensure OITopDataMap is initialized
-	if ctx.OITopDataMap == nil {
-		ctx.OITopDataMap = make(map[string]*OITopData)
-		oiPositions, err := engine.nofxosClient.GetOITopPositions()
-		if err == nil {
-			for _, pos := range oiPositions {
-				ctx.OITopDataMap[pos.Symbol] = &OITopData{
-					Rank:              pos.Rank,
-					OIDeltaPercent:    pos.OIDeltaPercent,
-					OIDeltaValue:      pos.OIDeltaValue,
-					PriceDeltaPercent: pos.PriceDeltaPercent,
-				}
-			}
-		}
 	}
 
 	// 2. Build System Prompt using strategy engine

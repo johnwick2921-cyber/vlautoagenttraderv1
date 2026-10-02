@@ -1,24 +1,25 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # LOCK — ATOMIC CREATE + HEARTBEAT (checklist class 70)
 
 **Branch:** `fix/lock-atomic-heartbeat`, built ON TOP of a peer lane's `ec2dd8f7`
 (see §6 — two sessions were dispatched the same wave and both wrote it)
 **Checklist:** entry **70** — number assigned AT MERGE (A16); highest occupied on dev was
-**69**, nofx-b3's "reported wired, called by nobody", merged in that same boot.
+**69**, vl-b3's "reported wired, called by nobody", merged in that same boot.
 **Scope:** ops surface only. No Go file, no binary, no cutover, no boot.
 
 ---
 
 ## 1. The defect, stated once
 
-`~/nofx-main.lock` was **one flat file, written with `>`, carrying a pid, read with
+`~/vl-main.lock` was **one flat file, written with `>`, carrying a pid, read with
 `kill -0`**. On 2026-09-03 it failed in three distinct directions. Not one bug three times —
 three different failure modes of the same design, in one day, on one machine.
 
 | # | mode | what happened | who caught it |
 |---|---|---|---|
-| a | **dead pid, live owner** | agents wrote `pid=$$`; every tool call is a fresh shell, so the pid was dead within a second while its owner worked on | nofx-ed, who found an unexpired lock whose `kill -0` failed and correctly did **not** clear it |
-| b | **live pid, silently replaced** | `>` truncates; a second acquirer clobbered an active cutover's lock with no error and no trace | nofx-b3, three minutes after I overwrote their lock |
-| c | **stale pid after resume** | a session resumed under a new pid and wrote a lock naming its own former, now-dead process | nofx-b3, on themselves, by running `kill -0` against their own note before trusting it |
+| a | **dead pid, live owner** | agents wrote `pid=$$`; every tool call is a fresh shell, so the pid was dead within a second while its owner worked on | vl-ed, who found an unexpired lock whose `kill -0` failed and correctly did **not** clear it |
+| b | **live pid, silently replaced** | `>` truncates; a second acquirer clobbered an active cutover's lock with no error and no trace | vl-b3, three minutes after I overwrote their lock |
+| c | **stale pid after resume** | a session resumed under a new pid and wrote a lock naming its own former, now-dead process | vl-b3, on themselves, by running `kill -0` against their own note before trusting it |
 
 **Not one of the three was caught by the lock.** Every one was caught by a peer asking a
 question the file could not answer. That is the finding, and it is why this is a class and
@@ -32,9 +33,9 @@ scheme is an attempt to infer an answer from a proxy that does not know it.
 
 ## 2. The fix
 
-`deploy/nofx-lock.sh`. Two properties do the work:
+`deploy/vl-lock.sh`. Two properties do the work:
 
-**Atomic create.** `mkdir ~/nofx-main.lock.d` succeeds exactly once and fails if the
+**Atomic create.** `mkdir ~/vl-main.lock.d` succeeds exactly once and fails if the
 directory exists. Mode (b) is not *detected*, it is **unrepresentable** — a second acquire
 cannot overwrite, only refuse, and it names the holder and task while refusing.
 
@@ -76,7 +77,7 @@ The heartbeat makes an abandoned lock *visible*; it does not hand it over. `recl
 and only on the record:
 
 ```
-nofx-lock reclaim <new> <stale> "<what you checked>"
+vl-lock reclaim <new> <stale> "<what you checked>"
 ```
 
 - **Refused while the heartbeat is fresh**, without exception. A reclaim that can take a
@@ -91,13 +92,13 @@ nofx-lock reclaim <new> <stale> "<what you checked>"
   the failure this exists for is invisible succession and a chain that vanishes silently
   would defeat the point.
 - **rc 3, not acquire's 0.** A script can distinguish "took a free lock" from "inherited an
-  abandoned one", so a lane can refuse to inherit. Suggested by nofx-b3 and adopted.
+  abandoned one", so a lane can refuse to inherit. Suggested by vl-b3 and adopted.
 
 One peer suggestion was **not** taken: that reclaim "must refuse while the recorded pid is
 alive". There is no recorded pid any more, and adding one back to gate reclaim would
 reintroduce the class this wave removed. Staleness of the heartbeat is the whole test.
 
-## 3. Tests — `deploy/nofx-lock-test.sh`, 56 assertions
+## 3. Tests — `deploy/vl-lock-test.sh`, 56 assertions
 
 | pins | first run |
 |---|---|
@@ -115,7 +116,7 @@ reintroduce the class this wave removed. Staleness of the heartbeat is the whole
 
 ### Three defects in my own tests, found by running them
 
-1. **Three source pins passed vacuously** against a `nofx-lock.sh` that did not exist yet —
+1. **Three source pins passed vacuously** against a `vl-lock.sh` that did not exist yet —
    a green that proves nothing, which is the exact failure these pins exist to catch. The
    harness now aborts if the script is missing.
 2. **The stale pin was case-sensitive** and missed `STALE`. Both the stale and the
@@ -130,14 +131,14 @@ reintroduce the class this wave removed. Staleness of the heartbeat is the whole
 
 - `docs/superpowers/AUDIT-CHECKLIST.md` — class **70** (all three modes in ONE entry, with
   the fix and the probe); **class 13's probe** and **PART 3 step 1** both named
-  `~/nofx-main.lock (owner/PID/expiry)` and now name the new shape and the heartbeat duty.
+  `~/vl-main.lock (owner/PID/expiry)` and now name the new shape and the heartbeat duty.
 - `docs/superpowers/plans/2026-09-02-tree-guard-spec.md` — its expected-dirty suppression
-  rule was literally `if ~/nofx-main.lock exists AND its pid is alive (kill -0)`. It now
-  calls `nofx-lock.sh check` and distinguishes held-fresh (INFO) from held-stale (WARN,
+  rule was literally `if ~/vl-main.lock exists AND its pid is alive (kill -0)`. It now
+  calls `vl-lock.sh check` and distinguishes held-fresh (INFO) from held-stale (WARN,
   naming the session and the age) from no-lock (ALARM, the 08:46 signature). Its fixture
   list changed with it. The guard is still SPEC ONLY — this wave did not build it.
 - **No deploy script referenced the lock**; it was a hand-written convention, which is part
-  of why it drifted. `deploy/nofx-lock.sh` is now the one implementation.
+  of why it drifted. `deploy/vl-lock.sh` is now the one implementation.
 - **No Guide change.** GUIDE CONTENT LAW covers knobs, plays, chips, gates and defaults of
   the running bot. This is an agent-ops surface; `web/src/guide/content/*` does not mention
   the lock and would be wrong to. Stated explicitly so the omission is a ruling and not an
@@ -150,7 +151,7 @@ reintroduce the class this wave removed. Staleness of the heartbeat is the whole
 
 `ec2dd8f7` and my merge both edited `docs/superpowers/plans/2026-09-02-tree-guard-spec.md`.
 The tree-guard wave was implementing that spec's expected-dirty rule at the same time, from
-a worktree cut before either edit — so it built the **old** model: `~/nofx-main.lock`, a pid,
+a worktree cut before either edit — so it built the **old** model: `~/vl-main.lock`, a pid,
 `kill -0`.
 
 Under the new lock there is no legacy file. During a cutover that guard would have found
@@ -159,7 +160,7 @@ exists to be trusted** — running and printing normally the whole time. It woul
 on the next boot. A guard that cries wolf on every deploy is worse than no guard, because
 the next real alarm is the one everybody scrolls past.
 
-Found and fixed by nofx-ed at `ac345a7a`: the lock directory is authoritative, and the
+Found and fixed by vl-ed at `ac345a7a`: the lock directory is authoritative, and the
 legacy file is surfaced but never honoured for liveness — honouring it would restore the
 exact `kill -0` test this wave removed. One of their tests asserted the old contract and was
 migrated with its reason rather than deleted.
@@ -174,7 +175,7 @@ value read once, at a moment nobody recorded.
 
 Recorded here because it was found while checking this wave: `stash@{0}` held the class-45
 VS Code revert — 127 insertions, **596 deletions** of shipped safety code — and `git stash`
-is per-REPOSITORY, so any of this repo's 56 worktrees could pop it. nofx-47 did, by routine
+is per-REPOSITORY, so any of this repo's 56 worktrees could pop it. vl-47 did, by routine
 stash/pop; three files applied CLEANLY and staged, deleting the class-33 boot sweep.
 
 **The annotated tag `class45-found-revert-1203` is what makes a drop lossless** — it
@@ -184,7 +185,7 @@ convenience, not the guarantee.
 
 I got that wrong once and it is worth keeping: I first committed the copy as `.patch`,
 `.gitignore:143` (`*.patch`) silently swallowed it, and I reported both halves as landed
-having verified neither. nofx-47 caught it by reading `dev` rather than my report. **A tool
+having verified neither. vl-47 caught it by reading `dev` rather than my report. **A tool
 that skips silently and a report that asserts success are the same failure twice** — the
 rule this checklist already states as "read the value back out of the artifact".
 
@@ -215,21 +216,21 @@ identity, same 2-min/5-min heartbeat, same STALE-not-DEAD wording. **I did not f
 over it.** That commit is the base; mine is layered on top, and the shipped script takes the
 better half of each:
 
-**`ec2dd8f7` is nofx-47's**, confirmed by them 2026-09-03 after two wrong guesses. Nothing
+**`ec2dd8f7` is vl-47's**, confirmed by them 2026-09-03 after two wrong guesses. Nothing
 of their wave was lost: the 36 lines of extra reclaim tests they had locally are covered by
 the shipped suite (refused-on-fresh, rc nonzero, holder unchanged after refusal,
 corroboration required once stale), which they ran themselves at `bd20be31` — 56 pass, 0
 fail. **That it took three rounds of asking to establish is itself the finding.** I first
-told nofx-b3 it was theirs. They corrected it with their own timeline — their boot marker
+told vl-b3 it was theirs. They corrected it with their own timeline — their boot marker
 lands at 21:49:36, sixty seconds after `ec2dd8f7`, and at 21:48:12 they were reading a
 boot-integrity line; nobody writes 150 lines of bash in that minute. **Every commit in this
 repo carries the identical author identity (`johnwick2921-cyber`), so git cannot answer
 "which lane wrote this".** Provenance has to come from the branch, the worktree and the
 timestamp. Both wrong guesses were ruled out on evidence I verified myself before believing
 the denial:
-nofx-b3's boot marker lands 60s after `ec2dd8f7` while they were reading a boot-integrity
-line, and none of nofx-ed's six branches contains it (`git merge-base --is-ancestor`, all
-six), with their own commits bracketing the timestamp at 21:44:33 and 22:01:48. nofx-47 then
+vl-b3's boot marker lands 60s after `ec2dd8f7` while they were reading a boot-integrity
+line, and none of vl-ed's six branches contains it (`git merge-base --is-ancestor`, all
+six), with their own commits bracketing the timestamp at 21:44:33 and 22:01:48. vl-47 then
 confirmed. Their own verdict on the merge: combining rather than forcing was right, and the
 owner-scoped heartbeat I added is **a bug fix rather than a refinement** — theirs took no
 session, so any lane could beat any lock, which defeats the liveness claim the whole class
@@ -245,7 +246,7 @@ happening again.
 |---|---|
 | `heartbeat_epoch` beside the ISO stamp | reading age is integer arithmetic, no `date -d` parse at read time |
 | meta replaced via temp + `mv`, never edited in place | a reader cannot catch a half-written heartbeat |
-| **legacy `~/nofx-main.lock` surfaced in `status`** | the transition's real hazard: a lane still on the old shape is invisible to the new one. I had missed this entirely |
+| **legacy `~/vl-main.lock` surfaced in `status`** | the transition's real hazard: a lane still on the old shape is invisible to the new one. I had missed this entirely |
 | one `meta` file, and the corroboration wording | theirs was better written than mine |
 
 | kept from mine | why |

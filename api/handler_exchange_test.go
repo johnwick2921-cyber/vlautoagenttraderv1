@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"nofx/crypto"
-	"nofx/store"
+	"vl/crypto"
+	"vl/store"
 )
 
 func TestSafeExchangeConfigFromStoreIncludesCredentialPresenceFlags(t *testing.T) {

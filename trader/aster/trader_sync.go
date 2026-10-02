@@ -2,10 +2,10 @@ package aster
 
 import (
 	"fmt"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/safe"
-	"nofx/store"
+	"vl/logger"
+	"vl/market"
+	"vl/safe"
+	"vl/store"
 	"sort"
 	"strings"
 	"time"

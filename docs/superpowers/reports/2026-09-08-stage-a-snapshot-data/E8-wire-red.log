@@ -7,5 +7,5 @@ provider/ninjatrader/tcp_server.go:1677: researchWire.observe(env.Type, env.Payl
 --- FAIL: TestStageAWireProductionReadLoop (0.03s)
     research_wire_test.go:56: received frames never reached archive: counts=map[candidate:0 exec:0 market:0 plan:0 scenario:0] dropped=0
 FAIL
-FAIL	nofx/provider/ninjatrader	0.035s
+FAIL	vl/provider/ninjatrader	0.035s
 FAIL

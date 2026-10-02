@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 7 — The prompts and the trading system, complete reassessment
 
 ## One-page summary
@@ -22,11 +23,11 @@ The independently recomputed primary population is **58 closed eligible trades, 
 
 I own only Section 7. This replaces the previous report and its Appendix A in full. Older `2026-09-05-vet-07-prompts-data/` files are historical, superseded evidence, not primary results for this revision. In particular I withdraw the unsupported approximate rewrite count, deletion of FVG policy from a supposedly equivalent rewrite, weakened three-per-side mandate, retained capitalized guards, generic immediate-entry/fade repair recommendation, and any implication that those changes were applied.
 
-Worktree `/home/hoang/nofx-vet-07-complete`; branch `docs/vet-07-0905-complete`; session `codex-vet-07-complete-0905`; base `b4376246c2c502ecedd119c6a44a27956ed2f616`. Parent owns integration into dev; this worktree remains until integration. Scratch is exclusively `/home/hoang/nofx-analysis/vet-07-complete-0905`. Only this report and its own new evidence directory are changed.
+Worktree `/home/hoang/vl-vet-07-complete`; branch `docs/vet-07-0905-complete`; session `codex-vet-07-complete-0905`; base `b4376246c2c502ecedd119c6a44a27956ed2f616`. Parent owns integration into dev; this worktree remains until integration. Scratch is exclusively `/home/hoang/vl-analysis/vet-07-complete-0905`. Only this report and its own new evidence directory are changed.
 
 Here **D** means `docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data`. **P** means `D/planner-132-actual.txt`; **C** means `D/planner-132-current-contract-replay.txt`; **X** means `D/executor-37768-system_prompt.txt`; **Y** means `D/executor-37768-input_prompt.txt`. All `path:line` source references refer to the pinned base unless identified as actual stored prompts. [T] denotes measured own-tape evidence; [R] identifies a checked external source with transfer limits; [I] is my untested analytical judgment. Statements about code/text are direct inspection, not market research.
 
-Fresh read-only capture: **September 5, 17:31:40 CT**. SQLite URI `file:/home/hoang/nofx/data/data.db?mode=ro`, `PRAGMA query_only=ON`, read transaction, no schema initialization. GET `/api/health` returned 200, revision `36648655cfe0`; authenticated GET `/api/config/resolved?…&session=NY` returned 200. Authentication was signed only in memory from the existing local configuration; no `cmd/gate-jwt`, `store.New`, credential output or credential file was used. `D/capture.py:1`, `D/capture-meta.json:1`, `D/api-health.json:1`, `D/api-resolved.json:1`.
+Fresh read-only capture: **September 5, 17:31:40 CT**. SQLite URI `file:/home/hoang/vl/data/data.db?mode=ro`, `PRAGMA query_only=ON`, read transaction, no schema initialization. GET `/api/health` returned 200, revision `36648655cfe0`; authenticated GET `/api/config/resolved?…&session=NY` returned 200. Authentication was signed only in memory from the existing local configuration; no `cmd/gate-jwt`, `store.New`, credential output or credential file was used. `D/capture.py:1`, `D/capture-meta.json:1`, `D/api-health.json:1`, `D/api-resolved.json:1`.
 
 Spec freshness at the pinned base: SYSTEM-MAP `a96224dd`, 2026-09-04 09:07:37−05:00; AUDIT-CHECKLIST `15340faa`, 2026-09-04 13:22:07−05:00. The renewed user instruction to cut from origin/dev governs over PART 2 R9's running-revision wording. There is no deployment in this section.
 

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Wave 1D — per-condition expectancy on the corrected column
 
-**Branch** `fix/expectancy-1d` (worktree `~/nofx-expectancy`, off `origin/dev` 5ebeb5a2)
+**Branch** `fix/expectancy-1d` (worktree `~/vl-expectancy`, off `origin/dev` 5ebeb5a2)
 **Status** BUILT, GREEN, **NOT DEPLOYED** — the cutover needs the owner's GO (A3).
 **Scope** a read model, one read-only endpoint, one Studio panel, Guide §14, checklist.
 It gates nothing, sizes nothing, prompts nothing. Class 23/A10 throughout: a failure
@@ -83,14 +84,14 @@ Split by **timestamp, not session-day**, because 0B booted mid-day (E3).
 **RED** (`go test ./expectancy/`, before any implementation existed):
 
 ```
-# nofx/expectancy [nofx/expectancy.test]
+# vl/expectancy [vl/expectancy.test]
 expectancy/expectancy_test.go:156:76: undefined: TestSeamSource
 expectancy/expectancy_test.go:170:14: undefined: LoadAndBuildAt
 expectancy/expectancy_test.go:250:60: undefined: Cell
 expectancy/expectancy_test.go:270:5:  undefined: MinN
 expectancy/expectancy_test.go:281:19: undefined: StatusNotEnoughData
 ...
-FAIL	nofx/expectancy [build failed]
+FAIL	vl/expectancy [build failed]
 ```
 
 **GREEN**, all 13 cases:
@@ -110,7 +111,7 @@ FAIL	nofx/expectancy [build failed]
 --- PASS: TestBootLineCountsJudgedRollUpsSeparatelyFromCells
 --- PASS: TestE8RefusesToMeanAnUncomputableColumn
 --- PASS: TestE8MeanIsAbsentWhenNoRowIsUsable
-ok  	nofx/expectancy
+ok  	vl/expectancy
 ```
 
 The E1 fixture holds exactly 40 positions across 3 conditions with every exclusion class

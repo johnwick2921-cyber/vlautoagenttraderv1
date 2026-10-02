@@ -1,4 +1,4 @@
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 echo "== detector barrier params =="
 sqlite3 "$DB" "select horizon, k, exit_on, count(*), min(delta), max(delta), min(band_pts), max(band_pts) from touch_outcomes group by 1,2,3;"
 echo "== outcome vs bars_to_exit and wallclock minutes =="

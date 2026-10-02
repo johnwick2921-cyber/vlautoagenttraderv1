@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W3 — blockers found by the scout, and how each is resolved
 
 Eight read-only scouts mapped the surfaces. Two findings change the wave's shape; both verified by me
@@ -69,7 +70,7 @@ the **per-read** map line. `cap=<n>` is read as the resolved `max_levels`, not `
 
 ## B6 — practical: no `node_modules` in the worktree
 
-`/home/hoang/nofx-cand/web` has none, and the main tree is deploy-only (A2b), so vitest cannot run
+`/home/hoang/vl-cand/web` has none, and the main tree is deploy-only (A2b), so vitest cannot run
 here yet. **RESOLUTION:** `npm ci` inside the worktree before the A12 vitest run — my own worktree,
 never the main tree.
 

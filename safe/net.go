@@ -11,9 +11,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nofx/discipline"
-	"nofx/logger"
-	"nofx/telemetry"
+	"vl/discipline"
+	"vl/logger"
+	"vl/telemetry"
 )
 
 // TestPanicNextGoNet is a test seam (default false): when true, the NEXT GoNet

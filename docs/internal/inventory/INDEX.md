@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL Page Inventory — Cross-reference Index
 
 Companion to the 5 per-page docs + `BACKEND.md`. Use this index to find which page uses what, and to locate a function/endpoint/handler by name.
@@ -97,7 +98,7 @@ Alphabetical. Components in `PascalCase`; module-level functions in `camelCase`;
 | `NewTraderFromEnv` | `trader/ninjatrader/transport.go:57-71` | Backend (env-var router) |
 | `NewTCPTrader` | `trader/ninjatrader/tcp_trader.go` | Backend (Plan 1.5) |
 | `nextId` | `web/src/pages/AgentChatPage.tsx:40-42` | Page 2 |
-| `NofxSelect` | `web/src/components/ui/select.tsx` | Pages 4, 5 |
+| `VLSelect` | `web/src/components/ui/select.tsx` | Pages 4, 5 |
 | `normalizeStrategyConfig` | `StrategyStudioPage.tsx:70-80` | Page 5 |
 | `PageNotFound` | `web/src/pages/PageNotFound.tsx` | **Orphan** (not wired into router) |
 | `parseFillRow` (Go) | `provider/ninjatrader/csv_tailer.go` | Backend |
@@ -351,14 +352,14 @@ These were not in the prior 2026-05-27 audit. Severity in column 4.
 | N15 | "在竞技场显示" Chinese label in EN mode | `TradersList.tsx` | i18n gap | Page 4 |
 | N16 | Footer links have empty `href=""` | `SiteFooter.tsx` | Cosmetic | All footers |
 | N17 | ChartTabs has no `futures` market type; NT falls back to Binance default | `ChartTabs.tsx:38-44, 83-89` | Plan 4.4 prerequisite | Page 4 |
-| N18 | `IndicatorEditor.DEFAULT_NOFXOS_API_KEY = "cm_568c67eae410d912c54c"` — dead default key | `IndicatorEditor.tsx:7` | Dead code | Page 5 |
+| N18 | `IndicatorEditor.DEFAULT_VLOS_API_KEY = "cm_568c67eae410d912c54c"` — dead default key | `IndicatorEditor.tsx:7` | Dead code | Page 5 |
 | N19 | `/api/strategies` and `/api/models` each fire TWICE on Strategy page load | `StrategyStudioPage.tsx:207-210` + StrictMode | Cosmetic | Page 5 |
 | N20 | External CDN reference `grainy-gradients.vercel.app/noise.svg` returns 404 | `DeepVoidBackground` or similar | Console noise | Page 5 |
 | N21 | `/api/my-traders` fires unconditionally at boot with no token → ERR_ABORTED | global | Cosmetic | All pages |
 | N22 | `MarketTicker.SYMBOLS = ['MNQ']` hardcoded — not user-configurable | `MarketTicker.tsx:14` | Functional limitation | Page 2 |
 | N23 | Tool descriptions in `agent/tools.go` still mention crypto-only assumptions (funding rate, OI, USDT) | `agent/tools.go` various `Description:` fields | Plan 4.6-adjacent | Page 2 |
 | N24 | `binanceFuturesAPIBaseURL` hardcoded module-level, not env-overridable | `agent/web.go:35` | Multi-exchange chart gap | Backend |
-| N25 | `nofxos` import in `kernel/engine.go` looks unused; service is deprecated | `kernel/engine.go:14` | Code hygiene | Backend |
+| N25 | `vlos` import in `kernel/engine.go` looks unused; service is deprecated | `kernel/engine.go:14` | Code hygiene | Backend |
 | N26 | Hardcoded `"默认策略"` literal in agent tools | `agent/tools.go:2166` | i18n debt | Backend |
 | N27 | `chartUpdateKey` in TraderDashboardPage triggers chart re-fetch via `Date.now()` — fine pattern but state coupling | `TraderDashboardPage.tsx:145, 786` | n/a | Page 4 |
 

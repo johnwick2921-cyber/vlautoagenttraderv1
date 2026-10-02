@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/activation"
+	"vl/internal/activation"
 )
 
 // Compile-time half of the parity: every mirror converts to activation's type

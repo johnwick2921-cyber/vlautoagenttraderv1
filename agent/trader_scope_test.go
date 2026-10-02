@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/mcp"
-	"nofx/store"
+	"vl/mcp"
+	"vl/store"
 )
 
 type staticAIClient struct {
@@ -19,7 +19,7 @@ type staticAIClient struct {
 }
 
 func (c *staticAIClient) SetAPIKey(apiKey string, customURL string, customModel string) {}
-func (c *staticAIClient) ResolvedModel() string { return "mock-model" }
+func (c *staticAIClient) ResolvedModel() string                                         { return "mock-model" }
 func (c *staticAIClient) SetTimeout(timeout time.Duration)                              {}
 func (c *staticAIClient) CallWithMessages(systemPrompt, userPrompt string) (string, error) {
 	return c.response, nil
@@ -302,14 +302,12 @@ func TestStrategyConfigSchemaOnlyExposesEditorCoinSourceFields(t *testing.T) {
 	aiProperties := aiConfig["properties"].(map[string]any)
 	coinSource := aiProperties["coin_source"].(map[string]any)
 	coinProperties := coinSource["properties"].(map[string]any)
-	for _, unexpected := range []string{"use_hyper_all", "use_hyper_main", "hyper_main_limit"} {
+	// D2-DEAD (item 12): the ai500/oi_* coin sources rode the deleted legacy
+	// provider, so the editor schema must no longer expose any of their fields.
+	for _, unexpected := range []string{"use_hyper_all", "use_hyper_main", "hyper_main_limit", "use_ai500", "ai500_limit", "use_oi_top", "oi_top_limit", "use_oi_low", "oi_low_limit"} {
 		if _, ok := coinProperties[unexpected]; ok {
 			t.Fatalf("strategy config schema should not expose non-editor coin source field %s", unexpected)
 		}
-	}
-	ai500 := coinProperties["ai500_limit"].(map[string]any)
-	if ai500["maximum"] != 10 {
-		t.Fatalf("expected AI500 maximum 10, got %+v", ai500)
 	}
 }
 
@@ -889,12 +887,6 @@ func TestStrategyCreateUsesConfigPatch(t *testing.T) {
 	if cfg.CoinSource.SourceType != "static" || len(cfg.CoinSource.StaticCoins) != 1 || cfg.CoinSource.StaticCoins[0] != "BTCUSDT" {
 		t.Fatalf("expected BTC static coin source, got %+v", cfg.CoinSource)
 	}
-	if cfg.CoinSource.UseAI500 {
-		t.Fatalf("expected AI500 disabled for explicit BTC strategy")
-	}
-	if cfg.CoinSource.UseOILow {
-		t.Fatalf("expected OI low disabled when source_type is static, got %+v", cfg.CoinSource)
-	}
 	if cfg.RiskControl.MaxPositions != 3 || cfg.RiskControl.MinConfidence != 80 {
 		t.Fatalf("expected risk patch to apply, got %+v", cfg.RiskControl)
 	}
@@ -1293,9 +1285,8 @@ func TestStrategyCreateConfirmationForcesSynchronousExecutionRoute(t *testing.T)
 		"strategy_type": "ai_trading",
 		"ai_config": map[string]any{
 			"coin_source": map[string]any{
-				"source_type": "ai500",
-				"use_ai500":   true,
-				"ai500_limit": 5,
+				"source_type":  "static",
+				"static_coins": []any{"BTCUSDT"},
 			},
 			"indicators": map[string]any{
 				"klines": map[string]any{
@@ -1359,9 +1350,8 @@ func TestStrategyCreateConfirmationForcesExecutionWithoutPriorPromptPhrase(t *te
 		"strategy_type": "ai_trading",
 		"ai_config": map[string]any{
 			"coin_source": map[string]any{
-				"source_type": "ai500",
-				"use_ai500":   true,
-				"ai500_limit": 5,
+				"source_type":  "static",
+				"static_coins": []any{"BTCUSDT"},
 			},
 			"indicators": map[string]any{
 				"klines": map[string]any{
@@ -1419,9 +1409,8 @@ func TestUnifiedPlannedAgentCannotStealActiveStrategyCreateConfirmation(t *testi
 		"strategy_type": "ai_trading",
 		"ai_config": map[string]any{
 			"coin_source": map[string]any{
-				"source_type": "ai500",
-				"use_ai500":   true,
-				"ai500_limit": 5,
+				"source_type":  "static",
+				"static_coins": []any{"BTCUSDT"},
 			},
 			"indicators": map[string]any{
 				"klines": map[string]any{
@@ -1613,7 +1602,7 @@ func TestStrategyCreateOptionsQuestionExplainsCurrentMissingField(t *testing.T) 
 	if !blocked {
 		t.Fatalf("expected options question to be handled")
 	}
-	for _, want := range []string{"AI500", "OI Top", "OI Low", "静态币种"} {
+	for _, want := range []string{"static", "hyper_all", "hyper_main"} {
 		if !strings.Contains(reply, want) {
 			t.Fatalf("expected source options to include %q, got: %s", want, reply)
 		}
@@ -1625,7 +1614,7 @@ func TestStrategyCreateOptionsQuestionExplainsCurrentMissingField(t *testing.T) 
 
 func TestStrategyCreateMissingFieldsIncludeInlineOptions(t *testing.T) {
 	reply := formatStrategyCreateConfigNeeded("zh", "source_type,primary_timeframe,btceth_max_leverage,min_confidence,trading_frequency")
-	for _, want := range []string{"AI500", "OI Top", "OI Low", "静态币种", "1m", "1h", "1～20", "50～100", "每天最多"} {
+	for _, want := range []string{"static", "hyper_all", "hyper_main", "1m", "1h", "1～20", "50～100", "每天最多"} {
 		if !strings.Contains(reply, want) {
 			t.Fatalf("expected missing-field prompt to include option/range %q, got: %s", want, reply)
 		}
@@ -1733,7 +1722,7 @@ func TestStrategyCreateConfirmationUsesModelRepairForPriorStyleProposal(t *testi
 		t.Fatalf("create store: %v", err)
 	}
 	a := New(nil, st, DefaultConfig(), slog.Default())
-	a.SetAIClient(&staticAIClient{response: `{"route":"execute_skill","extracted_data":{"config_patch":{"strategy_type":"ai_trading","ai_config":{"coin_source":{"source_type":"ai500","use_ai500":true,"ai500_limit":3},"indicators":{"klines":{"primary_timeframe":"1m","primary_count":20,"selected_timeframes":["1m","5m","15m"],"enable_multi_timeframe":true,"enable_raw_klines":true},"enable_volume":true,"enable_oi":true,"enable_funding_rate":true,"enable_quant_data":true},"risk_control":{"btc_eth_max_leverage":5,"altcoin_max_leverage":5,"min_confidence":75,"min_risk_reward_ratio":3},"prompt_sections":{"trading_frequency":"高频但不过度交易：目标每小时 1-3 笔；单笔持仓通常 10-30 分钟。","entry_standards":"只在短周期趋势、成交量/OI、资金费率或排行信号形成共振时入场。"}}}}}`})
+	a.SetAIClient(&staticAIClient{response: `{"route":"execute_skill","extracted_data":{"config_patch":{"strategy_type":"ai_trading","ai_config":{"coin_source":{"source_type":"static","static_coins":["BTCUSDT"]},"indicators":{"klines":{"primary_timeframe":"1m","primary_count":20,"selected_timeframes":["1m","5m","15m"],"enable_multi_timeframe":true,"enable_raw_klines":true},"enable_volume":true,"enable_oi":true,"enable_funding_rate":true},"risk_control":{"btc_eth_max_leverage":5,"altcoin_max_leverage":5,"min_confidence":75,"min_risk_reward_ratio":3},"prompt_sections":{"trading_frequency":"高频但不过度交易：目标每小时 1-3 笔；单笔持仓通常 10-30 分钟。","entry_standards":"只在短周期趋势、成交量/OI、资金费率形成共振时入场。"}}}}}`})
 
 	userID := int64(42)
 	session := newActiveSkillSession(userID, "strategy_management", "create")
@@ -1766,8 +1755,8 @@ func TestStrategyCreateConfirmationUsesModelRepairForPriorStyleProposal(t *testi
 	if err := json.Unmarshal([]byte(strategies[0].Config), &cfg); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
 	}
-	if cfg.CoinSource.SourceType != "ai500" || cfg.Indicators.Klines.PrimaryTimeframe != "1m" {
-		t.Fatalf("expected model-repaired AI500 1m strategy, got %+v", cfg)
+	if cfg.CoinSource.SourceType != "static" || len(cfg.CoinSource.StaticCoins) != 1 || cfg.CoinSource.StaticCoins[0] != "BTCUSDT" || cfg.Indicators.Klines.PrimaryTimeframe != "1m" {
+		t.Fatalf("expected model-repaired static BTCUSDT 1m strategy, got %+v", cfg)
 	}
 }
 

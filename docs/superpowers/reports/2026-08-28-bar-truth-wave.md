@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # BAR-TRUTH WAVE (S-1 + A-1 + A-2) — CLOSED, E-proofs in, owner ack honored
 
 Branch `fix/bar-truth` off dev. Commit `dd3da1c9f2577e461e5ceac665fe137b4e50f1a9`.
@@ -65,7 +66,7 @@ rows.
 
 ## 6. HYGIENE
 
-- Removed the stale `/tmp/nofx-dev-check` worktree (detached a52de628).
+- Removed the stale `/tmp/vl-dev-check` worktree (detached a52de628).
 - PR triage: closed 9 heads fully contained in dev — #45, #47, #48, #49, #50,
   #55, #57, #58, #59.
 - Survivors (11): #64 regime-wave · #63 research-import · #62 brand-census ·

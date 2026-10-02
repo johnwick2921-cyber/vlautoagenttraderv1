@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 <h1 align="center">VL Intelligent</h1>
 
 <p align="center">
@@ -6,10 +7,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/NoFxAiOS/nofx/stargazers"><img src="https://img.shields.io/github/stars/NoFxAiOS/nofx?style=for-the-badge" alt="Stars"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/releases"><img src="https://img.shields.io/github/v/release/NoFxAiOS/nofx?style=for-the-badge" alt="Release"></a>
-  <a href="https://github.com/NoFxAiOS/nofx/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg?style=for-the-badge" alt="License"></a>
-  <a href="https://t.me/nofx_dev_community"><img src="https://img.shields.io/badge/Telegram-Community-blue?style=for-the-badge&logo=telegram" alt="Telegram"></a>
 </p>
 
 <p align="center">
@@ -36,10 +33,6 @@ VL Intelligent là trợ lý giao dịch AI **tự chủ** mã nguồn mở. Kh�
 **Hoàn toàn tự chủ**: AI tự quyết định sử dụng mô hình nào, lấy dữ liệu thị trường gì, khi nào giao dịch. Không cần cấu hình mô hình thủ công. Không cần quản lý API key của nhiều dịch vụ. Chỉ cần nạp ví USDC và chạy.
 
 Điểm khác biệt: **tích hợp thanh toán vi mô [x402](https://x402.org)**. Không cần API key. Nạp ví USDC và thanh toán theo yêu cầu. Ví chính là danh tính của bạn.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
 
 Mở **http://127.0.0.1:3000**. Xong.
 
@@ -74,7 +67,6 @@ Không tài khoản. Không API key. Không trả trước. Một ví, tất c�
 ### Nhà cung cấp x402 tích hợp
 
 | Nhà cung cấp | Chain | Mô hình |
-|:---------|:------|:-------|
 | <img src="../../../web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base | GPT-5.4, Claude Opus, DeepSeek, Qwen, Grok, Gemini, Kimi — 15+ mô hình |
 
 ---
@@ -82,7 +74,6 @@ Không tài khoản. Không API key. Không trả trước. Một ví, tất c�
 ## Tính năng
 
 | Tính năng | Mô tả |
-|:--------|:------------|
 | **Đa AI** | DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi, MiniMax — chuyển đổi bất cứ lúc nào |
 | **Đa Sàn** | Binance, Bybit, OKX, Bitget, KuCoin, Gate, Hyperliquid, Aster, Lighter |
 | **Strategy Studio** | Trình xây dựng trực quan — nguồn coin, chỉ báo, kiểm soát rủi ro |
@@ -97,8 +88,7 @@ Crypto · Cổ phiếu Mỹ · Forex · Kim loại
 ### Sàn giao dịch (CEX)
 
 | Sàn | Trạng thái | Đăng ký (Giảm phí) |
-|:---------|:------:|:------------------------|
-| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [Đăng ký](https://www.binance.com/join?ref=NOFXENG) |
+| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [Đăng ký](https://www.binance.com/join?) |
 | <img src="../../../web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [Đăng ký](https://partner.bybit.com/b/83856) |
 | <img src="../../../web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [Đăng ký](https://www.okx.com/join/1865360) |
 | <img src="../../../web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [Đăng ký](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
@@ -108,7 +98,6 @@ Crypto · Cổ phiếu Mỹ · Forex · Kim loại
 ### Sàn giao dịch (Perp-DEX)
 
 | Sàn | Trạng thái | Đăng ký (Giảm phí) |
-|:---------|:------:|:------------------------|
 | <img src="../../../web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [Đăng ký](https://app.hyperliquid.xyz/join/AITRADING) |
 | <img src="../../../web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [Đăng ký](https://www.asterdex.com/en/referral/fdfc0e) |
 | <img src="../../../web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [Đăng ký](https://app.lighter.xyz/?referral=68151432) |
@@ -116,7 +105,6 @@ Crypto · Cổ phiếu Mỹ · Forex · Kim loại
 ### Mô hình AI (Chế độ API Key)
 
 | Mô hình AI | Trạng thái | Lấy API Key |
-|:---------|:------:|:------------|
 | <img src="../../../web/public/icons/deepseek.svg" width="20" height="20" style="vertical-align: middle;"/> **DeepSeek** | ✅ | [Lấy API Key](https://platform.deepseek.com) |
 | <img src="../../../web/public/icons/qwen.svg" width="20" height="20" style="vertical-align: middle;"/> **Qwen** | ✅ | [Lấy API Key](https://dashscope.console.aliyun.com) |
 | <img src="../../../web/public/icons/openai.svg" width="20" height="20" style="vertical-align: middle;"/> **OpenAI (GPT)** | ✅ | [Lấy API Key](https://platform.openai.com) |
@@ -134,23 +122,6 @@ Crypto · Cổ phiếu Mỹ · Forex · Kim loại
 
 ## Cài đặt
 
-### Linux / macOS
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash
-```
-
-### Railway (Cloud)
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/nofx?referralCode=nofx)
-
-### Docker
-
-```bash
-curl -O https://raw.githubusercontent.com/NoFxAiOS/nofx/main/docker-compose.prod.yml
-docker compose -f docker-compose.prod.yml up -d
-```
-
 ### Từ mã nguồn
 
 ```bash
@@ -158,22 +129,11 @@ docker compose -f docker-compose.prod.yml up -d
 # macOS: brew install ta-lib
 # Ubuntu: sudo apt-get install libta-lib0-dev
 
-git clone https://github.com/NoFxAiOS/nofx.git && cd nofx
-go build -o nofx && ./nofx          # backend
+go build -o vl-bin && ./vl-bin          # backend
 cd web && npm install && npm run dev  # frontend (terminal mới)
 ```
 
 ---
-
-## Liên kết
-
-| | |
-|:--|:--|
-| Website | [nofxai.com](https://nofxai.com) |
-| Dashboard | [nofxos.ai/dashboard](https://nofxos.ai/dashboard) |
-| API Docs | [nofxos.ai/api-docs](https://nofxos.ai/api-docs) |
-| Telegram | [nofx_dev_community](https://t.me/nofx_dev_community) |
-| Twitter | [@nofx_official](https://x.com/nofx_official) |
 
 > **Cảnh báo rủi ro**: Giao dịch tự động AI có rủi ro đáng kể. Chỉ nên sử dụng cho mục đích học tập/nghiên cứu hoặc số tiền nhỏ.
 
@@ -183,4 +143,3 @@ cd web && npm install && npm run dev  # frontend (terminal mới)
 
 [AGPL-3.0](../../../LICENSE)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NoFxAiOS/nofx&type=Date)](https://star-history.com/#NoFxAiOS/nofx&Date)

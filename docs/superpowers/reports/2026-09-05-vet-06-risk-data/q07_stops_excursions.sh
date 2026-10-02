@@ -1,6 +1,6 @@
 #!/bin/bash
 # q07 — per-trade risk as it actually ran: stop distances (armed_orders), worst trades, MAE/MFE, fees
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 S() { echo "--- $1"; sqlite3 -header "$DB" "$2"; }
 S "armed_orders: stop distance pts by state (all rows)" "SELECT state, COUNT(*) n, ROUND(MIN(ABS(entry_px-stop_px)),2) mn, ROUND(AVG(ABS(entry_px-stop_px)),2) mean, ROUND(MAX(ABS(entry_px-stop_px)),2) mx FROM armed_orders WHERE entry_px>0 AND stop_px>0 GROUP BY state ORDER BY n DESC;"
 S "armed_orders: stop distance pts, ordered (all with prices) — for quantiles" "SELECT ROUND(ABS(entry_px-stop_px),2) d FROM armed_orders WHERE entry_px>0 AND stop_px>0 ORDER BY 1;"

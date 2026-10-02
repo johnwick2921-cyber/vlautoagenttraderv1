@@ -2,7 +2,7 @@ package gate
 
 import (
 	"fmt"
-	"nofx/trader/types"
+	"vl/trader/types"
 	"strconv"
 	"time"
 

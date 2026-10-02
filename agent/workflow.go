@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/mcp"
+	"vl/branding"
+	"vl/mcp"
 )
 
 const (
@@ -401,7 +402,7 @@ func (a *Agent) generateWorkflowSummary(ctx context.Context, userID int64, lang 
 	}
 	stageCtx, cancel := withPlannerStageTimeout(ctx, directReplyTimeout)
 	defer cancel()
-	systemPrompt := `You are summarizing a finished workflow for NOFXi.
+	systemPrompt := `You are summarizing a finished workflow for ` + branding.PersonaName() + `.
 Return one short user-facing summary in the user's language.
 Do not mention internal DAG, scheduler, or JSON.
 ` + cleanUserFacingReplyInstruction
@@ -506,7 +507,7 @@ func looksLikeCompoundExchangeIntent(text string) bool {
 func (a *Agent) decomposeWorkflowIntentWithLLM(ctx context.Context, userID int64, lang, text string) (workflowDecomposition, error) {
 	stageCtx, cancel := withPlannerStageTimeout(ctx, directReplyTimeout)
 	defer cancel()
-	systemPrompt := `You decompose one NOFXi user request into a small task graph for execution.
+	systemPrompt := `You decompose one ` + branding.PersonaName() + ` user request into a small task graph for execution.
 Return JSON only. No markdown.
 Only use these skills: trader_management, strategy_management, model_management, exchange_management.
 Only use one atomic action per task.

@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/auth"
-	"nofx/manager"
-	"nofx/store"
+	"vl/auth"
+	"vl/manager"
+	"vl/store"
 )
 
 // ── W-EXEC-TRUTH W0 (CTO Q6) → W5 — the plan card's Picture line ───────────

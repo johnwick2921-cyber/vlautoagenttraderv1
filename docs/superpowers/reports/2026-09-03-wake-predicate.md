@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Wake-predicate wave — step 2: the 1B wiring (steps 3-4 gated on a boot)
 
-Owner: hoang · 2026-09-03 · branch `fix/wake-predicate` · worktree `/home/hoang/nofx-wake`
+Owner: hoang · 2026-09-03 · branch `fix/wake-predicate` · worktree `/home/hoang/vl-wake`
 
 ---
 

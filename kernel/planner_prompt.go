@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // P3.3 — the planner input package (assembled into ONE prompt for the reasoner).

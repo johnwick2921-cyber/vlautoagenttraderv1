@@ -3,8 +3,8 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // 6.4 (ruling B) — the clamps stay enforced with the deprecated toggles stored

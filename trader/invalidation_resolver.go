@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // ── INVALIDATION RESOLVER (owner ruling 2026-09-03) ─────────────────────────

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // TestSVPValueArea_MandatoryVector is the LOCKED spec vector (Part B2). The

@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // failStudioRecordWrites makes every write of a settings_truth_zero:* row fail

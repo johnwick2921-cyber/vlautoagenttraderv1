@@ -12,11 +12,11 @@ import (
 // service (CI killer 2026-09-26: TestBaseCoinSymbolsNoArgs hung the Backend and
 // Go-coverage jobs on a slow API with context.TODO() and no timeout). These
 // tests are NOT unit tests — they probe the live endpoint — so they run ONLY
-// with NOFX_LIVE_TESTS=1 and under a BOUNDED context.
+// with VL_LIVE_TESTS=1 and under a BOUNDED context.
 func liveNetworkGate(t *testing.T) context.Context {
 	t.Helper()
-	if os.Getenv("NOFX_LIVE_TESTS") != "1" {
-		t.Skip("live-network integration test — set NOFX_LIVE_TESTS=1 to run")
+	if os.Getenv("VL_LIVE_TESTS") != "1" {
+		t.Skip("live-network integration test — set VL_LIVE_TESTS=1 to run")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	t.Cleanup(cancel)

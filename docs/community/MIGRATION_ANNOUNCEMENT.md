@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 📢 PR Management System Update - What Contributors Need to Know
 
 **Language:** [English](MIGRATION_ANNOUNCEMENT.md) | [中文](MIGRATION_ANNOUNCEMENT.zh-CN.md)
@@ -246,8 +247,6 @@ Don't panic! We're here to help.
   - Merge conflicts → Rebase on latest `dev`
 
 **Need help?** Just ask! Comment in your PR or reach out:
-- [GitHub Discussions](https://github.com/NoFxAiOS/nofx/discussions)
-- [Telegram Community](https://t.me/nofx_dev_community)
 
 ---
 
@@ -323,13 +322,13 @@ This new system helps YOU by:
 
 ### Helpful Links
 - [Conventional Commits](https://www.conventionalcommits.org/) - Commit format
-- [Good First Issues](https://github.com/NoFxAiOS/nofx/labels/good%20first%20issue) - Beginner-friendly tasks
+- [Good First Issues](upstream github link (removed in the VL rename)) - Beginner-friendly tasks
 - [Bounty Program](../bounty-guide.md) - Get paid to contribute
 
 ### Get Help
-- [GitHub Discussions](https://github.com/NoFxAiOS/nofx/discussions) - Ask questions
-- [Telegram](https://t.me/nofx_dev_community) - Community chat
-- [Twitter](https://x.com/nofx_official) - Updates and announcements
+- [GitHub Discussions](upstream github link (removed in the VL rename)) - Ask questions
+- [Telegram](upstream telegram link (removed in the VL rename)) - Community chat
+- [Twitter](upstream x link (removed in the VL rename)) - Updates and announcements
 
 ---
 
@@ -341,7 +340,7 @@ This is a new system and we want YOUR input:
 - 🤔 What concerns do you have?
 - 💡 How can we improve?
 
-Share in the [Migration Feedback Discussion](https://github.com/NoFxAiOS/nofx/discussions) (link TBD)
+Share in the [Migration Feedback Discussion](upstream github link (removed in the VL rename)) (link TBD)
 
 ---
 

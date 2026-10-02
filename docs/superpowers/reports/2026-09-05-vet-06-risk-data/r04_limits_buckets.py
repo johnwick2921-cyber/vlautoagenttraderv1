@@ -87,7 +87,7 @@ for LABEL, FN in (("COMPLIANT n=58", "trade_sample_58.csv"), ("BROAD n=65", "tra
     print()
 
 # long/short by 1d bar direction of the session-day
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 bars={}
 for sym,ot,o,c in con.execute("SELECT symbol,open_time_ms,o,c FROM bars WHERE symbol='MNQ' AND tf='1d'"):
     d=(datetime.datetime.fromtimestamp(ot/1000, ct)).date().isoformat()

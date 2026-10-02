@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/mcp"
+	"vl/kernel"
+	"vl/mcp"
 )
 
 func TestResolvePlannerModelID(t *testing.T) {

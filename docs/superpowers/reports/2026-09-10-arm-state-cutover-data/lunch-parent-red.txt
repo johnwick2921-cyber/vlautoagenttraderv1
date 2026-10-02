@@ -67,5 +67,5 @@
     split_entry_test.go:139: split arm must write 2 ledger rows (legs), got 0 ([])
 --- FAIL: TestSplitArmWritesTwoLedgerRows (0.20s)
 FAIL
-FAIL	nofx/trader	7.579s
+FAIL	vl/trader	7.579s
 FAIL

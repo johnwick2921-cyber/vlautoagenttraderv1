@@ -60,9 +60,9 @@ export const updatesStrings = {
   },
   // authorization paste box (UPDATER-USABLE-V1)
   authzLabel: {
-    en: 'Authorization — paste the one line "updater-bootstrap authorize <release_id>" prints (valid 5 minutes, single use)',
-    zh: '授权 — 粘贴 "updater-bootstrap authorize <release_id>" 打印的那一行（有效期 5 分钟，仅限一次）',
-    id: 'Otorisasi — tempel satu baris yang dicetak "updater-bootstrap authorize <release_id>" (berlaku 5 menit, sekali pakai)',
+    en: 'Authorization — paste the one line "vl-updater-bootstrap authorize <release_id>" prints (valid 5 minutes, single use)',
+    zh: '授权 — 粘贴 "vl-updater-bootstrap authorize <release_id>" 打印的那一行（有效期 5 分钟，仅限一次）',
+    id: 'Otorisasi — tempel satu baris yang dicetak "vl-updater-bootstrap authorize <release_id>" (berlaku 5 menit, sekali pakai)',
   },
   installAccepted: {
     en: 'Install accepted',

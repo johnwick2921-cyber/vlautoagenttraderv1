@@ -257,7 +257,7 @@ SOURCE trader/entry_gate.go
 
 SOURCE trader/exit_mechs_suspend.go
 10:
-11: 	ntTrader "nofx/trader/ninjatrader"
+11: 	ntTrader "vl/trader/ninjatrader"
 12: )
 13:
 14: // ── 0B (2026-09-02) — BE+40 AND THE ATR TRAIL ARE SUSPENDED ─────────────────

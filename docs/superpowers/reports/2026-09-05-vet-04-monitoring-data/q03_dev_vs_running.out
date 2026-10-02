@@ -9,5 +9,5 @@ ee147a42 docs(review): veteran review parts A and B, folded into the lead report
 643df6b8 docs(review): veteran review — lead report (interim)
 b44ce31c partner-sync: Binnie update runbook — re-clone (not pull), 8 boot lines, bound-row lesson, tree-guard absent
 e7fd564b partner-sync: PUSH STOPPED — partner main is not an ancestor; histories are UNRELATED (no merge-base). Evidence recorded, nothing pushed.
-51f3cc14 claim: partner sync — push dev to vlautoagenttraderv1 + Binnie update runbook — nofx-c6, 2026-09-04T13:27:01-05:00
+51f3cc14 claim: partner sync — push dev to vlautoagenttraderv1 + Binnie update runbook — vl-c6, 2026-09-04T13:27:01-05:00
 b2d3826e deploy: boot 10 marker — RELEASE=36648655 + GUIDE_BUILT_REV=36648655, FROM THE MAIN TREE after the passed boot

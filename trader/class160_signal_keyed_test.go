@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
-	nttrader "nofx/trader/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0 (d) — CLASS 160: A QUEUED SEND IS NOT A FILL ─────────────

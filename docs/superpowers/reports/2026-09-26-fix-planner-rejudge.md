@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # FIX-PLANNER item 5 — offline re-judge of the killed chains (zero API)
 
 - **Lane:** DS-101 · branch `fix/planner-killers` · base `origin/dev` `04ae1c2f`
 - **Specs built from (L3):** CTO dispatch 2026-09-26 04:59Z (id 1790398758580-4857-000001, scope-amended 05:06Z); CTO fold 05:50Z (id 1790401854275-64319-000001 — DS-104 cross-check PR #242 labels + census boundary); census `docs/superpowers/reports/2026-09-26-plan-death-census.md` (6bbb3a6c).
-- **Method:** read-only on the DB COPY (`/home/hoang/nofx-ds-101-plandeath/ab.db`, 09-25 22:39 CT). No API calls, no writes, no live system.
+- **Method:** read-only on the DB COPY (`/home/hoang/vl-ds-101-plandeath/ab.db`, 09-25 22:39 CT). No API calls, no writes, no live system.
 - **Census boundary (fold 3):** 80 rows = 36 reads; pre-boot ids 336-338 are OUT (UTC-vs-CT boundary). Killed reads below are the corrected set.
 
 ## Corrected killer labels (fold 2) — final attempt reason, verbatim from the DB

@@ -1,4 +1,5 @@
-# NOFXi 诊断与配置 Skills（第一批）
+names rewritten to vl on 2026-09-30 (VL rename)
+# VLi 诊断与配置 Skills（第一批）
 
 这份文档用于沉淀交易智能助手的第一批高频诊断与配置 skill。
 

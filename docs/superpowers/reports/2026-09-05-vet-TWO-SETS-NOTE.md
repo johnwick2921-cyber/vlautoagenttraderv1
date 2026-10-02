@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 2026-09-05 veteran review — TWO SETS OF SECTION REPORTS, AND WHICH FILE IS WHICH
 
 **Owner ruling, 2026-09-05 18:2x CT: keep both. Nothing was deleted.**
@@ -24,7 +25,7 @@ Every commit in this repo carries the identical git author, so the author field 
 "which lane wrote this" (PROVENANCE, CLAUDE.md). The branch and the claim commit can:
 
 - Sections 01–08 and 10 were claimed at 09:55–10:00 CT on branches `docs/vet-NN-0905`, each with
-  a conforming claim commit naming its session (`deploy/nofx-claim.sh check` passes on all nine).
+  a conforming claim commit naming its session (`deploy/vl-claim.sh check` passes on all nine).
 - Section 09 was claimed at 15:47:56 CT (`codex-vet-09-0905`), and a second wave at 17:27:04 CT
   (`codex-vet-09-complete-0905`).
 - At 15:48 CT the section-09 lane merged all nine section branches into its own branch and

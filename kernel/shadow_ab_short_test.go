@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // E8 ONE PRICE SPACE (data-integrity wave) — E1, THE PIN.

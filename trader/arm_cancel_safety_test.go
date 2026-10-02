@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	nt "nofx/provider/ninjatrader"
-	"nofx/store"
+	nt "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ── THE 2026-09-06 23:35:02 → 23:37:02 REPLAY ────────────────────────────────

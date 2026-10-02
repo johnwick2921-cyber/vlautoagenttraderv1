@@ -24,7 +24,11 @@ const L: Record<string, Record<string, string>> = {
   resume: { en: 'Resume', zh: '恢复', id: 'Lanjutkan' },
   m30: { en: '30 min', zh: '30分钟', id: '30 mnt' },
   h1: { en: '1 hour', zh: '1小时', id: '1 jam' },
-  sessionEnd: { en: 'Until session end', zh: '至本时段结束', id: 'Sampai akhir sesi' },
+  sessionEnd: {
+    en: 'Until session end',
+    zh: '至本时段结束',
+    id: 'Sampai akhir sesi',
+  },
   custom: { en: 'Custom (min)', zh: '自定义(分钟)', id: 'Kustom (mnt)' },
   title: {
     en: 'Pause NEW entries — stops/targets/position management continue',
@@ -88,7 +92,7 @@ export function PauseButton({ traderId, stopUntil, onChanged }: Props) {
         type="button"
         disabled={busy}
         onClick={doResume}
-        className="bg-nofx-gold/20 hover:bg-nofx-gold/30 border border-nofx-gold text-nofx-gold font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+        className="bg-vl-neo-gold/20 hover:bg-vl-neo-gold/30 border border-vl-neo-gold text-vl-neo-gold font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
       >
         ▶ {t('resume')}
       </button>
@@ -103,12 +107,12 @@ export function PauseButton({ traderId, stopUntil, onChanged }: Props) {
         disabled={busy}
         onClick={() => setOpen((v) => !v)}
         title={L.title[language] ?? L.title.en}
-        className="border border-white/20 hover:border-nofx-gold/60 text-nofx-text-muted hover:text-nofx-gold font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+        className="border border-white/20 hover:border-vl-neo-gold/60 text-vl-neo-text-muted hover:text-vl-neo-gold font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
       >
         ⏸ {t('pause')}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 z-40 nofx-glass border border-white/10 rounded-lg p-2 min-w-[180px] flex flex-col gap-1 shadow-xl">
+        <div className="absolute right-0 mt-2 z-40 vl-neo-glass border border-white/10 rounded-lg p-2 min-w-[180px] flex flex-col gap-1 shadow-xl">
           <button
             type="button"
             data-testid="pause-30m"
@@ -146,7 +150,7 @@ export function PauseButton({ traderId, stopUntil, onChanged }: Props) {
               type="button"
               data-testid="pause-custom-go"
               disabled={!customMin || Number(customMin) <= 0}
-              className="px-2 py-1 rounded bg-nofx-gold/20 border border-nofx-gold/50 text-nofx-gold text-sm disabled:opacity-40"
+              className="px-2 py-1 rounded bg-vl-neo-gold/20 border border-vl-neo-gold/50 text-vl-neo-gold text-sm disabled:opacity-40"
               onClick={() => doPause({ minutes: Number(customMin) })}
             >
               OK

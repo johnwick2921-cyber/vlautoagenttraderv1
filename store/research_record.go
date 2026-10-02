@@ -1,7 +1,7 @@
 package store
 
 import (
-	"nofx/researchsnapshot"
+	"vl/researchsnapshot"
 	"time"
 )
 

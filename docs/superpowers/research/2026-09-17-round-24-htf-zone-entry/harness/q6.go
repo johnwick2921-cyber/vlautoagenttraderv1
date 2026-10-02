@@ -40,8 +40,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 type planRow struct {

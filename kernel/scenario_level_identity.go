@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"nofx/levelidentity"
+	"vl/levelidentity"
 )
 
 func identityString(s string) *string {

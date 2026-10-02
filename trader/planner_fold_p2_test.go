@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 func foldTestTrader(t *testing.T) (*AutoTrader, *store.Store) {

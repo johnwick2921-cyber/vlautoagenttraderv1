@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Page 2 — AgentBeta (`/agent`)
 
 ## Quick reference
@@ -94,7 +95,7 @@
 ### Sub-component: `ChatInput`
 - **File:** [web/src/components/agent/ChatInput.tsx](web/src/components/agent/ChatInput.tsx) (192 LOC)
 - **Exports:** `ChatInput`, `type ChatInputHandle` — imperative handle (uses `useImperativeHandle`) probably exposes `focus()` for the `⌘K` keyboard shortcut.
-- Visible behavior: placeholder `Ask NOFXi anything... ⌘K`; Send button `[disabled]` when empty
+- Visible behavior: placeholder `Ask VLi anything... ⌘K`; Send button `[disabled]` when empty
 
 ### Sub-component: `MessageRenderer`
 - **File:** [web/src/components/agent/MessageRenderer.tsx](web/src/components/agent/MessageRenderer.tsx) (187 LOC)
@@ -118,8 +119,8 @@
   - **Center column (chat area):**
     - Welcome screen: zap icon, heading `What can I help with?`, paragraph `Analyze markets, execute trades, search stocks — just ask`
     - 4 suggestion cards: `Analyze MNQ / Technical analysis + sentiment`, `Trade MNQ / Agent executes for you`, `Search Futures / Enter symbol or contract`, `Strategy Ideas / Market-based suggestions`
-    - Input box: `Ask NOFXi anything... ⌘K` placeholder + Send button (disabled until text entered)
-    - Footer disclaimer: `NOFXi may make mistakes. Always verify trading decisions.`
+    - Input box: `Ask VLi anything... ⌘K` placeholder + Send button (disabled until text entered)
+    - Footer disclaimer: `VLi may make mistakes. Always verify trading decisions.`
   - **Right sidebar (accordion):**
     - `Trading Panel` header
     - `Market` section (collapsed, contains the MNQ ticker)
@@ -242,7 +243,7 @@ Both authenticated routes inject `agent.WithStoreUserID(ctx, userID)` AND `agent
 |---|---|---|---|
 | `MarketTicker.SYMBOLS` array is hardcoded to `['MNQ']` — not configurable per user. If user later wants ES + GC + CL on the ticker, requires code change. | `MarketTicker.tsx:14` | Functional limitation | 30-min: make it a prop, drive from `UserPreferencesPanel` watchlist |
 | `SYMBOL_ICONS = { MNQ: 'N', NQ: 'N' }` uses a letter as icon — no proper futures icon asset | `MarketTicker.tsx:16-19` | Cosmetic | Bundle with a /public/icons/futures/ asset addition |
-| The chat input placeholder text says "Ask NOFXi anything... ⌘K" — verify ⌘K actually focuses the input | `ChatInput.tsx` (not read fully) | UX assumption | 5-min Playwright verify (out of this read-only pass) |
+| The chat input placeholder text says "Ask VLi anything... ⌘K" — verify ⌘K actually focuses the input | `ChatInput.tsx` (not read fully) | UX assumption | 5-min Playwright verify (out of this read-only pass) |
 | The quick-action button `💰 Balance` likely sends a fixed prompt to the agent that triggers the `get_balance` tool. None of these quick-actions are documented in source comments — easy to break by mistake. | `AgentChatPage.tsx` (quick action handler not read) | Maintainability | Document the 6 quick-action commands somewhere |
 | `runAgentStream`'s module-level singletons (`activeStreamAbortController`, `activeStreamReader`) make multi-tab support fragile — opening /agent in two tabs of the same session will collide on the singleton | `AgentChatPage.tsx:36-38` | Edge case | Worth a per-tab refactor only if multi-tab becomes a use case |
 | `localStorage`-only persistence (`persistAgentMessages`, slice last 100) | `AgentChatPage.tsx:84` | Privacy + portability | Chat history doesn't sync across devices. Worth documenting. |

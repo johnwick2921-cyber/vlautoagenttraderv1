@@ -5,7 +5,7 @@
   "verification_head": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
   "entries": [
     {
-      "path": "/tmp/nofx-combined-review/deeper-ordering-repro-a982cc74.log",
+      "path": "/tmp/vl-combined-review/deeper-ordering-repro-a982cc74.log",
       "bytes": 1281,
       "sha256": "5f8237da9b5be13b5e8fb877aeb430c48f2ee90d110791b4a293be12239bffa8",
       "group": "ordered_execution",
@@ -15,7 +15,7 @@
       "revision_context": "a982cc74"
     },
     {
-      "path": "/tmp/nofx-combined-review/ordering-repro-a982cc74.log",
+      "path": "/tmp/vl-combined-review/ordering-repro-a982cc74.log",
       "bytes": 1148,
       "sha256": "3d08ddfb9ad55ed74000543352f6ae8a629fd0b7147cc31868c14f32a6dc0b1c",
       "group": "ordered_execution",
@@ -25,7 +25,7 @@
       "revision_context": "a982cc74"
     },
     {
-      "path": "/tmp/nofx-combined-review/first-snapshot-before-d3e4638e.log",
+      "path": "/tmp/vl-combined-review/first-snapshot-before-d3e4638e.log",
       "bytes": 408,
       "sha256": "1f6e8df3fe74eed4191cdcb18fa1480be0876cd83f447e69c50b66a72c1f204a",
       "group": "ordered_execution",
@@ -35,7 +35,7 @@
       "revision_context": "d3e4638e"
     },
     {
-      "path": "/tmp/nofx-combined-review/bounded-followup-race-0913.log",
+      "path": "/tmp/vl-combined-review/bounded-followup-race-0913.log",
       "bytes": 83,
       "sha256": "4422c3609d9e8166e881e49fd14cf2038c2373d4bb2f235aa2c75ab747613010",
       "group": "ordered_execution",
@@ -45,7 +45,7 @@
       "revision_context": "c20d0a82 precursor"
     },
     {
-      "path": "/tmp/nofx-combined-review/ordered-final-06.log",
+      "path": "/tmp/vl-combined-review/ordered-final-06.log",
       "bytes": 98,
       "sha256": "ccd32a87e30b454ba4577cefc732353927955b5b5dbc2fc8cb95522218a6300f",
       "group": "ordered_execution",
@@ -55,7 +55,7 @@
       "revision_context": "9b379c8c precursor"
     },
     {
-      "path": "/tmp/nofx-combined-review/ordered-positive-reject-before-07.log",
+      "path": "/tmp/vl-combined-review/ordered-positive-reject-before-07.log",
       "bytes": 2762,
       "sha256": "cf41406835d2b4a6361587048306e6065af3565c62f0433c0c9a4a859be15236",
       "group": "ordered_execution",
@@ -65,7 +65,7 @@
       "revision_context": "9b379c8c"
     },
     {
-      "path": "/tmp/nofx-combined-review/ordered-old-flat-before-08.log",
+      "path": "/tmp/vl-combined-review/ordered-old-flat-before-08.log",
       "bytes": 2700,
       "sha256": "44422ecb8f8d0b045836727b951753b4488cbdb69c25f4bedc1d498d1feb53a1",
       "group": "ordered_execution",
@@ -75,7 +75,7 @@
       "revision_context": "9b379c8c"
     },
     {
-      "path": "/tmp/nofx-combined-review/ordered-final-boundaries-14.log",
+      "path": "/tmp/vl-combined-review/ordered-final-boundaries-14.log",
       "bytes": 121,
       "sha256": "5449915fa255aafbbb9087026753adb0c195ad61be4df7f894b1a01611791d36",
       "group": "ordered_execution",
@@ -85,7 +85,7 @@
       "revision_context": "d7b70a90 precursor"
     },
     {
-      "path": "/tmp/nofx-combined-review/ordered-adapter-full-race-13.log",
+      "path": "/tmp/vl-combined-review/ordered-adapter-full-race-13.log",
       "bytes": 37,
       "sha256": "9a2a2b8f15b94bd337c51039ad2a60538338ceaaf39f08294e1c3b6861278339",
       "group": "ordered_execution",
@@ -95,7 +95,7 @@
       "revision_context": "Before final raw executionFill copy adjustment; that adjustment covered in focused14"
     },
     {
-      "path": "/tmp/nofx-entry-replacement-before.log",
+      "path": "/tmp/vl-entry-replacement-before.log",
       "bytes": 1225,
       "sha256": "e76b9d2ec54581b3daa624bdbbdf0e17ddbe1ebf1b8fc2b8dd2f7bbc44e373b4",
       "group": "shared_entry_receipt",
@@ -105,7 +105,7 @@
       "revision_context": "cd2978b7 precursor"
     },
     {
-      "path": "/tmp/nofx-entry-replacement-focused-02.log",
+      "path": "/tmp/vl-entry-replacement-focused-02.log",
       "bytes": 98,
       "sha256": "129605333e9b30657fd854a4e76abf7a89ab663f028aa8fd00becd18bf7268eb",
       "group": "shared_entry_receipt",
@@ -115,57 +115,57 @@
       "revision_context": "cd2978b7 precursor"
     },
     {
-      "path": "/tmp/nofx-shared-entry-watermark-review.md",
+      "path": "/tmp/vl-shared-entry-watermark-review.md",
       "bytes": 4875,
       "sha256": "0ab6d4f6ab255f7e89973733f216bd65994aa005f37f54787af9d5940b8991c6",
       "group": "review_report",
       "result": "review",
-      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-shared-entry-watermark-review.md.",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for vl-shared-entry-watermark-review.md.",
       "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-positive-entry-independent-review.md",
+      "path": "/tmp/vl-positive-entry-independent-review.md",
       "bytes": 5306,
       "sha256": "ed268e4346c42be1d1f3c23e37dba33742ad3408c6c20dcac43e21ef454f09c2",
       "group": "review_report",
       "result": "review",
-      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-positive-entry-independent-review.md.",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for vl-positive-entry-independent-review.md.",
       "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-ordered-execution-independent-review.md",
+      "path": "/tmp/vl-ordered-execution-independent-review.md",
       "bytes": 10359,
       "sha256": "eeb950251b6b4b7235c12539971423621e3f76821af4b3aaec511c8c27521cd6",
       "group": "review_report",
       "result": "review",
-      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-ordered-execution-independent-review.md.",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for vl-ordered-execution-independent-review.md.",
       "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-ordered-execution-repair.md",
+      "path": "/tmp/vl-ordered-execution-repair.md",
       "bytes": 7342,
       "sha256": "b042aee13f2178a7f94e787f86eb412af8b3321b4852a571a3b36da140d4656e",
       "group": "review_report",
       "result": "review",
-      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-ordered-execution-repair.md.",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for vl-ordered-execution-repair.md.",
       "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-entry-replacement-report.md",
+      "path": "/tmp/vl-entry-replacement-report.md",
       "bytes": 3465,
       "sha256": "eebb2ce67786f1cc0ca6b958cb3c6ac4056800b4d7b5a04661cbf7948c34eb58",
       "group": "review_report",
       "result": "review",
-      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-entry-replacement-report.md.",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for vl-entry-replacement-report.md.",
       "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-csharp-verification/terminal-exit-before.log",
+      "path": "/tmp/vl-csharp-verification/terminal-exit-before.log",
       "bytes": 2334,
       "sha256": "b9dbc32211b69a95d63391ddc3147d79c317b981173e4ae3f060d0355191169d",
       "group": "csharp_offline",
@@ -175,7 +175,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-csharp-verification/terminal-exit-report.md",
+      "path": "/tmp/vl-csharp-verification/terminal-exit-report.md",
       "bytes": 3526,
       "sha256": "3bf7f665537d94f2dc91f8028ea8fe3a6503da9bf1fddb9089f974d7c2e84272",
       "group": "csharp_offline",
@@ -185,7 +185,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-csharp-verification/final-marker-compile.log",
+      "path": "/tmp/vl-csharp-verification/final-marker-compile.log",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "group": "csharp_offline",
@@ -195,7 +195,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-csharp-verification/final-marker-harness-compile.log",
+      "path": "/tmp/vl-csharp-verification/final-marker-harness-compile.log",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "group": "csharp_offline",
@@ -205,7 +205,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-csharp-verification/final-marker-harness-results.log",
+      "path": "/tmp/vl-csharp-verification/final-marker-harness-results.log",
       "bytes": 6523,
       "sha256": "388f95048a1d81190deeebb1994e680877624c6c5fe976e534b7e93fccd8647c",
       "group": "csharp_offline",
@@ -215,7 +215,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-csharp-verification/terminal-exit-go-pins.log",
+      "path": "/tmp/vl-csharp-verification/terminal-exit-go-pins.log",
       "bytes": 24,
       "sha256": "6b2e842e0cda39866055935c9726b93de90fab5adc7196a5198c0d1afe41755e",
       "group": "csharp_offline",
@@ -225,7 +225,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-terminal-notional-final-0858-run2.log",
+      "path": "/tmp/vl-terminal-notional-final-0858-run2.log",
       "bytes": 47,
       "sha256": "164dd560f9bcc8957ace9f001261ab6af6aadd675c21e79868d5f37ff9f040fa",
       "group": "earlier_repair",
@@ -235,7 +235,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-terminal-migration-0856.log",
+      "path": "/tmp/vl-terminal-migration-0856.log",
       "bytes": 23,
       "sha256": "d7d1621217c3744112624653b8fb1f71b84ef0b01f67f238579e0ed05cb6b53f",
       "group": "earlier_repair",
@@ -245,7 +245,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-partialclose-review/related-race-02.log",
+      "path": "/tmp/vl-partialclose-review/related-race-02.log",
       "bytes": 126,
       "sha256": "052de1952581fdc7b4355e715c6485d283e51a729eab23dc89afa549572b02e9",
       "group": "earlier_repair",
@@ -255,7 +255,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-partialclose-review/observer-handoff-01.log",
+      "path": "/tmp/vl-partialclose-review/observer-handoff-01.log",
       "bytes": 36,
       "sha256": "19981daec7c0538ce51d41f31dd6247b252d1358b4f23f49211652f5ab9bb53a",
       "group": "earlier_repair",
@@ -265,7 +265,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-stop-refusal-after.log",
+      "path": "/tmp/vl-stop-refusal-after.log",
       "bytes": 24,
       "sha256": "48d815117885d2a33e2c2fee72ab265aadecba5bc1be212a324dea6ea2096f4b",
       "group": "earlier_repair",
@@ -275,7 +275,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-agent-client-after.log",
+      "path": "/tmp/vl-agent-client-after.log",
       "bytes": 23,
       "sha256": "ed920ef8dd4b82d522e853f29b4ff4af39effcbe6950d56988ce089e505344ec",
       "group": "earlier_repair",
@@ -285,7 +285,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-overlay-revision-02.log",
+      "path": "/tmp/vl-overlay-revision-02.log",
       "bytes": 44,
       "sha256": "e19ca7d81a9dff9206afddfdb1f29a37c384b27d344e835df83e583e47308976",
       "group": "earlier_repair",
@@ -295,7 +295,7 @@
       "revision_context": null
     },
     {
-      "path": "/tmp/nofx-repair-full-suite-03.log",
+      "path": "/tmp/vl-repair-full-suite-03.log",
       "bytes": 2852,
       "sha256": "a7e1bf60640916e5836f6929aa2065c017358ecd2c564825916df78a9daee168",
       "group": "earlier_repair",

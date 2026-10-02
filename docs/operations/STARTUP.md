@@ -1,4 +1,5 @@
-# STARTUP — nofx NQ Futures Bot
+names rewritten to vl on 2026-09-30 (VL rename)
+# STARTUP — vl NQ Futures Bot
 
 Operator runbook for cold-starting the bot against a live NT8 host. Terse, copy-paste-ready. See plan doc Task 30 for source.
 
@@ -34,7 +35,7 @@ grep TRADING_MODE .env   # must show TRADING_MODE=futures
 ## 2. Cold start
 
 ```bash
-./nofx-bin > /tmp/nofx.log 2>&1 &
+./vl-bin > /tmp/vl.log 2>&1 &
 ```
 
 Verify port 8080 is listening:
@@ -46,10 +47,10 @@ ss -tlnp | grep :8080
 Verify startup log:
 
 ```bash
-grep "System started successfully" /tmp/nofx.log
+grep "System started successfully" /tmp/vl.log
 ```
 
-Expected output: a single line containing `✅ System started successfully`. Absence means crash — `tail -200 /tmp/nofx.log` for the panic.
+Expected output: a single line containing `✅ System started successfully`. Absence means crash — `tail -200 /tmp/vl.log` for the panic.
 
 ## 3. Verify trader loads
 
@@ -60,7 +61,7 @@ curl -s localhost:8080/api/traders | jq '.[] | {id, exchange, symbol}'
 Expected: at least one entry with `exchange: "ninjatrader"`. Cross-check the log:
 
 ```bash
-grep "Loading trader" /tmp/nofx.log
+grep "Loading trader" /tmp/vl.log
 ```
 
 Expected line shape: `📦 Loading trader <id> (AI Model: <model>, Exchange: ninjatrader/...)`.
@@ -71,7 +72,7 @@ Run the end-to-end NQ smoke (Databento → indicators → prompt → CSV signal 
 
 ```bash
 DATABENTO_API_KEY=$KEY \
-NINJATRADER_DATA_DIR=/mnt/c/Users/<u>/NofxTrader/data \
+NINJATRADER_DATA_DIR=/mnt/c/Users/<u>/VLTrader/data \
 TRADING_MODE=futures \
 go run ./cmd/nq_smoke
 ```
@@ -79,7 +80,7 @@ go run ./cmd/nq_smoke
 While that runs, in a separate terminal tail the NT-side fills file:
 
 ```bash
-tail -f /mnt/c/Users/<u>/NofxTrader/data/trades_taken.csv
+tail -f /mnt/c/Users/<u>/VLTrader/data/trades_taken.csv
 ```
 
 A successful smoke ends with a 3-field row appearing in `trades_taken.csv` (DateTime,Direction,Entry_Price). NT must be live and VLTrader attached for the fill to land.
@@ -87,13 +88,13 @@ A successful smoke ends with a 3-field row appearing in `trades_taken.csv` (Date
 ## 5. Shutdown
 
 ```bash
-pkill -TERM -f nofx-bin
+pkill -TERM -f vl-bin
 ```
 
 Verify no lingering file handles into the NT data dir:
 
 ```bash
-lsof | grep NofxTrader
+lsof | grep VLTrader
 ```
 
 Expected: empty. Any remaining handles indicate a stuck goroutine — investigate before restarting.
@@ -105,7 +106,7 @@ Defender's real-time scanner can transiently lock files during `os.Rename`, brea
 From an **Administrator** PowerShell prompt on the Windows host:
 
 ```powershell
-Add-MpPreference -ExclusionPath "C:\Users\<user>\NofxTrader\data"
+Add-MpPreference -ExclusionPath "C:\Users\<user>\VLTrader\data"
 ```
 
 Verify the exclusion is active:

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // TestDecisionSaveFailureIsLoudAndCounted is the P1-D pin (audit 2026-09-26):

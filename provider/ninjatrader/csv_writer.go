@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"nofx/internal/retry"
+	"vl/internal/retry"
 )
 
 // CSVWriter writes trade signals to a Windows-shared CSV file that

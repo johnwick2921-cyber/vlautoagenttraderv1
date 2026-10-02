@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	"vl/kernel"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // Class 27 FIX 4 (one-live-arm guard) + FIX 5 (split-leg capacity) tests.

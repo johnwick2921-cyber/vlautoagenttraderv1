@@ -16,9 +16,9 @@ import (
 	"strings"
 	"sync"
 
-	"nofx/logger"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/trader/types"
+	"vl/logger"
+	ntwire "vl/provider/ninjatrader"
+	"vl/trader/types"
 )
 
 // TransportEnvVar is the env-var name read by NewTraderFromEnv. Exported so

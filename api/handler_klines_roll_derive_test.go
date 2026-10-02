@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/manager"
-	"nofx/market"
-	"nofx/store"
+	"vl/auth"
+	"vl/manager"
+	"vl/market"
+	"vl/store"
 )
 
 func rollMinute(d, h, min int) int64 {

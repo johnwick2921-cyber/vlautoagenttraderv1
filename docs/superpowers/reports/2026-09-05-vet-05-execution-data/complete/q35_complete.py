@@ -1,7 +1,7 @@
 """Section 5 documentary measurements only: explicit eligible ids and uncertainty."""
 import sqlite3,json,collections,datetime,math,csv,pathlib
 from zoneinfo import ZoneInfo
-c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
+c=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
 c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
 x=json.load(open('q31_verified.json'));z=json.load(open('q34_integration.json'));o={}
 def rows(q,a=()):return [dict(r) for r in c.execute(q,a)]

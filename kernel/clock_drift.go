@@ -4,9 +4,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nofx/logger"
-	"nofx/market"
-	"nofx/telemetry"
+	"vl/logger"
+	"vl/market"
+	"vl/telemetry"
 )
 
 // C2 — CLOCK-DRIFT ENTRY GUARD.

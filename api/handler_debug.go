@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"nofx/config"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/config"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // runtimeSymbolsEnabled is the P5.3 feature flag (NT_RUNTIME_SYMBOLS=true/1).

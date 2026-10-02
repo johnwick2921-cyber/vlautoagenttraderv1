@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"gorm.io/gorm"
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 	"testing"
 	"time"
 )

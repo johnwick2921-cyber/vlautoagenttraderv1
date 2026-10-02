@@ -1,7 +1,7 @@
 package trader
 
 import (
-	"nofx/store"
+	"vl/store"
 )
 
 // FlipRereadBootLine (W-FLIP-REREAD, 2026-09-17) renders the resolved knob at

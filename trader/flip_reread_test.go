@@ -7,16 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // W-FLIP-REREAD (2026-09-17) — a fired flip must produce a re-read in the
 // FLIPPED direction (class NN), instead of only sleeping. These tests pin the
 // knob gate, the once-per-fired-flip semantics, the refusal path, the death
 // path, and the ASIA-v13 replay shape (built from dispatch quotes because
-// /home/hoang/nofx-r101/data/db.copy.db predates the overnight ASIA rows).
+// /home/hoang/vl-r101/data/db.copy.db predates the overnight ASIA rows).
 
 // flipRereadRecorder substitutes the read-call seam so fixtures can observe the
 // request without running a live planner stream. It can append a fresh plan
@@ -343,7 +343,7 @@ func TestFlipRereadDeathConditionUnchanged(t *testing.T) {
 
 // TestFlipRereadAsiaV13ReplayFixture replays the owner's overnight ASIA v13
 // shape: plan bias SHORT with a flip above 29418.8 → bias long; price broke up
-// through the line. PROVENANCE: /home/hoang/nofx-r101/data/db.copy.db predates
+// through the line. PROVENANCE: /home/hoang/vl-r101/data/db.copy.db predates
 // the 2026-09-16 overnight ASIA rows (the copy was made 16:00 CT), so this
 // fixture is built from the dispatch quotes, not from the DB.
 func TestFlipRereadAsiaV13ReplayFixture(t *testing.T) {

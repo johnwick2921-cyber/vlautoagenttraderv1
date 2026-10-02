@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # No-Entry Investigation — Zero Entries Since the Hardening Deploy
 
-**Date:** 2026-08-14 · **Repo:** /home/hoang/nofx · **Running rev:** `3624a2a4` (PID 363618) · **Read-only** (sqlite mode=ro, bounded log/journal reads). This report is the only write.
+**Date:** 2026-08-14 · **Repo:** /home/hoang/vl · **Running rev:** `3624a2a4` (PID 363618) · **Read-only** (sqlite mode=ro, bounded log/journal reads). This report is the only write.
 
 ## VERDICT
 
@@ -9,7 +10,7 @@
 ---
 
 ## STEP 1 — Process truth [A]
-- `nofx-bin` **running**, PID **363618**, rev **`3624a2a4`** (`go version -m nofx-bin` → vcs.revision 3624a2a4). systemd `active`, **`NRestarts=0`**, `ExecMainStartTimestamp=2026-08-13 19:59:36 CDT`. No restarts since deploy.
+- `vl-bin` **running**, PID **363618**, rev **`3624a2a4`** (`go version -m vl-bin` → vcs.revision 3624a2a4). systemd `active`, **`NRestarts=0`**, `ExecMainStartTimestamp=2026-08-13 19:59:36 CDT`. No restarts since deploy.
 - **Both traders cycling:** 468 + 469 decision rows since Aug-13 15:00; latest decision `2026-08-14 15:59:50 UTC` (10:59 CT). The loop is alive and advancing — not a stuck process. Source: `decision_records` (28 713 rows total).
 
 ## STEP 2 — Halt/freeze states [A]
@@ -63,4 +64,4 @@ Why the guard is right to block: `placeEntry` stamps the signal `Timestamp` from
 **No code fix is warranted** — C2 is behaving correctly and is self-clearing; the defect is the host clock. If the owner nonetheless wants to reconsider policy, the only knob is C2's 60 s threshold (would just push signals into NT8's own 60 s rejection) — not recommended.
 
 ## Evidence ledger
-All Tier [A] unless noted. Process: `pgrep`/`systemctl show`. Decisions: `decision_records` (sqlite ro). Gate receipts: `data/nofx_2026-08-13.log` (the active log — opened at the 19:59 Aug-13 start, still receiving Aug-14 writes; there is no `nofx_2026-08-14.log`). Key lines: `kernel/clock_drift.go:77` (16×), `kernel/engine_position.go:178` (R:R PASS 16×), `kernel/engine_analysis.go:164` (guardrails master OFF). Live drift last measured 253 s at 10:00:46 CDT; WSL2 drift persists, so it is presumed current [B].
+All Tier [A] unless noted. Process: `pgrep`/`systemctl show`. Decisions: `decision_records` (sqlite ro). Gate receipts: `data/vl_2026-08-13.log` (the active log — opened at the 19:59 Aug-13 start, still receiving Aug-14 writes; there is no `vl_2026-08-14.log`). Key lines: `kernel/clock_drift.go:77` (16×), `kernel/engine_position.go:178` (R:R PASS 16×), `kernel/engine_analysis.go:164` (guardrails master OFF). Live drift last measured 253 s at 10:00:46 CDT; WSL2 drift persists, so it is presumed current [B].

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // ── W-EXEC-TRUTH W0 (a/e) — PICTURE HTF THROUGH THE ONE ENTRY GATE ─────────

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // P&L-TRUTH WAVE (2026-09-01) — PIN: the model must never read a fabricated

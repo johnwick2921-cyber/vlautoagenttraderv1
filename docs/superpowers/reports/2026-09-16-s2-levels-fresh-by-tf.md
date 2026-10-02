@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # S2 — Timeframe-Aware Freshness + Name-Preserving Collapse (DS-101)
 
-- **Lane:** DS-101 · **Branch:** `fix/levels-fresh-by-tf` · **Claim:** `f3d46176` · **Worktree:** `/home/hoang/nofx-ds101`
+- **Lane:** DS-101 · **Branch:** `fix/levels-fresh-by-tf` · **Claim:** `f3d46176` · **Worktree:** `/home/hoang/vl-ds101`
 - **Base:** `git log -1 -- docs/superpowers/AUDIT-CHECKLIST.md` on dev at cut = `f6465143` (dev tip at claim time).
 - **REVIEW FIXES (CTO 00:06Z, F0–F5):** all landed at `324927ad`; re-entry grading semantics (F1), threaded read-now (F4), per-install bar cache + dedupe + CloseTime honesty (F2/F3), harness build tag + export pin (F0), gofmt (F5). F6 merge of origin/dev pending in the same wave.
 - **Report:** 2026-09-16 → 17 (revised after F0–F5).
@@ -66,7 +67,7 @@ The direction FLIPPED vs my pre-review table (which counted formation bars and s
 
 ## What I did NOT do
 
-- No writes under `/home/hoang/nofx` (main tree untouched). DB opened read-only only.
+- No writes under `/home/hoang/vl` (main tree untouched). DB opened read-only only.
 - No change to `freshMult`/`zoneFreshMult` tables, no scoring-constant moves, no seating changes (S3's scope), no S1 structure-block fields.
 - `GUIDE_BUILT_REV` NOT bumped (deploy lane's step).
 - No deploys, no RELEASE edits, no `.env`, no trader/account/key touches (SIM-only law intact).

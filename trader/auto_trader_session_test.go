@@ -3,7 +3,7 @@ package trader
 import (
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 func TestSessionGateDecision(t *testing.T) {

@@ -23,12 +23,12 @@ anything is uploaded**, so a signature the shipped key cannot check never leaves
 the runner. That requires a keypair the owner creates once:
 
 ```
-ssh-keygen -t ed25519 -C nofx-release -f nofx-release-key   # no passphrase
-echo "release $(cat nofx-release-key.pub)" > deploy/release_allowed_signers
+ssh-keygen -t ed25519 -C vl-release -f vl-release-key   # no passphrase
+echo "release $(cat vl-release-key.pub)" > deploy/release_allowed_signers
 git add deploy/release_allowed_signers                      # COMMIT this half
-# paste the PRIVATE half (nofx-release-key) into the repo's
+# paste the PRIVATE half (vl-release-key) into the repo's
 # Settings → Environments → release → secret RELEASE_SIGNING_KEY
-shred -u nofx-release-key                                   # keep no local copy
+shred -u vl-release-key                                   # keep no local copy
 ```
 
 **It must be an allowed-signers file, not a bare `.pub`.** `ssh-keygen -Y verify

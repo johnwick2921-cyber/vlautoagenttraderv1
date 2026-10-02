@@ -3,8 +3,8 @@ package kernel
 import (
 	"strings"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // W11 — PLANNER INDICATOR MIRROR (owner override, spec §regime). The planner prompt

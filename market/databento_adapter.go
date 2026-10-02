@@ -1,7 +1,7 @@
 package market
 
 import (
-	"nofx/provider/databento"
+	"vl/provider/databento"
 )
 
 // BarsToKlines converts Databento bars into the project's canonical Kline shape.

@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/updaterjob"
+	"vl/internal/updaterjob"
 )
 
 // A forward wall step must NOT let one ack count twice: the gate passes only

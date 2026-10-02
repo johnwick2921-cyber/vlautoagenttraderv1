@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 func readFileForTest(name string) (string, error) {

@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # 🔍 维护者 PR 审核指南
 
 **语言：** [English](PR_REVIEW_GUIDE.md) | [中文](PR_REVIEW_GUIDE.zh-CN.md)
 
-本指南适用于审核 pull request 的 NOFX 维护者。
+本指南适用于审核 pull request 的 VL 维护者。
 
 ---
 

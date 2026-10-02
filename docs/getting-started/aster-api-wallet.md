@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Aster DEX API Wallet Setup Guide
 
 This guide explains how to create and configure an API Wallet for secure trading on Aster DEX.
@@ -39,11 +40,11 @@ After creation, save these **immediately**:
 
 ⚠️ **Important**: The private key is only shown once! Save it securely.
 
-## Step 4: Configure in NOFX
+## Step 4: Configure in VL
 
-Add your API wallet through the NOFX web interface:
+Add your API wallet through the VL web interface:
 
-1. Open NOFX dashboard (http://localhost:3000)
+1. Open VL dashboard (http://localhost:3000)
 2. Go to **Exchange Configuration**
 3. Enable **Aster DEX**
 4. Enter:

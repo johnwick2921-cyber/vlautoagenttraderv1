@@ -16,7 +16,7 @@ import (
 	"math"
 	"sort"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // cellEvent is one first-touch event for ONE map cell (compact form).

@@ -4,9 +4,9 @@ import (
  "path/filepath"
  "testing"
  "time"
- "nofx/market"
- "nofx/store"
- "nofx/researchsnapshot"
+ "vl/market"
+ "vl/store"
+ "vl/researchsnapshot"
 )
 
 // Paired offline production assembler benchmark. No model or broker call.

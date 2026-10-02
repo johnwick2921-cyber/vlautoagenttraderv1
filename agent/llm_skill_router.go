@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/mcp"
+	"vl/branding"
+	"vl/mcp"
 )
 
 type unifiedTurnDecision struct {
@@ -173,7 +174,7 @@ func (a *Agent) buildUnifiedTurnRouterPrompt(userID int64, lang, text string) (s
 		activeTaskDetails = buildBrainUserPrompt(lang, text, previousAssistantReply, recentConversation, currentRefs, activeTask, true)
 	}
 
-	systemPrompt := prependNOFXiAdvisorPreamble(`You are the unified turn router for NOFXi.
+	systemPrompt := prependPersonaAdvisorPreamble("You are the unified turn router for " + branding.PersonaName() + `.
 Return JSON only. No markdown.
 
 You must make ONE combined decision for this user turn:

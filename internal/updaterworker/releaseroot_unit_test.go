@@ -8,7 +8,7 @@ import (
 )
 
 // PIN (CTO 1790303901586): ReleaseRoot's own rules, at the unit, so a second
-// caller inherits them — not only cmd/nofx-updater's fetch refusals. Each row
+// caller inherits them — not only cmd/vl-updater's fetch refusals. Each row
 // is one rule: containment compares path ELEMENTS ("<install>/..rel" is
 // inside), a trusted root is its own resolved path, and the install side is
 // resolved too. The two controls prove the rules do not refuse a real

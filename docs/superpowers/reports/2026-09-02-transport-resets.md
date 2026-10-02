@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Transport resets — who closes the socket, then survive it (class 41)
 
 **Dispatch:** TRANSPORT RESETS — Phase 1 read-only forensics + Phase 2 fix. Owner: hoang, 2026-09-02.
-**Worktree:** `../nofx-transport` (branch `fix/transport-resets`), main tree untouched during Phase 1, no lock held.
+**Worktree:** `../vl-transport` (branch `fix/transport-resets`), main tree untouched during Phase 1, no lock held.
 **Evidence tiers:** [A] directly verified · [B] inferred from strong evidence · [C] speculation.
 
 ## 0. Surprise logged (A23)
@@ -56,7 +57,7 @@ will have its gap.
 | Setting | Value | Can it close a long body? |
 |---|---|---|
 | `net.Dialer.Timeout` | = client timeout (600 s) | connect only — no |
-| `net.Dialer.KeepAlive` | **30 s** | keepalive probes only; **confirmed in effect** (`ss -o` shows `timer:(keepalive,…)` on every nofx-bin :443 socket) — no |
+| `net.Dialer.KeepAlive` | **30 s** | keepalive probes only; **confirmed in effect** (`ss -o` shows `timer:(keepalive,…)` on every vl-bin :443 socket) — no |
 | `ResponseHeaderTimeout` | unset (0) | headers only — no |
 | `IdleConnTimeout` | unset (0 = never) | idle pooled conns only — could make a REUSED conn stale, but a stale reuse fails at request time, not after 55k chars — not these cuts |
 | `DisableKeepAlives` | false | — |
@@ -87,8 +88,8 @@ the overlapped rate. **No power, no effect shown — concurrency is not demonstr
 
 `tcpdump`/`tshark`/`dumpcap` are **not installed** and `sudo` needs a password, so a pcap is not
 available to this dispatch. Substitute armed (read-only, no root): a passive TCP-state watcher
-(`~/nofx-backups/transport-capture/sockwatch.sh`, log `sockwatch.log`) polling `ss -tnopi` every
-250 ms for every nofx-bin :443 socket, logging state transitions with `lastrcv/lastsnd/bytes_received`:
+(`~/vl-backups/transport-capture/sockwatch.sh`, log `sockwatch.log`) polling `ss -tnopi` every
+250 ms for every vl-bin :443 socket, logging state transitions with `lastrcv/lastsnd/bytes_received`:
 
 - `ESTAB → CLOSE-WAIT` = the **peer sent FIN first**; `ESTAB → FIN-WAIT-*` = **we closed first**;
 - `ESTAB → GONE` with no intermediate state = RST (either side) — `lastrcv` right before tells the gap.
@@ -151,8 +152,8 @@ Tests: `go test ./...` green (worktree, full) · `go vet ./mcp ./trader` clean �
 ## 3. Cutover (pending owner GO)
 
 Clean-clone build: `git clone --no-local` of the branch → `go build` → `vcs.revision=<REV>`
-`vcs.modified=false` (quoted in §5 once staged). Rollback binary: `nofx-bin.prev.boot` (= the running
-23f56f49 at swap time); rollback command: `cp nofx-bin.prev.boot nofx-bin && echo 23f56f49… >
+`vcs.modified=false` (quoted in §5 once staged). Rollback binary: `vl-bin.prev.boot` (= the running
+23f56f49 at swap time); rollback command: `cp vl-bin.prev.boot vl-bin && echo 23f56f49… >
 deploy/RELEASE && kill -9 <MainPID>`. Cutover protocol: flat gate (DB OPEN=0 · API positions [] ·
 NT8 count=0 · armed_orders non-terminal=0 — leg 4 is the ledger, `GetOpenOrders` is a stub) ·
 in-flight (`replan_in_flight` + attempt state) · window (not 16:45–17:10, no live arms) · owner GO ·
@@ -180,12 +181,12 @@ _(appended after the owner GO)_
 | Window | 06:2x CT, outside 16:45–17:10, no live arms |
 | Binary | clean clone `--no-local` of `fix/transport-resets` @ d5a6e138 → `vcs.revision=d5a6e138da851f2ee9ceba22424363bba0f219eb vcs.modified=false`; dev fast-forwarded to the same rev (PR #88) |
 | RELEASE file | written to d5a6e138 BEFORE the swap (A19: file before swap, marker COMMIT after boot) |
-| Swap | `cp nofx-bin nofx-bin.prev.boot` (= 23f56f49 rollback) · `mv nofx-bin nofx-bin.old.23f56f49` · `mv nofx-bin.next nofx-bin` |
-| Restart | the auto-mode classifier denied `kill -9 2097561` and `systemctl kill --signal=SIGKILL nofx.service` three times; the OWNER ran the restart ("DO IT FOR ME ALL" → owner-side kill); old process exited 06:27:45 CT |
+| Swap | `cp vl-bin vl-bin.prev.boot` (= 23f56f49 rollback) · `mv vl-bin vl-bin.old.23f56f49` · `mv vl-bin.next vl-bin` |
+| Restart | the auto-mode classifier denied `kill -9 2097561` and `systemctl kill --signal=SIGKILL vl.service` three times; the OWNER ran the restart ("DO IT FOR ME ALL" → owner-side kill); old process exited 06:27:45 CT |
 | Boot | 06:27:45 CT PID 1744258: `🔐 BOOT INTEGRITY OK — rev d5a6e138da85 · built 2026-09-02T11:15:37Z · expected d5a6e138da85 · goldens PASS` |
 | Ledger lines | 🚀 speed wave · 🗓 session reads · 🪢 class 27 · 🧪 validator hints 15 sites (34+38) · 📜 contract 17 restrictions (38) · ⚖ arm normalizer (39) · 🗓 preflight (36) · 🧾 P&L surfaces 12/0 (40) · 🛰 planner client (37) · **🔁 planner stream policy (class 41): stream_tries=3 … backoff=2s→15s→45s … watchdog_log=on … keepalive=30s … serialize_executor=off resend_identical=on** |
 | Errors since boot | 0 `[ERRO]`, 0 TradingRefused |
-| Rollback | `cp nofx-bin.prev.boot nofx-bin && echo 23f56f49a53667174ca0d929d1e536f716bb1236 > deploy/RELEASE && <owner kill -9 MainPID>` |
+| Rollback | `cp vl-bin.prev.boot vl-bin && echo 23f56f49a53667174ca0d929d1e536f716bb1236 > deploy/RELEASE && <owner kill -9 MainPID>` |
 
 **Proof owed (A20):** the next `class=transport|idle_deadline|total_deadline|client_timeout` or 5xx/429 planner failure must show `⏳ Waiting 2s` → `15s` between calls, then `📐 planner attempt N/3 failed on the provider (class=…) — attempt N+1 re-sends the IDENTICAL prompt` and `🧩 planner attempt N+1/3 resend-identical`; an idle kill must show `⏱ stream idle watchdog FIRED: Ns since last SSE line`. The NY 08:00 CT read is the first live candidate. Monitor `be53w8t7e` is armed on those lines.
 

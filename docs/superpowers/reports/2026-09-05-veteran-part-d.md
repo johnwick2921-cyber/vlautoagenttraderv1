@@ -1,11 +1,12 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 8 — The three-day stretch and the tape (Sub-agent D)
 
 ## EVIDENCE BASIS — READ THIS FIRST
 
 **No store, no bars, no tape, no engine were reachable from this environment, and NO REPLAY WAS
-PERFORMED.** This is a fresh cloud clone at `/home/user/nofx`. There is no `data.db` anywhere in
+PERFORMED.** This is a fresh cloud clone at `/home/user/vl`. There is no `data.db` anywhere in
 the container, no `bars` table, no listener on `localhost:8080`, no `/api/health`, no
-`/api/expectancy`, no `/api/config/resolved`, and no `~/nofx-analysis/`. Nothing below is a
+`/api/expectancy`, no `/api/config/resolved`, and no `~/vl-analysis/`. Nothing below is a
 simulation, and no number below was produced by replaying a tape I did not have.
 
 What I *did* have, and what everything below rests on, is **committed evidence inside this
@@ -702,7 +703,7 @@ needs all of it.
 
 ```sql
 -- 0) the scenario universe, with the two fields plans.csv omits
-sqlite3 "file:$HOME/nofx/data/data.db?mode=ro" -header -csv "
+sqlite3 "file:$HOME/vl/data/data.db?mode=ro" -header -csv "
 SELECT p.trade_date, p.session, p.version,
        datetime(p.created_at,'-5 hours') created_ct,
        json_extract(p.doc,'\$.bias.direction')        bias,
@@ -719,7 +720,7 @@ FROM plans p, json_each(json_extract(p.doc,'\$.scenarios')) s
 WHERE p.trade_date BETWEEN '2026-09-02' AND '2026-09-04';" > /tmp/replay_scen.csv
 
 -- 1) 1m bars for the three days (the replay tape)
-sqlite3 "file:$HOME/nofx/data/data.db?mode=ro" -header -csv "
+sqlite3 "file:$HOME/vl/data/data.db?mode=ro" -header -csv "
 SELECT open_time_ms, datetime(open_time_ms/1000,'unixepoch','-5 hours') ct, open,high,low,close,volume
 FROM bars WHERE symbol='MNQ' AND tf='1m'
   AND open_time_ms BETWEEN strftime('%s','2026-09-02 05:00:00')*1000
@@ -727,7 +728,7 @@ FROM bars WHERE symbol='MNQ' AND tf='1m'
 ORDER BY open_time_ms;" > /tmp/replay_bars.csv
 
 -- 2) ground truth to check the replay against
-sqlite3 "file:$HOME/nofx/data/data.db?mode=ro" -header -csv "
+sqlite3 "file:$HOME/vl/data/data.db?mode=ro" -header -csv "
 SELECT id,session,scenario,side,entry_px,stop_px,target_px,kind,state,reason,
        datetime(created_at,'-5 hours') created_ct, datetime(updated_at,'-5 hours') updated_ct
 FROM armed_orders WHERE created_at >= strftime('%s','2026-09-02 05:00:00')*1000;" > /tmp/replay_arms.csv

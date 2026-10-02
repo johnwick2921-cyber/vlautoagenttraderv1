@@ -17,7 +17,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { httpClient } from '../../lib/httpClient'
-import { NofxSelect } from '../ui/select'
+import { VlSelect } from '../ui/select'
 
 // 提取下划线后面的名称部分
 function getShortName(fullName: string): string {
@@ -43,7 +43,7 @@ const EXCHANGE_REGISTRATION_LINKS: Record<
   { url: string; hasReferral?: boolean }
 > = {
   binance: {
-    url: 'https://www.binance.com/join?ref=NOFXENG',
+    url: 'https://www.binance.com/join',
     hasReferral: true,
   },
   okx: { url: 'https://www.okx.com/join/1865360', hasReferral: true },
@@ -276,7 +276,7 @@ export function TraderConfigModal({
                   <label className="text-sm text-[#EAECEF] block mb-2">
                     {t('aiModelRequired', language)}
                   </label>
-                  <NofxSelect
+                  <VlSelect
                     value={formData.ai_model}
                     onChange={(val) => handleInputChange('ai_model', val)}
                     className="w-full px-3 py-2 bg-[#0B0E11] border border-[#2B3139] rounded text-[#EAECEF]"
@@ -300,7 +300,7 @@ export function TraderConfigModal({
                   <label className="text-sm text-[#EAECEF] block mb-2">
                     {t('exchangeRequired', language)}
                   </label>
-                  <NofxSelect
+                  <VlSelect
                     value={formData.exchange_id}
                     onChange={handleExchangeChange}
                     className="w-full px-3 py-2 bg-[#0B0E11] border border-[#2B3139] rounded text-[#EAECEF]"
@@ -361,7 +361,7 @@ export function TraderConfigModal({
                 <label className="text-sm text-[#EAECEF] block mb-2">
                   {t('useStrategy', language)}
                 </label>
-                <NofxSelect
+                <VlSelect
                   value={formData.strategy_id}
                   onChange={(val) => handleInputChange('strategy_id', val)}
                   className="w-full px-3 py-2 bg-[#0B0E11] border border-[#2B3139] rounded text-[#EAECEF]"
@@ -426,13 +426,13 @@ export function TraderConfigModal({
                             {t('coinSource', language)}:{' '}
                             {aiConfig.coin_source.source_type === 'static'
                               ? '固定币种'
-                              : aiConfig.coin_source.source_type === 'ai500'
-                                ? 'AI500'
-                                : aiConfig.coin_source.source_type === 'oi_top'
-                                  ? 'OI Top'
-                                  : aiConfig.coin_source.source_type ===
-                                      'oi_low'
-                                    ? 'OI Low'
+                              : aiConfig.coin_source.source_type === 'hyper_all'
+                                ? 'Hyper All'
+                                : aiConfig.coin_source.source_type ===
+                                    'hyper_main'
+                                  ? 'Hyper Main'
+                                  : aiConfig.coin_source.source_type === 'mixed'
+                                    ? 'Mixed'
                                     : '-'}
                           </div>
                           <div>

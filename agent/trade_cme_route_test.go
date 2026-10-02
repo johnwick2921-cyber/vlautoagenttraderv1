@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/mcp"
-	"nofx/store"
+	"vl/mcp"
+	"vl/store"
 )
 
 // ── W1b FOLD-5 — a CME futures chat entry reaches the NT8 trader's door ─────

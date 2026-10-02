@@ -3,7 +3,7 @@ package kernel
 import (
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // Level-truth wave (2026-08-27) — SWING-POINT DETECTOR (T3).

@@ -2,7 +2,7 @@
 """r04: candidate_pool 09-04 seated vs cut, DEDUPLICATED per distinct (kind, price):
 classify each distinct level by its status at its FIRST appearance (and by ever-seated), scan forward from that first read_at."""
 import sqlite3, math, collections
-exec(open('/home/hoang/nofx-analysis/vet-02-0905/q11_replay.py').read().split("# group bars by session day")[0])
+exec(open('/home/hoang/vl-analysis/vet-02-0905/q11_replay.py').read().split("# group bars by session day")[0])
 by_sd=collections.OrderedDict()
 for b in bars: by_sd.setdefault(sess_day(b['t']),[]).append(b)
 sdays=sorted(by_sd)

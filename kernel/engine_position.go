@@ -2,9 +2,9 @@ package kernel
 
 import (
 	"fmt"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/telemetry"
+	"vl/logger"
+	"vl/market"
+	"vl/telemetry"
 )
 
 // GateRefusalError is a NON-FIXABLE risk-gate refusal (C6 executor plan gate).

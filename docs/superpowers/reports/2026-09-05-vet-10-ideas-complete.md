@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 10 — Trading ideas and one month to test the method
 
 Owner: hoang · September 5, 2026 · `docs/vet-10-0905-complete` · documentation only. I own Section 10; Section 09 owns integration. This report replaces the previous Section 10 in full. Its historical files remain reproducibility records, not current recommendations.
@@ -24,7 +25,7 @@ I use first person for analytical judgment, not a professional biography. **[I] 
 
 ## Evidence basis and explicit withdrawals
 
-The worktree was created detached from the fetched `origin/dev` tip **488ce82748ca570804240630677c90d3055f128e**, which had advanced beyond the user's reference **b4376246**. The required claim tool created this branch. Source citations refer to that base; they do not assert that dev is the deployed binary. I did not run `cmd/gate-jwt`, construct a store, read credentials, or change trading code/configuration/data/runtime/orders. The sole production data connection used SQLite URI `mode=ro`, `PRAGMA query_only=ON` and one read transaction. Extraction time: **2026-09-05 22:52:39 UTC**. Scratch: `/home/hoang/nofx-analysis/vet-10-complete-0905`.
+The worktree was created detached from the fetched `origin/dev` tip **488ce82748ca570804240630677c90d3055f128e**, which had advanced beyond the user's reference **b4376246**. The required claim tool created this branch. Source citations refer to that base; they do not assert that dev is the deployed binary. I did not run `cmd/gate-jwt`, construct a store, read credentials, or change trading code/configuration/data/runtime/orders. The sole production data connection used SQLite URI `mode=ro`, `PRAGMA query_only=ON` and one read transaction. Extraction time: **2026-09-05 22:52:39 UTC**. Scratch: `/home/hoang/vl-analysis/vet-10-complete-0905`.
 
 Hereafter **complete** means `docs/superpowers/reports/2026-09-05-vet-10-ideas-data/complete/`. `recompute.py:1` and `population.sql:1` specify the sample. The boundary is **1786770000000**, August 15 00:00 CT. I exclude test IDs **572–574**; unresolved-plan IDs **530,539,545,546,566,571,580** in addition to test overlap; and NULL corrected-P&L IDs **576,577,579** in addition to test overlap. `extraction.json:1` preserves every excluded row and its source. `population.csv:1` lists all 58 included IDs; `days.csv:1` assigns each to a day beginning **17:00 CT**. Those are active entry-day blocks, not a complete calendar of trading or readiness days.
 
@@ -48,7 +49,7 @@ For the separate position **591** example I adopt the broker witness: accepted p
 
 ### 1.1 Entry timing: test the event, not the level's name
 
-[R] **Osler**, New York Fed Staff Report 125 (2001, published 2003), examines stop-loss and take-profit orders at a large FX dealer. Different clustering patterns offer mechanisms for reversal near a reference and acceleration after crossing it. The data are dealer FX orders, not MNQ order-book data; they cannot choose a NOFX level kind, touch ordinal, or fade/break direction. [Primary report](https://www.newyorkfed.org/research/staff_reports/sr125.html).
+[R] **Osler**, New York Fed Staff Report 125 (2001, published 2003), examines stop-loss and take-profit orders at a large FX dealer. Different clustering patterns offer mechanisms for reversal near a reference and acceleration after crossing it. The data are dealer FX orders, not MNQ order-book data; they cannot choose a VL level kind, touch ordinal, or fade/break direction. [Primary report](https://www.newyorkfed.org/research/staff_reports/sr125.html).
 
 [I] I would distinguish a resting rejection from confirmation after reclaim and a pullback after continuation. I would not label all three “support worked.” **Current mapping:** `reject` and waterfall pullbacks use limits; `reclaim` derives a stop entry; `sweep_reclaim` has special chained/split validation. `hold`, `acceptance` and `breakout_retest` are not generic arm entries. `kernel/armed.go:17`; `kernel/arm_kind.go:35`; `kernel/planner_prompt.go:728`. The numeric target and stop remain part of the setup, not outcomes implied by an observed hold.
 
@@ -217,6 +218,6 @@ Checklist cross-check: existing fantasy-target warning (`docs/superpowers/AUDIT-
 
 The report data in **complete** comprises `recompute.py`, `population.sql`, `population.csv`, `days.csv`, `results.json`, `evidence.txt`, `extraction.json`, `touch_keys.csv`, `plan_versions.csv`, `read_facts.csv`, `candidate_provenance.csv`, `source_evidence.py`, `source_evidence.txt`, `research-verification.md` and `verification.txt`. Source excerpts carry original `path:line` and base revision. Census tables carry actual IDs/composite keys; they are not independent-trial estimates. Research notes preserve exact accessed URLs, scope and access failures without copying papers into the repository.
 
-Run the script from the permitted scratch directory with `--db /home/hoang/nofx/data/data.db --out <scratch>` for a new read-only snapshot, or `--sample <complete/population.csv> --out <scratch/offline>` to reproduce the corrected-dollar statistics without a database. Do not rerun the legacy initial-R/MFE scripts as if they implement this revised protocol. The offline check and docs-only path verification are recorded in complete `verification.txt:1`.
+Run the script from the permitted scratch directory with `--db /home/hoang/vl/data/data.db --out <scratch>` for a new read-only snapshot, or `--sample <complete/population.csv> --out <scratch/offline>` to reproduce the corrected-dollar statistics without a database. Do not rerun the legacy initial-R/MFE scripts as if they implement this revised protocol. The offline check and docs-only path verification are recorded in complete `verification.txt:1`.
 
 I changed only this report and its own report-data directory. No runtime, prompt, DB, configuration or order mutation was performed. Parent Section 09 will integrate the branch into dev; this worktree remains for that integration. The proposed month's trading-method result remains explicitly unmeasured.

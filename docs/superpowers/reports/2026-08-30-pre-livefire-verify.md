@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Pre-Live-Fire Verification — P2/P3/P4 (2026-08-30)
 
 Sandboxed dispatch. Live system untouched (bot PID 482741 running throughout).
-Worktree: `~/nofx-vf` @ `a9aa9a04` (branch `docs/pre-livefire-verify-0830`, the
+Worktree: `~/vl-vf` @ `a9aa9a04` (branch `docs/pre-livefire-verify-0830`, the
 deployed `23243670` lineage — boot-acked per the commit record). DB copy:
-`/tmp/nofx-vf-db/data.db` (sandbox, rw). LIVE DB `/home/hoang/nofx/data/data.db`
+`/tmp/vl-vf-db/data.db` (sandbox, rw). LIVE DB `/home/hoang/vl/data/data.db`
 opened ONLY `mode=ro` (+ `PRAGMA query_only=ON`). Harness:
 `cmd/vfverify` in the worktree (imports the repo's `kernel`/`market`/`store`/
 `calendar`/`mcp`/`crypto` packages; builds the planner input the way
@@ -148,7 +149,7 @@ ATR5m (recomputed).
 
 ## P4 — MANUAL PLANNER TEST (one real AI call, sandboxed)
 
-Mechanics: sandbox DB (`/tmp/nofx-vf-db/data.db`, rw) → test-trader row
+Mechanics: sandbox DB (`/tmp/vl-vf-db/data.db`, rw) → test-trader row
 `trader-1` inserted there ONLY (sandbox traders count proof below); the rotated
 DeepSeek key was decrypted from the sandbox `ai_models` row
 (`8ef641a7…_deepseek`, enabled) via the repo's `crypto` package (ENC:v1

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # MASTER SYSTEM RECHECK — FULL CHECKLIST VERIFICATION
 
-**Date:** 2026-08-27 · **Scope:** running system post-armed-orders cutover · **Worktree:** `/home/hoang/nofx-recheck` @ `4f2cee03` (branch `docs/master-recheck`) · **READ-ONLY** — zero code/config/DB writes.
+**Date:** 2026-08-27 · **Scope:** running system post-armed-orders cutover · **Worktree:** `/home/hoang/vl-recheck` @ `4f2cee03` (branch `docs/master-recheck`) · **READ-ONLY** — zero code/config/DB writes.
 
 **Evidence law compliance:** every ✅ carries fresh evidence produced in this run (query timestamp CT, quoted log line, or independent Python recomputation from `data/data.db` in read-only mode — never the function under test, never a prior report). Anything without fresh evidence is marked UNVERIFIED.
 
@@ -22,7 +23,7 @@
 
 **1.6 Clock drift — ✅ PROVEN (Go/RTC side), ⚠️ UNVERIFIED (NT8 leg).** `🕰 clock-health [boot] … rtc_vs_go=0s … NTP=yes NTPSynchronized=yes … ntp_offset=+126.479ms … last_status=OK` + clock-guard timer active. NT8 drift line = `nt8_last_bar=none drift_ms=n/a` at boot; no numeric drift line emitted since (measurement needs bars to flow past the health tick) → drift number vs NT8 UNVERIFIED this run. WSL2 timesync OK.
 
-**1.7 402/credit + retention + units — ✅ PROVEN (2 of 3) + ⚠️.** AI completing: `08-27 10:01:25 📊 AI call complete: completion=126 prompt=10199 finish_reason=stop`; **zero HTTP-402 lines today**. journald = 1.9G of the 2G cap, **BUT retention < 24h** — the `bar_update` INFO-per-frame spam (7.57M lines today) eats the cap, so yesterday's logs are rotated out (a real evidence-loss finding). Units: `nofx.service`, `nofx-web.service` running; `nofx-backup.timer` + `nofx-clock-guard.timer` active.
+**1.7 402/credit + retention + units — ✅ PROVEN (2 of 3) + ⚠️.** AI completing: `08-27 10:01:25 📊 AI call complete: completion=126 prompt=10199 finish_reason=stop`; **zero HTTP-402 lines today**. journald = 1.9G of the 2G cap, **BUT retention < 24h** — the `bar_update` INFO-per-frame spam (7.57M lines today) eats the cap, so yesterday's logs are rotated out (a real evidence-loss finding). Units: `vl.service`, `vl-web.service` running; `vl-backup.timer` + `vl-clock-guard.timer` active.
 
 **1.8 Armed-orders frames — ⚠️ SHIPPED-UNPROVEN (deployed, zero frames yet).** Cutover DEPLOYED: boot line `⚔️ armed_orders=on place_band=100t stale_working=15m (resting limits fill at the authorized price; stale_reeval NOT applied)`. Since boot: **0 order_update frames, 0 ARMED lines, 0 placements** — no plan with `arm{}` specs has been produced yet (NY v1 = no_trade fail-closed; LONDON plans predate the cutover binary). The wire path is code-present and the event machine is exercised by unit tests, but no live frame to quote. Honest status: deployed-unexercised.
 
@@ -128,7 +129,7 @@
 
 ## SECTION 8 · META / PROCESS
 
-**8.1 One-agent/worktree state — ✅.** Main tree = `dev @ bc95e92b` (cutover complete, clean except untracked `.env.bak.0825-2157` / `nofx-bin.old*`). Worktrees: main, `nofx-recheck` (this dispatch), `/tmp/nofx-dev-check` (stale from the level-verify dispatch). Stash index on the repo (5, re-organized post-cutover): `{0} leveltruth-parked: no-trade stamp + StampMachineGrades/CarryMachineGrades (apply after cutover on fix/level-truth)` · `{1} level-truth-wave-wip-parked-4` · `{2} …-parked-3` · `{3} …-parked-2` · `{4} …-parked`. `feat/armed-orders` merged (30159b2b inside dev history).
+**8.1 One-agent/worktree state — ✅.** Main tree = `dev @ bc95e92b` (cutover complete, clean except untracked `.env.bak.0825-2157` / `vl-bin.old*`). Worktrees: main, `vl-recheck` (this dispatch), `/tmp/vl-dev-check` (stale from the level-verify dispatch). Stash index on the repo (5, re-organized post-cutover): `{0} leveltruth-parked: no-trade stamp + StampMachineGrades/CarryMachineGrades (apply after cutover on fix/level-truth)` · `{1} level-truth-wave-wip-parked-4` · `{2} …-parked-3` · `{3} …-parked-2` · `{4} …-parked`. `feat/armed-orders` merged (30159b2b inside dev history).
 
 **8.2 Docs truth — ⚠️.** Guide `asBuiltRev` grep found nothing in `GuidePage.tsx` this run (unverified placement); README-VL-SYSTEM + guide were last updated at Wave-1; PIPELINE-MAP staleness (per verify) unchanged. No doc write this dispatch.
 

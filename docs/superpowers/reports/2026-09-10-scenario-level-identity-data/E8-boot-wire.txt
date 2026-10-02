@@ -22,5 +22,5 @@ test rc: 1
     identity_wiring_test.go:51: kernel/planner_prompt.go → RenderIdentityMapBlock: 1
     identity_wiring_test.go:51: trader/auto_trader_levelstate.go → observeScenarioIdentity: 1
 FAIL
-FAIL	nofx/trader	0.016s
+FAIL	vl/trader	0.016s
 FAIL

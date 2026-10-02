@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // PIN (M3 fold M5, red-team 4 #1): the maintenance-setter census walks a
@@ -19,7 +19,7 @@ func TestMaintenanceSetterCensusSeesNestedSkipNamedDirs(t *testing.T) {
 		t.Helper()
 		root := t.TempDir()
 		for r, body := range map[string]string{
-			"go.mod":                       "module nofx\n\ngo 1.25\n",
+			"go.mod":                       "module vl\n\ngo 1.25\n",
 			"trader/maintenance_wiring.go": "package trader\n",
 			rel: "package " + pkg + "\n\ntype permitter interface{ SetEntryPermit(any) }\n\n" +
 				"func Unwire(nt permitter) { nt.SetEntryPermit(nil) }\n",

@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Dispatch 102 — visible brand implementation (not deployed)
 
-Updated 2026-09-09. Branch `fix/brand-visible`; lane `brand-visible-0b955fbc/root[unlisted]`; isolated worktree `/tmp/nofx-brand-visible`. Accepted from dev `954f11b15f2e7615678f7d2b708c47895faebf1e`, then merged refreshed dev before implementation. This lane owns only the visible-brand changes and pins. It does not own Stage A's archive repair or the held `fix/rebrand-phase-1-2` work.
+Updated 2026-09-09. Branch `fix/brand-visible`; lane `brand-visible-0b955fbc/root[unlisted]`; isolated worktree `/tmp/vl-brand-visible`. Accepted from dev `954f11b15f2e7615678f7d2b708c47895faebf1e`, then merged refreshed dev before implementation. This lane owns only the visible-brand changes and pins. It does not own Stage A's archive repair or the held `fix/rebrand-phase-1-2` work.
 
 **Implemented and merged to dev at `05125bd6efffd2a9afd179728f32b29d679f71ac`; not deployed.** Stage A released its lock after publishing its passed-boot marker. This lane acquired the now-free lock on 2026-09-09 with automatic heartbeat started at acquisition; no reclaim was used. Main was updated only by fast-forward under this lane’s lock and pushed from that same tree. No RELEASE update, dist swap, service restart, DB write or gate edit occurred. A new cutover still requires the dispatch's owner GO, safe window and fresh five-leg gate. No live brand result is claimed.
 
@@ -8,17 +9,17 @@ Updated 2026-09-09. Branch `fix/brand-visible`; lane `brand-visible-0b955fbc/roo
 
 ## Owner correction — imports are allowed
 
-The owner clarified on 2026-09-09: Section B protects the module path and every existing import target; adding the imports needed by D2 is in scope. The earlier import STOP is resolved. **No existing import target changed.** The module remains `nofx`.
+The owner clarified on 2026-09-09: Section B protects the module path and every existing import target; adding the imports needed by D2 is in scope. The earlier import STOP is resolved. **No existing import target changed.** The module remains `vl`.
 
 Production imports added:
 
-- `nofx/branding` in `main.go`, `agent/{agent,i18n,onboard,prompt_persona,scheduler,planner_runtime,skill_domain_context}.go`, `telegram/bot.go`, `telegram/agent/{agent,prompt}.go`.
+- `vl/branding` in `main.go`, `agent/{agent,i18n,onboard,prompt_persona,scheduler,planner_runtime,skill_domain_context}.go`, `telegram/bot.go`, `telegram/agent/{agent,prompt}.go`.
 - Blank `embed` in new `branding/branding.go`.
 - `../../../branding/product.txt?raw` and `../../../branding/persona.txt?raw` in `web/src/constants/branding.ts`.
 - `../../constants/branding` in ChatInput, ChatMessages, WelcomeScreen, HeaderBar and Guide content/welcome; `../constants/branding` in GuidePage, TraderDashboardPage and i18n/translations.
 - `node:fs` in `web/vite.config.ts` to transform the HTML title from the same product source.
 
-The [machine-readable import ledger](2026-09-08-brand-visible-data/added-imports.json) names each file. E2 parses Go imports with `go/parser` and TypeScript imports with the TypeScript AST, comparing existing targets against `954f11b1`. Added imports are allowed; a removed or renamed existing target fails. The Go negative pin changes `nofx/config` to `vl/config` in memory and verifies rejection. Test-only added imports are standard parser/test/filesystem/process utilities and `typescript`; they do not change a production target.
+The [machine-readable import ledger](2026-09-08-brand-visible-data/added-imports.json) names each file. E2 parses Go imports with `go/parser` and TypeScript imports with the TypeScript AST, comparing existing targets against `954f11b1`. Added imports are allowed; a removed or renamed existing target fails. The Go negative pin changes `vl/config` to `vl/config` in memory and verifies rejection. Test-only added imports are standard parser/test/filesystem/process utilities and `typescript`; they do not change a production target.
 
 ## Shared display names and exact strings
 
@@ -28,18 +29,18 @@ Product form: boot banner, page title, dashboard label, Guide heading/card, prod
 
 | Surface | Before | After |
 | --- | --- | --- |
-| Boot product word | `🚀 NOFX - AI-Powered Trading System` | `🚀 VL Intelligent - AI-Powered Trading System` |
+| Boot product word | `🚀 VL - AI-Powered Trading System` | `🚀 VL Intelligent - AI-Powered Trading System` |
 | Browser title | `VL Trader - AI Trading System` | `VL Intelligent - AI Trading System` |
-| Server-authored status card | `NOFXi Status` / `NOFXi 状态` | `VL Status` / `VL 状态` |
-| Sender label | `NOFXi · <time>` | `VL · <time>` |
-| Input EN/ID fallback | `Ask NOFXi anything...  ⌘K` | `Ask VL anything...  ⌘K` |
-| Input ZH | `跟 NOFXi 聊点什么...  ⌘K` | `跟 VL 聊点什么...  ⌘K` |
-| Disclaimer | `NOFXi may make mistakes. Always verify trading decisions.` | `VL may make mistakes. Always verify trading decisions.` |
-| Welcome ZH | `跟 NOFXi 聊点什么` | `跟 VL 聊点什么` |
-| Guide | `NOFX System Guide`, `NOFX / VL` | `VL Intelligent System Guide`, `VL Intelligent` |
+| Server-authored status card | `VLi Status` / `VLi 状态` | `VL Status` / `VL 状态` |
+| Sender label | `VLi · <time>` | `VL · <time>` |
+| Input EN/ID fallback | `Ask VLi anything...  ⌘K` | `Ask VL anything...  ⌘K` |
+| Input ZH | `跟 VLi 聊点什么...  ⌘K` | `跟 VL 聊点什么...  ⌘K` |
+| Disclaimer | `VLi may make mistakes. Always verify trading decisions.` | `VL may make mistakes. Always verify trading decisions.` |
+| Welcome ZH | `跟 VLi 聊点什么` | `跟 VL 聊点什么` |
+| Guide | `VL System Guide`, `VL / VL` | `VL Intelligent System Guide`, `VL Intelligent` |
 | Dashboard brand | `VL Trader` | `VL Intelligent` |
-| Registration example | `user@nofx.os` | `user@example.com` (example address, not an invented VL domain) |
-| README headings/prose | `NOFX` | `VL Intelligent` |
+| Registration example | `user@vl.os` | `user@example.com` (example address, not an invented VL domain) |
+| README headings/prose | `VL` | `VL Intelligent` |
 
 The boot banner changes its product word only. No new boot line or field is added. Its existing border/padding remains; revision, integrity, units and log file names are untouched. An AST pin checks the **actual main logger call** reads `branding.ProductName()` and rejects even a same-looking literal replacement.
 
@@ -53,8 +54,8 @@ Basis: census `docs/superpowers/reports/2026-09-03-rebrand-census.md`, last chan
 
 | Census row | Reproduced at running source | Action/correction |
 | --- | --- | --- |
-| 1.1 | `main.go:45`, one NOFX product word | Changes through shared product source; old census line 44 moved |
-| 1.2 | ChatMessages:133; ChatInput:123,124,187; WelcomeScreen:118 — five NOFXi strings in three files | All five changed; census's “4 files” is not reproduced for this listed frontend set |
+| 1.1 | `main.go:45`, one VL product word | Changes through shared product source; old census line 44 moved |
+| 1.2 | ChatMessages:133; ChatInput:123,124,187; WelcomeScreen:118 — five VLi strings in three files | All five changed; census's “4 files” is not reproduced for this listed frontend set |
 | 1.3 | `agent/prompt_persona.go:5-8` — five name occurrences, including first-line persona and product | Five shared-name substitutions |
 | 1.4 | `telegram/bot.go:376,387,419,440` — four rendered name occurrences | Four substitutions |
 | 1.5 | Telegram prompt:10,19,24 plus agent.go:22 — four occurrences | Four substitutions; tool/API identifiers unchanged |
@@ -62,26 +63,26 @@ Basis: census `docs/superpowers/reports/2026-09-03-rebrand-census.md`, last chan
 | 1.7 | docs/i18n has 379 raw case-insensitive matches in 18 files | Only six translated product READMEs change: 25 product occurrences; legal/contribution text, handles and paths excluded |
 | 1.8 | SECURITY.md has 13 raw matches | Outside Section B; no edit. External handle is not a product-name replacement |
 | 1.9 | index.css has 26 raw matches, not 25 | Invisible CSS namespace is outside scope; all styling identifiers retained |
-| 1.10 | welcome.ts:14 `NOFX / VL`; :37 technical `nofx-bin` example | Product card changed; accurate binary example retained. GuidePage:487 heading also needed correction |
-| 1.11 | favicon has zero nofx text; VL icon already exists | No asset edit |
+| 1.10 | welcome.ts:14 `VL / VL`; :37 technical `vl-bin` example | Product card changed; accurate binary example retained. GuidePage:487 heading also needed correction |
+| 1.11 | favicon has zero vl text; VL icon already exists | No asset edit |
 
 **Measured implementation count: 78 old product-name/example occurrences corrected**, comprising 33 Go display/persona occurrences, 10 frontend/title/registration occurrences, and 35 root/translated/index README occurrences. This count includes newly found surfaces and README prose omitted by the census's small direct-string estimate; it does not pretend to be a 78-versus-35 like-for-like subtraction. The pre-existing 108 correct VL language occurrences and two frontend shared-name consumers (header/BRAND_INFO) are source consolidation, not old-name corrections.
 
-Additional discoveries: `agent/i18n.go:5,14,25,26,73,74` (six), `agent/scheduler.go:75` (one), `agent/agent.go:376,393,559,647,923,925` (six), onboarding greetings `agent/onboard.go:531,535` (two), Guide title/card, dashboard title, page's noncanonical VL Trader title, and registration placeholder. The stored-name producer `agent/onboard.go:412` (`NOFXi-%s`) is expressly **unchanged** under Section B.
+Additional discoveries: `agent/i18n.go:5,14,25,26,73,74` (six), `agent/scheduler.go:75` (one), `agent/agent.go:376,393,559,647,923,925` (six), onboarding greetings `agent/onboard.go:531,535` (two), Guide title/card, dashboard title, page's noncanonical VL Trader title, and registration placeholder. The stored-name producer `agent/onboard.go:412` (`VLi-%s`) is expressly **unchanged** under Section B.
 
-C2 correction: “NOFXi Status” is not a standalone status-card component literal. `Agent.handleStatus` formats `agent/i18n.go`; ChatMessages/MessageRenderer renders that server-produced text. The test traverses those production call sites.
+C2 correction: “VLi Status” is not a standalone status-card component literal. `Agent.handleStatus` formats `agent/i18n.go`; ChatMessages/MessageRenderer renders that server-produced text. The test traverses those production call sites.
 
 ## D3 / E3 — language coverage
 
 `web/src/i18n/translations.ts`: **EN 37, ZH 37, ID 34** existing VL occurrences now read the shared short name; zero old product-brand occurrences remain in tested language values after excluding URL/environment identifiers. The two placeholder branches are EN (also the existing ID fallback) and ZH. The status handler similarly preserves existing EN fallback for ID. No translation coverage was fabricated or claimed where fallback exists.
 
-Agent translation source `agent/i18n.go`: three name occurrences per EN and ZH (help, status, persona prompt). Telegram `/start` and `/help`: two per EN/ZH. The separate strategy-translations.ts names the **external NofxOS provider** in EN/ZH/ES and remains unchanged, including its existing language availability.
+Agent translation source `agent/i18n.go`: three name occurrences per EN and ZH (help, status, persona prompt). Telegram `/start` and `/help`: two per EN/ZH. The separate strategy-translations.ts names the **external VLOS provider** in EN/ZH/ES and remains unchanged, including its existing language availability.
 
 Translated README occurrence counts: JA 4, KO 4, RU 4, UK 4, VI 4, ZH-CN 5; root README 6; bilingual language-index README 4. These are actual product-name occurrences; paths, referral code and external links remain unchanged.
 
 ## E1–E6 — measured tests and mutations
 
-[A] Initial production source: **8/8 rendered pins RED**. Status expected VL but received NOFXi; placeholders expected VL but received NOFXi; title expected VL Intelligent but received VL Trader; Guide's new heading was absent. The initial Vite/jsdom environment failure was discarded; the valid title RED came from Vite's actual HTML transformation in Node. Preflight commit `66e2c09a8709d178f0cffc83eb470b809ce9e440` records those failures.
+[A] Initial production source: **8/8 rendered pins RED**. Status expected VL but received VLi; placeholders expected VL but received VLi; title expected VL Intelligent but received VL Trader; Guide's new heading was absent. The initial Vite/jsdom environment failure was discarded; the valid title RED came from Vite's actual HTML transformation in Node. Preflight commit `66e2c09a8709d178f0cffc83eb470b809ce9e440` records those failures.
 
 [A] Implementation: rendered pins **8/8 GREEN**; scope suite **18/18 GREEN**; language suite **4/4 GREEN**. The frontend fixture executes the real Go status handler, then the real ChatMessages renderer. It does not copy the expected status text into both sides.
 
@@ -89,13 +90,13 @@ Translated README occurrence counts: JA 4, KO 4, RU 4, UK 4, VI 4, ZH-CN 5; root
 
 [A] E5 mutations (each restored in a finally block):
 
-- `branding/persona.txt:1`: exact bytes **VL → NOFXi**, surface suite exit 1; status/sender and input assertions fail.
-- `branding/product.txt:1`: exact bytes **VL Intelligent → NOFX**, surface suite exit 1; page-title and Guide assertions fail.
-- `web/src/i18n/translations.ts` EN `appTitle`: **PERSONA_NAME → 'NOFX'**, language suite exit 1; EN appTitle fails.
+- `branding/persona.txt:1`: exact bytes **VL → VLi**, surface suite exit 1; status/sender and input assertions fail.
+- `branding/product.txt:1`: exact bytes **VL Intelligent → VL**, surface suite exit 1; page-title and Guide assertions fail.
+- `web/src/i18n/translations.ts` EN `appTitle`: **PERSONA_NAME → 'VL'**, language suite exit 1; EN appTitle fails.
 
-[Mutation receipts](2026-09-08-brand-visible-data/mutations.json). E2 additionally rejects in-memory deletion of the exact JWT guard `&& token.Valid`; no auth file is edited for that negative check. Module/import guard rejects `nofx/config → vl/config`. Boot-call guard rejects replacing `branding.ProductName()` with a literal `"VL Intelligent"` even though the visual result would match.
+[Mutation receipts](2026-09-08-brand-visible-data/mutations.json). E2 additionally rejects in-memory deletion of the exact JWT guard `&& token.Valid`; no auth file is edited for that negative check. Module/import guard rejects `vl/config → vl/config`. Boot-call guard rejects replacing `branding.ProductName()` with a literal `"VL Intelligent"` even though the visual result would match.
 
-[Exact mutation failure text](2026-09-08-brand-visible-data/mutation-failures.json). A follow-up production-call trace found finalPlanResponseSystemPrompt in agent/planner_runtime.go still used NOFXi in its EN/ZH user-reply identity. TestUserReplyPersonaUsesVisibleName first failed for EN/ZH/ID, then passed after only those two persona strings changed. The two corresponding recommendation-persona references in skill_domain_context.go and four product references in docs/i18n/README.md were also corrected. Internal planning/module labels and all instruction logic remain unchanged.
+[Exact mutation failure text](2026-09-08-brand-visible-data/mutation-failures.json). A follow-up production-call trace found finalPlanResponseSystemPrompt in agent/planner_runtime.go still used VLi in its EN/ZH user-reply identity. TestUserReplyPersonaUsesVisibleName first failed for EN/ZH/ID, then passed after only those two persona strings changed. The two corresponding recommendation-persona references in skill_domain_context.go and four product references in docs/i18n/README.md were also corrected. Internal planning/module labels and all instruction logic remain unchanged.
 
 E4/A29: the production consumers are nonzero and explicit: `branding.ProductName()` / `PersonaName()` in the eleven Go rendering/persona files, `PRODUCT_NAME` / `PERSONA_NAME` in the existing frontend branding module and visible surfaces, and the product file in Vite. None is a test-only constant. [The production call-site ledger](2026-09-08-brand-visible-data/production-call-sites.json) records each call site; the boot and status pins exercise production callers.
 
@@ -105,36 +106,36 @@ E6 will be rerun at the **final merged release HEAD immediately before its clean
 
 Sixteen protected source files remain byte-identical to the measured base: Go module, JWT mint/validator, log filename logic, service and timer units, deploy lock/claim/backup scripts, TCP server/schema, NT8 AddOn and chat-storage keys. E2 compares their hashes and all existing Go/TS import targets in changed files. No existing URL in the changed display sources changed.
 
-- Units/ExecStart: `deploy/nofx.service:41` and `deploy/systemd-user/nofx-backup.service:7`; binary and repo paths are operational references.
-- Lock: `deploy/nofx-lock.sh:43`, `nofx-main.lock.d`; claim and backup paths unchanged.
-- Module: `go.mod:1`, `module nofx`; all existing import targets preserved.
-- JWT: `auth/auth.go:93`, issuer `nofxAI` unchanged. **Correction:** its ValidateJWT function does not explicitly require that issuer; an issuer-specific consumer requirement is not established from that function. Signature/method/validity behavior is unchanged.
-- Logs: `logger/logger.go:90` constructs `nofx_%s.log`; no log glob renamed. A specific current reader-glob dependency is **NOT ESTABLISHED**, not invented to make C3 read stronger.
-- Wire: `provider/ninjatrader/tcp_server.go:1749` emits `nofx-go`; tcp_framing.go:114 documents the source pair. No NT8/wire edit.
+- Units/ExecStart: `deploy/vl.service:41` and `deploy/systemd-user/vl-backup.service:7`; binary and repo paths are operational references.
+- Lock: `deploy/vl-lock.sh:43`, `vl-main.lock.d`; claim and backup paths unchanged.
+- Module: `go.mod:1`, `module vl`; all existing import targets preserved.
+- JWT: `auth/auth.go:93`, issuer `vlAI` unchanged. **Correction:** its ValidateJWT function does not explicitly require that issuer; an issuer-specific consumer requirement is not established from that function. Signature/method/validity behavior is unchanged.
+- Logs: `logger/logger.go:90` constructs `vl_%s.log`; no log glob renamed. A specific current reader-glob dependency is **NOT ESTABLISHED**, not invented to make C3 read stronger.
+- Wire: `provider/ninjatrader/tcp_server.go:1749` emits `vl-go`; tcp_framing.go:114 documents the source pair. No NT8/wire edit.
 - DB: config's existing DB filename and store schemas remain unchanged. This wave has no migration and no stored-value edit. Browser chat keys remain in `web/src/lib/agentChatStorage.ts`; the new-trader stored-name producer remains in agent/onboard.go.
 - GitHub/raw URLs and external handles remain exact. C3's blanket premise that **every** excluded string is proven load-bearing is too strong: exclusions remain in force even where a reader dependency was not established.
 
 ## A15 / A20 — live truth and retained text
 
-**Not live:** the initial unauthenticated walk observed the old title, Agent disclaimer `NOFXi may make mistakes.` and placeholder `Ask NOFXi anything...  ⌘K`, plus technical references in FAQ; protected pages redirected to login. [Initial route results](2026-09-08-brand-visible-data/live-before.json). Automated approval review rejected reading JWT secret material to mint a token. The owner selected **“Use an owner-authenticated browser instead”** and subsequently supplied credentials for normal browser sign-in. That sign-in succeeded; no signing-secret read or token minting occurred.
+**Not live:** the initial unauthenticated walk observed the old title, Agent disclaimer `VLi may make mistakes.` and placeholder `Ask VLi anything...  ⌘K`, plus technical references in FAQ; protected pages redirected to login. [Initial route results](2026-09-08-brand-visible-data/live-before.json). Automated approval review rejected reading JWT secret material to mint a token. The owner selected **“Use an owner-authenticated browser instead”** and subsequently supplied credentials for normal browser sign-in. That sign-in succeeded; no signing-secret read or token minting occurred.
 
-[A] The authenticated read-only walk on 2026-09-09 at 13:50 CT reached Agent, Traders, Dashboard, Strategy, Guide, Settings and Welcome without a login redirect. All seven retained the live title `VL Trader - AI Trading System`; Agent rendered `NOFXi` and `Ask NOFXi anything...  ⌘K`, Dashboard rendered `VL Trader`, and Guide rendered `NOFX`. [Authenticated route evidence](2026-09-08-brand-visible-data/authenticated-ui-before.json). Output is restricted to product-word matches and brand placeholders; credentials, tokens and account names are excluded. This proves the current release still serves the old Group 1 text; no after-boot proof is claimed. Unit-rendered status/sender text remains code evidence, not an observed new live message.
+[A] The authenticated read-only walk on 2026-09-09 at 13:50 CT reached Agent, Traders, Dashboard, Strategy, Guide, Settings and Welcome without a login redirect. All seven retained the live title `VL Trader - AI Trading System`; Agent rendered `VLi` and `Ask VLi anything...  ⌘K`, Dashboard rendered `VL Trader`, and Guide rendered `VL`. [Authenticated route evidence](2026-09-08-brand-visible-data/authenticated-ui-before.json). Output is restricted to product-word matches and brand placeholders; credentials, tokens and account names are excluded. This proves the current release still serves the old Group 1 text; no after-boot proof is claimed. Unit-rendered status/sender text remains code evidence, not an observed new live message.
 
 Known retained old-name occurrences, deliberately outside Section B:
 
-- Guide stack example: `nofx-bin` in welcome.ts. Actual binary/clean-clone/log/process/unit/path names remain nofx; held identifier wave `fix/rebrand-phase-1-2` is the relevant existing dispatch, not this lane.
+- Guide stack example: `vl-bin` in welcome.ts. Actual binary/clean-clone/log/process/unit/path names remain vl; held identifier wave `fix/rebrand-phase-1-2` is the relevant existing dispatch, not this lane.
 - FAQ/README/translation examples: current clone/build commands, env keys, repo/raw URLs and external community handles. The held phase-1-2 branch is not merged by this lane; GitHub/external renaming is later scope.
-- Strategy configuration: **NofxOS** is an external provider label, not a claim that this product is NOFX. Renaming that provider is not part of Dispatch 102.
-- Historical chat content, stored trader labels (including the `NOFXi-` producer), localStorage keys and API health's existing agent identifier remain untouched. Stored-value/API migration is later scope, not retrospectively attributed to this lane.
+- Strategy configuration: **VLOS** is an external provider label, not a claim that this product is VL. Renaming that provider is not part of Dispatch 102.
+- Historical chat content, stored trader labels (including the `VLi-` producer), localStorage keys and API health's existing agent identifier remain untouched. Stored-value/API migration is later scope, not retrospectively attributed to this lane.
 - `.github/SECURITY.md`, translated legal policies, older reports and operational docs retain historical text. Section B authorizes product READMEs and the Guide, not a repository-wide prose sweep.
 
-The after-boot A15 list is **pending observation**, not asserted empty. No remaining current Group 1 product literal was found in the changed executable rendering sources. Internal orchestration prompts still contain NOFXi as an internal module persona; those non-rendered planning instructions were not swept, and arbitrary model-generated/historical text cannot be claimed scrubbed by a UI rename.
+The after-boot A15 list is **pending observation**, not asserted empty. No remaining current Group 1 product literal was found in the changed executable rendering sources. Internal orchestration prompts still contain VLi as an internal module persona; those non-rendered planning instructions were not swept, and arbitrary model-generated/historical text cannot be claimed scrubbed by a UI rename.
 
 ## Cutover, rollback and numbering status
 
-The release candidate and dist have been built in the isolated clean clone, **not swapped**. The candidate Guide was stamped from that binary. Main’s served dist, binary, RELEASE and tracked Guide revision continue to name the existing running release; candidate metadata is not misrepresented as a passed boot. At cutover: coordinate lock succession, acquire with heartbeat at acquire, merge current dev, enumerate checklist classes with `uniq -c`, assign the new class, run full merged suite in a clean clone named **nofx**, build a clean VCS binary, read its actual vcs.revision, stamp Guide, then build dist. Read own five-leg gate including broker leg 4 and in-flight state. Apply A7 (14:45–16:30 CT, or after 17:10 flat/no arms/no position); no mid-session override is inferred from “continue.”
+The release candidate and dist have been built in the isolated clean clone, **not swapped**. The candidate Guide was stamped from that binary. Main’s served dist, binary, RELEASE and tracked Guide revision continue to name the existing running release; candidate metadata is not misrepresented as a passed boot. At cutover: coordinate lock succession, acquire with heartbeat at acquire, merge current dev, enumerate checklist classes with `uniq -c`, assign the new class, run full merged suite in a clean clone named **vl**, build a clean VCS binary, read its actual vcs.revision, stamp Guide, then build dist. Read own five-leg gate including broker leg 4 and in-flight state. Apply A7 (14:45–16:30 CT, or after 17:10 flat/no arms/no position); no mid-session override is inferred from “continue.”
 
-Preserve the binary actually running at cutover as `nofx-bin.old.<verified held revision>`, with DB/dist rollback artifacts. RELEASE → atomic mv → VERIFY → **print the exact owner kill command**; do not execute it under this dispatch. After an acknowledged good boot, verify all five references, read the real banner, push marker from the same main tree before releasing the lock. No old gate-script exception or previous wave's override is reused.
+Preserve the binary actually running at cutover as `vl-bin.old.<verified held revision>`, with DB/dist rollback artifacts. RELEASE → atomic mv → VERIFY → **print the exact owner kill command**; do not execute it under this dispatch. After an acknowledged good boot, verify all five references, read the real banner, push marker from the same main tree before releasing the lock. No old gate-script exception or previous wave's override is reused.
 
 Pre-assignment numbering census (both formats, sorted with `uniq -c`): highest **93**; existing duplicates **75/76/77** each count 2. At merge preparation the repeated `sort -n | uniq -c` census again showed highest 93; **class 94** is assigned to this wave. Existing duplicated classes are untouched. Class 94 cites C1 and the display/identifier scope boundary. The implementation and this report are **on dev**, first published there at `05125bd6efffd2a9afd179728f32b29d679f71ac`. Publication is not a claim that the candidate is live.
 
@@ -147,12 +148,12 @@ Pre-assignment numbering census (both formats, sorted with `uniq -c`): highest *
 
 Current dev advanced with Stage A’s passed-boot receipts and the separately authored range-fade research report. They were incorporated by merge; this lane did not author them. The prescribed pull --rebase flattened local integration history, so the first main fast-forward attempt correctly refused and left main unchanged. Current dev ancestry was restored on the isolated branch, then main fast-forwarded and pushed successfully at **05125bd6**. No reset, forced update or peer-file deletion was used.
 
-The ordinary clean clone is `/tmp/brand-visible-build/nofx`, pinned to that merged HEAD, with clean porcelain before suite/build. Its frontend suite is **57 files / 408 tests PASS**, TypeScript PASS. The full merged Go suite and embedded prompt goldens **PASS**. The candidate build and dist **PASS**, with the binary stamp verified below. This is preparation; the subsequent authenticated broker-backed gate failed leg 4, and owner GO and boot remain outstanding.
+The ordinary clean clone is `/tmp/brand-visible-build/vl`, pinned to that merged HEAD, with clean porcelain before suite/build. Its frontend suite is **57 files / 408 tests PASS**, TypeScript PASS. The full merged Go suite and embedded prompt goldens **PASS**. The candidate build and dist **PASS**, with the binary stamp verified below. This is preparation; the subsequent authenticated broker-backed gate failed leg 4, and owner GO and boot remain outstanding.
 
 
 ## Clean-clone build receipt — ready for owner-controlled cutover
 
-[A] Build source **05125bd6efffd2a9afd179728f32b29d679f71ac**, the merged dev HEAD. Ordinary clone leaf directory **nofx**: `/tmp/brand-visible-build/nofx`. Full Go suite, 57 Vitest files / 408 tests, TypeScript and embedded prompt goldens passed there before the build. Actual `go version -m nofx-bin.next` reads **vcs.revision=05125bd6efffd2a9afd179728f32b29d679f71ac**, **vcs.modified=false**. Binary SHA-256 **070ef7cf432da6e11201996f5512e29134c0bb0b9fc0b10480bbd7d17aae6d5b**.
+[A] Build source **05125bd6efffd2a9afd179728f32b29d679f71ac**, the merged dev HEAD. Ordinary clone leaf directory **vl**: `/tmp/brand-visible-build/vl`. Full Go suite, 57 Vitest files / 408 tests, TypeScript and embedded prompt goldens passed there before the build. Actual `go version -m vl-bin.next` reads **vcs.revision=05125bd6efffd2a9afd179728f32b29d679f71ac**, **vcs.modified=false**. Binary SHA-256 **070ef7cf432da6e11201996f5512e29134c0bb0b9fc0b10480bbd7d17aae6d5b**.
 
 [A] Only after that binary existed, its embedded revision was parsed to stamp the **candidate clone’s** `GUIDE_BUILT_REV` from 954f11b1… to full 05125bd6…. Dist was then built: **92 files**; its HTML title is `VL Intelligent - AI Trading System`; its compiled JS contains that exact Guide revision. [Build validation](2026-09-08-brand-visible-data/build-validation.json) and [full binary/dist manifest](2026-09-08-brand-visible-data/candidate.json). The clone’s Guide change is intentional post-binary metadata and does not change the already verified clean binary stamp. It will be carried into the release metadata at the authorized swap, not silently served ahead of the binary.
 

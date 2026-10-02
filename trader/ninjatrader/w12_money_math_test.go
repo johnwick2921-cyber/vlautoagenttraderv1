@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W12 — MNQ money-math oracle. The realized-P&L formula (close_sync.go:135-148) is

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Frontend state repairs — isolated source batch
 
 Base63968be; branch fix/repo-audit-web-state-20260913, claim3ca1c809. Source changes and offline fixtures only. No owner settings/accounts/API keys, app server,8080E2E, NT8, live data or deployment touched. Root owns API counterpart, guide/content/revision and final merged-head validation.
@@ -15,13 +16,13 @@ Validation before dependency updates:
 - Final ordinary suites:68files,434tests passed; brand-visible excluded and checked separately because its synthetic Go fixture needs process/cache escalation. Separately escalated synthetic branding fixture:1file/8tests passed; together442tests across69files.
 - npm run build passed (TypeScript+Vite), with existing large-chunk and stale browsers-data warnings.
 - One initial wrong-root invocation failed setup resolution for all discovered files and ran zero tests. Corrected cwd is this worktree/web; no E2E runner was invoked.
-- Detailed raw logs retained locally at /tmp/nofx-web-{overlay-before,overlay-after,chart-before,focused,focused2,suite,suite-final,brand,build}.log. Reports do not claim a final merged Go/web suite pass.
+- Detailed raw logs retained locally at /tmp/vl-web-{overlay-before,overlay-after,chart-before,focused,focused2,suite,suite-final,brand,build}.log. Reports do not claim a final merged Go/web suite pass.
 
 Residuals explicitly outside this batch: AdvancedChart request-generation/marker ownership, legacy comparison chart, corrected-only PositionHistory aggregation, bulk model payload replay/extra-model knob loss, model submit await/UI state, account-name backend persistence, all historical review findings not listed above, and end-to-end broker/runtime/backup evidence. Root controls further prioritization; dormant paths remain reports. Dependency alerts handled in a separate compatible-lock change after source commit.
 
 ## Compatible dependency update
 
-After source committed ed85a80a, removed only this worktree's node_modules symlink and copied the shared tree into a private directory. `npm update baseline-browser-mapping browserslist @humanfs/node postcss-selector-parser --ignore-scripts --no-fund` updated the four affected transitives and their compatible dependent metadata/data packages, with no package.json or major-range changes. Exact10entry version delta is npm-version-changes.json. Target versions: baseline-browser-mapping2.11.23, browserslist4.28.9, @humanfs/node0.16.8, postcss-selector-parser6.1.4. They exceed parent-verified advisory patched floors2.11.0,4.28.7,0.16.8,6.1.3 respectively. Primary advisory input: /tmp/nofx-open-dependency-alerts.jsonl.
+After source committed ed85a80a, removed only this worktree's node_modules symlink and copied the shared tree into a private directory. `npm update baseline-browser-mapping browserslist @humanfs/node postcss-selector-parser --ignore-scripts --no-fund` updated the four affected transitives and their compatible dependent metadata/data packages, with no package.json or major-range changes. Exact10entry version delta is npm-version-changes.json. Target versions: baseline-browser-mapping2.11.23, browserslist4.28.9, @humanfs/node0.16.8, postcss-selector-parser6.1.4. They exceed parent-verified advisory patched floors2.11.0,4.28.7,0.16.8,6.1.3 respectively. Primary advisory input: /tmp/vl-open-dependency-alerts.jsonl.
 
 Registry `npm audit --json` reports0vulnerabilities (saved npm-audit.json); this is npm's current database result, not a claim of exhaustive security proof or GitHub remote alert closure before merge. Private updated dependencies pass all69Vitest files/442tests in one escalated offline invocation and npm run build. Existing large-bundle warning remains. Shared dependency installation untouched. Go gnark advisory belongs to root.
 
@@ -36,7 +37,7 @@ Root explicitly prioritized active corrected-P&L and chart ownership, and indepe
 
 Full updated suite/build status recorded below. Root still integrates guide prose/revision and final merged validation. Remaining prioritized gaps: selected-account history/chart completeness and bounded history versus full aggregate; AdvancedChart marker association to current forming candle; open-order request failures still treated as empty by fetch wrapper; bulk model updates replay unrelated configs and extra-model creation omits thinking knobs; model submit await/busy state; account-name edit persistence; DayPlanEditor draft reset on polled props, inherited/default semantics and translation drift; historical residuals not explicitly repaired. Corrected-only PositionHistory and chart response ownership should no longer be listed as wholly open.
 
-Final local data-truth head:71Vitest files/451tests passed in the authorized offline suite; npm run build passed (existing bundle-size warning only). Logs: /tmp/nofx-web-truth-final-suite.log and /tmp/nofx-web-truth-final-build.log. TypeScript and git diff --check also passed. No claim about root's later combined source or Windows AddOn runtime.
+Final local data-truth head:71Vitest files/451tests passed in the authorized offline suite; npm run build passed (existing bundle-size warning only). Logs: /tmp/vl-web-truth-final-suite.log and /tmp/vl-web-truth-final-build.log. TypeScript and git diff --check also passed. No claim about root's later combined source or Windows AddOn runtime.
 
 
 ## Final bounded follow-up: open-order uncertainty and account-name binding
@@ -48,4 +49,4 @@ Failed HTTP/transport/malformed snapshots now remain UNKNOWN; a previous snapsho
 
 [A/static] Existing-account renames were not persisted: Settings edit payload omits `account_name`, and `UpdateExchangeConfigRequest` has no matching field. Existing names are now visibly read-only with a bound-account migration explanation; creation remains editable. No backend, owner account binding, reload, or migration changes were made. Any future rename/binding migration requires a separate review of cached traders and account scope.
 
-Validation: 2 chart test files / 9 tests pass; production TypeScript/Vite build passes with existing bundle-size warning; `git diff --check` passes. Before-change regression log `/tmp/nofx-open-order-before.log`; passing log `/tmp/nofx-open-order-after.log`; build log `/tmp/nofx-open-order-build.log`. Parent owns merged-head combined suite and guide synchronization. Prior residual open-order error-to-empty finding is resolved by this follow-up; account-qualified backend order retrieval and account migration remain open.
+Validation: 2 chart test files / 9 tests pass; production TypeScript/Vite build passes with existing bundle-size warning; `git diff --check` passes. Before-change regression log `/tmp/vl-open-order-before.log`; passing log `/tmp/vl-open-order-after.log`; build log `/tmp/vl-open-order-build.log`. Parent owns merged-head combined suite and guide synchronization. Prior residual open-order error-to-empty finding is resolved by this follow-up; account-qualified backend order retrieval and account migration remain open.

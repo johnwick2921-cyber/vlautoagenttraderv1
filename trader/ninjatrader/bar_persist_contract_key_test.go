@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ── W-BARS-CONTRACT-KEY — the persister's call site, two contracts, one minute ─

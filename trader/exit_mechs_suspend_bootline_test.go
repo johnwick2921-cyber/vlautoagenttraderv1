@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // D102-1 (2026-09-16) — the exit-posture boot line must read the SAME sources

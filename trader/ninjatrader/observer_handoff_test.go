@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 func TestObserverStartReplacementRetiresOldReconcileOnly(t *testing.T) {

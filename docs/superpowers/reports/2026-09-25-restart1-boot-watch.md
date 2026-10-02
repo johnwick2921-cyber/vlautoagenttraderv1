@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # RESTART 1 — BOOT WATCH SHEET
 
 **Author:** DS-105 · **Branch:** `docs/restart1-boot-watch` · **Base:** origin/dev `39829e65`, refreshed against **final restart-1 dev sha `9c106d0b`** (all citations re-grepped at that sha)
@@ -11,7 +12,7 @@
 - **#218 W117-A (fix/w117-a-exec-evidence)** — NT8 execution-evidence ownership: F1 + F4 + F5 in this PR; **F2/F3 moved to a rebuild PR** (the "F2/F3 rebuild" the CTO named). Watch for it after the boot, not at it.
 - **#224 W117-B2 (fix/w117-b-cancel-truth follow-up)** — the boot sweep requests the cancel and settles only on a persisted broker snapshot (F8's last caller).
 - **#225 W117 PR-C (placement/commit semantics)** — F13, F13b, F14, F15.
-- **#206 M4 3b-B (feat/one-button-m4-worker)** — the updater worker (`nofx-updater`) + API glue behind `NOFX_UPDATER`, default OFF.
+- **#206 M4 3b-B (feat/one-button-m4-worker)** — the updater worker (`vl-updater`) + API glue behind `VL_UPDATER`, default OFF.
 
 None of these four is live in restart 1; do not look for their evidence in this boot.
 
@@ -90,7 +91,7 @@ None of these four is live in restart 1; do not look for their evidence in this 
 ## 11. #220 — W117-I: dependency security bumps (merged)
 
 - **Live change:** `golang.org/x/crypto` 0.55.0, `gnark-crypto` 0.19.2, 4 npm transitives.
-- **Proof line:** `go version -m nofx-bin | grep -E 'x/crypto|gnark-crypto'` shows the new versions.
+- **Proof line:** `go version -m vl-bin | grep -E 'x/crypto|gnark-crypto'` shows the new versions.
 - **Knobs:** none.
 - **First evidence:** the binary's module list carries the bumped versions.
 

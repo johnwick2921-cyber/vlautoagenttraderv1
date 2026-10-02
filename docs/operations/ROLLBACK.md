@@ -1,4 +1,5 @@
-# ROLLBACK — nofx NQ Futures Bot
+names rewritten to vl on 2026-09-30 (VL rename)
+# ROLLBACK — vl NQ Futures Bot
 
 Operator runbook for reverting code, schema, NT scripts, and risk state after a bad deploy or unexpected loss. See plan doc Task 31.
 
@@ -17,12 +18,12 @@ To roll back the working tree to a tag, then rebuild:
 
 ```bash
 git checkout v1.0-plan2 -- .
-go build -o nofx-bin .
-pkill -TERM -f nofx-bin
-./nofx-bin > /tmp/nofx.log 2>&1 &
+go build -o vl-bin .
+pkill -TERM -f vl-bin
+./vl-bin > /tmp/vl.log 2>&1 &
 ```
 
-Verify the rolled-back binary boots cleanly (`grep "System started successfully" /tmp/nofx.log`) and serves `/api/traders` (see STARTUP.md §3).
+Verify the rolled-back binary boots cleanly (`grep "System started successfully" /tmp/vl.log`) and serves `/api/traders` (see STARTUP.md §3).
 
 > Note: `git checkout <tag> -- .` rewrites tracked files in place. It does NOT change the branch HEAD. To formally pin to a tag, follow with `git switch --detach v1.0-plan2`.
 
@@ -37,9 +38,9 @@ cp data/data.db "data/data.db.bak.$(date -u +%Y%m%dT%H%M%SZ)"
 To restore from a backup:
 
 ```bash
-pkill -TERM -f nofx-bin
+pkill -TERM -f vl-bin
 cp data/data.db.bak.20260525T120000Z data/data.db
-./nofx-bin > /tmp/nofx.log 2>&1 &
+./vl-bin > /tmp/vl.log 2>&1 &
 ```
 
 For column **removal**, write a one-shot migration file under `store/migrations/`. Auto-migrate will not do it.

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/holdcli"
-	"nofx/internal/updateauth"
-	"nofx/store"
+	"vl/internal/holdcli"
+	"vl/internal/updateauth"
+	"vl/store"
 )
 
 // PR #200 fold F3 (CTO 1790252194343): installpath.DotEnvGetenv lets a

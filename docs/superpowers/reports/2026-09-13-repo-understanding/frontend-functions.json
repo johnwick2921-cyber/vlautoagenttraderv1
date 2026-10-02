@@ -13483,7 +13483,7 @@
   },
   {
     "path": "web/src/components/strategy/CoinSourceEditor.tsx",
-    "name": "NofxOSBadge",
+    "name": "VLOSBadge",
     "kind": "ArrowFunction",
     "start_line": 193,
     "end_line": 197,
@@ -19621,7 +19621,7 @@
   },
   {
     "path": "web/src/components/ui/select.tsx",
-    "name": "NofxSelect",
+    "name": "VLSelect",
     "kind": "FunctionDeclaration",
     "start_line": 20,
     "end_line": 102,

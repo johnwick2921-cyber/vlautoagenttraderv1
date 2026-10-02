@@ -58,12 +58,12 @@ export function FAQContent({
       {categories.map((category) => (
         <div
           key={category.id}
-          className="nofx-glass p-8 rounded-xl border border-white/5"
+          className="vl-neo-glass p-8 rounded-xl border border-white/5"
         >
           {/* Category Header */}
           <div className="flex items-center gap-3 mb-6 pb-3 border-b border-white/10">
-            <category.icon className="w-7 h-7 text-nofx-gold" />
-            <h2 className="text-2xl font-bold text-nofx-text-main">
+            <category.icon className="w-7 h-7 text-vl-neo-gold" />
+            <h2 className="text-2xl font-bold text-vl-neo-text-main">
               {t(category.titleKey, language)}
             </h2>
           </div>
@@ -79,18 +79,18 @@ export function FAQContent({
                 className="scroll-mt-24"
               >
                 {/* Question */}
-                <h3 className="text-xl font-semibold mb-3 text-nofx-text-main">
+                <h3 className="text-xl font-semibold mb-3 text-vl-neo-text-main">
                   {t(item.questionKey, language)}
                 </h3>
 
                 {/* Answer */}
-                <div className="prose prose-invert max-w-none text-nofx-text-muted leading-relaxed">
+                <div className="prose prose-invert max-w-none text-vl-neo-text-muted leading-relaxed">
                   {item.id === 'github-projects-tasks' ? (
                     <div className="space-y-3">
                       <div className="text-base">
                         {language === 'zh' ? '链接：' : 'Links:'}{' '}
                         <a
-                          href="https://github.com/johnwick2921-cyber/nofx/3"
+                          href="https://github.com/johnwick2921-cyber/nofx/issues/3"
                           target="_blank"
                           rel="noreferrer"
                           style={{ color: '#F0B90B' }}
@@ -99,7 +99,7 @@ export function FAQContent({
                         </a>
                         {'  |  '}
                         <a
-                          href="https://github.com/johnwick2921-cyber/nofx/5"
+                          href="https://github.com/johnwick2921-cyber/nofx/issues/5"
                           target="_blank"
                           rel="noreferrer"
                           style={{ color: '#F0B90B' }}
@@ -285,7 +285,7 @@ export function FAQContent({
                           href="#"
                           target="_blank"
                           rel="noreferrer"
-                          className="text-nofx-gold hover:underline"
+                          className="text-vl-neo-gold hover:underline"
                         >
                           CONTRIBUTING.md
                         </a>
@@ -294,7 +294,7 @@ export function FAQContent({
                           href="#"
                           target="_blank"
                           rel="noreferrer"
-                          className="text-nofx-gold hover:underline"
+                          className="text-vl-neo-gold hover:underline"
                         >
                           PR_TITLE_GUIDE.md
                         </a>
@@ -374,10 +374,10 @@ export function FAQContent({
                         )}
                       </ol>
 
-                      <div className="rounded p-3 mt-3 bg-nofx-gold/10 border border-nofx-gold/25">
+                      <div className="rounded p-3 mt-3 bg-vl-neo-gold/10 border border-vl-neo-gold/25">
                         {language === 'zh' ? (
                           <div className="text-sm">
-                            <strong className="text-nofx-gold">Note:</strong>{' '}
+                            <strong className="text-vl-neo-gold">Note:</strong>{' '}
                             我们为高质量贡献提供激励（Bounty/奖金、荣誉徽章与鸣谢、优先
                             Review/合并与内测资格 等）。 详情可关注带
                             <a

@@ -1,5 +1,5 @@
 import sqlite3, re, json
-db = sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+db = sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 c = db.cursor()
 print("=== N1: planner_rejected_prompts classification by STATED definition ===")
 rows = c.execute("SELECT id, reject_reason FROM planner_rejected_prompts ORDER BY id").fetchall()

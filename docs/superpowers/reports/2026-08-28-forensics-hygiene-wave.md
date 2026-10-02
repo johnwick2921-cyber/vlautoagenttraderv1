@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # FORENSICS-HYGIENE WAVE — STRICT-TRUTH + S-1..S-4 + T2/T4
 
 **2026-08-27, cutover 18:14:40 CT · branch `fix/forensics-hygiene` off dev ·

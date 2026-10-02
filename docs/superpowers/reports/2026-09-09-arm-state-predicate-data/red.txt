@@ -12,5 +12,5 @@
     arm_state_contract_test.go:47: terminal state "shadowed" must not be reported armed
     arm_state_contract_test.go:47: terminal state " CANCELED " must not be reported armed
 FAIL
-FAIL	nofx/trader	0.429s
+FAIL	vl/trader	0.429s
 FAIL

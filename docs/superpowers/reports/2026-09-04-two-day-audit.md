@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Two-day audit — every loss, every refused opportunity, and why a fast tape produced one trade
 
 **Window** 2026-09-02 00:00 CT → 2026-09-03 23:31 CT (with 08-26…09-01 as baseline)
 **Dispatch** owner hoang, 2026-09-04 · READ-ONLY · SIM-only (Sim101), MNQ only
-**Branch** `docs/two-day-audit-0904` · base `dfbfa660` (dev tip at accept) · worktree `~/nofx-2day04`
+**Branch** `docs/two-day-audit-0904` · base `dfbfa660` (dev tip at accept) · worktree `~/vl-2day04`
 **Running rev at audit time** boot line `530009ff`; PID 594377 started 2026-09-03 23:12:54 CT
 **Evidence classes** **[A]** directly verified · **[B]** inferred from strong evidence · **[C]** speculation
 
@@ -13,7 +14,7 @@
 **[A] There is no open position and no resting arm.** Nothing needs the owner's hand tonight.
 
 ```sql
-sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
  "SELECT * FROM trader_positions WHERE status='OPEN';"                        -- 0 rows
 
 -- ⚠ SUPERSEDED — DO NOT COPY THE QUERY BELOW. It retyped 5 of the 7 terminal
@@ -21,12 +22,12 @@ sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
 -- docs/superpowers/AUDIT-CHECKLIST.md. Use the code's own predicate,
 -- isTerminalArmState (trader/one_contract.go:285), or the exported SQL fragment
 -- once it lands.
-sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
  "SELECT * FROM armed_orders
    WHERE state NOT IN ('filled','cancelled','canceled','expired','done');"    -- 0 rows
 
 -- ✅ THE CORRECT FORM — all seven states isTerminalArmState returns true for:
-sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" \
  "SELECT * FROM armed_orders
    WHERE state NOT IN ('filled','cancelled','canceled','rejected',
                        'expired','superseded','shadowed');"                   -- 0 rows
@@ -152,19 +153,19 @@ preceded it, not to a file default.
 
 | # | boot (CT) | build tree | # | boot (CT) | build tree |
 |---|---|---|---|---|---|
-| 1 | 09-02 00:01:06 | clone-c39 | 15 | 09-02 22:37:35 | nofx |
-| 2 | 09-02 00:10:20 | clonepnl ← `TRADING REFUSED` stale rev | 16 | 09-02 22:41:58 | nofx |
-| 3 | 09-02 00:11:47 | clonepnl | 17 | 09-02 23:24:56 | nofx |
+| 1 | 09-02 00:01:06 | clone-c39 | 15 | 09-02 22:37:35 | vl |
+| 2 | 09-02 00:10:20 | clonepnl ← `TRADING REFUSED` stale rev | 16 | 09-02 22:41:58 | vl |
+| 3 | 09-02 00:11:47 | clonepnl | 17 | 09-02 23:24:56 | vl |
 | 4 | 09-02 06:27:45 | c41clone | 18 | 09-03 10:28:29 | cleanclone |
 | 5 | 09-02 06:57:49 | c33clone | 19 | 09-03 11:10:33 | cc2 ← **mid-NY-session** |
 | 6 | 09-02 07:32:15 | rfclone | 20 | 09-03 14:18:24 | cc2 ← **host reboot** |
 | 7 | 09-02 07:49:06 | clone0b2 | 21 | 09-03 14:59:03 | cc3 |
 | 8 | 09-02 08:10:30 | rpclone | 22 | 09-03 15:02:18 | cc3 |
 | 9 | 09-02 17:51:14 | bwclone | 23 | 09-03 18:08:56 | cleanbuild |
-| 10 | 09-02 18:05:26 | nofx-deploy | 24 | 09-03 19:06:06 | cc6 |
-| 11 | 09-02 18:27:17 | c46clone | 25 | 09-03 21:19:00 | nofx |
-| 12 | 09-02 20:42:28 | nofx | 26 | 09-03 21:48:12 | nofx |
-| 13 | 09-02 21:19:21 | nofx | 27 | 09-03 23:11:59 | nofx ← `TRADING REFUSED` stale rev |
+| 10 | 09-02 18:05:26 | vl-deploy | 24 | 09-03 19:06:06 | cc6 |
+| 11 | 09-02 18:27:17 | c46clone | 25 | 09-03 21:19:00 | vl |
+| 12 | 09-02 20:42:28 | vl | 26 | 09-03 21:48:12 | vl |
+| 13 | 09-02 21:19:21 | vl | 27 | 09-03 23:11:59 | vl ← `TRADING REFUSED` stale rev |
 | 14 | 09-02 21:32:51 | ncclone | 28 | 09-03 23:12:54 | cleanclone ← **the running PID 594377** |
 
 **The rules changed inside the window.** The two that matter for attribution:
@@ -183,7 +184,7 @@ preceded it, not to a file default.
 
 **Three premise corrections on the running rev [A]:**
 
-1. **PID 594377 *is* boot 7 running `530009ff`. There is no boot 8** — one `nofx-bin`,
+1. **PID 594377 *is* boot 7 running `530009ff`. There is no boot 8** — one `vl-bin`,
    `ExecMainStartTimestamp = Thu 2026-09-03 23:12:54 CDT`. They were never two facts to reconcile.
 2. **"~23:05 CT" is the build time, not the boot.** `530009ff` was committed/built at 23:04:45 CT
    (`vcs.time 2026-09-04T04:04:45Z`); the boot is **23:12:55 CT**, eight minutes later.
@@ -414,9 +415,9 @@ The next decision cycle after 12:22:44 is **15:08:51** — a 166-minute decision
 14:45. **[A] The whole NY afternoon — 12:24:33 to 14:45, 2h20m containing the day's high — ran
 with either no host or no market data, and nothing alerted on the second half.**
 
-**[B] The restart cadence is a separate finding, and it is not the cause of this gap either.** `nofx_2026-09-03.log`
+**[B] The restart cadence is a separate finding, and it is not the cause of this gap either.** `vl_2026-09-03.log`
 alone carries **11 boot banners from at least 6 different build trees** (`cleanclone`, `cc2`,
-`cc3`, `cleanbuild`, `cc6`, `nofx`) — audit and fix lanes cutting over repeatedly on a live
+`cc3`, `cleanbuild`, `cc6`, `vl`) — audit and fix lanes cutting over repeatedly on a live
 trading day, one of them at 11:10:33 CT landing *between* NY v6 (10:49:57) and v7 (11:27:53), so
 the running code changed mid-session. Twice in the window the rev-guard caught a stale binary and
 refused outright:
@@ -923,8 +924,8 @@ Every defect found, with the code path. None was acted on — this audit is read
 | **D18** | `plan_lifecycle_log` holds **2 rows all-time** (09-03 ASIA v2 @19:25:00, ASIA v5 @21:21:00 CT); the fix that creates it landed 09-03 17:40:18 CT, so it covers **8 of 51** versions in the window (15.7%, n=51). 09-03 LONDON v1's full history — PLAN 01:34:53 → DORMANT 02:40:00 → REARMED 04:30:55 → DORMANT 08:00:54 → superseded 08:15:44 — is recoverable only from the log file, not the lifecycle table |
 | **D19** | **38 of 51 plan versions** in the window record their trigger as the bare token `level_event` — *which* level woke the planner is never persisted (n=51 versions created 09-02 00:00 CT onward) |
 | **D20** | Until commit `4e901261` (09-03 17:40:18 CT), `UpdatePlanLifecycle` **overwrote `plans.trigger_reason`** with the dormant/flip marker, destroying the authoring trigger. This is why §6's version table shows death markers in the trigger column |
-| **D21** | **`data/nofx_<date>.log` rotates on PROCESS START, not on date.** Position 591's close (09-03 09:20:45 CT) is at line 85591 of **`nofx_2026-09-02.log`**. Any grep scoped by filename silently misses events |
-| **D22** | **`nofx_2026-08-27.log` is 2,049,637,081 bytes** (2.0 GB) against 0.6–13 MB for every other day — 180,139 lines in the first 40 MB are empty-payload `📡 armed order_update frame` spam |
+| **D21** | **`data/vl_<date>.log` rotates on PROCESS START, not on date.** Position 591's close (09-03 09:20:45 CT) is at line 85591 of **`vl_2026-09-02.log`**. Any grep scoped by filename silently misses events |
+| **D22** | **`vl_2026-08-27.log` is 2,049,637,081 bytes** (2.0 GB) against 0.6–13 MB for every other day — 180,139 lines in the first 40 MB are empty-payload `📡 armed order_update frame` spam |
 | **D23** | **The min-SL refusal line prints the raw ATR where the threshold belongs** (`kernel/min_sl.go:62`), so a correct refusal reads as an arithmetic error. All 34 were correct |
 | **D24** | **A min-SL-rejected decision is not persisted with its prices** — the retry overwrites the record with the final `wait`, so the refused set's exact counterfactual is unrecoverable from the store |
 | **D25** | `armed_orders` rows for positions **582 and 585 were overwritten in place** by later re-arms (`UNIQUE INDEX idx_armed_orders_plan_scenario`), so their brackets are gone |

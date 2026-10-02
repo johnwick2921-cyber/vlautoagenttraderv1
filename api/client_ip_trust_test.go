@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/logger"
+	"vl/logger"
 
 	"github.com/gin-gonic/gin"
 )

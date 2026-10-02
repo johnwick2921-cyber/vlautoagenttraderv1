@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // ── 101 D2 / E3 — 5,000 asked: 152 current-contract ring rows + 2,000 prior-

@@ -13,8 +13,8 @@ package api
 import (
 	"net/http"
 
-	"nofx/discipline"
-	"nofx/logger"
+	"vl/discipline"
+	"vl/logger"
 
 	"github.com/gin-gonic/gin"
 )

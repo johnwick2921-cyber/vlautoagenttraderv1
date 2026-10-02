@@ -1,10 +1,11 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Does the forming candle predict? — touch_episodes × touch_outcomes (round 13f)
 
 **Dispatch:** 02 — TEST 13f · owner hoang · 2026-09-11 · READ-ONLY (no code, no config, no DB write, no boot)
 **Branch:** `docs/forming-candle-test` — claim commit `fdd8a3b0` (ls-remote `fdd8a3b01e9a2d145e1859a852bf8c063c148382`, pushed 10:40 CT)
 **Base:** worktree cut from `origin/dev` tip `616b52a9` (marker: boot 802fb00b verified)
-**Running rev verified:** `deploy/RELEASE` = `802fb00b`; `go version -m nofx-bin` → `vcs.revision=802fb00b09e51f9801e8d4fbd1bf156c86865d95`, `vcs.modified=false` [A, measured]
-**Data snapshot:** live DB read-only (`file:/home/hoang/nofx/data/data.db?mode=ro`), 2026-09-11 ~18:38 UTC. Every figure below is reproduced by
+**Running rev verified:** `deploy/RELEASE` = `802fb00b`; `go version -m vl-bin` → `vcs.revision=802fb00b09e51f9801e8d4fbd1bf156c86865d95`, `vcs.modified=false` [A, measured]
+**Data snapshot:** live DB read-only (`file:/home/hoang/vl/data/data.db?mode=ro`), 2026-09-11 ~18:38 UTC. Every figure below is reproduced by
 `docs/superpowers/reports/2026-09-11-forming-candle-test-data/analysis.py` (output in `output.txt`; the analysis population, one row per joined pair with its ids, in `pairs_primary.csv`).
 
 **The question:** at the moment price is AT a level and the bar has not closed, does anything we already record predict whether the level holds?

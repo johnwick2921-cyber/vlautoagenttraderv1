@@ -2,7 +2,7 @@ package kernel
 
 import (
 	"math"
-	"nofx/market"
+	"vl/market"
 	"time"
 )
 

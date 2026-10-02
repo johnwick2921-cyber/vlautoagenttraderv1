@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # W-TF — every detector, every timeframe
 
 **Dispatch** 103, owner hoang, 2026-09-10 · SELF-CONTAINED · SIM-only (Sim101), MNQ, one contract, `plan_mode=strict`
-**Branch** `fix/every-detector-every-timeframe` · claim `81bb9f3c` · composite id `every-detector-every-tf-51524a30/nofx-6d[63eafa]`
-**Running rev at measurement** `8941ec68612c` — `/api/health` → `{"revision":"8941ec68612c"}`, PID 1953256, `/proc/1953256/exe → /home/hoang/nofx/nofx-bin`, started 06:56:51 CT; `go version -m` → `vcs.revision=8941ec68612cc019edc3002b999272ab2ed20516`, `vcs.modified=false`
+**Branch** `fix/every-detector-every-timeframe` · claim `81bb9f3c` · composite id `every-detector-every-tf-51524a30/vl-6d[63eafa]`
+**Running rev at measurement** `8941ec68612c` — `/api/health` → `{"revision":"8941ec68612c"}`, PID 1953256, `/proc/1953256/exe → /home/hoang/vl/vl-bin`, started 06:56:51 CT; `go version -m` → `vcs.revision=8941ec68612cc019edc3002b999272ab2ed20516`, `vcs.modified=false`
 **Evidence** **[A]** directly verified · **[B]** inferred · **[C]** speculation · **[I]** installed-but-untested
 
 ---
@@ -216,7 +217,7 @@ skipped test is not evidence.
 9. **Executor cost measured, not assumed**: the 2→5 timeframe expansion moves one
    detection pass from **217µs to 535µs** (`-benchtime 20x`, same 500-bar input
    per timeframe). Sub-millisecond on a path that runs about once a minute.
-11. **`nofx/trader` is RED on dev, and it is not the lunch band.**
+11. **`vl/trader` is RED on dev, and it is not the lunch band.**
     `TestSplitArmWritesTwoLedgerRows` fails with *"split arm must write 2 ledger
     rows (legs), got 0"*. Measured **[A]** at three heads in clean worktrees
     carrying none of this wave's commits:
@@ -259,7 +260,7 @@ no data written, no config touched.
 - **Narrow without reverting**: remove `"1d","3d","1w"` from `HTFDetectionTFs`
   (one line, one source — the gate ranges over it). Detection returns to 15m–12h
   immediately; nothing else needs touching.
-- **Binary rollback**: `nofx-bin.old.<rev it holds>` per A13, verified with
+- **Binary rollback**: `vl-bin.old.<rev it holds>` per A13, verified with
   `go version -m` before the swap.
 
 ---

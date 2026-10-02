@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W3 (K) — the write loop under the entry policy, driven through

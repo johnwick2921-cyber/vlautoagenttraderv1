@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"fmt"
-	"nofx/market"
-	"nofx/store"
-	ntTrader "nofx/trader/ninjatrader"
+	"vl/market"
+	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // Phase 3B — TRAILING PROFIT (final-bundle 2026-08-19). Owner-requested Risk

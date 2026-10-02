@@ -1,11 +1,11 @@
 import datetime,hashlib,json,os,pathlib,subprocess,sys,time
 label,cwd,*cmd=sys.argv[1:]
-root=pathlib.Path('/tmp/nofx-audit-repairs-20260913')
+root=pathlib.Path('/tmp/vl-audit-repairs-20260913')
 def git(*args):return subprocess.check_output(['git',*args],cwd=root,text=True).strip()
 rev=git('rev-parse','HEAD');dirty=git('status','--porcelain')
 if dirty:raise SystemExit('Refusing final verification on dirty source')
-out=pathlib.Path('/tmp/nofx-final-verification');log=out/(label+'.log')
-env=os.environ.copy();env['GIT_DIR']='/tmp/structural-daily-loss-release/nofx/.git/worktrees/nofx-audit-repairs-20260913';env['GIT_WORK_TREE']=str(root)
+out=pathlib.Path('/tmp/vl-final-verification');log=out/(label+'.log')
+env=os.environ.copy();env['GIT_DIR']='/tmp/structural-daily-loss-release/vl/.git/worktrees/vl-audit-repairs-20260913';env['GIT_WORK_TREE']=str(root)
 start=datetime.datetime.now(datetime.timezone.utc).isoformat();t=time.monotonic()
 with log.open('wb') as f:r=subprocess.run(cmd,cwd=cwd,env=env,stdout=f,stderr=subprocess.STDOUT)
 end=git('rev-parse','HEAD');dirty_after=git('status','--porcelain')

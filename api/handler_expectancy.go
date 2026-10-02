@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"time"
 
-	"nofx/expectancy"
+	"vl/expectancy"
 
 	"github.com/gin-gonic/gin"
 )

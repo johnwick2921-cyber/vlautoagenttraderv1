@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"nofx/logger"
-	"nofx/market"
+	"vl/logger"
+	"vl/market"
 )
 
 // New-authoring contract only. Legacy PlanDoc reads never call its refusal seam.

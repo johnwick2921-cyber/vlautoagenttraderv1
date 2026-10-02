@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
 )
 
 // CreatePositionSnapshot gets current real positions from exchange and creates snapshot positions

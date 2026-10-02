@@ -391,8 +391,6 @@ export const translations = {
     noExchangesConfigured: 'No configured exchanges',
     signalSource: 'Signal Source',
     signalSourceConfig: 'Signal Source Configuration',
-    ai500Description:
-      'API endpoint for AI500 data provider, leave blank to disable this signal source',
     oiTopDescription:
       'API endpoint for open interest rankings, leave blank to disable this signal source',
     information: 'Information',
@@ -582,7 +580,7 @@ export const translations = {
 
     // Features Section
     coreFeatures: 'Core Features',
-    whyChooseNofx: 'Why Choose ' + PERSONA_NAME + '?',
+    whyChooseVL: 'Why Choose ' + PERSONA_NAME + '?',
     openCommunityDriven:
       'Open source, transparent, community-driven AI trading OS',
     openSourceSelfHosted: '100% Open Source & Self-Hosted',
@@ -608,20 +606,20 @@ export const translations = {
     secureFeatures4: 'Trading log auditing',
 
     // About Section
-    aboutNofx: 'About ' + PERSONA_NAME,
-    whatIsNofx: 'What is ' + PERSONA_NAME + '?',
-    nofxNotAnotherBot:
+    aboutVL: 'About ' + PERSONA_NAME,
+    whatIsVL: 'What is ' + PERSONA_NAME + '?',
+    vlNotAnotherBot:
       PERSONA_NAME +
       " is not another trading bot, but the 'Linux' of AI trading —",
-    nofxDescription1:
+    vlDescription1:
       'a transparent, trustworthy open source OS that provides a unified',
-    nofxDescription2:
+    vlDescription2:
       "'decision-risk-execution' layer, supporting all asset classes.",
-    nofxDescription3:
+    vlDescription3:
       'Starting with crypto markets (24/7, high volatility perfect testing ground), future expansion to stocks, futures, forex. Core: open architecture, AI',
-    nofxDescription4:
+    vlDescription4:
       'Darwinism (multi-agent self-competition, strategy evolution), CodeFi',
-    nofxDescription5:
+    vlDescription5:
       'flywheel (developers get point rewards for PR contributions).',
     youFullControl: 'You 100% Control',
     fullControlDesc: 'Complete control over AI prompts and funds',
@@ -635,7 +633,7 @@ export const translations = {
       'Four simple steps to start your AI automated trading journey',
     step1Title: 'Clone GitHub Repository',
     step1Desc:
-      'git clone https://github.com/NoFxAiOS/nofx and switch to dev branch to test new features.',
+      'git clone https://github.com/johnwick2921-cyber/nofx and switch to dev branch to test new features.',
     step2Title: 'Configure Environment',
     step2Desc:
       'Frontend setup for exchange APIs (like Binance, Hyperliquid), AI models and custom prompts.',
@@ -662,7 +660,7 @@ export const translations = {
     strategicInvestment: '(Strategic Investment)',
 
     // Login Modal
-    accessNofxPlatform: 'Access ' + PERSONA_NAME + ' Platform',
+    accessVLPlatform: 'Access ' + PERSONA_NAME + ' Platform',
     loginRegisterPrompt:
       'Please login or register to access the full AI trading platform',
     registerNewAccount: 'Register New Account',
@@ -671,19 +669,15 @@ export const translations = {
     candidateCoins: 'Candidate Coins',
     candidateCoinsZeroWarning: 'Candidate Coins Count is 0',
     possibleReasons: 'Possible Reasons:',
-    ai500ApiNotConfigured:
-      'AI500 data provider API not configured or inaccessible (check signal source settings)',
     apiConnectionTimeout: 'API connection timeout or returned empty data',
     noCustomCoinsAndApiFailed:
       'No custom coins configured and API fetch failed',
     solutions: 'Solutions:',
     setCustomCoinsInConfig: 'Set custom coin list in trader configuration',
     orConfigureCorrectApiUrl: 'Or configure correct data provider API address',
-    orDisableAI500Options:
-      'Or disable "Use AI500 Data Provider" and "Use OI Top" options',
     signalSourceNotConfigured: 'Signal Source Not Configured',
     signalSourceWarningMessage:
-      'You have traders that enabled "Use AI500 Data Provider" or "Use OI Top", but signal source API address is not configured yet. This will cause candidate coins count to be 0, and traders cannot work properly.',
+      'You have traders that enabled Hyperliquid coin sources (Hyper All / Hyper Main), but the signal source API address is not configured yet. This will cause candidate coins count to be 0, and traders cannot work properly.',
     configureSignalSourceNow: 'Configure Signal Source Now',
 
     // FAQ Page
@@ -704,8 +698,8 @@ export const translations = {
     faqCategoryContributing: 'Contributing',
 
     // ===== GETTING STARTED =====
-    faqWhatIsNOFX: 'What is ' + PERSONA_NAME + '?',
-    faqWhatIsNOFXAnswer:
+    faqWhatIsVL: 'What is ' + PERSONA_NAME + '?',
+    faqWhatIsVLAnswer:
       PERSONA_NAME +
       ' is an open-source AI-powered trading operating system for cryptocurrency and US stock markets. It uses large language models (LLMs) like DeepSeek, GPT, Claude, Gemini to analyze market data and make autonomous trading decisions. Key features include: multi-AI model support, multi-exchange trading, and visual strategy builder.',
 
@@ -736,7 +730,7 @@ export const translations = {
     // ===== INSTALLATION =====
     faqHowToInstall: 'How do I install ' + PERSONA_NAME + '?',
     faqHowToInstallAnswer:
-      'Easiest method (Linux/macOS): Run "curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash" - this installs Docker containers automatically. Then open http://127.0.0.1:3000 in your browser. For manual installation or development, clone the repository and follow the README instructions.',
+      'For manual installation or development, clone the repository and follow the README instructions.',
 
     faqWindowsInstallation: 'How do I install on Windows?',
     faqWindowsInstallationAnswer:
@@ -748,15 +742,15 @@ export const translations = {
 
     faqManualInstallation: 'How do I install manually for development?',
     faqManualInstallationAnswer:
-      'Prerequisites: Go 1.21+, Node.js 18+, TA-Lib. Steps: 1) Clone repo: "git clone https://github.com/NoFxAiOS/nofx.git"; 2) Install backend deps: "go mod download"; 3) Install frontend deps: "cd web && npm install"; 4) Build backend: "go build -o nofx"; 5) Run backend: "./nofx"; 6) Run frontend (new terminal): "cd web && npm run dev". Access at http://127.0.0.1:3000',
+      'Prerequisites: Go 1.21+, Node.js 18+, TA-Lib. Steps: 1) Clone repo: "git clone https://github.com/johnwick2921-cyber/nofx.git"; 2) Install backend deps: "go mod download"; 3) Install frontend deps: "cd web && npm install"; 4) Build backend: "go build -o vl"; 5) Run backend: "./vl"; 6) Run frontend (new terminal): "cd web && npm run dev". Access at http://127.0.0.1:3000',
 
     faqServerDeployment: 'How do I deploy to a remote server?',
     faqServerDeploymentAnswer:
       'Run the install script on your server - it auto-detects the server IP. Access via http://YOUR_SERVER_IP:3000. For HTTPS: 1) Use Cloudflare (free) - add domain, create A record pointing to server IP, set SSL to "Flexible"; 2) Enable TRANSPORT_ENCRYPTION=true in .env for browser-side encryption; 3) Access via https://your-domain.com',
 
-    faqUpdateNOFX: 'How do I update ' + PERSONA_NAME + '?',
-    faqUpdateNOFXAnswer:
-      'For Docker: Run "docker compose pull && docker compose up -d" to pull latest images and restart. For manual installation: "git pull && go build -o nofx" for backend, "cd web && npm install && npm run build" for frontend. Your configurations in data.db are preserved during updates.',
+    faqUpdateVL: 'How do I update ' + PERSONA_NAME + '?',
+    faqUpdateVLAnswer:
+      'For Docker: Run "docker compose pull && docker compose up -d" to pull latest images and restart. For manual installation: "git pull && go build -o vl" for backend, "cd web && npm install && npm run build" for frontend. Your configurations in data.db are preserved during updates.',
 
     // ===== CONFIGURATION =====
     faqConfigureAIModels: 'How do I configure AI models?',
@@ -779,7 +773,7 @@ export const translations = {
 
     faqCreateStrategy: 'How do I create a trading strategy?',
     faqCreateStrategyAnswer:
-      'Go to Strategy Studio: 1) Coin Source - select which coins to trade (static list, AI500 pool, or OI Top ranking); 2) Indicators - enable technical indicators (EMA, MACD, RSI, ATR, Volume, OI, Funding Rate); 3) Risk Controls - set leverage limits, max positions, margin usage cap, position size limits; 4) Custom Prompt (optional) - add specific instructions for the AI. Save and assign to a trader.',
+      'Go to Strategy Studio: 1) Coin Source - select which coins to trade (static list, Hyperliquid All, or Hyperliquid Main); 2) Indicators - enable technical indicators (EMA, MACD, RSI, ATR, Volume, OI, Funding Rate); 3) Risk Controls - set leverage limits, max positions, margin usage cap, position size limits; 4) Custom Prompt (optional) - add specific instructions for the AI. Save and assign to a trader.',
 
     faqCreateTrader: 'How do I create and start a trader?',
     faqCreateTraderAnswer:
@@ -824,19 +818,19 @@ export const translations = {
     // ===== TECHNICAL ISSUES =====
     faqPortInUse: 'Port 8080 or 3000 already in use',
     faqPortInUseAnswer:
-      'Check what\'s using the port: "lsof -i :8080" (macOS/Linux) or "netstat -ano | findstr 8080" (Windows). Kill the process or change ports in .env: NOFX_BACKEND_PORT=8081, NOFX_FRONTEND_PORT=3001. Restart with "docker compose down && docker compose up -d".',
+      'Check what\'s using the port: "lsof -i :8080" (macOS/Linux) or "netstat -ano | findstr 8080" (Windows). Kill the process or change ports in .env: VL_BACKEND_PORT=8081, VL_FRONTEND_PORT=3001. Restart with "docker compose down && docker compose up -d".',
 
     faqFrontendNotLoading: 'Frontend shows "Loading..." forever',
     faqFrontendNotLoadingAnswer:
-      'Backend may not be running or reachable. Check: 1) "curl http://127.0.0.1:8080/api/health" should return {"status":"ok"}; 2) "docker compose ps" to verify containers are running; 3) Check backend logs: "docker compose logs nofx-backend"; 4) Ensure firewall allows port 8080.',
+      'Backend may not be running or reachable. Check: 1) "curl http://127.0.0.1:8080/api/health" should return {"status":"ok"}; 2) "docker compose ps" to verify containers are running; 3) Check backend logs: "docker compose logs vl-backend"; 4) Ensure firewall allows port 8080.',
 
     faqDatabaseLocked: 'Database locked error',
     faqDatabaseLockedAnswer:
-      'Multiple processes accessing SQLite simultaneously. Solution: 1) Stop all processes: "docker compose down" or "pkill nofx"; 2) Remove lock files if present: "rm -f data/data.db-wal data/data.db-shm"; 3) Restart: "docker compose up -d". Only one backend instance should access the database.',
+      'Multiple processes accessing SQLite simultaneously. Solution: 1) Stop all processes: "docker compose down" or "pkill vl"; 2) Remove lock files if present: "rm -f data/data.db-wal data/data.db-shm"; 3) Restart: "docker compose up -d". Only one backend instance should access the database.',
 
     faqTALibNotFound: 'TA-Lib not found during build',
     faqTALibNotFoundAnswer:
-      'TA-Lib is required for technical indicators. Install: macOS: "brew install ta-lib"; Ubuntu/Debian: "sudo apt-get install libta-lib0-dev"; CentOS: "yum install ta-lib-devel". After installing, rebuild: "go build -o nofx". Docker images include TA-Lib pre-installed.',
+      'TA-Lib is required for technical indicators. Install: macOS: "brew install ta-lib"; Ubuntu/Debian: "sudo apt-get install libta-lib0-dev"; CentOS: "yum install ta-lib-devel". After installing, rebuild: "go build -o vl". Docker images include TA-Lib pre-installed.',
 
     faqAIAPITimeout: 'AI API timeout or connection refused',
     faqAIAPITimeoutAnswer:
@@ -874,8 +868,8 @@ export const translations = {
       PERSONA_NAME +
       '; 3) Enable TRANSPORT_ENCRYPTION for remote deployments; 4) Never share .env or data.db files; 5) Use HTTPS with valid certificates; 6) Regularly rotate API keys; 7) Monitor account activity.',
 
-    faqCanNOFXStealFunds: 'Can ' + PERSONA_NAME + ' steal my funds?',
-    faqCanNOFXStealFundsAnswer:
+    faqCanVLStealFunds: 'Can ' + PERSONA_NAME + ' steal my funds?',
+    faqCanVLStealFundsAnswer:
       PERSONA_NAME +
       ' is open-source (AGPL-3.0 license) - you can audit all code on GitHub. API keys are stored locally on YOUR machine, never sent to external servers. ' +
       PERSONA_NAME +
@@ -884,7 +878,7 @@ export const translations = {
     // ===== FEATURES =====
     faqStrategyStudio: 'What is Strategy Studio?',
     faqStrategyStudioAnswer:
-      'Strategy Studio is a visual strategy builder where you configure: 1) Coin Sources - which cryptocurrencies to trade (static list, AI500 top coins, OI ranking); 2) Technical Indicators - EMA, MACD, RSI, ATR, Volume, Open Interest, Funding Rate; 3) Risk Controls - leverage limits, position sizing, margin caps; 4) Custom Prompts - specific instructions for AI. No coding required.',
+      'Strategy Studio is a visual strategy builder where you configure: 1) Coin Sources - which cryptocurrencies to trade (static list, Hyperliquid All, Hyperliquid Main); 2) Technical Indicators - EMA, MACD, RSI, ATR, Volume, Open Interest, Funding Rate; 3) Risk Controls - leverage limits, position sizing, margin caps; 4) Custom Prompts - specific instructions for AI. No coding required.',
 
     faqCompetitionMode: 'What is Competition Mode?',
     faqCompetitionModeAnswer:
@@ -923,7 +917,7 @@ export const translations = {
 
     faqPRGuidelines: 'What are the PR guidelines?',
     faqPRGuidelinesAnswer:
-      'PR Process: 1) Fork repo to your account; 2) Create feature branch from dev: "git checkout -b feat/your-feature"; 3) Make changes, run lint: "npm --prefix web run lint"; 4) Commit with Conventional Commits format; 5) Push and create PR to NoFxAiOS/nofx:dev; 6) Reference related issue (Closes #123); 7) Wait for review. Keep PRs small and focused.',
+      'PR Process: 1) Fork repo to your account; 2) Create feature branch from dev: "git checkout -b feat/your-feature"; 3) Make changes, run lint: "npm --prefix web run lint"; 4) Commit with Conventional Commits format; 5) Push and create PR to johnwick2921-cyber/nofx:dev; 6) Reference related issue (Closes #123); 7) Wait for review. Keep PRs small and focused.',
 
     faqBountyProgram: 'Is there a bounty program?',
     faqBountyProgramAnswer:
@@ -1823,7 +1817,6 @@ export const translations = {
     noExchangesConfigured: '暂无已配置的交易所',
     signalSource: '信号源',
     signalSourceConfig: '信号源配置',
-    ai500Description: '用于获取 AI500 数据源的 API 地址，留空则不使用此数据源',
     oiTopDescription: '用于获取持仓量排行数据的API地址，留空则不使用此信号源',
     information: '说明',
     signalSourceInfo1:
@@ -1992,7 +1985,7 @@ export const translations = {
 
     // Features Section
     coreFeatures: '核心功能',
-    whyChooseNofx: '为什么选择 ' + PERSONA_NAME + '？',
+    whyChooseVL: '为什么选择 ' + PERSONA_NAME + '？',
     openCommunityDriven: '开源、透明、社区驱动的 AI 交易操作系统',
     openSourceSelfHosted: '100% 开源与自托管',
     openSourceDesc: '你的框架，你的规则。非黑箱，支持自定义提示词和多模型。',
@@ -2014,17 +2007,17 @@ export const translations = {
     secureFeatures4: '交易日志审计',
 
     // About Section
-    aboutNofx: '关于 ' + PERSONA_NAME,
-    whatIsNofx: '什么是 ' + PERSONA_NAME + '？',
-    nofxNotAnotherBot:
+    aboutVL: '关于 ' + PERSONA_NAME,
+    whatIsVL: '什么是 ' + PERSONA_NAME + '？',
+    vlNotAnotherBot:
       PERSONA_NAME + " 不是另一个交易机器人，而是 AI 交易的 'Linux' ——",
-    nofxDescription1: "一个透明、可信任的开源 OS，提供统一的 '决策-风险-执行'",
-    nofxDescription2: '层，支持所有资产类别。',
-    nofxDescription3:
+    vlDescription1: "一个透明、可信任的开源 OS，提供统一的 '决策-风险-执行'",
+    vlDescription2: '层，支持所有资产类别。',
+    vlDescription3:
       '从加密市场起步（24/7、高波动性完美测试场），未来扩展到股票、期货、外汇。核心：开放架构、AI',
-    nofxDescription4:
+    vlDescription4:
       '达尔文主义（多代理自竞争、策略进化）、CodeFi 飞轮（开发者 PR',
-    nofxDescription5: '贡献获积分奖励）。',
+    vlDescription5: '贡献获积分奖励）。',
     youFullControl: '你 100% 掌控',
     fullControlDesc: '完全掌控 AI 提示词和资金',
     startupMessages1: '启动自动交易系统...',
@@ -2036,7 +2029,7 @@ export const translations = {
     fourSimpleSteps: '四个简单步骤，开启 AI 自动交易之旅',
     step1Title: '拉取 GitHub 仓库',
     step1Desc:
-      'git clone https://github.com/NoFxAiOS/nofx 并切换到 dev 分支测试新功能。',
+      'git clone https://github.com/johnwick2921-cyber/nofx 并切换到 dev 分支测试新功能。',
     step2Title: '配置环境',
     step2Desc:
       '前端设置交易所 API（如 Binance、Hyperliquid）、AI 模型和自定义提示词。',
@@ -2062,7 +2055,7 @@ export const translations = {
     strategicInvestment: '(战略投资)',
 
     // Login Modal
-    accessNofxPlatform: '访问 ' + PERSONA_NAME + ' 平台',
+    accessVLPlatform: '访问 ' + PERSONA_NAME + ' 平台',
     loginRegisterPrompt: '请选择登录或注册以访问完整的 AI 交易平台',
     registerNewAccount: '注册新账号',
 
@@ -2070,17 +2063,14 @@ export const translations = {
     candidateCoins: '候选币种',
     candidateCoinsZeroWarning: '候选币种数量为 0',
     possibleReasons: '可能原因：',
-    ai500ApiNotConfigured:
-      'AI500 数据源 API 未配置或无法访问（请检查信号源设置）',
     apiConnectionTimeout: 'API连接超时或返回数据为空',
     noCustomCoinsAndApiFailed: '未配置自定义币种且API获取失败',
     solutions: '解决方案：',
     setCustomCoinsInConfig: '在交易员配置中设置自定义币种列表',
     orConfigureCorrectApiUrl: '或者配置正确的数据源 API 地址',
-    orDisableAI500Options: '或者禁用"使用 AI500 数据源"和"使用 OI Top"选项',
     signalSourceNotConfigured: '信号源未配置',
     signalSourceWarningMessage:
-      '您有交易员启用了"使用 AI500 数据源"或"使用 OI Top"，但尚未配置信号源 API 地址。这将导致候选币种数量为 0，交易员无法正常工作。',
+      '您有交易员启用了 Hyperliquid 币种来源（Hyper All / Hyper Main），但尚未配置信号源 地址。这将导致候选币种数量为 0，交易员无法正常工作。',
     configureSignalSourceNow: '立即配置信号源',
 
     // FAQ Page
@@ -2101,8 +2091,8 @@ export const translations = {
     faqCategoryContributing: '参与贡献',
 
     // ===== 入门指南 =====
-    faqWhatIsNOFX: PERSONA_NAME + ' 是什么？',
-    faqWhatIsNOFXAnswer:
+    faqWhatIsVL: PERSONA_NAME + ' 是什么？',
+    faqWhatIsVLAnswer:
       PERSONA_NAME +
       ' 是一个开源的 AI 驱动交易操作系统，支持加密货币和美股市场。它使用大语言模型（LLM）如 DeepSeek、GPT、Claude、Gemini 来分析市场数据，进行自主交易决策。核心功能包括：多 AI 模型支持、多交易所交易、可视化策略构建器、回测系统。',
 
@@ -2132,8 +2122,7 @@ export const translations = {
 
     // ===== 安装部署 =====
     faqHowToInstall: '如何安装 ' + PERSONA_NAME + '？',
-    faqHowToInstallAnswer:
-      '最简单的方法（Linux/macOS）：运行 "curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash" - 这会自动安装 Docker 容器。然后在浏览器中打开 http://127.0.0.1:3000。手动安装或开发请克隆仓库并按照 README 说明操作。',
+    faqHowToInstallAnswer: '手动安装或开发请克隆仓库并按照 README 说明操作。',
 
     faqWindowsInstallation: 'Windows 如何安装？',
     faqWindowsInstallationAnswer:
@@ -2145,15 +2134,15 @@ export const translations = {
 
     faqManualInstallation: '如何手动安装用于开发？',
     faqManualInstallationAnswer:
-      '前置条件：Go 1.21+、Node.js 18+、TA-Lib。步骤：1）克隆仓库："git clone https://github.com/NoFxAiOS/nofx.git"；2）安装后端依赖："go mod download"；3）安装前端依赖："cd web && npm install"；4）构建后端："go build -o nofx"；5）运行后端："./nofx"；6）运行前端（新终端）："cd web && npm run dev"。访问 http://127.0.0.1:3000',
+      '前置条件：Go 1.21+、Node.js 18+、TA-Lib。步骤：1）克隆仓库："git clone https://github.com/johnwick2921-cyber/nofx.git"；2）安装后端依赖："go mod download"；3）安装前端依赖："cd web && npm install"；4）构建后端："go build -o vl"；5）运行后端："./vl"；6）运行前端（新终端）："cd web && npm run dev"。访问 http://127.0.0.1:3000',
 
     faqServerDeployment: '如何部署到远程服务器？',
     faqServerDeploymentAnswer:
       '在服务器上运行安装脚本 - 它会自动检测服务器 IP。通过 http://服务器IP:3000 访问。配置 HTTPS：1）使用 Cloudflare（免费）- 添加域名，创建 A 记录指向服务器 IP，SSL 设为"灵活"；2）在 .env 中启用 TRANSPORT_ENCRYPTION=true 进行浏览器端加密；3）通过 https://你的域名.com 访问。',
 
-    faqUpdateNOFX: '如何更新 ' + PERSONA_NAME + '？',
-    faqUpdateNOFXAnswer:
-      'Docker 方式：运行 "docker compose pull && docker compose up -d" 拉取最新镜像并重启。手动安装：后端 "git pull && go build -o nofx"，前端 "cd web && npm install && npm run build"。data.db 中的配置在更新时会保留。',
+    faqUpdateVL: '如何更新 ' + PERSONA_NAME + '？',
+    faqUpdateVLAnswer:
+      'Docker 方式：运行 "docker compose pull && docker compose up -d" 拉取最新镜像并重启。手动安装：后端 "git pull && go build -o vl"，前端 "cd web && npm install && npm run build"。data.db 中的配置在更新时会保留。',
 
     // ===== 配置设置 =====
     faqConfigureAIModels: '如何配置 AI 模型？',
@@ -2176,7 +2165,7 @@ export const translations = {
 
     faqCreateStrategy: '如何创建交易策略？',
     faqCreateStrategyAnswer:
-      '进入策略工作室：1）币种来源 - 选择交易哪些币（静态列表、AI500 池或 OI 排行）；2）指标 - 启用技术指标（EMA、MACD、RSI、ATR、成交量、OI、资金费率）；3）风控 - 设置杠杆限制、最大持仓数、保证金使用上限、仓位大小限制；4）自定义提示词（可选）- 为 AI 添加特定指令。保存后分配给交易员。',
+      '进入策略工作室：1）币种来源 - 选择交易哪些币（静态列表、Hyperliquid All 或 Hyperliquid Main）；2）指标 - 启用技术指标（EMA、MACD、RSI、ATR、成交量、OI、资金费率）；3）风控 - 设置杠杆限制、最大持仓数、保证金使用上限、仓位大小限制；4）自定义提示词（可选）- 为 AI 添加特定指令。保存后分配给交易员。',
 
     faqCreateTrader: '如何创建并启动交易员？',
     faqCreateTraderAnswer:
@@ -2220,19 +2209,19 @@ export const translations = {
     // ===== 技术问题 =====
     faqPortInUse: '端口 8080 或 3000 被占用',
     faqPortInUseAnswer:
-      '查看占用端口的进程：macOS/Linux 用 "lsof -i :8080"，Windows 用 "netstat -ano | findstr 8080"。终止进程或在 .env 中修改端口：NOFX_BACKEND_PORT=8081、NOFX_FRONTEND_PORT=3001。然后 "docker compose down && docker compose up -d" 重启。',
+      '查看占用端口的进程：macOS/Linux 用 "lsof -i :8080"，Windows 用 "netstat -ano | findstr 8080"。终止进程或在 .env 中修改端口：VL_BACKEND_PORT=8081、VL_FRONTEND_PORT=3001。然后 "docker compose down && docker compose up -d" 重启。',
 
     faqFrontendNotLoading: '前端一直显示"加载中..."',
     faqFrontendNotLoadingAnswer:
-      '后端可能未运行或无法访问。检查：1）"curl http://127.0.0.1:8080/api/health" 应返回 {"status":"ok"}；2）"docker compose ps" 验证容器运行中；3）查看后端日志："docker compose logs nofx-backend"；4）确保防火墙允许 8080 端口。',
+      '后端可能未运行或无法访问。检查：1）"curl http://127.0.0.1:8080/api/health" 应返回 {"status":"ok"}；2）"docker compose ps" 验证容器运行中；3）查看后端日志："docker compose logs vl-backend"；4）确保防火墙允许 8080 端口。',
 
     faqDatabaseLocked: '数据库锁定错误',
     faqDatabaseLockedAnswer:
-      '多个进程同时访问 SQLite 导致。解决方案：1）停止所有进程："docker compose down" 或 "pkill nofx"；2）如有锁文件删除："rm -f data/data.db-wal data/data.db-shm"；3）重启："docker compose up -d"。只能有一个后端实例访问数据库。',
+      '多个进程同时访问 SQLite 导致。解决方案：1）停止所有进程："docker compose down" 或 "pkill vl"；2）如有锁文件删除："rm -f data/data.db-wal data/data.db-shm"；3）重启："docker compose up -d"。只能有一个后端实例访问数据库。',
 
     faqTALibNotFound: '构建时找不到 TA-Lib',
     faqTALibNotFoundAnswer:
-      'TA-Lib 是技术指标所需。安装：macOS："brew install ta-lib"；Ubuntu/Debian："sudo apt-get install libta-lib0-dev"；CentOS："yum install ta-lib-devel"。安装后重新构建："go build -o nofx"。Docker 镜像已预装 TA-Lib。',
+      'TA-Lib 是技术指标所需。安装：macOS："brew install ta-lib"；Ubuntu/Debian："sudo apt-get install libta-lib0-dev"；CentOS："yum install ta-lib-devel"。安装后重新构建："go build -o vl"。Docker 镜像已预装 TA-Lib。',
 
     faqAIAPITimeout: 'AI API 超时或连接被拒绝',
     faqAIAPITimeoutAnswer:
@@ -2270,8 +2259,8 @@ export const translations = {
       PERSONA_NAME +
       ' 使用专用子账户；3）远程部署启用 TRANSPORT_ENCRYPTION；4）切勿分享 .env 或 data.db 文件；5）使用有效证书的 HTTPS；6）定期轮换 API 密钥；7）监控账户活动。',
 
-    faqCanNOFXStealFunds: PERSONA_NAME + ' 会盗取我的资金吗？',
-    faqCanNOFXStealFundsAnswer:
+    faqCanVLStealFunds: PERSONA_NAME + ' 会盗取我的资金吗？',
+    faqCanVLStealFundsAnswer:
       PERSONA_NAME +
       ' 是开源的（AGPL-3.0 许可）- 您可以在 GitHub 审计所有代码。API 密钥存储在您的机器本地，从不发送到外部服务器。' +
       PERSONA_NAME +
@@ -2280,7 +2269,7 @@ export const translations = {
     // ===== 功能介绍 =====
     faqStrategyStudio: '什么是策略工作室？',
     faqStrategyStudioAnswer:
-      '策略工作室是可视化策略构建器，您可以配置：1）币种来源 - 交易哪些加密货币（静态列表、AI500 热门币、OI 排行）；2）技术指标 - EMA、MACD、RSI、ATR、成交量、持仓量、资金费率；3）风控 - 杠杆限制、仓位大小、保证金上限；4）自定义提示词 - AI 的特定指令。无需编程。',
+      '策略工作室是可视化策略构建器，您可以配置：1）币种来源 - 交易哪些加密货币（静态列表、Hyperliquid All、Hyperliquid Main）；2）技术指标 - EMA、MACD、RSI、ATR、成交量、持仓量、资金费率；3）风控 - 杠杆限制、仓位大小、保证金上限；4）自定义提示词 - AI 的特定指令。无需编程。',
 
     faqCompetitionMode: '什么是竞赛模式？',
     faqCompetitionModeAnswer:
@@ -2319,7 +2308,7 @@ export const translations = {
 
     faqPRGuidelines: 'PR 指南是什么？',
     faqPRGuidelinesAnswer:
-      'PR 流程：1）Fork 仓库到您的账户；2）从 dev 创建功能分支："git checkout -b feat/your-feature"；3）修改代码，运行 lint："npm --prefix web run lint"；4）使用 Conventional Commits 格式提交；5）推送并创建 PR 到 NoFxAiOS/nofx:dev；6）关联相关 issue（Closes #123）；7）等待审核。保持 PR 小而聚焦。',
+      'PR 流程：1）Fork 仓库到您的账户；2）从 dev 创建功能分支："git checkout -b feat/your-feature"；3）修改代码，运行 lint："npm --prefix web run lint"；4）使用 Conventional Commits 格式提交；5）推送并创建 PR 到 johnwick2921-cyber/nofx:dev；6）关联相关 issue（Closes #123）；7）等待审核。保持 PR 小而聚焦。',
 
     faqBountyProgram: '有赏金计划吗？',
     faqBountyProgramAnswer:
@@ -3203,8 +3192,6 @@ export const translations = {
     noExchangesConfigured: 'Belum ada bursa yang dikonfigurasi',
     signalSource: 'Sumber Sinyal',
     signalSourceConfig: 'Konfigurasi Sumber Sinyal',
-    ai500Description:
-      'Endpoint API untuk penyedia data AI500, kosongkan untuk menonaktifkan sumber sinyal ini',
     oiTopDescription:
       'Endpoint API untuk peringkat open interest, kosongkan untuk menonaktifkan sumber sinyal ini',
     information: 'Informasi',
@@ -3385,7 +3372,7 @@ export const translations = {
     getStartedNow: 'Mulai Sekarang',
     viewSourceCode: 'Lihat Kode Sumber',
     coreFeatures: 'Fitur Inti',
-    whyChooseNofx: 'Mengapa Memilih ' + PERSONA_NAME + '?',
+    whyChooseVL: 'Mengapa Memilih ' + PERSONA_NAME + '?',
     openCommunityDriven:
       'Open source, transparan, OS trading AI yang didorong komunitas',
     openSourceSelfHosted: '100% Open Source & Self-Hosted',
@@ -3409,20 +3396,20 @@ export const translations = {
     secureFeatures2: 'Kontrol izin API granular',
     secureFeatures3: 'Pemantauan risiko realtime',
     secureFeatures4: 'Audit log trading',
-    aboutNofx: 'Tentang ' + PERSONA_NAME,
-    whatIsNofx: 'Apa itu ' + PERSONA_NAME + '?',
-    nofxNotAnotherBot:
+    aboutVL: 'Tentang ' + PERSONA_NAME,
+    whatIsVL: 'Apa itu ' + PERSONA_NAME + '?',
+    vlNotAnotherBot:
       PERSONA_NAME +
       " bukan bot trading biasa, melainkan 'Linux' dari trading AI —",
-    nofxDescription1:
+    vlDescription1:
       'OS open source yang transparan dan terpercaya yang menyediakan lapisan',
-    nofxDescription2:
+    vlDescription2:
       "'keputusan-risiko-eksekusi' terpadu, mendukung semua kelas aset.",
-    nofxDescription3:
+    vlDescription3:
       'Dimulai dari pasar kripto (24/7, volatilitas tinggi sebagai tempat uji sempurna), ekspansi masa depan ke saham, futures, forex. Inti: arsitektur terbuka, AI',
-    nofxDescription4:
+    vlDescription4:
       'Darwinisme (kompetisi mandiri multi-agen, evolusi strategi), flywheel CodeFi',
-    nofxDescription5: '(pengembang mendapat reward poin untuk kontribusi PR).',
+    vlDescription5: '(pengembang mendapat reward poin untuk kontribusi PR).',
     youFullControl: 'Anda 100% Mengendalikan',
     fullControlDesc: 'Kontrol penuh atas prompt AI dan dana',
     startupMessages1: 'Memulai sistem trading otomatis...',
@@ -3433,7 +3420,7 @@ export const translations = {
       'Empat langkah sederhana untuk memulai perjalanan trading AI otomatis Anda',
     step1Title: 'Clone Repository GitHub',
     step1Desc:
-      'git clone https://github.com/NoFxAiOS/nofx dan beralih ke branch dev untuk menguji fitur baru.',
+      'git clone https://github.com/johnwick2921-cyber/nofx dan beralih ke branch dev untuk menguji fitur baru.',
     step2Title: 'Konfigurasi Lingkungan',
     step2Desc:
       'Setup frontend untuk API bursa (seperti Binance, Hyperliquid), model AI dan prompt kustom.',
@@ -3454,15 +3441,13 @@ export const translations = {
     documentation: 'Dokumentasi',
     supporters: 'Pendukung',
     strategicInvestment: '(Investasi Strategis)',
-    accessNofxPlatform: 'Akses Platform ' + PERSONA_NAME,
+    accessVLPlatform: 'Akses Platform ' + PERSONA_NAME,
     loginRegisterPrompt:
       'Silakan masuk atau daftar untuk mengakses platform trading AI lengkap',
     registerNewAccount: 'Daftar Akun Baru',
     candidateCoins: 'Koin Kandidat',
     candidateCoinsZeroWarning: 'Jumlah Koin Kandidat adalah 0',
     possibleReasons: 'Kemungkinan Penyebab:',
-    ai500ApiNotConfigured:
-      'API penyedia data AI500 tidak dikonfigurasi atau tidak dapat diakses (periksa pengaturan sumber sinyal)',
     apiConnectionTimeout: 'Koneksi API timeout atau mengembalikan data kosong',
     noCustomCoinsAndApiFailed:
       'Tidak ada koin kustom yang dikonfigurasi dan pengambilan API gagal',
@@ -3470,11 +3455,9 @@ export const translations = {
     setCustomCoinsInConfig: 'Atur daftar koin kustom di konfigurasi trader',
     orConfigureCorrectApiUrl:
       'Atau konfigurasi alamat API penyedia data yang benar',
-    orDisableAI500Options:
-      'Atau nonaktifkan opsi "Gunakan Penyedia Data AI500" dan "Gunakan OI Top"',
     signalSourceNotConfigured: 'Sumber Sinyal Belum Dikonfigurasi',
     signalSourceWarningMessage:
-      'Anda memiliki trader yang mengaktifkan "Gunakan Penyedia Data AI500" atau "Gunakan OI Top", tetapi alamat API sumber sinyal belum dikonfigurasi. Ini akan menyebabkan jumlah koin kandidat menjadi 0, dan trader tidak dapat bekerja dengan baik.',
+      'Anda memiliki trader yang mengaktifkan sumber koin Hyperliquid (Hyper All / Hyper Main), tetapi alamat API sumber sinyal belum dikonfigurasi. Ini akan menyebabkan jumlah koin kandidat menjadi 0, dan trader tidak dapat bekerja dengan baik.',
     configureSignalSourceNow: 'Konfigurasi Sumber Sinyal Sekarang',
 
     // FAQ Page
@@ -3493,8 +3476,8 @@ export const translations = {
     faqCategoryFeatures: 'Fitur',
     faqCategoryAIModels: 'Model AI',
     faqCategoryContributing: 'Kontribusi',
-    faqWhatIsNOFX: 'Apa itu ' + PERSONA_NAME + '?',
-    faqWhatIsNOFXAnswer:
+    faqWhatIsVL: 'Apa itu ' + PERSONA_NAME + '?',
+    faqWhatIsVLAnswer:
       PERSONA_NAME +
       ' adalah sistem operasi trading bertenaga AI open-source untuk pasar kripto dan saham AS. Ia menggunakan model bahasa besar (LLM) seperti DeepSeek, GPT, Claude, Gemini untuk menganalisis data pasar dan membuat keputusan trading secara otonom. Fitur utama: dukungan multi-model AI, trading multi-bursa, dan pembangun strategi visual.',
     faqHowDoesItWork: 'Bagaimana cara kerja ' + PERSONA_NAME + '?',
@@ -3518,7 +3501,7 @@ export const translations = {
       'Minimum: 2 core CPU, 2GB RAM, 1GB disk, internet stabil. Direkomendasikan: 4GB RAM untuk menjalankan beberapa trader. OS yang didukung: Linux, macOS, atau Windows (via Docker atau WSL2).',
     faqHowToInstall: 'Bagaimana cara menginstal ' + PERSONA_NAME + '?',
     faqHowToInstallAnswer:
-      'Metode termudah (Linux/macOS): Jalankan "curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash" - ini menginstal kontainer Docker secara otomatis. Lalu buka http://127.0.0.1:3000 di browser Anda.',
+      'Untuk instalasi manual atau pengembangan, clone repositori dan ikuti instruksi README.',
     faqWindowsInstallation: 'Bagaimana cara menginstal di Windows?',
     faqWindowsInstallationAnswer:
       'Tiga opsi: 1) Docker Desktop (Direkomendasikan); 2) WSL2 - Instal Windows Subsystem for Linux; 3) Docker di WSL2. Akses via http://127.0.0.1:3000',
@@ -3528,13 +3511,13 @@ export const translations = {
     faqManualInstallation:
       'Bagaimana cara menginstal manual untuk pengembangan?',
     faqManualInstallationAnswer:
-      'Prasyarat: Go 1.21+, Node.js 18+, TA-Lib. Langkah: 1) Clone repo; 2) "go mod download"; 3) "cd web && npm install"; 4) "go build -o nofx"; 5) "./nofx"; 6) "cd web && npm run dev".',
+      'Prasyarat: Go 1.21+, Node.js 18+, TA-Lib. Langkah: 1) Clone repo; 2) "go mod download"; 3) "cd web && npm install"; 4) "go build -o vl"; 5) "./vl"; 6) "cd web && npm run dev".',
     faqServerDeployment: 'Bagaimana cara deploy ke server remote?',
     faqServerDeploymentAnswer:
       'Jalankan skrip instal di server Anda. Akses via http://IP_SERVER:3000. Untuk HTTPS: Gunakan Cloudflare (gratis) dan aktifkan TRANSPORT_ENCRYPTION=true di .env.',
-    faqUpdateNOFX: 'Bagaimana cara memperbarui ' + PERSONA_NAME + '?',
-    faqUpdateNOFXAnswer:
-      'Docker: "docker compose pull && docker compose up -d". Manual: "git pull && go build -o nofx" untuk backend, "cd web && npm install && npm run build" untuk frontend.',
+    faqUpdateVL: 'Bagaimana cara memperbarui ' + PERSONA_NAME + '?',
+    faqUpdateVLAnswer:
+      'Docker: "docker compose pull && docker compose up -d". Manual: "git pull && go build -o vl" untuk backend, "cd web && npm install && npm run build" untuk frontend.',
     faqConfigureAIModels: 'Bagaimana cara mengonfigurasi model AI?',
     faqConfigureAIModelsAnswer:
       'Buka halaman Konfigurasi → bagian Model AI. Untuk setiap model: 1) Dapatkan API key dari penyedia; 2) Masukkan API key; 3) Opsional kustomisasi base URL dan nama model; 4) Simpan.',
@@ -3584,7 +3567,7 @@ export const translations = {
       'Perkiraan biaya harian per trader (interval 5 menit): DeepSeek: $0.10-0.50; Qwen: $0.20-0.80; OpenAI: $2-5; Claude: $1-3.',
     faqPortInUse: 'Port 8080 atau 3000 sudah digunakan',
     faqPortInUseAnswer:
-      'Periksa proses yang menggunakan port. Ubah port di .env: NOFX_BACKEND_PORT=8081, NOFX_FRONTEND_PORT=3001.',
+      'Periksa proses yang menggunakan port. Ubah port di .env: VL_BACKEND_PORT=8081, VL_FRONTEND_PORT=3001.',
     faqFrontendNotLoading: 'Frontend menampilkan "Memuat..." terus-menerus',
     faqFrontendNotLoadingAnswer:
       'Backend mungkin tidak berjalan. Periksa: "curl http://127.0.0.1:8080/api/health" harus mengembalikan {"status":"ok"}.',
@@ -3618,8 +3601,8 @@ export const translations = {
     faqSecurityBestPractices: 'Apa praktik terbaik keamanan?',
     faqSecurityBestPracticesAnswer:
       'Disarankan: 1) Gunakan API key dengan whitelist IP dan izin minimal; 2) Gunakan sub-akun khusus; 3) Aktifkan TRANSPORT_ENCRYPTION; 4) Gunakan HTTPS.',
-    faqCanNOFXStealFunds: 'Bisakah ' + PERSONA_NAME + ' mencuri dana saya?',
-    faqCanNOFXStealFundsAnswer:
+    faqCanVLStealFunds: 'Bisakah ' + PERSONA_NAME + ' mencuri dana saya?',
+    faqCanVLStealFundsAnswer:
       PERSONA_NAME +
       ' open-source (lisensi AGPL-3.0) - Anda bisa audit semua kode. API key disimpan lokal di mesin ANDA, tidak pernah dikirim ke server eksternal.',
     faqStrategyStudio: 'Apa itu Strategy Studio?',
@@ -3652,7 +3635,7 @@ export const translations = {
       ' open-source dan menyambut kontribusi! Cara: 1) Kode - perbaiki bug, tambah fitur; 2) Dokumentasi; 3) Laporan Bug; 4) Ide Fitur. Semua kontributor mungkin mendapat reward airdrop.',
     faqPRGuidelines: 'Apa panduan PR?',
     faqPRGuidelinesAnswer:
-      'Proses PR: 1) Fork repo; 2) Buat branch fitur dari dev; 3) Buat perubahan, jalankan lint; 4) Commit dengan format Conventional Commits; 5) Push dan buat PR ke NoFxAiOS/nofx:dev.',
+      'Proses PR: 1) Fork repo; 2) Buat branch fitur dari dev; 3) Buat perubahan, jalankan lint; 4) Commit dengan format Conventional Commits; 5) Push dan buat PR ke johnwick2921-cyber/nofx:dev.',
     faqBountyProgram: 'Apakah ada program bounty?',
     faqBountyProgramAnswer:
       'Ya! Kontributor mendapat reward airdrop berdasarkan kontribusi. Issue dengan label "bounty" memiliki reward uang tunai.',

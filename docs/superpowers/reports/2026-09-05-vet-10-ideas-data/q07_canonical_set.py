@@ -1,8 +1,8 @@
 # q07: canonical usable set aligned with /api/expectancy (excl. e7 test seam, pnl NULL, plan_link UNRESOLVABLE),
 # plus the 7 off-plan rows shown separately; R-multiples from the opening decision's stop (decision path) or arm stop_px (armed path)
 import sqlite3, json, sys, re
-sys.path.insert(0,'/home/hoang/nofx-analysis/vet-10-0905'); from wilson import wilson, mean_ci
-db=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True); db.row_factory=sqlite3.Row
+sys.path.insert(0,'/home/hoang/vl-analysis/vet-10-0905'); from wilson import wilson, mean_ci
+db=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True); db.row_factory=sqlite3.Row
 E=int(__import__('datetime').datetime(2026,8,15,5,0).timestamp()*1000)  # 2026-08-15 00:00 CT = 05:00 UTC
 rows=db.execute("select * from trader_positions where entry_time>=? and source<>'e7_farside_test' and pnl_corrected is not null order by entry_time",(E,)).fetchall()
 print("era rows with pnl, non-test:",len(rows))
@@ -39,7 +39,7 @@ for r in canon:
     Rm = (r['pnl_corrected']/2.0)/risk if risk else None
     out.append((r['id'],r['side'],r['entry_price'],r['exit_price'],round(r['pnl_corrected'],1),r['mae'],r['mfe'],stop,tp,round(risk,2) if risk else None,round(rr,2) if rr else None,round(Rm,2) if Rm is not None else None,src,r['plan_session'],r['cited_scenario_id']))
 import csv
-w=csv.writer(open('/home/hoang/nofx-analysis/vet-10-0905/q07_canonical_trades.csv','w'))
+w=csv.writer(open('/home/hoang/vl-analysis/vet-10-0905/q07_canonical_trades.csv','w'))
 w.writerow(['id','side','entry','exit','pnl_c','mae_pts','mfe_pts','stop','tp','risk_pts','planned_rr','realized_R','stop_src','session','scenario'])
 for o in out: w.writerow(o)
 print("stop source counts:",{s:sum(1 for o in out if o[12]==s) for s in set(o[12] for o in out)})

@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 
 	"gorm.io/gorm"
-	"nofx/store/sqlitedriver"
+	"vl/store/sqlitedriver"
 )
 
 // closeTo is the 1e-6 tolerance the dispatch names (E1).

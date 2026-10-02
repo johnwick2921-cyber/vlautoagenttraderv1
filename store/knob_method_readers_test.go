@@ -19,7 +19,7 @@ import (
 	"sync"
 	"testing"
 
-	"nofx/internal/censuswalk"
+	"vl/internal/censuswalk"
 )
 
 // ── CLEANUP BATCH 2, B1 — THE REGISTRY'S FIELD GREP MISSED METHOD READERS ─────
@@ -160,7 +160,7 @@ func methodReadersOfKnob(t *testing.T, leaf string) (accessors []string, callSit
 	}
 	// pass 2: production call sites via go/types — the selector's selection
 	// must resolve to the accessor *types.Func on the owner type in
-	// nofx/store; package store itself is excluded (the call chain must leave
+	// vl/store; package store itself is excluded (the call chain must leave
 	// store/), and method expressions / method values count (SelectorExpr
 	// references, not only calls). CTO CENSUS-GUARDS 1790306266164 [31].
 	var anames []string
@@ -186,13 +186,13 @@ func methodReadersOfKnob(t *testing.T, leaf string) (accessors []string, callSit
 // expressions — trader/effective_settings.go:842 — pass unseen. The typed
 // pass resolves each selector through the toolchain and counts only
 // selections whose *types.Func IS the accessor method on the owner type
-// inside nofx/store; package store is excluded and references count, not
+// inside vl/store; package store is excluded and references count, not
 // only calls. go list and go/types failures are FATAL here — the pass never
 // degrades to name matching.
 
 // readerTypeContext is the one-per-root typed fixture: the toolchain's
 // package list (go list -e -json -deps -export over every walked dir), the
-// export-data importer that makes nofx/store resolve to ONE package object
+// export-data importer that makes vl/store resolve to ONE package object
 // across all type-checks, and the parsed + type-checked caches. Shared by
 // every methodReadersOfKnob call so the cost is paid once per test process.
 type readerTypeContext struct {
@@ -317,19 +317,19 @@ func tailOf(s string, n int) string {
 }
 
 // storeAccessorFuncs resolves each accessor name to its *types.Func on the
-// owner type inside nofx/store. Identity is by OBJECT, not name — so the
+// owner type inside vl/store. Identity is by OBJECT, not name — so the
 // same-named method on any other type never matches.
 func storeAccessorFuncs(t *testing.T, c *readerTypeContext, accessors []string, owners [][2]string) map[*types.Func]bool {
 	t.Helper()
-	storePkg, err := c.imp.Import("nofx/store")
+	storePkg, err := c.imp.Import("vl/store")
 	if err != nil {
-		t.Fatalf("import nofx/store: %v", err)
+		t.Fatalf("import vl/store: %v", err)
 	}
 	out := map[*types.Func]bool{}
 	for _, o := range owners {
 		obj := storePkg.Scope().Lookup(o[0])
 		if obj == nil {
-			t.Fatalf("owner type %s not found in the nofx/store scope — pass 1 and go/types disagree", o[0])
+			t.Fatalf("owner type %s not found in the vl/store scope — pass 1 and go/types disagree", o[0])
 		}
 		tname, ok := obj.(*types.TypeName)
 		if !ok {
@@ -348,7 +348,7 @@ func storeAccessorFuncs(t *testing.T, c *readerTypeContext, accessors []string, 
 				}
 			}
 			if idx < 0 {
-				t.Fatalf("accessor %s is not a method of %s in nofx/store — pass 1 and go/types disagree", an, o[0])
+				t.Fatalf("accessor %s is not a method of %s in vl/store — pass 1 and go/types disagree", an, o[0])
 			}
 			out[named.Method(idx)] = true
 		}
@@ -383,7 +383,7 @@ func (c *readerTypeContext) checkPackage(t *testing.T, importPath string) *types
 
 // typedAccessorCallSites returns every production reference to the accessors
 // whose selection resolves to the accessor method itself on the owner type in
-// nofx/store. package store is excluded — the call chain must leave store/ —
+// vl/store. package store is excluded — the call chain must leave store/ —
 // and a SelectorExpr counts whether it is a call, a method value or a method
 // expression. go list and go/types failures are fatal (no name fallback).
 func typedAccessorCallSites(t *testing.T, root string, accessors []string, owners [][2]string) []string {
@@ -396,7 +396,7 @@ func typedAccessorCallSites(t *testing.T, root string, accessors []string, owner
 	}
 	var sites []string
 	for importPath, files := range c.pkgFiles {
-		if importPath == "nofx/store" {
+		if importPath == "vl/store" {
 			continue
 		}
 		mentions := false
@@ -486,7 +486,7 @@ func TestKnobMethodReaderSitesLeaveStorePackage(t *testing.T) {
 // + accessor names) through the same typed pass methodReadersOfKnob calls.
 func TestKnobMethodReaderSitesAreReceiverTyped(t *testing.T) {
 	root := t.TempDir()
-	writeTreeFile(t, root, "go.mod", "module nofx\n\ngo 1.25.13\n")
+	writeTreeFile(t, root, "go.mod", "module vl\n\ngo 1.25.13\n")
 	writeTreeFile(t, root, "store/store.go", `package store
 
 type DayPlanConfig struct{ WakeOnIfvgFlag bool }
@@ -496,7 +496,7 @@ func (c *DayPlanConfig) helper() bool     { return c.WakeOnIfvg() }
 `)
 	writeTreeFile(t, root, "elsewhere/fake.go", `package elsewhere
 
-import "nofx/store"
+import "vl/store"
 
 type Fake struct{}
 

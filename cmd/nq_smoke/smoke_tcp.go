@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	ntpkg "nofx/provider/ninjatrader"
+	ntpkg "vl/provider/ninjatrader"
 )
 
 // runTCPSmoke exercises the Plan 1.5 TCP bridge end-to-end against the

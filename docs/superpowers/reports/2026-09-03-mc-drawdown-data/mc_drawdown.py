@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """1E — Monte Carlo drawdown rig. Read-only, seeded, re-runnable.
 
-Re-run:  cd ~/nofx-analysis/mc-drawdown && python3 mc_drawdown.py
+Re-run:  cd ~/vl-analysis/mc-drawdown && python3 mc_drawdown.py
 Inputs:  trade_sample.csv (built read-only from data/data.db, mode=ro)
 Outputs: drawdown_paths.csv, day_sim.csv, and the tables printed below.
 

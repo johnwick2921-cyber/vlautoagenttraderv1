@@ -3,7 +3,7 @@ package kernel
 import (
 	"sort"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // W-PICTURE-HTF (2026-09-19) — the owner's two-picture method as deterministic

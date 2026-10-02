@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Planner tape is NT8-only — dispatch 101 follow-up (2026-09-16)
 
-**Ruling:** CTO nofx-c5 under the owner's delegation ("you are cto just approve as my guideline"):
+**Ruling:** CTO vl-c5 under the owner's delegation ("you are cto just approve as my guideline"):
 `historical_import` rows are excluded from EVERY planner door; the chart keeps them, labelled. Follow-up
 to dispatch 101 (`9e200002`, booted 14:33 CT), where guard (iii) closed the rehydrate door and A15 §8 named
 the second door with counts read from the store.
@@ -92,7 +93,7 @@ Go binary swap only; no migration, no flag. The readers are additive; the previo
 ## F3 · THE BOOT — c6579347, 2026-09-16 15:31:59 CT (owner-run runbook; F3 PARTIAL)
 
 PID 2748996. `🔐 BOOT INTEGRITY OK — rev c6579347580a · built 2026-09-16T19:57:23Z · expected c6579347580a
-· goldens PASS`; `/api/health` c6579347; `deploy/RELEASE=c6579347`; `nofx-bin.old.9e200002` HOLDS 9e200002
+· goldens PASS`; `/api/health` c6579347; `deploy/RELEASE=c6579347`; `vl-bin.old.9e200002` HOLDS 9e200002
 (`go version -m`). `🧯 nt8 history at subscribe: MNQ 1m..30m 2000/2000, HTF n/a`; `🧯 ring rehydrated MNQ 1m
 [O]: nt8=2001 store_live=2500 store_hist=0 import=0 (refused at the door — guard iii) total=2500/2500`;
 `🧯 ring rehydrate done: 9 of 17 pairs deepened, +1104`; `📼 … mismatches this process: none`; zero
@@ -120,7 +121,7 @@ and is owed — the owner ran the binary runbook only. So the `🖥 ui … STALE
 rev 9e200002 ≠ binary c6579347) and the Guide banner shows drift until that cp runs; the timestamp-vs-rev
 point is a separate small fix, not this boot's explanation.
 
-Marker: this commit, from `~/nofx`, `deploy/RELEASE=c6579347` (written by the runbook before the kill, A19).
+Marker: this commit, from `~/vl`, `deploy/RELEASE=c6579347` (written by the runbook before the kill, A19).
 
 ## FOLLOW-UP PR — the hook race and the 🖥 rule (CTO ruling (b): rides the next scheduled boot)
 
@@ -140,7 +141,7 @@ Marker: this commit, from `~/nofx`, `deploy/RELEASE=c6579347` (written by the ru
   dist is installed (or a later one built at the booted rev).
 
 **STAGED AND GREEN (not booted):** PR #135 merged fast-forward → dev `7e87a375`. Clean-clone binary at that
-sha: `scratchpad/cc101e/nofx/nofx-bin` — `vcs.revision=7e87a375…`, `vcs.modified=false`, dir `nofx`, md5
+sha: `scratchpad/cc101e/vl/vl-bin` — `vcs.revision=7e87a375…`, `vcs.modified=false`, dir `vl`, md5
 `03a82609ff78e88bf83abc8ecbbf7969`, 73,554,832 bytes. Rides the NEXT scheduled boot (CTO ruling (b), no
 boot today); at that boot the dist built at the booted rev is installed alongside it (`GUIDE_BUILT_REV`
 stamp + dist build follow the 642f8808 precedent), and the proofs are: `🧮 planner tape` (import rows=426
@@ -149,11 +150,11 @@ on 12-26, Δ rows, Δ baseline), `📈`, R1, and `🖥 … bundle-rev=<rev> matc
 ## F3 · THE BOOT — 7e87a375, 2026-09-16 16:15:30 CT (owner-run: install-dist-97a1b0f3.sh then cutover-101-7e87a375.sh)
 
 Tree recovered from the THIRD class-45 strike first (15:51 CT, 57 files; the reverted content preserved on
-the local branch `junk/class45-strike3-20260916-1551`, never to be merged); `~/nofx` at `97a1b0f3 ==
+the local branch `junk/class45-strike3-20260916-1551`, never to be merged); `~/vl` at `97a1b0f3 ==
 origin/dev`, porcelain 0. PID 2748996 → **2814144**. Read from the log [A]:
 
 - `🔐 BOOT INTEGRITY OK — rev 7e87a375acf7 · built 2026-09-16T20:47:45Z · expected 7e87a375acf7 · goldens PASS`;
-  `/api/health` 7e87a375acf7; `deploy/RELEASE=7e87a375`; `nofx-bin.old.c6579347` HOLDS c6579347.
+  `/api/health` 7e87a375acf7; `deploy/RELEASE=7e87a375`; `vl-bin.old.c6579347` HOLDS c6579347.
 - **`🖥 ui: served-by=go-static build=2026-09-16T21:00:07Z bundle=index-CVZahq3s.js bundle-rev=7e87a375 matches
   the binary`** — the rev-judged line, first live print; the bundle was built 13 minutes AFTER this binary,
   which the old timestamp rule would also have passed, but for the wrong reason.
@@ -169,7 +170,7 @@ origin/dev`, porcelain 0. PID 2748996 → **2814144**. Read from the log [A]:
   the class-130 fix. **The `🧮` live proof (import rows=426 on 12-26, Δ rows, Δ baseline) is therefore due
   at ~17:00:0x CT and is read then**, appended below when it lands.
 
-Marker: this commit, from `~/nofx`, `deploy/RELEASE=7e87a375` (runbook, before the kill); `GUIDE_BUILT_REV`
+Marker: this commit, from `~/vl`, `deploy/RELEASE=7e87a375` (runbook, before the kill); `GUIDE_BUILT_REV`
 = 7e87a375 (dev 97a1b0f3, web-only; the Go binary is the 7e87a375 build, md5 03a82609…).
 
 ### The 17:00 open — the 🧮 line landed (2026-09-16 17:01:27 CT, verbatim [A])

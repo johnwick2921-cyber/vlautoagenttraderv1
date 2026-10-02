@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Two-picture (W-PICTURE-HTF) — owner-attended activation runbook
 
 Wave: branch `fix/picture-htf` (pushed). Mode: deterministic 4H-pivot →
@@ -12,7 +13,7 @@ NT8 compile is the bot operator's (owner's) action or explicitly acked.
 - Bot flat gate: no open positions in the store, no working arms, NT8
   snapshots flat on both accounts.
 - Backup the DB: the systemd timer does it daily; take one explicitly:
-  `python3 -c "import sqlite3; s=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True); d=sqlite3.connect('/home/hoang/nofx-backups/manual/pre-picture.db'); s.backup(d)"`
+  `python3 -c "import sqlite3; s=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro',uri=True); d=sqlite3.connect('/home/hoang/vl-backups/manual/pre-picture.db'); s.backup(d)"`
 - Strategy config quoted before touching anything: trader → strategy binding,
   `risk_control.min_risk_reward_ratio` (live: 2.0), `day_plan.picture_htf`
   (live: absent = resolved defaults once enabled).
@@ -24,16 +25,16 @@ currently-running DLL source:
 
 ```bash
 # 1. backup what NT8 is running today (WSL view of the NT8 AddOns folder)
-mkdir -p ~/nofx-backups/addon/$(date +%Y%m%d-%H%M%S)
+mkdir -p ~/vl-backups/addon/$(date +%Y%m%d-%H%M%S)
 cp "/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom/AddOns/"*.cs \
-   ~/nofx-backups/addon/$(date +%Y%m%d-%H%M%S)/
+   ~/vl-backups/addon/$(date +%Y%m%d-%H%M%S)/
 
 # 2. copy the new sources (from the DEPLOYED tree, not the worktree)
-cp /home/hoang/nofx/ninjascript/*.cs \
+cp /home/hoang/vl/ninjascript/*.cs \
    "/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom/AddOns/"
 
 # 3. verify the copy
-md5sum /home/hoang/nofx/ninjascript/*.cs \
+md5sum /home/hoang/vl/ninjascript/*.cs \
        "/mnt/c/Users/hoang/Documents/NinjaTrader 8/bin/Custom/AddOns/"*.cs
 ```
 
@@ -49,7 +50,7 @@ prints `addon=not proven` and the mode refuses every evaluation — by design.
 
 ## Step 3 — the cutover (owner-attended, no timers)
 
-1. Acquire the main-tree lock: `deploy/nofx-lock.sh acquire <session> "<task>"`.
+1. Acquire the main-tree lock: `deploy/vl-lock.sh acquire <session> "<task>"`.
 2. Five-leg gate, all on FRESH broker evidence: flat store · flat NT8
    snapshots · no working arms · API positions [] · owner present and acking.
 3. Build the binary from a clean clone at the merged head (vcs.revision
@@ -57,7 +58,7 @@ prints `addon=not proven` and the mode refuses every evaluation — by design.
    stash `deploy/RELEASE` + `web/src/guide/types.ts` → build binary → pop →
    `sed` GUIDE_BUILT_REV + deploy/RELEASE = S → `npm run build` in web/ →
    commit artifacts.
-4. Swap (mv old → `nofx-bin.old.<prev>`) then `kill -9 <pid>` (SIGTERM exits
+4. Swap (mv old → `vl-bin.old.<prev>`) then `kill -9 <pid>` (SIGTERM exits
    0 and does NOT relaunch; systemd `Restart=on-failure` boots the new one).
 5. Read the boot lines from the journal, ALL of:
    - `🔐 BOOT INTEGRITY OK — rev <merged sha> · goldens PASS`
@@ -65,7 +66,7 @@ prints `addon=not proven` and the mode refuses every evaluation — by design.
      (final+emitted_at) addon=proven|not proven (build=…, need ≥ 2026-09-20-p1)`
    - UI bundle matches binary (no drift banner).
 6. Flat-gate re-check post-boot. Push the post-boot marker BEFORE releasing
-   the lock. Rollback = restore `nofx-bin.old.<prev>` + release + restart.
+   the lock. Rollback = restore `vl-bin.old.<prev>` + release + restart.
 
 ## Step 4 — native 4H data readiness (BEFORE enabling; subscription config and DB storage are NOT proof)
 

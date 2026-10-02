@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // BuildFuturesDecisionSystemPrompt builds the CME index-futures (MNQ) system

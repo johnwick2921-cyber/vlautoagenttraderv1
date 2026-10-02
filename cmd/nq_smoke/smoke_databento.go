@@ -7,7 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"nofx/provider/databento"
+	"vl/provider/databento"
 )
 
 // runDatabentoSmoke fetches ~90min of 1m NQ.c.0 bars from live Databento and

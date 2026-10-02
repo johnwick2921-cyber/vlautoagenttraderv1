@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # WAVE A — THE RECORD
 
 **Branch:** `fix/wave-a-the-record` · **session:** `wave-a-record-554049f5` ·
@@ -287,16 +288,16 @@ counts are visible without arming anything.
 
 ```
 # code
-git -C ~/nofx checkout dev && git -C ~/nofx reset --hard <prior-dev-sha>
+git -C ~/vl checkout dev && git -C ~/vl reset --hard <prior-dev-sha>
 
 # binary (A13: name the rollback for the rev it HOLDS)
-mv ~/nofx/nofx-bin.old.36648655 ~/nofx/nofx-bin
-echo 36648655cfe03fc8dccd03403a10922f1621b24a > ~/nofx/deploy/RELEASE
-kill -9 $(pgrep -f nofx-bin)
+mv ~/vl/vl-bin.old.36648655 ~/vl/vl-bin
+echo 36648655cfe03fc8dccd03403a10922f1621b24a > ~/vl/deploy/RELEASE
+kill -9 $(pgrep -f vl-bin)
 
 # data — the migration took its own backup first
-ls ~/nofx-backups/wave-a-record/
-sqlite3 ~/nofx/data/data.db ".restore '~/nofx-backups/wave-a-record/<stamp>.db'"
+ls ~/vl-backups/wave-a-record/
+sqlite3 ~/vl/data/data.db ".restore '~/vl-backups/wave-a-record/<stamp>.db'"
 ```
 
 The migration is additive and reversible by backup: **no row is deleted**, the
@@ -316,7 +317,7 @@ on `position_id`.
    expected f516da7c · goldens PASS                       (no +dirty)
 📐 wave-A record migration: 254 duplicate + 423 legacy touch rows marked
    (NEVER deleted, never blessed) · mae 0→NULL on 4 row(s) [569 579 580 584] ·
-   mfe 0→NULL on 5 row(s) · backup ~/nofx-backups/wave-a-record/20260905-235345.db
+   mfe 0→NULL on 5 row(s) · backup ~/vl-backups/wave-a-record/20260905-235345.db
 📐 excursion backfill: scanned=587 computed=68 unrecomputable=519
    (no 1m coverage — those rows keep NULLs, never zeros) levels_resolved=567
 📐 record: touches=677 (valid=0 no_formation=0 invalid:pre_formation=0

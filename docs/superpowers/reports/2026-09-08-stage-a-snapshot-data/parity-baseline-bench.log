@@ -1,7 +1,7 @@
 09-08 16:13:58 [INFO] kernel/levels_score.go:575 🗺️ seated 24/72 in-band levels (proximity band ±450pt, 24 of them retained)
 goos: linux
 goarch: amd64
-pkg: nofx/kernel
+pkg: vl/kernel
 cpu: Intel(R) Core(TM) Ultra 9 285K
 BenchmarkStageAScoreCapture-24    	09-08 16:13:58 [INFO] kernel/levels_score.go:575 🗺️ seated 24/72 in-band levels (proximity band ±450pt, 24 of them retained)
 09-08 16:13:58 [INFO] kernel/levels_score.go:575 🗺️ seated 24/72 in-band levels (proximity band ±450pt, 24 of them retained)
@@ -3009,4 +3009,4 @@ BenchmarkStageAScoreCapture-24    	09-08 16:13:58 [INFO] kernel/levels_score.go:
 09-08 16:13:58 [INFO] kernel/levels_score.go:575 🗺️ seated 24/72 in-band levels (proximity band ±450pt, 24 of them retained)
     1000	     80335 ns/op	  132579 B/op	      71 allocs/op
 PASS
-ok  	nofx/kernel	0.257s
+ok  	vl/kernel	0.257s

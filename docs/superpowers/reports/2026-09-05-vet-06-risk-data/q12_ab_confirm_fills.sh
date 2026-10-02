@@ -1,6 +1,6 @@
 #!/bin/bash
 # q12 — ab_confirm_log net_pnl sanity (avg -18321 looked non-dollar) + broker-side commission in trader_fills
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"
+DB="file:/home/hoang/vl/data/data.db?mode=ro"
 S() { echo "--- $1"; sqlite3 -header "$DB" "$2"; }
 S "ab_confirm_log net_pnl distribution" "SELECT COUNT(*) n, ROUND(MIN(net_pnl),2) mn, ROUND(MAX(net_pnl),2) mx, ROUND(AVG(net_pnl),2) avg, SUM(net_pnl=0) zeros, SUM(ABS(net_pnl)>1000) gt1000 FROM ab_confirm_log;"
 S "ab_confirm_log: rows with |net_pnl|>1000 (ids, session, condition, rule, entry/exit, net_pnl, normalized)" "SELECT id, session, condition, rule, entry_px, stop_px, target_px, ROUND(net_pnl,2), normalized, recompute FROM ab_confirm_log WHERE ABS(net_pnl)>1000 ORDER BY ABS(net_pnl) DESC LIMIT 6;"

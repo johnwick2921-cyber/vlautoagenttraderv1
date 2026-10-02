@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"nofx/internal/updaterjob"
-	"nofx/safe"
+	"vl/internal/updaterjob"
+	"vl/safe"
 )
 
 // Budgets are the step budgets (brief §3.1 "constants, not knobs"; OQ-2 as
@@ -46,7 +46,7 @@ func DefaultBudgets() Budgets {
 // Config is one worker's installation and budgets.
 type Config struct {
 	Target Target
-	// BackupRoot is ~/nofx-backups/updater: <BackupRoot>/<job>/data.db (the DB
+	// BackupRoot is ~/vl-backups/updater: <BackupRoot>/<job>/data.db (the DB
 	// backup) and <BackupRoot>/<job>/install/ (the snapshot of the install's
 	// three halves the rollback restores). Absolute, outside the install.
 	BackupRoot string

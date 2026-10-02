@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // P6 — the owner reset. Distinct from the re-read: it ABANDONS the chain

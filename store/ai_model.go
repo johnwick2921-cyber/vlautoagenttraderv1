@@ -3,8 +3,8 @@ package store
 import (
 	"errors"
 	"fmt"
-	"nofx/crypto"
-	"nofx/logger"
+	"vl/crypto"
+	"vl/logger"
 	"os"
 	"strings"
 	"time"

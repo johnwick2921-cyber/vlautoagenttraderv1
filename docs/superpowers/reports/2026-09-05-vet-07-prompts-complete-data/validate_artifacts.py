@@ -1,6 +1,6 @@
 from pathlib import Path
 import json,csv,re,subprocess,hashlib,shutil
-W=Path('/home/hoang/nofx-vet-07-complete');D=W/'docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data';S=Path('/home/hoang/nofx-analysis/vet-07-complete-0905')
+W=Path('/home/hoang/vl-vet-07-complete');D=W/'docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data';S=Path('/home/hoang/vl-analysis/vet-07-complete-0905')
 m=json.loads((D/'measurements.json').read_text());p=json.loads((D/'population.json').read_text());r=(D/'appendix-rewrite.txt').read_text();cm=json.loads((D/'constraint-map.json').read_text())
 assert p['n']==58 and abs(p['sum_pnl_corrected']+466.428572)<1e-8
 assert (p['wins'],p['losses'],p['flats'])==(18,38,2) and len(p['days_17ct'])==12

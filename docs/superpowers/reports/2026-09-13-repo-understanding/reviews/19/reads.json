@@ -51,7 +51,7 @@
       "notes": "SSRF scheme/name/IP checks and redirects; safe dialer re-resolves checked hostname instead of pinning IP."
     },
     {
-      "path": "deploy/nofx-lock.sh",
+      "path": "deploy/vl-lock.sh",
       "mode": "full/manual",
       "ranges": [
         [
@@ -63,7 +63,7 @@
       "notes": "Atomic mkdir lock and bounded detached keeper; heartbeat/session ownership, release group targeting, incomplete states; with-heartbeat adds separate writer; reclaim retains expiry and no new keeper."
     },
     {
-      "path": "deploy/nofx-lock-test.sh",
+      "path": "deploy/vl-lock-test.sh",
       "mode": "full/manual",
       "ranges": [
         [
@@ -75,7 +75,7 @@
       "notes": "Lock tests read fully; compressed keeper timing, refusal/expiry/group ownership/removal/incomplete pins; historical heartbeat-path assertion reads missing file; no execution."
     },
     {
-      "path": "deploy/nofx-claim.sh",
+      "path": "deploy/vl-claim.sh",
       "mode": "full/manual",
       "ranges": [
         [
@@ -87,7 +87,7 @@
       "notes": "Claim regex validates routable session; remote branch presence check, branch/empty commit/push; check/audit read local remote tracking refs."
     },
     {
-      "path": "deploy/nofx-claim-test.sh",
+      "path": "deploy/vl-claim-test.sh",
       "mode": "full/manual",
       "ranges": [
         [
@@ -99,7 +99,7 @@
       "notes": "Claim regex source-derived table pins for real malformed/routable messages; no execution."
     },
     {
-      "path": "deploy/nofx-db-backup.sh",
+      "path": "deploy/vl-db-backup.sh",
       "mode": "full/manual",
       "ranges": [
         [
@@ -147,7 +147,7 @@
       "notes": "Root chrony installer replaces config, enables service, attempts makestep, installs cron fallback; enable --now does not restart already-running service."
     },
     {
-      "path": "deploy/nofx-clock-guard.sh",
+      "path": "deploy/vl-clock-guard.sh",
       "mode": "full/manual",
       "ranges": [
         [
@@ -1238,7 +1238,7 @@
       "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
     },
     {
-      "path": "deploy/nofx.service",
+      "path": "deploy/vl.service",
       "mode": "full/manual",
       "ranges": [
         [
@@ -1250,7 +1250,7 @@
       "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
     },
     {
-      "path": "deploy/nofx-web.service",
+      "path": "deploy/vl-web.service",
       "mode": "full/manual",
       "ranges": [
         [
@@ -1262,7 +1262,7 @@
       "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
     },
     {
-      "path": "deploy/systemd-user/nofx-backup.service",
+      "path": "deploy/systemd-user/vl-backup.service",
       "mode": "full/manual",
       "ranges": [
         [
@@ -1274,7 +1274,7 @@
       "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
     },
     {
-      "path": "deploy/systemd-user/nofx-backup.timer",
+      "path": "deploy/systemd-user/vl-backup.timer",
       "mode": "full/manual",
       "ranges": [
         [
@@ -1286,7 +1286,7 @@
       "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
     },
     {
-      "path": "deploy/systemd-user/nofx-clock-guard.service",
+      "path": "deploy/systemd-user/vl-clock-guard.service",
       "mode": "full/manual",
       "ranges": [
         [
@@ -1298,7 +1298,7 @@
       "notes": "Additional dependency/document read; excluded from assigned-file coverage denominator."
     },
     {
-      "path": "deploy/systemd-user/nofx-clock-guard.timer",
+      "path": "deploy/systemd-user/vl-clock-guard.timer",
       "mode": "full/manual",
       "ranges": [
         [

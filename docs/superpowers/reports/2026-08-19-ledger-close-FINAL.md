@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # FINAL REPORT — fix/ledger-close-sep-risk (2026-08-19)
 
 Standalone per the final report specification. Branch head `f6447076`,
@@ -248,9 +249,9 @@ plumbing + boot line). Drive-bys: none. **New dependencies: NONE**
 | Key | Default | .env.example |
 |---|---|---|
 | CLOCK_WARN_MS | 30000 | Y |
-| CLOCK_GUARD_WARN_S / NOFX_CLOCK_STATE | 30 / data/clock-guard-state.json | Y |
+| CLOCK_GUARD_WARN_S / VL_CLOCK_STATE | 30 / data/clock-guard-state.json | Y |
 | ROLL_BLOCK_DAYS_BEFORE_EXPIRY | 3 | Y |
-| NOFX_HALF_DAYS | half_days.json | Y |
+| VL_HALF_DAYS | half_days.json | Y |
 | AI_BALANCE_WARN | unset (OFF) | Y |
 | LOG_DB_RETENTION_DAYS | 30 | Y |
 | POSITION_RECONCILE (PR #50 base) | on | Y |

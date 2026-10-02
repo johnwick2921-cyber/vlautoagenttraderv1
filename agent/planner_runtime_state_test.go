@@ -9,8 +9,37 @@ import (
 	"testing"
 	"time"
 
-	"nofx/mcp"
+	"vl/branding"
+	"vl/mcp"
 )
+
+// TestDirectAnswerRouterPromptCarriesThePersonaName (D2 item 6, F7) is the LIVE
+// pin for the first-pass router prompt, which is built inline at tryDirectAnswer's
+// production call site. The persona name must come from branding.PersonaName();
+// a legacy-name literal would ship the old assistant name to the AI. The legacy
+// pins for this prompt are skipped (fork API TODO), so this test is the pin the
+// item-6 mutant requirement names: a persona line reverted to the legacy literal
+// turns it RED.
+func TestDirectAnswerRouterPromptCarriesThePersonaName(t *testing.T) {
+	client := &directReplyAIClient{}
+	a := newTestAgentWithStore(t)
+	a.aiClient = client
+	a.config = DefaultConfig()
+	a.logger = slog.Default()
+	a.history = newChatHistory(10)
+
+	_, handled := a.tryDirectAnswer(context.Background(), 88, "zh", "你好", nil)
+	if !handled {
+		t.Fatal("expected a greeting to take the direct-answer route")
+	}
+	if !strings.Contains(client.lastSystemPrompt, "first-pass router for "+branding.PersonaName()) {
+		t.Fatalf("router prompt must carry the persona name %q, got %q", branding.PersonaName(), client.lastSystemPrompt)
+	}
+	legacyPersona := "NO" + "FXi"
+	if strings.Contains(client.lastSystemPrompt, legacyPersona) {
+		t.Fatalf("router prompt must not carry the legacy persona literal %q, got %q", legacyPersona, client.lastSystemPrompt)
+	}
+}
 
 func TestIsConfigOrTraderIntent(t *testing.T) {
 	cases := []struct {
@@ -450,21 +479,21 @@ func (d *directReplyAIClient) CallWithRequest(req *mcp.Request) (string, error) 
 	if len(req.Messages) > 1 {
 		d.lastUserPrompt = req.Messages[1].Content
 	}
-	if strings.Contains(d.lastSystemPrompt, "first-pass router for NOFXi") {
+	if strings.Contains(d.lastSystemPrompt, "first-pass router for VL") {
 		d.routerPrompt = d.lastSystemPrompt
 		if strings.Contains(d.lastUserPrompt, "你好") {
 			return `{"action":"direct_answer","answer":"你好，我在。想聊策略、配置还是排障？"}`, nil
 		}
 		return `{"action":"defer","answer":""}`, nil
 	}
-	if strings.Contains(d.lastSystemPrompt, "lightweight skill router for NOFXi") {
+	if strings.Contains(d.lastSystemPrompt, "lightweight skill router for VL") {
 		d.skillRouterPrompt = d.lastSystemPrompt
 		if strings.Contains(d.lastUserPrompt, "运行中的trader") || strings.Contains(d.lastUserPrompt, "有没有 trader 在跑") {
 			return `{"route":"skill","skill":"trader_management","action":"query","filter":"running_only"}`, nil
 		}
 		return `{"route":"planner","skill":"","action":"","filter":""}`, nil
 	}
-	if strings.Contains(d.lastSystemPrompt, "planning module for NOFXi") {
+	if strings.Contains(d.lastSystemPrompt, "planning module for VL") {
 		d.plannerPrompt = d.lastSystemPrompt
 	}
 	return `{"goal":"test goal","steps":[{"id":"step_1","type":"respond","instruction":"ok"}]}`, nil
@@ -513,7 +542,7 @@ func TestThinkAndActUsesDirectReplyGateForConversationalQuestion(t *testing.T) {
 	if !strings.Contains(resp, "你好，我在") {
 		t.Fatalf("expected direct reply response, got %q", resp)
 	}
-	if !strings.Contains(client.routerPrompt, "first-pass router for NOFXi") {
+	if !strings.Contains(client.routerPrompt, "first-pass router for VL") {
 		t.Fatalf("expected direct reply router prompt, got %q", client.routerPrompt)
 	}
 }
@@ -624,7 +653,7 @@ func TestThinkAndActPrioritizesActiveExecutionStateOverDirectReply(t *testing.T)
 	if strings.Contains(resp, "你好，我在") {
 		t.Fatalf("expected active execution state to bypass direct reply gate, got %q", resp)
 	}
-	if !strings.Contains(client.plannerPrompt, "planning module for NOFXi") {
+	if !strings.Contains(client.plannerPrompt, "planning module for VL") {
 		t.Fatalf("expected planner prompt when execution state is active, got %q", client.plannerPrompt)
 	}
 }

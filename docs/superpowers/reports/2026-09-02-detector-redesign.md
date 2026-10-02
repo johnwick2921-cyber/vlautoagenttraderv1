@@ -1,8 +1,9 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Touch/Bounce Detector — Why It Is Biased, and a Symmetric Replacement
 
 **Lane 4 · READ-ONLY · no lock · no engine code · offline analysis**
 Owner: hoang · Live rev `0d093c3b` · Report opened **2026-09-02 07:44:10 CDT**
-Scripts: `~/nofx-analysis/detector-redesign/` (never under `~/nofx`, per A1)
+Scripts: `~/vl-analysis/detector-redesign/` (never under `~/vl`, per A1)
 
 ---
 
@@ -56,7 +57,7 @@ Two DIFFERENT biased instruments are in production. Both were quoted as "reactio
 
 | Element | Code | Value (RESOLVED, A4) |
 |---|---|---|
-| Touch band | `minBarDist(last, l.Price) <= TouchBandPoints()` — `touch_telemetry.go:162,164,214` | `band=16t(4.0pt)` — boot line `kernel/levels_volume_boot.go:15`, no `TOUCH_BAND_TICKS` in `.env`, `systemctl show nofx -p Environment` empty ⇒ default |
+| Touch band | `minBarDist(last, l.Price) <= TouchBandPoints()` — `touch_telemetry.go:162,164,214` | `band=16t(4.0pt)` — boot line `kernel/levels_volume_boot.go:15`, no `TOUCH_BAND_TICKS` in `.env`, `systemctl show vl -p Environment` empty ⇒ default |
 | Touch geometry | `minBarDist` = 0 if `Low<=L<=High`, else gap from High/Low — **wick-based** | ±4.00 pt |
 | Approach side | `ep.approachFrom = approachSide(last.Close, l.Price)` — `:171,225` | `"below"` iff `close < L` |
 | Bounce verdict | `ep.Close1m = closeSide(last.Close, l.Price, ep.approachFrom)` — `:194,265` | from below: `close <= L` ⇒ `reject` |
@@ -302,7 +303,7 @@ one. No knob was written, no engine file touched, no restart performed by this l
 
 ## 8. Scripts and reproduction
 
-All under `~/nofx-analysis/detector-redesign/` (outside the repo, per A1):
+All under `~/vl-analysis/detector-redesign/` (outside the repo, per A1):
 `detectors.py` (library: D1, D1′, both live replications, Wilson, shuffle, stationary
 bootstrap) · `run_e1.py` (pre-registered E1) · `run_e1b.py` (amended E1′) ·
 `run_e2345.py` (E2/E3/E5) · `run_e4.py` (Osler + D3) · `run_c2.py` (C2 mechanism) ·

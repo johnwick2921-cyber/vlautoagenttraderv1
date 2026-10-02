@@ -17,9 +17,9 @@ import (
 	"time"
 	"unsafe"
 
-	"nofx/internal/holdcli"
-	"nofx/internal/updateauth"
-	"nofx/store"
+	"vl/internal/holdcli"
+	"vl/internal/updateauth"
+	"vl/store"
 )
 
 // W-ONE-BUTTON M3 — the attended enrollment / authorization CLI. Every
@@ -122,7 +122,7 @@ func TestDataDirIsTheMaintenanceResolver(t *testing.T) {
 		t.Setenv("DB_PATH", "x")
 		os.Unsetenv("DB_PATH")
 		if a, b := DataDirFor(inst), holdcli.DataDirFor(inst); a != b {
-			t.Errorf(".env %q: updater-bootstrap %q != maintenance-hold %q", env, a, b)
+			t.Errorf(".env %q: vl-updater-bootstrap %q != maintenance-hold %q", env, a, b)
 		}
 		if a, b := DBFileFor(inst), holdcli.DBFileFor(inst); a != b {
 			t.Errorf(".env %q: db %q != %q", env, a, b)

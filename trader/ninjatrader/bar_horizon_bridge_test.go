@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	ntwire "nofx/provider/ninjatrader"
+	"vl/kernel"
+	"vl/logger"
+	ntwire "vl/provider/ninjatrader"
 )
 
 // ── BARS HORIZON pins (2026-09-09) ───────────────────────────────────────────

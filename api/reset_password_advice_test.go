@@ -28,7 +28,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
+	"vl/auth"
 )
 
 const resetPasswordGoneBody = `{"error":"Password reset by email is disabled. Sign in and use PUT /api/user/password. ` +

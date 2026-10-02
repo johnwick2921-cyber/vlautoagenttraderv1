@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W2 A3 + A4 — the write-site seam. The kernel judges

@@ -5,7 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"nofx/store"
+	"vl/store"
 )
 
 func main() {

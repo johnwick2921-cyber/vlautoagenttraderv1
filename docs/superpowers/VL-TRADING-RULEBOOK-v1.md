@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VL TRADING RULEBOOK v1 — corrected evidence and policy structure
 
 **Documentation correction: 2026-09-10. This document describes and proposes no code changes.**
@@ -132,7 +133,7 @@ Implementation: `provider/ninjatrader/bar_source.go` (adjacency, skips),
 `trader/planner_tape_nt8_only.go` (the 🧮 accounting line), `history_rerequest.go` (once-per-boot re-request), `trader/ninjatrader/bar_persist_wire.go`
 (`rehydrateRowsFor` — the door), `store/bar_history_across_roll.go` (display readers,
 the current contract excluded from "prior"), `api/handler_klines.go`
-(`klinesAcrossRoll`, `NOFX_CHART_ACROSS_ROLL`), `trader/ninjatrader/bar_horizon_warn.go`
+(`klinesAcrossRoll`, `VL_CHART_ACROSS_ROLL`), `trader/ninjatrader/bar_horizon_warn.go`
 (one WARN per condition per five minutes).
 
 ### Scenario identity — implementation addition, awaiting cutover

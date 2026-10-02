@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Order truth — plan, ledger, dashboard, NinjaTrader
 
 Owner: hoang · 2026-09-07 · read-only audit · branch `docs/order-truth-0907`.
@@ -8,9 +9,9 @@ The answer to the dispatch's main question is **no**: :8080 can establish sample
 
 ## Evidence scope and clocks
 
-- Worktree base is dev tip at acceptance, `7ddf73cd99b9cd7fece7791c33a15bc56e33192e`; isolated worktree `/tmp/nofx-order-truth-0907`. The deploy checkout was porcelain-clean on `dev` at `af3472ee7224227dba735d48550e2848f44c982b`, and was rechecked clean during evidence collection. No main-tree lock was acquired, reclaimed or altered.
-- Running process: PID 3058590, start 2026-09-07 20:39:39 CDT. At 20:49:30 CT, `/proc/3058590/exe` resolved to `/home/hoang/nofx/nofx-bin`; `go version -m` reported revision `5457ac5accd97c3519bf6d16ead147a0db2ab0d0`, VCS time `2026-09-08T00:39:02Z`, modified=false. `/api/health` independently returned revision `5457ac5accd9`, status `ok`. Execution sources cited here match that running revision; the base-to-running differences are documentation, RELEASE and the guide revision marker.
-- Every DB query used SQLite URI `file:/home/hoang/nofx/data/data.db?mode=ro` plus `PRAGMA query_only=ON`. Row evidence is from the retained store; it is not a count copied from another report. DB and API reads were sequential samples, not an atomic distributed snapshot. Account names and credentials are omitted.
+- Worktree base is dev tip at acceptance, `7ddf73cd99b9cd7fece7791c33a15bc56e33192e`; isolated worktree `/tmp/vl-order-truth-0907`. The deploy checkout was porcelain-clean on `dev` at `af3472ee7224227dba735d48550e2848f44c982b`, and was rechecked clean during evidence collection. No main-tree lock was acquired, reclaimed or altered.
+- Running process: PID 3058590, start 2026-09-07 20:39:39 CDT. At 20:49:30 CT, `/proc/3058590/exe` resolved to `/home/hoang/vl/vl-bin`; `go version -m` reported revision `5457ac5accd97c3519bf6d16ead147a0db2ab0d0`, VCS time `2026-09-08T00:39:02Z`, modified=false. `/api/health` independently returned revision `5457ac5accd9`, status `ok`. Execution sources cited here match that running revision; the base-to-running differences are documentation, RELEASE and the guide revision marker.
+- Every DB query used SQLite URI `file:/home/hoang/vl/data/data.db?mode=ro` plus `PRAGMA query_only=ON`. Row evidence is from the retained store; it is not a count copied from another report. DB and API reads were sequential samples, not an atomic distributed snapshot. Account names and credentials are omitted.
 - Historical-order cutoff: 2026-09-07 **21:03:53 CT**. The three D2 specimens are two actual entry orders (arms 111, 109) and one refused candidate (`log_events.id=32509`, plan row 264 S2). A refused candidate has no broker order by definition. The earlier checkpoint's refusal 31082 was superseded during the audit by 32509. “Latest filled/cancelled” below means latest real **entry**, using native event time, not a protective exit or mutable ledger `updated_at`.
 - All displayed dates/times are America/Chicago unless explicitly UTC. DB epoch values are milliseconds unless the schema says otherwise. Native Windows log timestamps and Go/SQLite timestamps come from different clocks: negative received-minus-emitted differences occur. Cross-host deltas are observed timestamp differences, not calibrated network latency. Native-log same-clock differences are identified separately in D5.
 - No performance rate, win rate or P&L result is calculated here. The day-plan boundary is `store/attribution.go:153`, 2026-08-15 00:00 CT. Synthetic E7 arm 15 (`TEST-E7`) is excluded from latest-order selection; its later update does not make it a new execution. Thus no uncorrected/NULL/UNRESOLVABLE result or pre-era trade contributes to a performance claim.
@@ -21,8 +22,8 @@ Evidence aliases used throughout:
 |---|---|
 | N6 | `/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260906.00006.txt` — NT8 native log; account text redacted |
 | N3 | `/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00000.txt` — native log; its `.en.txt` duplicate is not a second observation |
-| G6 | `/home/hoang/nofx/data/nofx_2026-09-06.log` |
-| G7 | `/home/hoang/nofx/data/nofx_2026-09-07.log` |
+| G6 | `/home/hoang/vl/data/vl_2026-09-06.log` |
+| G7 | `/home/hoang/vl/data/vl_2026-09-07.log` |
 | P | The shared `plan_id` of `plans.rowid=259,260,261,262,263`, 2026-09-06 ASIA, versions 2–6 respectively; join by the actual `plan_id`, never scenario ID alone |
 | A | arm 111 signal `aa07e583-6df3-4148-9d57-667630f1b155`; native entry order `e9ba2836ba864015895f797220f76ab1` |
 | B | arm 109 signal `c5d8bdde-22a2-494c-8943-e9c6a0999324`; native entry order `cb6c87f59be44ff29791f7af996c7730` |

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/store"
+	ntwire "vl/provider/ninjatrader"
+	"vl/store"
 )
 
 // ENTRY-MECHANICS E7 (2026-08-30) — stop-entry orders. Far-side frame law:

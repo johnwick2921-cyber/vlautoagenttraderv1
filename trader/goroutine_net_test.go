@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/discipline"
-	"nofx/safe"
+	"vl/discipline"
+	"vl/safe"
 )
 
 // TestGoNettedPanicFreezesTheOwner is the trader-side RED pin for the

@@ -173,7 +173,7 @@ var toPark = []State{StateDownloaded, StateVerified, StatePreflightOK, StateMain
 // TestLeavingTheParkNeedsAnAttendedResume (U1 verifier defect 3, probes H20
 // and H18): the job leaves the nt8_updated park for activated only with a
 // resumed_at recorded AFTER the park was done and no later than the move
-// out of it (the attended `nofx-updater resume` is the only way out); and a
+// out of it (the attended `vl-updater resume` is the only way out); and a
 // resumed_at on a job that never parked is refused.
 func TestLeavingTheParkNeedsAnAttendedResume(t *testing.T) {
 	restoreSeams(t)

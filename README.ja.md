@@ -1,4 +1,4 @@
-# 🤖 NOFX - Agentic Trading OS
+# 🤖 VL - Agentic Trading OS
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react)](https://reactjs.org/)
@@ -7,13 +7,11 @@
 
 **言語:** [English](README.md) | [中文](README.zh-CN.md) | [Українська](README.uk.md) | [Русский](README.ru.md) | [日本語](README.ja.md)
 
-**公式Twitter:** [@nofx_official](https://x.com/nofx_official)
-
 ---
 
 ## 🚀 ユニバーサルAIトレーディングOS
 
-**NOFX**は、統合アーキテクチャに基づいて構築された**ユニバーサルAgenticトレーディングOS**です。暗号通貨市場において **「マルチエージェント判断 → 統一リスク管理 → 低レイテンシ実行 → ライブ/ペーパーアカウントバックテスト」** のループを成功裏に完成させ、現在この技術スタックを **株式、先物、オプション、外国為替、およびすべての金融市場** に拡大しています。
+**VL**は、統合アーキテクチャに基づいて構築された**ユニバーサルAgenticトレーディングOS**です。暗号通貨市場において **「マルチエージェント判断 → 統一リスク管理 → 低レイテンシ実行 → ライブ/ペーパーアカウントバックテスト」** のループを成功裏に完成させ、現在この技術スタックを **株式、先物、オプション、外国為替、およびすべての金融市場** に拡大しています。
 
 ### 🎯 コア機能
 
@@ -32,8 +30,6 @@
 
 **投資に関するお問い合わせ**は、TwitterでTinkleまたはZackにDMをお送りください。
 
-**パートナーシップおよび協業**については、公式Twitter [@nofx_official](https://x.com/nofx_official)にDMをお送りください。
-
 ---
 
 > ⚠️ **リスク警告**: このシステムは実験的なものです。AI自動取引には大きなリスクが伴います。学習/研究目的、または少額でのテストのみを強く推奨します！
@@ -42,15 +38,13 @@
 
 Telegram開発者コミュニティに参加して、議論、アイデアの共有、サポートを受けましょう：
 
-**💬 [NOFX開発者コミュニティ](https://t.me/nofx_dev_community)**
-
 ---
 
 ## 🆕 最新情報（最新アップデート）
 
 ### 🚀 マルチ取引所対応！
 
-NOFXは現在、**3つの主要取引所**をサポートしています：Binance、Hyperliquid、Aster DEX！
+VLは現在、**3つの主要取引所**をサポートしています：Binance、Hyperliquid、Aster DEX！
 
 #### **Hyperliquid取引所**
 
@@ -108,8 +102,7 @@ Binance互換の分散型無期限先物取引所！
 ### CEX（中央集権型取引所）
 
 | 取引所 | ステータス | 登録（手数料割引） |
-|:-------|:----------:|:-------------------|
-| <img src="web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [登録](https://www.binance.com/join?ref=NOFXENG) |
+| <img src="web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [登録](https://www.binance.com/join?) |
 | <img src="web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [登録](https://partner.bybit.com/b/83856) |
 | <img src="web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [登録](https://www.okx.com/join/1865360) |
 | <img src="web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [登録](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
@@ -119,7 +112,6 @@ Binance互換の分散型無期限先物取引所！
 ### Perp-DEX（分散型無期限取引所）
 
 | 取引所 | ステータス | 登録（手数料割引） |
-|:-------|:----------:|:-------------------|
 | <img src="web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [登録](https://app.hyperliquid.xyz/join/AITRADING) |
 | <img src="web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [登録](https://www.asterdex.com/en/referral/fdfc0e) |
 | <img src="web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [登録](https://app.lighter.xyz/?referral=68151432) |
@@ -129,7 +121,6 @@ Binance互換の分散型無期限先物取引所！
 ## 対応AIモデル
 
 | AIモデル | ステータス | APIキー取得 |
-|:---------|:----------:|:------------|
 | <img src="web/public/icons/deepseek.svg" width="20" height="20" style="vertical-align: middle;"/> **DeepSeek** | ✅ | [APIキー取得](https://platform.deepseek.com) |
 | <img src="web/public/icons/qwen.svg" width="20" height="20" style="vertical-align: middle;"/> **Qwen** | ✅ | [APIキー取得](https://dashscope.console.aliyun.com) |
 | <img src="web/public/icons/openai.svg" width="20" height="20" style="vertical-align: middle;"/> **OpenAI (GPT)** | ✅ | [APIキー取得](https://platform.openai.com) |
@@ -154,7 +145,7 @@ Binance互換の分散型無期限先物取引所！
 
 ## ✨ 現在の実装 - 暗号通貨市場
 
-NOFXは現在、以下の実証済み機能で**暗号通貨市場において完全に稼働**しています：
+VLは現在、以下の実証済み機能で**暗号通貨市場において完全に稼働**しています：
 
 ### 🏆 マルチエージェント競争フレームワーク
 - **ライブエージェントバトル**: QwenとDeepSeekモデルがリアルタイム取引で競争
@@ -216,7 +207,7 @@ NOFXは現在、以下の実証済み機能で**暗号通貨市場において�
 ## 🏗️ 技術アーキテクチャ
 
 ```
-nofx/
+vl/
 ├── main.go                          # プログラムエントリ（マルチトレーダーマネージャー）
 ├── config.json                      # 設定ファイル（APIキー、マルチトレーダー設定）
 │
@@ -307,8 +298,6 @@ nofx/
 
 ## 🚀 クイックスタート
 
-### 🐳 オプションA：Dockerワンクリックデプロイ（最も簡単 - 初心者推奨！）
-
 **⚡ Dockerで3つの簡単なステップで取引開始 - インストール不要！**
 
 Dockerはすべての依存関係（Go、Node.js、TA-Lib）と環境設定を自動的に処理します。初心者に最適！
@@ -389,8 +378,7 @@ sudo apt-get install libta-lib0-dev
 ### 2. プロジェクトをクローン
 
 ```bash
-git clone https://github.com/NoFxAiOS/nofx.git
-cd nofx
+cd vl
 ```
 
 ### 3. 依存関係をインストール
@@ -497,7 +485,6 @@ cp config.json.example config.json
 **ステップ3**: プレースホルダーを実際のキーに置き換え
 
 | プレースホルダー | 置き換え先 | 取得場所 |
-|------------|--------------|--------------|
 | `YOUR_BINANCE_API_KEY` | BinanceのAPIキー | Binance → アカウント → API管理 |
 | `YOUR_BINANCE_SECRET_KEY` | Binanceのシークレットキー | 上記と同じ |
 | `sk-xxxxxxxxxxxxx` | DeepSeek APIキー | [platform.deepseek.com](https://platform.deepseek.com) |
@@ -521,7 +508,7 @@ cp config.json.example config.json
 
 #### 🔷 代替：Hyperliquid取引所の使用
 
-**NOFXはHyperliquidもサポート** - 分散型無期限先物取引所。Binanceの代わりにHyperliquidを使用するには：
+**VLはHyperliquidもサポート** - 分散型無期限先物取引所。Binanceの代わりにHyperliquidを使用するには：
 
 **ステップ1**: Ethereum秘密鍵を取得（Hyperliquid認証用）
 
@@ -565,7 +552,7 @@ cp config.json.example config.json
 
 #### 🔶 代替：Aster DEX取引所の使用
 
-**NOFXはAster DEXもサポート** - Binance互換の分散型無期限先物取引所！
+**VLはAster DEXもサポート** - Binance互換の分散型無期限先物取引所！
 
 **なぜAsterを選ぶ？**
 - 🎯 Binance互換API（簡単な移行）
@@ -678,7 +665,6 @@ cp config.json.example config.json
 #### 📚 設定フィールド説明
 
 | フィールド | 説明 | 例の値 | 必須？ |
-|-------|-------------|---------------|-----------|
 | `id` | このトレーダーの一意の識別子 | `"my_trader"` | ✅ はい |
 | `name` | 表示名 | `"My AI Trader"` | ✅ はい |
 | `enabled` | このトレーダーが有効かどうか<br>起動をスキップする場合は`false`に設定 | `true`または`false` | ✅ はい |
@@ -731,7 +717,6 @@ cp config.json.example config.json
 **推奨設定：**
 
 | アカウントタイプ | BTC/ETHレバレッジ | アルトコインレバレッジ | リスクレベル |
-|-------------|------------------|------------------|------------|
 | **サブアカウント** | `5` | `5` | ✅ 安全（デフォルト） |
 | **メイン（保守的）** | `10` | `10` | 🟡 中程度 |
 | **メイン（積極的）** | `20` | `15` | 🔴 高 |
@@ -815,10 +800,10 @@ cp config.json.example config.json
 
 ```bash
 # プログラムをビルド（初回のみ、またはコード変更後）
-go build -o nofx
+go build -o vl
 
 # バックエンドを起動
-./nofx
+./vl
 ```
 
 **表示されるべきもの：**
@@ -833,7 +818,6 @@ go build -o nofx
 **⚠️ エラーが表示される場合：**
 
 | エラーメッセージ | 解決策 |
-|--------------|----------|
 | `invalid API key` | config.jsonのBinance APIキーを確認 |
 | `TA-Lib not found` | `brew install ta-lib`を実行（macOS） |
 | `port 8080 already in use` | config.jsonの`api_server_port`を変更 |
@@ -1349,10 +1333,7 @@ IssueとPull Requestを歓迎します！
 
 ## 📬 お問い合わせ
 
-
 ### 🐛 技術サポート
-- **GitHub Issues**: [Issueを提出](https://github.com/NoFxAiOS/nofx/issues)
-- **開発者コミュニティ**: [Telegramグループ](https://t.me/nofx_dev_community)
 
 ---
 
@@ -1374,4 +1355,3 @@ IssueとPull Requestを歓迎します！
 
 ## ⭐ Star履歴
 
-[![Star履歴チャート](https://api.star-history.com/svg?repos=NoFxAiOS/nofx&type=Date)](https://star-history.com/#NoFxAiOS/nofx&Date)

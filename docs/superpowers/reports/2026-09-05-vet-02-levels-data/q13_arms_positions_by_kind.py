@@ -2,7 +2,7 @@
 """q13: which level KINDS are actually traded (arms + positions), as what (condition), and how they did (pnl_corrected).
 Map: arm.entry_px / cited scenario arm.entry -> nearest level in the SAME plan doc (|dp|<=1.0 pt) -> label -> family."""
 import sqlite3, json, re, collections
-DB="file:/home/hoang/nofx/data/data.db?mode=ro"; con=sqlite3.connect(DB, uri=True); con.row_factory=sqlite3.Row
+DB="file:/home/hoang/vl/data/data.db?mode=ro"; con=sqlite3.connect(DB, uri=True); con.row_factory=sqlite3.Row
 plans={}
 for r in con.execute("SELECT plan_id, version, doc FROM plans"):
     try: plans[(r['plan_id'],r['version'])]=json.loads(r['doc'])

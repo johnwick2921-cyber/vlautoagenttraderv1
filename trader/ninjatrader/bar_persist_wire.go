@@ -3,16 +3,16 @@ package ninjatrader
 import (
 	"errors"
 	"fmt"
-	"nofx/market"
+	"vl/market"
 	"sync"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	ntwire "nofx/provider/ninjatrader"
-	"nofx/safe"
-	"nofx/store"
-	"nofx/telemetry"
+	"vl/kernel"
+	"vl/logger"
+	ntwire "vl/provider/ninjatrader"
+	"vl/safe"
+	"vl/store"
+	"vl/telemetry"
 )
 
 // WireBarPersistence (2026-08-26) — installs the closed-bar writer on the TCP
@@ -605,7 +605,7 @@ const rehydrateTimeframe = "1m"
 //	(i)   post-drop, `historical` rows are the rejected seed's kin: excluded
 //	(ii)  RING-SIDE: every store row enters the ring as historical — a store
 //	      row is replay-grade to this process whatever its stamp says
-//	      (nofx-93's census: migration-stamped 09-26 `live`, catch-up-stamped
+//	      (vl-93's census: migration-stamped 09-26 `live`, catch-up-stamped
 //	      12-26 `live`; age distinguishes neither)
 //	(iii) historical_import rows never reach a planner ring (LastNBarsOn's own
 //	      filter — measured, E4)
@@ -628,7 +628,7 @@ func rehydrateRowsFor(rows []store.BarHistoryDB, reseeded bool) (kept []store.Ba
 		// guard (iii): an import never enters the ring, on either path. The
 		// reader (LastNBarsOn) filters mixed+off-scale ONLY and hands imports
 		// to every caller; this door is the only line that keeps them out of
-		// the ring, and the boot line prints THIS count (nofx-93 objection 1).
+		// the ring, and the boot line prints THIS count (vl-93 objection 1).
 		if r.Source == store.BarSourceHistoricalImport {
 			importExcluded++
 			continue

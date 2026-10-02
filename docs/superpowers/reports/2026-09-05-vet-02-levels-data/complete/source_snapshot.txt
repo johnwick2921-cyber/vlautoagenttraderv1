@@ -116,7 +116,7 @@ kernel/levels_score.go:7 	"sort"
 kernel/levels_score.go:8 	"strconv"
 kernel/levels_score.go:9 	"strings"
 kernel/levels_score.go:10
-kernel/levels_score.go:11 	"nofx/logger"
+kernel/levels_score.go:11 	"vl/logger"
 kernel/levels_score.go:12 )
 kernel/levels_score.go:13
 kernel/levels_score.go:14 // P1.5 — CONFLUENCE SCORER → graded TOP-8.
@@ -1235,7 +1235,7 @@ kernel/levels_assemble.go:4 	"math"
 kernel/levels_assemble.go:5 	"strings"
 kernel/levels_assemble.go:6 	"time"
 kernel/levels_assemble.go:7
-kernel/levels_assemble.go:8 	"nofx/market"
+kernel/levels_assemble.go:8 	"vl/market"
 kernel/levels_assemble.go:9 )
 kernel/levels_assemble.go:10
 kernel/levels_assemble.go:11 // P1.7 — assemble every detector → confluence scorer → the KEY LEVELS prompt
@@ -1564,7 +1564,7 @@ kernel/levels_intraday.go:5 	"math"
 kernel/levels_intraday.go:6 	"sort"
 kernel/levels_intraday.go:7 	"time"
 kernel/levels_intraday.go:8
-kernel/levels_intraday.go:9 	"nofx/market"
+kernel/levels_intraday.go:9 	"vl/market"
 kernel/levels_intraday.go:10 )
 kernel/levels_intraday.go:11
 kernel/levels_intraday.go:12 // P1.2 — intraday computed levels: round numbers, unfilled gaps, opening range +
@@ -1746,7 +1746,7 @@ kernel/levels_multiday.go:3 import (
 kernel/levels_multiday.go:4 	"math"
 kernel/levels_multiday.go:5 	"time"
 kernel/levels_multiday.go:6
-kernel/levels_multiday.go:7 	"nofx/market"
+kernel/levels_multiday.go:7 	"vl/market"
 kernel/levels_multiday.go:8 )
 kernel/levels_multiday.go:9
 kernel/levels_multiday.go:10 // P1.1 — session-tagged bars → multi-day level extractor.
@@ -2013,7 +2013,7 @@ kernel/levels_volume.go:4 	"math"
 kernel/levels_volume.go:5 	"sync"
 kernel/levels_volume.go:6 	"time"
 kernel/levels_volume.go:7
-kernel/levels_volume.go:8 	"nofx/market"
+kernel/levels_volume.go:8 	"vl/market"
 kernel/levels_volume.go:9 )
 kernel/levels_volume.go:10
 kernel/levels_volume.go:11 // Pack B — VOLUME FAMILY detectors (owner override 2026-08-26, research
@@ -2419,7 +2419,7 @@ kernel/levels_zones.go:7 	"strconv"
 kernel/levels_zones.go:8 	"strings"
 kernel/levels_zones.go:9 	"time"
 kernel/levels_zones.go:10
-kernel/levels_zones.go:11 	"nofx/market"
+kernel/levels_zones.go:11 	"vl/market"
 kernel/levels_zones.go:12 )
 kernel/levels_zones.go:13
 kernel/levels_zones.go:14 // P1.4 — liquidity + zone detectors: EQH/EQL, S/D zones, FVG, OB.
@@ -2744,7 +2744,7 @@ kernel/levels_swing.go:2
 kernel/levels_swing.go:3 import (
 kernel/levels_swing.go:4 	"time"
 kernel/levels_swing.go:5
-kernel/levels_swing.go:6 	"nofx/market"
+kernel/levels_swing.go:6 	"vl/market"
 kernel/levels_swing.go:7 )
 kernel/levels_swing.go:8
 kernel/levels_swing.go:9 // Level-truth wave (2026-08-27) — SWING-POINT DETECTOR (T3).
@@ -2970,7 +2970,7 @@ kernel/levels_role.go:7 	"sort"
 kernel/levels_role.go:8 	"strings"
 kernel/levels_role.go:9 	"time"
 kernel/levels_role.go:10
-kernel/levels_role.go:11 	"nofx/market"
+kernel/levels_role.go:11 	"vl/market"
 kernel/levels_role.go:12 )
 kernel/levels_role.go:13
 kernel/levels_role.go:14 // ADDENDUM (1) — ROLE GRAMMAR (same wave as Pack B, 2026-08-26).
@@ -3552,7 +3552,7 @@ kernel/detector_d1prime.go:6 	"os"
 kernel/detector_d1prime.go:7 	"strconv"
 kernel/detector_d1prime.go:8 	"strings"
 kernel/detector_d1prime.go:9
-kernel/detector_d1prime.go:10 	"nofx/market"
+kernel/detector_d1prime.go:10 	"vl/market"
 kernel/detector_d1prime.go:11 )
 kernel/detector_d1prime.go:12
 kernel/detector_d1prime.go:13 // ── D1′ — THE CALIBRATED TOUCH DETECTOR (2026-09-03) ─────────────────────────
@@ -3579,7 +3579,7 @@ kernel/detector_d1prime.go:33 // 50.6% of episodes (n 56,922 → 21,948) to buy 
 kernel/detector_d1prime.go:34 // confidence interval. The report's k=3 stands; k=3/range is computed as a
 kernel/detector_d1prime.go:35 // SENSITIVITY variant and presented beside it, never used for decisions.
 kernel/detector_d1prime.go:36 //
-kernel/detector_d1prime.go:37 // Reference: ~/nofx-analysis/detector-redesign/detectors.py detect_symmetric_v2.
+kernel/detector_d1prime.go:37 // Reference: ~/vl-analysis/detector-redesign/detectors.py detect_symmetric_v2.
 kernel/detector_d1prime.go:38
 kernel/detector_d1prime.go:39 // TouchOutcome is one episode. Ambiguous outcomes are RECORDED and excluded
 kernel/detector_d1prime.go:40 // from the rate — never dropped (that is how a rate lies about its own base).
@@ -3830,8 +3830,8 @@ trader/detector_record.go:2
 trader/detector_record.go:3 import (
 trader/detector_record.go:4 	"time"
 trader/detector_record.go:5
-trader/detector_record.go:6 	"nofx/kernel"
-trader/detector_record.go:7 	"nofx/store"
+trader/detector_record.go:6 	"vl/kernel"
+trader/detector_record.go:7 	"vl/store"
 trader/detector_record.go:8 )
 trader/detector_record.go:9
 trader/detector_record.go:10 // ── 1B — THE PRODUCTION CALL PATH ────────────────────────────────────────────
@@ -5511,7 +5511,7 @@ kernel/planner_prompt.go:4 	"fmt"
 kernel/planner_prompt.go:5 	"strings"
 kernel/planner_prompt.go:6 	"time"
 kernel/planner_prompt.go:7
-kernel/planner_prompt.go:8 	"nofx/market"
+kernel/planner_prompt.go:8 	"vl/market"
 kernel/planner_prompt.go:9 )
 kernel/planner_prompt.go:10
 kernel/planner_prompt.go:11 // P3.3 — the planner input package (assembled into ONE prompt for the reasoner).
@@ -6282,7 +6282,7 @@ kernel/plan_render.go:5 	"strings"
 kernel/plan_render.go:6 	"sync"
 kernel/plan_render.go:7 	"time"
 kernel/plan_render.go:8
-kernel/plan_render.go:9 	"nofx/market"
+kernel/plan_render.go:9 	"vl/market"
 kernel/plan_render.go:10 )
 kernel/plan_render.go:11
 kernel/plan_render.go:12 // P3.4 — executor injection of the active plan.
@@ -6681,7 +6681,7 @@ kernel/svp.go:19 	"math"
 kernel/svp.go:20 	"sort"
 kernel/svp.go:21 	"time"
 kernel/svp.go:22
-kernel/svp.go:23 	"nofx/market"
+kernel/svp.go:23 	"vl/market"
 kernel/svp.go:24 )
 kernel/svp.go:25
 kernel/svp.go:26 // ---- Constants (single source of truth) ------------------------------------
@@ -7059,19 +7059,19 @@ trader/auto_trader_planner.go:5 	"encoding/hex"
 trader/auto_trader_planner.go:6 	"encoding/json"
 trader/auto_trader_planner.go:7 	"fmt"
 trader/auto_trader_planner.go:8 	"math"
-trader/auto_trader_planner.go:9 	"nofx/logger"
+trader/auto_trader_planner.go:9 	"vl/logger"
 trader/auto_trader_planner.go:10 	"os"
 trader/auto_trader_planner.go:11 	"strconv"
 trader/auto_trader_planner.go:12 	"strings"
 trader/auto_trader_planner.go:13 	"sync"
 trader/auto_trader_planner.go:14 	"time"
 trader/auto_trader_planner.go:15
-trader/auto_trader_planner.go:16 	"nofx/calendar"
-trader/auto_trader_planner.go:17 	"nofx/kernel"
-trader/auto_trader_planner.go:18 	"nofx/market"
-trader/auto_trader_planner.go:19 	"nofx/mcp"
-trader/auto_trader_planner.go:20 	"nofx/store"
-trader/auto_trader_planner.go:21 	"nofx/telemetry"
+trader/auto_trader_planner.go:16 	"vl/calendar"
+trader/auto_trader_planner.go:17 	"vl/kernel"
+trader/auto_trader_planner.go:18 	"vl/market"
+trader/auto_trader_planner.go:19 	"vl/mcp"
+trader/auto_trader_planner.go:20 	"vl/store"
+trader/auto_trader_planner.go:21 	"vl/telemetry"
 trader/auto_trader_planner.go:22 )
 trader/auto_trader_planner.go:23
 trader/auto_trader_planner.go:24 const plannerSystemPrompt = "You are a disciplined CME index-futures day-plan reasoner. Output ONLY the single JSON object requested — reasoning first, then the answer fields. No prose outside the JSON."
@@ -9892,11 +9892,11 @@ api/handler_plan.go:11 	"strings"
 api/handler_plan.go:12 	"sync"
 api/handler_plan.go:13 	"time"
 api/handler_plan.go:14
-api/handler_plan.go:15 	"nofx/kernel"
-api/handler_plan.go:16 	"nofx/logger"
-api/handler_plan.go:17 	"nofx/market"
-api/handler_plan.go:18 	"nofx/store"
-api/handler_plan.go:19 	"nofx/trader"
+api/handler_plan.go:15 	"vl/kernel"
+api/handler_plan.go:16 	"vl/logger"
+api/handler_plan.go:17 	"vl/market"
+api/handler_plan.go:18 	"vl/store"
+api/handler_plan.go:19 	"vl/trader"
 api/handler_plan.go:20
 api/handler_plan.go:21 	"github.com/gin-gonic/gin"
 api/handler_plan.go:22 )

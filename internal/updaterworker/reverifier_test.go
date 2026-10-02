@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/internal/installpath"
-	"nofx/internal/updaterjob"
+	"vl/internal/installpath"
+	"vl/internal/updaterjob"
 )
 
 // reproofInstall is a temp installation (its .env names no DB_PATH) whose
@@ -60,7 +60,7 @@ func setReleaseRoot(t *testing.T, root string) {
 }
 
 // PIN (U4N item A): the production Reverifier — the constructor
-// cmd/nofx-updater's newReverifier calls — re-proves a release the REAL fetch
+// cmd/vl-updater's newReverifier calls — re-proves a release the REAL fetch
 // verified: Verdict is updaterjob.ReadVerdict's file, field for field; Rehash
 // re-hashes every artifact; Reverify re-verifies the SSHSIG against the
 // INSTALL's deploy/release_allowed_signers and returns the signed manifest's
@@ -90,7 +90,7 @@ func TestReleaseReverifierReprovesAFetchedRelease(t *testing.T) {
 	isum := sha256.Sum256(idx)
 	if f.ReleaseID != testReleaseID || f.SourceSHA != testSHA || f.ManifestSHA256 != v.ManifestSHA256 ||
 		f.SignerFingerprint != r.fp || f.AddonBuildID != testBuildID || len(f.Artifacts) != v.Artifacts ||
-		f.Artifacts["web/dist/index.html"] != hex.EncodeToString(isum[:]) || f.Artifacts["ninjascript/VLTraderTcp.cs"] == "" {
+		f.Artifacts["web/dist/index.html"] != hex.EncodeToString(isum[:]) || f.Artifacts["ninjascript/VLTraderTCPClient.cs"] == "" {
 		t.Fatalf("Reverify facts = %+v\nwant release %s source %s manifest %s signer %s build %s, %d artifacts incl. index.html %x",
 			f, testReleaseID, testSHA, v.ManifestSHA256, r.fp, testBuildID, v.Artifacts, isum)
 	}

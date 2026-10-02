@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # VETERAN REVIEW — PART A: the way it trades, the levels, the division of labour
 
 **Sub-agent A · sections 1–3 · owner hoang · 2026-09-05 · READ-ONLY**
@@ -10,7 +11,7 @@ own tape (n and interval given) · `[I]` my experience, untested here. I never d
 
 ## EVIDENCE BASIS — what I could and could not reach
 
-This is a fresh cloud clone at `/home/user/nofx`. It is **not** the owner's machine.
+This is a fresh cloud clone at `/home/user/vl`. It is **not** the owner's machine.
 
 **Could not reach (verified, not assumed):**
 
@@ -18,7 +19,7 @@ This is a fresh cloud clone at `/home/user/nofx`. It is **not** the owner's mach
 |---|---|
 | `GET /api/health`, `/api/expectancy`, `/api/config/resolved` | **BLOCKED — no engine.** `curl -s -m 3 http://localhost:8080/api/health` returns nothing; no process listens on any port. |
 | Every store query (`touch_outcomes`, `trader_positions`, `plans`, `bars`, `trade_excursions`, `candidate_pool`, `decision_records`, `armed_orders`, `plan_lifecycle_log`, `ab_confirm_log`, `nt8_order_snapshots`) | **BLOCKED — no SQLite file exists.** `find / -name "*.db" -o -name "*.sqlite*"` returns only OS mime/avahi files. `store/` source is readable; it holds no rows. |
-| `~/nofx-analysis/` scripts, the live tape, NT8 logs, the journal | **BLOCKED — absent.** `ls ~/nofx-analysis` → No such file or directory. |
+| `~/vl-analysis/` scripts, the live tape, NT8 logs, the journal | **BLOCKED — absent.** `ls ~/vl-analysis` → No such file or directory. |
 | `docs/superpowers/plans/VL-MASTER-PLAN-v2.md` | **BLOCKED — does not exist** in this tree (see `docs/superpowers/plans/` listing). |
 | "Replay the last 10 sessions' plans against the tape" | **BLOCKED as specified** — substituted with the committed exports below. |
 
@@ -635,12 +636,12 @@ trades, which is what everyone believed it was doing all along.
 | 1 | `GET /api/expectancy`, `/api/config/resolved`, `/api/health`; token via `cmd/gate-jwt` | **No engine running**; nothing listens on any port | Read the handlers and resolved defaults in code (`store/strategy.go:76`, `store/trader.go:29`, `kernel/session_registry.go:83-117`) and said so at each use |
 | 2 | Query `touch_outcomes` by kind and ordinal with n and Wilson | **No SQLite store on disk** | Wrote the SQL (§2.1, marked BLOCKED) and computed Wilson myself on the committed `D5b-touch_outcomes-*.csv` |
 | 3 | Query `trader_positions`, `plans`, `bars`, `trade_excursions`, `armed_orders`, `candidate_pool`, `decision_records`, `plan_lifecycle_log`, `ab_confirm_log`, `nt8_order_snapshots` | Same | Used the committed exports (`trade_sample.csv` n=64, `E-d3-mae-mfe-per-trade.csv` n=61, `plans.jsonl` n=23, `decisions.csv` n=544, `arms.csv` n=15, `baseline.csv`, `levels.csv` n=254) |
-| 4 | "Replay the last 10 sessions' plans against the tape" | No tape, no `~/nofx-analysis/` scripts | Replayed the **2 committed sessions** (09-01, 09-02) I do have: authored → armed → filled → P&L, §3.1–3.4 |
+| 4 | "Replay the last 10 sessions' plans against the tape" | No tape, no `~/vl-analysis/` scripts | Replayed the **2 committed sessions** (09-01, 09-02) I do have: authored → armed → filled → P&L, §3.1–3.4 |
 | 5 | "Count each scenario type's trigger fired vs armed vs filled vs won" | **Partially blocked.** *Authored* and *armed* I computed by condition (§3.1); *filled* by arm id (§3.3). **"Trigger fired" needs `plan_lifecycle_log`, and "won" by condition needs a `cited_scenario_id`→condition join through `plans.doc`** — `trades.csv` carries only the slot (S1–S4) | Reported P&L **by slot** (§3.1d) and stated plainly that it is a proxy for condition, not the condition itself |
-| 6 | Run existing analysis scripts under `~/nofx-analysis/` | Directory absent | Wrote my own one-off computations in the scratchpad; every command shown inline |
+| 6 | Run existing analysis scripts under `~/vl-analysis/` | Directory absent | Wrote my own one-off computations in the scratchpad; every command shown inline |
 | 7 | Grep the journal; read the NT8 logs | Absent (no journald, no NT8) | Used `2026-09-02-deepseek-e2e-audit.md` for the log-derived latency figures, cited by report:line |
 | 8 | Read `plans/VL-MASTER-PLAN-v2.md`; `research/` rounds 1–9 | File does not exist; `research/` holds only `INDEX.md` | Used `INDEX.md` verdicts and the individual reports under `reports/` |
-| 9 | Claim `docs/veteran-part-a-0905` via `deploy/nofx-claim.sh`; merge to dev | **Forbidden by the amendment** — the lead owns all git this session | Wrote only this file; ran no git command |
+| 9 | Claim `docs/veteran-part-a-0905` via `deploy/vl-claim.sh`; merge to dev | **Forbidden by the amendment** — the lead owns all git this session | Wrote only this file; ran no git command |
 | 10 | Verify `E-d3` cohort n=30 | Cohort filter not reproducible from the committed CSV | Used my own cohort (n=36, `floor_pts` present) and flagged the discrepancy in the Evidence Basis |
 
 **Secrets:** none quoted. I read no `.env`; `.env.example` was not opened for values. No keys, tokens or

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func TestReadBackendLogEntriesReturnsRecentErrorLines(t *testing.T) {

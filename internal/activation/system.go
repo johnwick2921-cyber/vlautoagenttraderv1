@@ -25,11 +25,44 @@ type system struct {
 	// does NOT relaunch, so the process would simply stay down.
 	Kill func(pid int) error
 	// MainPID reads systemd's notion of the unit's main process. NEVER pgrep:
-	// `pgrep -f nofx-bin` also matches `go version -m nofx-bin`, and a pattern
-	// can match the very shell that runs it (CLASS 242).
+	// `pgrep -f vl-bin` also matches `go version -m vl-bin`, and a pattern
+	// can match the very shell that runs it (CLASS 242). The unit is vl,
+	// falling back to vl while the rename is in flight (R5 removes the
+	// vl unit and the fallback).
 	MainPID func() (int, error)
 	Now     func() time.Time
 	Sleep   func(time.Duration)
+}
+
+// mainPIDOf runs `systemctl show -p MainPID --value <unit>` and returns the
+// pid, or the error. // R5 removes the unit list with the rename.
+func mainPIDOf(unit string) (int, error) {
+	out, err := exec.Command("systemctl", "show", "-p", "MainPID", "--value", unit).Output()
+	if err != nil {
+		return 0, fmt.Errorf("systemctl show MainPID (%s): %w", unit, err)
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(out)))
+	if err != nil {
+		return 0, fmt.Errorf("MainPID (%s) %q is not a pid: %w", unit, strings.TrimSpace(string(out)), err)
+	}
+	return pid, nil
+}
+
+// readMainPID walks the unit list through the reader: vl first (R5 removes
+// the vl fallback); a unit that is absent or stopped reports 0 or errors,
+// and then the next unit answers.
+func readMainPID(mainPIDOf func(string) (int, error)) (int, error) {
+	for _, unit := range []string{"vl", "nofx"} {
+		pid, err := mainPIDOf(unit)
+		if err != nil {
+			continue
+		}
+		if pid <= 1 {
+			continue
+		}
+		return pid, nil
+	}
+	return 0, fmt.Errorf("MainPID is 0 — the unit is not running")
 }
 
 func defaultSystem() *system {
@@ -38,24 +71,10 @@ func defaultSystem() *system {
 			b, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
 			return string(b), err
 		},
-		Kill: func(pid int) error { return syscall.Kill(pid, syscall.SIGKILL) },
-		MainPID: func() (int, error) {
-			out, err := exec.Command("systemctl", "show", "-p", "MainPID", "--value", "nofx").Output()
-			if err != nil {
-				return 0, fmt.Errorf("systemctl show MainPID: %w", err)
-			}
-			s := strings.TrimSpace(string(out))
-			pid, err := strconv.Atoi(s)
-			if err != nil {
-				return 0, fmt.Errorf("MainPID %q is not a pid: %w", s, err)
-			}
-			if pid == 0 {
-				return 0, fmt.Errorf("MainPID is 0 — the unit is not running")
-			}
-			return pid, nil
-		},
-		Now:   time.Now,
-		Sleep: time.Sleep,
+		Kill:    func(pid int) error { return syscall.Kill(pid, syscall.SIGKILL) },
+		MainPID: func() (int, error) { return readMainPID(mainPIDOf) },
+		Now:     time.Now,
+		Sleep:   time.Sleep,
 	}
 }
 
@@ -112,18 +131,25 @@ func IdentityOf(pid int) (Identity, error) {
 // NewestLogPath returns the log the running process is actually writing.
 //
 // LOGS ARE NAMED BY BOOT DATE, NOT CALENDAR DATE. On the live box at 08:04 on
-// 2026-09-24 the active file was data/nofx_2026-09-23.log, because the process
+// 2026-09-24 the active file was data/vl_2026-09-23.log, because the process
 // booted the previous evening. Anything that builds the path as
-// nofx_$(date +%F).log — as the v6 script did — points at a file that may not
+// vl_$(date +%F).log — as the v6 script did — points at a file that may not
 // exist, and then a Watch fails for a reason that has nothing to do with the
 // activation.
 func NewestLogPath(dir string) (string, error) {
-	hits, err := filepath.Glob(filepath.Join(dir, "nofx_*.log"))
-	if err != nil {
-		return "", err
+	// Both prefixes: a vl-boot names its log vl_, a nofx-boot nofx_; the
+	// newest of either is what the running process is writing. // R5 removes
+	// the vl glob.
+	var hits []string
+	for _, pat := range []string{"vl_*.log", "nofx_*.log"} {
+		h, err := filepath.Glob(filepath.Join(dir, pat))
+		if err != nil {
+			return "", err
+		}
+		hits = append(hits, h...)
 	}
 	if len(hits) == 0 {
-		return "", fmt.Errorf("no nofx_*.log in %s", dir)
+		return "", fmt.Errorf("no vl_*.log or nofx_*.log in %s", dir)
 	}
 	newest, newestAt := "", time.Time{}
 	for _, h := range hits {
@@ -136,7 +162,7 @@ func NewestLogPath(dir string) (string, error) {
 		}
 	}
 	if newest == "" {
-		return "", fmt.Errorf("no readable nofx_*.log in %s", dir)
+		return "", fmt.Errorf("no readable vl_*.log or nofx_*.log in %s", dir)
 	}
 	return newest, nil
 }

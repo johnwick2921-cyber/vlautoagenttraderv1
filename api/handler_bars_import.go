@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"nofx/trader"
+	"vl/trader"
 )
 
 // handleAdminBarsImport POST /api/admin/bars/import — HISTORY IMPORT (wave 101).

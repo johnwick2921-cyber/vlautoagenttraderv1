@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // futuresTestEngine builds a StrategyEngine with a minimal futures-flavoured

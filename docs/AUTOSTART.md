@@ -1,7 +1,8 @@
-# NOFX auto-start on reboot (WSL2 + Windows)
+names rewritten to vl on 2026-09-30 (VL rename)
+# VL auto-start on reboot (WSL2 + Windows)
 
 Goal: after a Windows restart + login, the full stack returns with **zero manual
-steps** — WSL boots, `nofx-bin` + the frontend run as systemd services
+steps** — WSL boots, `vl-bin` + the frontend run as systemd services
 (auto-restart on crash), and the NT8 AddOn reconnects on its own (it retries
 every 5s — `VLTraderTCPClient.cs` `RECONNECT_INTERVAL_MS`).
 
@@ -18,7 +19,7 @@ your machine at install time.
   ```
   If you had to add it, run `wsl.exe --shutdown` once from Windows, reopen the
   distro, and check `systemctl is-system-running` says `running` (or `degraded`).
-- A built backend: `go build -o nofx-bin .` in your clone.
+- A built backend: `go build -o vl-bin .` in your clone.
 - `.env` configured in the clone root. **It must contain `NT_TRANSPORT=tcp`**
   (see `.env.example`) — systemd services never read `~/.bashrc`, so any env
   var living only there is invisible to the service. The installer checks
@@ -36,8 +37,8 @@ the templates in `deploy/`, and installs + enables two units:
 
 | Unit | What | Logs |
 |---|---|---|
-| `nofx.service` | `./nofx-bin` from the clone root (reads `.env`, `data/data.db`) | `journalctl -u nofx -f` |
-| `nofx-web.service` | `npm run dev` in `web/` (vite :3000, proxies /api → :8080) | `journalctl -u nofx-web -f` |
+| `vl.service` | `./vl-bin` from the clone root (reads `.env`, `data/data.db`) | `journalctl -u vl -f` |
+| `vl-web.service` | `npm run dev` in `web/` (vite :3000, proxies /api → :8080) | `journalctl -u vl-web -f` |
 
 Re-running the installer is safe and is also the upgrade path: after a
 `git pull` that changes the templates, just run it again.
@@ -48,28 +49,28 @@ both died with `Failed to set up standard output: Permission denied` (exit
 1. `append:/tmp/backend.log` — Ubuntu's `fs.protected_regular` sysctl refuses
    to open another user's file in sticky world-writable `/tmp`, and the /tmp
    logs end up owned by whichever side (root vs user) created them first.
-2. `append:/var/log/nofx/...` + a root `ExecStartPre` to prep the dir — the
+2. `append:/var/log/vl/...` + a root `ExecStartPre` to prep the dir — the
    `StandardOutput=` directive applies to EVERY `Exec*` line, and systemd
    opens the append-file in the forked child BEFORE exec, so even the
    root-prefixed pre-step died at stdout setup without running at all.
 The journal sink has no file-open in the child, so it cannot 209. Do NOT
 reintroduce `StandardOutput=` file directives or a log-file `ExecStartPre`.
 **Tooling note:** the services no longer write `/tmp/backend.log` — use
-`journalctl -u nofx` (it also keeps history across reboots). A MANUAL
-fallback launch (`nohup ./nofx-bin >> /tmp/backend.log 2>&1 &`) still writes
+`journalctl -u vl` (it also keeps history across reboots). A MANUAL
+fallback launch (`nohup ./vl-bin >> /tmp/backend.log 2>&1 &`) still writes
 the /tmp file as before.
 
 **Never permanently dead:** the units use `StartLimitIntervalSec=0` with
 `Restart=on-failure` / `RestartSec=5`. A persistent failure will retry every
-5s forever (you'll see it in `journalctl -u nofx`) — the tradeoff is a
+5s forever (you'll see it in `journalctl -u vl`) — the tradeoff is a
 visible loop instead of a silently dead bot.
 
 Verify after install:
 ```bash
-systemctl status nofx nofx-web --no-pager | grep Active
+systemctl status vl vl-web --no-pager | grep Active
 ss -tlnp | grep -E ':(8080|3000|36974)'   # 36974 binds once a ninjatrader trader loads
 # crash-restart proof:
-sudo kill -9 $(pgrep -x nofx-bin); sleep 6; pgrep -x nofx-bin && echo RESTARTED
+sudo kill -9 $(pgrep -x vl-bin); sleep 6; pgrep -x vl-bin && echo RESTARTED
 ```
 
 **NT8 closed is fine.** The bot is the TCP *server* — it starts, binds
@@ -86,14 +87,14 @@ wsl.exe -l -v
 Use that exact name (e.g. `Ubuntu-24.04`, `Ubuntu`, `Debian`) below.
 
 1. Start → "Task Scheduler" → **Create Task** (not Basic):
-   - **Name:** `Start nofx WSL`
+   - **Name:** `Start vl WSL`
    - **General:** Run only when user is logged on.
    - **Triggers:** New → *At log on* → Specific user (you) → ✅ *Delay task for:* `30 seconds`.
    - **Actions:** New → Program: `C:\Windows\System32\wsl.exe`
      Arguments: `-d <YOUR-DISTRO-NAME> --exec /bin/true`
    - **Conditions:** untick "Start the task only if the computer is on AC power" (laptops).
-2. That command boots the WSL VM; systemd then auto-starts `nofx` +
-   `nofx-web`, and the running services keep the VM alive.
+2. That command boots the WSL VM; systemd then auto-starts `vl` +
+   `vl-web`, and the running services keep the VM alive.
 
 ## 3. Windows side — NT8 (optional but recommended)
 
@@ -118,10 +119,10 @@ on the PC is logged in as you. Default recommendation: leave login required.
 ## 5. Full-reboot test (the real proof)
 
 Restart Windows → log in → wait ~1 minute → check:
-- `wsl.exe -d <YOUR-DISTRO-NAME> -- systemctl is-active nofx nofx-web` → both `active`
+- `wsl.exe -d <YOUR-DISTRO-NAME> -- systemctl is-active vl vl-web` → both `active`
 - `:36974` listening; once NT8 is open, the AddOn log shows CONNECTED
 - bars flowing (market open) or clean idle (closed); UI at `http://localhost:3000`
 
 SIM-only: nothing here touches trading code; the live-account block is
-unchanged. Rollback: `sudo systemctl disable --now nofx nofx-web` and launch
+unchanged. Rollback: `sudo systemctl disable --now vl vl-web` and launch
 manually as before.

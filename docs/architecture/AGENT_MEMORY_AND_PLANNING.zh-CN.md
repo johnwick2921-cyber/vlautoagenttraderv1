@@ -1,8 +1,9 @@
-# NOFXi Agent 记忆与规划设计
+names rewritten to vl on 2026-09-30 (VL rename)
+# VLi Agent 记忆与规划设计
 
 ## 目的
 
-本文说明当前 NOFXi agent 是如何处理以下能力的：
+本文说明当前 VLi agent 是如何处理以下能力的：
 
 - 短期对话记忆
 - 持久化任务记忆

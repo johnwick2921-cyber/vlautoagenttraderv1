@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // F6 (2026-08-30) — clock-hold fixtures: injected drift > tolerance must defer

@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DATA-INTEGRITY (checklist class 66)
 
 **Branch:** `fix/data-integrity` off `5ebeb5a2` · **Status:** NOT DEPLOYED, rides the next boot
@@ -178,7 +179,7 @@ wave actually claims.
 
 ## 8. Cutover
 
-Rides the next boot. `E8_BACKFILL=1` as a line in `/home/hoang/nofx/.env` for
+Rides the next boot. `E8_BACKFILL=1` as a line in `/home/hoang/vl/.env` for
 one boot, then removed — the unit has no `Environment=`, so an `export` never
 reaches the process. Gate, GO, A13, A19 four halves, marker pushed.
 

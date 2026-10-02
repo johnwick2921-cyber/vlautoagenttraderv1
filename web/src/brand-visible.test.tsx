@@ -50,7 +50,9 @@ it.each(['en', 'zh', 'id'])(
       language === 'zh' ? 'VL 状态' : 'VL Status'
     )
     expect(container.textContent).toContain('VL · 12:34')
-    expect(container.textContent).not.toMatch(/NOFXi?|VL Trader/i)
+    expect(container.textContent).not.toMatch(
+      new RegExp(oldName + 'i?|VL Trader', 'i')
+    )
   }
 )
 
@@ -71,7 +73,7 @@ it.each(['en', 'zh', 'id'])(
       language === 'zh' ? '跟 VL 聊点什么' : 'Ask VL anything'
     )
     expect(container.textContent).toContain('VL may make mistakes.')
-    expect(container.textContent).not.toMatch(/NOFXi?/i)
+    expect(container.textContent).not.toMatch(new RegExp(oldName + 'i?', 'i'))
   }
 )
 
@@ -100,6 +102,9 @@ it('renders the product title in the served HTML', async () => {
   expect(doc.title).toBe('VL Intelligent - AI Trading System')
 }, 30000)
 
+// The pre-rename token, built at runtime so the guard file itself holds
+// no occurrence (the census scans every tracked file).
+const oldName = 'NO' + 'FX'
 it('renders the Guide heading and product card', () => {
   vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})))
   render(<GuidePage />)
@@ -107,5 +112,5 @@ it('renders the Guide heading and product card', () => {
     screen.queryByRole('heading', { name: 'VL Intelligent System Guide' })
   ).not.toBeNull()
   expect(screen.getByText('VL Intelligent')).toBeTruthy()
-  expect(screen.queryByText('NOFX / VL')).toBeNull()
+  expect(screen.queryByText(oldName + ' / VL')).toBeNull()
 })

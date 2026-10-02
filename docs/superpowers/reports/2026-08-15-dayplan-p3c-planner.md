@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # DAY-PLAN CAMPAIGN — P3 FINAL: executor injection + advisory + lifecycle-core
 
-**Date:** 2026-08-15 · **Repo:** /home/hoang/nofx · **Branch:** main
+**Date:** 2026-08-15 · **Repo:** /home/hoang/vl · **Branch:** main
 **Range:** `c65d9b2b` → `0a292148` · 3 feature commits (P3.4/P3.5/P3.6-core)
 **Contract:** [docs/VL-DAYPLAN-FULL-SPEC.md](../../VL-DAYPLAN-FULL-SPEC.md)
 

@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	ntwire "nofx/provider/ninjatrader"
+	ntwire "vl/provider/ninjatrader"
 )
 
 const addonSourcePath = "../ninjascript/VLTraderTCPClient.cs"

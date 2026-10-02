@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"nofx/hook"
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"vl/hook"
+	"vl/kernel"
+	"vl/market"
+	"vl/store"
 )
 
 // ── W-NO-BINANCE A — the CME futures path makes ZERO Binance calls ──────────

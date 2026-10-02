@@ -9,7 +9,7 @@ import sqlite3, datetime, zoneinfo, math
 from collections import defaultdict
 import numpy as np
 ct=zoneinfo.ZoneInfo("America/Chicago")
-con=sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro",uri=True)
+con=sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro",uri=True)
 def sday(ms):
     t=datetime.datetime.fromtimestamp(ms/1000, ct)
     return (t - datetime.timedelta(hours=17)).date().isoformat()

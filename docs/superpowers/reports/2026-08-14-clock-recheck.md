@@ -1,6 +1,7 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Clock-Cure Recheck — Post-timesyncd
 
-**Date:** 2026-08-14 ~11:36 CT · **Repo:** /home/hoang/nofx · **Running rev:** `3624a2a4` (PID 363618) · **Read-only** (sqlite mode=ro, bounded log reads). This report is the only write.
+**Date:** 2026-08-14 ~11:36 CT · **Repo:** /home/hoang/vl · **Running rev:** `3624a2a4` (PID 363618) · **Read-only** (sqlite mode=ro, bounded log reads). This report is the only write.
 **Context:** owner enabled `systemd-timesyncd` ~11:32 CT (prior state: WSL clock 201–479 s behind the feed → C2 blocked all 16 entry proposals).
 
 ## VERDICT: CLOCK CURED — AWAITING FIRST SETUP
@@ -37,4 +38,4 @@ The clock is fixed and C2 is no longer blocking (self-cleared, no restart). Both
 The first post-fix `open_long/short` proposal should log `📐 R:R eval … → PASS` and then proceed to `placeEntry` / `submitted entry signal_id=…` with **no** `clock-drift ENTRY BLOCK`, followed by a fill + resting SL/TP bracket on the bound account (own-account stamp, no A4 freeze). Until a setup appears, one-trader-per-symbol and the wait discipline stand. Only ~4 min have elapsed since the fix; a longer window (next RTH momentum push) will produce the proof-positive entry receipt.
 
 ## Evidence ledger
-All Tier [A]. `timedatectl`/`systemctl` for clock+process; `decision_records` (sqlite ro) for the 23-cycle flow + wait reasonings; `data/nofx_2026-08-13.log` (the active log — no daily roll since the 19:59 Aug-13 start) for the C2 block absence, transport, and guardrail lines. Live drift not independently re-measured against the feed (C2 logs only on block); `timedatectl synchronized:yes` + the disappearance of all drift blocks post-fix are the cure evidence.
+All Tier [A]. `timedatectl`/`systemctl` for clock+process; `decision_records` (sqlite ro) for the 23-cycle flow + wait reasonings; `data/vl_2026-08-13.log` (the active log — no daily roll since the 19:59 Aug-13 start) for the C2 block absence, transport, and guardrail lines. Live drift not independently re-measured against the feed (C2 logs only on block); `timedatectl synchronized:yes` + the disappearance of all drift blocks post-fix are the cure evidence.

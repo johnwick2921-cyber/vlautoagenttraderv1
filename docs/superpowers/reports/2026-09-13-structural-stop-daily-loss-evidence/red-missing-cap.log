@@ -7,5 +7,5 @@
 --- FAIL: TestStructuralStopF1F2ProductionArmCycle (0.52s)
     structural_stop_seam_test.go:77: F1/F2: structural stop 28995 must stand despite authored/ATR floors; rows=[]
 FAIL
-FAIL	nofx/trader	0.529s
+FAIL	vl/trader	0.529s
 FAIL

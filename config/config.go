@@ -1,10 +1,10 @@
 package config
 
 import (
-	"nofx/internal/installpath"
-	"nofx/logger"
-	"nofx/mcp"
-	"nofx/telemetry"
+	"vl/internal/installpath"
+	"vl/logger"
+	"vl/mcp"
+	"vl/telemetry"
 	"os"
 	"strconv"
 	"strings"
@@ -157,7 +157,7 @@ func Init() {
 		DBHost:    "localhost",
 		DBPort:    5432,
 		DBUser:    "postgres",
-		DBName:    "nofx",
+		DBName:    "vl",
 		DBSSLMode: "disable",
 	}
 

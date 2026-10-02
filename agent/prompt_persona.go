@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"nofx/branding"
+	"vl/branding"
 	"strings"
 )
 
@@ -19,7 +19,7 @@ User-facing response style rules:
 - Do not expose internal architecture, tool names, JSON fields, or implementation details unless the user explicitly asks for them.
 - When asking follow-up questions, make them specific, friendly, and easy to answer.`
 
-func prependNOFXiAdvisorPreamble(body string) string {
+func prependPersonaAdvisorPreamble(body string) string {
 	body = strings.TrimSpace(body)
 	if body == "" {
 		return nofxiAdvisorSystemPreamble

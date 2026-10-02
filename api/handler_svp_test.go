@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"nofx/kernel"
+	"vl/kernel"
 )
 
 // CLEANUP BATCH 2, B4 — THE SVP DEPTH IS THE CONSTANT, NOT A RETYPED 2000.

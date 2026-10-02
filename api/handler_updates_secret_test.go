@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/config"
+	"vl/auth"
+	"vl/config"
 )
 
 // jwtSecretLiteralRe matches a literal JWT_SECRET assignment: KEY=value

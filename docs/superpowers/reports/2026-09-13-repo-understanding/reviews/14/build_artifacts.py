@@ -1,5 +1,5 @@
 import json,re,csv,hashlib,pathlib
-base=pathlib.Path('/tmp/nofx-understanding-surfaces-20260913'); dst=pathlib.Path('/tmp/nofx-review-14'); root=pathlib.Path('/tmp/nofx-repo-understanding-20260913/docs/superpowers/reports/2026-09-13-repo-understanding')
+base=pathlib.Path('/tmp/vl-understanding-surfaces-20260913'); dst=pathlib.Path('/tmp/vl-review-14'); root=pathlib.Path('/tmp/vl-repo-understanding-20260913/docs/superpowers/reports/2026-09-13-repo-understanding')
 a=next(a for a in json.load(open(root/'review-plan.json'))['assignments'] if a['id']==14)
 notes={
 'VLBarsSubscriptionManager.cs':'Native per-root/timeframe BarsRequest lifecycle, DoNotMerge, event range emission, close stamps, platform contract resolution; reconnect preserves cursor and emits no subscribed ACK; watchdog rebuilds 3 fast attempts then75min backstop.',
@@ -171,6 +171,6 @@ for s in syms:
  s['invariants_or_risks']=notes[pathlib.Path(s['path']).name]
 json.dump(syms,open(dst/'functions.json','w'),indent=2)
 print('functions',len(syms),'assigned',len(a['files']))
-g=json.load(open('/home/hoang/nofx-untracked-stash-20260816/.understand-anything/knowledge-graph.json'))
+g=json.load(open('/home/hoang/vl-untracked-stash-20260816/.understand-anything/knowledge-graph.json'))
 paths={f['path'] for f in a['files']};ns=[n for n in g['nodes'] if n.get('filePath') in paths];ids={n['id'] for n in ns};es=[e for e in g['edges'] if e['source'] in ids or e['target'] in ids]
 json.dump(dict(assignment=14,historical_base='July10@7a8adce0',current_base='63968be62e44db2fb07a92883e02127b9064b0be',matched_nodes=len(ns),matched_edges=len(es),historical_file_nodes=[n for n in ns if n['type']=='file'],corrections=['Old graph AddOn summary says protocol v2; current constants3 on both sides.','Old resolver summary says date-derived primary; rolling->platform next expiry now primary, date fallback only.','Graph lacks9 of20 assigned files including history, instrument lookup, roll, source, persistence, echo, research and book/state additions.','Graph package imports expanded to every package file are not evidence of function-level call edges.','Current fanout owner key is symbol+account, not merely symbol.'],edges=[dict(source='VLTraderTCPClient.HandleFrame',target='VLBarsSubscriptionManager.HandleBarsSubscribe',evidence='ninjascript/VLTraderTCPClient.cs:700'),dict(source='VLTraderTCPClient.OnOrderUpdate',target='VLTraderTCPClient.SubmitBracketOnEntryFill',evidence='ninjascript/VLTraderTCPClient.cs:1445'),dict(source='TCPServer.readLoop/FrameSubscribed',target='TCPServer.observeContract',evidence='provider/ninjatrader/tcp_server.go:1944'),dict(source='TCPServer.drainBarIngest',target='BarCache.SeedHistorical/Upsert',evidence='provider/ninjatrader/tcp_server.go:1600')]),open(dst/'graph.json','w'),indent=2)

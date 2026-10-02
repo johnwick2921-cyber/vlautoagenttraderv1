@@ -28,10 +28,10 @@ import os
 import sys
 
 P_NULL = 0.5067
-R93_OUT = "/home/hoang/nofx-93r24/docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/out-r24"
+R93_OUT = "/home/hoang/vl-93r24/docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/out-r24"
 EPISODES = os.path.join(R93_OUT, "episodes.jsonl")
 ZONES = os.path.join(R93_OUT, "zones.jsonl")
-ERA_TRENDS = "/home/hoang/nofx-r101/docs/superpowers/research/2026-09-16-round-23/out-s4/era-trends.jsonl"
+ERA_TRENDS = "/home/hoang/vl-r101/docs/superpowers/research/2026-09-16-round-23/out-s4/era-trends.jsonl"
 OUTDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out-audit")
 
 EXPECT = {

@@ -2,7 +2,7 @@ package hyperliquid
 
 import (
 	"fmt"
-	"nofx/logger"
+	"vl/logger"
 	"strconv"
 	"strings"
 )

@@ -15,7 +15,7 @@ import (
 // ── W-BARS-CONTRACT-KEY — the migration, its guards, and the readers ─────────
 
 // legacyBarsDDL is the live 2026-09-18 shape, byte-for-byte from sqlite_master
-// (PRAGMA on /home/hoang/nofx/data/data.db, read-only), plus its three indexes.
+// (PRAGMA on /home/hoang/vl/data/data.db, read-only), plus its three indexes.
 var legacyBarsDDL = []string{
 	"CREATE TABLE `bars` (`symbol` text,`tf` text,`open_time_ms` integer,`o` real,`h` real,`l` real,`c` real,`v` real, `convention` text, `contract` text, `source` text,PRIMARY KEY (`symbol`,`tf`,`open_time_ms`))",
 	"CREATE UNIQUE INDEX idx_bars_sym_tf_time_unique ON bars(symbol, tf, open_time_ms)",

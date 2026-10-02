@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 func TestHandleModelCreateSkillAsksProviderFirstWithClaw402Recommendation(t *testing.T) {

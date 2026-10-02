@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Section 8 — The three-day stretch: complete trader assessment
 
 Owner: hoang. Section 8 only; integration belongs to Section 9. Branch `docs/vet-08-0905-complete`; pinned source `b4376246c2c502ecedd119c6a44a27956ed2f616`. Final transaction extraction: 2026-09-05T22:54:16.973730+00:00 (UTC); analytical cutoff remains the historical CT windows below. All trading access was read-only: SQLite `mode=ro`, `query_only=on`, transaction-scoped extraction; no JWT generator, orders, runtime, configuration or production code changes.
@@ -10,7 +11,7 @@ Owner: hoang. Section 8 only; integration belongs to Section 9. Branch `docs/vet
 
 1. **The thesis and the executable trade are different objects.** At 10:00 September 3, NY v4 was long/trend, but all three scenarios had no enabled arm, and the highest authored target was 29375.25, only 12 points above the last closed minute. A 75.95-point minimum stop required roughly 151.90 points of reward. Calling the day bullish did not supply that reward or authorize an entry. [T; D/plans.json, NY v4; D/q2_asof.json:1; D/q2_atr.json:1]
 2. **Prior replay profits were manufactured by assumptions.** The earlier −144.71-point “current rules” result repaired the guard, substituted mutable ledger stops, assumed fills, and skipped alternate minute bars. Its +151.90-point 10:00 trade was hindsight-selected. I withdraw both as trading results. The new source-based checkpoint replay finds four independently price-reachable opportunities, only three on one alternate-minute phase; none is a proven counterfactual fill. [T; D/replay.go:1; D/reach_bounds.csv:2]
-3. **An empty ledger did not establish operational control.** On September 3 the process was silent for 114m51s, then returned without the broker link. On September 4, a live TCP connection coexisted with missing bars. Earlier that morning, 21 submissions of one stop-entry idea carried `Stop price=0`. These are distinct failures requiring distinct checks. [T; production log `nofx_2026-09-03.log:5422`; D/log_evidence.csv:2; D/broker_evidence.csv:6]
+3. **An empty ledger did not establish operational control.** On September 3 the process was silent for 114m51s, then returned without the broker link. On September 4, a live TCP connection coexisted with missing bars. Earlier that morning, 21 submissions of one stop-entry idea carried `Stop price=0`. These are distinct failures requiring distinct checks. [T; production log `vl_2026-09-03.log:5422`; D/log_evidence.csv:2; D/broker_evidence.csv:6]
 
 **My three biggest opportunities:**
 
@@ -164,9 +165,9 @@ The daily-limit leg exists and precedes strict (`trader/entry_gate.go:157`); the
 
 ## 4. The 12:30 outage and blind boot: my runbook
 
-**Observed:** September 3 last recorded decision **37169 at 12:22:44**; last log line **12:23:33** (`nofx_2026-09-03.log:5422`); startup banner **14:18:24** on the next line after a NUL block; silence **114m51s**. The **14:18:27** dead-man message says TCP down (`:5549`); later no-balance skips precede the first recovered decision around **15:08:51**, after the 14:45 flat. Thus process return and usable trading return are different clocks, roughly **50m27s** apart. At 12:30 the last observed position had closed and arm37 had been cancelled at **12:15:01**; that is the last known state, not a fresh broker confirmation. [D/decisions.csv, id37169; D/arms.csv, id37; D/log_evidence.csv:2]
+**Observed:** September 3 last recorded decision **37169 at 12:22:44**; last log line **12:23:33** (`vl_2026-09-03.log:5422`); startup banner **14:18:24** on the next line after a NUL block; silence **114m51s**. The **14:18:27** dead-man message says TCP down (`:5549`); later no-balance skips precede the first recovered decision around **15:08:51**, after the 14:45 flat. Thus process return and usable trading return are different clocks, roughly **50m27s** apart. At 12:30 the last observed position had closed and arm37 had been cancelled at **12:15:01**; that is the last known state, not a fresh broker confirmation. [D/decisions.csv, id37169; D/arms.csv, id37; D/log_evidence.csv:2]
 
-September 4 last retained minute is **12:19**; the **12:30:01** feed alert reports 10m1s without a bar (`nofx_2026-09-04.log:17339`). The **13:25:47** startup (`:19749`) did not demonstrate a recovered feed. Ledger104/105 remained armed without signal IDs while the observed broker orders had been cancelled. TCP health alone cannot certify market-data health. [D/arms.csv; D/snapshots.csv; D/log_evidence.csv]
+September 4 last retained minute is **12:19**; the **12:30:01** feed alert reports 10m1s without a bar (`vl_2026-09-04.log:17339`). The **13:25:47** startup (`:19749`) did not demonstrate a recovered feed. Ledger104/105 remained armed without signal IDs while the observed broker orders had been cancelled. TCP health alone cannot certify market-data health. [D/arms.csv; D/snapshots.csv; D/log_evidence.csv]
 
 My procedure is an **owner-run proposal [I], not an action performed in this audit**:
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	ntTrader "nofx/trader/ninjatrader"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // handleBarsStream streams live NT8 OHLCV bars to the FuturesChart over SSE

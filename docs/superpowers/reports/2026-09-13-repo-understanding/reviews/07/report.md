@@ -1,12 +1,13 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Review 07 — retained crypto broker adapters
 
-Source base: `63968be62e44db2fb07a92883e02127b9064b0be`. Isolated worktree `/tmp/nofx-understanding-market-20260913`; initial `git status --porcelain` empty and revision verified. Review date: 2026-09-13 America/Chicago. All **25 assigned files, 9,071 lines**, manually read in bounded chunks; **184 named functions plus 9 callbacks** catalogued. Extra dependency/test reads are separately marked. No production/source edits, broker calls, credentials/environment reads, DB changes, test executions or restarts occurred.
+Source base: `63968be62e44db2fb07a92883e02127b9064b0be`. Isolated worktree `/tmp/vl-understanding-market-20260913`; initial `git status --porcelain` empty and revision verified. Review date: 2026-09-13 America/Chicago. All **25 assigned files, 9,071 lines**, manually read in bounded chunks; **184 named functions plus 9 callbacks** catalogued. Extra dependency/test reads are separately marked. No production/source edits, broker calls, credentials/environment reads, DB changes, test executions or restarts occurred.
 
 [A] means directly read current source, [B] a consequence inferred from those source boundaries. The findings below are **static legacy-path defects/limitations**, not demonstrations of live failures, exploits, or the owner's MNQ behavior. No production rows were inspected, so there are no sample-ID/PnL population claims.
 
 ## Scope and authority
 
-The parent's claimed documentation dispatch owns publication. This worker follows `/tmp/nofx-understanding-review-instructions.md`, root AGENTS instructions, tracked `CLAUDE-canon.md`, and `AUDIT-CHECKLIST.md` pre-audit R1–R10. Applicable audit classes include wrong owner/identity, timestamp conventions, incomplete state presented as success, canonical identifiers, missing values, and tests exercising production call sites. No separate per-trade loss cap is proposed; the owner's daily-loss clarification remains authoritative.
+The parent's claimed documentation dispatch owns publication. This worker follows `/tmp/vl-understanding-review-instructions.md`, root AGENTS instructions, tracked `CLAUDE-canon.md`, and `AUDIT-CHECKLIST.md` pre-audit R1–R10. Applicable audit classes include wrong owner/identity, timestamp conventions, incomplete state presented as success, canonical identifiers, missing values, and tests exercising production call sites. No separate per-trade loss cap is proposed; the owner's daily-loss clarification remains authoritative.
 
 Reference freshness at this source base:
 

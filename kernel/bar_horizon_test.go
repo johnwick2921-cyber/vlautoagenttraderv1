@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // ── BAR HORIZON (wave BARS HORIZON, 2026-09-09) ──────────────────────────────

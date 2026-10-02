@@ -2,7 +2,7 @@
 """q08 — bars coverage + session-day range / ATR history (regime context for Q5). mode=ro."""
 import sqlite3, datetime, zoneinfo, statistics as st, math
 ct = zoneinfo.ZoneInfo("America/Chicago")
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True)
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True)
 print("--- bars coverage by symbol/tf ---")
 for r in con.execute("SELECT symbol, tf, COUNT(*), datetime(MIN(open_time_ms)/1000,'unixepoch','-5 hours'), datetime(MAX(open_time_ms)/1000,'unixepoch','-5 hours') FROM bars GROUP BY 1,2 ORDER BY 1,2"):
     print(r)

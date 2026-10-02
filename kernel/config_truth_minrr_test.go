@@ -10,8 +10,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 func TestConfigTruth_MinRR_SavedRowReadEnforced(t *testing.T) {

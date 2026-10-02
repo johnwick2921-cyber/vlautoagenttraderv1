@@ -1,12 +1,13 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Telegram Bot Integration Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 在 NOFX 单进程内内置 Telegram Bot，用户通过自然语言（LLM 解析意图）在 Telegram 配置策略、交易所、大模型、交易员、查询持仓、控制交易。
+**Goal:** 在 VL 单进程内内置 Telegram Bot，用户通过自然语言（LLM 解析意图）在 Telegram 配置策略、交易所、大模型、交易员、查询持仓、控制交易。
 
-**Architecture:** 新增 `telegram/` 包，单一 Facade 层（`service/nofx.go`）作为唯一接触 NOFX 内部的边界，借鉴 openclaw compaction 模式实现多轮对话记忆压缩，`main.go` 仅增加 3 行。
+**Architecture:** 新增 `telegram/` 包，单一 Facade 层（`service/vl.go`）作为唯一接触 VL 内部的边界，借鉴 openclaw compaction 模式实现多轮对话记忆压缩，`main.go` 仅增加 3 行。
 
-**Tech Stack:** Go, `github.com/go-telegram-bot-api/telegram-bot-api/v5`（已在 go.mod）, `nofx/mcp`（复用现有 LLM 客户端）
+**Tech Stack:** Go, `github.com/go-telegram-bot-api/telegram-bot-api/v5`（已在 go.mod）, `vl/mcp`（复用现有 LLM 客户端）
 
 ---
 
@@ -84,7 +85,7 @@
 1. 每个子任务至少过 `go build ./telegram/...`
 2. 合并前必须过 `go build ./...`
 3. `handler/` 不允许直接碰 `store/` 或 `manager/`
-4. 所有跨层访问都只能从 `telegram/service/nofx.go` 进入
+4. 所有跨层访问都只能从 `telegram/service/vl.go` 进入
 5. 任何伪代码字段名、方法名、返回值，在落地前都必须先对照真实仓库接口
 
 ---
@@ -100,7 +101,7 @@ telegram/
 ├── intent/
 │   └── parser.go           # 新建：LLM 意图解析
 ├── service/
-│   └── nofx.go             # 新建：Facade（唯一接触 store/manager 的地方）
+│   └── vl.go             # 新建：Facade（唯一接触 store/manager 的地方）
 └── handler/
     └── handler.go          # 新建：业务路由，只调 service/ 和 intent/
 
@@ -141,7 +142,7 @@ if chatIDStr := os.Getenv("TELEGRAM_ADMIN_CHAT_ID"); chatIDStr != "" {
 **Step 3: 构建验证**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build ./...
+cd /Users/yida/gopro/open-vl && go build ./...
 ```
 
 Expected: 无错误
@@ -155,12 +156,12 @@ git commit -m "feat(telegram): add TelegramBotToken and TelegramAdminChatID to c
 
 ---
 
-### Task 2: Facade 层 telegram/service/nofx.go
+### Task 2: Facade 层 telegram/service/vl.go
 
 **Files:**
-- Create: `telegram/service/nofx.go`
+- Create: `telegram/service/vl.go`
 
-这是**唯一**接触 NOFX 内部（store、manager）的文件。handler 不直接碰 store/manager。
+这是**唯一**接触 VL 内部（store、manager）的文件。handler 不直接碰 store/manager。
 
 **Step 1: 创建文件**
 
@@ -169,29 +170,29 @@ package service
 
 import (
 	"fmt"
-	"nofx/manager"
-	"nofx/store"
+	"vl/manager"
+	"vl/store"
 )
 
-// NofxService is the single facade between Telegram bot and NOFX internals.
+// VLService is the single facade between Telegram bot and VL internals.
 // All store/manager access MUST go through this layer.
-type NofxService struct {
+type VLService struct {
 	store   *store.Store
 	manager *manager.TraderManager
 	userID  string // fixed user ID for single-user mode: "default"
 }
 
-func New(st *store.Store, tm *manager.TraderManager) *NofxService {
-	return &NofxService{store: st, manager: tm, userID: "default"}
+func New(st *store.Store, tm *manager.TraderManager) *VLService {
+	return &VLService{store: st, manager: tm, userID: "default"}
 }
 
 // --- Trader ---
 
-func (s *NofxService) ListTraders() ([]store.Trader, error) {
+func (s *VLService) ListTraders() ([]store.Trader, error) {
 	return s.store.Trader().List(s.userID)
 }
 
-func (s *NofxService) StartTrader(traderID string) error {
+func (s *VLService) StartTrader(traderID string) error {
 	t, err := s.store.Trader().Get(traderID)
 	if err != nil {
 		return fmt.Errorf("trader not found: %w", err)
@@ -199,17 +200,17 @@ func (s *NofxService) StartTrader(traderID string) error {
 	return s.manager.StartTrader(t, s.store)
 }
 
-func (s *NofxService) StopTrader(traderID string) error {
+func (s *VLService) StopTrader(traderID string) error {
 	return s.manager.StopTrader(traderID)
 }
 
 // --- Strategy ---
 
-func (s *NofxService) ListStrategies() ([]store.Strategy, error) {
+func (s *VLService) ListStrategies() ([]store.Strategy, error) {
 	return s.store.Strategy().List(s.userID)
 }
 
-func (s *NofxService) CreateStrategy(name string, configJSON string) (*store.Strategy, error) {
+func (s *VLService) CreateStrategy(name string, configJSON string) (*store.Strategy, error) {
 	strategy := &store.Strategy{
 		UserID: s.userID,
 		Name:   name,
@@ -221,7 +222,7 @@ func (s *NofxService) CreateStrategy(name string, configJSON string) (*store.Str
 	return strategy, nil
 }
 
-func (s *NofxService) UpdateStrategyPrompt(strategyID uint, prompt string) error {
+func (s *VLService) UpdateStrategyPrompt(strategyID uint, prompt string) error {
 	strategy, err := s.store.Strategy().Get(strategyID)
 	if err != nil {
 		return err
@@ -232,11 +233,11 @@ func (s *NofxService) UpdateStrategyPrompt(strategyID uint, prompt string) error
 
 // --- AI Model ---
 
-func (s *NofxService) ListModels() ([]store.AIModel, error) {
+func (s *VLService) ListModels() ([]store.AIModel, error) {
 	return s.store.AIModel().List(s.userID)
 }
 
-func (s *NofxService) CreateModel(provider, apiKey, model string) (*store.AIModel, error) {
+func (s *VLService) CreateModel(provider, apiKey, model string) (*store.AIModel, error) {
 	m := &store.AIModel{
 		UserID:   s.userID,
 		Provider: provider,
@@ -251,11 +252,11 @@ func (s *NofxService) CreateModel(provider, apiKey, model string) (*store.AIMode
 
 // --- Exchange ---
 
-func (s *NofxService) ListExchanges() ([]store.Exchange, error) {
+func (s *VLService) ListExchanges() ([]store.Exchange, error) {
 	return s.store.Exchange().List(s.userID)
 }
 
-func (s *NofxService) CreateExchange(exchangeType, apiKey, secretKey string) (*store.Exchange, error) {
+func (s *VLService) CreateExchange(exchangeType, apiKey, secretKey string) (*store.Exchange, error) {
 	ex := &store.Exchange{
 		UserID:       s.userID,
 		ExchangeType: exchangeType,
@@ -270,11 +271,11 @@ func (s *NofxService) CreateExchange(exchangeType, apiKey, secretKey string) (*s
 
 // --- Positions / Query ---
 
-func (s *NofxService) GetPositions(traderID string) ([]store.TraderPosition, error) {
+func (s *VLService) GetPositions(traderID string) ([]store.TraderPosition, error) {
 	return s.store.Position().ListByTrader(traderID)
 }
 
-func (s *NofxService) GetEquitySummary(traderID string) (*store.EquitySnapshot, error) {
+func (s *VLService) GetEquitySummary(traderID string) (*store.EquitySnapshot, error) {
 	return s.store.Equity().Latest(traderID)
 }
 ```
@@ -294,7 +295,7 @@ store 的方法名称（List、Get、Create、Update）需要根据实际 store 
 **Step 3: Build 验证**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build ./telegram/...
+cd /Users/yida/gopro/open-vl && go build ./telegram/...
 ```
 
 Expected: 只可能有 store 方法名不匹配的错误，逐一修正即可。
@@ -302,8 +303,8 @@ Expected: 只可能有 store 方法名不匹配的错误，逐一修正即可。
 **Step 4: Commit**
 
 ```bash
-git add telegram/service/nofx.go
-git commit -m "feat(telegram): add NofxService facade layer"
+git add telegram/service/vl.go
+git commit -m "feat(telegram): add VLService facade layer"
 ```
 
 ---
@@ -322,7 +323,7 @@ package session
 
 import (
 	"fmt"
-	"nofx/mcp"
+	"vl/mcp"
 	"strings"
 )
 
@@ -426,7 +427,7 @@ func (m *Memory) compact() {
 **Step 2: Build 验证**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build ./telegram/...
+cd /Users/yida/gopro/open-vl && go build ./telegram/...
 ```
 
 **Step 3: Commit**
@@ -449,7 +450,7 @@ git commit -m "feat(telegram): add conversation memory with openclaw-style compa
 package session
 
 import (
-	"nofx/mcp"
+	"vl/mcp"
 	"sync"
 	"time"
 )
@@ -532,7 +533,7 @@ func (s *Session) ResetFull() {
 **Step 2: Build 验证**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build ./telegram/...
+cd /Users/yida/gopro/open-vl && go build ./telegram/...
 ```
 
 **Step 3: Commit**
@@ -549,7 +550,7 @@ git commit -m "feat(telegram): add session state manager"
 **Files:**
 - Create: `telegram/intent/parser.go`
 
-复用 `nofx/mcp` 的现有 LLM 客户端，不引入新依赖。
+复用 `vl/mcp` 的现有 LLM 客户端，不引入新依赖。
 
 **Step 1: 创建文件**
 
@@ -558,7 +559,7 @@ package intent
 
 import (
 	"encoding/json"
-	"nofx/mcp"
+	"vl/mcp"
 	"strings"
 )
 
@@ -570,7 +571,7 @@ type ParsedIntent struct {
 	Reply   string            `json:"reply"`   // what bot should say to user
 }
 
-const systemPrompt = `你是 NOFX 交易系统的对话助手。分析用户消息，提取交易配置意图和参数。
+const systemPrompt = `你是 VL 交易系统的对话助手。分析用户消息，提取交易配置意图和参数。
 
 支持的操作（action）：
 - config_strategy: 创建/修改策略（需要：name, coins, indicators, max_position_pct, stop_loss_pct）
@@ -654,7 +655,7 @@ func extractJSON(s string) string {
 **Step 2: Build 验证**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build ./telegram/...
+cd /Users/yida/gopro/open-vl && go build ./telegram/...
 ```
 
 **Step 3: Commit**
@@ -680,20 +681,20 @@ package handler
 
 import (
 	"fmt"
-	"nofx/telegram/intent"
-	"nofx/telegram/service"
-	"nofx/telegram/session"
+	"vl/telegram/intent"
+	"vl/telegram/service"
+	"vl/telegram/session"
 	"strings"
 )
 
 // Handler dispatches parsed intents to the right operation
 type Handler struct {
-	svc     *service.NofxService
+	svc     *service.VLService
 	parser  *intent.Parser
 	sessions *session.Manager
 }
 
-func New(svc *service.NofxService, parser *intent.Parser, sessions *session.Manager) *Handler {
+func New(svc *service.VLService, parser *intent.Parser, sessions *session.Manager) *Handler {
 	return &Handler{svc: svc, parser: parser, sessions: sessions}
 }
 
@@ -941,7 +942,7 @@ func formatParams(params map[string]string) string {
 **Step 2: Build 验证**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build ./telegram/...
+cd /Users/yida/gopro/open-vl && go build ./telegram/...
 ```
 
 **Step 3: Commit**
@@ -964,15 +965,15 @@ git commit -m "feat(telegram): add intent handler with 6 feature areas"
 package telegram
 
 import (
-	"nofx/config"
-	"nofx/logger"
-	"nofx/manager"
-	"nofx/mcp"
-	"nofx/store"
-	"nofx/telegram/handler"
-	"nofx/telegram/intent"
-	"nofx/telegram/service"
-	"nofx/telegram/session"
+	"vl/config"
+	"vl/logger"
+	"vl/manager"
+	"vl/mcp"
+	"vl/store"
+	"vl/telegram/handler"
+	"vl/telegram/intent"
+	"vl/telegram/service"
+	"vl/telegram/session"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -1043,7 +1044,7 @@ func Start(cfg *config.Config, st *store.Store, tm *manager.TraderManager) {
 }
 
 func welcomeMessage() string {
-	return `👋 欢迎使用 NOFX 交易助手！
+	return `👋 欢迎使用 VL 交易助手！
 
 你可以用自然语言配置和管理你的交易系统：
 
@@ -1074,7 +1075,7 @@ func welcomeMessage() string {
 **Step 2: Build 验证**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build ./telegram/...
+cd /Users/yida/gopro/open-vl && go build ./telegram/...
 ```
 
 **Step 3: Commit**
@@ -1096,7 +1097,7 @@ git commit -m "feat(telegram): add Telegram bot entry point with access control"
 在 main.go 的 import 块加：
 
 ```go
-"nofx/telegram"
+"vl/telegram"
 ```
 
 **Step 2: 在 API Server 启动之后加 3 行**
@@ -1119,7 +1120,7 @@ logger.Info("🤖 Telegram bot goroutine started")
 **Step 3: 完整构建**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && go build -o nofx .
+cd /Users/yida/gopro/open-vl && go build -o vl .
 ```
 
 Expected: 成功编译，无错误
@@ -1166,10 +1167,10 @@ export TELEGRAM_BOT_TOKEN=你的bot_token
 export TELEGRAM_ADMIN_CHAT_ID=你的chat_id
 ```
 
-**Step 2: 启动 NOFX**
+**Step 2: 启动 VL**
 
 ```bash
-cd /Users/yida/gopro/open-nofx && ./nofx
+cd /Users/yida/gopro/open-vl && ./vl
 ```
 
 Expected 日志：
@@ -1195,7 +1196,7 @@ Expected 日志：
 
 ## 关键约束备忘
 
-1. **`service/nofx.go` 是唯一接触 store/manager 的文件**，handler 不能绕过它
+1. **`service/vl.go` 是唯一接触 store/manager 的文件**，handler 不能绕过它
 2. **compaction 静默发生**，用户看不到压缩过程
 3. **LLM 客户端必须使用真实存在的构造器**，不能写 `mcp.New()`
 4. **当前仓库的 `store` / `manager` 接口与本文示例存在偏差**，实现时必须以源码为准
@@ -1213,6 +1214,6 @@ Expected 日志：
 
 ## 后续可扩展
 
-- 主动推送：NOFX 交易决策 → 推送到 Telegram
+- 主动推送：VL 交易决策 → 推送到 Telegram
 - 多语言：intent parser 的 systemPrompt 支持英文
 - 图表：发送持仓/权益曲线截图（需 TradingView Lightweight Charts 截图服务）

@@ -1,9 +1,10 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Three pre-existing lock defects — Section G report
 
 **Wave:** the three pre-existing lock defects (owner-pinned Section C, 2026-09-10)
 **Branch:** `fix/lock-defects-release-meta-halfbuilt`
-**Claim:** `lockdefects-554049f5/nofx-8e[88742a]`
-**Scope:** `deploy/nofx-lock.sh`, `deploy/nofx-lock-test.sh`. No Go, no binary, no
+**Claim:** `lockdefects-554049f5/vl-8e[88742a]`
+**Scope:** `deploy/vl-lock.sh`, `deploy/vl-lock-test.sh`. No Go, no binary, no
 boot. SIM untouched.
 
 ---
@@ -97,13 +98,13 @@ n=10  min=6.92ms  mean=7.35ms  max=7.71ms
 
 30s is ~4000× the observed window — wide enough that a loaded machine cannot
 cross it, narrow enough that a lock orphaned mid-creation clears within the
-minute. Override with `NOFX_LOCK_INCOMPLETE_SECONDS`.
+minute. Override with `VL_LOCK_INCOMPLETE_SECONDS`.
 
 ## PREMISE CORRECTION — the tree guard does not exist
 
 The dispatch described `check` as "the tree guard's unattended interface", which
 set C3's severity. **There is no tree guard.** `deploy/` contains
-`nofx-clock-guard.sh` (a different tool) and no `nofx-tree-guard.sh`; what exists
+`vl-clock-guard.sh` (a different tool) and no `vl-tree-guard.sh`; what exists
 is a SPEC, `docs/superpowers/plans/2026-09-02-tree-guard-spec.md`, last touched
 `f9b00935` 2026-09-03.
 

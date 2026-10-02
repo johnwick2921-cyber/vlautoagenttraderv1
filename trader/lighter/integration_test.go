@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	tradertypes "nofx/trader/types"
+	tradertypes "vl/trader/types"
 )
 
 // Test configuration - uses environment variables for security

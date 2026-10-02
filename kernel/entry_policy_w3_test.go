@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nofx/store"
+	"vl/store"
 )
 
 // W-EXEC-TRUTH W3 (K) — the validator, the R4 stamp and the armable hold

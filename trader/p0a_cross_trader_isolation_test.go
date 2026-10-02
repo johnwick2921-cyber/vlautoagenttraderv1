@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nofx/kernel"
-	"nofx/store"
+	"vl/kernel"
+	"vl/store"
 )
 
 // P0-A (2026-08-18) — CROSS-TRADER PLAN GOVERNANCE. With two day-plan traders

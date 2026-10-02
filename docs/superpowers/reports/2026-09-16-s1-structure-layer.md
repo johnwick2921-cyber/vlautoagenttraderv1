@@ -1,11 +1,12 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # S1 — the structure layer (feat/structure-map, 2026-09-16)
 
-**Dispatch:** CTO (nofx-2a) under the owner's delegation; owner's target approved 17:55 CT: TWO tables —
+**Dispatch:** CTO (vl-2a) under the owner's delegation; owner's target approved 17:55 CT: TWO tables —
 STRUCTURE (D/4h/1h, direction only, never an entry) and ENTRY (the existing 12-seat logic). Every knob
 defaults OFF; nothing changes the live plan until DS-R's S4 measurement. No deploy tonight (S6 is
 tomorrow's window with the owner present).
 
-**Base (spec-freshness law):** worktree `/home/hoang/nofx-101s` cut from `origin/dev` `f6465143`; claim
+**Base (spec-freshness law):** worktree `/home/hoang/vl-101s` cut from `origin/dev` `f6465143`; claim
 `5de94327`. What moved dev past the `054e97e5` marker before this base: `f6465143` only — "docs: 🧮 planner
 tape proof landed 17:01:27 CT" (docs-only; the running binary is `7e87a375`).
 

@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"nofx/kernel"
-	"nofx/logger"
-	"nofx/market"
-	"nofx/store"
+	"vl/kernel"
+	"vl/logger"
+	"vl/market"
+	"vl/store"
 )
 
 // ── D2 — THE STORE IS THE HORIZON; THE RING IS THE CACHE ────────────────────

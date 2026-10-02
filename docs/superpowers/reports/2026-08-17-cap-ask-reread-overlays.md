@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Six versions existed because the cap worked exactly as specified — v1–v5 were the five real plans a cap of 4 allows, and v6 is the NO-TRADE marker, which consumes a version number because the plans table is append-only
 
 ## ITEM 1 — replan cap / v6 semantics
@@ -46,10 +47,10 @@
 ## Deploy
 
 ```bash
-cd /home/hoang/nofx && git pull
-go build -o nofx-bin . && echo BUILD OK
+cd /home/hoang/vl && git pull
+go build -o vl-bin . && echo BUILD OK
 git rev-parse HEAD > deploy/RELEASE     # MANDATORY — else the boot assertion refuses trading
-sudo systemctl restart nofx
+sudo systemctl restart vl
 cd web && npm run build && cd ..        # then HARD reload (Ctrl+Shift+R)
 ```
 

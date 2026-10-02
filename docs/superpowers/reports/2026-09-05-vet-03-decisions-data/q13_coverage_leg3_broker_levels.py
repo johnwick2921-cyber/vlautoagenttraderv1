@@ -1,6 +1,6 @@
 # q13: (gg) 1m bar coverage per hour 09-03/09-04; (ii) leg-3 refusal counterfactuals; (mm) broker book during 09-04 churn; (qq) plan levels vs seated candidates; (rr) planned arm R:R bins
 import sqlite3, json, datetime, collections, bisect, math
-con=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro', uri=True)
+con=sqlite3.connect('file:/home/hoang/vl/data/data.db?mode=ro', uri=True)
 CT=datetime.timezone(datetime.timedelta(hours=-5))
 print('## (gg) 1m MNQ bars per CT hour, 09-03 and 09-04')
 for d in ('2026-09-03','2026-09-04'):

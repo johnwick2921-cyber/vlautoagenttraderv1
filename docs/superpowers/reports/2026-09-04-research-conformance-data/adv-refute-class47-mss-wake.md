@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Adversarial REFUTE attempt — "class 47 cadence does not reach the structure_mss wake"
 
 Verdict: **NOT REFUTED — CONFIRMED** (independently reproduced at the deployed rev). Two
@@ -9,10 +10,10 @@ corrections to the peer's phrasing, one downgrade of a caveat, one addition.
   The MSS wake path is byte-identical at dev tip, deployed rev 70af663d and the audit worktree.
 
 ## RESOLVED, from the running process (A11 — not a file default)
-`/home/hoang/nofx/data/nofx_2026-09-04.log`, boot 08:30:11 CT, `🔐 BOOT INTEGRITY OK — rev
+`/home/hoang/vl/data/vl_2026-09-04.log`, boot 08:30:11 CT, `🔐 BOOT INTEGRITY OK — rev
 70af663dcb6f · built 2026-09-04T13:16:34Z · expected 70af663d · goldens PASS`:
 
-    09-04 08:30:11 [INFO] nofx/main.go:340 ⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce,
+    09-04 08:30:11 [INFO] vl/main.go:340 ⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce,
     fast-market≥1.5×ATR exempt) cross-session=on stale-arm-expiry=on (class 47) — cutoffs govern
     LEVEL_EVENT/structure_mss wakes ONLY; …
 
@@ -91,7 +92,7 @@ are filled with `onOffWord(true), onOffWord(true)` — hard-coded literals (L224
 cannot report those two as off even if the code stopped doing them. [A]
 
 ## Commands
-    cd /home/hoang/nofx-conform
+    cd /home/hoang/vl-conform
     git diff 70af663d -- trader/auto_trader_transition.go
     git diff --name-only 70af663d 492d2067
     grep -rn "WakeCadenceDecision" --include=*.go .
@@ -99,10 +100,10 @@ cannot report those two as off even if the code stopped doing them. [A]
     grep -n "cutoff\|cooldown\|minutesToSessionFlat\|anyPlannerStreamOpen\|WakeCadence\|SkipFor" trader/auto_trader_planner.go
     grep -rn "maybeWakePlannerOnMSS" --include=*.go .
     grep -rn "IncWakeCounter" --include=*.go .
-    grep -h "⏱ wakes:" /home/hoang/nofx/data/nofx_2026-09-04.log | tail -1
-    sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT trigger_reason, COUNT(*) FROM plans GROUP BY 1 ORDER BY 2 DESC;"
-    sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT id, datetime(ts_utc/1000,'unixepoch','-5 hours'), substr(message,1,120) FROM log_events WHERE message LIKE '%structure MSS%' ORDER BY id;"
-    sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT id, json_extract(config,'\$.day_plan.wake_min_interval_min') FROM strategies;"
+    grep -h "⏱ wakes:" /home/hoang/vl/data/vl_2026-09-04.log | tail -1
+    sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" "SELECT trigger_reason, COUNT(*) FROM plans GROUP BY 1 ORDER BY 2 DESC;"
+    sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" "SELECT id, datetime(ts_utc/1000,'unixepoch','-5 hours'), substr(message,1,120) FROM log_events WHERE message LIKE '%structure MSS%' ORDER BY id;"
+    sqlite3 "file:/home/hoang/vl/data/data.db?mode=ro" "SELECT id, json_extract(config,'\$.day_plan.wake_min_interval_min') FROM strategies;"
 
 ## Report provenance (git log -1)
     docs/superpowers/reports/2026-09-04-two-day-audit.md

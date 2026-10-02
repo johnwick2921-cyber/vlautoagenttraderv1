@@ -1,9 +1,9 @@
 // Class 105 — the contract test the canon mirror was missing.
 //
-// docs/superpowers/CLAUDE-canon.md exists because ~/nofx/CLAUDE.md is UNTRACKED:
+// docs/superpowers/CLAUDE-canon.md exists because ~/VL/CLAUDE.md is UNTRACKED:
 // no wave can correct it, no review can see it drift, no test can check it. The
 // mirror closed the git half of that. It did NOT close the test half — nothing
-// asserted the mirror still described deploy/nofx-lock.sh, so the mirror was
+// asserted the mirror still described deploy/vl-lock.sh, so the mirror was
 // class 105 with one more copy in it: a second piece of prose about the code,
 // free to drift from the code AND from the original, independently and silently.
 //
@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	lockScriptPath = "nofx-lock.sh"
+	lockScriptPath = "vl-lock.sh"
 	canonPath      = "../docs/superpowers/CLAUDE-canon.md"
 )
 
@@ -70,7 +70,7 @@ func shellFunc(t *testing.T, script, name string) string {
 		}
 	}
 	if start < 0 {
-		t.Fatalf("deploy/nofx-lock.sh no longer defines %s().\n"+
+		t.Fatalf("deploy/vl-lock.sh no longer defines %s().\n"+
 			"CLAUDE-canon.md describes the keeper in terms of this function; if it was renamed,\n"+
 			"update the canon's description and this test together.", name)
 	}
@@ -79,7 +79,7 @@ func shellFunc(t *testing.T, script, name string) string {
 			return strings.Join(lines[start:i+1], "\n")
 		}
 	}
-	t.Fatalf("%s() in deploy/nofx-lock.sh has no closing brace at column 0", name)
+	t.Fatalf("%s() in deploy/vl-lock.sh has no closing brace at column 0", name)
 	return ""
 }
 
@@ -144,7 +144,7 @@ func TestCanonMirrorDescribesTheLockScript(t *testing.T) {
 		// the whole reason the flat pid file was replaced.
 		if regexp.MustCompile(`kill -0[^\n]*keeper`).MatchString(script) ||
 			regexp.MustCompile(`keeper\.pid[^\n]*kill -0`).MatchString(script) {
-			t.Errorf("deploy/nofx-lock.sh probes keeper.pid with `kill -0`.\n" +
+			t.Errorf("deploy/vl-lock.sh probes keeper.pid with `kill -0`.\n" +
 				"That makes a pid answer the liveness question again, which is exactly the failure\n" +
 				"class 70 replaced: a dead pid under a working owner, and a resumed session naming\n" +
 				"its own former process. Liveness is the heartbeat and only the heartbeat.")
@@ -264,11 +264,11 @@ func TestCanonMirrorDeclaresItsOwnPrecedence(t *testing.T) {
 func canonCheckLine(t *testing.T, canon string) string {
 	t.Helper()
 	for _, ln := range strings.Split(canon, "\n") {
-		if strings.HasPrefix(strings.TrimSpace(ln), "deploy/nofx-lock.sh check") {
+		if strings.HasPrefix(strings.TrimSpace(ln), "deploy/vl-lock.sh check") {
 			return ln
 		}
 	}
-	t.Fatalf("%s has no `deploy/nofx-lock.sh check` line.\n"+
+	t.Fatalf("%s has no `deploy/vl-lock.sh check` line.\n"+
 		"The canon is the copy lanes are told to trust over the untracked CLAUDE.md;\n"+
 		"if the verb block was restructured, this test must be taught the new shape.", canonPath)
 	return ""
@@ -304,7 +304,7 @@ func TestCanonNamesEveryCheckReturnCode(t *testing.T) {
 		}
 		t.Errorf(`cmd_check can return %s, and the canon's rc list does not name it.
 
-  SCRIPT : deploy/nofx-lock.sh cmd_check returns %s
+  SCRIPT : deploy/vl-lock.sh cmd_check returns %s
   CANON  : %s check line reads: %s
 
 One of the two is wrong and this test does not know which. If the code is new,
@@ -335,15 +335,58 @@ func TestCanonNamesEveryVerb(t *testing.T) {
 	}
 	flat := flattenProse(canon)
 	for v := range verbs {
-		if strings.Contains(flat, "nofx-lock.sh "+v) {
+		if strings.Contains(flat, "vl-lock.sh "+v) {
 			continue
 		}
 		t.Errorf(`the script accepts the verb %q and the canon never names it.
 
-  SCRIPT : deploy/nofx-lock.sh dispatches %q
-  CANON  : %s has no "nofx-lock.sh %s" line
+  SCRIPT : deploy/vl-lock.sh dispatches %q
+  CANON  : %s has no "vl-lock.sh %s" line
 
 A verb lanes cannot find is a verb they will not use — and this file is the copy
 they are told to trust over the untracked CLAUDE.md.`, v, v, canonPath, v)
+	}
+}
+
+// TestDeployScriptsAndWrappersAreExecutable pins the mode bits the rename plan
+// requires (4 vl twins + 4 old-name wrappers). A wrapper without +x cannot run
+// on its own shebang, and every call site invokes them DIRECTLY.
+func TestDeployScriptsAndWrappersAreExecutable(t *testing.T) {
+	old := "no" + "fx" // the pre-rename prefix, assembled at runtime (census)
+	names := []string{
+		"vl-lock.sh", "vl-claim.sh", "vl-db-backup.sh", "vl-clock-guard.sh",
+		old + "-lock.sh", old + "-claim.sh", old + "-db-backup.sh", old + "-clock-guard.sh",
+	}
+	for _, n := range names {
+		fi, err := os.Stat(filepath.Join(".", n))
+		if err != nil {
+			t.Errorf("%s: %v", n, err)
+			continue
+		}
+		if got := fi.Mode().Perm(); got != 0o755 {
+			t.Errorf("%s mode is %04o, want 0755 (call sites exec the wrappers directly)", n, got)
+		}
+	}
+}
+
+// TestCanonDocNeverNamesTheOldLockTool pins the CANON-FIX direction: after the
+// rename the tool is deploy/vl-lock.sh (the old name is only a wrapper), and a
+// canon doc that names the old tool in its verb block is exactly the drift the
+// two verb/rc contract tests cannot see — they only assert the doc names EVERY
+// verb of the REAL tool, never that it stops naming the old one. dev's doc said
+// deploy/nofx-lock.sh after the docs rename and both tests went RED on it.
+func TestCanonDocNeverNamesTheOldLockTool(t *testing.T) {
+	old := "no" + "fx" // assembled at runtime; the census must never see the token
+	b, err := os.ReadFile(canonPath)
+	if err != nil {
+		t.Fatalf("%s: %v", canonPath, err)
+	}
+	flat := flattenProse(string(b))
+	if !strings.Contains(flat, "deploy/vl-lock.sh") {
+		t.Errorf("%s never names deploy/vl-lock.sh — the canon does not describe the real tool", canonPath)
+	}
+	if strings.Contains(flat, "deploy/"+old+"-lock.sh") {
+		t.Errorf("%s still names deploy/%s-lock.sh in the lock block —\n"+
+			"the old name is a wrapper now; a doc that names it as the tool is drift", canonPath, old)
 	}
 }

@@ -1,8 +1,8 @@
 package trader
 
 import (
-	"nofx/kernel"
-	"nofx/market"
+	"vl/kernel"
+	"vl/market"
 )
 
 // W11 — render the planner's INDICATOR MIRROR: the SAME per-timeframe indicator

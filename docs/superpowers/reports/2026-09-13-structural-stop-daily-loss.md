@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Automatic structural stops; owner-controlled daily loss
 
 [A] The owner clarified **“i mean daily loss”** after the initial structural-stop
@@ -133,7 +134,7 @@ including goldens, **64 frontend files / 430 tests**, and TypeScript passed.
 The first merged frontend attempt was sandbox-blocked (`spawnSync go EPERM`);
 the permission-correct rerun executed all 430 tests successfully.
 
-[A] Clean clone `/tmp/structural-daily-loss-release/nofx`, Go go1.25.13,
+[A] Clean clone `/tmp/structural-daily-loss-release/vl`, Go go1.25.13,
 `vcs.modified=false`; binary **73,422,552 bytes**,
 MD5 `1dba3de51d4813481546ecb933325d4c`, SHA-256 `5738ec671b9d706e43f545c99c218bfcd18b4e982f22358c6dcf4581ee5045ca`. Guide SOURCE and RELEASE are stamped
 from this binary revision in the following metadata commit; the Go binary is not
@@ -142,7 +143,7 @@ rebuilt from that deliberately different metadata revision.
 [A] Backup at 00:41:13 CT: `before-correction.db`, **1,236,676,608 bytes**,
 SQLite integrity `ok`, SHA-256
 `cd05846b018be69073329b746cefe4330af5aeec811a9830d19d802ff7311684`.
-Directory: `/home/hoang/nofx-backups/structural-daily-loss-20260913/`.
+Directory: `/home/hoang/vl-backups/structural-daily-loss-20260913/`.
 The original release marker and Guide source are preserved separately.
 
 [A] Additional pre-edit source freshness at base `587148a6`:
@@ -161,8 +162,8 @@ The service's `Restart=on-failure` policy was verified. Old PID 4165029 was
 signaled at **2026-09-13T01:04:11.132267-05:00**; new PID 24534 was verified at **2026-09-13T01:04:20.177698-05:00**.
 
 ```text
-09-13 01:04:16 [INFO] nofx/main.go:295 🔐 BOOT INTEGRITY OK — rev 0c9d4f30a047 · built 2026-09-13T05:58:55Z · expected 0c9d4f30a047 · goldens PASS
-09-13 01:04:16 [INFO] nofx/main.go:548 🎯 stop/target: stop=zone-edge+buffer buffer=4.50[I] (p95 of measured overshoot; resolver=ResolveStructuralStop:C5_MNQ_default[I]; calibration=C5-H12-IS-6181-p95-20260912; sweep=[0.25 1.25 4.5] points[I]) · atr-fallback=0 · refused today=0 (no_target=0 net<=0=0 rr<2.00=0 no_provenance=0 other=0) · target=first-distinct-eligible-zone · never-widened=asserted · research-candidate
+09-13 01:04:16 [INFO] vl/main.go:295 🔐 BOOT INTEGRITY OK — rev 0c9d4f30a047 · built 2026-09-13T05:58:55Z · expected 0c9d4f30a047 · goldens PASS
+09-13 01:04:16 [INFO] vl/main.go:548 🎯 stop/target: stop=zone-edge+buffer buffer=4.50[I] (p95 of measured overshoot; resolver=ResolveStructuralStop:C5_MNQ_default[I]; calibration=C5-H12-IS-6181-p95-20260912; sweep=[0.25 1.25 4.5] points[I]) · atr-fallback=0 · refused today=0 (no_target=0 net<=0=0 rr<2.00=0 no_provenance=0 other=0) · target=first-distinct-eligible-zone · never-widened=asserted · research-candidate
 ```
 
 [A] Disk RELEASE, committed RELEASE, Guide source, health revision and loaded

@@ -1,7 +1,7 @@
 package trader
 
 import (
-	"nofx/store"
+	"vl/store"
 )
 
 // ── W-ONE-BUTTON M2 — THE MAINTENANCE GATE (process-wide) ──────────────────

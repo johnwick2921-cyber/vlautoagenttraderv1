@@ -599,7 +599,7 @@
         "Syntax-visible calls (not type-resolved): DeepVoidBackground, gradient, perspective, return, rgba, rotateX, scale, translateY, url"
       ],
       "invariants_or_risks": "Decorative static/animated backgrounds; animated version references remote grain texture; disabledAnimation static variant.",
-      "source_excerpt": "export function DeepVoidBackground({ children, className = '', disableAnimation = false, ...props }: DeepVoidBackgroundProps) {\n    return (\n        <div className={`relative w-full min-h-screen bg-nofx-bg text-nofx-text overflow-hidden flex flex-col ${className}`} {...props}>\n            {/* Background layers: use a much lighter static stack when animations are disabled */}\n            {disableAnimation ? (\n                <>\n                    <div className=\"absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_top,rgba(240,185,11,0.08),transparent_38%),linear-gradient(180deg,rgba(12,14,20,0.98),rgba(8,10,15,1))]\"></div>\n                    <div className=\"absolute inset-0 pointer-events-none z-0 opacity-[0.035] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:36px_36px]\"></div>\n                </>\n            ) : (\n                <>\n                    {/* 1. Grain/Noise Texture */}"
+      "source_excerpt": "export function DeepVoidBackground({ children, className = '', disableAnimation = false, ...props }: DeepVoidBackgroundProps) {\n    return (\n        <div className={`relative w-full min-h-screen bg-vl-bg text-vl-text overflow-hidden flex flex-col ${className}`} {...props}>\n            {/* Background layers: use a much lighter static stack when animations are disabled */}\n            {disableAnimation ? (\n                <>\n                    <div className=\"absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_top,rgba(240,185,11,0.08),transparent_38%),linear-gradient(180deg,rgba(12,14,20,0.98),rgba(8,10,15,1))]\"></div>\n                    <div className=\"absolute inset-0 pointer-events-none z-0 opacity-[0.035] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:36px_36px]\"></div>\n                </>\n            ) : (\n                <>\n                    {/* 1. Grain/Noise Texture */}"
     },
     {
       "path": "web/src/components/common/ExchangeIcons.tsx",
@@ -1043,7 +1043,7 @@
         "Syntax-visible calls (not type-resolved): FAQSearchBar, onSearchChange, return"
       ],
       "invariants_or_risks": "Controlled search and clear button; icon clear lacks accessible label.",
-      "source_excerpt": "export function FAQSearchBar({\n  searchTerm,\n  onSearchChange,\n  placeholder = 'Search FAQ...',\n}: FAQSearchBarProps) {\n  return (\n    <div className=\"relative group\">\n      <Search\n        className=\"absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-nofx-text-muted group-focus-within:text-nofx-gold transition-colors\"\n      />\n      <input\n        type=\"text\""
+      "source_excerpt": "export function FAQSearchBar({\n  searchTerm,\n  onSearchChange,\n  placeholder = 'Search FAQ...',\n}: FAQSearchBarProps) {\n  return (\n    <div className=\"relative group\">\n      <Search\n        className=\"absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-vl-text-muted group-focus-within:text-vl-gold transition-colors\"\n      />\n      <input\n        type=\"text\""
     },
     {
       "path": "web/src/components/settings/ResolvedKnobPanel.tsx",
@@ -1083,15 +1083,15 @@
     },
     {
       "path": "web/src/components/ui/select.tsx",
-      "name": "NofxSelect",
+      "name": "VLSelect",
       "start_line": 20,
       "end_line": 102,
-      "purpose": "NofxSelect: Portal custom select stringifies values; outside-click/scroll close listeners cleaned; no keyboard semantics/tabindex, disabled changing while open does not block option click.",
+      "purpose": "VLSelect: Portal custom select stringifies values; outside-click/scroll close listeners cleaned; no keyboard semantics/tabindex, disabled changing while open does not block option click.",
       "connections": [
-        "Syntax-visible calls (not type-resolved): NofxSelect, String, cn, contains, createPortal, document.addEventListener, document.removeEventListener, e.stopPropagation, if, onChange, options.find, options.map, return, setOpen, setPos, triggerRef.current.getBoundingClientRect, updatePos, useCallback, useLayoutEffect, useState, window.addEventListener, window.removeEventListener"
+        "Syntax-visible calls (not type-resolved): VLSelect, String, cn, contains, createPortal, document.addEventListener, document.removeEventListener, e.stopPropagation, if, onChange, options.find, options.map, return, setOpen, setPos, triggerRef.current.getBoundingClientRect, updatePos, useCallback, useLayoutEffect, useState, window.addEventListener, window.removeEventListener"
       ],
       "invariants_or_risks": "Portal custom select stringifies values; outside-click/scroll close listeners cleaned; no keyboard semantics/tabindex, disabled changing while open does not block option click.",
-      "source_excerpt": "export function NofxSelect({ value, onChange, options, disabled, className, style }: NofxSelectProps) {\n  const [open, setOpen] = useState(false)\n  const triggerRef = useRef<HTMLDivElement>(null)\n  const dropdownRef = useRef<HTMLDivElement>(null)\n  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })\n  const selected = options.find(o => String(o.value) === String(value))\n\n  const updatePos = useCallback(() => {\n    if (!triggerRef.current) return\n    const rect = triggerRef.current.getBoundingClientRect()\n    setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width })\n  }, [])"
+      "source_excerpt": "export function VLSelect({ value, onChange, options, disabled, className, style }: VLSelectProps) {\n  const [open, setOpen] = useState(false)\n  const triggerRef = useRef<HTMLDivElement>(null)\n  const dropdownRef = useRef<HTMLDivElement>(null)\n  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })\n  const selected = options.find(o => String(o.value) === String(value))\n\n  const updatePos = useCallback(() => {\n    if (!triggerRef.current) return\n    const rect = triggerRef.current.getBoundingClientRect()\n    setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width })\n  }, [])"
     },
     {
       "path": "web/src/components/ui/select.tsx",
@@ -2291,7 +2291,7 @@
         "Syntax-visible calls (not type-resolved): PageNotFound, gradient, return"
       ],
       "invariants_or_risks": "Static404view and full-navigation home anchor; current wildcard route redirects home instead.",
-      "source_excerpt": "export function PageNotFound() {\n    return (\n        <DeepVoidBackground className=\"flex items-center justify-center text-center p-4\">\n            <div className=\"bg-nofx-bg border border-nofx-gold/20 p-8 rounded-lg max-w-md w-full relative overflow-hidden group\">\n\n                {/* Background Grid inside Card */}\n                <div className=\"absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none\"></div>\n\n                <div className=\"relative z-10 flex flex-col items-center gap-6\">\n                    <div className=\"relative\">\n                        <div className=\"absolute inset-0 bg-red-500/20 blur-xl animate-pulse\"></div>\n                        <AlertCircle size={64} className=\"text-nofx-danger relative z-10\" />"
+      "source_excerpt": "export function PageNotFound() {\n    return (\n        <DeepVoidBackground className=\"flex items-center justify-center text-center p-4\">\n            <div className=\"bg-vl-bg border border-vl-gold/20 p-8 rounded-lg max-w-md w-full relative overflow-hidden group\">\n\n                {/* Background Grid inside Card */}\n                <div className=\"absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none\"></div>\n\n                <div className=\"relative z-10 flex flex-col items-center gap-6\">\n                    <div className=\"relative\">\n                        <div className=\"absolute inset-0 bg-red-500/20 blur-xl animate-pulse\"></div>\n                        <AlertCircle size={64} className=\"text-vl-danger relative z-10\" />"
     },
     {
       "path": "web/src/router/AppRoutes.tsx",

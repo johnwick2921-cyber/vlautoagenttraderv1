@@ -30,9 +30,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-NOFX_REPO=${NOFX_REPO:-/home/hoang/nofx}
-NOFX_DATA=${NOFX_DATA:-$NOFX_REPO/data}
-[ -n "$LOG" ] || LOG=$(ls -t "$NOFX_DATA"/nofx_*.log 2>/dev/null | head -1)
+# install-root rule: $HOME/vl when present, else $HOME/nofx — never a
+# hardcoded /home/hoang. Every var is the shell twin VL_ → NOFX_ → default.
+# R5 removes the NOFX twins and the rule.
+DEFAULT_REPO="$HOME/vl"; [ -d "$DEFAULT_REPO" ] || DEFAULT_REPO="$HOME/nofx"
+NOFX_REPO="${VL_REPO:-${NOFX_REPO:-$DEFAULT_REPO}}"
+NOFX_DATA="${VL_DATA:-${NOFX_DATA:-$NOFX_REPO/data}}"
+[ -n "$LOG" ] || LOG=$(ls -t "$NOFX_DATA"/{vl,nofx}_*.log 2>/dev/null | head -1)
 [ -n "$DB" ] || DB=$NOFX_DATA/data.db
 [ -n "$OUT" ] || OUT=$NOFX_DATA
 [ -n "$BOOT" ] || { echo "--boot YYYY-MM-DD required" >&2; exit 2; }

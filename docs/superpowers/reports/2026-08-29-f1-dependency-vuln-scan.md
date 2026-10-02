@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # F1 — Dependency Vulnerability Scan (build & prove, no deploy)
 
 **Branch:** `fix/security-hygiene` · **Base:** `f08a300a` · **Deploy:** rides Monday's cutover with news-hygiene (one boot for everything).
@@ -38,7 +39,7 @@ Plus 14 vulns in imported-but-uncalled packages + 21 in required-but-uncalled mo
 
 ## F1d — F2a EXPOSURE ANSWER (read-only)
 
-- **Bind:** `api/server.go:848-854` — default host **`127.0.0.1` (loopback-only)**; only `API_SERVER_HOST` env overrides it (`config.go:133-141`, loud WARN off-loopback). **Live `.env`: `API_SERVER_HOST` UNSET → loopback.** Port `8080` (`NOFX_BACKEND_PORT`).
+- **Bind:** `api/server.go:848-854` — default host **`127.0.0.1` (loopback-only)**; only `API_SERVER_HOST` env overrides it (`config.go:133-141`, loud WARN off-loopback). **Live `.env`: `API_SERVER_HOST` UNSET → loopback.** Port `8080` (`VL_BACKEND_PORT`).
 - **Write routes:** 50 (POST/PUT/DELETE). **Public (no token): 5** — `/login`, `/register`, `/reset-password`, `/equity-history-batch` (public competition batch, documented as no-auth), `/strategies/estimate-tokens`. The other 45 sit behind Bearer JWT (`authMiddleware` + `planTraderOwnership` IDOR gate). Two env-gated debug seams inside the protected group: `/debug/nt-test-trade`, `/armed/test-arm` (SIM-only).
 - **"Owner token":** no route requires a separate owner token — the JWT `user_id` claim IS the owner credential. Net exposure today: loopback-only, so the network can't reach any write route; F2's real subjects are JWT-secret strength + the public batch shape, not missing middleware. **F2 can ride post-NFP.**
 

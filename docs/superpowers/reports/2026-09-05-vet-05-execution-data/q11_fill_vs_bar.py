@@ -1,5 +1,5 @@
 import sqlite3, csv, glob, re, datetime
-con = sqlite3.connect("file:/home/hoang/nofx/data/data.db?mode=ro", uri=True); c=con.cursor()
+con = sqlite3.connect("file:/home/hoang/vl/data/data.db?mode=ro", uri=True); c=con.cursor()
 print("-- bars tf values:", c.execute("SELECT tf, COUNT(*), MIN(datetime(open_time_ms/1000,'unixepoch','-5 hours')), MAX(datetime(open_time_ms/1000,'unixepoch','-5 hours')) FROM bars WHERE symbol='MNQ' GROUP BY tf").fetchall())
 era=1786770000000
 rows=c.execute("""SELECT id, side, entry_price, entry_time, source, plan_band, cited_scenario_id, entry_order_id, pnl_corrected FROM trader_positions

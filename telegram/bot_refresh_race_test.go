@@ -29,9 +29,9 @@ import (
 	"testing"
 	"time"
 
-	"nofx/auth"
-	"nofx/store"
-	"nofx/telegram/agent"
+	"vl/auth"
+	"vl/store"
+	"vl/telegram/agent"
 )
 
 func TestRaceBotRefreshAgainstInFlightManager(t *testing.T) {

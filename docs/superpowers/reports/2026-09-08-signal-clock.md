@@ -1,7 +1,8 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # SIGNAL CLOCK — the wire timestamp is a creation time, not a market fact
 
 **Wave:** signal-clock · **Branch:** `fix/signal-clock`
-**Lane:** `signalclock-ee7f9468/nofx-db[ca9c60]` · claimed 2026-09-07T23:54:39-05:00
+**Lane:** `signalclock-ee7f9468/vl-db[ca9c60]` · claimed 2026-09-07T23:54:39-05:00
 **Base:** dev `33c4bf78`
 
 ---

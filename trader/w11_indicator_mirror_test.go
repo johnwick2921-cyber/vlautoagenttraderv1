@@ -3,8 +3,8 @@ package trader
 import (
 	"testing"
 
-	"nofx/market"
-	"nofx/store"
+	"vl/market"
+	"vl/store"
 )
 
 // W11 — the rendered indicator block + ai_config hash are FROZEN onto the plan row

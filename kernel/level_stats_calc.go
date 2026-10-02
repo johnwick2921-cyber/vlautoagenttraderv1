@@ -3,7 +3,7 @@ package kernel
 import (
 	"math"
 
-	"nofx/market"
+	"vl/market"
 )
 
 // B4 — LEVEL_STATS outcome evaluation (forward-validation substrate, Pack B

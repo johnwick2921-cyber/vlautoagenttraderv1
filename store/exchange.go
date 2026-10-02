@@ -2,8 +2,8 @@ package store
 
 import (
 	"fmt"
-	"nofx/crypto"
-	"nofx/logger"
+	"vl/crypto"
+	"vl/logger"
 	"strings"
 	"time"
 

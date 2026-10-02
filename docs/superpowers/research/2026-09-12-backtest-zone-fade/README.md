@@ -1,3 +1,4 @@
+names rewritten to vl on 2026-09-30 (VL rename)
 # Backtest 1 — does the fade at a zone pay?
 
 **Branch:** `research/backtest-zone-fade` · claim `b994de5c` (ls-remote
@@ -427,7 +428,7 @@ pay. A hold rate is not an edge — this table is why.
 ## Artifacts
 
 - `harness/` — the replay harness + extraction scripts (committed; nothing in
-  it ships; it imports only `nofx/kernel`, `nofx/market` and a read-only SQLite
+  it ships; it imports only `vl/kernel`, `vl/market` and a read-only SQLite
   view of the DB COPY).
 - `artifacts/` — the small aggregates this report quotes (`seam.json`,
   `summary.json`, `c1c4_spine{,_all_zones}.json`, `c3_baseline.json`,
