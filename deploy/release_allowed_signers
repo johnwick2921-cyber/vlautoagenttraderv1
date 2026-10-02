@@ -1,1 +1,13 @@
-release ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFAnymAm3evz3IP3DQPjgaBIGzMpobd55aLLhWhtwVqF vl-release
+# PARTNER PLACEHOLDER (audit fold B3, one-button P-B).
+#
+# The OWNER replaces the line below at B2 with the partner's OWN public key
+# (deploy/release/README.md keypair flow — the private half goes ONLY into
+# the partner repo's `release` environment secret RELEASE_SIGNING_KEY).
+#
+# Until the real partner key is in place, NO release verifies on a partner
+# box: the verification anchor fails closed. The release workflow is still
+# `if: ${{ false }}` so nothing can publish anyway.
+#
+# The nofx public key must NEVER appear in this file — the partner tree
+# verifies ONLY partner-signed releases (contract-tested).
+partner-release ssh-ed25519 AAAA0PLACEHOLDER0REPLACED0BY0OWNER0AT0B2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

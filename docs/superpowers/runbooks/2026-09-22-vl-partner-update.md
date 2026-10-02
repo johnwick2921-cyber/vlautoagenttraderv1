@@ -76,10 +76,9 @@ Same procedure as steps 1–8 above, with these deltas:
    no hot reload).
 3. **One-order check** at the next market open: a single SIM order round-trip,
    and report the boot line (machine, sha, time) to the CTO.
-4. **Updater worker is OPTIONAL** for partners and is NOT installed by this
-   sync. If a partner later chooses it, it builds from the partner repo
-   (`install-updater-worker.sh` defaults `REPO_URL` to
-   `johnwick2921-cyber/vlautoagenttraderv1`).
+4. **Updater worker** was OPTIONAL at boot-7. It becomes REQUIRED with the
+   one-button P-C section below (run only AFTER P-E has landed in the partner
+   tree — see that section's step 0).
 5. **No release capability.** The partner workflow has no trigger that can
    fire; no partner CI run can create a release or tag in
    `johnwick2921-cyber/nofx`.
@@ -114,3 +113,31 @@ Stacks on the R2 sync (#15). Tree = nofx `ebb726977ef67c71cf6493a39886e74c005a30
 2. **AddOn: NO .cs change in this wave** — `git diff 0b45081d ebb726977 -- ninjascript/`
    is empty [A].
 3. **One SIM order check** at the next market open; report the boot line to the CTO.
+
+## P-C — one-button partner machine setup (DS-106, 2026-10-02; run ONLY after P-E lands)
+
+Order (audit fold B5): P-E (non-expiring worker credential) MUST be in the
+partner tree before this is run — `install-updater-worker.sh` refuses without a
+working credential. Do NOT run on a tree that still needs the 24 h gate-jwt.
+
+1. **Worker install** (partner present, on the partner box):
+   `bash deploy/install-updater-worker.sh <40-hex partner build sha>`
+   Success prints exactly:
+   `install-updater-worker: DONE — $HOME/bin/vl-updater from <sha> (clean, stamped); unit installed …`
+   Every refusal prints `install-updater-worker: REFUSED — <reason>` and writes
+   nothing. The worker is NOT started by the script — start it attended:
+   `systemctl --user start vl-updater`.
+2. **Enroll** the update administrator (B9: exact prints):
+   `vl-updater-bootstrap enroll <partner email>` with `--install-dir` set to the
+   bot's REAL install folder (the printed dir must be the live install — an
+   enrollment the bot never reads is silently useless). The tool prints the
+   confirmation line `ENROLL <email>` and you TYPE it; success prints
+   `enrolled: user_id=… dir=… (both enrollment files 0600; the key is never printed)`.
+3. **Verify** on the Updates page (Settings → Updates): status shows
+   `worker_listening: true` — measured at request time, never inferred.
+4. **Handover** (B8): `enroll --replace <new email>` rotates `device.key` —
+   every outstanding authorization code STOPS working immediately; say so to
+   the partner before doing it.
+5. **Secrets never leave the box**: admin.json, device.key, ~/.config/vl-updater/env
+   and the signing private key live ONLY on the partner machine / in GitHub
+   secrets. The partner repo (public) must never contain any of them.

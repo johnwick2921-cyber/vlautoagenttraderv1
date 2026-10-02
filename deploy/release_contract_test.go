@@ -7,6 +7,10 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"vl/internal/updatersource"
+	"vl/internal/updaterworker"
+	"vl/internal/updaterworker/releasefixture"
 )
 
 // W-ONE-BUTTON WAVE 3a — the release workflow's guarantees, pinned.
@@ -27,29 +31,99 @@ func repoFile(t *testing.T, rel string) string {
 
 // The trigger is the whole safety story: a release is cut from a TAG that a
 // human approved, never from a push to a branch.
-// PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7) — this repo is NEVER a release
-// source. No partner CI run may ever create a release or tag in
-// johnwick2921-cyber/nofx. The only permitted trigger is a manual
-// workflow_dispatch, and BOTH jobs carry `if: ${{ false }}` so even a manual
-// dispatch cannot run them. This test asserts exactly that: the workflow has
-// NO trigger that can fire.
-func TestReleaseWorkflowHasNoTriggerThatCanFire(t *testing.T) {
+// PARTNER CARVE-OUT (one-button P-B, audit fold B4) — this repo publishes
+// ONLY its own, owner-approved releases. The only trigger that may ever fire
+// is a manual workflow_dispatch (never push/tags — the nofx repo keeps its
+// push-tags path, the partner does not), and the signing job runs inside the
+// protected `release` environment, whose required reviewer is the owner
+// (audit fold B2: the environment + signing secret + guard removal are ONE
+// owner-gated step; the guards stay until then).
+func TestReleaseWorkflowOnlyManualDispatchAndProtectedByReleaseEnvironment(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	if !strings.Contains(y, "workflow_dispatch:") {
-		t.Fatalf("release.yml must keep workflow_dispatch as its ONLY trigger key")
+		t.Fatalf("release.yml must keep workflow_dispatch as its trigger")
 	}
 	for _, forbidden := range []string{"push:", "tags:", "branches:", "pull_request:", "schedule:", "workflow_call:", "workflow_run:"} {
 		if strings.Contains(y, forbidden) {
-			t.Fatalf("release.yml must have NO trigger that can fire — found %q", forbidden)
+			t.Fatalf("release.yml must have NO trigger other than manual workflow_dispatch — found %q", forbidden)
 		}
 	}
-	// Both jobs must be permanently disabled; count the `if: ${{ false }}`
-	// occurrences and the job declarations to make sure every job carries one.
-	jobCount := len(regexp.MustCompile(`(?m)^  [a-z]+:$`).FindAllString(y, -1))
-	ifCount := strings.Count(y, "if: ${{ false }}")
-	if jobCount == 0 || ifCount < jobCount {
-		t.Fatalf("every job must carry `if: ${{ false }}`: %d jobs, %d if-guards", jobCount, ifCount)
+	if !strings.Contains(y, "environment: release") {
+		t.Fatalf("the signing/publishing job must declare `environment: release` so the owner approves every dispatch")
 	}
+	if !strings.Contains(y, "RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}") {
+		t.Fatalf("the signing key must come ONLY from the release environment secret")
+	}
+	// The key may be assigned ONLY via the secrets interpolation; the
+	// ${RELEASE_SIGNING_KEY:-} existence check is a use, not an assignment.
+	if strings.Count(y, "RELEASE_SIGNING_KEY: ${{") != 1 {
+		t.Fatalf("RELEASE_SIGNING_KEY must have exactly one ${{ assignment (the secrets one)")
+	}
+}
+
+// B1 — the release source the bot checks MUST equal the workflow's
+// RELEASE_REPO. One value, two pins: the build-time constant and the
+// workflow variable. A build can never be pointed at the wrong venue.
+func TestReleaseSourceConstantEqualsWorkflowRepo(t *testing.T) {
+	y := repoFile(t, ".github/workflows/release.yml")
+	m := regexp.MustCompile(`(?m)^\s*RELEASE_REPO:\s*(\S+)`).FindStringSubmatch(y)
+	if m == nil {
+		t.Fatalf("release.yml must define RELEASE_REPO exactly once")
+	}
+	if m[1] != updatersource.ReleaseRepo {
+		t.Fatalf("workflow RELEASE_REPO %q != build-time constant %q", m[1], updatersource.ReleaseRepo)
+	}
+	if !strings.Contains(updatersource.ReleaseRepo, "vlautoagenttraderv1") {
+		t.Fatalf("the partner build's release source must be the partner repo")
+	}
+	if strings.Contains(updatersource.ReleaseRepo, "johnwick2921-cyber/nofx") {
+		t.Fatalf("the partner release source must never be the nofx repo")
+	}
+}
+
+// B3 — the partner tree's allowed_signers must NEVER carry the nofx public
+// key. Until the owner installs the partner key at B2, the file holds only a
+// placeholder, and a manifest signed by any other key (including nofx's) is
+// refused by the same verification the box runs.
+func TestPartnerAllowedSignersNeverShipTheNofxKey(t *testing.T) {
+	a := repoFile(t, "deploy/release_allowed_signers")
+	if strings.Contains(a, "IFAnymAm3evz") { // nofx's vl-release public key fingerprint body
+		t.Fatalf("the nofx public key must never appear in the partner allowed_signers")
+	}
+	if !strings.Contains(a, "partner-release") {
+		t.Fatalf("allowed_signers must name the partner principal line")
+	}
+}
+
+func TestForeignKeySignedManifestIsRefused(t *testing.T) {
+	if _, err := exec.LookPath("ssh-keygen"); err != nil {
+		t.Skipf("ssh-keygen not available: %v", err)
+	}
+	dir := t.TempDir()
+	foreign := releasefixture.NewSigner(t, dir, "foreign-nofx-sim")
+	partner := releasefixture.NewSigner(t, dir, "partner")
+	msg := []byte("activation manifest under test\n")
+	sig := foreign.Sign(t, writeMsg(t, dir, "m.json", msg), "release")
+
+	allowed := releasefixture.WriteAllowedSigners(t, dir, "release "+partner.Pub)
+	if _, err := updaterworker.VerifySSHSIG(msg, sig, allowed); err == nil {
+		t.Fatalf("a manifest signed by a key NOT in the partner allowed_signers (e.g. nofx's) must be REFUSED")
+	}
+	// The partner key itself verifies — the refusal above is about the KEY,
+	// not a broken verification path.
+	sig2 := partner.Sign(t, writeMsg(t, dir, "m2.json", msg), "release")
+	if _, err := updaterworker.VerifySSHSIG(msg, sig2, allowed); err != nil {
+		t.Fatalf("the partner key must verify against its own allowed_signers: %v", err)
+	}
+}
+
+func writeMsg(t *testing.T, dir, name string, content []byte) string {
+	t.Helper()
+	p := filepath.Join(dir, name)
+	if err := os.WriteFile(p, content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return p
 }
 
 func TestReleaseWorkflowEnforcesCleanVcsStampAndTheGuideRev(t *testing.T) {

@@ -43,6 +43,8 @@ jobs:
   # broker, and the verdict is read off the DATABASE rather than the process
   # (with no NT8 a binary is not expected to stay up).
   dbcompat:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     outputs:
@@ -90,6 +92,8 @@ jobs:
 
   release:
     needs: [dbcompat]
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     if: ${{ false }}  # PARTNER CARVE-OUT: this job can never fire
     # The protected Environment carries the owner as a REQUIRED REVIEWER and
