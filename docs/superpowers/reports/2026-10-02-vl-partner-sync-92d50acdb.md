@@ -3,12 +3,16 @@
 - Source: nofx `92d50acdb` ("Merge pull request #293 … release2", password
   install booted 10:17 CT 2026-10-02).
 - Branch: `sync/vl-92d50acdb-20261002`, stacked on `sync/vl-pb-pc-20261002`
-  (PR #18).
+  @ `1f50c8687` (PR #18, rebased by DS-106 onto #16 head `638556547`;
+  base move only, tree identical) — quoted as the PR base.
 - Method: tree-level net-diff (`git ls-tree -r --format='%(objectname) %(path)'`)
   between nofx@92d50acdb and the partner head. 4,576 paths byte-identical;
-  69 paths taken from nofx (50 overwrites + 19 adds); the 9 remaining
-  differences are the partner carve-outs below — every path, blob sha, and
-  reason.
+  69 paths taken from nofx (50 overwrites + 19 adds), including the P0
+  test-isolation guard
+  `internal/updaterbootstrap/home_isolation_guard_test.go` (nofx blob
+  `8178a19f4078…`, commit `a0470035a` ancestor of `92d50acdb` [A]) — present
+  and byte-identical in the partner tree. The 9 remaining differences are the
+  partner carve-outs below — every path, blob sha, and reason.
 
 ## Match table (the ONLY differences)
 
