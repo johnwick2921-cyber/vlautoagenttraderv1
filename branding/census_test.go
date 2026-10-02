@@ -88,17 +88,35 @@ var censusTable = map[string][]censusEntry{
 	"deploy/vl-lock-test.sh": {
 		{count: 15, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
+	"branding/census_test.go": {
+		{count: 9, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
+	},
 	"deploy/release_contract_test.go": {
-		{count: 14, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 31, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
+	},
+	"deploy/release_allowed_signers": {
+		{count: 1, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
 	},
 	"deploy/install-updater-worker.sh": {
-		{count: 13, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 12, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
 	},
 	"deploy/planner-ab-report.sh": {
 		{count: 13, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
+	"internal/updaterbootstrap/workertoken.go": {
+		{count: 2, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
+	},
 	"internal/activation/steps_test.go": {
 		{count: 13, phase: "R5", reason: "transitional — re-pinned at final"},
+	},
+	"docs/superpowers/reports/2026-09-22-vl-partner-verification.md": {
+		{count: 5, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
+	},
+	"docs/superpowers/reports/2026-10-02-vl-partner-sync-92d50acdb.md": {
+		{count: 7, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
+	},
+	"docs/superpowers/runbooks/2026-09-22-vl-partner-update.md": {
+		{count: 10, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
 	},
 	"logger/log_prune_test.go": {
 		{count: 13, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -111,16 +129,6 @@ var censusTable = map[string][]censusEntry{
 	},
 	"internal/updaterworker/harness_test.go": {
 		{count: 12, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	// ONE-BUTTON P-A/P-E additions (integration, 2026-10-02): the VL_ env
-	// prefix and its legacy fallback, and the ReleaseRepo constant — the
-	// census counts the token in every tracked file. (The reasons below
-	// spell nothing out so this file itself stays at zero.)
-	"internal/updaterbootstrap/workertoken.go": {
-		{count: 2, phase: "final", reason: "P-E worker-token env reads (VL_ prefix + legacy fallback)"},
-	},
-	"internal/updatersource/source.go": {
-		{count: 1, phase: "final", reason: "P-A ReleaseRepo constant value"},
 	},
 	"api/release_dir_test.go": {
 		{count: 11, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -662,7 +670,8 @@ var censusTable = map[string][]censusEntry{
 }
 
 // Ceiling = sum of allowed counts at the R1b merge (1160).
-const censusCeiling = 1160
+// 2026-10-02 PARTNER-SYNC-1002 (CTO ruling): partner-only content, exact counts, ceiling = exact sum; nofx-side census unchanged.
+const censusCeiling = 1206
 
 func TestCensusGuard(t *testing.T) {
 	tok := "no" + "fx" // runtime assembly — never the literal
