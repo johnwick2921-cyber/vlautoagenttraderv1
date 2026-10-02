@@ -16,6 +16,7 @@ type wantRow struct {
 	fail   State
 	cancel bool
 	parks  bool
+	extra  []State // F2 ExtraFailure edges (last: positional literals stay valid)
 }
 
 var wantOrder = []State{
@@ -26,25 +27,25 @@ var wantOrder = []State{
 }
 
 var wantTable = map[State]wantRow{
-	StateRequested:       {EffectNone, []State{StateDownloaded}, "", true, false},
-	StateDownloaded:      {EffectDownload, []State{StateVerified}, StateRefused, true, false},
-	StateVerified:        {EffectVerify, []State{StatePreflightOK}, StateRefused, true, false},
-	StatePreflightOK:     {EffectPreflight, []State{StateMaintenanceHeld}, StateRefused, true, false},
-	StateMaintenanceHeld: {EffectHold, []State{StateDrainedAcked}, StateRefused, false, false},
-	StateDrainedAcked:    {EffectDrain, []State{StateGateOK}, StateRecoveryNeeded, false, false},
-	StateGateOK:          {EffectGate, []State{StateBackupDone}, StateRecoveryNeeded, false, false},
-	StateBackupDone:      {EffectBackup, []State{StateNT8Skipped, StateNT8Updated}, StateRecoveryNeeded, false, false},
-	StateNT8Skipped:      {EffectNT8, []State{StateActivated}, StateRecoveryNeeded, false, false},
-	StateNT8Updated:      {EffectNT8, []State{StateActivated}, StateRecoveryNeeded, false, true},
-	StateActivated:       {EffectActivate, []State{StateBooted}, StateRollingBack, false, false},
-	StateBooted:          {EffectWatch, []State{StateBootVerified}, StateRollingBack, false, false},
-	StateBootVerified:    {EffectBootVerify, []State{StateComplete}, StateRollingBack, false, false},
-	StateComplete:        {EffectReleaseHold, nil, StateRecoveryNeeded, false, false},
-	StateRollingBack:     {EffectRollback, []State{StateRolledBack}, StateRecoveryNeeded, false, false},
-	StateRolledBack:      {EffectReleaseHold, nil, StateRecoveryNeeded, false, false},
-	StateRecoveryNeeded:  {EffectNone, nil, "", false, false},
-	StateCancelled:       {EffectNone, nil, "", false, false},
-	StateRefused:         {EffectNone, nil, "", false, false},
+	StateRequested:       {eff: EffectNone, succ: []State{StateDownloaded}, cancel: true},
+	StateDownloaded:      {eff: EffectDownload, succ: []State{StateVerified}, fail: StateRefused, cancel: true},
+	StateVerified:        {eff: EffectVerify, succ: []State{StatePreflightOK}, fail: StateRefused, cancel: true},
+	StatePreflightOK:     {eff: EffectPreflight, succ: []State{StateMaintenanceHeld}, fail: StateRefused, cancel: true},
+	StateMaintenanceHeld: {eff: EffectHold, succ: []State{StateDrainedAcked}, fail: StateRefused},
+	StateDrainedAcked:    {eff: EffectDrain, succ: []State{StateGateOK}, fail: StateRecoveryNeeded, extra: []State{StateRefused}},
+	StateGateOK:          {eff: EffectGate, succ: []State{StateBackupDone}, fail: StateRecoveryNeeded, extra: []State{StateRefused}},
+	StateBackupDone:      {eff: EffectBackup, succ: []State{StateNT8Skipped, StateNT8Updated}, fail: StateRecoveryNeeded},
+	StateNT8Skipped:      {eff: EffectNT8, succ: []State{StateActivated}, fail: StateRecoveryNeeded},
+	StateNT8Updated:      {eff: EffectNT8, succ: []State{StateActivated}, fail: StateRecoveryNeeded, parks: true},
+	StateActivated:       {eff: EffectActivate, succ: []State{StateBooted}, fail: StateRollingBack},
+	StateBooted:          {eff: EffectWatch, succ: []State{StateBootVerified}, fail: StateRollingBack},
+	StateBootVerified:    {eff: EffectBootVerify, succ: []State{StateComplete}, fail: StateRollingBack},
+	StateComplete:        {eff: EffectReleaseHold, fail: StateRecoveryNeeded},
+	StateRollingBack:     {eff: EffectRollback, succ: []State{StateRolledBack}, fail: StateRecoveryNeeded},
+	StateRolledBack:      {eff: EffectReleaseHold, fail: StateRecoveryNeeded},
+	StateRecoveryNeeded:  {eff: EffectNone},
+	StateCancelled:       {eff: EffectNone},
+	StateRefused:         {eff: EffectNone},
 }
 
 var phases = []Phase{PhaseStarted, PhaseDone}
@@ -265,7 +266,15 @@ func legalMove(from State, p Phase, to State) bool {
 		}
 		return false
 	}
-	return to == w.fail
+	if to == w.fail {
+		return true
+	}
+	for _, s := range w.extra {
+		if s == to {
+			return true
+		}
+	}
+	return false
 }
 
 // TestTransitionValidatorAllowsOnlyTableEdges: every (from, phase, to) over
@@ -304,7 +313,9 @@ func TestTransitionValidatorAllowsOnlyTableEdges(t *testing.T) {
 		{StateDownloaded, PhaseStarted, StateVerified, "success before the receipt is persisted"},
 		{StateActivated, PhaseDone, StateCancelled, "cancel past the boundary"},
 		{StateMaintenanceHeld, PhaseStarted, StateCancelled, "cancel while the hold may be on disk"},
-		{StateDrainedAcked, PhaseStarted, StateRefused, "refused after a hold"},
+		// F2: drained_acked/gate_ok → refused is now a LEGAL edge (the step
+		// releases the hold BEFORE refusing on planner-wait expiry). Refused from
+		// every other post-boundary state stays forbidden.
 		{StateActivated, PhaseStarted, StateRefused, "refused after the swap began"},
 		{StateComplete, PhaseDone, StateRecoveryNeeded, "a finished job moves"},
 		{StateCancelled, PhaseDone, StateDownloaded, "a finished job restarts"},

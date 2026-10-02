@@ -938,6 +938,23 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// P-E E2: a cutover-worker token is admitted ONLY on its two
+		// read-only routes, and only while its mint epoch is current.
+		// Deny-by-default here is what makes the long-lived worker
+		// credential safe: every other route 403s it, force-flat
+		// included (pinned by TestCutoverWorkerTokenIsRefusedOnEveryOtherRoute).
+		if claims.Scope == auth.ScopeCutoverWorker {
+			if !workerTokenAllowed(c.FullPath()) {
+				credentialForbid(c, "cutover-worker token outside its two routes")
+				return
+			}
+			wte, err := auth.CurrentWorkerEpoch()
+			if err != nil || claims.WTE < wte {
+				credentialForbid(c, "cutover-worker token predates the worker epoch")
+				return
+			}
+		}
+
 		// Store user information in context (user_id, email and the claims
 		// the credential guard reads — credential_guard.go).
 		setAuthContext(c, claims)

@@ -1,460 +1,471 @@
-# CR-C disposition table — web + docs (crypto removal, part CR-C, regenerated at the integrated head)
+# disposition-CR-C.md
 
-- branch point: b6648fcab9cf495e316ef5492ec6852cc3fcc2cf (integration head branched from)
-- integrator tip at generation: ce4cb71ed65c9a301625b33b239633b2231ada48 (regenerated at the integrated head; provenance: branch + sha only)
-- paths: web docs :(exclude)docs/crypto-removal
+- branch point: 2fff83d6e226a27a4caf763d8549c71e4089c479 (crypto-residue-integration head)
+- integrator tip at generation: bc23c226cc5954262400017b30b398b1a449a6f3 (last web-touching commit; table excluded from the scoped diff)
 - regex: binance|bybit|okx|bitget|kucoin|gate\.io|gateio|indodax|hyperliquid|\baster\b|asterdex|\blighter\b|coinank|usdc|usdt|x402|claw402|blockrun|wallet|ai500|hyper_all|hyper_main|oi_top|oi_low|netflow|quant\b|price ranking|"mixed"|币安|欧易|火币|U本位|永续|btc|ethusdt|\beth\b|altcoin|ethereum
-- line rows: 243 · blanket-KEEP paths: 207
+- generated: crypto-removal-cr-c-repin@bc23c226cc5954262400017b30b398b1a449a6f3 2026-10-02T08:08:41.646780+00:00 by DS-105
+- paths: web docs :(exclude)docs/crypto-removal
+- line rows: 245 · blanket-KEEP paths: 213
 
-| path | line | token | disposition | owner | reason |
+| path | line | token | disposition | OWNER | reason |
 |---|---|---|---|---|---|
-| docs/ONBOARDING.md | 12 | `Binance` | KEEP | CR-C | origin statement (history), not a capability claim — CTO ruling 10-01 19:48 |
-| docs/README-VL-SYSTEM.md | 359 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/AGENT_CURRENT_DESIGN.zh-CN.md | 261 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.md | 242 | `altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.md | 243 | `btc` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.md | 251 | `altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.md | 252 | `btc` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.md | 643 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.md | 644 | `Altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.md | 645 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.md | 646 | `Altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.zh-CN.md | 242 | `altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.zh-CN.md | 243 | `btc` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.zh-CN.md | 251 | `altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.zh-CN.md | 252 | `btc` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.zh-CN.md | 643 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.zh-CN.md | 644 | `Altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.zh-CN.md | 645 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/architecture/STRATEGY_MODULE.zh-CN.md | 646 | `Altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/guides/TROUBLESHOOTING.zh-CN.md | 32 | `btc` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/guides/TROUBLESHOOTING.zh-CN.md | 33 | `altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/en/PRIVACY POLICY.md | 54 | `Binance` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/en/PRIVACY POLICY.md | 57 | `Ethereum` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/en/PRIVACY POLICY.md | 58 | `wallet` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/en/PRIVACY POLICY.md | 71 | `Binance` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/en/PRIVACY POLICY.md | 74 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/en/TERMS OF SERVICE.md | 89 | `WALLET` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/en/TERMS OF SERVICE.md | 102 | `BINANCE` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/ja/PRIVACY POLICY.md | 54 | `Binance` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/ja/PRIVACY POLICY.md | 57 | `Hyperliquid` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/ja/PRIVACY POLICY.md | 71 | `Binance` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/ja/PRIVACY POLICY.md | 74 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/i18n/ja/TERMS OF SERVICE.md | 83 | `Binance` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/internal/external-reviews/2026-05-28-comparison-vs-canonical-plan.md | 139 | `ETH` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/internal/external-reviews/2026-05-28-end-to-end-architecture.md | 106 | `altcoin` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/internal/inventory/page-2-agentbeta.md | 138 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/internal/inventory/page-5-strategy.md | 100 | `Quant` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/internal/inventory/page-5-strategy.md | 109 | `btc` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/internal/inventory/page-5-strategy.md | 110 | `btc` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/internal/inventory/page-5-strategy.md | 218 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/operations/MONITORING.md | 27 | `ETH` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-01-14-grid-trading-fixes.md | 574 | `Wallet` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-agent-redesign.md | 760 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-agent-redesign.md | 772 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-agent-redesign.md | 778 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-agent-redesign.md | 1035 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-agent-redesign.md | 1037 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-bot.md | 628 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-bot.md | 880 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-bot.md | 1052 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-bot.md | 1188 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/plans/2026-03-06-telegram-bot.md | 1189 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/AI-Trader-Analysis-Report.md | 1760 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/AI-Trader-Analysis-Report.md | 1761 | `ETH` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/AI-Trader-Analysis-Report.md | 2131 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/AI-Trader-Analysis-Report.md | 2164 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/plan-card/Strategy-Studio-Complete-Plan.md | 85 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/plan-card/Strategy-Studio-Complete-Plan.md | 141 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/plan-card/VL_Trading_System_Final_Build_Plan_v5-(1).md | 2474 | `ETH` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/plan-card/VL_Trading_System_Final_Build_Plan_v5-(1).md | 2495 | `quant` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/research/plan-card/VL_Trading_System_Final_Build_Plan_v5-(1).md | 2689 | `quant` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md | 5800 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md | 6012 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md | 6326 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md | 6341 | `BTC` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md | 9878 | `btc` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| web/CLAUDE.md | 30 | `USDT` | KEEP | CR-C | subsystem CLAUDE.md — agent instructions, byte-identical to dev; CTO drafts any update for the owner (KEEP) |
-| web/CLAUDE.md | 31 | `USDT` | KEEP | CR-C | subsystem CLAUDE.md — agent instructions, byte-identical to dev; CTO drafts any update for the owner (KEEP) |
-| web/CLAUDE.md | 33 | `USDT` | KEEP | CR-C | subsystem CLAUDE.md — agent instructions, byte-identical to dev; CTO drafts any update for the owner (KEEP) |
-| web/CLAUDE.md | 34 | `Aster` | KEEP | CR-C | subsystem CLAUDE.md — agent instructions, byte-identical to dev; CTO drafts any update for the owner (KEEP) |
-| web/CLAUDE.md | 35 | `USDT` | KEEP | CR-C | subsystem CLAUDE.md — agent instructions, byte-identical to dev; CTO drafts any update for the owner (KEEP) |
-| web/README.md | 92 | `Binance` | KEEP | CR-C | historical doc — not shipped code, KEEP byte-identical |
-| web/package-lock.json | 3812 | `okX` | KEEP | CR-C | npm integrity hash — incidental base64 substring, KEEP byte-identical |
-| web/package-lock.json | 4158 | `oKX` | KEEP | CR-C | npm integrity hash — incidental base64 substring, KEEP byte-identical |
-| web/src/components/agent/PositionsPanel.tsx | 5 | `Wallet` | KEEP | CR-C | lucide icon name restored per CTO ruling (original name — KEEP) |
-| web/src/components/agent/PositionsPanel.tsx | 46 | `Wallet` | KEEP | CR-C | lucide icon name restored per CTO ruling (original name — KEEP) |
-| web/src/components/auth/LoginRequiredOverlay.tsx | 53 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/components/auth/LoginRequiredOverlay.tsx | 98 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/components/charts/EquityChart.tsx | 85 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/components/charts/EquityChart.tsx | 103 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/components/charts/EquityChart.tsx | 138 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/components/charts/EquityChart.tsx | 259 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/components/common/DeepVoidBackground.tsx | 20 | `lighter` | KEEP | CR-C | incidental English word (lighter) — not the venue |
-| web/src/components/common/HeaderBar.tsx | 181 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/components/common/HeaderBar.tsx | 193 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/components/common/HeaderBar.tsx | 256 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/components/plan/P4_3.test.tsx | 255 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/components/strategy/CoinSourceEditor.tsx | 231 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/components/strategy/RiskControlEditor.tsx | 474 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 477 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 482 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 485 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 498 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 511 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 514 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 519 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 522 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 535 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 568 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 571 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 578 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 594 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 597 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/RiskControlEditor.tsx | 604 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/components/strategy/StrategyTradingBadge.tsx | 37 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/components/strategy/TokenEstimateBar.tsx | 129 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/components/trader/LedgerDayPnl.test.tsx | 12 | `wallet` | KEEP | CR-C | NT8 account-snapshot shape — balance key family (CTO ruling, byte-identical) |
-| web/src/components/trader/TradersList.tsx | 54 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/components/ui/alert-dialog.tsx | 107 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/components/ui/input.tsx | 15 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/guide/GuidePage.test.tsx | 26 | `hyper_all` | KEEP | CR-C | historical knob-census comment inside the count assertion |
-| web/src/guide/GuidePage.test.tsx | 27 | `quant` | KEEP | CR-C | historical knob-census comment inside the count assertion |
-| web/src/guide/content/settings.ts | 557 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/guide/content/settings.ts | 562 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/guide/content/settings.ts | 563 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/guide/content/settings.ts | 726 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/guide/content/settings.ts | 730 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.labels.test.ts | 109 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.labels.test.ts | 110 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.labels.test.ts | 113 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.labels.test.ts | 114 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.labels.test.ts | 115 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 324 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 325 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 326 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 327 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 329 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 334 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 336 | `Altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 337 | `Altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 339 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 354 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 355 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 356 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 357 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 359 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 364 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 366 | `Altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 367 | `Altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/strategy-translations.ts | 369 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 282 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 283 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 285 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 294 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 295 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 1601 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 1602 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 1603 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 1612 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 1613 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 2866 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 2867 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 2869 | `BTC` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 2879 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/i18n/translations.ts | 2880 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/index.css | 49 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 50 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 51 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 52 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 53 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 54 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 55 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 175 | `Binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 297 | `Binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 305 | `Binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 330 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 331 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 336 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 341 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 342 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 347 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 353 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 354 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 361 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 386 | `Binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 483 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 518 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 525 | `Binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 526 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 616 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 649 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 656 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 663 | `Binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 664 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 667 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 668 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 672 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 681 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 682 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 687 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 692 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 697 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 698 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 699 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 703 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 704 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 705 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 722 | `Binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 723 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 724 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 735 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 736 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 741 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 742 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 748 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 749 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 759 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 762 | `Binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 810 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 814 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 815 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 816 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 820 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 821 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 822 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 827 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 831 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 888 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 916 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/index.css | 944 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/lib/registrationToggle.test.ts | 157 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/lib/registrationToggle.test.ts | 158 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/lib/registrationToggle.test.ts | 168 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/lib/registrationToggle.test.ts | 169 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/pages/StrategyStudioPage.tsx | 1091 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/pages/StrategyStudioPage.tsx | 1237 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/pages/StrategyStudioPage.tsx | 1284 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/pages/StrategyStudioPage.tsx | 1366 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/pages/StrategyStudioPage.tsx | 1496 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/pages/StrategyStudioPage.tsx | 1497 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/pages/StrategyStudioPage.tsx | 1521 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| web/src/pages/TraderDashboardPage.test.tsx | 86 | `binance` | KEEP | CR-C | CSS token/class name restored per CTO removal-only ruling (names that stay are NOT renamed — KEEP) |
-| web/src/types/config.ts | 81 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/types/config.ts | 82 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/types/strategy.ts | 285 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/types/strategy.ts | 286 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/types/strategy.ts | 290 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/types/strategy.ts | 291 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/types/strategy.ts | 295 | `USDT` | KEEP | CR-C | grid type comment restored with the cr-c3 file restore (grid is live futures) — legacy value-currency naming |
-| web/src/types/trading.ts | 20 | `wallet` | KEEP | CR-C | NT8 account-snapshot shape — balance key family (CTO ruling, byte-identical) |
-| web/src/types/trading.ts | 162 | `btc` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/src/types/trading.ts | 163 | `altcoin` | KEEP | CR-C | risk-cap knob family (union-gate risk-cap canary) |
-| web/tailwind.config.js | 19 | `lighter` | KEEP | CR-C | incidental color-token name — not the venue |
-| docs/superpowers/reports/2026-06-02-strategy-studio-universal-futures-map.md | - | `count=52` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-14-dayplan-recon.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-16-acceptance-gate-v2.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-16-security-p0-fix.md | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-18-timegate-audit-ai-timeout.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-18-total-sweep.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-19-aug14-bisect.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-19-controls-runtime-verify.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-19-partner-vs-us.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-19-strategy-controls-census.md | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-19-timezone-ct-canonical.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-19-total-root-cause.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-20-brand-census-docs-brand-census.md | - | `count=298` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-20-brand-census.md | - | `count=298` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-20-forensic-multiagent.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-25-1h-timeframe-research-wave.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-26-settings-census.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-26-volume-wave-phase0-stop.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-26-winrate-packA-implementation.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-27-london-drought.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-27-mega-research-mnq.md | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-28-grand-audit.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-28-london-forensics-fix-wave.md | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-28-london-forensics.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-29-f1-dependency-vuln-scan.md | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-29-total-audit-15.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-30-knob-census.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-08-30-massive-move-audit.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-01-class35-replan-budget.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-01-full-system-audit.md | - | `count=8` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-01-pnl-truth-wave.md | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-02-bar-source-audit.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-03-clock-seam-flake-sweep.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-03-rebrand-census.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-03-studio-audit.md | - | `count=7` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-04-partner-sync-data/content-diff-stat.txt | - | `count=20` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-04-partner-sync-data/partner-only-commits.txt | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-04-research-conformance-data/grid-family-knobs-adversarial.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-04-research-conformance-data/guardrails-d9-measurements.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-04-research-conformance-data/guardrails-sizing-rules.csv | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-04-research-conformance-data/knob_registry_labels.csv | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-04-research-conformance-data/knoblive.txt | - | `count=17` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-03-decisions-data/revise/r12_code_a.out | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-04-monitoring-complete.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q11_log_0903_reconnect.out | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q15_boot_lines.out | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q16_boot_block_0904.out | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q20_log_0904_1219.out | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q46_log_eod.out | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-04-monitoring.md | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-05-execution-data/log_arm35.out | - | `count=39` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-05-execution-data/q05_fills_orders.out | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-06-risk-data/q09_strategy_knobs.out | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/api-resolved.json | - | `count=17` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/executor-37768-input_prompt.txt | - | `count=10` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/prompt-boundaries.csv | - | `count=10` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/saved-trading-settings.json | - | `count=16` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-07-prompts-data/api_config_resolved_trader.json | - | `count=17` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-07-prompts-data/q18_strategy_values.txt | - | `count=16` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-07-prompts-data/rendered_executor_input_prompt_dr37768_2026-09-04_1327CT.txt | - | `count=10` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-07-prompts.md | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/offline.mod | - | `count=8` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/offline.sum | - | `count=16` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-08-stretch-data/q18_0904_feed_link.txt | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-09-complete-data/q01_context.json | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-vet-09-complete-data/q03_proxy_sensitivity.py | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-05-veteran-part-c.md | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-06-v5-precheck-panels.md | - | `count=30` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-06-v5-precheck.md | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-07-order-truth.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-brand-visible-data/candidate.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-brand-visible-data/production-call-sites.json | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-brand-visible-data/source-freshness.json | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-brand-visible-data/visible-strings.patch | - | `count=70` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-confirmation-truth-data/dist-manifest.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-confirmation-truth-data/merged-suite-go.log | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-scenario-economics-cutover-data/candidate.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-scenario-economics-data/candidate-build.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-stage-a-path-repair-data/candidate.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-stage-a-path-repair-data/full-go.log | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/dist-manifest.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/full-go.log | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/production-call-census.json | - | `count=200` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-the-strategy-data/runtime-final.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-08-the-strategy-data/runtime.json | - | `count=17` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-09-arm-state-predicate-data/go-test.txt | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-10-identity-chart-discontinuity.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-10-scenario-level-identity-data/candidate-dist-manifest.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-10-scenario-level-identity-data/cutover-buildinfo.txt | - | `count=7` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-10-scenario-level-identity-data/cutover-go-merged.txt | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-10-scenario-level-identity-data/go-aa145338.txt | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-10-scenario-level-identity-data/go-before-guard-correction.txt | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-10-scenario-level-identity-data/go-w2-final.txt | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-11-cleanup-batch-2.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-11-historical-backfill.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-11-level-zones-evidence/go-suite-fixtures-fixed.txt | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-11-level-zones-evidence/merged-go-suite.txt | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-12-structural-stop.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-12-structural-stop/evidence/dist-manifest.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-12-structural-stop/evidence/logs/go-full-final.log | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-12-structural-stop/evidence/logs/go-merged-final.log | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-12-structural-stop/evidence/logs/go-release.log | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-12-structural-stop/evidence/postboot-gate.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-12-structural-stop/evidence/pre-kill-gate.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-crypto-security-repair.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/CTO-REPORT.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/FULL-AUDIT.md | - | `count=168` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/REPAIR-STATUS.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/cgc-file-paths.json | - | `count=101` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/cgc-normalize-callers.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/file-inventory.json | - | `count=115` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/frontend-functions.json | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/go-calls.tsv | - | `count=7145` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/go-functions.tsv | - | `count=725` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/go-imports.tsv | - | `count=686` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/graph-freshness.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/orientation/vl-market-reads.json | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/orientation/vl-market-understanding.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/python-functions.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/review-plan.json | - | `count=75` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/01/functions.json | - | `count=59` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/01/reads.json | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/01/report.md | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/02/functions.json | - | `count=23` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/02/reads.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/02/report.md | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/03/functions.json | - | `count=31` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/03/reads.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/03/report.md | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/04/functions.json | - | `count=38` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/04/reads.json | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/04/report.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/05/functions.json | - | `count=19` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/05/graph.json | - | `count=15` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/05/reads.json | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/05/report.md | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/build.py | - | `count=42` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/functions.json | - | `count=416` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/graph.json | - | `count=13` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/reads.json | - | `count=42` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/report.md | - | `count=34` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/build_artifacts.py | - | `count=35` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/functions.json | - | `count=372` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/graph.json | - | `count=10` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/reads.json | - | `count=37` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/report.md | - | `count=34` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/08/functions.json | - | `count=21` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/08/graph.json | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/08/reads.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/08/report.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/09/functions.json | - | `count=45` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/09/graph.json | - | `count=34` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/09/reads.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/09/report.md | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/12/functions.json | - | `count=236` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/12/graph.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/12/reads.json | - | `count=35` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/12/report.md | - | `count=42` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/13/functions.json | - | `count=145` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/13/graph.json | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/13/reads.json | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/13/report.md | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/14/build_artifacts.py | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/14/functions.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/14/report.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/15/functions.json | - | `count=15` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/15/report.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/16/functions.json | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/18/functions.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/19/functions.json | - | `count=29` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/19/graph.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/19/reads.json | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/19/report.md | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/22/functions.json | - | `count=22` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/22/graph.json | - | `count=37` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/22/reads.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/22/report.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/23/functions.json | - | `count=24` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/23/graph.json | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/23/report.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/25/functions.json | - | `count=33` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/25/graph.json | - | `count=8` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/25/reads.json | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/25/report.md | - | `count=9` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/26/functions.json | - | `count=9` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/26/graph.json | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/26/report.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/27/functions.json | - | `count=22` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/27/graph.json | - | `count=9` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/27/reads.json | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/27/report.md | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/28/functions.json | - | `count=58` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/28/graph.json | - | `count=19` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/28/reads.json | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/28/report.md | - | `count=8` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repo-understanding/reviews/29/functions.json | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-repository-repairs/README.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-structural-stop-daily-loss-evidence/dist-manifest.json | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-structural-stop-daily-loss-evidence/go-merged.log | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-structural-stop-daily-loss-evidence/go-race-full.log | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-13-web-state-repairs/README.md | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-16-nt8-history-and-chart-depth.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-20-picture-htf-wave-evidence.md | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/2026-09-26-labels-ledger.csv | - | `count=16` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/reports/exports/2026-09-02-losses/decisions.csv | - | `count=5318` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/research/2026-09-12-stop-target-geometry/README.md | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
-| docs/superpowers/research/2026-09-16-round-23/s4_analysis.py | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/ONBOARDING.md` | 12 | `Binance` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/README-VL-SYSTEM.md` | 359 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/AGENT_CURRENT_DESIGN.zh-CN.md` | 261 | `BTC` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.md` | 242 | `altcoin` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.md` | 243 | `btc` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.md` | 251 | `altcoin` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.md` | 252 | `btc` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.md` | 643 | `BTC` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.md` | 644 | `Altcoin` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.md` | 645 | `BTC` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.md` | 646 | `Altcoin` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.zh-CN.md` | 242 | `altcoin` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.zh-CN.md` | 243 | `btc` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.zh-CN.md` | 251 | `altcoin` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.zh-CN.md` | 252 | `btc` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.zh-CN.md` | 643 | `BTC` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.zh-CN.md` | 644 | `Altcoin` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.zh-CN.md` | 645 | `BTC` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/architecture/STRATEGY_MODULE.zh-CN.md` | 646 | `Altcoin` | KEEP | CR-C | architecture doc — futures-only rewrite — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/guides/TROUBLESHOOTING.zh-CN.md` | 32 | `btc` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/guides/TROUBLESHOOTING.zh-CN.md` | 33 | `altcoin` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/i18n/en/PRIVACY POLICY.md` | 54 | `Binance` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/en/PRIVACY POLICY.md` | 57 | `Ethereum` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/en/PRIVACY POLICY.md` | 58 | `wallet` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/en/PRIVACY POLICY.md` | 71 | `Binance` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/en/PRIVACY POLICY.md` | 74 | `BTC` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/en/TERMS OF SERVICE.md` | 89 | `WALLET` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/en/TERMS OF SERVICE.md` | 102 | `BINANCE` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/ja/PRIVACY POLICY.md` | 54 | `Binance` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/ja/PRIVACY POLICY.md` | 57 | `Hyperliquid` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/ja/PRIVACY POLICY.md` | 71 | `Binance` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/ja/PRIVACY POLICY.md` | 74 | `BTC` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/i18n/ja/TERMS OF SERVICE.md` | 83 | `Binance` | KEEP | CR-C | legal policy translation — out of scope this wave |
+| `docs/internal/external-reviews/2026-05-28-comparison-vs-canonical-plan.md` | 139 | `ETH` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/internal/external-reviews/2026-05-28-end-to-end-architecture.md` | 106 | `altcoin` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/internal/inventory/page-2-agentbeta.md` | 138 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/internal/inventory/page-5-strategy.md` | 100 | `Quant` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/internal/inventory/page-5-strategy.md` | 109 | `btc` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/internal/inventory/page-5-strategy.md` | 110 | `btc` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/internal/inventory/page-5-strategy.md` | 218 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/operations/MONITORING.md` | 27 | `ETH` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-01-14-grid-trading-fixes.md` | 574 | `Wallet` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-agent-redesign.md` | 760 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-agent-redesign.md` | 772 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-agent-redesign.md` | 778 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-agent-redesign.md` | 1035 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-agent-redesign.md` | 1037 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-bot.md` | 628 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-bot.md` | 880 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-bot.md` | 1052 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-bot.md` | 1188 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/plans/2026-03-06-telegram-bot.md` | 1189 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/AI-Trader-Analysis-Report.md` | 1760 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/AI-Trader-Analysis-Report.md` | 1761 | `ETH` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/AI-Trader-Analysis-Report.md` | 2131 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/AI-Trader-Analysis-Report.md` | 2164 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/plan-card/Strategy-Studio-Complete-Plan.md` | 85 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/plan-card/Strategy-Studio-Complete-Plan.md` | 141 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/plan-card/VL_Trading_System_Final_Build_Plan_v5-(1).md` | 2474 | `ETH` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/plan-card/VL_Trading_System_Final_Build_Plan_v5-(1).md` | 2495 | `quant` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/research/plan-card/VL_Trading_System_Final_Build_Plan_v5-(1).md` | 2689 | `quant` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md` | 5800 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md` | 6012 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md` | 6326 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md` | 6341 | `BTC` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md` | 9878 | `btc` | KEEP | CR-C | doc crypto wording — rewrite futures-only — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/CLAUDE.md` | 30 | `USDT` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/CLAUDE.md` | 31 | `USDT` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/CLAUDE.md` | 33 | `USDT` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/CLAUDE.md` | 34 | `Aster` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/CLAUDE.md` | 35 | `USDT` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/README.md` | 92 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/package-lock.json` | 3812 | `okX` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/package-lock.json` | 4158 | `oKX` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/brand-scope.test.ts` | 378 | `claw402` | KEEP | CR-C | guard pins naming the files/imports the crypto wave deleted (CTO 6952f2b44) |
+| `web/src/brand-scope.test.ts` | 379 | `wallet` | KEEP | CR-C | guard pins naming the files/imports the crypto wave deleted (CTO 6952f2b44) |
+| `web/src/components/agent/PositionsPanel.tsx` | 5 | `Wallet` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/agent/PositionsPanel.tsx` | 46 | `Wallet` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/auth/LoginRequiredOverlay.tsx` | 53 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/components/auth/LoginRequiredOverlay.tsx` | 98 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/components/charts/EquityChart.tsx` | 85 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/charts/EquityChart.tsx` | 103 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/charts/EquityChart.tsx` | 138 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/charts/EquityChart.tsx` | 259 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/common/DeepVoidBackground.tsx` | 20 | `lighter` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/common/HeaderBar.tsx` | 181 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/components/common/HeaderBar.tsx` | 193 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/components/common/HeaderBar.tsx` | 256 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/components/plan/P4_3.test.tsx` | 255 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/CoinSourceEditor.tsx` | 231 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 474 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 477 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 482 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 485 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 498 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 511 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 514 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 519 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 522 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 535 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 568 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 571 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 578 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 594 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 597 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/RiskControlEditor.tsx` | 604 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/strategy/StrategyTradingBadge.tsx` | 37 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/components/strategy/TokenEstimateBar.tsx` | 129 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/components/trader/LedgerDayPnl.test.tsx` | 12 | `wallet` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/trader/TradersList.tsx` | 54 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/ui/alert-dialog.tsx` | 107 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/components/ui/input.tsx` | 15 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/guide/GuidePage.test.tsx` | 26 | `hyper_all` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/guide/GuidePage.test.tsx` | 27 | `quant` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/guide/content/settings.ts` | 557 | `BTC` | KEEP | CR-C | guide content — C9 rewrite (crypto wording out) — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/guide/content/settings.ts` | 562 | `btc` | KEEP | CR-C | guide content — C9 rewrite (crypto wording out) — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/guide/content/settings.ts` | 563 | `BTC` | KEEP | CR-C | guide content — C9 rewrite (crypto wording out) — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/guide/content/settings.ts` | 726 | `BTC` | KEEP | CR-C | guide content — C9 rewrite (crypto wording out) — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/guide/content/settings.ts` | 730 | `BTC` | KEEP | CR-C | guide content — C9 rewrite (crypto wording out) — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.labels.test.ts` | 109 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.labels.test.ts` | 110 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.labels.test.ts` | 113 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.labels.test.ts` | 114 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.labels.test.ts` | 115 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 324 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 325 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 326 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 327 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 329 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 334 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 336 | `Altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 337 | `Altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 339 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 354 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 355 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 356 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 357 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 359 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 364 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 366 | `Altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 367 | `Altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/strategy-translations.ts` | 369 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 282 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 283 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 285 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 294 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 295 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 1601 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 1602 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 1603 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 1612 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 1613 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 2866 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 2867 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 2869 | `BTC` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 2879 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/i18n/translations.ts` | 2880 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 49 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 50 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 51 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 52 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 53 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 54 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 55 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 175 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 297 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 305 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 330 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 331 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 336 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 341 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 342 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 347 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 353 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 354 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 361 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 386 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 483 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 518 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 525 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 526 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 616 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 649 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 656 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 663 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 664 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 667 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 668 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 672 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 681 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 682 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 687 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 692 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 697 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 698 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 699 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 703 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 704 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 705 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 722 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 723 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 724 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 735 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 736 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 741 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 742 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 748 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 749 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 759 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 762 | `Binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 810 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 814 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 815 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 816 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 820 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 821 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 822 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 827 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 831 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 888 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 916 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/index.css` | 944 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/lib/registrationToggle.test.ts` | 157 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/lib/registrationToggle.test.ts` | 158 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/lib/registrationToggle.test.ts` | 168 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/lib/registrationToggle.test.ts` | 169 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/pages/StrategyStudioPage.tsx` | 1091 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/pages/StrategyStudioPage.tsx` | 1237 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/pages/StrategyStudioPage.tsx` | 1284 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/pages/StrategyStudioPage.tsx` | 1366 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/pages/StrategyStudioPage.tsx` | 1496 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/pages/StrategyStudioPage.tsx` | 1497 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/pages/StrategyStudioPage.tsx` | 1521 | `lighter` | KEEP | CR-C | existing vl-neo token — false positive of \blighter\b |
+| `web/src/pages/TraderDashboardPage.test.tsx` | 86 | `binance` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/config.ts` | 81 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/config.ts` | 82 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/strategy.ts` | 285 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/strategy.ts` | 286 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/strategy.ts` | 290 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/strategy.ts` | 291 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/strategy.ts` | 295 | `USDT` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/trading.ts` | 20 | `wallet` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/trading.ts` | 162 | `btc` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/src/types/trading.ts` | 163 | `altcoin` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `web/tailwind.config.js` | 19 | `lighter` | KEEP | CR-C | web crypto surface — CR-C row — remaining crypto residue at this head — follow-up wave (each row CTO-ruled, never generator-CUT; CTO 154-row ruling) |
+| `docs/legal/chainopera-evidence-google-search.png` | - | `count=7` | KEEP | CR-C | binary artifact — no text lines (false-positive bytes) |
+| `docs/superpowers/reports/2026-06-02-strategy-studio-universal-futures-map.md` | - | `count=52` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-14-dayplan-recon.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-16-acceptance-gate-v2.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-16-security-p0-fix.md` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-18-timegate-audit-ai-timeout.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-18-total-sweep.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-19-aug14-bisect.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-19-controls-runtime-verify.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-19-partner-vs-us.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-19-strategy-controls-census.md` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-19-timezone-ct-canonical.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-19-total-root-cause.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-20-brand-census-docs-brand-census.md` | - | `count=298` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-20-brand-census.md` | - | `count=298` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-20-forensic-multiagent.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-25-1h-timeframe-research-wave.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-26-settings-census.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-26-volume-wave-phase0-stop.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-26-winrate-packA-implementation.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-27-london-drought.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-27-mega-research-mnq.md` | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-28-grand-audit.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-28-london-forensics-fix-wave.md` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-28-london-forensics.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-29-f1-dependency-vuln-scan.md` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-29-total-audit-15.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-30-knob-census.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-08-30-massive-move-audit.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-01-class35-replan-budget.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-01-full-system-audit.md` | - | `count=8` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-01-pnl-truth-wave.md` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-02-bar-source-audit.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-03-clock-seam-flake-sweep.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-03-rebrand-census.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-03-studio-audit.md` | - | `count=7` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-04-partner-sync-data/content-diff-stat.txt` | - | `count=20` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-04-partner-sync-data/partner-only-commits.txt` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-04-research-conformance-data/grid-family-knobs-adversarial.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-04-research-conformance-data/guardrails-d9-measurements.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-04-research-conformance-data/guardrails-sizing-rules.csv` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-04-research-conformance-data/knob_registry_labels.csv` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-04-research-conformance-data/knoblive.txt` | - | `count=17` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-01-way-it-trades-complete-data/inputs.json.gz` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-03-decisions-data/revise/r12_code_a.out` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-04-monitoring-complete.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q11_log_0903_reconnect.out` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q15_boot_lines.out` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q16_boot_block_0904.out` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q20_log_0904_1219.out` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q46_log_eod.out` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-04-monitoring.md` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-05-execution-data/log_arm35.out` | - | `count=39` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-05-execution-data/q05_fills_orders.out` | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-06-risk-data/q09_strategy_knobs.out` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/api-resolved.json` | - | `count=17` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/executor-37768-input_prompt.txt` | - | `count=10` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/prompt-boundaries.csv` | - | `count=10` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/saved-trading-settings.json` | - | `count=16` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-07-prompts-data/api_config_resolved_trader.json` | - | `count=17` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-07-prompts-data/q18_strategy_values.txt` | - | `count=16` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-07-prompts-data/rendered_executor_input_prompt_dr37768_2026-09-04_1327CT.txt` | - | `count=10` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-07-prompts.md` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/offline.mod` | - | `count=8` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/offline.sum` | - | `count=16` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-08-stretch-data/q18_0904_feed_link.txt` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-09-complete-data/q01_context.json` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-vet-09-complete-data/q03_proxy_sensitivity.py` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-05-veteran-part-c.md` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-06-v5-precheck-panels.md` | - | `count=30` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-06-v5-precheck.md` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-07-order-truth.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-brand-visible-data/candidate.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-brand-visible-data/production-call-sites.json` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-brand-visible-data/source-freshness.json` | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-brand-visible-data/visible-strings.patch` | - | `count=70` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-confirmation-truth-data/dist-manifest.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-confirmation-truth-data/merged-suite-go.log` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-scenario-economics-cutover-data/candidate.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-scenario-economics-data/candidate-build.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-stage-a-path-repair-data/candidate.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-stage-a-path-repair-data/full-go.log` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/dist-manifest.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/full-go.log` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-stage-a-snapshot-data/production-call-census.json` | - | `count=200` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-the-strategy-data/runtime-final.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-08-the-strategy-data/runtime.json` | - | `count=17` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-09-arm-state-predicate-data/go-test.txt` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-10-identity-chart-discontinuity.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-10-scenario-level-identity-data/candidate-dist-manifest.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-10-scenario-level-identity-data/cutover-buildinfo.txt` | - | `count=7` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-10-scenario-level-identity-data/cutover-go-merged.txt` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-10-scenario-level-identity-data/go-aa145338.txt` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-10-scenario-level-identity-data/go-before-guard-correction.txt` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-10-scenario-level-identity-data/go-w2-final.txt` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-11-cleanup-batch-2.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-11-historical-backfill.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-11-level-zones-evidence/go-suite-fixtures-fixed.txt` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-11-level-zones-evidence/merged-go-suite.txt` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-12-structural-stop.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-12-structural-stop/evidence/dist-manifest.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-12-structural-stop/evidence/logs/go-full-final.log` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-12-structural-stop/evidence/logs/go-merged-final.log` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-12-structural-stop/evidence/logs/go-release.log` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-12-structural-stop/evidence/postboot-gate.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-12-structural-stop/evidence/pre-kill-gate.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-crypto-security-repair.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/CTO-REPORT.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/FULL-AUDIT.md` | - | `count=168` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/REPAIR-STATUS.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/cgc-file-paths.json` | - | `count=101` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/cgc-normalize-callers.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/file-inventory.json` | - | `count=115` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/frontend-functions.json` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/go-calls.tsv` | - | `count=7145` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/go-functions.tsv` | - | `count=725` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/go-imports.tsv` | - | `count=686` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/graph-freshness.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/orientation/vl-market-reads.json` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/orientation/vl-market-understanding.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/python-functions.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/review-plan.json` | - | `count=75` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/01/functions.json` | - | `count=59` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/01/reads.json` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/01/report.md` | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/02/functions.json` | - | `count=23` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/02/reads.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/02/report.md` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/03/functions.json` | - | `count=31` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/03/reads.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/03/report.md` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/04/functions.json` | - | `count=38` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/04/reads.json` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/04/report.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/05/functions.json` | - | `count=19` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/05/graph.json` | - | `count=15` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/05/reads.json` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/05/report.md` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/build.py` | - | `count=42` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/functions.json` | - | `count=416` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/graph.json` | - | `count=13` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/reads.json` | - | `count=42` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/06/report.md` | - | `count=34` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/build_artifacts.py` | - | `count=35` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/functions.json` | - | `count=372` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/graph.json` | - | `count=10` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/reads.json` | - | `count=37` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/07/report.md` | - | `count=34` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/08/functions.json` | - | `count=21` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/08/graph.json` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/08/reads.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/08/report.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/09/functions.json` | - | `count=45` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/09/graph.json` | - | `count=34` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/09/reads.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/09/report.md` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/12/functions.json` | - | `count=236` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/12/graph.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/12/reads.json` | - | `count=35` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/12/report.md` | - | `count=42` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/13/functions.json` | - | `count=145` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/13/graph.json` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/13/reads.json` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/13/report.md` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/14/build_artifacts.py` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/14/functions.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/14/report.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/15/functions.json` | - | `count=15` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/15/report.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/16/functions.json` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/18/functions.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/19/functions.json` | - | `count=29` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/19/graph.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/19/reads.json` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/19/report.md` | - | `count=4` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/22/functions.json` | - | `count=22` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/22/graph.json` | - | `count=37` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/22/reads.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/22/report.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/23/functions.json` | - | `count=24` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/23/graph.json` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/23/report.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/25/functions.json` | - | `count=33` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/25/graph.json` | - | `count=8` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/25/reads.json` | - | `count=5` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/25/report.md` | - | `count=9` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/26/functions.json` | - | `count=9` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/26/graph.json` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/26/report.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/27/functions.json` | - | `count=22` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/27/graph.json` | - | `count=9` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/27/reads.json` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/27/report.md` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/28/functions.json` | - | `count=58` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/28/graph.json` | - | `count=19` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/28/reads.json` | - | `count=6` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/28/report.md` | - | `count=8` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repo-understanding/reviews/29/functions.json` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-repository-repairs/README.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-structural-stop-daily-loss-evidence/dist-manifest.json` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-structural-stop-daily-loss-evidence/go-merged.log` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-structural-stop-daily-loss-evidence/go-race-full.log` | - | `count=14` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-13-web-state-repairs/README.md` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-16-nt8-history-and-chart-depth.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-20-picture-htf-wave-evidence.md` | - | `count=3` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/2026-09-26-labels-ledger.csv` | - | `count=16` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/reports/exports/2026-09-02-losses/decisions.csv` | - | `count=5318` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/research/2026-09-12-stop-target-geometry/README.md` | - | `count=1` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `docs/superpowers/research/2026-09-16-round-23/s4_analysis.py` | - | `count=2` | KEEP | CR-C | dated research export / generated artifact — historical record, not shipped code, KEEP byte-identical |
+| `web/public/images/guide.png` | - | `count=1` | KEEP | CR-C | binary artifact — no text lines (false-positive bytes) |
+| `web/public/images/hand-bg.png` | - | `count=2` | KEEP | CR-C | binary artifact — no text lines (false-positive bytes) |
+| `web/public/images/hand.png` | - | `count=2` | KEEP | CR-C | binary artifact — no text lines (false-positive bytes) |
+| `web/public/images/main.png` | - | `count=2` | KEEP | CR-C | binary artifact — no text lines (false-positive bytes) |
+| `web/src/components/trader/TraderConfigModal.tsx` | 434 | `'mixed' (single-quoted)` | CUT | CR-C | named trap (not regex-visible): single-quoted mixed — CUT with the trader legacy fields |
+| `web/src/components/plan/ExecutorVerdict.tsx` | 114 | `'mixed' (single-quoted)` | KEEP | CR-C | named trap (not regex-visible): web twin of the plan-state string — must stay byte-identical |

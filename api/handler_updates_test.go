@@ -101,6 +101,10 @@ func newUpdEnv(t *testing.T) *updEnv {
 	// P2-11: the login limiter is process-global; every env starts clean so
 	// one test's failed logins cannot block another's (the IP key is shared).
 	resetLoginLimiter()
+	// install-with-password lockout limiter: same process-global hygiene.
+	apiInstallPasswordLimiter.mu.Lock()
+	apiInstallPasswordLimiter.m = make(map[string]*loginLimiterEntry)
+	apiInstallPasswordLimiter.mu.Unlock()
 	return e
 }
 
@@ -347,8 +351,8 @@ func TestUpdateRoutesAreNotAdvertisedToTheAgent(t *testing.T) {
 			found++
 		}
 	}
-	if found != 5 {
-		t.Fatalf("router has %d /api/updates routes, want 5", found)
+	if found != 6 {
+		t.Fatalf("router has %d /api/updates routes, want 6 (status, check, install, install-with-password, jobs, jobs/receipt)", found)
 	}
 	re := regexp.MustCompile(`s\.route(WithSchema)?\([^)]*"/updates`)
 	for _, f := range []string{"server.go", "handler_updates.go"} {

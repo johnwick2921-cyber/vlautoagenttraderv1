@@ -195,6 +195,16 @@ var (
 		"DeviceKeyPath": {"internal/updaterbootstrap/bootstrap.go": true},
 		"SeenPath":      {},
 	}
+	// owner order 2026-10-02 07:3x CT: install with the VL password on the
+	// page — the server mints the grant only after the password proof. The
+	// ONLY Authorize reference admitted in api/ sits inside the one function
+	// below, called EXACTLY ONCE, and after an `auth.CheckPassword(...)`
+	// call whose false branch returns (judged in updateAuthOffenders); any
+	// other reference anywhere in api/ still fails (M3: the web server must
+	// never mint install grants).
+	updateAuthAuthorizeFunction = map[string]string{
+		"api/handler_updates.go": "handleUpdatesInstallWithPassword",
+	}
 	// updateAuthOpen: identifiers any admitted importer may reference.
 	updateAuthOpen = map[string]bool{
 		"Admin": true, "Grant": true, "Manifest": true, "Verifier": true, "StubVerifier": true,
@@ -271,6 +281,14 @@ func TestUpdateAuthCensusTablesArePinned(t *testing.T) {
 		"Message=;NoteExpired=api/handler_updates.go;SeenPath=;VerifyMAC=api/handler_updates.go"
 	if got := strings.Join(restricted, ";"); got != want {
 		t.Fatalf("restricted identifiers =\n%s\nwant exactly\n%s", got, want)
+	}
+	var authorizeAllowance []string
+	for file, fn := range updateAuthAuthorizeFunction {
+		authorizeAllowance = append(authorizeAllowance, file+"="+fn)
+	}
+	sort.Strings(authorizeAllowance)
+	if got := strings.Join(authorizeAllowance, ";"); got != "api/handler_updates.go=handleUpdatesInstallWithPassword" {
+		t.Fatalf("authorize allowance = %s, want exactly api/handler_updates.go=handleUpdatesInstallWithPassword", got)
 	}
 	// every classified name exists; nothing is both restricted and open
 	exported := map[string]bool{}
@@ -511,6 +529,104 @@ func updateAuthOffenders(t *testing.T, root string) (offenders []string, scanned
 			}
 		}
 
+		// owner order 2026-10-02 07:3x CT: in api/, updateauth.Authorize is
+		// admitted inside exactly ONE function — called EXACTLY ONCE — and
+		// only after an `auth.CheckPassword(...)` call in the same function
+		// whose false branch returns (judged here, AST positions, same parse),
+		// so the restricted check below is waived for it only there.
+		authorizeFn, authorizable := updateAuthAuthorizeFunction[rel]
+		if authorizable {
+			authAliases := map[string]bool{}
+			for _, im := range f.Imports {
+				ip, _ := strconv.Unquote(im.Path.Value)
+				if ip != module+"/auth" {
+					continue
+				}
+				name := "auth"
+				if im.Name != nil {
+					name = im.Name.Name
+				}
+				authAliases[name] = true
+			}
+			var fn *ast.FuncDecl
+			for _, d := range f.Decls {
+				if fd, ok := d.(*ast.FuncDecl); ok && fd.Name.Name == authorizeFn {
+					fn = fd
+				}
+			}
+			inside := func(p token.Pos) bool { return fn != nil && p >= fn.Pos() && p <= fn.End() }
+			var authorized []token.Pos
+			ast.Inspect(f, func(n ast.Node) bool {
+				sel, ok := n.(*ast.SelectorExpr)
+				if !ok {
+					return true
+				}
+				id, ok := sel.X.(*ast.Ident)
+				if !ok {
+					return true
+				}
+				if aliases[id.Name] && sel.Sel.Name == "Authorize" {
+					if inside(sel.Pos()) {
+						authorized = append(authorized, sel.Pos())
+					} else {
+						offend(rel + ": references updateauth.Authorize")
+					}
+				}
+				return true
+			})
+			// the password proof: `if !auth.CheckPassword(...) { … return }` —
+			// a CheckPassword call in the false branch that returns, inside the
+			// allowed function. Only such a call proves the password before the
+			// mint; any other CheckPassword spelling does not count.
+			var passwordProof []token.Pos
+			ast.Inspect(f, func(n ast.Node) bool {
+				ifs, ok := n.(*ast.IfStmt)
+				if !ok {
+					return true
+				}
+				u, ok := ifs.Cond.(*ast.UnaryExpr)
+				if !ok || u.Op != token.NOT {
+					return true
+				}
+				call, ok := u.X.(*ast.CallExpr)
+				if !ok {
+					return true
+				}
+				sel, ok := call.Fun.(*ast.SelectorExpr)
+				if !ok || sel.Sel.Name != "CheckPassword" {
+					return true
+				}
+				id, ok := sel.X.(*ast.Ident)
+				if !ok || !authAliases[id.Name] || !inside(sel.Pos()) {
+					return true
+				}
+				returns := false
+				ast.Inspect(ifs.Body, func(m ast.Node) bool {
+					if _, is := m.(*ast.ReturnStmt); is {
+						returns = true
+					}
+					return true
+				})
+				if returns {
+					passwordProof = append(passwordProof, sel.Pos())
+				}
+				return true
+			})
+			if len(authorized) > 1 {
+				offend(rel + ": updateauth.Authorize is called " + strconv.Itoa(len(authorized)) + " times in " + authorizeFn + " — exactly one call is admitted (owner order 2026-10-02 07:3x CT)")
+			} else if len(authorized) == 1 {
+				after := false
+				for _, cp := range passwordProof {
+					if authorized[0] > cp {
+						after = true
+					}
+				}
+				if !after {
+					offend(rel + ": updateauth.Authorize in " + authorizeFn + " must come after a successful auth.CheckPassword branch (owner order 2026-10-02 07:3x CT: install with the VL password on the page — the server mints the grant only after the password proof)")
+				}
+			}
+		}
+
 		holdsKey := false
 		ast.Inspect(f, func(n ast.Node) bool {
 			switch x := n.(type) {
@@ -523,7 +639,7 @@ func updateAuthOffenders(t *testing.T, root string) (offenders []string, scanned
 					name := x.Sel.Name
 					holdsKey = holdsKey || name == "LoadDeviceKey"
 					if allowed, restricted := updateAuthRestricted[name]; restricted {
-						if !allowed[rel] {
+						if !allowed[rel] && !(authorizable && name == "Authorize") {
 							offend(rel + ": references updateauth." + name)
 						}
 					} else if !updateAuthOpen[name] {

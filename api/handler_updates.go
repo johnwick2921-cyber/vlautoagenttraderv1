@@ -1,12 +1,14 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"vl/auth"
@@ -14,8 +16,10 @@ import (
 	"vl/internal/envcompat"
 	"vl/internal/updateauth"
 	"vl/internal/updaterjob"
+	"vl/internal/updatersource"
 	"vl/internal/updaterwire"
 	"vl/logger"
+	"vl/telemetry"
 	"vl/trader"
 
 	"github.com/gin-gonic/gin"
@@ -76,6 +80,11 @@ const maxUpdateInstallBody = 4096
 // can never stall on a half-dead socket (CTO ruling on #206 — a measured
 // value, never inferred).
 const workerProbeTimeout = 250 * time.Millisecond
+
+// checkRelayTimeout is the relay deadline for POST /api/updates/check: the
+// worker's own download is bounded at updatersource.DefaultTimeout (5 min);
+// the relay adds one minute of margin (fold A1).
+const checkRelayTimeout = updatersource.DefaultTimeout + time.Minute
 
 var errForbiddenBody = gin.H{"error": "forbidden"}
 
@@ -221,6 +230,7 @@ func (s *Server) registerUpdateRoutes(api *gin.RouterGroup) {
 	upd.GET("", s.handleUpdatesStatus)
 	upd.POST("/check", s.handleUpdatesCheck)
 	upd.POST("/install", s.handleUpdatesInstall)
+	upd.POST("/install-with-password", s.handleUpdatesInstallWithPassword)
 	upd.GET("/jobs/:id", s.handleUpdatesJob)
 	upd.GET("/jobs/:id/receipt", s.handleUpdatesJob)
 }
@@ -275,6 +285,11 @@ var updatesRefusalCategories = map[string]string{
 	"password changed since enrollment (re-enroll with --replace)":                                  "password_changed",
 	"install: expired under the seen-store lock, or at/below its clock floor (clock stepped back?)": "install_expired_under_lock",
 	"install: job-id store refused":                                                                 "job_store_refused",
+	"install-with-password: no enrolled admin on the context":                                       "install_password_no_admin_context",
+	"install-with-password: password locked out":                                                    "install_password_locked_out",
+	"install-with-password: admin user row absent":                                                  "install_password_admin_row_absent",
+	"install-with-password: password wrong":                                                         "install_password_wrong",
+	"install-with-password: server-side mint refused":                                               "install_password_mint_refused",
 }
 
 // updatesRefusalCategory maps a refusal reason onto its closed category.
@@ -295,6 +310,14 @@ func updatesRefusalCategory(why string) string {
 // its once-set on the reason too, so two different unknown reasons never
 // hide behind one another.
 func (s *Server) updatesForbid(c *gin.Context, why string) {
+	s.updatesForbidStatus(c, why, http.StatusForbidden, errForbiddenBody)
+}
+
+// updatesForbidStatus is updatesForbid with a caller-chosen status and body:
+// every refusal still counts in vl_updates_refused_total (route + closed
+// category) and logs once per (route, category) — the 429 lockout refusals
+// included, so they cannot hide from the counters.
+func (s *Server) updatesForbidStatus(c *gin.Context, why string, status int, body gin.H) {
 	route := c.FullPath()
 	if route == "" {
 		route = "unmatched"
@@ -305,17 +328,12 @@ func (s *Server) updatesForbid(c *gin.Context, why string) {
 	if cat == updatesRefusalUnmapped {
 		key += "\x00" + why
 	}
-	// The line logs the ROUTE (c.FullPath()), never c.Request.URL.Path: the
-	// raw path is client-supplied and would land in the boot log the worker
-	// scans (#206 review fold — an unauthenticated loopback GET of
-	// /api/updates/jobs/BOOT%20INTEGRITY%20REFUSED once printed a WARN that
-	// verifyBootLine read as a refused boot and rolled back a good install).
 	if _, seen := s.updatesWarned.LoadOrStore(key, struct{}{}); !seen {
 		logger.Warnf("🔒 [updates] refused %s %.96q: %s — first %s refusal on %s this process; repeats log at DEBUG, all count in vl_updates_refused_total", c.Request.Method, route, why, cat, route)
 	} else {
 		logger.Debugf("🔒 [updates] refused %s %.96q: %s (repeat, counted as %s on %s)", c.Request.Method, route, why, cat, route)
 	}
-	c.AbortWithStatusJSON(http.StatusForbidden, errForbiddenBody)
+	c.AbortWithStatusJSON(status, body)
 }
 
 // updatesGate is the whole identity gate. It returns the refusal category
@@ -531,10 +549,83 @@ func (s *Server) handleUpdatesStatus(c *gin.Context) {
 	})
 }
 
-// handleUpdatesCheck — POST /api/updates/check. M3 has no release source and
-// makes no network call; it says so rather than inventing a result.
+// handleUpdatesCheck — POST /api/updates/check (ONE-BUTTON P-A, fold A1).
+// The bot makes NO network call: it relays the `check` verb to the worker
+// over the unix socket. The worker owns every byte of release-source network
+// code (updatersource). When the worker or the source is absent the answer
+// keeps the M3 shape ({checked:false, reason}), so old clients degrade to
+// exactly today's text.
 func (s *Server) handleUpdatesCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"checked": false, "reason": "no release source in this build"})
+	conn, err := updaterwire.DialWorker(trader.MaintenanceDataDir())
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"checked": false, "reason": "updater worker unreachable"})
+		return
+	}
+	defer conn.Close()
+	// The check may download + verify (the worker bounds its own network at
+	// updatersource.DefaultTimeout); the relay deadline adds a margin.
+	resp, err := conn.DoWithTimeout(updaterwire.NewCheck(), checkRelayTimeout)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"checked": false, "reason": "updater worker unreachable"})
+		return
+	}
+	if !resp.OK {
+		c.JSON(http.StatusOK, gin.H{"checked": false, "reason": "check failed"})
+		return
+	}
+	switch resp.State {
+	case "off":
+		c.JSON(http.StatusOK, gin.H{"checked": false, "reason": "no release source in this build"})
+	case "rate_limited":
+		c.JSON(http.StatusOK, gin.H{"checked": false, "reason": "rate limited, try later"})
+	case "up_to_date":
+		d := checkDetailFrom(resp.Detail)
+		c.JSON(http.StatusOK, gin.H{
+			"checked":          true,
+			"available":        false,
+			"ready":            false,
+			"tag":              d.Tag,
+			"target_commitish": d.TargetCommitish,
+			"reason":           "up to date",
+		})
+	case "verified_ready":
+		d := checkDetailFrom(resp.Detail)
+		c.JSON(http.StatusOK, gin.H{
+			"checked":          true,
+			"available":        true,
+			"ready":            true,
+			"tag":              d.Tag,
+			"target_commitish": d.TargetCommitish,
+			"source_sha":       d.SourceSHA,
+			"reason":           "verified, ready",
+		})
+	case "error":
+		d := checkDetailFrom(resp.Detail)
+		reason := d.Reason
+		if reason == "" {
+			reason = "check failed"
+		}
+		c.JSON(http.StatusOK, gin.H{"checked": false, "reason": reason})
+	default:
+		c.JSON(http.StatusOK, gin.H{"checked": false, "reason": "check failed"})
+	}
+}
+
+// checkDetail is the worker's CheckDetail as the relay re-reads it. The relay
+// re-parses (never re-interprets) the worker's own JSON.
+type checkDetail struct {
+	Available       bool   `json:"available"`
+	Ready           bool   `json:"ready"`
+	Tag             string `json:"tag"`
+	TargetCommitish string `json:"target_commitish"`
+	SourceSHA       string `json:"source_sha"`
+	Reason          string `json:"reason"`
+}
+
+func checkDetailFrom(raw string) checkDetail {
+	var d checkDetail
+	_ = json.Unmarshal([]byte(raw), &d)
+	return d
 }
 
 // handleUpdatesInstall — POST /api/updates/install
@@ -543,7 +634,6 @@ func (s *Server) handleUpdatesCheck(c *gin.Context) {
 // 409; at/below the seen store's clock floor 403) → verified manifest (M3
 // stub: 422 "release not verified").
 func (s *Server) handleUpdatesInstall(c *gin.Context) {
-	dataDir := trader.MaintenanceDataDir()
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUpdateInstallBody)
 	g, err := updateauth.ParseInstallRequest(c.Request.Body)
 	if err != nil {
@@ -551,6 +641,17 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
+	s.runInstall(c, g)
+}
+
+// runInstall is the ONE install path (owner order 10-02 07:3x: "remove the
+// code step"): both the paste flow and install-with-password hand their grant
+// here — expiry window → HMAC → consume job id → verified manifest → hand-off
+// to the worker. The terminal authorize mints the grant off-box;
+// install-with-password mints it server-side with the SAME
+// updateauth.Authorize (same job id / expiry / MAC rules).
+func (s *Server) runInstall(c *gin.Context, g updateauth.Grant) {
+	dataDir := trader.MaintenanceDataDir()
 	// the enrolled admin the gate admitted (fail closed when absent: the MAC
 	// is bound to that identity and cannot verify without it)
 	adminID := c.GetString(updatesAdminIDKey)
@@ -630,6 +731,133 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusAccepted, gin.H{"job_id": g.JobID})
+}
+
+// ── owner order 10-02 07:3x — install with the owner's VL password ──────
+//
+// POST /api/updates/install-with-password {release_id, password}. Behind the
+// SAME updates gate as /install (loopback, X-VL-Update, same-origin, machine
+// tokens refused, enrolled-admin session only — updatesRefusal), so the
+// caller here IS the enrolled admin with a fresh-enough session. The handler
+// adds the PASSWORD proof: the account's stored hash, delayed + counted like
+// the current_password compare (F9), with a lockout after 5 wrong in 15 min
+// (429 + unlock time). On success it mints the grant server-side with the
+// SAME updateauth.Authorize the terminal `authorize` uses, then hands it to
+// runInstall — no second install path.
+
+const (
+	// installPasswordWrongGate is the gate-block counter a failed password
+	// compare bumps (telemetry.IncGateBlock; read at GET /api/risk/gate-blocks).
+	installPasswordWrongGate = "updates_install_password_wrong"
+	// installPasswordFailWindow and thresholds: 5 wrong in 15 min locks the
+	// install out for 15 min (the unlock time is in the 429 body).
+	installPasswordFailWindow = 15 * time.Minute
+	installPasswordBlockAfter = 5
+	installPasswordBlockFor   = 15 * time.Minute
+)
+
+type installPasswordLimiter struct {
+	mu sync.Mutex
+	m  map[string]*loginLimiterEntry
+}
+
+var apiInstallPasswordLimiter = &installPasswordLimiter{m: make(map[string]*loginLimiterEntry)}
+
+func (l *installPasswordLimiter) blocked(now time.Time, adminID string) (time.Duration, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if e := l.m[adminID]; e != nil && e.blockedUntil.After(now) {
+		return e.blockedUntil.Sub(now), true
+	}
+	return 0, false
+}
+
+func (l *installPasswordLimiter) recordFail(now time.Time, adminID string) time.Duration {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if len(l.m) > loginLimiterMaxKeys {
+		for k, e := range l.m {
+			if now.Sub(e.windowStart) > installPasswordFailWindow && !e.blockedUntil.After(now) {
+				delete(l.m, k)
+			}
+		}
+	}
+	e := l.m[adminID]
+	if e == nil || now.Sub(e.windowStart) > installPasswordFailWindow {
+		e = &loginLimiterEntry{windowStart: now}
+		l.m[adminID] = e
+	}
+	e.fails++
+	if e.fails >= installPasswordBlockAfter {
+		e.blockedUntil = now.Add(installPasswordBlockFor)
+		return e.blockedUntil.Sub(now)
+	}
+	return 0
+}
+
+func (l *installPasswordLimiter) clear(adminID string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.m, adminID)
+}
+
+// handleUpdatesInstallWithPassword — POST /api/updates/install-with-password.
+// Refusals are specific: bad body/release id 400; locked out 429 with the
+// unlock time; wrong password 403 (counted in vl_updates refusals AND the
+// gate-block counter, delayed like the F9 compare); the grant hand-off keeps
+// every existing refusal (expiry/HMAC/replay/422) byte-identical.
+func (s *Server) handleUpdatesInstallWithPassword(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUpdateInstallBody)
+	var req struct {
+		ReleaseID string `json:"release_id" binding:"required"`
+		Password  string `json:"password" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "release_id and password are required"})
+		return
+	}
+	if !updateauth.ValidReleaseID(req.ReleaseID) {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "release_id is an identifier (letters, digits, . _ -)"})
+		return
+	}
+	adminID := c.GetString(updatesAdminIDKey)
+	if adminID == "" {
+		// Unreachable through the gate (fail closed if it ever is).
+		s.updatesForbid(c, "install-with-password: no enrolled admin on the context")
+		return
+	}
+	now := s.updatesClock()
+	if d, ok := apiInstallPasswordLimiter.blocked(now, adminID); ok {
+		s.updatesForbidStatus(c, "install-with-password: password locked out", http.StatusTooManyRequests,
+			gin.H{"error": "too many wrong passwords", "unlock_in_seconds": int(d.Seconds())})
+		return
+	}
+	u, err := s.store.User().GetByID(adminID)
+	if err != nil || u == nil {
+		s.updatesForbid(c, "install-with-password: admin user row absent")
+		return
+	}
+	if !auth.CheckPassword(req.Password, u.PasswordHash) {
+		logger.Warnf("🔒 [updates] refused %s %s: install password wrong", c.Request.Method, c.FullPath())
+		telemetry.IncGateBlock("", installPasswordWrongGate)
+		if d := apiInstallPasswordLimiter.recordFail(now, adminID); d > 0 {
+			s.updatesForbidStatus(c, "install-with-password: password locked out", http.StatusTooManyRequests,
+				gin.H{"error": "too many wrong passwords", "unlock_in_seconds": int(d.Seconds())})
+			return
+		}
+		currentPasswordFailSleep(currentPasswordFailDelay)
+		s.updatesForbid(c, "install-with-password: password wrong")
+		return
+	}
+	apiInstallPasswordLimiter.clear(adminID)
+
+	g, err := updateauth.Authorize(trader.MaintenanceDataDir(), req.ReleaseID, now)
+	if err != nil {
+		logger.Errorf("🔒 [updates] install-with-password: server-side mint refused: %v", err)
+		s.updatesForbid(c, "install-with-password: server-side mint refused")
+		return
+	}
+	s.runInstall(c, g)
 }
 
 // handleUpdatesJob — GET /api/updates/jobs/:id and /jobs/:id/receipt.

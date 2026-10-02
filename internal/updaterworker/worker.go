@@ -26,6 +26,10 @@ type Budgets struct {
 	Poll          time.Duration // every re-read of the app
 	IdentityRetry time.Duration // CurrentIdentity before a rollback
 	HoldClear     time.Duration // complete/rolled_back: retry the clear this long
+	PlannerWait   time.Duration // F2: a live AI-plan read is a benign blocker; wait
+	// up to this long for it (preflight, drain, gate) instead of
+	// failing on the step budget. Expiry: preflight refused (no
+	// hold); drain/gate RELEASE the hold and refuse.
 }
 
 // DefaultBudgets are the ruled values.
@@ -40,6 +44,7 @@ func DefaultBudgets() Budgets {
 		Poll:          2 * time.Second,
 		IdentityRetry: 15 * time.Second,
 		HoldClear:     30 * time.Second,
+		PlannerWait:   15 * time.Minute,
 	}
 }
 

@@ -38,7 +38,7 @@ func buildSkillDomainPrimer(lang, skillName string) string {
 			"- Key fields: " + strings.Join(fields, ", "),
 			"- Supported providers: " + modelProviderSummaryList(lang),
 			"- Recommended provider: the official API-key billing option.",
-			"- If provider is still missing, the next step must be to ask the user to choose one from the full provider list. Do not ask for an API key, wallet private key, or other credentials before the provider is chosen.",
+			"- If provider is still missing, the next step must be to ask the user to choose one from the full provider list. Do not ask for an API key or other credentials before the provider is chosen.",
 			"- Standard providers (openai/deepseek/claude etc.) usually require an API key; `custom_model_name` and `custom_api_url` can be omitted to use defaults.",
 		}, "\n")
 	case "exchange_management":

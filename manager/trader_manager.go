@@ -55,6 +55,16 @@ func (tm *TraderManager) GetLoadError(traderID string) error {
 	return tm.loadErrors[traderID]
 }
 
+// SetTraderForTest installs a prebuilt AutoTrader in the roster under id.
+// TEST-ONLY seam for another package's production-call-site test: the roster
+// is otherwise filled only from store rows (addTraderFromStore), which pulls
+// NewAutoTrader's process-wide side effects. Never called in production.
+func (tm *TraderManager) SetTraderForTest(id string, at *trader.AutoTrader) {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	tm.traders[id] = at
+}
+
 // GetTrader retrieves a trader by ID
 func (tm *TraderManager) GetTrader(id string) (*trader.AutoTrader, error) {
 	tm.mu.RLock()

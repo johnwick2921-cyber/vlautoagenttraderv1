@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
+	"vl/kernel"
 	ntwire "vl/provider/ninjatrader"
 	"vl/store"
 	ntTrader "vl/trader/ninjatrader"
@@ -76,6 +78,24 @@ type NT8AbsentView struct {
 	Ready         bool                  `json:"ready"`
 	LinkDownSince string                `json:"link_down_since,omitempty"` // RFC3339 of the disconnect stamp; absent when unknown
 	Legs          []InstallationGateLeg `json:"legs,omitempty"`            // computed ONLY when eligible; absent otherwise
+}
+
+// plannerClaimStarts returns the OLDEST claim-started wall time across the
+// four planner in-flight maps, or ok=false when nothing is claimed or no claim
+// carried a time (F1). The claim sites (claimPlannerRead / claimWeeklyRead /
+// flipRereadInFlight / deathRereadInFlight) store time.Time; a held claim with
+// no time (a test fixture storing the old struct{}/bool shape) is tolerated —
+// its identity is reported by the leg, the started time is simply absent.
+func plannerClaimStarts() (oldest time.Time, ok bool) {
+	for _, m := range []*sync.Map{&plannerReadInFlight, &weeklyReadClaim, &flipRereadInFlight, &deathRereadInFlight} {
+		m.Range(func(_, v any) bool {
+			if t, isTime := v.(time.Time); isTime && (!ok || t.Before(oldest)) {
+				oldest, ok = t, true
+			}
+			return true
+		})
+	}
+	return oldest, ok
 }
 
 // nt8AbsentMinLinkDown is the continuous link-down the absent path requires
@@ -244,7 +264,11 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			}
 		}
 		if len(held) > 0 {
-			return false, "IN FLIGHT: " + strings.Join(held, ", ")
+			inFlight := strings.Join(held, ", ")
+			if start, ok := plannerClaimStarts(); ok {
+				return false, fmt.Sprintf("waiting for the AI plan (started %s) — IN FLIGHT: %s", kernel.ClockCTSeconds(start), inFlight)
+			}
+			return false, "waiting for the AI plan — IN FLIGHT: " + inFlight
 		}
 		return true, "no planner-class read claimed, any trader"
 	}

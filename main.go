@@ -117,6 +117,9 @@ func main() {
 	if err := st.RevokedTokens().PruneExpired(time.Now()); err != nil {
 		logger.Warnf("⚠️  prune expired token revocations failed: %v", err)
 	}
+	// P-E E3 — the worker_token_epoch the API compares cutover-worker tokens
+	// against; a nil reader refuses every worker token (fail closed).
+	auth.SetWorkerEpochReader(func() (int64, error) { return st.WorkerEpoch().Current() })
 	// B6 — the boot line READS the live state: persistence is read from the
 	// installed store (auth.BlacklistStoreEnabled), and the row count is what
 	// the table holds right now (n/a when unreadable).

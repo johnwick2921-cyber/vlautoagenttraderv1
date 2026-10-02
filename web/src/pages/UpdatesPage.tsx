@@ -79,6 +79,9 @@ export default function UpdatesPage() {
   const [authzText, setAuthzText] = useState('')
   const [installing, setInstalling] = useState(false)
   const [installJobId, setInstallJobId] = useState<string | null>(null)
+  // install-with-password (owner order 10-02 07:3x CT): the PRIMARY flow.
+  const [password, setPassword] = useState('')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   // Panel E — the resolved PivotWindow (W1 effective settings), or null.
   const [pivotWindow, setPivotWindow] = useState<number | null>(null)
@@ -310,6 +313,31 @@ export default function UpdatesPage() {
     setInstalling(false)
   }, [authz, installing])
 
+  // install-with-password (owner order 10-02 07:3x CT): the PRIMARY
+  // flow — the release id comes from the last Check the SERVER affirmed; the
+  // password is sent only in the request body and never rendered anywhere.
+  const releaseId = check?.release_id || check?.latest_tag || null
+  const passwordInstallDisabled =
+    installDisabled || installing || !password.trim() || !releaseId
+
+  const doInstallWithPassword = useCallback(async () => {
+    if (INSTALL_AUTHZ_UNDER_REVIEW || installing) return
+    if (!releaseId || !password.trim()) return
+    setInstalling(true)
+    setInstallError(null)
+    const res = await updatesApi.installWithPassword(releaseId, password)
+    if (res.ok && res.job_id) {
+      setLastJobID(res.job_id)
+      setInstallJobId(res.job_id)
+      setPassword('')
+    } else {
+      // the SERVER's own text verbatim (wrong password 403 counted, lockout
+      // 429 with the unlock time, not enrolled 403, release not verified 422)
+      setInstallError(res.error || 'install refused')
+    }
+    setInstalling(false)
+  }, [releaseId, password, installing])
+
   const askReloadHistory = useCallback(() => {
     setHistoryReply(null)
     setConfirmBackfill(true)
@@ -415,34 +443,82 @@ export default function UpdatesPage() {
             {checking && <Loader2 size={15} className="animate-spin" />}
             {checkLabel}
           </button>
-          <button
-            type="button"
-            disabled={installDisabled || !authz?.ok || installing}
-            onClick={doInstall}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-vl-neo-gold text-black disabled:opacity-50"
-            data-testid="update-button"
-          >
-            {installing && <Loader2 size={15} className="animate-spin" />}
-            {installLabel}
-          </button>
         </div>
         <label
-          htmlFor="updates-authz"
+          htmlFor="updates-password"
           className="mt-3 block text-xs text-zinc-400"
         >
-          {up('authzLabel', language)}
+          {up('installPasswordLabel', language)}
         </label>
-        <textarea
-          id="updates-authz"
-          data-testid="authz-paste"
-          value={authzText}
-          onChange={(e) => setAuthzText(e.target.value)}
-          rows={2}
+        <input
+          id="updates-password"
+          data-testid="install-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
           spellCheck={false}
-          className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-mono text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
-          placeholder='{"release_id":"…","job_id":"…","expires_at":…,"hmac":"…"}'
+          className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+          placeholder={up('installPasswordPlaceholder', language)}
         />
-        {authz?.ok === false && (
+        <button
+          type="button"
+          disabled={passwordInstallDisabled}
+          onClick={doInstallWithPassword}
+          className="mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-vl-neo-gold text-black disabled:opacity-50"
+          data-testid="update-button"
+        >
+          {installing && <Loader2 size={15} className="animate-spin" />}
+          {installLabel}
+        </button>
+        {!releaseId && (
+          <p
+            className="mt-2 text-xs text-zinc-500"
+            data-testid="check-first-hint"
+          >
+            {up('checkFirstForUpdate', language)}
+          </p>
+        )}
+        <div className="mt-4 border-t border-zinc-800 pt-3">
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            className="text-xs text-zinc-500 hover:text-zinc-300"
+            data-testid="advanced-toggle"
+          >
+            {up('advancedInstallCode', language)}
+          </button>
+          {advancedOpen && (
+            <>
+              <label
+                htmlFor="updates-authz"
+                className="mt-3 block text-xs text-zinc-400"
+              >
+                {up('authzLabel', language)}
+              </label>
+              <textarea
+                id="updates-authz"
+                data-testid="authz-paste"
+                value={authzText}
+                onChange={(e) => setAuthzText(e.target.value)}
+                rows={2}
+                spellCheck={false}
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-mono text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                placeholder='{"release_id":"…","job_id":"…","expires_at":…,"hmac":"…"}'
+              />
+              <button
+                type="button"
+                disabled={installDisabled || !authz?.ok || installing}
+                onClick={doInstall}
+                className="mt-2 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-zinc-700 text-zinc-100 disabled:opacity-50"
+                data-testid="update-button-advanced"
+              >
+                {up('updateNow', language)}
+              </button>
+            </>
+          )}
+        </div>
+        {authz?.ok === false && advancedOpen && (
           <p
             className="mt-1 text-xs text-amber-400"
             data-testid="authz-parse-error"
@@ -481,6 +557,37 @@ export default function UpdatesPage() {
         {check && (
           <p className="mt-2 text-xs text-zinc-400">
             {up('checkReason', language)}: {check.reason || na(language)}
+          </p>
+        )}
+        {check?.update_available === true && (
+          <p
+            className="mt-2 text-xs text-emerald-400 font-semibold"
+            data-testid="update-available"
+          >
+            {up('updateAvailableVerified', language).replace(
+              '{tag}',
+              check.latest_tag || ''
+            )}
+          </p>
+        )}
+        {check?.rate_limited === true && (
+          <p
+            className="mt-2 text-xs text-amber-400"
+            data-testid="check-rate-limited"
+          >
+            {up('rateLimited', language)}
+          </p>
+        )}
+        {(status?.install_state === 'downloading' ||
+          status?.install_state === 'verifying') && (
+          <p
+            className="mt-2 text-xs text-sky-400 flex items-center gap-1.5"
+            data-testid="install-state"
+          >
+            <Loader2 size={13} className="animate-spin" />
+            {status.install_state === 'downloading'
+              ? up('downloading', language)
+              : up('verifying', language)}
           </p>
         )}
       </Panel>
@@ -565,7 +672,9 @@ export default function UpdatesPage() {
               <Row label={up('jobStep', language)} value={job.step} />
             )}
             {job?.blocker && (
-              <Row label={up('jobBlocker', language)} value={job.blocker} />
+              <div data-testid="job-blocker">
+                <Row label={up('jobBlocker', language)} value={job.blocker} />
+              </div>
             )}
             {job?.timestamps && Object.keys(job.timestamps).length > 0 && (
               <div

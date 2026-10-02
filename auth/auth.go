@@ -161,11 +161,17 @@ type Claims struct {
 	Email  string `json:"email"`
 	// Scope marks a MACHINE token (M3 red-team H1): one minted for a process
 	// rather than by a user proving their password — the Telegram bot
-	// (ScopeTelegram), cmd/gate-jwt (ScopeGateJWT). The API denies machine
-	// tokens by default on the credential, Telegram-config and update routes
-	// (api/credential_guard.go). A user token has NO scope key at all
-	// (omitempty), so a login token's claim set is byte-identical to before.
+	// (ScopeTelegram), cmd/gate-jwt (ScopeGateJWT), the updater worker
+	// (ScopeCutoverWorker). The API denies machine tokens by default on the
+	// credential, Telegram-config and update routes (api/credential_guard.go).
+	// A user token has NO scope key at all (omitempty), so a login token's
+	// claim set is byte-identical to before.
 	Scope string `json:"scope,omitempty"`
+	// WTE is the worker_token_epoch the token was minted under — carried ONLY
+	// by ScopeCutoverWorker tokens. The API refuses a worker token whose WTE
+	// is below the current epoch (revoke-worker --all bumped it). Absent on
+	// every other scope.
+	WTE int64 `json:"wte,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -177,9 +183,17 @@ const BotInternalEmail = "bot@internal"
 // Machine-token scopes. Any non-empty scope is a machine scope; these are the
 // ones this build mints.
 const (
-	ScopeTelegram = "telegram"
-	ScopeGateJWT  = "gate-jwt"
+	ScopeTelegram      = "telegram"
+	ScopeGateJWT       = "gate-jwt"
+	ScopeCutoverWorker = "cutover-worker"
 )
+
+// WorkerTokenTTL is the lifetime of a cutover-worker token: a human
+// timescale, so one-button installs never depend on a 24 h hand-minted
+// token (P-E E2). The token is worth this ONLY because the API admits the
+// scope on exactly two read-only routes (api/credential_guard.go
+// workerTokenRoutes) — never extend the TTL without that narrowing.
+const WorkerTokenTTL = 10 * 365 * 24 * time.Hour
 
 // IsMachine reports whether the token is a machine token: it carries any
 // scope, or the bot's email. nil claims are treated as a machine token (a
@@ -207,7 +221,7 @@ func CheckPassword(password, hash string) bool {
 // register handlers ONLY — a census test (auth/mint_census_test.go) pins it;
 // every other minting site uses GenerateScopedJWT.
 func GenerateJWT(userID, email string) (string, error) {
-	return signToken(userID, email, "")
+	return signToken(userID, email, "", 0)
 }
 
 // GenerateScopedJWT generates a MACHINE token carrying scope (non-empty).
@@ -215,16 +229,34 @@ func GenerateScopedJWT(userID, email, scope string) (string, error) {
 	if strings.TrimSpace(scope) == "" {
 		return "", fmt.Errorf("auth: a machine token needs a non-empty scope")
 	}
-	return signToken(userID, email, scope)
+	return signToken(userID, email, scope, 0)
 }
 
-func signToken(userID, email, scope string) (string, error) {
+// GenerateWorkerJWT mints the updater worker's credential (P-E E2): the ONLY
+// mint site is the attended vl-updater-bootstrap enroll / enroll --replace.
+// wte is the worker_token_epoch the mint runs under (from the bot DB); the
+// API refuses the token once the epoch is bumped.
+func GenerateWorkerJWT(userID, email string, wte int64) (string, error) {
+	return signToken(userID, email, ScopeCutoverWorker, wte)
+}
+
+// tokenTTL is per-scope (P-E E3): the worker token lives on a human
+// timescale; every other scope keeps the 24 h lifetime.
+func tokenTTL(scope string) time.Duration {
+	if scope == ScopeCutoverWorker {
+		return WorkerTokenTTL
+	}
+	return 24 * time.Hour
+}
+
+func signToken(userID, email, scope string, wte int64) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
 		Scope:  scope,
+		WTE:    wte,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Expires in 24 hours
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL(scope))),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			Issuer:    "vlAI",
@@ -233,6 +265,28 @@ func signToken(userID, email, scope string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(JWTSecret)
+}
+
+// WorkerEpochReader supplies the current worker_token_epoch to the API
+// middleware. The boot wires it to the DB-backed store; while nil, the API
+// REFUSES every cutover-worker token (fail closed — an epoch it cannot read
+// must not be trusted).
+type WorkerEpochReader func() (int64, error)
+
+var workerEpochReader WorkerEpochReader
+
+// SetWorkerEpochReader installs the reader (called once at boot from main.go).
+func SetWorkerEpochReader(f WorkerEpochReader) {
+	workerEpochReader = f
+}
+
+// CurrentWorkerEpoch reads the epoch through the installed reader. A nil
+// reader reports an error: the middleware must refuse the token.
+func CurrentWorkerEpoch() (int64, error) {
+	if workerEpochReader == nil {
+		return 0, fmt.Errorf("auth: no worker epoch reader installed")
+	}
+	return workerEpochReader()
 }
 
 // strictParser decodes every segment with STRICT base64url (M3 red-team M2,

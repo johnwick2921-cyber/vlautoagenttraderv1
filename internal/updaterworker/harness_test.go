@@ -110,13 +110,18 @@ type box struct {
 	reverifyTamper   func(*ReleaseFacts)
 
 	// UPDATER-NT8-CLOSED knobs
-	addonDownSince  time.Duration // >0: the AddOn is disconnected this long (stamped on the fake server's record); the ack is nil and the fake gate attaches its nt8_absent view
-	absentInflight  bool          // nt8_absent leg: an entry send holds a permit
-	absentQueued    int           // nt8_absent leg: queued_signals
-	absentPlanner   bool          // nt8_absent leg: a planner read is in flight
-	absentSim       bool          // nt8_absent leg: the bound account is SIM-tradeable
-	absentDbOpen    bool          // nt8_absent leg: an OPEN trader_positions row (the CTO P1 leg)
-	absentOverride  bool          // attach the view with the flags below instead of the computed ones (the K_elig mutant probe)
+	addonDownSince time.Duration // >0: the AddOn is disconnected this long (stamped on the fake server's record); the ack is nil and the fake gate attaches its nt8_absent view
+	absentInflight bool          // nt8_absent leg: an entry send holds a permit
+	absentQueued   int           // nt8_absent leg: queued_signals
+	absentPlanner  bool          // nt8_absent leg: a planner read is in flight
+	absentSim      bool          // nt8_absent leg: the bound account is SIM-tradeable
+	absentDbOpen   bool          // nt8_absent leg: an OPEN trader_positions row (the CTO P1 leg)
+	cutoverStale   bool          // P-D ruling item 3: the trader_cutover leg fails with the
+	// production "working_orders: snapshot stale" shape when the
+	// AddOn is gone (tonight's job 66383c7c preflight blocker)
+	plannerInFlight bool // F2: the planner_in_flight leg FAILS with the production
+	// "waiting for the AI plan (started hh:mm:ss)" detail
+	absentOverride  bool // attach the view with the flags below instead of the computed ones (the K_elig mutant probe)
 	absentEligible  bool
 	absentReady     bool
 	absentFlapAt    int // with absentOverride: from gate-read N onward the view flaps to eligible=false, ready=true (the gate must refuse — K_elig would let it through)
@@ -773,7 +778,7 @@ func (b *box) maintenanceView() MaintenanceView {
 func (b *box) gateView() GateView {
 	st := store.ReadMaintenanceHold(b.data)
 	b.mu.Lock()
-	flat := b.flat
+	flat, plannerHeld := b.flat, b.plannerInFlight
 	b.mu.Unlock()
 	a := b.ack()
 	job := "n/a"
@@ -796,13 +801,23 @@ func (b *box) gateView() GateView {
 		{Name: "go_drained", Pass: st.Held, Detail: "barrier engaged"},
 		{Name: "in_flight_sends", Pass: true, Detail: "0"},
 		{Name: "queued_signals", Pass: true, Detail: "0"},
-		{Name: "planner_in_flight", Pass: true, Detail: "none"},
+		{Name: "planner_in_flight", Pass: !plannerHeld, Detail: func() string {
+			if plannerHeld {
+				return "waiting for the AI plan (started 12:03:05)"
+			}
+			return "none"
+		}()},
 		{Name: "traders_nt8", Pass: true, Detail: "1 NT8 trader"},
 		{Name: "addon_ack", Pass: st.Held && a != nil && a.Held && a.JobID == job, Detail: "ack"},
 		{Name: "addon_census", Pass: flat, Detail: fmt.Sprintf("flat=%v", flat)},
 		{Name: "addon_census_prehold", Pass: preholdCensusPass, Detail: preholdCensusDetail},
 		{Name: "ledger_exposure", Pass: flat, Detail: "arms"},
-		{Name: "trader_cutover:t1", Pass: flat, Detail: "legs 1,2,4"},
+		{Name: "trader_cutover:t1", Pass: flat && !b.cutoverStale, Detail: func() string {
+			if b.cutoverStale {
+				return "working_orders: snapshot stale (AddOn down)"
+			}
+			return "legs 1,2,4"
+		}()},
 	}
 	ready := true
 	for _, l := range legs {

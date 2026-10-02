@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   updatesStatus: vi.fn(),
   check: vi.fn(),
   install: vi.fn(),
+  installWithPassword: vi.fn(),
   job: vi.fn(),
   receipt: vi.fn(),
   getTraders: vi.fn(),
@@ -30,6 +31,7 @@ vi.mock('../lib/api/updates', async (importOriginal) => {
       updatesStatus: mocks.updatesStatus,
       check: mocks.check,
       install: mocks.install,
+      installWithPassword: mocks.installWithPassword,
       job: mocks.job,
       receipt: mocks.receipt,
     },
@@ -213,7 +215,7 @@ describe('UpdatesPage', () => {
     await waitFor(() => expect(screen.getByText('not found')).toBeTruthy())
   })
 
-  it('install stays disabled without a pasted authorization and never POSTs', async () => {
+  it('primary Update now stays disabled without a password and never POSTs', async () => {
     mocks.updatesStatus.mockResolvedValue({
       status: {
         enrolled: true,
@@ -227,6 +229,7 @@ describe('UpdatesPage', () => {
     const button = screen.getByTestId('update-button') as HTMLButtonElement
     expect(button.disabled).toBe(true)
     fireEvent.click(button)
+    expect(mocks.installWithPassword).not.toHaveBeenCalled()
     expect(mocks.install).not.toHaveBeenCalled()
   })
 
@@ -263,10 +266,13 @@ describe('UpdatesPage', () => {
     })
     render(<UpdatesPage />)
     await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    fireEvent.click(screen.getByTestId('advanced-toggle'))
     fireEvent.change(screen.getByTestId('authz-paste'), {
       target: { value: authzLine },
     })
-    const button = screen.getByTestId('update-button') as HTMLButtonElement
+    const button = screen.getByTestId(
+      'update-button-advanced'
+    ) as HTMLButtonElement
     await waitFor(() => expect(button.disabled).toBe(false))
     fireEvent.click(button)
     await waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1))
@@ -294,14 +300,17 @@ describe('UpdatesPage', () => {
       mocks.install.mockResolvedValue({ ok: false, error: text, status })
       render(<UpdatesPage />)
       await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+      fireEvent.click(screen.getByTestId('advanced-toggle'))
       fireEvent.change(screen.getByTestId('authz-paste'), {
         target: { value: authzLine },
       })
       await waitFor(() => {
-        const b = screen.getByTestId('update-button') as HTMLButtonElement
+        const b = screen.getByTestId(
+          'update-button-advanced'
+        ) as HTMLButtonElement
         expect(b.disabled).toBe(false)
       })
-      fireEvent.click(screen.getByTestId('update-button'))
+      fireEvent.click(screen.getByTestId('update-button-advanced'))
       await waitFor(() =>
         expect(screen.getByTestId('install-error')).toHaveTextContent(text)
       )
@@ -311,6 +320,185 @@ describe('UpdatesPage', () => {
       ).toBe('')
     }
   )
+
+  // G1: a terminal-wrapped paste (hard newlines where the terminal folded
+  // the line) parses to the EXACT body — whitespace stripped, hmac untouched.
+  it('accepts a terminal-wrapped authorization line (G1)', async () => {
+    enableInstall()
+    mocks.install.mockResolvedValue({ ok: true, job_id: 'job-202' })
+    mocks.job.mockResolvedValue({ job_id: 'job-202', state: 'downloaded' })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    fireEvent.click(screen.getByTestId('advanced-toggle'))
+    const wrapped = `{"release_id":"v9.9.9","job_\nid":"job-202","expires_\nat":1893456000,"hmac":"deadbeef"}`
+    fireEvent.change(screen.getByTestId('authz-paste'), {
+      target: { value: wrapped },
+    })
+    const button = screen.getByTestId(
+      'update-button-advanced'
+    ) as HTMLButtonElement
+    await waitFor(() => expect(button.disabled).toBe(false))
+    fireEvent.click(button)
+    await waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1))
+    expect(mocks.install).toHaveBeenCalledWith(validAuthz)
+  })
+
+  // P-A: check affirms an available, verified release -> the badge text.
+  it('shows "Update available vX — verified" when check affirms it', async () => {
+    enableInstall()
+    mocks.check.mockResolvedValue({
+      checked: true,
+      reason: 'verified, ready',
+      update_available: true,
+      latest_tag: 'v2026.10.01.2',
+    })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    fireEvent.click(screen.getByTestId('check-button'))
+    await waitFor(() =>
+      expect(screen.getByTestId('update-available')).toHaveTextContent(
+        'v2026.10.01.2'
+      )
+    )
+  })
+
+  // P-A: rate limited answer renders its own line, never an invented one.
+  it('shows the rate-limited line when check says so', async () => {
+    enableInstall()
+    mocks.check.mockResolvedValue({
+      checked: false,
+      reason: 'rate limited',
+      rate_limited: true,
+    })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    fireEvent.click(screen.getByTestId('check-button'))
+    await waitFor(() =>
+      expect(screen.getByTestId('check-rate-limited')).toBeTruthy()
+    )
+  })
+
+  // P-A: install_state downloading/verifying renders from the SERVER field.
+  it.each([
+    ['downloading', 'Downloading…'],
+    ['verifying', 'Verifying…'],
+  ])(
+    'renders the server install_state %s',
+    async (installState, label) => {
+      mocks.updatesStatus.mockResolvedValue({
+        status: {
+          enrolled: true,
+          manifest_verifier: 'configured',
+          install_enabled: true,
+          worker_listening: true,
+          install_state: installState,
+        },
+      })
+      render(<UpdatesPage />)
+      await waitFor(() =>
+        expect(screen.getByTestId('install-state')).toHaveTextContent(label)
+      )
+    }
+  )
+
+  // P-F: the live blocker from the job is shown verbatim (server-formatted).
+  it('renders the live job blocker (waiting for the AI plan)', async () => {
+    enableInstall()
+    mocks.job.mockResolvedValue({
+      job_id: 'job-202',
+      state: 'preflight',
+      blocker: 'waiting for the AI plan (started 12:34:56)',
+    })
+    mocks.maintenance.mockResolvedValue({ job_id: 'job-202' })
+    render(<UpdatesPage />)
+    await waitFor(() =>
+      expect(screen.getByTestId('job-blocker')).toHaveTextContent(
+        'waiting for the AI plan (started 12:34:56)'
+      )
+    )
+  })
+
+  // install-with-password (owner order 10-02 07:3x CT) — the PRIMARY flow.
+  it('primary Update now posts install-with-password with the checked release id', async () => {
+    enableInstall()
+    mocks.check.mockResolvedValue({
+      checked: true,
+      reason: 'verified, ready',
+      update_available: true,
+      release_id: 'v2026.10.02.2',
+    })
+    mocks.installWithPassword.mockResolvedValue({ ok: true, job_id: 'job-303' })
+    mocks.job.mockResolvedValue({ job_id: 'job-303', state: 'downloaded' })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    fireEvent.click(screen.getByTestId('check-button'))
+    await waitFor(() =>
+      expect(screen.getByTestId('update-available')).toBeTruthy()
+    )
+    const input = screen.getByTestId('install-password') as HTMLInputElement
+    expect(input.type).toBe('password')
+    fireEvent.change(input, { target: { value: 's3cret' } })
+    const button = screen.getByTestId('update-button') as HTMLButtonElement
+    await waitFor(() => expect(button.disabled).toBe(false))
+    fireEvent.click(button)
+    await waitFor(() =>
+      expect(mocks.installWithPassword).toHaveBeenCalledTimes(1)
+    )
+    expect(mocks.installWithPassword).toHaveBeenCalledWith(
+      'v2026.10.02.2',
+      's3cret'
+    )
+    // the paste (grant) path is NEVER touched by the primary flow
+    expect(mocks.install).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(screen.getByTestId('install-accepted')).toHaveTextContent(
+        'job-303'
+      )
+    )
+    // the password is cleared on success, never rendered anywhere else
+    expect(
+      (screen.getByTestId('install-password') as HTMLInputElement).value
+    ).toBe('')
+  })
+
+  it('a wrong password renders the server refusal verbatim', async () => {
+    enableInstall()
+    mocks.check.mockResolvedValue({
+      checked: true,
+      reason: 'verified, ready',
+      release_id: 'v2026.10.02.2',
+    })
+    mocks.installWithPassword.mockResolvedValue({
+      ok: false,
+      error: 'wrong password (counted)',
+      status: 403,
+    })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    fireEvent.click(screen.getByTestId('check-button'))
+    fireEvent.change(screen.getByTestId('install-password'), {
+      target: { value: 'wrong' },
+    })
+    await waitFor(() => {
+      const b = screen.getByTestId('update-button') as HTMLButtonElement
+      expect(b.disabled).toBe(false)
+    })
+    fireEvent.click(screen.getByTestId('update-button'))
+    await waitFor(() =>
+      expect(screen.getByTestId('install-error')).toHaveTextContent(
+        'wrong password (counted)'
+      )
+    )
+  })
+
+  it('the paste box stays hidden until the advanced toggle opens it', async () => {
+    enableInstall()
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    expect(screen.queryByTestId('authz-paste')).toBeNull()
+    fireEvent.click(screen.getByTestId('advanced-toggle'))
+    expect(screen.getByTestId('authz-paste')).toBeTruthy()
+  })
 
   // UPDATER-NT8-CLOSED item 5: the install surface is loopback :8080 only.
   // A non-8080 origin (the :3000 dev server) gets the plain hint, never a
@@ -348,6 +536,7 @@ describe('UpdatesPage', () => {
     await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
     // the SAME fields, but expires_at quoted — the server would answer 400;
     // the paste box refuses it first, with text that says why
+    fireEvent.click(screen.getByTestId('advanced-toggle'))
     fireEvent.change(screen.getByTestId('authz-paste'), {
       target: {
         value: JSON.stringify({ ...validAuthz, expires_at: '1893456000' }),
@@ -359,7 +548,8 @@ describe('UpdatesPage', () => {
       )
     )
     expect(
-      (screen.getByTestId('update-button') as HTMLButtonElement).disabled
+      (screen.getByTestId('update-button-advanced') as HTMLButtonElement)
+        .disabled
     ).toBe(true)
     expect(mocks.install).not.toHaveBeenCalled()
   })
@@ -412,6 +602,7 @@ describe('UpdatesPage', () => {
     // the exact reason the CTO ruling names — never a generic message
     expect(screen.getByText('updater worker not running')).toBeTruthy()
     // even a valid paste cannot fire the install POST while the worker is down
+    fireEvent.click(screen.getByTestId('advanced-toggle'))
     fireEvent.change(screen.getByTestId('authz-paste'), {
       target: {
         value: JSON.stringify({
@@ -422,7 +613,9 @@ describe('UpdatesPage', () => {
         }),
       },
     })
-    const button = screen.getByTestId('update-button') as HTMLButtonElement
+    const button = screen.getByTestId(
+      'update-button-advanced'
+    ) as HTMLButtonElement
     expect(button.disabled).toBe(true)
     fireEvent.click(button)
     expect(mocks.install).not.toHaveBeenCalled()

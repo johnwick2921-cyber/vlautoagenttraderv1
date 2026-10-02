@@ -78,6 +78,11 @@ type Row struct {
 	// Failure is where a STARTED step that failed goes. "" ⇔ Effect is
 	// EffectNone (nothing runs, so nothing can fail).
 	Failure State
+	// ExtraFailure is an additional legal failure edge (phase started) beyond
+	// Failure. F2: drained_acked/gate_ok may end REFUSED when the planner-wait
+	// expires and the hold is released — a benign blocker must not park the
+	// desk in recovery_needed.
+	ExtraFailure []State
 	// Cancellable: cancel-before-boundary may move this state to cancelled.
 	// True exactly for the states before maintenance_held — nothing has been
 	// held, drained or changed yet.
@@ -95,10 +100,12 @@ var table = []Row{
 	{State: StatePreflightOK, Effect: EffectPreflight, Success: []State{StateMaintenanceHeld}, Failure: StateRefused, Cancellable: true},
 	// The boundary. A failed hold write leaves no hold of ours, so it is still
 	// "refused"; from here on a hold may exist, and no path reaches refused or
-	// cancelled (both mean "nothing was held or changed").
+	// cancelled (both mean "nothing was held or changed") — EXCEPT the F2
+	// planner-wait expiry: drained_acked/gate_ok release the hold and refuse,
+	// via ExtraFailure (the step cleared the hold BEFORE the edge).
 	{State: StateMaintenanceHeld, Effect: EffectHold, Success: []State{StateDrainedAcked}, Failure: StateRefused},
-	{State: StateDrainedAcked, Effect: EffectDrain, Success: []State{StateGateOK}, Failure: StateRecoveryNeeded},
-	{State: StateGateOK, Effect: EffectGate, Success: []State{StateBackupDone}, Failure: StateRecoveryNeeded},
+	{State: StateDrainedAcked, Effect: EffectDrain, Success: []State{StateGateOK}, Failure: StateRecoveryNeeded, ExtraFailure: []State{StateRefused}},
+	{State: StateGateOK, Effect: EffectGate, Success: []State{StateBackupDone}, Failure: StateRecoveryNeeded, ExtraFailure: []State{StateRefused}},
 	{State: StateBackupDone, Effect: EffectBackup, Success: []State{StateNT8Skipped, StateNT8Updated}, Failure: StateRecoveryNeeded},
 	{State: StateNT8Skipped, Effect: EffectNT8, Success: []State{StateActivated}, Failure: StateRecoveryNeeded},
 	{State: StateNT8Updated, Effect: EffectNT8, Success: []State{StateActivated}, Failure: StateRecoveryNeeded, Parks: true},
@@ -202,8 +209,15 @@ func CheckMove(from State, phase Phase, to State) error {
 				return nil
 			}
 		}
-	} else if to == r.Failure {
-		return nil
+	} else {
+		if to == r.Failure {
+			return nil
+		}
+		for _, s := range r.ExtraFailure {
+			if s == to {
+				return nil
+			}
+		}
 	}
 	return fmt.Errorf("%w: %s/%s → %s", ErrForbiddenEdge, from, phase, to)
 }

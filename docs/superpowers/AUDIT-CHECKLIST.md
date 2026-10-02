@@ -7833,3 +7833,18 @@ that parses a binary's output, diff the asserted jq/sed paths against the
 producer's actual struct tags/output. rule: every script that parses a binary's
 output has ≥1 test running the REAL binary (or its real serializer), never a
 hand-shaped fake.
+
+## CLASS NN (assigned at merge) — edge-triggered latch: a boolean derived from an edge-triggered frame latches after the source is gone
+
+P-D stale-link-latch (2026-10-02): /api/health's nt8 link read "up" for ~5 h
+after the :36974 socket was gone, because it derived from the last feed_status
+FRAME — and feed_status is edge-triggered (sent only on change), so its last
+value outlives the socket indefinitely. The same latch also fed the desk strip's
+LINK row. probe: for every "connected/up/down" display or gate, ask "what would
+this read 6 hours after the source dies with no further events?"; if the answer
+is the last value, it is a latch. rule: any link/up/down display reads the LIVE
+socket (TCPServer.IsConnected / HealthLinkConnected), never a stored frame value.
+KNOWN LIMIT by CTO ruling (P-D item 2): the trading feed gate IsFeedConnected
+keeps today's latched behaviour — entries are protected on a dead socket by the
+dead-man watchdog (ninjaLinkConnected → IsConnected), and the close path must
+never be stricter (exits are never blocked). Recorded in the PR body.

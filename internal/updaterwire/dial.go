@@ -97,17 +97,26 @@ func DialWorkerBounded(dataDir string, timeout time.Duration) (*Client, error) {
 	return DialWithTimeout(path, timeout)
 }
 
-// Do sends one request and reads one response. The request is validated
-// before it is written (an invalid request never reaches the wire); the
-// response is decoded strictly.
+// Do sends one request and reads one response with the default request
+// deadline (10 s). Every verb except check answers in milliseconds; check
+// can take minutes (the worker downloads + verifies) — see DoWithTimeout.
 func (c *Client) Do(req Request) (Response, error) {
+	return c.DoWithTimeout(req, requestTimeout)
+}
+
+// DoWithTimeout is Do with the caller's deadline. Only the app's check relay
+// may lengthen it (bounded by updatersource.DefaultTimeout + margin); every
+// other caller keeps the default. The request is validated before it is
+// written (an invalid request never reaches the wire); the response is
+// decoded strictly.
+func (c *Client) DoWithTimeout(req Request, timeout time.Duration) (Response, error) {
 	frame, err := EncodeRequest(req)
 	if err != nil {
 		return Response{}, err
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if err := c.conn.SetDeadline(time.Now().Add(requestTimeout)); err != nil {
+	if err := c.conn.SetDeadline(time.Now().Add(timeout)); err != nil {
 		return Response{}, err
 	}
 	if _, err := c.conn.Write(frame); err != nil {

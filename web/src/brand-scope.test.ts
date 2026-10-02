@@ -291,6 +291,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, it } from 'vitest'
 // CRYPTO REMOVAL (owner order 2026-09-30; CR-A 7497a02d3): go.mod re-pinned 2026-10-01 — crypto SDK requires dropped
+// ONE-BUTTON P-E (owner order 2026-10-02 "do all now"; DS-101 ac8983b32): auth/auth.go re-pinned 2026-10-02 — cutover-worker scope, per-scope TTL, two-route allowlist
 import baseline from './test/brand-scope-baseline.json'
 
 function verifyScope(path: string, bytes: Buffer, expected: string) {

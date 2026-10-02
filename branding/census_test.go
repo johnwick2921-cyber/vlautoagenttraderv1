@@ -112,6 +112,16 @@ var censusTable = map[string][]censusEntry{
 	"internal/updaterworker/harness_test.go": {
 		{count: 12, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
+	// ONE-BUTTON P-A/P-E additions (integration, 2026-10-02): the VL_ env
+	// prefix and its legacy fallback, and the ReleaseRepo constant — the
+	// census counts the token in every tracked file. (The reasons below
+	// spell nothing out so this file itself stays at zero.)
+	"internal/updaterbootstrap/workertoken.go": {
+		{count: 2, phase: "final", reason: "P-E worker-token env reads (VL_ prefix + legacy fallback)"},
+	},
+	"internal/updatersource/source.go": {
+		{count: 1, phase: "final", reason: "P-A ReleaseRepo constant value"},
+	},
 	"api/release_dir_test.go": {
 		{count: 11, phase: "R5", reason: "transitional — re-pinned at final"},
 	},

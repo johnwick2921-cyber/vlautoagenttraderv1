@@ -127,6 +127,13 @@ export interface UpdatesStatus {
 export interface UpdatesCheck {
   checked: boolean
   reason: string
+  // P-A: the release-source check result — OPTIONAL and ABSENT until the
+  // worker's `check` verb lands. The page renders each state ONLY when the
+  // API affirms it; it never invents one.
+  update_available?: boolean
+  latest_tag?: string
+  release_id?: string
+  rate_limited?: boolean
 }
 
 // ── POST /api/updates/install (api/handler_updates.go:236) — 202 {job_id};
@@ -161,7 +168,11 @@ export type InstallAuthorizationParse =
 export function parseInstallAuthorization(
   text: string
 ): InstallAuthorizationParse {
-  const trimmed = text.trim()
+  // G1: a terminal-wrapped paste carries hard newlines where the terminal
+  // folded the ONE printed line. json.Marshal output is compact and escapes
+  // control characters, so a raw newline can never sit inside the hmac —
+  // stripping them is safe. Un-wrapped pastes are byte-identical.
+  const trimmed = text.replace(/\r/g, '').replace(/\n/g, '').trim()
   if (!trimmed) {
     return { ok: false, error: 'paste the authorization line first' }
   }
@@ -226,6 +237,16 @@ export interface UpdateJobView {
   blocker?: string
   timestamps?: Record<string, string>
   receipt_url?: string
+  error?: string
+  status?: number
+}
+
+// ── POST /api/updates/install-with-password (owner password flow) ──
+// Same result shape as /api/updates/install; the password travels ONLY in this
+// request body and is never echoed by the page.
+export interface InstallWithPasswordResult {
+  ok: boolean
+  job_id?: string
   error?: string
   status?: number
 }
@@ -297,6 +318,25 @@ export const updatesApi = {
     const res = await httpClient.request<{ job_id: string; error?: string }>(
       `${API_BASE}/updates/install`,
       { method: 'POST', data: body, headers: UPDATE_HEADERS, silent: true }
+    )
+    if (res.success && res.data?.job_id) {
+      return { ok: true, job_id: res.data.job_id }
+    }
+    return {
+      ok: false,
+      error: res.data?.error || res.message,
+      status: res.statusCode,
+    }
+  },
+
+  async installWithPassword(
+    releaseId: string,
+    password: string
+  ): Promise<InstallWithPasswordResult> {
+    const payload = { release_id: releaseId, password }
+    const res = await httpClient.request<{ job_id: string; error?: string }>(
+      `${API_BASE}/updates/install-with-password`,
+      { method: 'POST', data: payload, headers: UPDATE_HEADERS, silent: true }
     )
     if (res.success && res.data?.job_id) {
       return { ok: true, job_id: res.data.job_id }

@@ -297,9 +297,6 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	if len(ctx.RecentOrders) > 0 {
 		sb.WriteString("## Recent Completed Trades\n")
 		for i, order := range ctx.RecentOrders {
-			// P&L-TRUTH WAVE: an UNRESOLVED row (pnl_corrected NULL) has no
-			// captured exit — it renders as UNRESOLVED with no P&L and no
-			// percentage (the old code showed "+0.00 USDT (+100.00%)").
 			if !order.Resolved {
 				sb.WriteString(fmt.Sprintf("%d. #%d %s %s | Entry %.4f→? UNRESOLVED (exit unknown) | %s→%s (%s)\n",
 					i+1, order.ID, order.Symbol, order.Side, order.EntryPrice,
@@ -399,7 +396,7 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	// Candidate coins (exclude coins already in positions to avoid duplicate data)
 	positionSymbols := make(map[string]bool)
 	for _, pos := range ctx.Positions {
-		// Normalize symbol to handle both "ETH" and "ETHUSDT" formats
+
 		normalizedSymbol := market.Normalize(pos.Symbol)
 		positionSymbols[normalizedSymbol] = true
 	}

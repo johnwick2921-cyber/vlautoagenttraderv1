@@ -41,6 +41,8 @@ func (w *Worker) Handle(req updaterwire.Request) updaterwire.Response {
 		return w.handleCancel(req.Cancel.JobID)
 	case req.Resume != nil:
 		return w.handleResume(req.Resume.JobID)
+	case req.Check != nil:
+		return w.handleCheck()
 	}
 	w.logf("updater: refused a request with no payload")
 	return refuse("rejected")
