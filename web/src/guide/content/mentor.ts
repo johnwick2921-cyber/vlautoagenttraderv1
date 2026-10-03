@@ -42,7 +42,7 @@ export const mentor: GuideSection = {
       cards: [
         {
           title: 'Inside bar (ISB)',
-          body: "Candle 2's BODY inside candle 1's FULL range (wicks included). Direction = candle 1's colour. Entry at the ISB candle's own extreme + 1–1.5 pt buffer, stop at its opposite extreme, no fixed stop size — skip only when the stop is \"in the twenties\". If the next candle does not fill the order and is NOT itself inside the mother candle → cancel. If the following candles stay inside the same mother candle, keep the order through the 2nd and 3rd inside candle; at the 4th, cancel.",
+          body: "Candle 2's BODY inside candle 1's FULL range (wicks included). Direction = candle 1's colour. Entry at the ISB candle's own extreme + 1–1.5 pt buffer, stop at its opposite extreme, no fixed stop size — skip only when the stop is \"in the twenties\". The FIRST inside-bar candle is I1 — the order sits at its extremes and the containment test is against I1. A following candle that does not fill and whose BODY is NOT inside I1 → cancel at once. Body inside I1 → keep. I1 counts as candle 1 of the stack; candles 2 and 3 inside → keep; the 4th not filling → cancel (it becomes a 5m inside bar = rest).",
           tag: 'D1.4 p1',
         },
         {
