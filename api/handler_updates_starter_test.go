@@ -96,7 +96,8 @@ var completeWalk = []updaterjob.State{
 	updaterjob.StateDownloaded, updaterjob.StateVerified, updaterjob.StatePreflightOK,
 	updaterjob.StateMaintenanceHeld, updaterjob.StateDrainedAcked, updaterjob.StateGateOK,
 	updaterjob.StateBackupDone, updaterjob.StateNT8Skipped, updaterjob.StateActivated,
-	updaterjob.StateBooted, updaterjob.StateBootVerified, updaterjob.StateComplete,
+	updaterjob.StateBooted, updaterjob.StateBootVerified, updaterjob.StateWorkerSwapped,
+	updaterjob.StateComplete,
 }
 
 // walkTestJob writes a job with updaterjob's PRODUCTION writer and walks it
