@@ -105,11 +105,12 @@ func TestISBStopVerdict(t *testing.T) {
 	}
 }
 
-// TestISBStackingArithmetic — §2.1 rule 1 + stacking [D4.2 p2 @ 08:49–16:08]:
-// 1 → cancel, 2–3 → hold, 4 → cancel (becomes a 5m ISB).
+// TestISBStackingArithmetic — stacking [D4.2 p2 @ 08:49–16:08] per the CTO
+// parity ruling (mail 1791008332386 #1): ONE arm, held through the 1st, 2nd and
+// 3rd inside candle, cancelled at the 4th.
 func TestISBStackingArithmetic(t *testing.T) {
-	if got := ISBStackAdvice(1); got != "cancel" {
-		t.Fatalf("1 inside = %q, want cancel", got)
+	if got := ISBStackAdvice(1); got != "hold" {
+		t.Fatalf("1 inside = %q, want hold (the arm is kept — ruling 1791008332386)", got)
 	}
 	if got := ISBStackAdvice(2); got != "hold" {
 		t.Fatalf("2 inside = %q, want hold", got)
@@ -131,30 +132,20 @@ func TestISBStackTickEmitsCancelAtFour(t *testing.T) {
 	first := market.Kline{Open: 100, Close: 105, High: 106, Low: 99}
 	inside := market.Kline{Open: 101, Close: 104, High: 105, Low: 100}
 
-	// 1 → cancel (the ISB order that did not fill after the next candle)
+	// 1–3 → hold (the arm is kept and the expiry extended), 4 → cancel
 	arm := &ISBArm{FirstBar: first}
 	got := ISBStackTick(arm, inside, cfg)
-	if len(got) != 1 || got[0].Action != CancelArm {
-		t.Fatalf("1st inside = %+v, want one cancel (rule 1)", got)
-	}
-
-	// 2–3 → hold, 4 → cancel
-	arm = &ISBArm{FirstBar: first}
-	if got := ISBStackTick(arm, inside, cfg); len(got) != 1 {
-		t.Fatalf("count 1 must cancel: %+v", got)
+	if len(got) != 0 {
+		t.Fatalf("1st inside = %+v, want no intents (hold)", got)
 	}
 	// restart the counter the way the evaluator does: a re-placed arm counts again
 	arm.Inside = 0
 	for n := 1; n <= 4; n++ {
 		got := ISBStackTick(arm, inside, cfg)
 		switch n {
-		case 1:
-			if len(got) != 1 || got[0].Action != CancelArm {
-				t.Fatalf("count 1 = %+v, want cancel", got)
-			}
-		case 2, 3:
+		case 1, 2, 3:
 			if len(got) != 0 {
-				t.Fatalf("count %d = %+v, want hold (no intents)", n, got)
+				t.Fatalf("count %d = %+v, want hold (no intents) — ruling 1791008332386", n, got)
 			}
 		case 4:
 			if len(got) != 1 || got[0].Action != CancelArm {

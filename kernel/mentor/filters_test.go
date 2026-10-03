@@ -27,8 +27,10 @@ func TestTriggerLineFirstBreakDrawsLine(t *testing.T) {
 	if got.Dir != SideLong || got.Price != 100 {
 		t.Fatalf("line = %+v, want long @ 100 (the broken high, not the breaker's high)", got)
 	}
-	if got.LastBucket != bars[2].OpenTime {
-		t.Fatalf("LastBucket = %d, want %d", got.LastBucket, bars[2].OpenTime)
+	// the LAST bucket is the forming tail — it never commits (re-evaluated
+	// every tick); the committed cursor is the second-to-last bucket.
+	if got.LastBucket != bars[1].OpenTime {
+		t.Fatalf("LastBucket = %d, want %d", got.LastBucket, bars[1].OpenTime)
 	}
 }
 
@@ -82,7 +84,8 @@ func TestTriggerTickIsIdempotentAndIncremental(t *testing.T) {
 	}
 	bars = append(bars, b5(10, 105, 100, 104)) // same-direction break → no move, but processed
 	third := TriggerTick(first, bars, 5, cfg)
-	if third.LastBucket != bars[2].OpenTime {
+	// the new tail (bars[2]) is forming — the committed cursor is bars[1].
+	if third.LastBucket != bars[1].OpenTime {
 		t.Fatalf("extended tick did not process only the new bucket: %+v", third)
 	}
 	if third.Dir != first.Dir || third.Price != first.Price {
@@ -154,8 +157,9 @@ func TestTriggerLineOnRecorded5mTape(t *testing.T) {
 	if got.Dir == "" {
 		t.Fatal("no trigger line was drawn on the recorded 5m tape")
 	}
-	if got.LastBucket != bars[len(bars)-1].OpenTime {
-		t.Fatalf("LastBucket = %d, want the last bucket %d", got.LastBucket, bars[len(bars)-1].OpenTime)
+	// the last bucket is the forming tail — it never commits.
+	if got.LastBucket != bars[len(bars)-2].OpenTime {
+		t.Fatalf("LastBucket = %d, want the second-to-last bucket %d", got.LastBucket, bars[len(bars)-2].OpenTime)
 	}
 	// re-tick idempotence on the real tape (B2)
 	again := TriggerTick(got, bars, 5, cfg)

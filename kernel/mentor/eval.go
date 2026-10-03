@@ -171,6 +171,19 @@ func midRangeBoxed(boxes []Box, price float64) bool {
 	return floor && ceil
 }
 
+// isbArmActive reports whether an ISB arm for the SAME side is still live
+// (CTO parity ruling 1791008332386 #1: ONE active ISB arm per side — the
+// reference is the FIRST ISB; a new arm forms only after the previous one is
+// filled, cancelled or expired).
+func isbArmActive(arms map[string]ISBArm, side Side) bool {
+	for _, arm := range arms {
+		if arm.Inside >= 0 && arm.Side == side {
+			return true
+		}
+	}
+	return false
+}
+
 // touchesOldExtreme reports whether the candle's range reaches an old high/low
 // within ±2 pts (the "isb_at_old_extreme" size flag, written rule 2 D4.1 p1).
 func touchesOldExtreme(cur market.Kline, levels []Level) bool {
@@ -305,6 +318,9 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	// colour, not the trigger line (RULES-FIX-v3).
 	prev, cur := bars[len(bars)-2], bars[len(bars)-1]
 
+	// arms placed on THIS tick are skipped by the stacking loop below.
+	justPlaced := map[string]bool{}
+
 	// R5 (RULES-FIX-v3): the 5m ISB rest box. While it stands it replaces the
 	// trigger line for gating; nothing trades inside it except a same-direction
 	// 1m ISB, and it is deleted when a 1m BODY closes outside [D3.4 p2 @
@@ -354,6 +370,9 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 					}
 					if !ok {
 						_ = reason // twenties — no entry
+					} else if isbArmActive(e.State.ISBArms, side) {
+						// ONE ARM PER SIDE (CTO parity ruling 1791008332386 #1):
+						// stacking extends the EXISTING arm — no new arm.
 					} else if boxBlocked {
 						// R5: an opposite-direction ISB inside the box — no entry
 					} else if side != "" && htfSide != "" && side != htfSide {
@@ -380,7 +399,10 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 						chosen.ExpiryMs = cur.CloseTime + 60_000
 						e.State.ArmSeq++
 						id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
-						e.State.ISBArms[id] = ISBArm{FirstBar: cur}
+						// the ISB candle is the 1st inside candle (Inside=1), so the
+						// stacking loop must skip this arm on the placement bar.
+						e.State.ISBArms[id] = ISBArm{FirstBar: cur, Inside: 1, Side: side}
+						justPlaced[id] = true
 						chosen.ArmID = id
 						out = append(out, chosen)
 					}
@@ -408,6 +430,9 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		if arm.Inside < 0 {
 			delete(e.State.ISBArms, id)
 			continue
+		}
+		if justPlaced[id] {
+			continue // placed this tick: the ISB candle is Inside 1 already
 		}
 		var cancelled bool
 		for _, in := range ISBStackTick(&arm, cur, e.Cfg) {

@@ -6,31 +6,30 @@ import (
 	"vl/market"
 )
 
-// TestTriggerFormingBucketCommittedOnce — B2: the forming bucket may fire a
-// break once and is NEVER re-applied. Re-ticking with the SAME bucket grown
-// (its high now breaks the previous bucket) must not fire a line.
-// (Mutant: drop the LastBucket skip → RED.)
-func TestTriggerFormingBucketCommittedOnce(t *testing.T) {
+// TestTriggerFormingBucketReevaluatedEachTick — the forming bucket is NEVER
+// committed: it is re-evaluated every tick with its growing extremes, so a
+// break fires at the MINUTE it happens (confirmation rule (a) — never from
+// the bucket open, and never lost). Same-direction re-breaks are idempotent.
+func TestTriggerFormingBucketReevaluatedEachTick(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	// bucket 17:00 recorded; bucket 17:05 partial (no break yet)
 	first := TriggerTick(TriggerLine{}, []market.Kline{
 		b5(0, 100, 96, 97),
-		b5(5, 99, 97, 98), // high 99 does NOT break 100, low 97 not < 96
+		b5(5, 99, 97, 98), // high 99 does NOT break 100
 	}, 5, cfg)
 	if first.Dir != "" {
-		t.Fatalf("no break should have fired: %+v", first)
+		t.Fatalf("no break should have fired yet: %+v", first)
 	}
-	// the SAME forming bucket now grows a high that WOULD break → committed
-	// once means it is never re-applied.
+	// the SAME forming bucket grows a high that breaks → the line fires NOW.
 	second := TriggerTick(first, []market.Kline{
 		b5(0, 100, 96, 97),
-		b5(5, 104, 97, 99), // grown: high 104 > 100 — but already processed
+		b5(5, 104, 97, 99), // grown: high 104 > 100 — the break minute arrived
 	}, 5, cfg)
-	if second.Dir != "" {
-		t.Fatalf("the forming bucket was re-applied after growing: %+v", second)
+	if second.Dir != SideLong || second.Price != 100 {
+		t.Fatalf("the grown forming bucket must fire at the break minute: %+v", second)
 	}
-	// a NEW bucket may then break (the stream continues normally)
+	// a NEW bucket may then reverse (the stream continues normally)
 	third := TriggerTick(second, []market.Kline{
 		b5(0, 100, 96, 97),
 		b5(5, 104, 97, 99),

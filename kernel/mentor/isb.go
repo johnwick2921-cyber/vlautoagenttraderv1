@@ -111,6 +111,8 @@ func ISBStopVerdict(candle market.Kline, cfg Config) (stopPts float64, ok bool, 
 type ISBArm struct {
 	FirstBar market.Kline // the first ISB candle (the reference)
 	Inside   int          // candles whose BODIES stayed inside the first ISB since placement
+	Side     Side         // the arm's R1 direction (candle-1 colour) — stored, not derived:
+	// FirstBar is the ISB candle, whose own colour is the OPPOSITE side
 }
 
 // ISBStackAdvice is the stacking arithmetic [D4.2 p2 @ 08:49–16:08]:
@@ -123,9 +125,11 @@ type ISBArm struct {
 // It returns "" (no action) for hold.
 func ISBStackAdvice(inside int) string {
 	switch inside {
-	case 1:
-		return "cancel"
-	case 2, 3:
+	case 1, 2, 3:
+		// CTO parity ruling 2026-10-03 (mail 1791008332386 #1, replay audit g):
+		// ONE arm, held through the 2nd and 3rd inside candle, cancelled at the
+		// 4th. The 1st inside candle KEEPS the arm (the old cancel-at-1 was dead
+		// code that dominated the stacking holds).
 		return "hold"
 	case 4:
 		return "cancel"
