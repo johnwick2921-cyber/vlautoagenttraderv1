@@ -131,6 +131,11 @@ type Config struct {
 	// Default 0: any closed candle that did not touch ends the visit ("he never
 	// states one"). Key-level touch references are per VISIT, not per day.
 	LvlRevisitMinPts float64
+	// EmaMaxCross30m — E4 knob (CTO 12:27:25Z): refuse the EMA34 setup when the
+	// close crossed the line this many times over the last 30 closed 1m candles
+	// ("xien len xien xuong", D4.2 p1 @ 22:27 — he never gives a number).
+	// Default 0 = OFF (base). Sensitivity rows: v5_ema_cross2 / v5_ema_cross4.
+	EmaMaxCross30m int
 
 	// ISB (PLAN v1 §3).
 	ISBBufferPts   float64 // order buffer beyond the wick extremes, BOTH sides; default 1.5 [D1.4 p1 @ 22:22–22:30]
