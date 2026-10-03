@@ -32,6 +32,11 @@ type Touch struct {
 	// ApproachedFrom names the side price stood on before the first touch
 	// (the previous bar's close vs the level).
 	ApproachedFrom Side
+	// PriceAtTouch is the level price when the touch was classified — for a
+	// MOVING line (EMA) the evaluator resets the touch when the line drifts
+	// away, so a touch against yesterday's EMA position is not treated as a
+	// touch of today's.
+	PriceAtTouch float64
 }
 
 // TouchTick evaluates one closed 1m candle against one level (§3 steps 1–3):
@@ -54,6 +59,7 @@ func TouchTick(t *Touch, level Level, prevClose float64, bar market.Kline, cfg C
 	}
 	t.ApproachedFrom = approachSide(prevClose, level.Price)
 	t.RefBar = bar
+	t.PriceAtTouch = level.Price
 	switch t.ApproachedFrom {
 	case SideShort: // price came from below: level acts as resistance
 		if bar.Close > level.Price {

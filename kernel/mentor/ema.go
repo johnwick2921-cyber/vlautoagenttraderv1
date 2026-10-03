@@ -1,8 +1,6 @@
 package mentor
 
 import (
-	"fmt"
-
 	"vl/market"
 )
 
@@ -27,7 +25,10 @@ func EMALevels(bars []market.Kline, cfg Config) []Level {
 	if cfg.EMAPeriod34 > 0 {
 		v := emaValue(tf, cfg.EMAPeriod34)
 		out = append(out, Level{
-			Key:    fmt.Sprintf("%s:%.2f", KindEMA34, v),
+			// STABLE key: the EMA line moves every bar, but it is ONE line —
+			// keying by value would fragment the touch state (each bar a new
+			// level) and break the invalid-level rule.
+			Key:    string(KindEMA34),
 			Kind:   KindEMA34,
 			Price:  v,
 			AtTime: last.OpenTime,
@@ -36,7 +37,7 @@ func EMALevels(bars []market.Kline, cfg Config) []Level {
 	if cfg.EMAPeriod9 > 0 {
 		v := emaValue(tf, cfg.EMAPeriod9)
 		out = append(out, Level{
-			Key:    fmt.Sprintf("%s:%.2f", KindEMA9, v),
+			Key:    string(KindEMA9),
 			Kind:   KindEMA9,
 			Price:  v,
 			AtTime: last.OpenTime,

@@ -102,6 +102,16 @@ func nextLevelBeyond(levels []Level, price float64, side Side) float64 {
 	return best
 }
 
+// freshTouch resets a classified touch when the level's price has moved away
+// from where it was touched (the EMA case): a touch against the line at one
+// price is not a touch of the same line after it drifted.
+func freshTouch(tr Touch, lvl Level) Touch {
+	if tr.Outcome != TouchNone && abs(lvl.Price-tr.PriceAtTouch) > 0.01 {
+		return Touch{LevelKey: lvl.Key}
+	}
+	return tr
+}
+
 // Tick evaluates the newest closed 1m candle. bars is the closed history up to
 // now (the bot's BarCache slice); now is the current time for the swing
 // detector's closed-bar filter. Returns the intents for this candle.
@@ -121,6 +131,9 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		if e.State.ISBOnly[lvl.Key] {
 			continue // invalid level: no PHL/PLH, and touches need no re-read
 		}
+		// a MOVING line (EMA) that drifted away from where it was touched is
+		// a fresh line for touch purposes — reset the classification.
+		tr = freshTouch(tr, lvl)
 		intents := TouchTick(&tr, lvl, bars[len(bars)-2].Close, bars[len(bars)-1], e.Cfg)
 		e.State.Touches[lvl.Key] = tr
 		for _, in := range intents {
