@@ -187,6 +187,29 @@ func TestTouchOnRecordedTapeClassifiesOncePerLevel(t *testing.T) {
 	}
 }
 
+// TestTouchTiePreviousCloseNoApproach — CTO review 2d3aad1ef: a previous close
+// exactly ON the level is a tie — no approach side yet. The touch waits for a
+// bar that closes off the level; nothing classifies on the tie bar.
+func TestTouchTiePreviousCloseNoApproach(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	lvl := Level{Key: "k1", Kind: KindKeyLevel, Price: 100}
+	tr := &Touch{LevelKey: "k1"}
+	// prevClose == the level: the candle touches and closes above, but there
+	// is no approach side → nothing classifies.
+	if got := TouchTick(tr, lvl, 100, market.Kline{High: 101, Low: 99.5, Close: 100.2}, cfg); len(got) != 0 {
+		t.Fatalf("tie bar emitted: %+v", got)
+	}
+	if tr.Outcome != TouchNone {
+		t.Fatalf("tie bar classified as %q", tr.Outcome)
+	}
+	// the NEXT bar closes off the level (above) and its touch classifies as a
+	// support reject.
+	if got := TouchTick(tr, lvl, 100.2, market.Kline{High: 100.5, Low: 99.0, Close: 100.2}, cfg); len(got) != 0 || tr.Outcome != TouchReject {
+		t.Fatalf("off-level bar: intents=%+v outcome=%q, want reject", got, tr.Outcome)
+	}
+}
+
 // TestTouchDisabledIsNil — L4: mentor_mode OFF → nothing.
 func TestTouchDisabledIsNil(t *testing.T) {
 	lvl := Level{Key: "k1", Price: 100}

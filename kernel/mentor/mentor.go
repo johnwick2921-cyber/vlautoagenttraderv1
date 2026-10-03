@@ -121,6 +121,9 @@ type Config struct {
 	// routed Config integration lands.
 	DayGateSpentPts     float64 // run >= this before the open = spent; default 300 [D5.1 p1 @ 15:57]
 	DayGateTargetCapPts float64 // spent-day target cap; default 15 ("15 điểm bán, 10 điểm bán")
+
+	// §8 SWING4H knobs (DS-106): the method defaults.
+	Swing SwingCfg
 }
 
 // DefaultConfig returns the mentor defaults per PLAN v1 (knob values start from
@@ -153,6 +156,8 @@ func DefaultConfig() Config {
 
 		DayGateSpentPts:     300,
 		DayGateTargetCapPts: 15,
+
+		Swing: DefaultSwingCfg(),
 	}
 }
 

@@ -63,6 +63,11 @@ func TouchTick(t *Touch, level Level, prevClose float64, bar market.Kline, cfg C
 		return nil // no touch
 	}
 	t.ApproachedFrom = approachSide(prevClose, level.Price)
+	if t.ApproachedFrom == "" {
+		// tie: the previous close sat exactly ON the level — no approach side
+		// yet (CTO review 2d3aad1ef). Wait for a bar that closes off the level.
+		return nil
+	}
 	t.RefBar = bar
 	t.PriceAtTouch = level.Price
 	switch t.ApproachedFrom {
@@ -118,5 +123,8 @@ func approachSide(prevClose, price float64) Side {
 	if prevClose > price {
 		return SideLong // above → level is support, approached from above
 	}
-	return SideShort // below → resistance, approached from below
+	if prevClose < price {
+		return SideShort // below → resistance, approached from below
+	}
+	return "" // tie: no approach yet (CTO review 2d3aad1ef)
 }

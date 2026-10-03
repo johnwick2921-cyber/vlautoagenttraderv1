@@ -26,6 +26,9 @@ type State struct {
 	HTF HTF `json:"htf,omitempty"`
 	// Day is the §7 pre-session verdict latch (DS-106, fold item 4).
 	Day DayLatch `json:"day_latch,omitempty"`
+	// Swing is the §8 4h-EMA34 swing state (DS-106 slice; rebuildable by
+	// replaying bars through SwingTick).
+	Swing SwingState `json:"swing,omitempty"`
 	// ArmSeq names the next arm.
 	ArmSeq int `json:"arm_seq"`
 }
@@ -276,6 +279,11 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 			}
 		}
 	}
+
+	// §8 SWING4H (DS-106 slice) on FINAL 5m bars only — the still-forming
+	// bucket is excluded (CTO wiring ruling 2026-10-03).
+	out = append(out, runSwing(e, bars, now)...)
+
 	return out
 }
 
@@ -307,4 +315,10 @@ func oldExtremeIndexes(levels []Level, bars []market.Kline) []oldExtreme {
 		}
 	}
 	return out
+}
+
+// runSwing evaluates the §8 4h-EMA34 swing on FINAL 5m bars (the forming
+// bucket excluded — CTO wiring ruling 2026-10-03) and returns its intents.
+func runSwing(e *Evaluator, bars []market.Kline, now int64) []Intent {
+	return SwingTick(&e.State.Swing, closedBuckets(bars, now, e.Cfg), e.Cfg.Swing, now)
 }
