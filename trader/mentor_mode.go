@@ -67,8 +67,10 @@ type mentorSizeChoice struct {
 }
 
 // mentorContractsFor is THE size table (pure — the call site the tests pin).
-// Order matters: big → confluence → reduced (twenties/spent) → swing4h → base,
-// every branch capped at maxContracts. A non-positive max refuses (fail-closed).
+// Order matters: spent → ISB reductions → twenties → big → confluence →
+// swing4h → base, every branch capped at maxContracts. A non-positive max
+// refuses (fail-closed). B12 (CTO 1791041016051): the stop-in-the-twenties
+// cut wins over confluence sizing — a 20–25 pt stop is 3, never 10/20.
 func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, spentCap, maxContracts int) (mentorSizeChoice, error) {
 	if maxContracts <= 0 {
 		return mentorSizeChoice{}, fmt.Errorf("mentor size: mentor_max_contracts not set (max=%d)", maxContracts)
@@ -95,6 +97,13 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 	if in.ISBInRange {
 		return mentorSizeChoice{Contracts: clamp(3), Tier: "isb_in_range", Why: "ISB traded inside a range → reduce size, tier 3 [D4.1 p1 written rule 3 @08:05/09:40]"}, nil
 	}
+	// B12 (CTO 1791041016051): a stop in the twenties cuts to 3 and wins over
+	// confluence sizing — "reduce size or don't trade" [D3.3 p1 @ 01:09] is a
+	// rule about the STOP, so it outranks a 10/20 the confluence would earn.
+	if in.StopPts >= mentorStopTwentiesMinPts && in.StopPts <= mentorStopTwentiesMaxPts {
+		return mentorSizeChoice{Contracts: clamp(reduced), Tier: "reduced", Why: fmt.Sprintf(
+			"stop %.1f pts in the twenties → reduce size or don't trade [D3.3 p1 @ 01:09]", in.StopPts)}, nil
+	}
 	if in.Confluence && in.HTFAgree && in.RoomMultiple >= mentorRoomBigMultiple && in.TargetPts >= mentorTargetBigPts {
 		return mentorSizeChoice{Contracts: clamp(big), Tier: "big", Why: fmt.Sprintf(
 			"confluence + 4h&1h agree + room %.1fx ≥ %.0fx + target %.1f pts ≥ %.0f (hard cap %d)",
@@ -102,10 +111,6 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 	}
 	if in.Confluence {
 		return mentorSizeChoice{Contracts: clamp(conf), Tier: "confluence", Why: "box/zone + key level + 5m trigger agreeing (§6)"}, nil
-	}
-	if in.StopPts >= mentorStopTwentiesMinPts && in.StopPts <= mentorStopTwentiesMaxPts {
-		return mentorSizeChoice{Contracts: clamp(reduced), Tier: "reduced", Why: fmt.Sprintf(
-			"stop %.1f pts in the twenties → reduce size or don't trade [D3.3 p1 @ 01:09]", in.StopPts)}, nil
 	}
 	if strings.EqualFold(in.Setup, "SWING4H") {
 		// S9 (D5.2 p2 @05:21–05:57): a strong day — 5m candles running 50–80
@@ -475,6 +480,18 @@ var mentorConfluenceForIntent func(in mentor.Intent) bool
 // mentorConfluenceFlag resolves the stub seam for one intent.
 func mentorConfluenceFlag(in mentor.Intent) bool {
 	return mentorConfluenceForIntent != nil && mentorConfluenceForIntent(in)
+}
+
+// mentorExtraFor builds the size-table inputs for ONE intent at the eval site.
+// A5 (CTO 1791041016051): the §7 spent-day flag rides the intent (stamped by
+// the evaluator) — before this line the flag existed in the table but was
+// never SET, so the spent_day tier (2) and the R9 15-pt stop cap never fired.
+func mentorExtraFor(in mentor.Intent, strongDay bool) mentorTierInputs {
+	return mentorTierInputs{
+		StrongDay:  strongDay,
+		Confluence: mentorConfluenceFlag(in),
+		SpentDay:   in.SpentDay,
+	}
 }
 
 // mentorIntentRisk is |entry − stop| from the intent (StopPts when the emit

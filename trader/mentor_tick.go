@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -35,6 +36,14 @@ func mentorPlaceEnv() bool {
 	return false
 }
 
+// mentorBars1mDepth is the 1m history depth the mentor fetch asks for (P0 A6
+// routing, CTO 1791058624275): the §7 Globex run window (17:00→08:30 CT) is
+// 930 bars and the full RTH day to 15:00 CT is 1320 — 1500 covers both with
+// slack. The old 4-hour ask started mid-window: past the 08:30 freeze the
+// run window held ZERO of those bars and the day gate read DayNotMeasured
+// every day, so the bot never traded.
+const mentorBars1mDepth = 1500
+
 // mentorTick runs the evaluator on the latest 1m bars (the 2-minute scan's
 // fallback — the PRIMARY path is the event pass on every FINAL 1m bar). It
 // never touches the wire unless mentor mode AND MENTOR_PLACE are both on.
@@ -45,7 +54,7 @@ func (at *AutoTrader) mentorTick(ctx *kernel.Context) {
 	if market.FuturesBarsProvider == nil {
 		return
 	}
-	bars := market.FuturesBarsProvider("MNQ", "1m", 240)
+	bars := market.FuturesBarsProvider("MNQ", "1m", mentorBars1mDepth)
 	if len(bars) == 0 {
 		return
 	}
@@ -91,7 +100,7 @@ func (at *AutoTrader) mentorEventPassAt(now time.Time) bool {
 	if market.FuturesBarsProvider == nil {
 		return false
 	}
-	bars := market.FuturesBarsProvider("MNQ", "1m", 240)
+	bars := market.FuturesBarsProvider("MNQ", "1m", mentorBars1mDepth)
 	if len(bars) == 0 {
 		return false
 	}
@@ -102,14 +111,13 @@ func (at *AutoTrader) mentorEventPassAt(now time.Time) bool {
 	return true
 }
 
-// mentorEvaluatorConfig builds the evaluator config with the strategy's knob
-// overrides (defaults as ruled, CTO 1791033257041). The G1 / location-filter
-// knobs wire in when their evaluator fields land (DS-107's limits,
-// DS-103's location trigger knob) — the resolvers already pin the defaults.
+// mentorEvaluatorConfig applies strategy overrides to the evaluator. B22's
+// structural departure remains primary; the fixed-points fallback is opt-in.
 func (at *AutoTrader) mentorEvaluatorConfig() mentor.Config {
 	cfg := mentor.DefaultConfig()
 	cfg.Enabled = true
 	rc := at.mentorRiskControl()
+	cfg.LossDeparturePts = mentorLossDeparturePts(rc)
 	if rc != nil {
 		cfg.LvlRevisitMinPts = mentorLvlRevisitMinPts(rc)
 		cfg.EmaMaxCross30m = mentorEmaMaxCross30m(rc)
@@ -130,11 +138,28 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 	intents := at.mentorEval.Tick(bars, last.OpenTime)
 	// S9 (D5.2 p2 @05:21): strong-day detection from the recent CLOSED 5m bars
 	// — 50–80 pt candles cut every tier to 1–2.
-	extra := mentorTierInputs{}
+	strongDay := false
 	if bars5 := market.FuturesBarsProvider("MNQ", "5m", 12); len(bars5) > 0 && mentorStrongDayFrom5m(bars5) {
-		extra.StrongDay = true
+		strongDay = true
 	}
 	for _, in := range intents {
+		// B20 trader half (CTO 1791058836784, FIXES.md B20): the trigger
+		// LATER flipped to the trade's side — the OPEN position upgrades
+		// to confluence: exit C (hold ≥ 1:2, stop untouched), size
+		// UNCHANGED (the table is never re-run for an upgrade). The emit
+		// itself is DS-103's (kernel/mentor is his). It rides its own path:
+		// the dispatch below sizes and places ENTRIES only.
+		if in.Action == mentor.ConfluenceUpgrade {
+			mentorCount("intent_" + string(in.Action))
+			at.mentorConfluenceUpgrade(in)
+			continue
+		}
+		// A5: the spent-day flag rides the intent (stamped by the
+		// evaluator); confluence comes from the R2 stub seam.
+		extra := mentorExtraFor(in, strongDay)
+		// P0-b ONE entry path: the injector's dispatch (ledger-routed,
+		// ALWAYS stop-limit) handles PlaceStopEntry/PlaceStopLimitEntry and
+		// every arm action; an unknown action is refused, never silent.
 		at.mentorDispatchIntent(in, extra, last.CloseTime, emitMs)
 	}
 }
@@ -201,6 +226,9 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 	forkMode, forkTP, forkWhy := mentorExitFork(in, mentorConfluenceFlag(in))
 	mentorCount("exit_fork_" + forkMode)
 	at.logInfof("🧑‍🏫 mentor exit fork: %s — %s (leg 1 TP %.2f)", forkMode, forkWhy, forkTP)
+	// B20: the chosen branch is REGISTERED per open position — a later
+	// confluence upgrade switches it to C (hold ≥ 1:2, size untouched).
+	at.setMentorExitMode(strings.ToLower(string(in.Side)), forkMode)
 	if mentorPlaceRecorderForTest != nil {
 		mentorPlaceRecorderForTest(in, choice.Contracts)
 		return // test seam: the real pipeline is never reached from a test
@@ -297,6 +325,67 @@ func mentorNoChase(side mentor.Side, latest float64, trigger float64) (skip bool
 // through-price intent and the test goes RED.
 var mentorPlaceRecorderForTest func(in mentor.Intent, contracts int)
 
+// ── B20 CONFLUENCE UPGRADE (trader half; the emit is DS-103's kernel) ───────
+
+// mentorExitMode / setMentorExitMode read/write the per-position exit branch
+// registered at placement (A/B/C/swing). The P1 exit loop drives the branch;
+// B20 switches it to C.
+func (at *AutoTrader) mentorExitMode(key string) string {
+	at.mentorExitMu.Lock()
+	defer at.mentorExitMu.Unlock()
+	return at.mentorExitModes[key]
+}
+
+func (at *AutoTrader) setMentorExitMode(key, mode string) {
+	at.mentorExitMu.Lock()
+	defer at.mentorExitMu.Unlock()
+	if at.mentorExitModes == nil {
+		at.mentorExitModes = map[string]string{}
+	}
+	at.mentorExitModes[key] = mode
+}
+
+// mentorConfluenceUpgradeMode is the pure B20 switch: an upgrade moves the
+// open position's exit branch to C — hold ≥ 1:2, the stop untouched. The SIZE
+// is never re-read (the upgrade never touches the size table). A no-position
+// and the swing (which holds by the 4h, not the 5m trigger) are no-ops — the
+// kernel only emits for live school-1 entries, but the switch fails closed
+// anyway.
+func mentorConfluenceUpgradeMode(current string) (mode string, why string) {
+	switch current {
+	case "":
+		return "", "no open mentor position — the upgrade names nothing"
+	case "swing":
+		return "swing", "the swing holds by the 4h — B20 upgrades school-1 entries only"
+	case "C":
+		return "C", "already confluence — hold ≥ 1:2, nothing to switch"
+	default:
+		return "C", fmt.Sprintf("exit %s → C: hold ≥ 1:2, stop untouched, size unchanged [D3.4 p3 @09:17–12:59]", current)
+	}
+}
+
+// mentorConfluenceUpgrade applies the B20 switch to the OPEN position named by
+// the intent's side: the exit branch moves to C (hold ≥ 1:2), the stop and the
+// size stay exactly as placed. A no-position or already-C intent is counted
+// and logged, never silent.
+func (at *AutoTrader) mentorConfluenceUpgrade(in mentor.Intent) {
+	key := strings.ToLower(string(in.Side))
+	next, why := mentorConfluenceUpgradeMode(at.mentorExitMode(key))
+	if next == "" {
+		mentorCount("exit_upgrade_no_position")
+		at.logWarnf("🧑‍🏫 mentor confluence upgrade IGNORED — %s (%s)", why, in.Reason)
+		return
+	}
+	if next == at.mentorExitMode(key) {
+		mentorCount("exit_upgrade_noop")
+		at.logInfof("🧑‍🏫 mentor confluence upgrade: %s (%s) — %s", key, why, in.Reason)
+		return
+	}
+	at.setMentorExitMode(key, next)
+	mentorCount("exit_upgrade_c")
+	at.logInfof("🧑‍🏫 mentor confluence upgrade: %s %s (size unchanged) — %s", key, why, in.Reason)
+}
+
 // ── STRONG DAY (S9) ────────────────────────────────────────────────────────
 
 const mentorStrongDayPtsMin = 50.0 // a 5m candle range ≥50 pts = the 50–80 band
@@ -342,9 +431,8 @@ func mentorNewsHold(events []calendar.Event, now time.Time) (hold bool, why stri
 	if !mentorNewsWindowActive(now) {
 		return false, ""
 	}
-	loc := kernel.CTLocation()
 	for _, e := range events {
-		if e.Impact != calendar.T1 || e.Time.In(loc).Format("15:04") != "07:30" {
+		if e.Impact != calendar.T1 || kernel.CloseHHMMCT(e.Time) != "07:30" {
 			continue
 		}
 		title := strings.ToLower(e.Title)
@@ -445,18 +533,38 @@ func mentorWindowActive(start string, minutes int, now time.Time) (active bool, 
 	if minutes == 0 {
 		return true, "" // the window is disabled
 	}
-	hm, err := time.Parse("15:04", start)
-	if err != nil {
+	hour, minute, ok := parseMentorWindowStart(start)
+	if !ok {
 		return false, fmt.Sprintf("trading window start %q unparseable — entries refused (fail-closed) [D1.2 p1 @23:52]", start)
 	}
 	loc := kernel.CTLocation()
 	ct := now.In(loc)
-	open := time.Date(ct.Year(), ct.Month(), ct.Day(), hm.Hour(), hm.Minute(), 0, 0, loc)
+	open := time.Date(ct.Year(), ct.Month(), ct.Day(), hour, minute, 0, 0, loc)
 	end := open.Add(time.Duration(minutes) * time.Minute)
 	if !now.Before(open) && now.Before(end) {
 		return true, ""
 	}
-	return false, fmt.Sprintf("outside the trading window %s–%s CT — no new entries [D1.2 p1 @23:52–24:59]", open.Format("15:04"), end.Format("15:04"))
+	return false, fmt.Sprintf("outside the trading window %s–%s CT — no new entries [D1.2 p1 @23:52–24:59]", kernel.CloseHHMMCT(open), kernel.CloseHHMMCT(end))
+}
+
+func parseMentorWindowStart(start string) (hour, minute int, ok bool) {
+	if len(start) != 5 || start[2] != ':' {
+		return 0, 0, false
+	}
+	for i, r := range start {
+		if i != 2 && (r < '0' || r > '9') {
+			return 0, 0, false
+		}
+	}
+	hour, err := strconv.Atoi(start[:2])
+	if err != nil || hour < 0 || hour > 23 {
+		return 0, 0, false
+	}
+	minute, err = strconv.Atoi(start[3:])
+	if err != nil || minute < 0 || minute > 59 {
+		return 0, 0, false
+	}
+	return hour, minute, true
 }
 
 // mentorWindowGate is the call-site half of (b); SWING4H is exempt.
@@ -612,11 +720,10 @@ func mentorSourceDepth(name string) (int, bool) {
 // per-source loop names the short source on the same numbers).
 
 const (
-	// mentorSeedBars1mN / mentorSeedBars1hN cap the store read. Retention
-	// bounds what the read can return (1m 90d, 1h forever); these caps only
-	// bound memory. Both are far above every seed floor (102 closed candles).
+	// mentorSeedBars1mN caps the store read. Retention bounds what the read
+	// can return (1m 90d); the cap only bounds memory. Far above every seed
+	// floor (102 closed 4h candles ≈ 17 days of 1m bars ≈ 24500 rows).
 	mentorSeedBars1mN = 50000
-	mentorSeedBars1hN = 10000
 )
 
 // mentorSeedDepths is the seeded per-source depth snapshot (nil until the
@@ -659,27 +766,63 @@ func (at *AutoTrader) mentorSeedAtStart() {
 		mentorCount("seed_store_read_error")
 		rows1m = nil
 	}
-	rows1h, err1h := bh.LastNBarsCurrentContract("MNQ", "1h", mentorSeedBars1hN)
-	if err1h != nil {
-		at.logWarnf("🧑‍🏫 mentor seed: 1h store read failed (%v) — seeding with nothing (refusing)", err1h)
-		mentorCount("seed_store_read_error")
-		rows1h = nil
-	}
 	bars1m := storeBarsToKlines(rows1m, 60_000)
-	bars1h := storeBarsToKlines(rows1h, 3_600_000)
-	missing := mentor.Seed(at.mentorEval, bars1m, bars1h, now)
+	// P1 (CTO 12:44:08Z / 12:47:11Z): ONE bar source — the seed aggregates
+	// every higher timeframe from 1m; the store's native 1h is never read.
+	// The trader-side 1h aggregation mirrors kernel barsTF(bars1m, 60)
+	// exactly (epoch-aligned buckets) for the per-source depth seam.
+	bars1h := mentorAgg1H(bars1m)
+	missing := mentor.Seed(at.mentorEval, bars1m, now)
 	depths := mentor.SeedDepths(bars1m, bars1h, now)
 	mentorSeedDepths = depths
 	mentorSourceDepthSource = func(name string) (int, bool) {
 		d, ok := mentorSeedDepths[name]
 		return d, ok
 	}
-	at.logInfof("🧑‍🏫 %s", mentor.SeedLine(at.mentorEval.State, bars1m, bars1h, now))
+	at.logInfof("🧑‍🏫 %s", mentor.SeedLine(at.mentorEval.State, bars1m, now))
 	at.logInfof("%s", mentorSeamBootLine())
 	if len(missing) > 0 {
 		mentorCount("seed_missing")
 		at.logErrorf("🧑‍🏫 mentor seed REFUSING entries — missing: %s", strings.Join(missing, "; "))
 	}
+}
+
+// mentorAgg1H aggregates 1m bars into clock-aligned 1h buckets on epoch
+// boundaries — a byte-for-byte mirror of kernel mentor.barsTF(bars1m, 60)
+// (the kernel's non-4h buckets are epoch-aligned; only the 4h bucket uses the
+// 17:00 CT anchor). Used for the SeedDepths depth seam; the kernel's Seed
+// aggregates its own copy from the same 1m input.
+func mentorAgg1H(bars []market.Kline) []market.Kline {
+	const hourMs = int64(3600_000)
+	out := make([]market.Kline, 0, len(bars)/60)
+	var cur *market.Kline
+	flush := func() {
+		if cur != nil {
+			out = append(out, *cur)
+			cur = nil
+		}
+	}
+	for _, b := range bars {
+		bucket := b.OpenTime / hourMs * hourMs
+		if cur == nil || bucket != cur.OpenTime {
+			flush()
+			c := b
+			c.OpenTime = bucket
+			c.CloseTime = bucket + hourMs - 1
+			cur = &c
+			continue
+		}
+		if b.High > cur.High {
+			cur.High = b.High
+		}
+		if b.Low < cur.Low {
+			cur.Low = b.Low
+		}
+		cur.Close = b.Close
+		cur.Volume += b.Volume
+	}
+	flush()
+	return out
 }
 
 // mentorSourcesMissing names every mentor source that is not wired. With

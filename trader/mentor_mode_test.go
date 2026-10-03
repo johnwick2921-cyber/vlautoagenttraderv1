@@ -38,11 +38,15 @@ func TestMentorContractsForSizeTable(t *testing.T) {
 		{"confluence", mentorTierInputs{Setup: "PHL", StopPts: 11.25, Confluence: true}, mentorSizeChoice{10, "confluence", ""}},
 		{"big", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true}, mentorSizeChoice{20, "big", ""}},
 		{"big needs 4h AND 1h", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: false}, mentorSizeChoice{10, "confluence", ""}},
-		{"big needs room", mentorTierInputs{Setup: "PHL", StopPts: 20, TargetPts: 35, RoomMultiple: 1.5, Confluence: true, HTFAgree: true}, mentorSizeChoice{10, "confluence", ""}},
+		{"big needs room", mentorTierInputs{Setup: "PHL", StopPts: 19.5, TargetPts: 35, RoomMultiple: 1.5, Confluence: true, HTFAgree: true}, mentorSizeChoice{10, "confluence", ""}},
 		{"big needs target", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 29, RoomMultiple: 2.5, Confluence: true, HTFAgree: true}, mentorSizeChoice{10, "confluence", ""}},
 		{"stop in the twenties", mentorTierInputs{Setup: "PLH", StopPts: 23, TargetPts: 46}, mentorSizeChoice{3, "reduced", ""}},
 		{"stop at 20 boundary", mentorTierInputs{Setup: "PLH", StopPts: 20, TargetPts: 40}, mentorSizeChoice{3, "reduced", ""}},
 		{"stop below twenties", mentorTierInputs{Setup: "PLH", StopPts: 19.5, TargetPts: 40}, mentorSizeChoice{5, "base", ""}},
+		// B12 (CTO 1791041016051): the stop-in-the-twenties cut wins over
+		// confluence sizing — 3, never 10/20.
+		{"twenties cut beats confluence", mentorTierInputs{Setup: "PHL", StopPts: 22, TargetPts: 30, Confluence: true}, mentorSizeChoice{3, "reduced", ""}},
+		{"twenties cut beats big", mentorTierInputs{Setup: "PHL", StopPts: 22, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true}, mentorSizeChoice{3, "reduced", ""}},
 		{"spent day beats twenties", mentorTierInputs{Setup: "PLH", StopPts: 23, TargetPts: 46, SpentDay: true}, mentorSizeChoice{2, "spent_day", ""}},
 		{"SWING4H", mentorTierInputs{Setup: "SWING4H", StopPts: 12, TargetPts: 24}, mentorSizeChoice{3, "swing4h", ""}},
 		{"hard cap", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true}, mentorSizeChoice{20, "big", ""}},
@@ -74,6 +78,26 @@ func TestMentorContractsForSizeTable(t *testing.T) {
 				t.Fatalf("got (%d, %s, %q), want (%d, %s)", got.Contracts, got.Tier, got.Why, c.want.Contracts, c.want.Tier)
 			}
 		})
+	}
+}
+
+// TestMentorExtraForCopiesSpentDay — A5 (CTO 1791041016051): the spent-day
+// flag rides the intent (stamped by the evaluator) and must reach the size
+// table. Dropping the SpentDay copy here would silently kill the spent_day
+// tier (2) and the R9 15-pt stop cap in production.
+func TestMentorExtraForCopiesSpentDay(t *testing.T) {
+	old := mentorConfluenceForIntent
+	mentorConfluenceForIntent = func(in mentor.Intent) bool { return true }
+	t.Cleanup(func() { mentorConfluenceForIntent = old })
+
+	got := mentorExtraFor(mentor.Intent{SpentDay: true}, true)
+	if !got.SpentDay || !got.StrongDay || !got.Confluence {
+		t.Fatalf("mentorExtraFor = %+v, want all three flags set", got)
+	}
+	mentorConfluenceForIntent = func(in mentor.Intent) bool { return false }
+	got = mentorExtraFor(mentor.Intent{SpentDay: false}, false)
+	if got.SpentDay || got.StrongDay || got.Confluence {
+		t.Fatalf("mentorExtraFor = %+v, want all three flags false", got)
 	}
 }
 
