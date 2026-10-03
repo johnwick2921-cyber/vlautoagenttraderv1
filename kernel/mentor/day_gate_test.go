@@ -62,8 +62,8 @@ func TestDayLatchSpentConflictLatchesAllDay(t *testing.T) {
 	open := time.Date(2026, 9, 15, 8, 30, 0, 0, loc)
 
 	l := LatchDay(DayLatch{}, open.UnixMilli(), loc, 350, true, true, g)
-	if l.Verdict != DayOff {
-		t.Fatalf("spent+conflict at 08:30: v=%v, want DayOff", l.Verdict)
+	if l.Verdict != DayOff || l.Key != "2026-09-15" {
+		t.Fatalf("spent+conflict at 08:30: v=%v key=%q, want DayOff keyed 2026-09-15", l.Verdict, l.Key)
 	}
 	// 10:00 same day, the 1h flips → conflict gone; the latch must hold.
 	l = LatchDay(l, time.Date(2026, 9, 15, 10, 0, 0, 0, loc).UnixMilli(), loc, 350, true, false, g)
@@ -90,13 +90,66 @@ func TestDayLatchFreezesAtOpen(t *testing.T) {
 }
 
 // TestDayLatchNormalConflictIsNotOff — E1: a NORMAL day with a conflict reads
-// DayTrade (live, pre-open); the sit-out until the flip is §5.4 case 3.
+// DayTrade (live, pre-open, never latched); the sit-out until the flip is
+// §5.4 case 3.
 func TestDayLatchNormalConflictIsNotOff(t *testing.T) {
 	g := DefaultDayGate()
 	loc := time.FixedZone("CT", -5*3600)
 	l := LatchDay(DayLatch{}, time.Date(2026, 9, 15, 7, 0, 0, 0, loc).UnixMilli(), loc, 120, true, true, g)
-	if l.Verdict != DayTrade {
-		t.Fatalf("normal run + conflict pre-open: v=%v, want DayTrade", l.Verdict)
+	if l.Verdict != DayTrade || l.Key != "" {
+		t.Fatalf("normal run + conflict pre-open: v=%v key=%q, want live DayTrade with no latch", l.Verdict, l.Key)
+	}
+}
+
+// TestDayLatchPreOpenDoesNotLatch — L1: §7 is a pre-session read taken AT
+// the open. A pre-open spent+conflict does NOT latch: if the 1h agrees by
+// 08:30, the day is DaySpent, not off. Only the first tick at/after 08:30
+// latches.
+func TestDayLatchPreOpenDoesNotLatch(t *testing.T) {
+	g := DefaultDayGate()
+	loc := time.FixedZone("CT", -5*3600)
+
+	l := LatchDay(DayLatch{}, time.Date(2026, 9, 15, 7, 0, 0, 0, loc).UnixMilli(), loc, 350, true, true, g)
+	if l.Verdict != DayOff || l.Key != "" {
+		t.Fatalf("07:00 spent+conflict: v=%v key=%q, want LIVE DayOff with no latch", l.Verdict, l.Key)
+	}
+	// 08:30: the 1h agrees by the open → DaySpent, latched for the day.
+	l = LatchDay(l, time.Date(2026, 9, 15, 8, 30, 0, 0, loc).UnixMilli(), loc, 350, true, false, g)
+	if l.Verdict != DaySpent || l.Key != "2026-09-15" {
+		t.Fatalf("08:30 agree after pre-open conflict: v=%v key=%q, want DaySpent latched 2026-09-15", l.Verdict, l.Key)
+	}
+}
+
+// TestDayLatchKeysByTradingDay — L2: the latch key is the trading day
+// (17:00 CT → 16:00 CT next calendar day), not the calendar date. From
+// 17:00 the overnight session belongs to TOMORROW's trading day and the
+// verdict is live again; a Sunday 17:00 open belongs to Monday.
+func TestDayLatchKeysByTradingDay(t *testing.T) {
+	g := DefaultDayGate()
+	loc := time.FixedZone("CT", -5*3600)
+
+	// Latch at 08:30 on 09-15 → keyed 2026-09-15.
+	l := LatchDay(DayLatch{}, time.Date(2026, 9, 15, 8, 30, 0, 0, loc).UnixMilli(), loc, 350, true, false, g)
+	if l.Key != "2026-09-15" {
+		t.Fatalf("08:30 latch key = %q, want 2026-09-15", l.Key)
+	}
+	// 18:00 on the SAME calendar date: the new session (09-16's trading
+	// day) is pre-open → live, not the frozen 09-15 verdict.
+	l = LatchDay(l, time.Date(2026, 9, 15, 18, 0, 0, 0, loc).UnixMilli(), loc, 350, true, true, g)
+	if l.Verdict != DayOff || l.Key != "" {
+		t.Fatalf("18:00 same date: v=%v key=%q, want LIVE DayOff for the next trading day", l.Verdict, l.Key)
+	}
+
+	// Sunday 17:05 (2026-09-20): the open belongs to Monday's trading day,
+	// so a Monday-keyed latch must NOT freeze the Sunday evening.
+	l = LatchDay(DayLatch{Key: "2026-09-21", Verdict: DayOff}, time.Date(2026, 9, 20, 17, 5, 0, 0, loc).UnixMilli(), loc, 120, true, false, g)
+	if l.Verdict != DayTrade || l.Key != "" {
+		t.Fatalf("Sunday 17:05 with a Monday-keyed latch: v=%v key=%q, want LIVE DayTrade", l.Verdict, l.Key)
+	}
+	// Monday 08:30 latches under Monday's key.
+	l = LatchDay(DayLatch{}, time.Date(2026, 9, 21, 8, 30, 0, 0, loc).UnixMilli(), loc, 350, true, true, g)
+	if l.Verdict != DayOff || l.Key != "2026-09-21" {
+		t.Fatalf("Monday 08:30: v=%v key=%q, want DayOff keyed 2026-09-21", l.Verdict, l.Key)
 	}
 }
 

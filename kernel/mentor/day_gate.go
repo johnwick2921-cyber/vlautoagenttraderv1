@@ -20,9 +20,8 @@ import (
 //
 // NOTE (CTO review E1): a NORMAL day with a 4h/1h conflict is NOT off — that
 // is §5.4 case 3, a per-tick sit-out until the 1h flips. DayOff is ONLY
-// spent AND conflict, read at the pre-open boundary (08:30 CT) and LATCHED
-// for the rest of that RTH day: even if the 1h flips later, the machine
-// stays off.
+// spent AND conflict, read AT the open (08:30 CT) and LATCHED for the rest
+// of that trading day: even if the 1h flips later, the machine stays off.
 //
 // The Globex session runs 17:00 CT → 08:30 CT. Before 08:30 the run is
 // measured on the CURRENT session, 17:00 CT to NOW; from 08:30 on the
@@ -42,8 +41,8 @@ const (
 	// DaySpent: the day already ran SpentPts+ and the HTFs agree — trade but
 	// cap the target ("15 điểm bán, 10 điểm bán").
 	DaySpent
-	// DayOff: spent AND conflict at the pre-open read — shut the machine off
-	// for the day ("TẮT MÁY NGHỈ LUÔN CHO EM"). Latched once read.
+	// DayOff: spent AND conflict at the open — shut the machine off for the
+	// day ("TẮT MÁY NGHỈ LUÔN CHO EM"). Latched once read.
 	DayOff
 	// DayNotMeasured: fewer than 2 bars cover the window — fail closed, no
 	// mentor entries ("any trade you are vague about — don't" [§12]).
@@ -67,10 +66,14 @@ func DefaultDayGate() DayGate {
 	return DayGate{SpentPts: 300, TargetCapPts: 15}
 }
 
-// DayLatch is the frozen §7 verdict for the current RTH day (CTO review E1).
+// DayLatch is the frozen §7 verdict for a TRADING DAY (CTO reviews E1, L2).
 // Once frozen, nothing re-reads it — a DayOff survives a later 1h flip.
 type DayLatch struct {
-	Date    string // CT date "2006-01-02" the verdict was frozen for
+	// Key is the trading day this verdict belongs to: the calendar date of
+	// the RTH session it names. A trading day runs 17:00 CT → 16:00 CT the
+	// NEXT calendar day, so from 17:00 on, the key is tomorrow's date (and
+	// a Sunday 17:00 open belongs to Monday). "" = nothing latched.
+	Key     string
 	Verdict DayVerdict
 }
 
@@ -82,6 +85,17 @@ func ctime() *time.Location {
 		return loc
 	}
 	return time.FixedZone("CST6", -6*3600)
+}
+
+// tradingDayKey returns the calendar date of the trading day the moment
+// belongs to (CTO review L2). Before 17:00 CT the trading day is the current
+// calendar day (its RTH session opened at 17:00 yesterday); at/after 17:00
+// the trading day is tomorrow (the session that just opened).
+func tradingDayKey(t time.Time) string {
+	if t.Hour() >= globexOpenMin/60 {
+		return t.AddDate(0, 0, 1).Format("2006-01-02")
+	}
+	return t.Format("2006-01-02")
 }
 
 // sessionBounds returns the Globex session window for a moment in time:
@@ -160,28 +174,33 @@ func DayGateVerdict(run float64, haveRun bool, conflict bool, g DayGate) (DayVer
 	return DayTrade, ""
 }
 
-// LatchDay is the call site the evaluator uses (CTO review E1): the §7
-// verdict is read at the pre-open boundary and then LATCHES for the rest of
-// that RTH day. A latched DayOff survives everything — a later 1h flip does
-// not reopen the machine. Before 08:30 CT the verdict re-reads live (a
-// pre-open spent+conflict latches immediately); at/after 08:30 the verdict
-// freezes as read.
+// LatchDay is the call site the evaluator uses (CTO review E1 + L1 + L2):
+// the §7 verdict is read AT the open and then LATCHES for the rest of that
+// trading day. Before 08:30 CT the verdict stays LIVE — recomputed every
+// tick (the overnight swing needs it; a pre-open spent+conflict does NOT
+// latch, because §7 is a pre-session read taken at the open). The latch
+// happens only at the first tick at/after 08:30 CT of the trading day, and
+// the key is the trading day (17:00 CT → next calendar day), not the
+// calendar date.
 func LatchDay(l DayLatch, now int64, loc *time.Location, run float64, haveRun bool, conflict bool, g DayGate) DayLatch {
 	if loc == nil {
 		loc = ctime()
 	}
 	t := time.UnixMilli(now).In(loc)
-	date := t.Format("2006-01-02")
-	open := time.Date(t.Year(), t.Month(), t.Day(), globexCloseMin/60, globexCloseMin%60, 0, 0, loc)
-	if l.Date == date {
-		// DayOff latches permanently; at/after 08:30 the whole verdict
-		// freezes (the pre-session read is done).
-		if l.Verdict == DayOff || !t.Before(open) {
-			return l
-		}
+	key := tradingDayKey(t)
+	openDay, _ := time.Parse("2006-01-02", key)
+	open := time.Date(openDay.Year(), openDay.Month(), openDay.Day(), globexCloseMin/60, globexCloseMin%60, 0, 0, loc)
+	if l.Key == key && !t.Before(open) {
+		// This trading day's pre-session read is done: frozen.
+		return l
 	}
 	v, _ := DayGateVerdict(run, haveRun, conflict, g)
-	return DayLatch{Date: date, Verdict: v}
+	if t.Before(open) {
+		// Pre-open: live, never latched (L1). Key "" so nothing freezes
+		// a stale pre-open value at 08:30.
+		return DayLatch{Key: "", Verdict: v}
+	}
+	return DayLatch{Key: key, Verdict: v}
 }
 
 // CapTargetForDay applies the §7 spent-day cap: on a DaySpent day the target
