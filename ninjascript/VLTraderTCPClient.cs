@@ -428,60 +428,17 @@ namespace NinjaTrader.NinjaScript.AddOns
         // Selection order (first match wins):
         //   1. The account name in %USERPROFILE%\VLTrader\account.txt
         //      (operator-editable — one line, e.g. "Sim101" or "MyPropAcct").
-        //   2. %USERPROFILE%\NofxTrader\account.txt (legacy), only when the
-        //      VLTrader file is absent or empty. The AddOn then copies the
-        //      legacy value into VLTrader ONCE (an EMPTY source is never
-        //      copied). When BOTH files hold a non-empty, different value the
-        //      VLTrader file wins and a WARN names both values — never a
-        //      silent account switch.
-        //   3. "Sim101" (SIM default).
-        //   4. The first available account.
+        //      NOTE (R5, 2026-10-03): the legacy NofxTrader\account.txt
+        //      migration branch was REMOVED in the cancel-confirm AddOn update
+        //      (one F5) — the NofxTrader folder holds only data\ and VLTrader
+        //      did not exist there yet, so there is nothing to migrate. If you
+        //      ever had NofxTrader\account.txt, move it to VLTrader\account.txt
+        //      yourself.
+        //   2. "Sim101" (SIM default).
+        //   3. The first available account.
         private void ResolveAccount()
         {
             string preferred = ReadAccountFile("VLTrader");
-            string legacy = null;
-
-            if (preferred == null)
-            {
-                legacy = ReadAccountFile("NofxTrader");
-                if (legacy != null)
-                {
-                    // VL absent or empty, legacy non-empty: copy ONCE into
-                    // VLTrader (creating the folder, overwriting an empty
-                    // file). An EMPTY source is never copied (ReadAccountFile
-                    // maps absent and empty to null).
-                    try
-                    {
-                        string vlDir = Path.Combine(
-                            Environment.GetEnvironmentVariable("USERPROFILE") ?? "",
-                            "VLTrader");
-                        Directory.CreateDirectory(vlDir);
-                        File.WriteAllText(Path.Combine(vlDir, "account.txt"), legacy);
-                        LogInfo("VLTraderTCPClient: account.txt copied NofxTrader→VLTrader (" + legacy + ")");
-                    }
-                    catch (Exception ex)
-                    {
-                        LogWarn("VLTraderTCPClient: could not copy account.txt into VLTrader: " + ex.Message);
-                    }
-                    preferred = legacy;
-                }
-            }
-            else
-            {
-                legacy = ReadAccountFile("NofxTrader");
-                if (legacy != null && legacy != preferred)
-                {
-                    // Both non-empty and different: VLTrader wins, and the
-                    // WARN fires ONCE here. The cached values replay the same
-                    // WARN on every TCP CONNECTED; ResolveAccount() is NEVER
-                    // called again and account.txt is never re-read on a
-                    // reconnect (that would switch `account` without moving
-                    // the subscriptions).
-                    accountConflictVl = preferred;
-                    accountConflictNofx = legacy;
-                    WarnAccountConflict();
-                }
-            }
 
             lock (Account.All)
             {
@@ -531,22 +488,6 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
             return null;
         }
-
-        // WarnAccountConflict names BOTH account.txt values and the winner.
-        // Called once at resolution and replayed on every TCP CONNECTED from
-        // the cached values (account.txt is never re-read on a reconnect).
-        private void WarnAccountConflict()
-        {
-            LogWarn("VLTraderTCPClient: account.txt conflict — VLTrader\\account.txt says \"" + accountConflictVl
-                + "\" but NofxTrader\\account.txt says \"" + accountConflictNofx
-                + "\"; using VLTrader (no silent account switch)");
-        }
-
-        // accountConflictVl / accountConflictNofx cache the resolution values
-        // so the CONNECTED handler can replay the conflict WARN without ever
-        // re-reading account.txt or re-running ResolveAccount().
-        private string accountConflictVl = null;
-        private string accountConflictNofx = null;
 
         // === SIM detection ===
         // Returns true if the account is a simulation account. Tries Account.Simulation
@@ -643,8 +584,6 @@ namespace NinjaTrader.NinjaScript.AddOns
                     client.Connect(GO_SERVER_HOST, GO_SERVER_PORT);
                     stream = client.GetStream();
                     LogInfo("VLTraderTCPClient: CONNECTED");
-                    if (accountConflictVl != null && accountConflictNofx != null)
-                        WarnAccountConflict();
                     // W-ONE-BUTTON M2 — a hold belongs to the connection that was
                     // told it. Go re-sends it at accept while held.
                     maintenanceHeld = false;
