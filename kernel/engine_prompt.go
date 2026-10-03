@@ -284,13 +284,6 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	sb.WriteString(fmt.Sprintf("Time: %s | Period: #%d | Runtime: %d minutes\n\n",
 		ctx.CurrentTime, ctx.CallCount, ctx.RuntimeMinutes))
 
-	// BTC market
-	if btcData, hasBTC := ctx.MarketDataMap["BTCUSDT"]; hasBTC {
-		sb.WriteString(fmt.Sprintf("BTC: %.2f (1h: %s, 4h: %s) | MACD: %.4f | RSI: %.2f\n\n",
-			btcData.CurrentPrice, market.PctOrNA(btcData.PriceChange1h, true), market.PctOrNA(btcData.PriceChange4h, true),
-			btcData.CurrentMACD, btcData.CurrentRSI7))
-	}
-
 	// Account information
 	sb.WriteString(fmt.Sprintf("Account: Equity %.2f | Balance %.2f (%.1f%%) | PnL %+.2f%% | Margin %.1f%% | Positions %d\n\n",
 		ctx.Account.TotalEquity,
@@ -304,9 +297,6 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	if len(ctx.RecentOrders) > 0 {
 		sb.WriteString("## Recent Completed Trades\n")
 		for i, order := range ctx.RecentOrders {
-			// P&L-TRUTH WAVE: an UNRESOLVED row (pnl_corrected NULL) has no
-			// captured exit — it renders as UNRESOLVED with no P&L and no
-			// percentage (the old code showed "+0.00 USDT (+100.00%)").
 			if !order.Resolved {
 				sb.WriteString(fmt.Sprintf("%d. #%d %s %s | Entry %.4f→? UNRESOLVED (exit unknown) | %s→%s (%s)\n",
 					i+1, order.ID, order.Symbol, order.Side, order.EntryPrice,
@@ -406,7 +396,7 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	// Candidate coins (exclude coins already in positions to avoid duplicate data)
 	positionSymbols := make(map[string]bool)
 	for _, pos := range ctx.Positions {
-		// Normalize symbol to handle both "ETH" and "ETHUSDT" formats
+
 		normalizedSymbol := market.Normalize(pos.Symbol)
 		positionSymbols[normalizedSymbol] = true
 	}
@@ -485,28 +475,11 @@ func (e *StrategyEngine) formatPositionInfo(index int, pos PositionInfo, ctx *Co
 func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 	if len(sources) > 1 {
 		// Multiple signal source combination
-		hasHyperAll := false
-		hasHyperMain := false
-		for _, s := range sources {
-			switch s {
-			case "hyper_all":
-				hasHyperAll = true
-			case "hyper_main":
-				hasHyperMain = true
-			}
-		}
-		if hasHyperAll || hasHyperMain {
-			return " (Hyperliquid)"
-		}
 		return " (Multiple sources)"
 	} else if len(sources) == 1 {
 		switch sources[0] {
 		case "static":
 			return " (Manual selection)"
-		case "hyper_all":
-			return " (Hyperliquid All)"
-		case "hyper_main":
-			return " (Hyperliquid Top20)"
 		}
 	}
 	return ""

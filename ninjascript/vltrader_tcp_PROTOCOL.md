@@ -468,6 +468,44 @@ The C# producer is explicitly deferred to the next owner-run AddOn wave.
 This additive receive-only extension does not change the protocol version or
 claim that h1 supplies rejection reasons.
 
+### `order_update` cancel-report echo (2026-10-03-c1) — AddOn → Go
+
+The cancel-report regime (`CANCEL_CONFIRM_REQUIRE_REPORT`, default OFF) settles
+a cancel ONLY on a POSITIVE per-order terminal report. The `order_snapshot`
+deliberately omits terminal orders (Filled/Cancelled/Rejected/Expired are
+history — C# D3, 2026-09-07), so absence from a book cannot distinguish
+"cancelled" from "never answered".
+
+From build `2026-10-03-c1` the AddOn emits, on EVERY `cancel_order` receipt, an
+`order_update` frame for the target order whose payload carries the new field:
+
+| field | type | meaning |
+|---|---|---|
+| `cancel_report` | bool | `true` marks this frame as the cancel-request echo, as distinct from a state-change event |
+
+The echo carries the order's CURRENT state (`state` field, unchanged semantics):
+for an order still resting that is `working`/`accepted`; for one already
+terminal it is `filled`/`cancelled`/`rejected`. The real terminal transition
+follows via the normal `OnOrderUpdate` stream, which continues to emit
+`state=cancelled` etc. The echo BYPASSES the per-order-name state dedupe — it
+is the report the gate waits for, not a state-change event.
+
+**Fail-closed by construction.** If the target order is not found in the
+account's order collection (never placed, or purged), the AddOn emits NOTHING.
+The Go side then records no report, the row stays `cancel_pending`, the slot
+stays BUSY, and a timeout prints the owner-visible census WARN. An absence the
+AddOn cannot explain is never dressed up as a report.
+
+Go-side gates, all keyed on the build id (bytewise date-prefix floor, same rule
+as every other capability):
+
+- `MinAddonBuildCancelReport = "2026-10-03-c1"` (`provider/ninjatrader/tcp_framing.go`)
+- an AddOn below the floor, while the regime is ON: no cancel confirms, no
+  re-arm, no stop-entry placement — fail-closed, owner-visible WARN.
+- the regime is OFF by default; with it OFF this frame is received and ignored
+  (the field is additive), and the bot is byte-identical to today.
+
+
 Entry `signal.timestamp` is UTC command creation time (RFC3339 with fractional
 seconds), independent of the market bar close used to compose entry prices.
 Go checks that payload timestamp before enqueue and again immediately before
@@ -574,3 +612,24 @@ A value the AddOn cannot read is **left out**, never guessed. The Go reply sets 
 its `accept_seq`, monotonic accept time and `remote_port`, as that connection's record.
 The verifier binds to that record, **never** to `FarSideBuildID()`. `VL_BUILD_ID` keeps
 its ISO-date prefix, because the capability floors compare it bytewise.
+
+## `signal.stop_limit` (2026-10-03-c2) — mentor stop-LIMIT entries (PR B)
+
+The `signal` payload gains `stop_limit` (bool, omitempty). When true and
+`order_type` is `stop_entry`, the AddOn builds `OrderType.StopLimit` with
+`LimitPrice == StopPrice` — the entry fills at its price or misses, never a
+stop-MARKET (D1.4 p1 @24:41, p2 @00:00). Go sets the flag only when its
+`MENTOR_STOP_LIMIT` knob is ON and the far side proves
+`MinAddonBuildStopLimit` = `2026-10-03-c2` (fail-closed: an older AddOn would
+build StopMarket and fill sloppily). With the knob OFF the wire is
+byte-identical.
+
+N12: with limit == stop and Day time-in-force, a gap through the trigger leaves
+a RESTING limit that can fill later at a stale price. Go closes that window
+with a per-order EXPIRY, authored by the evaluator's intent, not a blanket
+timer: armed_orders.expiry_ms is stamped when the evaluator places the order
+(DS-102 — a level touch or a single ISB expires at the close of the NEXT 1m
+candle; ISB stacking is extended while the candles stay inside and cancelled
+at the 4th; the swing runs its 5m rule). The armed pass requests cancel for an
+unfilled order at now >= expiry_ms through the existing settlement path; a row
+with no expiry is never auto-cancelled. The AddOn needs no new frame for this.

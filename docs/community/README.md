@@ -68,8 +68,6 @@ VL offers bounties for valuable contributions:
 
 | Task | Reward | Difficulty | Status |
 |------|--------|------------|--------|
-| [Hyperliquid Integration](bounty-hyperliquid.md) | TBD | Hard | 🟡 Open |
-| [Aster DEX Integration](bounty-aster.md) | TBD | Medium | ✅ Completed |
 
 ---
 
@@ -184,7 +182,7 @@ VL offers bounties for valuable contributions:
 **Learning Materials:**
 - Go programming: [Tour of Go](https://go.dev/tour/)
 - React/TypeScript: [React Docs](https://react.dev/)
-- Trading basics: [Binance Academy](https://academy.binance.com/)
+- Trading basics: [CME Group Education](https://www.cmegroup.com/education.html)
 
 ### Recommended Reading
 
@@ -193,9 +191,7 @@ VL offers bounties for valuable contributions:
    - [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 2. **For Exchange Integration:**
-   - [Hyperliquid Bounty](bounty-hyperliquid.md)
-   - [Aster Bounty](bounty-aster.md)
-   - Existing code: `trader/binance_futures.go`
+   - Existing bridge code: `provider/ninjatrader/` (Go) and the NT8 AddOn (`ninjascript/`)
 
 3. **For AI Features:**
    - [Custom API Guide](../getting-started/custom-api.md)

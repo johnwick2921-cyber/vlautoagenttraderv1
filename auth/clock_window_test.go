@@ -103,7 +103,7 @@ func TestBlacklistEntryOutlivesExpByTheLeeway(t *testing.T) {
 //     telegram/agent.GenerateBotToken, cmd/gate-jwt) goes through it;
 //  2. in every production file that imports golang-jwt, every IssuedAt and
 //     NotBefore — a composite-literal key or an assignment — is exactly
-//     jwt.NewNumericDate(time.Now()): no offset, no variable, no other clock;
+//     jwt.NewNumericDate(time.Now()) or the auth seam's Now(): no offset, no other clock;
 //     and no MapClaims "iat"/"nbf" key is written at all.
 func TestServerNeverMintsAFutureIat(t *testing.T) {
 	root, err := filepath.Abs("..")
@@ -141,7 +141,7 @@ func TestServerNeverMintsAFutureIat(t *testing.T) {
 // x/testdata/y is compiled and linked like any other, class 258) and returns
 // the jwt.NewWithClaims/jwt.New call sites per file, the IssuedAt/NotBefore
 // sites per file, and every site that is not exactly
-// jwt.NewNumericDate(time.Now()).
+// jwt.NewNumericDate(time.Now()) or the Now() seam.
 func futureIatCensus(root string) (minters, iatSites map[string]int, offenders []string, scanned int, err error) {
 	const jwtPath = "github.com/golang-jwt/jwt/v5"
 	files, err := censuswalk.NonTestGoFiles(root)
@@ -192,19 +192,28 @@ func futureIatCensus(root string) (minters, iatSites map[string]int, offenders [
 			id, ok := s.X.(*ast.Ident)
 			return ok && pkg != "" && id.Name == pkg && s.Sel.Name == name
 		}
-		// jwt.NewNumericDate(time.Now()) exactly.
+		// jwt.NewNumericDate(time.Now()) exactly — or the auth seam's
+		// Now() (whose default is time.Now; the token-iat-same-second
+		// tests freeze it deterministically). No offset, no other clock.
 		isNowDate := func(e ast.Expr) bool {
 			c, ok := e.(*ast.CallExpr)
 			if !ok || !isSel(c.Fun, jwtName, "NewNumericDate") || len(c.Args) != 1 {
 				return false
 			}
 			a, ok := c.Args[0].(*ast.CallExpr)
-			return ok && isSel(a.Fun, timeName, "Now") && len(a.Args) == 0
+			if !ok {
+				return false
+			}
+			if isSel(a.Fun, timeName, "Now") && len(a.Args) == 0 {
+				return true
+			}
+			id, ok := a.Fun.(*ast.Ident)
+			return ok && id.Name == "Now" && len(a.Args) == 0 // the auth seam — default time.Now
 		}
 		check := func(field string, v ast.Expr) {
 			iatSites[rel]++
 			if !isNowDate(v) {
-				offenders = append(offenders, fset.Position(v.Pos()).String()+": "+field+" is not "+jwtName+".NewNumericDate("+timeName+".Now())")
+				offenders = append(offenders, fset.Position(v.Pos()).String()+": "+field+" is not "+jwtName+".NewNumericDate("+timeName+".Now() or the Now() seam)")
 			}
 		}
 		ast.Inspect(f, func(n ast.Node) bool {

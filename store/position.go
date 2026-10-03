@@ -743,19 +743,6 @@ func (s *PositionStore) GetOpenPositionBySymbol(traderID, symbol, side string) (
 	}
 
 	if err == gorm.ErrRecordNotFound {
-		// Try without USDT suffix for backward compatibility
-		if strings.HasSuffix(symbol, "USDT") {
-			baseSymbol := strings.TrimSuffix(symbol, "USDT")
-			err = s.db.Where("trader_id = ? AND symbol = ? AND UPPER(side) = UPPER(?) AND status = ?", traderID, baseSymbol, side, "OPEN").
-				Order("entry_time DESC").
-				First(&pos).Error
-			if err == nil {
-				if pos.EntryQuantity == 0 {
-					pos.EntryQuantity = pos.Quantity
-				}
-				return &pos, nil
-			}
-		}
 		return nil, nil
 	}
 	return nil, err
@@ -791,10 +778,6 @@ func (s *PositionStore) GetOpenPositionByAccountSymbol(account, symbol, side str
 	pos, err := find(symbol)
 	if err != nil || pos != nil {
 		return pos, err
-	}
-	// Backward-compat: retry without the USDT suffix (mirrors GetOpenPositionBySymbol).
-	if strings.HasSuffix(symbol, "USDT") {
-		return find(strings.TrimSuffix(symbol, "USDT"))
 	}
 	return nil, nil
 }

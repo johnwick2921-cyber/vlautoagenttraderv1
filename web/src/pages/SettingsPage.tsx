@@ -196,13 +196,11 @@ export function SettingsPage() {
       // when adding via the catalog (not editing a specific row) for a provider that
       // ALREADY has a configured entry, CREATE a new named row instead of sending a
       // bare-provider key that the backend's legacy-match would use to overwrite the
-      // existing entry. Wallet providers (claw402/blockrun) keep their reconfigure flow.
+      // existing entry.
       const provider = modelToUpdate.provider || ''
-      const isWalletProvider =
-        provider === 'claw402' || provider.startsWith('blockrun')
       const providerAlreadyConfigured =
         !existingModel && configuredModels.some((m) => m.provider === provider)
-      if (providerAlreadyConfigured && !isWalletProvider) {
+      if (providerAlreadyConfigured) {
         const sameProviderCount = configuredModels.filter(
           (m) => m.provider === provider
         ).length
@@ -358,14 +356,6 @@ export function SettingsPage() {
     secretKey?: string,
     passphrase?: string,
     testnet?: boolean,
-    hyperliquidWalletAddr?: string,
-    asterUser?: string,
-    asterSigner?: string,
-    asterPrivateKey?: string,
-    lighterWalletAddr?: string,
-    lighterPrivateKey?: string,
-    lighterApiKeyPrivateKey?: string,
-    lighterApiKeyIndex?: number,
     ntDataDir?: string,
     ntInstrumentName?: string,
     ntDefaultContractQty?: number
@@ -380,14 +370,6 @@ export function SettingsPage() {
               secret_key: secretKey || '',
               passphrase: passphrase || '',
               testnet: testnet || false,
-              hyperliquid_wallet_addr: hyperliquidWalletAddr || '',
-              aster_user: asterUser || '',
-              aster_signer: asterSigner || '',
-              aster_private_key: asterPrivateKey || '',
-              lighter_wallet_addr: lighterWalletAddr || '',
-              lighter_private_key: lighterPrivateKey || '',
-              lighter_api_key_private_key: lighterApiKeyPrivateKey || '',
-              lighter_api_key_index: lighterApiKeyIndex || 0,
               nt_data_dir: ntDataDir || '',
               nt_instrument_name: ntInstrumentName || '',
               nt_default_contract_qty: ntDefaultContractQty || 0,
@@ -405,14 +387,6 @@ export function SettingsPage() {
           secret_key: secretKey || '',
           passphrase: passphrase || '',
           testnet: testnet || false,
-          hyperliquid_wallet_addr: hyperliquidWalletAddr || '',
-          aster_user: asterUser || '',
-          aster_signer: asterSigner || '',
-          aster_private_key: asterPrivateKey || '',
-          lighter_wallet_addr: lighterWalletAddr || '',
-          lighter_private_key: lighterPrivateKey || '',
-          lighter_api_key_private_key: lighterApiKeyPrivateKey || '',
-          lighter_api_key_index: lighterApiKeyIndex || 0,
           nt_data_dir: ntDataDir || '',
           nt_instrument_name: ntInstrumentName || '',
           nt_default_contract_qty: ntDefaultContractQty || 0,
@@ -743,8 +717,7 @@ export function SettingsPage() {
                 <div className="space-y-2">
                   {exchanges.map((exchange) => {
                     const isNinjaTrader =
-                      (exchange.exchange_type || exchange.type) ===
-                      'ninjatrader'
+                      exchange.exchange_type === 'ninjatrader'
                     return (
                       <button
                         key={exchange.id}
@@ -764,7 +737,7 @@ export function SettingsPage() {
                             </p>
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               <p className="text-xs text-zinc-500 capitalize">
-                                {exchange.exchange_type || exchange.type}
+                                {exchange.exchange_type}
                               </p>
                               {isNinjaTrader ? (
                                 configBadge('TCP Bridge', true)
@@ -780,16 +753,6 @@ export function SettingsPage() {
                                   )}
                                   {exchange.has_passphrase
                                     ? configBadge('Passphrase', true)
-                                    : null}
-                                  {exchange.hyperliquidWalletAddr
-                                    ? configBadge('Wallet', true)
-                                    : null}
-                                  {exchange.has_aster_private_key
-                                    ? configBadge('Aster Key', true)
-                                    : null}
-                                  {exchange.has_lighter_private_key ||
-                                  exchange.has_lighter_api_key_private_key
-                                    ? configBadge('Lighter Key', true)
                                     : null}
                                 </>
                               )}

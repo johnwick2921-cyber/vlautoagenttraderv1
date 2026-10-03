@@ -2,10 +2,6 @@ package updaterworker
 
 import (
 	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -28,43 +24,12 @@ func TestWorkerRefusesRoot(t *testing.T) {
 	}{
 		"an ordinary user":    {user, plainCgroup, noTZ, nil},
 		"root":                {func() int { return 0 }, plainCgroup, noTZ, ErrRoot},
-		"inside nofx.service": {user, func() ([]byte, error) { return []byte("0::/system.slice/nofx.service\n"), nil }, noTZ, ErrBotCgroup}, "inside vl.service": {user, func() ([]byte, error) { return []byte("0::/system.slice/vl.service\n"), nil }, noTZ, ErrBotCgroup}, // R5 removes the nofx name, keeps vl		"TZ set":                    {user, plainCgroup, func() (string, bool) { return "America/Chicago", true }, ErrTZ},
+		"inside vl.service": {user, func() ([]byte, error) { return []byte("0::/system.slice/vl.service\n"), nil }, noTZ, ErrBotCgroup},		"TZ set":                    {user, plainCgroup, func() (string, bool) { return "America/Chicago", true }, ErrTZ},
 		"TZ set empty is still set": {user, plainCgroup, func() (string, bool) { return "", true }, ErrTZ},
 	} {
 		geteuid, readCgroup, lookupTZ = c.euid, c.cgroup, c.tz
 		if err := CheckProcess(); !errors.Is(err, c.want) || (c.want == nil && err != nil) {
 			t.Errorf("%s: CheckProcess = %v, want %v", name, err, c.want)
 		}
-	}
-}
-
-// C19 as ruled: the worker READS the main-tree lock and never takes it — the
-// only verb it ever runs is `check`, and only rc 1 (held) passes; free (0),
-// stale (2), incomplete (3) and abandoned-incomplete (4) all refuse.
-func TestLockCheckRunsCheckOnlyAndOnlyRc1IsHeld(t *testing.T) {
-	dir := t.TempDir()
-	argsFile := filepath.Join(dir, "args")
-	for rc, want := range map[int]bool{0: false, 1: true, 2: false, 3: false, 4: false} {
-		script := filepath.Join(dir, "nofx-lock.sh")
-		body := fmt.Sprintf("#!/bin/bash\necho \"$@\" >> %q\nexit %d\n", argsFile, rc)
-		if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		held, detail, err := OSHost{LockScript: script}.MainTreeLockHeld()
-		if err != nil || held != want || detail != fmt.Sprintf("check rc=%d", rc) {
-			t.Fatalf("rc %d: held=%v detail=%q err=%v, want held=%v", rc, held, detail, err, want)
-		}
-	}
-	b, _ := os.ReadFile(argsFile)
-	for _, ln := range strings.Split(strings.TrimSpace(string(b)), "\n") {
-		if ln != "check" {
-			t.Fatalf("the worker ran the lock script with %q — only `check` is ever allowed", ln)
-		}
-	}
-	if _, _, err := (OSHost{LockScript: filepath.Join(dir, "absent.sh")}).MainTreeLockHeld(); err == nil {
-		t.Fatal("an absent lock script read as a verdict")
-	}
-	if _, _, err := (OSHost{}).MainTreeLockHeld(); err == nil {
-		t.Fatal("no lock script read as a verdict")
 	}
 }

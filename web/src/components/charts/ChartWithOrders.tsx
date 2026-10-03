@@ -41,15 +41,15 @@ interface ChartWithOrdersProps {
   interval?: string // 1m, 5m, 15m, 1h, 4h, 1d
   traderID?: string // Used to fetch orders for this trader
   height?: number
-  exchange?: string // Exchange type: binance, bybit, okx, bitget, hyperliquid, aster, lighter
+  exchange?: string // Exchange type: ninjatrader only in the vl product.
 }
 
 export function ChartWithOrders({
-  symbol = 'BTCUSDT',
+  symbol = 'MNQ',
   interval = '5m',
   traderID,
   height = 500,
-  exchange = 'binance', // Default to binance
+  exchange = 'ninjatrader', // Default to ninjatrader (the only venue)
 }: ChartWithOrdersProps) {
   const { language } = useLanguage()
   const chartContainerRef = useRef<HTMLDivElement>(null)

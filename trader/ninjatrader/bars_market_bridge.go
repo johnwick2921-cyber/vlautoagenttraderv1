@@ -11,7 +11,7 @@ import (
 
 // wireFuturesBarsProvider connects the live NT8 BarCache to the market
 // package's futures kline path (Stage 3). Called once when the TCP server
-// starts. The crypto/CoinAnk path is unaffected — market.GetWithTimeframes
+// starts. The legacy crypto path is unaffected — market.GetWithTimeframes
 // only calls this hook for CME futures symbols (IsCMEFuturesSymbol).
 //
 // The cache is keyed by the NT8 instrument symbol the AddOn subscribed to

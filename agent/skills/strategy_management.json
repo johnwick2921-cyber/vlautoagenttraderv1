@@ -37,18 +37,18 @@
     },
     "symbol": {
       "type": "enum",
-      "values": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT"],
-      "description": "网格策略页面交易对下拉选项，只能从 BTCUSDT、ETHUSDT、SOLUSDT、BNBUSDT、XRPUSDT、DOGEUSDT 中选择。用户问“交易对有哪些选项”时，直接列出这些选项。"
+      "values": ["MNQ"],
+      "description": "网格策略页面交易对下拉选项，只能从 MNQ 中选择。用户问“交易对有哪些选项”时，直接列出这些选项。"
     },
     "source_type": {
       "type": "enum",
-      "values": ["static", "ai500", "oi_top", "oi_low"],
-      "description": "选币来源类型。static=用户指定静态币池，ai500=AI500榜单，oi_top=持仓量增长，oi_low=持仓量下降。"
+      "values": ["static"],
+      "description": "选币来源类型。static=用户指定静态币池。"
     },
     "static_coins": {
       "type": "string_array",
       "max_items": 10,
-      "description": "静态币池，例如 [\"BTCUSDT\", \"ETHUSDT\"]，source_type=static 时使用，手动页面最多 10 个。页面支持常规合约币种，也支持 xyz: 前缀资产（如 xyz:TSLA、xyz:GOLD、xyz:XYZ100）。"
+      "description": "静态币池，source_type=static 时使用，手动页面最多 10 个。页面支持常规合约币种，也支持 xyz: 前缀资产（如 xyz:TSLA、xyz:GOLD、xyz:XYZ100）。"
     },
     "excluded_coins": {
       "type": "string_array",
@@ -118,7 +118,7 @@
     "total_investment": {
       "type": "float",
       "min": 100,
-      "description": "网格总投入金额，grid_trading 类型专用，表示用户实际投入/保证金预算，不是杠杆后的名义仓位；名义仓位约等于 total_investment × leverage。手动页面最小 100 USDT，步进 100。"
+      "description": "网格总投入金额，grid_trading 类型专用，表示用户实际投入/保证金预算，不是杠杆后的名义仓位；名义仓位约等于 total_investment × leverage。手动页面最小 100 美元，步进 100。"
     },
     "leverage": {
       "type": "int",

@@ -7,8 +7,6 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { t } from '../../i18n/translations'
 import { DeepVoidBackground } from '../common/DeepVoidBackground'
 import { LanguageSwitcher } from '../common/LanguageSwitcher'
-import { OnboardingModeSelector } from './OnboardingModeSelector'
-import type { UserMode } from '../../lib/onboarding'
 import { invalidateSystemConfig } from '../../lib/config'
 
 export function LoginPage() {
@@ -23,7 +21,6 @@ export function LoginPage() {
   const [expiredToastId, setExpiredToastId] = useState<string | number | null>(
     null
   )
-  const [mode, setMode] = useState<UserMode>('beginner')
 
   // Clean up stale auth state once on mount
   useEffect(() => {
@@ -70,7 +67,7 @@ export function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const result = await login(email, password, mode)
+    const result = await login(email, password)
     setLoading(false)
     if (result.success) {
       if (expiredToastId) toast.dismiss(expiredToastId)
@@ -156,12 +153,6 @@ export function LoginPage() {
                   </button>
                 </div>
               </div>
-
-              <OnboardingModeSelector
-                language={language}
-                mode={mode}
-                onChange={setMode}
-              />
 
               {/* Error */}
               {error && (

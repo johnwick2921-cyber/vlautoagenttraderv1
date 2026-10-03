@@ -6,7 +6,7 @@
 //
 // The force-flat path delegates to kernel.MaybeForceFlat with a thin
 // ForceFlatSignaler adapter wrapping the trader's underlying ninjatrader
-// CSVWriter. Other broker types (binance, hyperliquid, etc.) are not
+// CSVWriter. Other broker types are not
 // wired and return {triggered:false, reason:"trader is not a ninjatrader
 // CSV bridge"} so the endpoint stays safe to call on any trader.
 

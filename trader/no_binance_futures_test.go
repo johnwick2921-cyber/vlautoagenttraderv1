@@ -21,7 +21,7 @@ import (
 // read. The trap FAILS the test on any request to a host containing "binance"
 // and answers every request offline. It is installed on BOTH ways out of the
 // process (critic G3 — the earlier premise that every market HTTP call goes
-// through market.NewAPIClient was false): hook.SET_HTTP_CLIENT, which the
+// through one client was false): hook.SET_HTTP_CLIENT, which the
 // Binance OI/funding client consults, AND http.DefaultTransport, which the
 // clients that bypass the hook use (CoinAnk's package client, historical.go,
 // any client with a nil Transport). The drivers are the production call sites.

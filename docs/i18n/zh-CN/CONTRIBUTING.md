@@ -52,8 +52,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 **高优先级**（与路线图一致）：
 - 🔒 安全增强（加密、认证、RBAC）
 - 🧠 AI 模型集成（GPT-4、Claude、Gemini Pro）
-- 🔗 交易所集成（OKX、Bybit、Lighter、EdgeX）
-- 📊 交易数据 API（AI500、OI 分析、NetFlow）
 - 🎨 UI/UX 改进（移动端响应式、图表）
 - ⚡ 性能优化
 - 🐛 Bug 修复
@@ -162,7 +160,7 @@ npm run build
 
 ```bash
 git add .
-git commit -m "feat: add support for OKX exchange integration"
+git commit -m "feat: add NinjaTrader bridge support"
 ```
 
 ### 7. 推送并创建 PR
@@ -196,7 +194,7 @@ git push origin feature/your-feature-name
 <type>(<scope>): <subject>
 
 示例：
-feat(exchange): add OKX exchange integration
+feat(exchange): add NinjaTrader bridge integration
 fix(trader): resolve position tracking bug
 docs(readme): update installation instructions
 perf(ai): optimize prompt generation
@@ -276,7 +274,7 @@ func ce(a, s string) *Exchange {
 // ✅ 好：类型安全，清晰的命名
 interface TraderConfig {
   id: string;
-  exchange: 'binance' | 'hyperliquid' | 'aster';
+  exchange: 'ninjatrader';
   aiModel: string;
   enabled: boolean;
 }
@@ -350,7 +348,7 @@ VL/
 ### 示例
 
 ```
-feat(exchange): add OKX futures API integration
+feat(exchange): add NinjaTrader bridge integration
 
 - Implement order placement and cancellation
 - Add balance and position retrieval

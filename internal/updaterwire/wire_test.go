@@ -53,7 +53,7 @@ func mustReject(t *testing.T, frame string, want error) {
 // keep their exact bytes (TestM3VerbFramesAreByteIdentical, green at the base
 // before this change); every M3 forgery below is kept, and the resume
 // forgeries join it.
-func TestWireVerbSetIsExactlyFour(t *testing.T) {
+func TestWireVerbSetIsExactlyFive(t *testing.T) {
 	got := []string{}
 	for _, v := range Verbs() {
 		got = append(got, string(v))
@@ -62,15 +62,64 @@ func TestWireVerbSetIsExactlyFour(t *testing.T) {
 		}
 	}
 	sort.Strings(got)
-	want := []string{"cancel-before-boundary", "install", "resume", "status"}
+	want := []string{"cancel-before-boundary", "check", "install", "resume", "status"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("verb set = %v, want exactly %v", got, want)
 	}
 	for _, v := range []Verb{"exec", "STATUS", "Status", "install ", "", "cancel_before_boundary", "shell",
-		"Resume", "RESUME", "resume ", " resume", "resume_job", "start_install", "start-install", "cancel"} {
+		"Resume", "RESUME", "resume ", " resume", "resume_job", "start_install", "start-install", "cancel", "check "} {
 		if v.Known() {
 			t.Fatalf("%q must not be a known verb", v)
 		}
+	}
+}
+
+// The check payload is empty: the app's relay carries no field, and any key
+// in the payload object is refused by the strict decoder (fold A1).
+func TestCheckPayloadIsEmptyAndStrict(t *testing.T) {
+	frame, err := EncodeRequest(NewCheck())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := strings.TrimSpace(string(frame)), `{"v":1,"verb":"check","payload":{}}`; got != want {
+		t.Fatalf("check frame = %s, want %s", got, want)
+	}
+	dec, err := DecodeRequest(frame)
+	if err != nil || dec.Verb != VerbCheck || dec.Check == nil {
+		t.Fatalf("roundtrip = %+v, %v", dec, err)
+	}
+	// A key smuggled into the payload is refused.
+	if _, err := DecodeRequest([]byte(`{"v":1,"verb":"check","payload":{"release_id":"x"}}`)); err == nil {
+		t.Fatal("check payload with a field decoded")
+	}
+	// check requires its payload.
+	if _, err := DecodeRequest([]byte(`{"v":1,"verb":"check","payload":{}}` + "\n")); err != nil {
+		t.Fatalf("valid check frame refused: %v", err)
+	}
+}
+
+// TestCheckResponseDetailRoundtrip: the check answer carries its typed result
+// in Response.Detail (the wire keeps its {v,ok,state,error} shape; fold A1).
+func TestCheckResponseDetailRoundtrip(t *testing.T) {
+	r := Response{OK: true, State: "verified_ready", Detail: `{"available":true,"ready":true,"tag":"v9","target_commitish":"` + strings.Repeat("a", 40) + `"}`}
+	frame, err := EncodeResponse(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := DecodeResponse(frame)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.OK != r.OK || dec.State != r.State || dec.Detail != r.Detail {
+		t.Fatalf("roundtrip = %+v, want %+v", dec, r)
+	}
+	// detail only rides an OK response.
+	if _, err := EncodeResponse(Response{OK: false, Error: "rejected", Detail: "x"}); err == nil {
+		t.Fatal("a failed response carried detail")
+	}
+	// an unknown response key is still refused.
+	if _, err := DecodeResponse([]byte(`{"v":1,"ok":true,"state":"off","sneak":1}`)); err == nil {
+		t.Fatal("unknown response key decoded")
 	}
 }
 

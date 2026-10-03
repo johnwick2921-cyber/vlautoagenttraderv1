@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"vl/auth"
-	"vl/manager"
-	"vl/store"
 	"strings"
 	"testing"
 	"time"
+	"vl/auth"
+	"vl/manager"
+	"vl/store"
 )
 
 func TestOrderFillsProductionRouteScopesOrderAndFills(t *testing.T) {
@@ -33,7 +33,7 @@ func TestOrderFillsProductionRouteScopesOrderAndFills(t *testing.T) {
 	if err := s.store.AIModel().Create("reader", "m", "m", "deepseek", true, "", ""); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.store.Exchange().CreateLegacy("reader", "e", "e", "cex", true, "", "", false, "", "", "", ""); err != nil {
+	if _, err := s.store.Exchange().Create("reader", "ninjatrader", "e", true, "", "", "", false, "/tmp/nt-data", "MNQ", 1); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.store.Strategy().Create(&store.Strategy{ID: "st", UserID: "reader", Name: "st", Config: "{}"}); err != nil {

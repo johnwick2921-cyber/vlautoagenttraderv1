@@ -63,6 +63,10 @@ type slotVerdict struct {
 	State      string // the broker's own word for that order
 	SnapshotID int64  // which snapshot settled it; 0 when none did
 	BookAge    time.Duration
+	// ReportRegime marks a refusal produced by the cancel-report regime (an
+	// unconfirmed cancel, or an AddOn below the floor). It is NOT a broker-book
+	// outage, and must not raise the book-outage P0 or its counters.
+	ReportRegime bool
 }
 
 // Allowed reports whether a placement may proceed. ONLY slotFree allows.
@@ -235,6 +239,113 @@ func cancelReRequestMax() int {
 	return 5
 }
 
+// ── CANCEL-REPORT REGIME (2026-10-03, knob default OFF) ──────────────────────
+//
+// The snapshot-based wave (2026-09-06) proves a cancel by the order's ABSENCE
+// from a fresh book — and the AddOn's snapshot deliberately omits terminal
+// orders (C# D3, 2026-09-07), so absence cannot distinguish "cancelled" from
+// "never answered". For a mode that cancels and re-places constantly, the
+// proof must be POSITIVE: the AddOn reports the order Cancelled (or Filled,
+// which is the filled path's word) for that order id. This regime makes the
+// positive report the ONLY settlement evidence. It is a knob, default OFF —
+// with it OFF the bot is byte-identical to today.
+
+// cancelConfirmRequireReport resolves the regime (L4 knob, default OFF).
+// P2-2 (REVIEW-312 r3): ONE parser — this delegates to the provider's
+// CancelReportRegimeOn so the knob has exactly one reader and cannot drift
+// between packages.
+func cancelConfirmRequireReport() bool {
+	return nt.CancelReportRegimeOn()
+}
+
+// cancelReportBuildIDFor is the build-id seam the report pass reads (P1-2,
+// REVIEW-312 r3): the production value is the far side's proven build; tests
+// override it to pin the dispatch to the report pass without a live link.
+var cancelReportBuildIDFor = func(at *AutoTrader) string { return at.farSideBuildID() }
+
+// armedReportNow is the report receipt clock — swappable in tests (A28).
+var armedReportNow = func() int64 { return time.Now().UTC().UnixMilli() }
+
+// ResetArmedReportNowForTest restores the real clock.
+func ResetArmedReportNowForTest() {
+	armedReportNow = func() int64 { return time.Now().UTC().UnixMilli() }
+}
+
+// cancelReportQualifies reports whether a row's recorded report proves the
+// cancel. PURE: every value comes from the row (A28). F9 in one place: the
+// report must exist, be 'cancelled', and postdate the cancel request. A
+// 'filled' report does NOT qualify HERE — that is the filled path's outcome,
+// not a cancellation.
+func cancelReportQualifies(r store.ArmedOrderDB) (bool, string) {
+	if r.CancelReportMs <= 0 {
+		return false, "no AddOn terminal report has been recorded for this order id"
+	}
+	if strings.ToLower(strings.TrimSpace(r.CancelReportState)) != "cancelled" {
+		return false, fmt.Sprintf("the AddOn's report for this order id is %q, not cancelled", r.CancelReportState)
+	}
+	if r.CancelRequestedAtMs <= 0 {
+		return false, "the cancel request time is unavailable — an undated request cannot be proven"
+	}
+	if r.CancelReportMs < r.CancelRequestedAtMs {
+		return false, fmt.Sprintf("the AddOn's report (%d) predates the cancel request (%d)", r.CancelReportMs, r.CancelRequestedAtMs)
+	}
+	return true, "AddOn reported cancelled for this order id after the request"
+}
+
+// slotReportBlock is the report regime's slot-guard half. PURE. A slot whose
+// ledger rows hold an UNCONFIRMED cancel_pending row stays BUSY even when the
+// broker book no longer lists the order — the snapshot omits terminal orders,
+// so book-absence is not a terminal report, and a placement here is exactly
+// the id-1664 stacking. A regime with an uncertified AddOn blocks every slot
+// (fail-closed: no confirmation → no stop-entry placement). Returns false
+// when the slot is not blocked.
+func slotReportBlock(requireReport, floorMet bool, rows []store.ArmedOrderDB, slotSignalIDs []string) (blocked bool, why string) {
+	if !requireReport {
+		return false, ""
+	}
+	if !floorMet {
+		return true, "cancel-report regime ON but the AddOn does not certify cancel reports — no stop-entry placement (fail-closed)"
+	}
+	sigs := map[string]bool{}
+	for _, s := range slotSignalIDs {
+		if s = strings.TrimSpace(s); s != "" {
+			sigs[strings.ToLower(s)] = true
+		}
+	}
+	for i := range rows {
+		r := rows[i]
+		if r.State != store.StateCancelPending {
+			continue
+		}
+		if !sigs[strings.ToLower(strings.TrimSpace(r.SignalID))] {
+			continue
+		}
+		if ok, whyQ := cancelReportQualifies(r); !ok {
+			return true, "slot busy: " + whyQ + " (signal " + shortID(r.SignalID) + ")"
+		}
+	}
+	return false, ""
+}
+
+// cancelCensusLine renders the owner-visible census of unconfirmed cancels:
+// every id named (sample-id law), with its signal, age and attempts — one
+// WARN per pass, not one per row. READ, never inferred: the values come from
+// the rows, and a row with no request time reads n/a rather than a zero age.
+func cancelCensusLine(rows []store.ArmedOrderDB, now time.Time) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "🧾 cancel CENSUS: %d cancel(s) unconfirmed past the %s timeout — NOT promoted, NOT re-armed, slots stay busy:",
+		len(rows), cancelConfirmTimeout())
+	for i := range rows {
+		r := rows[i]
+		age := "n/a"
+		if r.CancelRequestedAtMs > 0 {
+			age = time.Duration(now.UnixMilli() - r.CancelRequestedAtMs).Round(time.Second).String()
+		}
+		fmt.Fprintf(&b, " [id=%d signal=%s age=%s attempts=%d]", r.ID, shortID(r.SignalID), age, r.CancelAttempts)
+	}
+	return b.String()
+}
+
 // liveBook returns the freshest book this process can see for the slot guard,
 // preferring the in-memory cache the cutover gate reads.
 func (at *AutoTrader) liveBook(now time.Time) (orders []nt.NT8Order, haveBook bool, age time.Duration) {
@@ -325,6 +436,16 @@ func (at *AutoTrader) armSlotGuard(ledgerRows []store.ArmedOrderDB, r store.Arme
 		// very first placement of every arm.
 		return slotVerdict{Action: slotFree, Why: "slot has never been placed (no signal id to look for)"}
 	}
+	// ── CANCEL-REPORT REGIME (2026-10-03, knob default OFF) ──
+	// Runs BEFORE the book: a slot whose cancel is unconfirmed stays busy even
+	// when the book no longer lists the order, because the snapshot omits
+	// terminal orders — absence from a book is not a terminal report, and a
+	// placement here is the id-1664 stacking again.
+	if cancelConfirmRequireReport() {
+		if blocked, why := slotReportBlock(true, nt.CancelReportProven(at.farSideBuildID()), ledgerRows, sigs); blocked {
+			return slotVerdict{Action: slotUnverifiable, Why: why, SignalID: shortID(r.SignalID), ReportRegime: true}
+		}
+	}
 	book, have, age := at.liveBook(now)
 	_, _, _, snapID := at.persistedBook(now)
 	v := adjudicateSlot(book, have, age, snapshotMaxAge(), snapID, sigs)
@@ -339,9 +460,16 @@ func (at *AutoTrader) refuseSlot(r store.ArmedOrderDB, v slotVerdict, what strin
 	class := "slot_live_at_broker"
 	if v.Action == slotUnverifiable {
 		class = "slot_unverifiable"
-		// Owner ruling 2026-09-06: a dark AddOn must read as an OUTAGE, not as
-		// a quiet no-trade day. Once per outage, with the book age.
-		at.raiseBookOutageAlert(v.BookAge, now)
+		if v.ReportRegime {
+			// The cancel-report regime's own refusal: an unconfirmed cancel or
+			// an uncertified AddOn. Counted and WARNed apart from a book
+			// outage, and it never raises the book-outage P0.
+			class = "slot_cancel_unconfirmed"
+		} else {
+			// Owner ruling 2026-09-06: a dark AddOn must read as an OUTAGE, not
+			// as a quiet no-trade day. Once per outage, with the book age.
+			at.raiseBookOutageAlert(v.BookAge, now)
+		}
 	}
 	key := r.PlanID + ":" + strconv.Itoa(r.Version) + ":" + r.Scenario + ":leg" +
 		strconv.Itoa(r.LegIndex+1) + ":slotguard"
@@ -387,6 +515,13 @@ func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cance
 	maxAge := snapshotMaxAge()
 	timeout := cancelConfirmTimeout()
 	cap := cancelReRequestMax()
+
+	// ── CANCEL-REPORT REGIME (2026-10-03, knob default OFF) ──
+	// With the knob ON a cancel settles ONLY on a positive per-order terminal
+	// report. The caller holds cancelConfirmMu, so the helper must not lock.
+	if cancelConfirmRequireReport() {
+		return at.confirmPendingCancelsReport(ledger, cancelFn, rows, now, timeout, cap, cancelReportBuildIDFor(at))
+	}
 
 	for i := range rows {
 		r := rows[i]
@@ -473,6 +608,123 @@ func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cance
 		at.logWarnf("🧾 cancel UNCONFIRMED %s signal=%s after %s (%s) — re-requested, attempt %d of %d; the row stays %s",
 			r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), why, attempts+1, cap, store.StateCancelPending)
 	}
+	return settled, stillPending, reRequested
+}
+
+// confirmPendingCancelsReport is the report regime's settlement pass. It runs
+// instead of the snapshot-based pass when CANCEL_CONFIRM_REQUIRE_REPORT is ON,
+// and the caller (confirmPendingCancels) already holds cancelConfirmMu.
+//
+// RULES, in dispatch order:
+//   - an uncertified AddOn (below MinAddonBuildCancelReport) confirms NOTHING:
+//     every row stays cancel_pending, no promotion, no re-arm, fail-closed;
+//   - a cancel is DONE only when the ledger holds the AddOn's positive report
+//     ('cancelled') for that order id, recorded at-or-after the request (F9);
+//     snapshot absence settles nothing here — the snapshot omits terminal
+//     orders, so absence is not a report;
+//   - until then the slot is BUSY (armSlotGuard's report block) and no
+//     placement happens, never a silent re-place;
+//   - a timeout leads to a CENSUS — one owner-visible WARN naming every
+//     unconfirmed id — and then the capped re-request, exactly like the
+//     snapshot pass; re-requests are cancels, not placements.
+func (at *AutoTrader) confirmPendingCancelsReport(ledger *store.ArmedOrderStore, cancelFn func(string) error, rows []store.ArmedOrderDB, now time.Time, timeout time.Duration, cap int, buildID string) (settled, stillPending, reRequested int) {
+	buildStr := buildID
+	if buildStr == "" {
+		buildStr = "n/a"
+	}
+	if !nt.CancelReportProven(buildID) {
+		at.logWarnf("🧾 cancel-report regime ON but the AddOn does not certify cancel reports (build %s < %s) — %d cancel(s) CANNOT be confirmed: no promotion, no re-arm, the slot stays busy (fail-closed)",
+			buildStr, nt.MinAddonBuildCancelReport, len(rows))
+		return 0, len(rows), 0
+	}
+	// P1-2 (review 2026-10-03): loop 2 must NEVER touch a row loop 1 settled.
+	// The census and the re-request walk the SAME stale `rows` slice — a row
+	// just confirmed (or re-armed) would otherwise get cancelFn + RequestCancel
+	// and be resurrected into cancel_pending.
+	settledIDs := map[int64]bool{}
+	for i := range rows {
+		r := rows[i]
+		ok, why := cancelReportQualifies(r)
+		if !ok {
+			continue // stays pending; the census below names it
+		}
+		if rearm, rearmWhy := at.zoneRestReArmOnConfirm(r, why); rearm {
+			if err := ledger.ResetToArmedUnplaced(r.ID, rearmWhy); err != nil {
+				at.logWarnf("🧾 cancel-report confirm: re-arm write failed for %s: %v", r.Scenario, err)
+				continue
+			}
+			settled++
+			settledIDs[r.ID] = true
+			at.logInfof("🧾 cancel-report CONFIRMED %s signal=%s — %s (report_ms=%d state=%s attempts=%d) — returned to armed-unplaced, re-placeable",
+				r.Scenario, shortID(r.SignalID), why, r.CancelReportMs, r.CancelReportState, r.CancelAttempts)
+			continue
+		}
+		// The ORIGINAL reason survives the confirmation — same law as the
+		// snapshot pass: the reason is the only record of why the cancel was
+		// requested, and the confirmation must not overwrite it.
+		if err := ledger.ConfirmCancelByReport(r.ID, strings.TrimSpace(r.StateReason)+" — report: "+why); err != nil {
+			at.logWarnf("🧾 cancel-report confirm failed for %s: %v", r.Scenario, err)
+			continue
+		}
+		settled++
+		settledIDs[r.ID] = true
+		at.logInfof("🧾 cancel-report CONFIRMED %s signal=%s — %s (report_ms=%d state=%s attempts=%d)",
+			r.Scenario, shortID(r.SignalID), why, r.CancelReportMs, r.CancelReportState, r.CancelAttempts)
+	}
+	// Census + re-request for every row still pending past the timeout.
+	var overdue []store.ArmedOrderDB
+	for i := range rows {
+		r := rows[i]
+		if settledIDs[r.ID] {
+			continue // settled in loop 1 — never re-requested, never resurrected
+		}
+		if r.CancelRequestedAtMs <= 0 {
+			continue
+		}
+		reqAge := time.Duration(now.UnixMilli()-r.CancelRequestedAtMs) * time.Millisecond
+		if reqAge >= timeout {
+			overdue = append(overdue, r)
+		}
+	}
+	if len(overdue) > 0 {
+		at.logWarnf("%s", cancelCensusLine(overdue, now))
+		for i := range overdue {
+			r := overdue[i]
+			reqAge := time.Duration(now.UnixMilli()-r.CancelRequestedAtMs) * time.Millisecond
+			telemetry.IncGateBlock(at.id, "cancel_unconfirmed_report")
+			attempts := r.CancelAttempts
+			if r.CancelAttemptsBoot != store.ProcessBootID() {
+				attempts = 0
+			}
+			if attempts >= cap {
+				at.logWarnf("🧾 cancel UNCONFIRMED %s signal=%s after %s and %d attempt(s) — attempt cap reached, NOT re-requesting and NOT promoting to cancelled (no qualifying AddOn terminal report)",
+					r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), attempts)
+				continue
+			}
+			if cancelFn == nil {
+				at.logWarnf("🧾 cancel UNCONFIRMED %s signal=%s after %s — no wire to re-request on (no qualifying AddOn terminal report)",
+					r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second))
+				continue
+			}
+			if cerr := cancelFn(r.SignalID); errors.Is(cerr, errCancelRefused) {
+				at.logWarnf("🧾 cancel re-request REFUSED %s signal=%s after %s — not sent, not recorded (no qualifying AddOn terminal report)",
+					r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second))
+				continue
+			} else if cerr != nil {
+				at.logWarnf("🧾 cancel re-request SEND FAILED %s signal=%s: %v", r.Scenario, shortID(r.SignalID), cerr)
+			}
+			// The re-request is recorded whether or not the SEND returned nil —
+			// because the send is not the point.
+			if err := ledger.RequestCancel(r.ID, "re-requested after "+reqAge.Round(time.Second).String()+" unconfirmed (report regime)", now.UnixMilli()); err != nil {
+				at.logWarnf("🧾 cancel re-request: ledger write failed for %s: %v", r.Scenario, err)
+				continue
+			}
+			reRequested++
+			at.logWarnf("🧾 cancel UNCONFIRMED %s signal=%s after %s (no qualifying AddOn terminal report) — re-requested, attempt %d of %d; the row stays %s",
+				r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), attempts+1, cap, store.StateCancelPending)
+		}
+	}
+	stillPending = len(rows) - settled
 	return settled, stillPending, reRequested
 }
 
@@ -577,7 +829,7 @@ func (at *AutoTrader) reconcileAgainstBroker(ledger *store.ArmedOrderStore, now 
 //
 // NOTE for whoever writes a watcher: the 🧾 glyph is shared by nine other log
 // sites in this tree. Key on the text "cancels:", never on the glyph (A24).
-func CancelBootLine(st *store.Store, rec ReconcileCounts, nowMs int64) string {
+func CancelBootLine(st *store.Store, rec ReconcileCounts, nowMs int64, buildID string) string {
 	pending, unconfirmed := int64(0), int64(0)
 	// B2 — rows whose attempts a DEPARTED process counted. -1 means the ledger
 	// could not be read, and prints UNKNOWN rather than a zero nobody measured.
@@ -597,9 +849,24 @@ func CancelBootLine(st *store.Store, rec ReconcileCounts, nowMs int64) string {
 		reconciled = fmt.Sprintf("reconciled(confirmed=%d live=%d unconfirmed=%d snapshot=%d)",
 			rec.ConfirmedGone, rec.LiveAtBroker, rec.Unconfirmed, rec.SnapshotID)
 	}
+	// The report regime is READ, never asserted: the knob is resolved from the
+	// env and the floor from the far-side build; at boot there is no build yet
+	// (it arrives on the first hello/heartbeat), so unproven reads "n/a" —
+	// which is the truth at that instant, not a fabricated yes or no.
+	regime := "report-regime=off"
+	if cancelConfirmRequireReport() {
+		switch {
+		case buildID == "":
+			regime = "report-regime=on(addon-proof=n/a — fail-closed until the hello carries a build)"
+		case nt.CancelReportProven(buildID):
+			regime = fmt.Sprintf("report-regime=on(addon-proof=yes build=%s)", buildID)
+		default:
+			regime = fmt.Sprintf("report-regime=on(addon-proof=NO build=%s < %s — fail-closed)", buildID, nt.MinAddonBuildCancelReport)
+		}
+	}
 	return fmt.Sprintf(
-		"cancels: confirm=broker-snapshot · pending=%d · unconfirmed=%d · slot-guard=on(refuse-on-live|stale) · timeout=%s · stale-bound=%s · rerequest-cap=%d budget=per-process carry=%s (inert until a cancel is re-requested after a restart) · %s",
-		pending, unconfirmed, cancelConfirmTimeout(), snapshotMaxAge(), cancelReRequestMax(), carryStr, reconciled)
+		"cancels: confirm=broker-snapshot · pending=%d · unconfirmed=%d · slot-guard=on(refuse-on-live|stale) · timeout=%s · stale-bound=%s · rerequest-cap=%d budget=per-process carry=%s (inert until a cancel is re-requested after a restart) · %s · %s",
+		pending, unconfirmed, cancelConfirmTimeout(), snapshotMaxAge(), cancelReRequestMax(), carryStr, reconciled, regime)
 }
 
 // ── A DARK ADDON IS AN OUTAGE, NOT A QUIET DAY (owner ruling 2026-09-06) ─────

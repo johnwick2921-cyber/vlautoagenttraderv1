@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"vl/logger"
-	"vl/researchsnapshot"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"vl/logger"
+	"vl/researchsnapshot"
 
 	"github.com/google/uuid"
 
@@ -1272,12 +1272,14 @@ func (at *AutoTrader) writeNoTradePlan(now time.Time, session, tradeDate, reason
 // two traders on the same session are NOT collapsed. The code is authoritative;
 // only the comment moved. Whether the collapse SHOULD happen is a live
 // question, not a fixed one: it is recorded in the hygiene report, unchanged.
-var plannerReadInFlight sync.Map // "tradeDate:session" -> struct{}
+var plannerReadInFlight sync.Map // "tradeDate:session" -> claim-started time.Time (F1)
 
 // claimPlannerRead returns false when another read for this session is already
-// running. The winner must call releasePlannerRead.
+// running. The winner must call releasePlannerRead. The stored value is the
+// claim-started wall time (F1: the installation gate renders "waiting for the
+// AI plan (started hh:mm:ss)" from it).
 func claimPlannerRead(key string) bool {
-	_, loaded := plannerReadInFlight.LoadOrStore(key, struct{}{})
+	_, loaded := plannerReadInFlight.LoadOrStore(key, time.Now())
 	return !loaded
 }
 

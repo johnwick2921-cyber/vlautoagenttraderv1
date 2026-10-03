@@ -54,7 +54,6 @@ Cross-cutting backend code paths that don't belong to one specific page. Page-sp
    - `GET/POST /api/health`
    - `GET /api/supported-models`, `GET /api/supported-exchanges`
    - `GET /api/config`
-   - `POST /api/wallet/validate`, `POST /api/wallet/generate`
    - `GET /api/crypto/config`, `GET /api/crypto/public-key`, `POST /api/crypto/decrypt`
    - `GET /api/traders`, `GET /api/competition`, `GET /api/top-traders`
    - `GET /api/equity-history`, `POST /api/equity-history-batch`
@@ -87,7 +86,6 @@ Owns the runtime trader lifecycle:
 
 - **`NewTraderManager()`** — constructor
 - **`LoadTradersFromStore(st)`** — called once at boot; iterates `store.Trader().List("default")` and calls `addTraderFromStore(...)` for each
-- **`addTraderFromStore(trader)`** — the big switch on `exchangeCfg.ExchangeType`. Cases for `binance`, `bybit`, `okx`, `bitget`, `gate`, `kucoin`, `indodax`, `hyperliquid`, `aster`, `lighter`, and **`ninjatrader`** ([line ~700 per CLAUDE.md](manager/trader_manager.go#L700)). Each case constructs the broker, then builds an `AutoTraderConfig` and creates the `AutoTrader`.
 - **Per-trader lifecycle:** Start / Stop / Restart goroutines per AutoTrader's scan loop. Each goroutine respects `ctx.Done()` for clean shutdown.
 - **`StopAll()`** — called on SIGINT/SIGTERM; iterates and signals every trader to stop.
 
@@ -97,19 +95,16 @@ The per-trader long-running goroutine:
 
 - Holds `Trader` (broker), `StrategyEngine`, `AIClient`, `AutoTraderConfig`
 - **Main loop** at the broker switch ([line 263-315](trader/auto_trader.go#L263-L315)) constructs the broker by `config.Exchange`:
-  - Each case calls a package's constructor (e.g. `binance.New(...)`, `ntTrader.NewTraderFromEnv(cfg)` for ninjatrader)
   - **NinjaTrader special:** uses `NewTraderFromEnv(cfg)` instead of direct `New(cfg)` — this is the env-var router that picks CSV vs TCP transport per `NT_TRANSPORT` env
 - **Scan loop:** sleeps `scan_interval_minutes`, calls `kernel.StrategyEngine.Run()`, processes the returned decisions, calls broker methods.
 - **Wire-format for the kernel:** trader sends a `kernel.Context` (positions / account / etc.) and gets back a `[]kernel.Decision`.
 
 ### Kernel — `kernel/engine.go` (924 LOC)
 
-Imports: `context`, `encoding/json`, `vl/config`, `vl/logger`, `vl/market`, `vl/provider/databento`, `vl/provider/hyperliquid`, `vl/provider/vlos`, `vl/security`, `vl/store`. Note the unused `provider/vlos` import — `upstream website link (removed in the VL rename)` is deprecated per CLAUDE.md.
 
 Major types ([line 25-150ish](kernel/engine.go#L25)):
 - `PositionInfo` — 11-field position struct (Symbol/Side/EntryPrice/MarkPrice/Quantity/Leverage/UnrealizedPnL/UnrealizedPnLPct/PeakPnLPct/LiquidationPrice/MarginUsed/UpdateTime)
 - `AccountInfo` — TotalEquity / AvailableBalance / UnrealizedPnL / TotalPnL / TotalPnLPct / MarginUsed / MarginUsedPct / PositionCount
-- `CandidateCoin` — Symbol + Sources[] (e.g. ["ai500","oi_top"])
 - `OITopData`, `TradingStats`, `RecentOrder`
 
 Companion files in `kernel/`:
@@ -271,7 +266,6 @@ main.go
  │     │      ntTrader.NewTraderFromEnv(cfg)
  │     │       ├─ NT_TRANSPORT=tcp → getOrStartTCPServer() singleton + NewTCPTrader
  │     │       └─ NT_TRANSPORT=csv → New(cfg) — CSV writer + tailer
- │     │    case "binance": binance.New(...)
  │     │    … 8 more brokers
  │     │  }
  │     ├─ AutoTrader{broker, kernel, ai, cfg}
@@ -397,7 +391,6 @@ Bot (Go side, TCPServer on :36974)            NT8 AddOn (Windows)
 | `main.go:160` starts the Telegram goroutine even when `TELEGRAM_BOT_TOKEN` is empty; the goroutine then sleeps in a check loop. Mild waste of a goroutine. | `main.go:160` + `telegram/start.go` | Cosmetic | 5-min: short-circuit `telegram.Start` when token is empty |
 | `vliAgent.Stop()` is called via `defer` AFTER `traderManager.StopAll()` returns — but the agent might still be holding handles to traders | `main.go:151, 180` | Edge case | Test for shutdown ordering issues. Currently no symptoms reported. |
 | `crypto.SetGlobalCryptoService(cs)` uses a package-level global. Cleaner DI would inject this — but the GORM `EncryptedString` hook needs a global to work (no per-conn context in GORM hooks). Documented for future reference. | `crypto/` | Architectural — n/a now | n/a |
-| `agent/web.go:35` hardcodes `binanceFuturesAPIBaseURL = "https://fapi.binance.com"` — not env-overridable. Means even non-Binance traders hit Binance for ticker data via the agent. | `agent/web.go:35` | Multi-exchange chart gap | Bundle with Plan 4.5 |
 | The `vlos` import in `kernel/engine.go` looks unused-at-glance but probably has indirect coupling via `vlos.NewClient(apiKey)` usage. Worth a `go vet`-style pass. | `kernel/engine.go:14` | Code hygiene | 10-min: grep for actual usage |
 | `store/visibility.go` — IsVisibleExchange logic checks `NTDataDir != ""` as a sufficient condition for visibility. If a NT exchange row is misconfigured (saved with empty DataDir), it disappears from the list with no warning. | `store/visibility.go:64-80` | UX | Show disabled entries with a "config incomplete" warning instead of hiding |
 | All HTTP handlers use `c.GetString("user_id")` to identify the caller — but the value is the `user_id` field in the JWT claim, NOT the `username`. Worth documenting because tools like `agent_routes.go` re-use this value as `storeUserID` (the convention is "user_id from JWT == user_id in store"). | `api/handler_*.go` patterns | Documentation | n/a |

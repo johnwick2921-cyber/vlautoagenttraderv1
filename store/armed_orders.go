@@ -41,10 +41,15 @@ type ArmedOrderDB struct {
 
 	// State: armed (authorized) | place_pending (registered, awaiting receipt) |
 	// working (received live entry) | filled | rejected | cancelled | expired.
-	State        string `gorm:"index"`
-	StateReason  string
-	EntryClass   string // armed_fill when filled (fills bypass stale_reeval)
-	SignalID     string // the wire signal_id registered before sending
+	State       string `gorm:"index"`
+	StateReason string
+	EntryClass  string // armed_fill when filled (fills bypass stale_reeval)
+	SignalID    string // the wire signal_id registered before sending
+	// ExpiryMs (PR B stop-limit, 2026-10-03): the per-order expiry the
+	// evaluator's intent authors when it places a stop-limit. The armed pass
+	// cancels an unfilled order at now >= expiry_ms. 0 = no expiry authored =
+	// this code never auto-cancels the row.
+	ExpiryMs     int64 `gorm:"default:0"`
 	FillPrice    float64
 	FillQuantity int
 
@@ -109,6 +114,16 @@ type ArmedOrderDB struct {
 	// 0 on a row that reached 'cancelled' any other way, which is every row
 	// written before this wave.
 	CancelSettledSnapshotID int64 `gorm:"default:0"`
+	// ── CANCEL-REPORT REGIME (2026-10-03) ───────────────────────────────────
+	//
+	// The positive per-order terminal report the AddOn certifies from
+	// MinAddonBuildCancelReport: emitted on every cancel_order receipt (the
+	// echo) and again as the real OnOrderUpdate terminal transition. Recorded
+	// latest-wins. 0 / '' = NO report has been recorded, which is the truth
+	// for every historical row — never a fabricated zero. The report regime
+	// (CANCEL_CONFIRM_REQUIRE_REPORT) settles cancels ONLY on these columns.
+	CancelReportMs    int64  `gorm:"default:0"`
+	CancelReportState string `gorm:"default:''"`
 
 	// W3 market_in_zone (2026-09-23). Every field is ABSENT (NULL / '') on a
 	// legacy or planned_order row — 0 is a real value for slippage and a real
@@ -210,8 +225,9 @@ CREATE TABLE IF NOT EXISTS armed_orders (
 	kind          TEXT    NOT NULL DEFAULT '',
 	boot_id       TEXT    NOT NULL DEFAULT '',
 	cancel_attempts_boot TEXT NOT NULL DEFAULT '',
-	created_at    DATETIME,
-	updated_at    DATETIME
+        expiry_ms     INTEGER NOT NULL DEFAULT 0,
+        created_at    DATETIME,
+        updated_at    DATETIME
 )`
 
 // ArmedOrderStore persists the armed ledger.
@@ -256,6 +272,18 @@ func (s *ArmedOrderStore) Migrate() error {
 			// were accumulated by a process that is gone.
 			{"cancel_attempts_boot", "TEXT NOT NULL DEFAULT ''"},
 			{"cancel_settled_snapshot_id", "INTEGER NOT NULL DEFAULT 0"},
+			// CANCEL-REPORT REGIME (2026-10-03) — the positive per-order
+			// terminal report columns. 0 / '' on every historical row: the
+			// report was never recorded, and absent ≠ 0.
+			{"cancel_report_ms", "INTEGER NOT NULL DEFAULT 0"},
+			{"cancel_report_state", "TEXT NOT NULL DEFAULT ''"},
+			// PER-ORDER EXPIRY (PR B stop-limit, 2026-10-03). The
+			// evaluator's intent sets expiry_ms when it places a
+			// stop-limit (DS-102); the armed pass cancels an unfilled
+			// order at now >= expiry_ms. 0 on every historical row = the
+			// truth for them: no expiry was ever authored, so nothing is
+			// auto-cancelled (absent ≠ 0 fabricated as data).
+			{"expiry_ms", "INTEGER NOT NULL DEFAULT 0"},
 			// W3 market_in_zone (2026-09-23): NULLable where 0 would be a
 			// fabricated value (absent ≠ 0); '' where the text is a label.
 			{"policy", "TEXT NOT NULL DEFAULT ''"},
@@ -664,6 +692,27 @@ func (s *ArmedOrderStore) BeginPlacement(id int64, signalID string) error {
 	return nil
 }
 
+// SetArmExpiry (PR B stop-limit, 2026-10-03) stamps the per-order expiry the
+// evaluator's intent authored when it placed the order (DS-102). Only an
+// unfilled, non-terminal row can carry one: once filled or terminal the
+// expiry is meaningless, and a late stamp must not revive anything. A refused
+// stamp is an error, never silent — the caller's intent and the ledger
+// disagreeing is exactly what must not be papered over.
+func (s *ArmedOrderStore) SetArmExpiry(id int64, expiryMs int64) error {
+	if expiryMs <= 0 {
+		return fmt.Errorf("armed_orders: expiry must be a positive ms timestamp")
+	}
+	r := s.db.Model(&ArmedOrderDB{}).Where("id = ? AND (state = ? OR state = ?)", id, StateArmed, StatePlacePending).
+		Update("expiry_ms", expiryMs)
+	if r.Error != nil {
+		return r.Error
+	}
+	if r.RowsAffected != 1 {
+		return fmt.Errorf("armed_orders: row %d is not an unfilled arm — expiry refused", id)
+	}
+	return nil
+}
+
 // BeginPlacementEval is BeginPlacement for a market_in_zone row (W3): the SAME
 // compare-and-set (armed, no signal yet) plus a non-empty policy, and in the same
 // write the evidence the placement verdict read — the price, the bar it came
@@ -834,6 +883,69 @@ func (s *ArmedOrderStore) ConfirmCancel(id int64, snapshotID int64, reason strin
 			"state_reason":               reasonKeepingWithdraw(reason),
 			"cancel_settled_snapshot_id": snapshotID,
 		})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected != 1 {
+			return fmt.Errorf("arm %d changed during cancel confirmation", id)
+		}
+		return nil
+	})
+}
+
+// RecordCancelReport stores the AddOn's positive per-order report for a row
+// (CANCEL-REPORT REGIME, 2026-10-03). Latest-wins and monotonic: a report
+// older than the recorded one is a duplicate and is ignored — the C# echo and
+// the real OnOrderUpdate transition both report, and either may arrive twice.
+// A report older than the last is still evidence for nothing new, so the row
+// keeps the newest it has.
+func (s *ArmedOrderStore) RecordCancelReport(id int64, reportMs int64, state string) error {
+	if s == nil || s.db == nil {
+		return fmt.Errorf("armed order store unavailable")
+	}
+	if reportMs <= 0 || strings.TrimSpace(state) == "" {
+		return fmt.Errorf("a cancel report requires its receipt time and state")
+	}
+	res := s.db.Model(&ArmedOrderDB{}).
+		Where("id = ? AND (cancel_report_ms = 0 OR cancel_report_ms < ?)", id, reportMs).
+		Updates(map[string]any{
+			"cancel_report_ms":    reportMs,
+			"cancel_report_state": state,
+		})
+	return res.Error
+}
+
+// ConfirmCancelByReport is the report regime's confirmation: the ONLY way a row
+// becomes 'cancelled' through the cancel path while CANCEL_CONFIRM_REQUIRE_REPORT
+// is ON. The evidence is the positive terminal report recorded by
+// RecordCancelReport — received at-or-after the cancel request (F9), terminal
+// ('cancelled'). A 'filled' report NEVER settles a cancel here: that is the
+// filled path's outcome, not a cancellation (the row leaves cancel_pending by
+// the filled branch, never through this door).
+func (s *ArmedOrderStore) ConfirmCancelByReport(id int64, reason string) error {
+	if s == nil || s.db == nil {
+		return fmt.Errorf("armed order store unavailable")
+	}
+	return immediateOrPlainTxAny(s.db, func(tx *gorm.DB) error {
+		var row ArmedOrderDB
+		if err := tx.First(&row, id).Error; err != nil {
+			return err
+		}
+		if row.State != StateCancelPending {
+			return fmt.Errorf("arm %d is %s, not cancel_pending", id, row.State)
+		}
+		if row.CancelReportMs <= 0 ||
+			strings.ToLower(strings.TrimSpace(row.CancelReportState)) != "cancelled" {
+			return fmt.Errorf("arm %d has no qualifying terminal report (report_ms=%d state=%q)", id, row.CancelReportMs, row.CancelReportState)
+		}
+		if row.CancelRequestedAtMs <= 0 || row.CancelReportMs < row.CancelRequestedAtMs {
+			return fmt.Errorf("arm %d report predates the cancel request (report %d < request %d)", id, row.CancelReportMs, row.CancelRequestedAtMs)
+		}
+		res := tx.Model(&ArmedOrderDB{}).Where("id = ? AND state = ?", id, StateCancelPending).
+			Updates(map[string]any{
+				"state":        StateCancelled,
+				"state_reason": reasonKeepingWithdraw(reason),
+			})
 		if res.Error != nil {
 			return res.Error
 		}

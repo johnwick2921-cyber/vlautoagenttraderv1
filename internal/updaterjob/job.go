@@ -418,8 +418,16 @@ func (j Job) Validate() error {
 			}
 			continue
 		}
-		if err := CheckMove(p.State, p.Phase, c.State); err != nil {
-			return bad("transition %d: %v", i, err)
+		// LEGACY EDGE (worker-self-update, P0 2026-10-02): every released
+		// worker before the worker_swapped state wrote boot_verified/done →
+		// complete. History validation must accept every transition any
+		// released version could have written — this edge stays legal for
+		// REPLAY only; CheckMove (the live table) still forbids it.
+		legacyBootToComplete := p.State == StateBootVerified && p.Phase == PhaseDone && c.State == StateComplete
+		if !legacyBootToComplete {
+			if err := CheckMove(p.State, p.Phase, c.State); err != nil {
+				return bad("transition %d: %v", i, err)
+			}
 		}
 		if c.Phase != EntryPhase(c.State) {
 			return bad("transition %d enters %s %s, want %s", i, c.State, c.Phase, EntryPhase(c.State))

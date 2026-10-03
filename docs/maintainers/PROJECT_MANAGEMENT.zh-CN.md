@@ -161,7 +161,7 @@ Available → Claimed → In Progress → Under Review → Paid
 **必须接受：**
 - 安全增强
 - AI 模型集成
-- 交易所集成（OKX、Bybit、Lighter、EdgeX）
+- 交易所集成（NinjaTrader 桥接）
 - 项目结构重构
 - UI/UX 改进
 

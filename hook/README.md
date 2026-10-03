@@ -57,40 +57,6 @@ type IpResult struct {
 
 ---
 
-### 2. `NEW_BINANCE_TRADER` - Binance客户端创建
-
-**调用位置**：`trader/binance_futures.go:68`
-
-**参数**：`userId string, client *futures.Client`
-
-**返回**：`*NewBinanceTraderResult`
-```go
-type NewBinanceTraderResult struct {
-    Err    error
-    Client *futures.Client  // 可修改client配置
-}
-```
-
-**用途**：为Binance客户端注入代理、日志等
-
----
-
-### 3. `NEW_ASTER_TRADER` - Aster客户端创建
-
-**调用位置**：`trader/aster_trader.go:68`
-
-**参数**：`user string, client *http.Client`
-
-**返回**：`*NewAsterTraderResult`
-```go
-type NewAsterTraderResult struct {
-    Err    error
-    Client *http.Client  // 可修改HTTP client
-}
-```
-
-**用途**：为Aster客户端注入代理等
-
 ## 使用示例
 
 ### 示例1：代理模块注册Hook
@@ -111,19 +77,6 @@ func InitHooks(enabled bool) {
         userId := args[0].(string)
         proxyIP, err := getProxyIP(userId)
         return &hook.IpResult{Err: err, IP: proxyIP}
-    })
-
-    // 注册Binance客户端Hook
-    hook.RegisterHook(hook.NEW_BINANCE_TRADER, func(args ...any) any {
-        userId := args[0].(string)
-        client := args[1].(*futures.Client)
-
-        // 修改client配置
-        if client.HTTPClient != nil {
-            client.HTTPClient.Transport = getProxyTransport()
-        }
-
-        return &hook.NewBinanceTraderResult{Client: client}
     })
 }
 ```
@@ -208,7 +161,6 @@ func (r *MyHookResult) GetResult() string {
 // hook/hooks.go
 const (
     GETIP              = "GETIP"
-    NEW_BINANCE_TRADER = "NEW_BINANCE_TRADER"
     NEW_ASTER_TRADER   = "NEW_ASTER_TRADER"
     MY_HOOK            = "MY_HOOK"  // 新增
 )
@@ -267,4 +219,4 @@ func TestHook(t *testing.T) {
 
 - 核心实现：`hook/hooks.go`
 - Result类型：`hook/trader_hook.go`, `hook/ip_hook.go`
-- 调用示例：`api/server.go`, `trader/binance_futures.go`, `trader/aster_trader.go`
+- 调用示例：`api/server.go`, `trader/aster_trader.go`

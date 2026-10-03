@@ -7,7 +7,7 @@
 // no trace that nobody saved it.
 //
 // Ownership is the strategy GET's own: Strategy().Get(userID, id) — another
-// user's id is 404, never 403. Secrets (the NofxOS key, external data-source
+// user's id is 404, never 403. Secrets (the VlOS key, external data-source
 // headers/URLs, any credential-shaped leaf) are redacted in the stored value
 // AND the effective value.
 
@@ -18,7 +18,6 @@ import (
 	"regexp"
 	"strings"
 
-	"vl/config"
 	"vl/trader"
 
 	"github.com/gin-gonic/gin"
@@ -61,10 +60,8 @@ func (s *Server) effectiveVenue(c *gin.Context, userID, strategyID string) strin
 			return t
 		}
 	}
-	if cfg := config.Get(); cfg != nil && cfg.TradingMode == "futures" {
-		return "ninjatrader"
-	}
-	return ""
+	// C2 — futures-only build: the default venue is always ninjatrader.
+	return "ninjatrader"
 }
 
 func (s *Server) handleStrategyEffective(c *gin.Context) {

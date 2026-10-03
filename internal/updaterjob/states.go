@@ -27,6 +27,7 @@ const (
 	StateActivated       State = "activated"
 	StateBooted          State = "booted"
 	StateBootVerified    State = "boot_verified"
+	StateWorkerSwapped   State = "worker_swapped"
 	StateComplete        State = "complete"
 	StateRollingBack     State = "rolling_back"
 	StateRolledBack      State = "rolled_back"
@@ -64,6 +65,7 @@ const (
 	EffectActivate    Effect = "activate"     // install the release halves + kill by identity
 	EffectWatch       Effect = "watch"        // the new process proves itself (log + health)
 	EffectBootVerify  Effect = "boot_verify"  // OK boot line, health prefix, AddOn ack build
+	EffectWorkerSwap  Effect = "worker_swap"  // atomic self-update of the worker binary (worker-self-update)
 	EffectRollback    Effect = "rollback"     // restore the snapshot + watch the OLD sha
 	EffectReleaseHold Effect = "release_hold" // the ONLY hold clears
 )
@@ -78,6 +80,11 @@ type Row struct {
 	// Failure is where a STARTED step that failed goes. "" ⇔ Effect is
 	// EffectNone (nothing runs, so nothing can fail).
 	Failure State
+	// ExtraFailure is an additional legal failure edge (phase started) beyond
+	// Failure. F2: drained_acked/gate_ok may end REFUSED when the planner-wait
+	// expires and the hold is released — a benign blocker must not park the
+	// desk in recovery_needed.
+	ExtraFailure []State
 	// Cancellable: cancel-before-boundary may move this state to cancelled.
 	// True exactly for the states before maintenance_held — nothing has been
 	// held, drained or changed yet.
@@ -95,17 +102,25 @@ var table = []Row{
 	{State: StatePreflightOK, Effect: EffectPreflight, Success: []State{StateMaintenanceHeld}, Failure: StateRefused, Cancellable: true},
 	// The boundary. A failed hold write leaves no hold of ours, so it is still
 	// "refused"; from here on a hold may exist, and no path reaches refused or
-	// cancelled (both mean "nothing was held or changed").
+	// cancelled (both mean "nothing was held or changed") — EXCEPT the F2
+	// planner-wait expiry: drained_acked/gate_ok release the hold and refuse,
+	// via ExtraFailure (the step cleared the hold BEFORE the edge).
 	{State: StateMaintenanceHeld, Effect: EffectHold, Success: []State{StateDrainedAcked}, Failure: StateRefused},
-	{State: StateDrainedAcked, Effect: EffectDrain, Success: []State{StateGateOK}, Failure: StateRecoveryNeeded},
-	{State: StateGateOK, Effect: EffectGate, Success: []State{StateBackupDone}, Failure: StateRecoveryNeeded},
+	{State: StateDrainedAcked, Effect: EffectDrain, Success: []State{StateGateOK}, Failure: StateRecoveryNeeded, ExtraFailure: []State{StateRefused}},
+	{State: StateGateOK, Effect: EffectGate, Success: []State{StateBackupDone}, Failure: StateRecoveryNeeded, ExtraFailure: []State{StateRefused}},
 	{State: StateBackupDone, Effect: EffectBackup, Success: []State{StateNT8Skipped, StateNT8Updated}, Failure: StateRecoveryNeeded},
 	{State: StateNT8Skipped, Effect: EffectNT8, Success: []State{StateActivated}, Failure: StateRecoveryNeeded},
 	{State: StateNT8Updated, Effect: EffectNT8, Success: []State{StateActivated}, Failure: StateRecoveryNeeded, Parks: true},
 	// The point of no return: any failure from here restores the snapshot.
 	{State: StateActivated, Effect: EffectActivate, Success: []State{StateBooted}, Failure: StateRollingBack},
 	{State: StateBooted, Effect: EffectWatch, Success: []State{StateBootVerified}, Failure: StateRollingBack},
-	{State: StateBootVerified, Effect: EffectBootVerify, Success: []State{StateComplete}, Failure: StateRollingBack},
+	{State: StateBootVerified, Effect: EffectBootVerify, Success: []State{StateWorkerSwapped}, Failure: StateRollingBack},
+	// The new bot is PROVEN before the worker swaps itself (never before
+	// boot_verified; never on refused/rolled_back/recovery_needed — the table
+	// has no edge from those). A swap refusal is recorded in the step's
+	// receipt and the job still completes (the install itself succeeded);
+	// Failure: StateComplete is the same completion for an unexpected error.
+	{State: StateWorkerSwapped, Effect: EffectWorkerSwap, Success: []State{StateComplete}, Failure: StateComplete},
 	{State: StateComplete, Effect: EffectReleaseHold, Failure: StateRecoveryNeeded},
 	{State: StateRollingBack, Effect: EffectRollback, Success: []State{StateRolledBack}, Failure: StateRecoveryNeeded},
 	{State: StateRolledBack, Effect: EffectReleaseHold, Failure: StateRecoveryNeeded},
@@ -202,8 +217,15 @@ func CheckMove(from State, phase Phase, to State) error {
 				return nil
 			}
 		}
-	} else if to == r.Failure {
-		return nil
+	} else {
+		if to == r.Failure {
+			return nil
+		}
+		for _, s := range r.ExtraFailure {
+			if s == to {
+				return nil
+			}
+		}
 	}
 	return fmt.Errorf("%w: %s/%s → %s", ErrForbiddenEdge, from, phase, to)
 }

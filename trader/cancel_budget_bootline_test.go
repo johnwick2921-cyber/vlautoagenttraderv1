@@ -18,7 +18,7 @@ import (
 // request. Zero of those is the normal, quiet case and must read as a measured
 // zero, not as an uncomputed one (A24).
 func TestCancelBootLineStatesThePerProcessBudget(t *testing.T) {
-	line := CancelBootLine(nil, ReconcileCounts{}, 0)
+	line := CancelBootLine(nil, ReconcileCounts{}, 0, "")
 
 	for _, want := range []string{
 		"rerequest-cap=",
@@ -44,7 +44,7 @@ func TestCancelBootLineStatesThePerProcessBudget(t *testing.T) {
 func TestCancelBootLineCountsTheForeignBootCarry(t *testing.T) {
 	st := newCancelBootLineStore(t)
 
-	line := CancelBootLine(st, ReconcileCounts{}, 0)
+	line := CancelBootLine(st, ReconcileCounts{}, 0, "")
 	if !strings.Contains(line, "carry=0") {
 		t.Fatalf("an empty ledger carries nothing and must say carry=0 (measured); got:\n  %s", line)
 	}
@@ -64,7 +64,7 @@ func TestCancelBootLineCountsTheForeignBootCarry(t *testing.T) {
 		t.Fatalf("stamp a foreign boot: %v", err)
 	}
 
-	line = CancelBootLine(st, ReconcileCounts{}, 0)
+	line = CancelBootLine(st, ReconcileCounts{}, 0, "")
 	if !strings.Contains(line, "carry=1") {
 		t.Fatalf("one row counted by a departed process must appear as carry=1 — it is the row whose budget resets on its next request; got:\n  %s", line)
 	}

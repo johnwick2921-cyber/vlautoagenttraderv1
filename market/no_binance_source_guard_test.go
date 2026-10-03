@@ -19,12 +19,7 @@ import (
 // from the else-branch of an `if isFutures` — the crypto branch.
 
 // binanceHostAllowlist: "<file>:<enclosing func or const/var name>" → why.
-var binanceHostAllowlist = map[string]string{
-	"market/data.go:getOpenInterestData":           "crypto-perp OI; called only from the crypto branch (checked below)",
-	"market/data.go:getFundingRate":                "crypto-perp funding; called only from the crypto branch (checked below)",
-	"market/api_client.go:baseURL":                 "APIClient's base URL; NewAPIClient is constructed only inside the two fetchers above",
-	"market/historical.go:binanceFuturesKlinesURL": "GetKlinesRange — no caller anywhere (dead on the live path); deleted in W-NO-BINANCE Part B",
-}
+var binanceHostAllowlist = map[string]string{}
 
 // Crypto-only renderers of funding that are NOT Binance hosts, for the record
 // (CTO): kernel/grid_engine.go's 'Funding Rate' lines serve crypto grid
@@ -101,54 +96,6 @@ func TestNoBinanceHostOnTheFuturesPathOutsideTheAllowlist(t *testing.T) {
 		if !found[key] {
 			t.Errorf("allowlist row %q matches nothing — delete it (the allowlist only shrinks)", key)
 		}
-	}
-}
-
-// The two Binance fetchers are called ONLY from the crypto branch: inside the
-// else of an `if isFutures { … }` in this package.
-func TestBinanceFetchersAreCalledOnlyFromTheCryptoBranch(t *testing.T) {
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, ".", func(fi os.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	calls := 0
-	for _, p := range pkgs {
-		for _, f := range p.Files {
-			var stack []ast.Node
-			ast.Inspect(f, func(n ast.Node) bool {
-				if n == nil {
-					stack = stack[:len(stack)-1]
-					return false
-				}
-				stack = append(stack, n)
-				ce, ok := n.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				id, ok := ce.Fun.(*ast.Ident)
-				if !ok || (id.Name != "getOpenInterestData" && id.Name != "getFundingRate") {
-					return true
-				}
-				calls++
-				inCrypto := false
-				for i := len(stack) - 1; i > 0; i-- {
-					if ifs, ok := stack[i-1].(*ast.IfStmt); ok && ifs.Else == stack[i] {
-						if c, ok := ifs.Cond.(*ast.Ident); ok && c.Name == "isFutures" {
-							inCrypto = true
-							break
-						}
-					}
-				}
-				if !inCrypto {
-					t.Errorf("%s: %s is called outside the else-branch of `if isFutures` — the futures path would reach Binance", fset.Position(ce.Pos()), id.Name)
-				}
-				return true
-			})
-		}
-	}
-	if calls < 4 {
-		t.Fatalf("expected the four crypto-branch calls (two per market read), found %d — the guard is going vacuous", calls)
 	}
 }
 

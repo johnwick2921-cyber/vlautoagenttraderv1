@@ -129,7 +129,6 @@ AI-Trader 定位为**评测基准平台(Benchmarking Platform)**，而非生产�
 |------|---------|---------|---------|---------|
 | **美股** | NASDAQ-100成分股 | $10,000 USD | 日级/小时级 | T+0 |
 | **A股** | SSE-50成分股 | ¥100,000 CNY | 日级 | T+1 |
-| **加密货币** | BTC, ETH, XRP, SOL等10种 | 50,000 USDT | 小时级 | 24/7 |
 
 ### 2.4 支持的LLM模型
 
@@ -998,8 +997,7 @@ async def execute_trade(
     Args:
         symbol: 交易标的代码
             - 美股: "AAPL", "MSFT", "GOOGL"等
-            - 加密货币: "BTCUSDT", "ETHUSDT"等
-            - A股: "600519.SH", "000001.SZ"等
+                        - A股: "600519.SH", "000001.SZ"等
         action: 交易方向
             - "buy": 买入
             - "sell": 卖出
@@ -1726,7 +1724,7 @@ class CryptoMarketRules(MarketRules):
 
     @property
     def currency(self) -> str:
-        return "USDT"
+        return "USD"
 
     @property
     def settlement_type(self) -> str:
@@ -1759,10 +1757,10 @@ class CryptoMarketRules(MarketRules):
         """加密货币支持极小单位交易"""
         # 根据币种返回最小精度
         lot_sizes = {
-            "BTCUSDT": 0.00001,
-            "ETHUSDT": 0.0001,
-            "XRPUSDT": 1,
-            "SOLUSDT": 0.01,
+            "BTC": 0.00001,
+            "ETH": 0.0001,
+            "XRP": 1,
+            "SOL": 0.01,
         }
         return lot_sizes.get(symbol, 0.001)
 ```
@@ -1881,7 +1879,7 @@ AI-Trader采用多维度指标体系评估模型表现:
 │  ┌──────────────────────────────────────────────────────────────────┐ │
 │  │  1.1 设定评测参数                                                  │ │
 │  │      • 时间范围: 2024-01-01 ~ 2024-12-31                          │ │
-│  │      • 初始资金: $10,000 / ¥100,000 / 50,000 USDT                 │ │
+│  │      • 初始资金: $10,000 / ¥100,000 / 50,000 USD                 │ │
 │  │      • 市场类型: US / CN / CRYPTO                                 │ │
 │  │                                                                    │ │
 │  │  1.2 加载待评测模型                                                │ │
@@ -2162,7 +2160,7 @@ markets:
 
   crypto:
     initial_cash: 50000
-    currency: USDT
+    currency: USD
     assets: [BTC, ETH, XRP, SOL, ADA, SUI, LINK, AVAX, LTC, DOT]
     frequency: hourly
 

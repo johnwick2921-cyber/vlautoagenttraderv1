@@ -59,7 +59,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         // + the hello epoch fields. 2026-09-23-m21 (M2.1): census `settled`,
         // no nested census locks, source_hash at activation. The ISO-date
         // prefix is kept (CTO ruling Q3).
-        private const string  VL_BUILD_ID             = "2026-09-30-m22";
+        private const string  VL_BUILD_ID             = "2026-10-03-c2";
         private const int    MAX_FRAME_BYTES         = 1 << 20; // 1 MB, spec L4376
 
         // === State ===
@@ -428,60 +428,17 @@ namespace NinjaTrader.NinjaScript.AddOns
         // Selection order (first match wins):
         //   1. The account name in %USERPROFILE%\VLTrader\account.txt
         //      (operator-editable — one line, e.g. "Sim101" or "MyPropAcct").
-        //   2. %USERPROFILE%\NofxTrader\account.txt (legacy), only when the
-        //      VLTrader file is absent or empty. The AddOn then copies the
-        //      legacy value into VLTrader ONCE (an EMPTY source is never
-        //      copied). When BOTH files hold a non-empty, different value the
-        //      VLTrader file wins and a WARN names both values — never a
-        //      silent account switch.
-        //   3. "Sim101" (SIM default).
-        //   4. The first available account.
+        //      NOTE (R5, 2026-10-03): the legacy NofxTrader\account.txt
+        //      migration branch was REMOVED in the cancel-confirm AddOn update
+        //      (one F5) — the NofxTrader folder holds only data\ and VLTrader
+        //      did not exist there yet, so there is nothing to migrate. If you
+        //      ever had NofxTrader\account.txt, move it to VLTrader\account.txt
+        //      yourself.
+        //   2. "Sim101" (SIM default).
+        //   3. The first available account.
         private void ResolveAccount()
         {
             string preferred = ReadAccountFile("VLTrader");
-            string legacy = null;
-
-            if (preferred == null)
-            {
-                legacy = ReadAccountFile("NofxTrader");
-                if (legacy != null)
-                {
-                    // VL absent or empty, legacy non-empty: copy ONCE into
-                    // VLTrader (creating the folder, overwriting an empty
-                    // file). An EMPTY source is never copied (ReadAccountFile
-                    // maps absent and empty to null).
-                    try
-                    {
-                        string vlDir = Path.Combine(
-                            Environment.GetEnvironmentVariable("USERPROFILE") ?? "",
-                            "VLTrader");
-                        Directory.CreateDirectory(vlDir);
-                        File.WriteAllText(Path.Combine(vlDir, "account.txt"), legacy);
-                        LogInfo("VLTraderTCPClient: account.txt copied NofxTrader→VLTrader (" + legacy + ")");
-                    }
-                    catch (Exception ex)
-                    {
-                        LogWarn("VLTraderTCPClient: could not copy account.txt into VLTrader: " + ex.Message);
-                    }
-                    preferred = legacy;
-                }
-            }
-            else
-            {
-                legacy = ReadAccountFile("NofxTrader");
-                if (legacy != null && legacy != preferred)
-                {
-                    // Both non-empty and different: VLTrader wins, and the
-                    // WARN fires ONCE here. The cached values replay the same
-                    // WARN on every TCP CONNECTED; ResolveAccount() is NEVER
-                    // called again and account.txt is never re-read on a
-                    // reconnect (that would switch `account` without moving
-                    // the subscriptions).
-                    accountConflictVl = preferred;
-                    accountConflictNofx = legacy;
-                    WarnAccountConflict();
-                }
-            }
 
             lock (Account.All)
             {
@@ -531,22 +488,6 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
             return null;
         }
-
-        // WarnAccountConflict names BOTH account.txt values and the winner.
-        // Called once at resolution and replayed on every TCP CONNECTED from
-        // the cached values (account.txt is never re-read on a reconnect).
-        private void WarnAccountConflict()
-        {
-            LogWarn("VLTraderTCPClient: account.txt conflict — VLTrader\\account.txt says \"" + accountConflictVl
-                + "\" but NofxTrader\\account.txt says \"" + accountConflictNofx
-                + "\"; using VLTrader (no silent account switch)");
-        }
-
-        // accountConflictVl / accountConflictNofx cache the resolution values
-        // so the CONNECTED handler can replay the conflict WARN without ever
-        // re-reading account.txt or re-running ResolveAccount().
-        private string accountConflictVl = null;
-        private string accountConflictNofx = null;
 
         // === SIM detection ===
         // Returns true if the account is a simulation account. Tries Account.Simulation
@@ -643,8 +584,6 @@ namespace NinjaTrader.NinjaScript.AddOns
                     client.Connect(GO_SERVER_HOST, GO_SERVER_PORT);
                     stream = client.GetStream();
                     LogInfo("VLTraderTCPClient: CONNECTED");
-                    if (accountConflictVl != null && accountConflictNofx != null)
-                        WarnAccountConflict();
                     // W-ONE-BUTTON M2 — a hold belongs to the connection that was
                     // told it. Go re-sends it at accept while held.
                     maintenanceHeld = false;
@@ -1167,7 +1106,14 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // trigger price (the tick offset was applied Go-side).
                 bool isLimit    = orderType == "limit" && limitPx > 0;
                 bool isStopEntry = orderType == "stop_entry" && stopPx > 0;
-                OrderType orderT = isLimit ? OrderType.Limit : (isStopEntry ? OrderType.StopMarket : OrderType.Market);
+                // MENTOR STOP-LIMIT (PR B, 2026-10-03): stop_limit=true builds
+                // OrderType.StopLimit instead of StopMarket — fills at its
+                // price or misses, never a stop-MARKET (D1.4 p1 @24:41,
+                // p2 @00:00). Go sets the flag only when its mentor knob is ON
+                // and the far side proved the floor.
+                bool stopLimitWanted = string.Equals(GetString(p, "stop_limit"), "true", StringComparison.OrdinalIgnoreCase);
+                OrderType orderT = isLimit ? OrderType.Limit
+                    : (isStopEntry ? (stopLimitWanted ? OrderType.StopLimit : OrderType.StopMarket) : OrderType.Market);
                 // WAVE B / D1 (2026-09-05) — ONE ORDER, CORRECT SLOTS.
                 // Account.CreateOrder is POSITIONAL: after `quantity` come
                 // (limitPrice, stopPrice, oco, name, gtd, customOrder). Until
@@ -1180,8 +1126,16 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // The correct shape was always in this file: the bracket stop
                 // loss below builds a StopMarket as (b.Qty, 0, b.Sl) and fills.
                 // A limit entry keeps the shape it has today: price in
-                // limitPrice, 0 in stopPrice. StopMarket only — no stop-limit.
-                double limitArg = isLimit ? limitPx : 0;
+                // limitPrice, 0 in stopPrice.
+                // N12 (PR B, 2026-10-03): LimitPrice == StopPrice leaves a
+                // RESTING limit when the market gaps through the trigger, and
+                // it can fill later at a stale price. The Go side closes that
+                // window with a per-order EXPIRY (expiry_ms, authored by the
+                // evaluator's intent; the armed pass cancels an unfilled order
+                // when it lapses). The order itself keeps the mentor's exact
+                // shape — limit == stop (D1.4 p1 @24:41).
+                double limitArg = isLimit ? limitPx
+                    : (isStopEntry && stopLimitWanted ? stopPx : 0);
                 double stopArg  = isStopEntry ? stopPx : 0;
                 var entryOrder = submitAccount.CreateOrder(
                     instrument, entryAction, orderT, OrderEntry.Manual,
@@ -1959,6 +1913,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                         {
                             if (o.OrderType == OrderType.Limit)           otype = "limit";
                             else if (o.OrderType == OrderType.StopMarket) otype = "stop";
+                            else if (o.OrderType == OrderType.StopLimit)  otype = "stop-limit";
                             else if (o.OrderType == OrderType.StopLimit)  otype = "stop_limit";
                         }
                         catch { }
@@ -2166,11 +2121,76 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // no-op when the entry already filled, because the bracket was
                 // placed and the note consumed at that moment.
                 lock (signalMapLock) { pendingBrackets.Remove(signalId); }
+                SendCancelReport(signalId);
                 SendAck("cancel_order");
             }
             catch (Exception ex)
             {
                 LogWarn("VLTraderTCPClient: cancel_order failed: " + ex.Message);
+            }
+        }
+
+        // ── CANCEL-REPORT (2026-10-03-c1) ─────────────────────────────────────
+        //
+        // The Go side's report regime (CANCEL_CONFIRM_REQUIRE_REPORT, off by
+        // default) settles a cancel ONLY on a POSITIVE per-order terminal
+        // report: the order_snapshot deliberately omits terminal orders (D3,
+        // 2026-09-07), so absence from a book cannot distinguish "cancelled"
+        // from "never answered". This echo is emitted on EVERY cancel_order
+        // receipt and bypasses the lastOrderState dedupe — it is the report the
+        // gate waits for, not a state-change event. A subsequent OnOrderUpdate
+        // still emits the real terminal transition (state=cancelled), which the
+        // Go side records as the latest report; both are idempotent there.
+        //
+        // FAIL-CLOSED BY CONSTRUCTION: if the order is not found in the
+        // account's collection (never placed, or purged), NOTHING is emitted —
+        // the Go side settles nothing and the slot stays busy. An absence we
+        // cannot explain is never dressed up as a report.
+        private void SendCancelReport(string signalId)
+        {
+            try
+            {
+                Order target = null;
+                Account acct = account;
+                lock (signalMapLock)
+                {
+                    workingEntries.TryGetValue(signalId, out target);
+                    if (target != null) { try { acct = target.Account ?? account; } catch { } }
+                }
+                if (target == null && acct != null)
+                {
+                    lock (acct.Orders)
+                    {
+                        foreach (Order o in acct.Orders)
+                        {
+                            if (o == null) continue;
+                            string n = o.Name ?? "";
+                            string g = o.Oco ?? "";
+                            if (n == signalId || g == signalId) { target = o; break; }
+                        }
+                    }
+                }
+                if (target == null) return;
+                string state = "";
+                try { state = target.OrderState.ToString().ToLowerInvariant(); } catch { }
+                var payload = new Dictionary<string, object>
+                {
+                    ["signal_id"]     = signalId,
+                    ["order_name"]    = target.Name ?? "",
+                    ["state"]         = state,
+                    ["fill_price"]    = target.AverageFillPrice,
+                    ["quantity"]      = target.Filled,
+                    ["account"]       = (target.Account ?? acct) != null ? (target.Account ?? acct).Name : "",
+                    ["cancel_report"] = true
+                };
+                try { payload["symbol"] = target.Instrument.MasterInstrument.Name ?? ""; } catch { }
+                StampIdentity(payload, signalId);
+                WriteEnvelope("order_update", payload);
+                LogInfo("VLTraderTCPClient: cancel_report echo " + signalId + " state=" + state);
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: cancel_report echo failed: " + ex.Message);
             }
         }
 

@@ -12,7 +12,7 @@
 //     rule: the updater never cancels orders).
 //   - the trading app never links this package (TestTradingAppNeverLinksTheUpdaterWorkerSide).
 //   - the worker never mints: it reads the app's own views on loopback with
-//     the operator's $NOFX_CUTOVER_TOKEN, which is never logged or persisted.
+//     the operator's $VL_CUTOVER_TOKEN, which is never logged or persisted.
 //
 // Every side effect is behind a narrow interface (this file) so the whole state
 // machine is driven, in tests and in the §5 dry run, against fakes — never the
@@ -158,7 +158,7 @@ type Reverifier interface {
 var ErrUnauthorized = errors.New("updaterworker: the app refused the cutover token (401)")
 
 // AppReader reads the running bot's own views. The real one (app_http.go)
-// sends GETs to 127.0.0.1 with Bearer $NOFX_CUTOVER_TOKEN; it never writes.
+// sends GETs to 127.0.0.1 with Bearer $VL_CUTOVER_TOKEN; it never writes.
 type AppReader interface {
 	// Health is GET /api/health's "revision" (12 chars on the live bot).
 	Health(ctx context.Context) (string, error)
@@ -231,9 +231,21 @@ type Host interface {
 	Now() time.Time
 	// Sleep waits d or until ctx ends.
 	Sleep(ctx context.Context, d time.Duration) error
-	// MainTreeLockHeld runs the installation's deploy/vl-lock.sh check
-	// (C19: rc 1 = held). The worker NEVER acquires the lock.
-	MainTreeLockHeld() (held bool, detail string, err error)
+	// LockAcquire runs `bash <LockScript> acquire <session> <task>
+	// <minutes>`: the same atomic acquire humans use. acquired=true when
+	// rc 0 (the lock is now ours). When rc 1 (held), holder names the
+	// current holder when the script's status line parses. The worker
+	// never acquires a held/stale lock and never clears an incomplete one.
+	LockAcquire(session, task string, minutes int) (acquired bool, holder string, err error)
+	// LockHolder reports the current lock holder: "" when free; the named
+	// session when held (fresh OR stale — both name their holder). An
+	// incomplete or abandoned-incomplete lock is an error: the worker
+	// never proceeds on a lock it cannot positively attribute.
+	LockHolder() (holder string, err error)
+	// LockRelease runs `bash <LockScript> release <session>` — only the
+	// holder may release. A no-lock release is a no-op success (the script
+	// prints "no lock" with rc 0).
+	LockRelease(session string) error
 	// BuildInfo reads vcs.revision and vcs.modified from a binary.
 	BuildInfo(binary string) (revision, modified string, err error)
 	// ExeOf is /proc/<pid>/exe.

@@ -1341,6 +1341,31 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 		if r.TraderID != at.id {
 			continue
 		}
+		// N12 (REVIEW-309 r2, PR B 2026-10-03) — per-order EXPIRY, not a
+		// blanket timer. The evaluator's intent stores expiry_ms when it
+		// places a stop-limit (DS-102): a level touch or a single ISB expires
+		// at the close of the next 1m candle, ISB stacking is extended by the
+		// evaluator while the candles stay inside, the swing runs its own 5m
+		// rule. The pass cancels an unfilled order at now >= expiry_ms through
+		// the existing settlement path; no expiry stored → this code never
+		// sweeps it (additive, OFF by absence).
+		//
+		// A working order with a PARTIAL fill is a trade in progress: expiry
+		// never cancels it — it is logged once and left to the position logic
+		// (the bot is one contract per leg anyway).
+		if r.ExpiryMs > 0 && now.UnixMilli() >= r.ExpiryMs &&
+			r.State == store.StateWorking && r.FillQuantity > 0 {
+			expKey := "expiry_partial_fill:" + strconv.FormatInt(r.ID, 10)
+			if armRefusalChanged(&at.armRefusalLast, expKey, "partial_fill_kept") {
+				at.logWarnf("⏳ armed %s row %d working with a partial fill at its expiry — KEPT (never auto-cancelled by expiry); the position logic owns it",
+					r.Scenario, r.ID)
+			}
+		}
+		if armExpired(r, now.UnixMilli()) {
+			at.armLifecycleWrite("request_cancel(expiry_elapsed)", r,
+				ledger.RequestCancel(r.ID, "stop-limit expiry elapsed", now.UnixMilli()))
+			continue
+		}
 		if scope.skips(r.Scenario) {
 			at.noteZoneVerdictOnly(ledger, r, bars, price, now) // W3: the verdict on every pass; placement scoped
 			continue
@@ -1726,6 +1751,7 @@ func decideStopEntry(rawSide string, entryPx, offset, tick, price float64) stopE
 // sent, not by grepping this file for the call's spelling.
 type stopEntryPlacer interface {
 	PlaceStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error)
+	PlaceStopEntryWithLimit(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error)
 }
 
 // armStateWriter is the ledger seam: atomic pre-send registration plus refusal.
@@ -1811,7 +1837,17 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// so everything after it is the send itself. An error before it is a
 	// refusal (build, account, permit, B3, the ledger CAS) — provably unsent.
 	stamped := false
-	sid, perr := pl.PlaceStopEntry(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error {
+	// MENTOR STOP-LIMIT (PR B, 2026-10-03): with the knob ON the stop-entry
+	// routes through the limit variant — the AddOn builds OrderType.StopLimit
+	// (bounded limit offset past the trigger, N12) instead of StopMarket.
+	// Default OFF keeps the wire byte-identical to today. The send itself and
+	// the beforeSend callback are shared verbatim: the only difference is the
+	// stop_limit frame flag behind the far-side floor.
+	placeStopFn := pl.PlaceStopEntry
+	if stopLimitEntriesEnabled() {
+		placeStopFn = pl.PlaceStopEntryWithLimit
+	}
+	sid, perr := placeStopFn(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error {
 		if err := ledger.BeginPlacement(r.ID, sid); err != nil {
 			return err
 		}
@@ -1962,11 +1998,16 @@ func StopEntryBootLine(received, expected string, seamOn bool) string {
 		build = build[:i]
 	}
 	// The seam leads, and says what it MEANS rather than only what it is: an
-	// owner ruling (2026-09-05) holds stop entries off until a cancel-confirmation
-	// wave lands, because nt.CancelOrder reports success on a SEND and the broker
-	// was once seen holding nine working stop orders for one arm slot
-	// (nt8_order_snapshots id 1664) on an account capped at two contracts.
-	seam := "OFF — NO stop entry is placed (owner ruling 2026-09-05: cancel-confirmation wave owed; broker-side stacking)"
+	// owner ruling (2026-09-05) holds stop entries off. The snapshot-based
+	// cancel-confirmation wave landed 2026-09-06 (confirm=broker-snapshot),
+	// but the seam stays OFF by the same ruling: snapshot absence cannot
+	// distinguish "cancelled" from "never answered" (the AddOn omits terminal
+	// orders from the book), the broker was once seen holding nine working
+	// stop orders for one arm slot (nt8_order_snapshots id 1664) on an account
+	// capped at two contracts, and the positive-report regime
+	// (CANCEL_CONFIRM_REQUIRE_REPORT, 2026-10-03) is the gate that decides
+	// when re-placing is safe. The switch stays the owner's.
+	seam := "OFF — NO stop entry is placed (owner ruling 2026-09-05: cancel-report regime is the owed gate; broker-side stacking)"
 	if seamOn {
 		seam = "on"
 	}
@@ -2252,6 +2293,14 @@ func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *st
 			u.State, u.SignalID, u.Account, u.FillPrice)
 	}
 	logArmedOrderUpdateSummary()
+	// P1-7 (review 2026-10-03): the AddOn's cancel echo is a REPORT, not a
+	// state event. With the regime OFF it must be a complete no-op — a live
+	// echo appends accepted_risk and a cancelled echo would settle rows
+	// through SetState, bypassing ConfirmCancel and the zone re-arm. The echo
+	// is only meaningful to the report regime.
+	if u.CancelReport && !cancelConfirmRequireReport() {
+		return
+	}
 	if u.OrderName != "" && u.OrderName != u.SignalID {
 		return
 	}
@@ -2290,6 +2339,19 @@ func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *st
 			at.stampArmedFillLineage(r, u.FillPrice)
 			at.logInfof("⚡ armed fill %s @ %.2f (entry_class=armed_fill — stale_reeval NOT applied)", r.Scenario, u.FillPrice)
 		case "cancelled":
+			// CANCEL-REPORT REGIME (2026-10-03, knob default OFF): for a row
+			// awaiting cancel confirmation, the AddOn's positive report is
+			// RECORDED, and the settlement pass (confirmPendingCancelsReport)
+			// is the single writer that promotes it — preserving the original
+			// cancel reason and the zone-rest re-arm semantics. A direct
+			// SetState here would skip both and let a send-shaped success
+			// stand in for a report.
+			if cancelConfirmRequireReport() && r.State == store.StateCancelPending {
+				if err := ledger.RecordCancelReport(r.ID, armedReportNow(), "cancelled"); err != nil {
+					at.logWarnf("🧾 cancel-report record failed for %s: %v", r.Scenario, err)
+				}
+				return
+			}
 			at.armLifecycleWrite("set_state(cancelled)", r, ledger.SetState(r.ID, "cancelled", "cancelled in NT8"))
 			at.logInfof("✕ armed %s cancelled in NT8", r.Scenario)
 		default:

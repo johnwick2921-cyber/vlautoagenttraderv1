@@ -63,7 +63,7 @@ cp config.json.example config.json
 部署完成后：
 
 1. **配置 AI 模型** → 访问 Web 界面 http://localhost:3000
-2. **设置交易所** → 添加 Binance/Hyperliquid 凭证
+2. **设置交易所** → 添加 NinjaTrader 凭证
 3. **创建交易员** → 将 AI 模型与交易所结合
 4. **开始交易** → 在仪表板中监控表现
 

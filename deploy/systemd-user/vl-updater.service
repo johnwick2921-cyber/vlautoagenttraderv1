@@ -20,6 +20,12 @@ Type=simple
 ExecStart=%h/bin/vl-updater --install-dir %h/vl serve
 EnvironmentFile=%h/.config/vl-updater/env
 UnsetEnvironment=TZ
+# worker-self-update: after a successful swap the worker exits so the unit
+# restarts on the new binary — Restart=always is the piece that makes the
+# exit mean "restart". The worker warns at boot when its self-update knob is
+# on but the running unit's Restart is not always/on-success.
+Restart=always
+RestartSec=2
 
 [Install]
 WantedBy=default.target

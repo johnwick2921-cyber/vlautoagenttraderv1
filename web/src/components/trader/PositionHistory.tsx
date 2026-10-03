@@ -222,7 +222,7 @@ function SymbolStatsRow({ stat }: { stat: SymbolStats }) {
     >
       <div className="flex items-center gap-3">
         <span className="font-mono font-semibold" style={{ color: '#EAECEF' }}>
-          {(stat.symbol || '').replace('USDT', '')}
+          {stat.symbol || ''}
         </span>
         <span className="text-xs" style={{ color: '#848E9C' }}>
           {stat.total_trades || 0} trades
@@ -404,7 +404,7 @@ function PositionRow({
             className="font-mono font-semibold"
             style={{ color: '#EAECEF' }}
           >
-            {(position.symbol || '').replace('USDT', '')}
+            {position.symbol || ''}
           </span>
           <span
             className="px-2 py-0.5 rounded text-xs font-semibold uppercase"
@@ -1014,7 +1014,7 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
                 },
                 ...uniqueSymbols.map((s) => ({
                   value: s,
-                  label: (s || '').replace('USDT', ''),
+                  label: (s || '').replace('USD', ''),
                 })),
               ]}
               className="rounded px-3 py-1.5 text-sm"

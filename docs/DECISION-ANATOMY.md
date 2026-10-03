@@ -51,7 +51,7 @@ Supporting cast: the **dodge** watches the 5m close boundary (defers a cycle tha
 | No balance frame yet / trader stopped / no candidates | — | — |
 | **In-position split** | `ai_watch` (default): a WATCH cycle runs instead (§4); `bracket_only`: silent skip | Trader modal "In-position AI mode" |
 
-**Stage B — inside the AI call (kernel):** concurrent cap (max_positions **3**, cycle HOLDs at cap) → guardrails master (**OFF today** → daily-loss $450 / profit $900 / max-trades 3 / blackout / consistency all log "WOULD have tripped" and never block) → then each proposed entry must survive: **notional ≤ equity×20** (always on) · min size (12/60 USDT literals) · SL/TP sane · **R:R ≥ 3.0** · **confidence ≥ 60** (your stored value; unset strategies default 60 everywhere since #55) → then price-sanity, **B4 stale-feed** (entry→wait if the snapshot's freshest 1m/5m bar is a period behind), **B7 re-entry cooldown** (**OFF** — `reentry_cooldown_minutes=0`).
+**Stage B — inside the AI call (kernel):** concurrent cap (max_positions **3**, cycle HOLDs at cap) → guardrails master (**OFF today** → daily-loss $450 / profit $900 / max-trades 3 / blackout / consistency all log "WOULD have tripped" and never block) → then each proposed entry must survive: **notional ≤ equity×20** (always on) · min size (12/60 USD literals) · SL/TP sane · **R:R ≥ 3.0** · **confidence ≥ 60** (your stored value; unset strategies default 60 everywhere since #55) → then price-sanity, **B4 stale-feed** (entry→wait if the snapshot's freshest 1m/5m bar is a period behind), **B7 re-entry cooldown** (**OFF** — `reentry_cooldown_minutes=0`).
 
 **Stage C — after the AI call:** supersession triage — a decision whose 5m bar closed mid-call is: discarded (contains closes) · quietly dropped (wait-only, free) · **re-validated for entries** (executes iff the fresh bar never touched its stop AND drift < 0.25×ATR14). Then safe-mode (3 AI failures → entries blocked) and **hold-lock** (ON — suppresses AI closes while holding; latent under ai_watch since the observer can't emit actions anyway).
 
@@ -111,7 +111,7 @@ Look at the decision card / `data/vl_YYYY-MM-DD.log` (journald drops INFO lines 
 - **Trader modal** (per trader, DB): scan interval **2m** · cadence **interval** · position mode **ai_watch** · account **Sim101**.
 - **Env** (`.env`, documented in `.env.example`): `STALE_DODGE` on · `STALE_REEVAL_DRIFT_ATR` 0.25 · `WATCH_INVALIDATE_MIN_CONF` 70 / `WATCH_MIN_HOLD_CYCLES` 2 / `WATCH_WARN_CONSECUTIVE` 2 · `POST_EXIT_RESCAN` on / delay 2000ms · `ROLL_BLOCK_DAYS_BEFORE_EXPIRY` 3 · `STALE_BAR_GRACE_S` 15 · `INTRADE_FEED_ALERT_S` 120 · `RISK_MAX_DAILY_LOSS_USD` 500 (only bites if master ON and Studio value empty) · `NT_ALLOWED_ACCOUNTS` (overrides the picker).
 - **Plan-authored** (the planner writes, you edit via the door): bias/flip, levels+grades+instructions, scenarios + their trigger/invalid text, no-trade windows, death/flip objects.
-- **Fixed in code** (deliberate): SIM-only · 2-contract clamp · equity×20 notional · 12/60 USDT minimums · 60s monitor · SVP 1m×2000 · dodge factor 1.2.
+- **Fixed in code** (deliberate): SIM-only · 2-contract clamp · equity×20 notional · 12/60 USD minimums · 60s monitor · SVP 1m×2000 · dodge factor 1.2.
 
 ---
 

@@ -33,8 +33,6 @@ func RegisterHook(key string, hook HookFunc) {
 
 // hook list
 const (
-	GETIP              = "GETIP"              // func (userID string) *IpResult
-	NEW_BINANCE_TRADER = "NEW_BINANCE_TRADER" // func (userID string, client *futures.Client) *NewBinanceTraderResult
-	NEW_ASTER_TRADER   = "NEW_ASTER_TRADER"   // func (userID string, client *http.Client) *NewAsterTraderResult
-	SET_HTTP_CLIENT    = "SET_HTTP_CLIENT"    // func (client *http.Client) *SetHttpClientResult
+	GETIP           = "GETIP"           // func (userID string) *IpResult
+	SET_HTTP_CLIENT = "SET_HTTP_CLIENT" // func (client *http.Client) *SetHttpClientResult
 )

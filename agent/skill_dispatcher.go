@@ -252,28 +252,6 @@ func parseSkillError(raw string) string {
 	return strings.TrimSpace(raw)
 }
 
-func modelWalletBalanceHint(model *store.AIModel) string {
-	if model == nil || !agentProviderSupportsUSDCBalance(model.Provider) {
-		return ""
-	}
-	privateKey := strings.TrimSpace(string(model.APIKey))
-	if privateKey == "" {
-		return "钱包未配置"
-	}
-	walletAddress, err := agentWalletAddressFromPrivateKey(privateKey)
-	if err != nil || strings.TrimSpace(walletAddress) == "" {
-		return "钱包私钥无效"
-	}
-	balance, err := agentQueryUSDCBalanceCached(walletAddress)
-	if err != nil {
-		return "钱包余额暂时无法读取"
-	}
-	if balance <= 0 {
-		return "钱包余额 0 USDC，需充值后才能稳定调用"
-	}
-	return fmt.Sprintf("钱包余额 %.4g USDC", balance)
-}
-
 func (a *Agent) loadEnabledModelOptions(storeUserID string) []traderSkillOption {
 	if a.store == nil {
 		return nil
@@ -291,7 +269,6 @@ func (a *Agent) loadEnabledModelOptions(storeUserID string) []traderSkillOption 
 		hint := strings.Join(cleanStringList([]string{
 			strings.TrimSpace(model.CustomModelName),
 			strings.TrimSpace(model.Provider),
-			modelWalletBalanceHint(model),
 		}), " / ")
 		out = append(out, traderSkillOption{ID: model.ID, Name: name, Hint: hint, Enabled: model.Enabled})
 	}
@@ -779,11 +756,8 @@ func (a *Agent) handleExchangeDiagnosisSkill(storeUserID, lang, text string) str
 		lines = append(lines, "先检查什么：")
 		lines = append(lines, "1. 先同步系统时间，尤其是出现 invalid signature / timestamp 时。")
 		lines = append(lines, "2. 确认 API Key 和 Secret 没有填反、没有过期。")
-		if containsAny(lower, []string{"okx", "欧易"}) || containsAny(strings.ToLower(formatOptionList("", exchanges)), []string{"okx"}) {
-			lines = append(lines, "3. 如果是 OKX，再确认 passphrase 没漏填。")
-		}
-		lines = append(lines, "4. 检查 API 白名单是否包含当前服务器 IP。")
-		lines = append(lines, "5. 检查是否已经开启交易/合约权限。")
+		lines = append(lines, "3. 检查 API 白名单是否包含当前服务器 IP。")
+		lines = append(lines, "4. 检查是否已经开启交易/合约权限。")
 		if excerpt := backendLogDiagnosisExcerpt(lang, text, "exchange"); excerpt != "" {
 			lines = append(lines, excerpt)
 		}
@@ -792,7 +766,7 @@ func (a *Agent) handleExchangeDiagnosisSkill(storeUserID, lang, text string) str
 	}
 
 	lines = append(lines, "Symptom: this looks like an exchange API connectivity or signature issue.")
-	lines = append(lines, "Check first: system time sync, API key/secret correctness, IP whitelist, trading permissions, and passphrase for OKX.")
+	lines = append(lines, "Check first: system time sync, API key/secret correctness, IP whitelist, and trading permissions.")
 	if len(exchanges) > 0 {
 		lines = append(lines, "Current exchange bindings exist, so the next step is to match the exact error text to the most likely cause.")
 	}

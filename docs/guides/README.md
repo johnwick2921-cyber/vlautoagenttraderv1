@@ -56,7 +56,7 @@ sudo apt-get install libta-lib0-dev
 ### Best Practices
 
 **1. Risk Management**
-- Start with small amounts (100-500 USDT)
+- Start with small size (1 MNQ contract)
 - Use subaccounts for additional safety
 - Set reasonable leverage limits
 - Monitor daily loss limits
@@ -83,15 +83,12 @@ Run multiple AI models simultaneously:
 - Compare performance in real-time
 - Identify best-performing strategies
 
-### Custom Coin Pools
-- Use external API for coin selection
-- Combine AI500 + OI Top data
+### Symbol Selection
+- Static symbol list in Strategy Studio
 - Filter by liquidity and volume
 
-### Exchange Integration
-- Binance Futures (CEX)
-- Hyperliquid (DEX)
-- Aster DEX (Binance-compatible)
+### Venue
+- NinjaTrader 8 (CME futures — SIM execution)
 
 ---
 

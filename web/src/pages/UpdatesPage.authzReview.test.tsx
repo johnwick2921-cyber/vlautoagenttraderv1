@@ -118,6 +118,7 @@ describe('UpdatesPage — review constant ON', () => {
         screen.getByText('install authorization under review')
       ).toBeTruthy()
     )
+    fireEvent.click(screen.getByTestId('advanced-toggle'))
     fireEvent.change(screen.getByTestId('authz-paste'), {
       target: {
         value: JSON.stringify({
@@ -128,7 +129,9 @@ describe('UpdatesPage — review constant ON', () => {
         }),
       },
     })
-    const button = screen.getByTestId('update-button') as HTMLButtonElement
+    const button = screen.getByTestId(
+      'update-button-advanced'
+    ) as HTMLButtonElement
     // server says everything is ready, the paste parses — and the constant
     // still wins, exactly as ruled
     expect(button.disabled).toBe(true)

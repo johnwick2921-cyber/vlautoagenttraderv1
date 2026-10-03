@@ -51,14 +51,8 @@ export const useTradersConfigStore = create<TradersConfigState>((set, get) => ({
     set({ allExchanges: exchanges })
     // 更新 configuredExchanges
     const configuredExchanges = exchanges.filter((e) => {
-      if (e.id === 'aster') {
-        return e.asterUser && e.asterUser.trim() !== ''
-      }
-      if (e.id === 'hyperliquid') {
-        return e.hyperliquidWalletAddr && e.hyperliquidWalletAddr.trim() !== ''
-      }
-      // 修复: 添加 enabled 判断,与原始逻辑保持一致
-      return e.enabled || (e.apiKey && e.apiKey.trim() !== '')
+      // ninjatrader is the only venue; a configured exchange is an enabled one.
+      return e.enabled
     })
     set({ configuredExchanges })
   },

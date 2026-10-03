@@ -70,7 +70,6 @@ Alphabetical. Components in `PascalCase`; module-level functions in `camelCase`;
 | `getShortName` | `web/src/components/trader/utils.ts` | Page 3 |
 | `getTraderSlug` | `web/src/router/AppRoutes.tsx:48-51` | Page 1, 4 |
 | `getUserMode` | `web/src/lib/onboarding.ts` | Page 1 (Welcome route) |
-| `getWalletAddress` | `web/src/pages/TraderDashboardPage.tsx:76-89` | Page 4 |
 | `GridConfigEditor` | `web/src/components/strategy/GridConfigEditor.tsx` (474 LOC) | Page 5 |
 | `GridRiskPanel` | `web/src/components/strategy/GridRiskPanel.tsx` (313 LOC) | Page 4 (only if strategy_type=grid_trading) |
 | `handleChangePassword` | `web/src/pages/SettingsPage.tsx:98-127` | Page 3 |
@@ -107,7 +106,6 @@ Alphabetical. Components in `PascalCase`; module-level functions in `camelCase`;
 | `PositionHistory` | `web/src/components/trader/PositionHistory.tsx` (918 LOC) | Page 4 |
 | `PositionsPanel` | `web/src/components/agent/PositionsPanel.tsx` (164 LOC) | Page 2 (right sidebar) |
 | `PromptSectionsEditor` | `web/src/components/strategy/PromptSectionsEditor.tsx` (178 LOC) | Page 5 |
-| `proxyBinance` (Go) | `agent/web.go:339` | Backend, Page 2 |
 | `PublishSettingsEditor` | `web/src/components/strategy/PublishSettingsEditor.tsx` (184 LOC) | Page 5 |
 | `PunkAvatar` + `getTraderAvatar` | `web/src/components/common/PunkAvatar.tsx` | Page 4 |
 | `RegisterAgentHandler` (Go) | `api/agent_routes.go:11` | Backend, Page 2 |
@@ -136,7 +134,6 @@ Alphabetical. Components in `PascalCase`; module-level functions in `camelCase`;
 | `TCPServer` (Go) | `provider/ninjatrader/tcp_server.go:65-…` | Backend (Plan 1.5) |
 | `TelegramConfigModal` | `web/src/components/trader/TelegramConfigModal.tsx` (515 LOC) | Page 3, Page 4 |
 | `TokenEstimateBar` | `web/src/components/strategy/TokenEstimateBar.tsx` (122 LOC) | Page 5 |
-| `Toaster` (sonner) | `main.tsx:11-25` | All pages |
 | `TraderConfigModal` | `web/src/components/trader/TraderConfigModal.tsx` | Page 4 |
 | `TraderDashboardPage` | `web/src/pages/TraderDashboardPage.tsx` (1154 LOC) | Page 4 |
 | `TraderManager` (Go) | `manager/trader_manager.go` (782 LOC) | Backend |
@@ -165,7 +162,6 @@ Endpoints that are accessed by each page during normal operation. Listed in alph
 | `/api/agent/chat` | POST | 2 | `WebHandler.HandleChat` |
 | `/api/agent/chat/stream` | POST | 2 | `WebHandler.HandleChatStream` (SSE) |
 | `/api/agent/health` | GET | 2 | `WebHandler.HandleHealth` |
-| `/api/agent/klines` | GET | 2 | `WebHandler.HandleKlines` (Binance proxy) |
 | `/api/agent/preferences` | GET/POST/DELETE | 2 | `handleGetAgentPreferences` / `handleCreateAgentPreference` / `handleDeleteAgentPreference` |
 | `/api/agent/ticker` | GET | 2 | `WebHandler.HandleTicker` |
 | `/api/agent/tickers` | GET | 2 | `WebHandler.HandleTickers` |
@@ -191,7 +187,6 @@ Endpoints that are accessed by each page during normal operation. Listed in alph
 | `/api/positions/history` | GET | 4 (PositionHistory panel) | `handlePositionHistory` |
 | `/api/risk/force-flat` | POST | 4 (EmergencyFlatButton) | `handleForceFlat` |
 | `/api/risk/status` | GET | 4 (potentially — not in capture) | `handleRiskStatus` |
-| `/api/server-ip` | GET | 3 (Binance section in modal) | `handleGetServerIP` |
 | `/api/statistics` | GET | 4 | `handleStatistics` |
 | `/api/status` | GET | 4 | `handleStatus` |
 | `/api/strategies` | GET | 5, 4 (indirectly via trader's strategy_id) | `handleGetStrategies` |
@@ -205,7 +200,6 @@ Endpoints that are accessed by each page during normal operation. Listed in alph
 | `/api/strategies/test-run` | POST | 5 | `handleStrategyTestRun` |
 | `/api/supported-exchanges` | GET | 3 | `handleGetSupportedExchanges` |
 | `/api/supported-models` | GET | 3, 4 | `handleGetSupportedModels` |
-| `/api/symbols` | GET | 4 (Hyperliquid dropdown) | `handleSymbols` |
 | `/api/telegram` | GET/POST | 3 (modal) | `handleGetTelegramConfig` / `handleUpdateTelegramConfig` |
 | `/api/telegram/binding` | DELETE | 3 | `handleUnbindTelegram` |
 | `/api/telegram/model` | POST | 3 | `handleUpdateTelegramModel` |
@@ -279,7 +273,6 @@ Page 4 (/dashboard for the trader)
 
 ```
 Page 2 (/agent)
- ├─ User: "Add a Bybit exchange"
  ├─ Agent calls manage_exchange_config tool
  │  └─ Backend creates store.Exchange row
  ├─ Backend dispatches window.dispatchEvent('agent-config-refresh')
@@ -321,7 +314,6 @@ Page 2 (/agent)
 
 | Gap | Plan # | File:line | Pages affected | Scope estimate |
 |---|---|---|---|---|
-| NT chart shows Binance data | Plan 4.4 | `ChartTabs.tsx:28-89` + `handler_klines.go` | Page 4 | ~720 LOC, ~33 hr (per Plan 4.4 deep spec) |
 | `/api/klines` 500 for NT | Plan 4.5 | `api/handler_klines.go` | Pages 2, 4 | ~120 LOC, 60 min |
 | `/api/symbols` 400 for NT | Plan 4.5 | `api/handler_symbols.go` | Page 4 | bundled in Plan 4.5 |
 | Strategy Studio crypto-coupled | Plan 4.6 | `CoinSourceEditor`, `IndicatorEditor`, `RiskControlEditor` | Page 5 | ~400 LOC, 3 hr |
@@ -351,14 +343,11 @@ These were not in the prior 2026-05-27 audit. Severity in column 4.
 | N14 | "Edit" button disabled when trader RUNNING with no tooltip explanation | `TradersList.tsx` | UX | Page 4 |
 | N15 | "在竞技场显示" Chinese label in EN mode | `TradersList.tsx` | i18n gap | Page 4 |
 | N16 | Footer links have empty `href=""` | `SiteFooter.tsx` | Cosmetic | All footers |
-| N17 | ChartTabs has no `futures` market type; NT falls back to Binance default | `ChartTabs.tsx:38-44, 83-89` | Plan 4.4 prerequisite | Page 4 |
 | N18 | `IndicatorEditor.DEFAULT_VLOS_API_KEY = "cm_568c67eae410d912c54c"` — dead default key | `IndicatorEditor.tsx:7` | Dead code | Page 5 |
 | N19 | `/api/strategies` and `/api/models` each fire TWICE on Strategy page load | `StrategyStudioPage.tsx:207-210` + StrictMode | Cosmetic | Page 5 |
 | N20 | External CDN reference `grainy-gradients.vercel.app/noise.svg` returns 404 | `DeepVoidBackground` or similar | Console noise | Page 5 |
 | N21 | `/api/my-traders` fires unconditionally at boot with no token → ERR_ABORTED | global | Cosmetic | All pages |
 | N22 | `MarketTicker.SYMBOLS = ['MNQ']` hardcoded — not user-configurable | `MarketTicker.tsx:14` | Functional limitation | Page 2 |
-| N23 | Tool descriptions in `agent/tools.go` still mention crypto-only assumptions (funding rate, OI, USDT) | `agent/tools.go` various `Description:` fields | Plan 4.6-adjacent | Page 2 |
-| N24 | `binanceFuturesAPIBaseURL` hardcoded module-level, not env-overridable | `agent/web.go:35` | Multi-exchange chart gap | Backend |
 | N25 | `vlos` import in `kernel/engine.go` looks unused; service is deprecated | `kernel/engine.go:14` | Code hygiene | Backend |
 | N26 | Hardcoded `"默认策略"` literal in agent tools | `agent/tools.go:2166` | i18n debt | Backend |
 | N27 | `chartUpdateKey` in TraderDashboardPage triggers chart re-fetch via `Date.now()` — fine pattern but state coupling | `TraderDashboardPage.tsx:145, 786` | n/a | Page 4 |

@@ -161,7 +161,7 @@ All work should align with our [roadmap](../roadmap/README.md):
 **Must Accept:**
 - Security enhancements
 - AI model integrations
-- Exchange integrations (OKX, Bybit, Lighter, EdgeX)
+- Exchange integrations (NinjaTrader bridge)
 - Project structure refactoring
 - UI/UX improvements
 

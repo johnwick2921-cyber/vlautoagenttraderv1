@@ -14,8 +14,6 @@ VL documentation has been reorganized into a structured `docs/` directory for be
 
 ### Community Docs
 - `HOW_TO_POST_BOUNTY.md` → `docs/community/bounty-guide.md`
-- `INTEGRATION_BOUNTY_HYPERLIQUID.md` → `docs/community/bounty-hyperliquid.md`
-- `INTEGRATION_BOUNTY_ASTER.md` → `docs/community/bounty-aster.md`
 
 ### Internationalization
 - `README.zh-CN.md` → `docs/i18n/zh-CN/README.md`
@@ -44,8 +42,6 @@ vl/
 ├── DOCKER_DEPLOY.en.md
 ├── CUSTOM_API.md
 ├── HOW_TO_POST_BOUNTY.md
-├── INTEGRATION_BOUNTY_HYPERLIQUID.md
-├── INTEGRATION_BOUNTY_ASTER.md
 ├── 常见问题.md
 └── ... (15+ markdown files in root!)
 ```

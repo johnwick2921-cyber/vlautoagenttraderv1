@@ -91,7 +91,7 @@ Rules:
 - For diagnosis, create, update, delete, start, stop, activation, duplication, or historical-performance analysis tasks, never reply only with a future promise such as "I'll do it now", "please wait", "diagnosis is running", or "I'll tell you later". If the next step is execution, choose the corresponding skill/planned execution. If execution is impossible, say exactly what information or data is missing.
 - Use CANCEL_TASK for "cancel", "stop", "forget it", "never mind", "算了", "取消".
 - Domain guard: if the user says "模型", "AI 模型", or "model" and asks to create or configure one, you must route to model_management, not exchange_management.
-- Domain guard: for model_management, the field "provider" means the AI model vendor such as OpenAI, DeepSeek, Claude, Gemini, Qwen, Kimi, Grok, Minimax, claw402, blockrun-base, or blockrun-sol. It never means an exchange like Binance, OKX, Bybit, CFD, forex, or metals.
+- Domain guard: for model_management, the field "provider" means the AI model vendor such as OpenAI, DeepSeek, Claude, Gemini, Qwen, Kimi, Grok, or MiniMax. It never means an exchange venue.
 - extracted_data should include any concrete facts from the user's message.
 - When an active session exposes allowed_field_spec_json, extracted_data must use only those canonical keys. Never output aliases, translated labels, or raw user wording as keys.
 - If the user clearly means a bulk destructive operation like "删除所有策略" or "全部删除策略", put the intent signal into extracted_data too. Example: {"bulk_scope":"all"}.
@@ -480,7 +480,7 @@ Rules:
 - Do not silently fill missing fields when the user has not authorized it. But if the user explicitly says things like "你帮我定 / 你推荐 / 按稳健高频设计 / 其他你定", that is authorization for the Agent to design the remaining fields. In that case you must produce a recommended config_patch based on the current strategy template and field limits, and explain which values came from the user versus which values are Agent recommendations.
 - The product editor template is the source of truth. Use only fields from the selected product template.
 - If the user switches strategy type, set extracted_data.strategy_type to the new type and discard fields from the previous type. Keep only shared fields such as name/description/publish settings.
-- In ` + branding.PersonaName() + ` product schema, AI500/OI Top/OI Low/static coin-source requests are ai_trading, not grid_trading.
+- In ` + branding.PersonaName() + ` product schema, static coin-source requests are ai_trading, not grid_trading.
 - Strategy creation is chat-executable. Do not tell the user to click a web/app button, open a page, or manually create it elsewhere.
 - Do not claim the strategy was created and do not promise future execution ("马上创建", "正在创建", "稍后通知"). This step only repairs state or asks for missing information.
 - When the current user message is a confirmation, prefer route="ready" whenever the structured template can be repaired. If it cannot be repaired, route="ask_user" with only the missing fields; never reply that you are about to create it.
@@ -853,7 +853,7 @@ Rules:
 - If the user clearly means a bulk destructive operation like "删除所有策略", "全部删除策略", "all strategies", set extracted_data to {"bulk_scope":"all"} and choose "execute_skill". Do not ask for target_ref.
 - If the user refers to a specific object from disclosed targets, set target_ref_id and target_ref_name when you can resolve it.
 - Current references are context for reasoning only. Do not copy a current reference into target_ref_id/target_ref_name unless the user explicitly refers to that object by name/id or clearly says "this/current/that previous one". If the target is not clear, ask instead of executing.
-- For trader bindings, exchange/model/strategy must resolve to an ID from Relevant disclosed resources before execution. Never invent a resource name or use a generic venue type like Binance/OKX as the bound exchange unless it appears as an actual disclosed resource.
+- For trader bindings, exchange/model/strategy must resolve to an ID from Relevant disclosed resources before execution. Never invent a resource name or use a generic venue type as the bound exchange unless it appears as an actual disclosed resource.
 - If there are multiple targets and the user did not disambiguate, ask a natural question with the available names.
 - If the current user message answers a missing field directly, extract it and continue.
 - extracted_data must use only canonical keys from Allowed field spec JSON. Never output aliases, translated labels, or raw user wording as keys.
@@ -905,7 +905,7 @@ func activeSessionSpecificRules(session skillSession) string {
 		return strings.Join([]string{
 			"- For strategy_management:create/update_config, the selected product editor template is the only schema. Write values only through extracted_data.config_patch, using the current type branch only: ai_trading => strategy_type + ai_config + publish_config; grid_trading => strategy_type + grid_config + publish_config.",
 			"- For strategy_management:create/update_config, config_patch values must be product schema raw values, not user-facing labels. Examples: source_type=\"static\" not \"静态币种\"; strategy_type=\"ai_trading\" not \"AI 策略\"; selected_timeframes=[\"1m\",\"5m\",\"15m\"] not a JSON string.",
-			"- For strategy_management:create, static / Hyperliquid coin-source requests imply strategy_type=\"ai_trading\". Do not leave strategy type ambiguous in that case.",
+			"- For strategy_management:create, static coin-source requests imply strategy_type=\"ai_trading\". Do not leave strategy type ambiguous in that case.",
 			"- For strategy_management:create/update_config, judge the user's natural-language intent. Explicit values, corrections, constraints, preferences, or requests to recommend/design must become config_patch for every determinable current-template field; pure questions/greetings/acknowledgements must not invent config_patch.",
 			"- For strategy_management:create, the Relevant disclosed resources include product_default_template and current_missing_template_fields. Treat product_default_template as the product editor's default template and field shape.",
 			"- For strategy_management:create, do not ask for or present fields listed in product_default_template.non_fields. They are not part of the selected product editor template.",
