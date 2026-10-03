@@ -1,66 +1,56 @@
 package api
 
-// P0 field-names hotfix (owner 10-02 12:2x CT): the parity test that cannot
-// drift. This test serialises the REAL verified_ready / up_to_date answer
-// builders into web/src/lib/api/fixtures/updates-check.json — the exact JSON
-// the handler puts on the wire — and the vitest side consumes that fixture to
-// drive the Updates page. It also pins the exact key sets, so a rename
-// (tag -> release_id) goes RED here before the web ever reads a stale name.
+// Parity test for the POST /api/updates/check answers (P0 field-names hotfix,
+// owner 10-02 12:2x CT; no-write fix 13:2x CT). The wire shape is built by
+// internal/updatescheck — the same builders the handler answers with. This test
+// never WRITES anything: it compares the builders' canonical output
+// byte-for-byte against the checked-in fixture the web vitest consumes, and
+// pins the exact key sets so a rename (tag -> release_id) fails here.
+//
+// Regenerate the fixture with:  go run ./cmd/gen-updates-check-fixture
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
 	"testing"
+
+	"vl/internal/updatescheck"
 )
 
 func TestCheckAnswersKeysAndFixtureCannotDrift(t *testing.T) {
-	vr := checkAnswerVerifiedReady(checkDetail{
-		Tag:             "v2026.10.02.3",
-		TargetCommitish: "dev",
-		SourceSHA:       "0123456789abcdef",
-	})
-	ud := checkAnswerUpToDate(checkDetail{
-		Tag:             "v2026.10.02.3",
-		TargetCommitish: "dev",
-	})
-
-	vrKeys := keys(vr)
-	udKeys := keys(ud)
+	pair := updatescheck.FixturePair()
+	vr := pair["verified_ready"].(map[string]any)
+	ud := pair["up_to_date"].(map[string]any)
 
 	wantVR := []string{"available", "checked", "ready", "reason", "source_sha", "tag", "target_commitish"}
 	wantUD := []string{"available", "checked", "ready", "reason", "tag", "target_commitish"}
-	if !equalSorted(vrKeys, wantVR) {
-		t.Fatalf("verified_ready answer keys = %v, want %v — the web reads `tag`/`available`/`ready`; a rename breaks the button", vrKeys, wantVR)
+	if !equalSorted(keys(vr), wantVR) {
+		t.Fatalf("verified_ready answer keys = %v, want %v — the web reads `tag`/`available`/`ready`; a rename breaks the button", keys(vr), wantVR)
 	}
-	if !equalSorted(udKeys, wantUD) {
-		t.Fatalf("up_to_date answer keys = %v, want %v", udKeys, wantUD)
-	}
-	if vr["tag"] != "v2026.10.02.3" || ud["available"] != false || vr["available"] != true || vr["ready"] != true {
-		t.Fatalf("answer values wrong: vr=%v ud=%v", vr, ud)
+	if !equalSorted(keys(ud), wantUD) {
+		t.Fatalf("up_to_date answer keys = %v, want %v", keys(ud), wantUD)
 	}
 
-	fixture := map[string]interface{}{
-		"verified_ready": vr,
-		"up_to_date":     ud,
-	}
-	b, err := json.MarshalIndent(fixture, "", "  ")
+	got, err := json.MarshalIndent(pair, "", "  ")
 	if err != nil {
-		t.Fatalf("marshal fixture: %v", err)
+		t.Fatalf("marshal pair: %v", err)
 	}
-	b = append(b, '\n')
-	dir := filepath.Join("..", "web", "src", "lib", "api", "fixtures")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		t.Fatalf("mkdir fixture dir: %v", err)
+	got = append(got, '\n')
+
+	fixturePath := filepath.Join("..", "web", "src", "lib", "api", "fixtures", "updates-check.json")
+	want, err := os.ReadFile(fixturePath)
+	if err != nil {
+		t.Fatalf("read fixture %s: %v — regenerate it with: go run ./cmd/gen-updates-check-fixture", fixturePath, err)
 	}
-	path := filepath.Join(dir, "updates-check.json")
-	if err := os.WriteFile(path, b, 0o644); err != nil {
-		t.Fatalf("write fixture %s: %v", path, err)
+	if !bytes.Equal(got, want) {
+		t.Fatalf("the checked-in fixture %s is STALE (drift between the Go wire shape and the web fixture). Regenerate with:\n\n  go run ./cmd/gen-updates-check-fixture\n\nbuilt:\n%s\n\nchecked in:\n%s", fixturePath, got, want)
 	}
 }
 
-func keys(m map[string]interface{}) []string {
+func keys(m map[string]any) []string {
 	var ks []string
 	for k := range m {
 		ks = append(ks, k)
