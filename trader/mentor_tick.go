@@ -578,13 +578,14 @@ type mentorDepthRequirement struct {
 // PR states the exact warm-up per source; these floors are the fail-closed
 // gate (the 4h EMA 34 floor is mentor4hEMA34Warmup — the seed's stated
 // warm-up, never below the absolute minimum 34 — derived from 1h at the
-// 17:00 CT anchor; the 1m EMA 34 needs 34 one-minute candles; the 1H RTH level
-// set reads the FULL stored history — no cap; today's session feeds the
-// boxes/ORB/day latch; the 15m source must have a closed candle).
+// 17:00 CT anchor; the 1m EMA 34 floor is mentor1mEMA34Warmup; the 1H RTH level
+// set needs at least 2 candles (one colour change) and reads the FULL stored
+// history — no cap; today's session feeds the boxes/ORB/day latch; the 15m
+// source must have a closed candle).
 var mentorDepthRequirements = []mentorDepthRequirement{
 	{Name: "4h EMA34", Min: mentorMin4hEMA34},
 	{Name: "1m EMA34", Min: 34},
-	{Name: "1h level set", Min: 1},
+	{Name: "1h level set", Min: 2},
 	{Name: "today session", Min: 1},
 	{Name: "closed 15m", Min: 1},
 }
@@ -604,6 +605,87 @@ func mentorSourceDepth(name string) (int, bool) {
 		return len(market.FuturesBarsProvider("MNQ", "1m", 34)), true
 	}
 	return 0, false
+}
+
+// ── P0 SPLICE — seed the evaluator at trader start ─────────────────────────
+//
+// The CTO splice (mail 1791030462901): at trader start, load the STORED 1m+1h
+// bars over the read-only store path the bot already uses (data.db is never
+// written by the seed), call mentor.Seed, wire the per-source depth seam from
+// SeedDepths, print the seed boot line, and refuse every mentor entry while
+// anything is missing (the evaluator refuses internally; the injector's
+// per-source loop names the short source on the same numbers).
+
+const (
+	// mentorSeedBars1mN / mentorSeedBars1hN cap the store read. Retention
+	// bounds what the read can return (1m 90d, 1h forever); these caps only
+	// bound memory. Both are far above every seed floor (102 closed candles).
+	mentorSeedBars1mN = 50000
+	mentorSeedBars1hN = 10000
+)
+
+// mentorSeedDepths is the seeded per-source depth snapshot (nil until the
+// splice runs) — the same numbers SeedLine prints.
+var mentorSeedDepths map[string]int
+
+// storeBarsToKlines converts persisted closed bars to market.Kline (CloseTime
+// = open + tf; every stored row is a CLOSED bar by the persistence contract).
+func storeBarsToKlines(rows []store.BarHistoryDB, tfMs int64) []market.Kline {
+	out := make([]market.Kline, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, market.Kline{
+			OpenTime:  r.OpenTimeMs,
+			Open:      r.O,
+			High:      r.H,
+			Low:       r.L,
+			Close:     r.C,
+			Volume:    r.V,
+			CloseTime: r.OpenTimeMs + tfMs,
+		})
+	}
+	return out
+}
+
+// mentorSeedAtStart is the splice entry: called once at trader construction
+// when mentor_mode is ON. A cold store (no rows) or a read error seeds with
+// nothing and refuses — never a trade on a cold EMA.
+func (at *AutoTrader) mentorSeedAtStart() {
+	if at == nil || at.store == nil {
+		return
+	}
+	if at.mentorEval == nil {
+		cfg := mentor.DefaultConfig()
+		cfg.Enabled = true
+		at.mentorEval = mentor.New(cfg)
+	}
+	now := time.Now().UnixMilli()
+	bh := store.NewBarHistoryStore(at.store.GormDB())
+	rows1m, err1m := bh.LastNBarsCurrentContract("MNQ", "1m", mentorSeedBars1mN)
+	if err1m != nil {
+		at.logWarnf("🧑‍🏫 mentor seed: 1m store read failed (%v) — seeding with nothing (refusing)", err1m)
+		mentorCount("seed_store_read_error")
+		rows1m = nil
+	}
+	rows1h, err1h := bh.LastNBarsCurrentContract("MNQ", "1h", mentorSeedBars1hN)
+	if err1h != nil {
+		at.logWarnf("🧑‍🏫 mentor seed: 1h store read failed (%v) — seeding with nothing (refusing)", err1h)
+		mentorCount("seed_store_read_error")
+		rows1h = nil
+	}
+	bars1m := storeBarsToKlines(rows1m, 60_000)
+	bars1h := storeBarsToKlines(rows1h, 3_600_000)
+	missing := mentor.Seed(at.mentorEval, bars1m, bars1h, now)
+	depths := mentor.SeedDepths(bars1m, bars1h, now)
+	mentorSeedDepths = depths
+	mentorSourceDepthSource = func(name string) (int, bool) {
+		d, ok := mentorSeedDepths[name]
+		return d, ok
+	}
+	at.logInfof("🧑‍🏫 %s", mentor.SeedLine(at.mentorEval.State, bars1m, bars1h, now))
+	if len(missing) > 0 {
+		mentorCount("seed_missing")
+		at.logErrorf("🧑‍🏫 mentor seed REFUSING entries — missing: %s", strings.Join(missing, "; "))
+	}
 }
 
 // mentorSourcesMissing names every mentor source that is not wired. With
