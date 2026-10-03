@@ -538,3 +538,71 @@ func TestBoxEntryDayAndHTFGates(t *testing.T) {
 		t.Fatalf("spent-day tick emitted %d box entries, want 2 (cap, not refusal)", len(got))
 	}
 }
+
+// TestBoxEntryBannedInsideISBBox — B11 [D3.4 p2 @07:58–08:21]: inside the
+// standing 5m-ISB box only a same-direction ISB trades; box trades never.
+func TestBoxEntryBannedInsideISBBox(t *testing.T) {
+	fixture := func() (*Evaluator, []market.Kline, int64) {
+		cfg := DefaultConfig()
+		cfg.Enabled = true
+		cfg.KeyLevelTFMinutes = 1
+		cfg.EMAPeriod34 = 0
+		cfg.EMAPeriod9 = 0
+		cfg.RoomMultiple = 0.05
+		t0 := time.Date(2026, time.September, 15, 9, 0, 0, 0, ctime()).UnixMilli()
+		mk := func(i int, o, h, l, c float64) market.Kline {
+			return market.Kline{OpenTime: t0 + int64(i)*60_000, CloseTime: t0 + int64(i)*60_000 + 59_000, Open: o, High: h, Low: l, Close: c}
+		}
+		bars := []market.Kline{
+			mk(0, 100, 101, 99, 100),
+			mk(1, 100, 102, 99, 101),
+			mk(2, 101, 103, 95, 96),
+			mk(3, 97.3, 98.3, 96.5, 97.5),
+			mk(4, 97, 98, 94, 95),
+			mk(5, 98, 98.2, 96.5, 97.2),
+			mk(6, 96.5, 97.1, 95.9, 97),
+			mk(7, 97.7, 97.9, 95.9, 96.9),
+			mk(8, 98.2, 98.5, 97, 98.4),
+		}
+		e := New(cfg)
+		now := bars[8].OpenTime + 59_999
+		e.State.ORB = ORB{Day: dayStartCT(now), High: 90, Low: 85, Drawn: true, Escaped: SideLong}
+		e.State.HTF = HTF{FourH: TriggerLine{Dir: SideLong, Price: 93}}
+		e.State.Day = DayLatch{Key: tradingDayKey(time.UnixMilli(now).In(ctime())), Verdict: DayTrade}
+		return e, bars, now
+	}
+	boxEntries := func(ins []Intent) []Intent {
+		var out []Intent
+		for _, in := range ins {
+			if strings.HasPrefix(in.Reason, "box edge return") {
+				out = append(out, in)
+			}
+		}
+		return out
+	}
+
+	// No ISB box: the two returns trade.
+	e, bars, now := fixture()
+	if got := boxEntries(e.Tick(bars, now)); len(got) != 2 {
+		t.Fatalf("no-ISB-box tick emitted %d box entries, want 2", len(got))
+	}
+
+	// A standing 5m-ISB box covering the returns (ref closes 97 / 96.9 are
+	// inside [95, 100]; the last candle's body stays inside too, so the box
+	// does not escape on this tick): box trades refused, named + counted.
+	e, bars, now = fixture()
+	e.State.ISBBox = &ISBBox{High: 100, Low: 95}
+	if got := boxEntries(e.Tick(bars, now)); len(got) != 0 {
+		t.Fatalf("inside-ISB-box tick emitted %d box entries, want 0", len(got))
+	}
+	if e.State.Refusals["box_isb_ban"] == 0 {
+		t.Fatalf("ledger = %v, want box_isb_ban counted", e.State.Refusals)
+	}
+
+	// ISB box elsewhere: entries fire again.
+	e, bars, now = fixture()
+	e.State.ISBBox = &ISBBox{High: 105, Low: 103}
+	if got := boxEntries(e.Tick(bars, now)); len(got) != 2 {
+		t.Fatalf("elsewhere-ISB-box tick emitted %d box entries, want 2", len(got))
+	}
+}
