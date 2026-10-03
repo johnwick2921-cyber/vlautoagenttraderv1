@@ -135,46 +135,16 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 		extra.StrongDay = true
 	}
 	for _, in := range intents {
-		switch in.Action {
-		case mentor.PlaceStopEntry:
-			// R2 STUB: the confluence flag feeds the size tier (10/20) and the
-			// exit fork (C) — nil seam → false, so neither fires until
-			// DS-103's tagged intents land.
-			extra.Confluence = mentorConfluenceFlag(in)
-			if why := mentorRuleGate(in, extra); why != "" {
-				rule := "other"
-				if i := strings.Index(why, ":"); i > 0 {
-					rule = strings.ToLower(strings.TrimSpace(why[:i]))
-				}
-				mentorCount("refused_" + rule)
-				at.logWarnf("🧑‍🏫 mentor intent REFUSED — %s", why)
-				continue
-			}
-			choice, err := at.mentorSizeFor(in, extra)
-			if err != nil {
-				continue
-			}
-			mentorCount("intent_" + in.Setup)
-			if !mentorPlaceEnv() {
-				at.logInfof("🧑‍🏫 mentor intent SIZED, NOT PLACED (MENTOR_PLACE env off — set MENTOR_PLACE=1 to place): %s %s %d contracts @ %.2f (stop %.2f, target %.2f, tier %s)",
-					in.Setup, in.Side, choice.Contracts, in.Price, in.Stop, in.Target, choice.Tier)
-				mentorCount("placement_held")
-				continue
-			}
-			at.mentorPlaceIntent(in, choice, last.CloseTime, emitMs)
-		case mentor.CancelArm, mentor.LevelInvalid:
-			// P3 scope: the arm lifecycle (cancel frames, level invalidation
-			// bookkeeping) lands with P1; the intent is recorded, never silent.
-			mentorCount("intent_" + string(in.Action))
-			at.logInfof("🧑‍🏫 mentor %s intent recorded (arm lifecycle lands with P1): %s", in.Action, in.Reason)
-		}
+		at.mentorDispatchIntent(in, extra, last.CloseTime, emitMs)
 	}
 }
 
-// mentorPlaceIntent converts a sized intent into a synthetic decision and runs
-// the FULL existing pipeline (every admission gate reused, SIM-only untouched).
-// The no-chase rule runs FIRST: a stop entry whose price is already through the
-// trigger is skipped — he never enters at market (§3).
+// mentorPlaceIntent runs the placement gates (sources wired, stop rules,
+// expiry guard, no-chase, the exit fork) and hands the intent to the ONE
+// mentor entry path (mentorDirectPlace): a ledger arm with origin=mentor and
+// the intent's expiry, placed ALWAYS stop-limit, never stop-market.
+// The no-chase rule runs FIRST: a stop entry whose price is already through
+// the trigger is skipped — he never enters at market (§3).
 func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoice, barCloseMs, emitMs int64) {
 	// WIRING PROOF (fail-closed): with any mentor source seam missing, EVERY
 	// entry refuses here — the boot line logs it, this line enforces it.
@@ -235,29 +205,7 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 		mentorPlaceRecorderForTest(in, choice.Contracts)
 		return // test seam: the real pipeline is never reached from a test
 	}
-	d := mentor.BuildDecision(in, "MNQ", choice.Contracts)
-	rec := &store.DecisionAction{
-		Action:     d.Action,
-		Symbol:     d.Symbol,
-		Quantity:   0,
-		Leverage:   d.Leverage,
-		Price:      0,
-		StopLoss:   d.StopLoss,
-		TakeProfit: d.TakeProfit,
-		Confidence: d.Confidence,
-		Reasoning:  d.Reasoning,
-		Timestamp:  time.Now().UTC(),
-		Success:    false,
-	}
-	if err := at.executeDecisionWithRecord(d, rec); err != nil {
-		mentorCount("placement_error")
-		at.logErrorf("🧑‍🏫 mentor placement error: %v", err)
-		return
-	}
-	mentorCount("placed_" + choice.Tier)
-	ackMs := time.Now().UnixMilli()
-	recordMentorLatency(barCloseMs, at.mentorFinalArrival.Load(), emitMs, ackMs)
-	at.logInfof("🧑‍🏫 mentor placed: %s %s %d contracts (tier %s) — close→ack %dms, expiry %d", in.Setup, in.Side, choice.Contracts, choice.Tier, ackMs-barCloseMs, in.ExpiryMs)
+	at.mentorDirectPlace(in, choice, barCloseMs, emitMs)
 }
 
 // mentorExpiryGuard is the F3 fail-closed pin (CTO 1791035117415): a mentor
