@@ -69,7 +69,9 @@ type Box struct {
 	// per candle). A return = price was outside the box on the approach
 	// side, then a candle touches an edge. The trade reference is the
 	// FIRST return — the third touch overall, counting the two extremes
-	// that BUILT the box [D3.2 p1 @ 04:29].
+	// that BUILT the box [D3.2 p1 @ 04:29] — and EVERY return trades
+	// [D3.2 p2 @ 06:25]; the per-visit reference bars come from
+	// BoxReturnBars.
 	Returns int
 	// FormedAt is the bar index the box was drawn (extend-right origin).
 	FormedAt int
@@ -307,40 +309,10 @@ func escaped(bars []market.Kline, b Box, formedAt int) bool {
 	return false
 }
 
-// countBoxReturns counts post-formation return visits, one per visit, not
-// per candle [BOX RULING 2026-10-03; D3.2 p1 @ 04:29]. A return = price was
-// OUTSIDE the box on the approach side, then a candle touches an edge. The
-// FIRST return after formation is the trade reference — the third touch
-// overall, counting the two extremes that built the box.
+// countBoxReturns is the number of post-formation return visits — see
+// BoxReturnBars for the per-visit reference bars.
 func countBoxReturns(bars []market.Kline, b Box, formedAt int, cfg BoxCfg) int {
-        n := 0
-        outside := false
-        for _, c := range bars[formedAt+1:] {
-                if c.CloseTime == 0 {
-                        continue
-                }
-                switch b.Kind {
-                case FTGH:
-                        if c.Close < b.Bottom {
-                                outside = true
-                                continue
-                        }
-                case FTGL:
-                        if c.Close > b.Top {
-                                outside = true
-                                continue
-                        }
-                }
-                if outside && touchesEdge(b, c, cfg) {
-                        n++
-                        outside = false
-                        continue
-                }
-                if !touchesEdge(b, c, cfg) {
-                        outside = false
-		}
-	}
-	return n
+	return len(BoxReturnBars(bars, b, formedAt, cfg))
 }
 
 // touchesEdge reports a wick touch of either edge within TouchBandPts.
