@@ -122,6 +122,10 @@ func TestEvaluatorBoxPathEveryReturnTrades(t *testing.T) {
 	// ORB preset (the §7 gate is drawn+escaped long; the tape alone never
 	// draws an ORB and the gate would refuse every intraday entry).
 	e.State.ORB = ORB{Day: dayStartCT(now), High: 90, Low: 85, Drawn: true, Escaped: SideLong}
+	// B9 presets: box entries obey the HTF/day gates (D5.1 p1 @16:24,
+	// @19:11–20:07) — 4h long (1h silent), a normal measured day.
+	e.State.HTF = HTF{FourH: TriggerLine{Dir: SideLong, Price: 93}}
+	e.State.Day = DayLatch{Verdict: DayTrade}
 	boxIntents := func(ins []Intent) []Intent {
 		var out []Intent
 		for _, in := range ins {
@@ -451,4 +455,86 @@ func TestBoxPathRecordedTapeWeekdayRTH(t *testing.T) {
 		}
 	}
 	t.Logf("weekday RTH tape 15 Sep: 0 box-return entries fired; %d returns, deaths: %v", returns, census)
+}
+
+// TestBoxEntryDayAndHTFGates — B9 [D5.1 p1 @16:24, @19:11–20:07]: box trades
+// obey the 4h/1h direction, the day-off and the spent cap like every setup.
+func TestBoxEntryDayAndHTFGates(t *testing.T) {
+	fixture := func(htf HTF, day DayLatch) (*Evaluator, []market.Kline, int64) {
+		cfg := DefaultConfig()
+		cfg.Enabled = true
+		cfg.KeyLevelTFMinutes = 1
+		cfg.EMAPeriod34 = 0
+		cfg.EMAPeriod9 = 0
+		cfg.RoomMultiple = 0.05
+		t0 := time.Date(2026, time.September, 15, 9, 0, 0, 0, ctime()).UnixMilli()
+		mk := func(i int, o, h, l, c float64) market.Kline {
+			return market.Kline{OpenTime: t0 + int64(i)*60_000, CloseTime: t0 + int64(i)*60_000 + 59_000, Open: o, High: h, Low: l, Close: c}
+		}
+		bars := []market.Kline{
+			mk(0, 100, 101, 99, 100),
+			mk(1, 100, 102, 99, 101),
+			mk(2, 101, 103, 95, 96),
+			mk(3, 97.3, 98.3, 96.5, 97.5),
+			mk(4, 97, 98, 94, 95),
+			mk(5, 98, 98.2, 96.5, 97.2),
+			mk(6, 96.5, 97.1, 95.9, 97), // FTGL reject return 1 → LONG
+			mk(7, 97.7, 97.9, 95.9, 96.9),
+			mk(8, 98.2, 98.5, 97, 98.4),
+		}
+		e := New(cfg)
+		now := bars[8].OpenTime + 59_999
+		e.State.ORB = ORB{Day: dayStartCT(now), High: 90, Low: 85, Drawn: true, Escaped: SideLong}
+		// Frozen per-trading-day latch so Tick's recompute keeps the preset
+		// (a zero-Key latch re-reads as not-measured on this synthetic tape).
+		if day.Key == "" {
+			day.Key = tradingDayKey(time.UnixMilli(now).In(ctime()))
+		}
+		e.State.HTF = htf
+		e.State.Day = day
+		return e, bars, now
+	}
+	boxEntries := func(ins []Intent) []Intent {
+		var out []Intent
+		for _, in := range ins {
+			if strings.HasPrefix(in.Reason, "box edge return") {
+				out = append(out, in)
+			}
+		}
+		return out
+	}
+
+	// (a) no 4h direction → box_htf_blocked, zero box entries.
+	e, bars, now := fixture(HTF{}, DayLatch{Verdict: DayTrade})
+	if got := boxEntries(e.Tick(bars, now)); len(got) != 0 {
+		t.Fatalf("no-4h tick emitted %d box entries, want 0", len(got))
+	}
+	if e.State.Refusals["box_htf_blocked"] == 0 {
+		t.Fatalf("ledger = %v, want box_htf_blocked counted", e.State.Refusals)
+	}
+
+	// (b) 4h SHORT vs a LONG box entry → box_htf_side_mismatch.
+	e, bars, now = fixture(HTF{FourH: TriggerLine{Dir: SideShort, Price: 99}}, DayLatch{Verdict: DayTrade})
+	if got := boxEntries(e.Tick(bars, now)); len(got) != 0 {
+		t.Fatalf("opposite-HTF tick emitted %d box entries, want 0", len(got))
+	}
+	if e.State.Refusals["box_htf_side_mismatch"] == 0 {
+		t.Fatalf("ledger = %v, want box_htf_side_mismatch counted", e.State.Refusals)
+	}
+
+	// (c) DayOff → box_day_off, zero box entries.
+	e, bars, now = fixture(HTF{FourH: TriggerLine{Dir: SideLong, Price: 93}}, DayLatch{Verdict: DayOff})
+	if got := boxEntries(e.Tick(bars, now)); len(got) != 0 {
+		t.Fatalf("day-off tick emitted %d box entries, want 0", len(got))
+	}
+	if e.State.Refusals["box_day_off"] == 0 {
+		t.Fatalf("ledger = %v, want box_day_off counted", e.State.Refusals)
+	}
+
+	// (d) DaySpent + HTF long → the entries emit (the cap path does not
+	// refuse); the spent cap value itself is pinned on the ISB path.
+	e, bars, now = fixture(HTF{FourH: TriggerLine{Dir: SideLong, Price: 93}}, DayLatch{Verdict: DaySpent})
+	if got := boxEntries(e.Tick(bars, now)); len(got) != 2 {
+		t.Fatalf("spent-day tick emitted %d box entries, want 2 (cap, not refusal)", len(got))
+	}
 }

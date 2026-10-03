@@ -229,3 +229,37 @@ func TestISBSilentDropsAllNamed(t *testing.T) {
 		}
 	})
 }
+
+// TestISBSpentDayTargetCap — B9 [D5.1 p1 @16:24, @19:11–20:07]: on a spent day
+// the ISB target obeys the cap ("15 điểm bán, 10 điểm bán") like every other
+// setup — the next-level-beyond target is pulled down to entry+15 when it is
+// farther, and the 1:1 floor is re-checked after the cap.
+func TestISBSpentDayTargetCap(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	cfg.DayGateSpentPts = 300
+	cfg.DayGateTargetCapPts = 15
+	e := newISBEval(cfg)
+	bars := isbFixture()
+	now := bars[len(bars)-1].CloseTime + 1
+	e.State.Day = DayLatch{Key: tradingDayKey(time.UnixMilli(now).In(ctime())), Verdict: DaySpent}
+
+	ins := e.Tick(bars, now)
+	var isb *Intent
+	for i := range ins {
+		if ins[i].Action == PlaceStopLimitEntry {
+			isb = &ins[i]
+			break
+		}
+	}
+	if isb == nil {
+		t.Fatalf("the long ISB did not emit on a spent day: %v (refusals %v)", ins, e.State.Refusals)
+	}
+	if isb.Target == 0 {
+		t.Fatal("ISB emitted without a target")
+	}
+	if abs(isb.Target-isb.Price) > cfg.DayGateTargetCapPts+1e-9 {
+		t.Fatalf("spent-day ISB target = %.2f, %.2f pts from entry — must be capped at %.0f",
+			isb.Target, abs(isb.Target-isb.Price), cfg.DayGateTargetCapPts)
+	}
+}
