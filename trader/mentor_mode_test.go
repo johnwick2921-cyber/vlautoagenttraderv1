@@ -708,3 +708,66 @@ func TestMentorExitForkAtPlacement(t *testing.T) {
 		t.Fatalf("exit_fork_B counter = %d, want 1", got)
 	}
 }
+
+// TestMentorKnobRoutingDefaults pins the five knob-routing resolvers (CTO
+// 1791033257041) at their ruled defaults and the evaluator config wiring.
+// Mutant: any default flipped (e.g. leg budget false) → RED.
+func TestMentorKnobRoutingDefaults(t *testing.T) {
+	if !mentorLegBudgetEnabled(nil) || !mentorLocationTriggerFilter(nil) {
+		t.Fatal("leg budget and the location trigger filter default ON")
+	}
+	if v := mentorLegResetOn(nil); v != "close" {
+		t.Fatalf("leg reset default = %q, want close", v)
+	}
+	if v := mentorLvlRevisitMinPts(nil); v != 0 {
+		t.Fatalf("lvl revisit default = %.2f, want 0", v)
+	}
+	if v := mentorEmaMaxCross30m(nil); v != 0 {
+		t.Fatalf("ema max cross default = %d, want 0 (OFF)", v)
+	}
+
+	f := false
+	rc := &store.RiskControlConfig{
+		MentorLegBudgetEnabled:      &f,
+		MentorLegResetOn:            "touch",
+		MentorLvlRevisitMinPts:      3,
+		MentorEmaMaxCross30m:        4,
+		MentorLocationTriggerFilter: &f,
+	}
+	if mentorLegBudgetEnabled(rc) || mentorLocationTriggerFilter(rc) {
+		t.Fatal("explicit false must turn the ON-default knobs OFF")
+	}
+	if v := mentorLegResetOn(rc); v != "touch" {
+		t.Fatalf("leg reset = %q, want touch", v)
+	}
+	if v := mentorLvlRevisitMinPts(rc); v != 3 {
+		t.Fatalf("lvl revisit = %.2f, want 3", v)
+	}
+	if v := mentorEmaMaxCross30m(rc); v != 4 {
+		t.Fatalf("ema max cross = %d, want 4", v)
+	}
+
+	// a bad leg reset value fails closed to the default and is counted.
+	ResetMentorCountersForTest()
+	bad := &store.RiskControlConfig{MentorLegResetOn: "garbage"}
+	if v := mentorLegResetOn(bad); v != "close" {
+		t.Fatalf("bad leg reset = %q, want close (fail closed)", v)
+	}
+	if got := MentorCountSnapshot()["leg_reset_on_bad_value"]; got != 1 {
+		t.Fatalf("leg_reset_on_bad_value counter = %d, want 1", got)
+	}
+
+	// the evaluator config builder carries the two wired knobs.
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true,
+		MentorLvlRevisitMinPts: 3, MentorEmaMaxCross30m: 4})
+	cfg := at.mentorEvaluatorConfig()
+	if !cfg.Enabled || cfg.LvlRevisitMinPts != 3 || cfg.EmaMaxCross30m != 4 {
+		t.Fatalf("evaluator config: enabled=%v revisit=%.2f cross=%d — want true/3/4",
+			cfg.Enabled, cfg.LvlRevisitMinPts, cfg.EmaMaxCross30m)
+	}
+	naked := (&AutoTrader{id: "t-naked"}).mentorEvaluatorConfig()
+	if !naked.Enabled || naked.LvlRevisitMinPts != 0 || naked.EmaMaxCross30m != 0 {
+		t.Fatalf("no strategy → evaluator defaults: enabled=%v revisit=%.2f cross=%d — want true/0/0",
+			naked.Enabled, naked.LvlRevisitMinPts, naked.EmaMaxCross30m)
+	}
+}

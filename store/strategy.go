@@ -2034,6 +2034,20 @@ type RiskControlConfig struct {
 	MentorDoneAfterWin  *bool  `json:"mentor_done_after_win,omitempty"`
 	MentorWindowStart   string `json:"mentor_window_start,omitempty"`
 	MentorWindowMinutes int    `json:"mentor_window_minutes,omitempty"`
+	// Knob routing (CTO 1791033257041): the evaluator's G1/L1/E4/location
+	// knobs ride the strategy config like the other mentor knobs, defaults as
+	// ruled:
+	//   MentorLegBudgetEnabled — G1 leg budget (nil → ON);
+	//   MentorLegResetOn — G1 parity ("close" default | "touch"; bad → close);
+	//   MentorLvlRevisitMinPts — L1 per-visit departure (default 0);
+	//   MentorEmaMaxCross30m — E4 "xien len xien xuong" (0 = OFF, base);
+	//   MentorLocationTriggerFilter — the 5m trigger filter at locations
+	//     (nil → ON, L3: keep it ON in the base).
+	MentorLegBudgetEnabled      *bool   `json:"mentor_leg_budget_enabled,omitempty"`
+	MentorLegResetOn            string  `json:"mentor_leg_reset_on,omitempty"`
+	MentorLvlRevisitMinPts      float64 `json:"mentor_lvl_revisit_min_pts,omitempty"`
+	MentorEmaMaxCross30m        int     `json:"mentor_ema_max_cross_30m,omitempty"`
+	MentorLocationTriggerFilter *bool   `json:"mentor_loc_trigger_filter,omitempty"`
 	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the
 	// contracts clamp is always-on venue safety. Field kept so old stored
 	// configs still parse; nothing reads it, the UI no longer writes it.

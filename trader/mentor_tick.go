@@ -101,6 +101,21 @@ func (at *AutoTrader) mentorEventPassAt(now time.Time) bool {
 	return true
 }
 
+// mentorEvaluatorConfig builds the evaluator config with the strategy's knob
+// overrides (defaults as ruled, CTO 1791033257041). The G1 / location-filter
+// knobs wire in when their evaluator fields land (DS-107's limits,
+// DS-103's location trigger knob) — the resolvers already pin the defaults.
+func (at *AutoTrader) mentorEvaluatorConfig() mentor.Config {
+	cfg := mentor.DefaultConfig()
+	cfg.Enabled = true
+	rc := at.mentorRiskControl()
+	if rc != nil {
+		cfg.LvlRevisitMinPts = mentorLvlRevisitMinPts(rc)
+		cfg.EmaMaxCross30m = mentorEmaMaxCross30m(rc)
+	}
+	return cfg
+}
+
 // mentorEvalOnce runs one evaluator tick over the bars and processes every
 // intent (size → latency → no-chase → place-or-hold).
 func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
@@ -108,9 +123,7 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 	at.mentorLastTickOpen = last.OpenTime
 
 	if at.mentorEval == nil {
-		cfg := mentor.DefaultConfig()
-		cfg.Enabled = true
-		at.mentorEval = mentor.New(cfg)
+		at.mentorEval = mentor.New(at.mentorEvaluatorConfig())
 	}
 	emitMs := time.Now().UnixMilli()
 	intents := at.mentorEval.Tick(bars, last.OpenTime)
@@ -664,9 +677,7 @@ func (at *AutoTrader) mentorSeedAtStart() {
 		return
 	}
 	if at.mentorEval == nil {
-		cfg := mentor.DefaultConfig()
-		cfg.Enabled = true
-		at.mentorEval = mentor.New(cfg)
+		at.mentorEval = mentor.New(at.mentorEvaluatorConfig())
 	}
 	now := time.Now().UnixMilli()
 	bh := store.NewBarHistoryStore(at.store.GormDB())

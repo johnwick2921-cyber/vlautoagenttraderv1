@@ -8,6 +8,7 @@ import (
 
 	"vl/kernel"
 	"vl/kernel/mentor"
+	"vl/store"
 	"vl/telemetry"
 	ntTrader "vl/trader/ninjatrader"
 )
@@ -198,6 +199,68 @@ func (at *AutoTrader) mentorMaxContracts() (int, bool) {
 	}
 	_, _, _, _, _, _, mx := at.mentorKnobs()
 	return mx, true
+}
+
+// mentorRiskControl returns the trader's risk-control config (nil when there
+// is no strategy bound).
+func (at *AutoTrader) mentorRiskControl() *store.RiskControlConfig {
+	if at.config.StrategyConfig == nil {
+		return nil
+	}
+	return &at.config.StrategyConfig.RiskControl
+}
+
+// ── KNOB ROUTING (CTO 1791033257041) — defaults as ruled ───────────────────
+//
+// The evaluator's G1/L1/E4/location knobs ride the strategy config like the
+// other mentor knobs. Each resolver is the single defaults site; the
+// evaluator config builder (mentorEvaluatorConfig) applies the two that exist
+// on feat/mentor-eval today, and the rest wire in when the evaluator fields
+// land (DS-107's limits, DS-103's location trigger knob).
+
+// mentorLegBudgetEnabled — G1 leg budget: nil → ON (default).
+func mentorLegBudgetEnabled(rc *store.RiskControlConfig) bool {
+	return rc == nil || rc.MentorLegBudgetEnabled == nil || *rc.MentorLegBudgetEnabled
+}
+
+// mentorLegResetOn — G1 parity knob: "close" default; a bad value fails
+// closed to "close" and is counted.
+func mentorLegResetOn(rc *store.RiskControlConfig) string {
+	if rc != nil {
+		switch v := strings.ToLower(strings.TrimSpace(rc.MentorLegResetOn)); v {
+		case "close", "touch":
+			return v
+		case "":
+		default:
+			mentorCount("leg_reset_on_bad_value")
+		}
+	}
+	return "close"
+}
+
+// mentorLvlRevisitMinPts — L1 knob: the extra departure distance a closed
+// non-touching candle needs to END a visit. Default 0 (he never states one).
+func mentorLvlRevisitMinPts(rc *store.RiskControlConfig) float64 {
+	if rc != nil && rc.MentorLvlRevisitMinPts > 0 {
+		return rc.MentorLvlRevisitMinPts
+	}
+	return 0
+}
+
+// mentorEmaMaxCross30m — E4 knob: refuse the EMA34 setup when the close
+// crossed the line this many times over the last 30 closed 1m candles.
+// Default 0 = OFF (base).
+func mentorEmaMaxCross30m(rc *store.RiskControlConfig) int {
+	if rc != nil && rc.MentorEmaMaxCross30m > 0 {
+		return rc.MentorEmaMaxCross30m
+	}
+	return 0
+}
+
+// mentorLocationTriggerFilter — the 5m trigger filter at locations (L3: kept
+// ON in the base). nil → ON.
+func mentorLocationTriggerFilter(rc *store.RiskControlConfig) bool {
+	return rc == nil || rc.MentorLocationTriggerFilter == nil || *rc.MentorLocationTriggerFilter
 }
 
 // mentorSuppressAIEntry is the AI-entries-off half of the mode switch: a
