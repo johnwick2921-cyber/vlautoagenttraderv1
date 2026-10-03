@@ -278,21 +278,27 @@ func TestLocTriggerFilterBox(t *testing.T) {
 	}
 }
 
-// TestBetweenTriggerLinesBox — the R4 ban rides the box path through
-// TriggerVerdict: a price between two opposing trigger lines refuses.
-func TestBetweenTriggerLinesBox(t *testing.T) {
+// TestWrongTriggerSideBox — B2 (10-03 ruling): every entry, the box path
+// included, must be on the trigger side. The old two-line band is gone (B1).
+func TestWrongTriggerSideBox(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	cfg.RoomMultiple = 0.05
 	floor := Box{Kind: FTGL, Top: 100, Bottom: 90, Key: "ftgl:100.00:90.00"}
 	ref := market.Kline{High: 101, Low: 99, Close: 101}
 	levels := []Level{{Key: "k", Kind: KindKeyLevel, Price: 160}}
-	// long at 95, then a reversal to short at 120: the zone [95,120] is dead.
-	trig := TriggerLine{Dir: SideShort, Price: 120, OldPrice: 95}
+	// a sell trigger at 120: the entry price (~99) sits on the WRONG side.
+	trig := TriggerLine{Dir: SideShort, Price: 120}
 
 	out := boxEntryIntent(ref, floor, []Box{floor}, levels, trig, cfg)
 	if len(out) != 0 {
-		t.Fatalf("entry between two opposing trigger lines must refuse, got %+v", out)
+		t.Fatalf("entry on the wrong trigger side must refuse, got %+v", out)
+	}
+	// the same box with a BUY trigger above the entry is allowed by the trigger
+	// gate (target ladder may still refuse it — that is the target, not the side).
+	buy := TriggerLine{Dir: SideLong, Price: 95}
+	if ok, _, _ := TriggerVerdict(buy, 99); !ok {
+		t.Fatal("fixture: above the buy line the trigger side is correct")
 	}
 }
 
@@ -332,16 +338,18 @@ func TestBoxPathRecordedTape13Sep(t *testing.T) {
 			census[censusBoxReturn(ref, b, boxes, levels, e.State.Trigger, cfg)]++
 		}
 	}
-	// Census verdict: every death must be one of the two ruling-sanctioned
-	// refusals — fact 4 (a close inside the box cancels, not a trade) or the
-	// 5m trigger filter (F1/L3: the trigger stays ON in the base). The CTO's
+	// Census verdict: every death must be one of the ruling-sanctioned
+	// refusals — fact 4 (a close inside the box cancels, not a trade), the
+	// 5m trigger filter (F1/L3: the trigger stays ON in the base) or the room
+	// rule (a return whose next-level target lacks room — B1 removed the
+	// two-line band, so those deaths now reach the room check). The CTO's
 	// fallback for a non-firing tape is exactly this census.
 	if returns == 0 {
 		t.Fatal("recorded tape: no box returns at all — the box path is dead")
 	}
 	for gate, n := range census {
 		switch gate {
-		case "reject (close inside the box)", "trigger verdict":
+		case "reject (close inside the box)", "trigger verdict", "room":
 		default:
 			t.Fatalf("recorded tape: %d returns died at an UNEXPECTED gate %q (full census %v)",
 				n, gate, census)

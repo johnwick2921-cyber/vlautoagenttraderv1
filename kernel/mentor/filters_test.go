@@ -109,8 +109,10 @@ func TestTriggerLineMovesOnEveryReversalOnceEach(t *testing.T) {
 	if got.Dir != SideLong || got.Price != 98 {
 		t.Fatalf("after two reversals = %+v, want long @ 98 (the second reversal's broken high)", got)
 	}
-	if got.OldPrice != 101 || got.OldDir != SideShort {
-		t.Fatalf("old line = %v/%q, want 101/short (the line before the LAST reversal)", got.OldPrice, got.OldDir)
+	// B1 (10-03 ruling): ONE line — a reversal moves it and the old line is gone
+	// [D3.4 p1 @11:11–12:40].
+	if got.Price != 98 {
+		t.Fatalf("the line must carry only the last reversal's extreme, got %+v", got)
 	}
 }
 
@@ -124,25 +126,21 @@ func TestTriggerVerdictSideAndNoTradeZone(t *testing.T) {
 	if ok, _, reason := TriggerVerdict(TriggerLine{Dir: SideLong, Price: 100}, 99); ok || reason == "" {
 		t.Fatalf("below the buy line must be refused with a reason")
 	}
-	// after a reversal the zone between old (100) and new (97) lines is no-trade
-	tl := TriggerLine{Dir: SideShort, Price: 97, OldPrice: 100, OldDir: SideLong}
+	// B1 (10-03 ruling): there is ONE line — a reversal moves it, the old line
+	// is gone; the no-trade zone lives between an FTGL and the buy line (see
+	// triggerBoxZoneVerdict tests), NOT between two trigger lines.
+	tl := TriggerLine{Dir: SideShort, Price: 97}
 	if ok, _, reason := TriggerVerdict(tl, 98.5); ok || reason == "" {
-		t.Fatalf("between two lines must be no-trade")
+		t.Fatalf("above the sell line must be refused with a reason")
 	}
-	// R4: the zone INCLUDES the lines themselves — price sitting exactly ON
-	// either line is still no-trade [D3.4 p1 @ 16:56–17:17].
-	for _, p := range []float64{100, 97} {
-		if ok, _, reason := TriggerVerdict(tl, p); ok || reason == "" {
-			t.Fatalf("price exactly on a zone line (%v) must be no-trade", p)
-		}
+	if ok, side, _ := TriggerVerdict(tl, 97); !ok || side != SideShort {
+		t.Fatalf("exactly ON the sell line is allowed (no second line); ok=%v side=%q", ok, side)
 	}
 	if ok, side, _ := TriggerVerdict(tl, 96); !ok || side != SideShort {
-		t.Fatalf("below the new sell line: ok=%v side=%q", ok, side)
+		t.Fatalf("below the sell line: ok=%v side=%q", ok, side)
 	}
-	// above the old buy line is the WRONG side of the current (sell) line —
-	// still refused, but for the wrong-side reason, not the zone.
 	if ok, _, reason := TriggerVerdict(tl, 101); ok || reason == "" {
-		t.Fatalf("above the current sell line must be refused")
+		t.Fatalf("above the sell line must be refused")
 	}
 }
 
