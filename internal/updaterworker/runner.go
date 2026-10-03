@@ -174,6 +174,8 @@ func (w *Worker) step(ctx context.Context, j updaterjob.Job) stepResult {
 		return w.stepWatch(j)
 	case updaterjob.StateBootVerified:
 		return w.stepBootVerify(ctx, j)
+	case updaterjob.StateWorkerSwapped:
+		return w.stepWorkerSwap(ctx, j)
 	case updaterjob.StateRollingBack:
 		return w.stepRollback(ctx, j)
 	case updaterjob.StateComplete, updaterjob.StateRolledBack:
@@ -287,6 +289,8 @@ func (w *Worker) advance(ctx context.Context, j updaterjob.Job) (parked bool, er
 	case updaterjob.StateBooted:
 		next = updaterjob.StateBootVerified
 	case updaterjob.StateBootVerified:
+		next = updaterjob.StateWorkerSwapped
+	case updaterjob.StateWorkerSwapped:
 		next = updaterjob.StateComplete
 	case updaterjob.StateRollingBack:
 		next = updaterjob.StateRolledBack

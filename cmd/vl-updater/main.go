@@ -218,6 +218,14 @@ func serve(t updaterworker.Target, stderr io.Writer) int {
 		ln.Close()
 		<-done
 		return 0
+	case <-w.SwapDone():
+		// worker-self-update: the worker swapped its own binary; exit so
+		// systemd restarts the unit on the new one (the unit's Restart=
+		// policy decides — see the PR body; today it is Restart=no).
+		fmt.Fprintln(stderr, "vl-updater serve: worker self-update swapped the binary; exiting for the unit restart")
+		ln.Close()
+		<-done
+		return 0
 	case err := <-done:
 		fmt.Fprintln(stderr, "vl-updater serve:", err)
 		return 1

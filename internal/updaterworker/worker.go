@@ -74,6 +74,11 @@ type Worker struct {
 	resume  map[string]bool // attended resume signals, consumed by the runner
 	wake    chan struct{}
 
+	// swapDone closes exactly once, when a worker-self-update swap completed.
+	// cmd/vl-updater serve exits on it so systemd restarts the worker on the
+	// new binary (the unit's Restart= policy decides — see the PR body).
+	swapDone chan struct{}
+
 	// crash is a TEST SEAM: called at every boundary with a point name
 	// ("<state>/started", "<state>/effect", "<state>/done"); a test panics in
 	// it to play a crash there. nil in production.
@@ -112,7 +117,7 @@ func New(cfg Config, d Deps) (*Worker, error) {
 	if cfg.Logf == nil {
 		cfg.Logf = func(string, ...any) {}
 	}
-	return &Worker{cfg: cfg, lib: d.Lib, app: d.App, rel: d.Rel, host: d.Host, resume: map[string]bool{}, wake: make(chan struct{}, 1)}, nil
+	return &Worker{cfg: cfg, lib: d.Lib, app: d.App, rel: d.Rel, host: d.Host, resume: map[string]bool{}, wake: make(chan struct{}, 1), swapDone: make(chan struct{})}, nil
 }
 
 func (w *Worker) dataDir() string { return w.cfg.Target.DataDir }
