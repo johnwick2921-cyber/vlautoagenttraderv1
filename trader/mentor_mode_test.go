@@ -245,6 +245,43 @@ func TestMentorExitMechSuspensionAppliesToAIOnly(t *testing.T) {
 	}
 }
 
+// TestMentorRuleGateR8R9: the injector-side R8/R9 gate (RULES-FIX v3).
+// SWING4H: 30–60 allowed, ~100 refused, EXEMPT from the 25-pt ceiling.
+// R9: target never smaller than stop; spent-day cap 15 skips a stop over 15.
+func TestMentorRuleGateR8R9(t *testing.T) {
+	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", StopPts: 40, TargetPts: 80}, mentorTierInputs{}); why != "" {
+		t.Fatalf("SWING4H 40-pt stop must pass (30–60 allowed): %q", why)
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", StopPts: 60, TargetPts: 120}, mentorTierInputs{}); why != "" {
+		t.Fatalf("SWING4H 60-pt stop must pass: %q", why)
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", StopPts: 100, TargetPts: 200}, mentorTierInputs{}); why == "" {
+		t.Fatal("SWING4H ~100-pt stop must be refused (R8)")
+	}
+	// the swing is the ONLY exemption from the 25-pt ceiling
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 30, TargetPts: 60}, mentorTierInputs{}); why == "" {
+		t.Fatal("a non-swing stop over 25 must be refused (R8 ceiling)")
+	}
+	// R9: target never smaller than stop
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 12, TargetPts: 10}, mentorTierInputs{}); why == "" {
+		t.Fatal("a target smaller than the stop must be refused (R9)")
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 12, TargetPts: 24}, mentorTierInputs{}); why != "" {
+		t.Fatalf("target ≥ stop must pass: %q", why)
+	}
+	// R9 spent-day cap: stop over 15 skips
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 18, TargetPts: 36}, mentorTierInputs{SpentDay: true}); why == "" {
+		t.Fatal("a spent day must skip any stop over 15 (R9 cap)")
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 12, TargetPts: 24}, mentorTierInputs{SpentDay: true}); why != "" {
+		t.Fatalf("a spent day with a 12-pt stop must pass: %q", why)
+	}
+	// ISB intents carry no target (0): the target check never fires on them
+	if why := mentorRuleGate(mentor.Intent{Setup: "ISB", StopPts: 5.75}, mentorTierInputs{}); why != "" {
+		t.Fatalf("a targetless ISB must pass the gate: %q", why)
+	}
+}
+
 // TestMentorSpentDayClamp: §7 — at most 2 contracts running on a spent day.
 func TestMentorSpentDayClamp(t *testing.T) {
 	if got := mentorSpentDayClamp(20, 2); got != 2 {

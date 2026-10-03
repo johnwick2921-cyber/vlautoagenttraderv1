@@ -34,6 +34,12 @@ const (
 	mentorRoomBigMultiple    = 2.0  // room ≥ this × risk for the big tier
 	mentorStopTwentiesMinPts = 20.0 // stop 20–25 pts → reduced [D3.3 p1 @ 01:09]
 	mentorStopTwentiesMaxPts = 25.0
+	// R8 (RULES-FIX v3): a SWING4H stop of 30–60 pts is allowed, ~100 is
+	// refused, and SWING4H is EXEMPT from the 25-pt ceiling.
+	mentorSwingStopMaxPts = 60.0
+	// R9 (RULES-FIX v3): the target is never smaller than the stop; on a spent
+	// day (cap 15) any setup whose stop is over 15 is skipped.
+	mentorSpentDayStopCapPts = 15.0
 )
 
 // mentorTierInputs is everything the size table reads. The trader computes
@@ -185,6 +191,32 @@ func (at *AutoTrader) mentorSuppressAIEntry(d *kernel.Decision) string {
 		mentorCount("ai_entry_suppressed")
 		telemetry.IncGateBlock(at.id, "mentor_ai_entries_off")
 		return "mentor_mode: AI entries are OFF — every entry comes from the mentor evaluator"
+	}
+	return ""
+}
+
+// mentorRuleGate is the injector-side R8/R9 gate: it refuses intents the
+// evaluator should never have let through, fail-closed, before any sizing.
+// (R8) SWING4H: stop 30–60 allowed, ≥100 refused, exempt from the 25-pt
+// ceiling. (R9) the target is never smaller than the stop; on a spent day
+// (cap 15) a stop over 15 skips. Returns the skip reason, "" when the intent
+// passes.
+func mentorRuleGate(in mentor.Intent, extra mentorTierInputs) string {
+	swing := strings.EqualFold(in.Setup, "SWING4H")
+	if swing {
+		if in.StopPts > mentorSwingStopMaxPts {
+			return fmt.Sprintf("R8: SWING4H stop %.1f pts — ~100 is refused (allowed 30–60, no 25-pt ceiling for the swing)", in.StopPts)
+		}
+	} else {
+		if in.StopPts > mentorStopTwentiesMaxPts {
+			return fmt.Sprintf("R8: stop %.1f pts over the 25-pt ceiling — skip (the swing is the only exemption)", in.StopPts)
+		}
+	}
+	if in.TargetPts > 0 && in.TargetPts < in.StopPts {
+		return fmt.Sprintf("R9: target %.1f pts smaller than the stop %.1f pts — never trade it [D1.2 p1 @ 07:48–09:00]", in.TargetPts, in.StopPts)
+	}
+	if extra.SpentDay && in.StopPts > mentorSpentDayStopCapPts {
+		return fmt.Sprintf("R9: spent day cap 15 — stop %.1f pts skips", in.StopPts)
 	}
 	return ""
 }

@@ -115,6 +115,15 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 	for _, in := range intents {
 		switch in.Action {
 		case mentor.PlaceStopEntry:
+			if why := mentorRuleGate(in, mentorTierInputs{}); why != "" {
+				rule := "other"
+				if i := strings.Index(why, ":"); i > 0 {
+					rule = strings.ToLower(strings.TrimSpace(why[:i]))
+				}
+				mentorCount("refused_" + rule)
+				at.logWarnf("🧑‍🏫 mentor intent REFUSED — %s", why)
+				continue
+			}
 			choice, err := at.mentorSizeFor(in, mentorTierInputs{})
 			if err != nil {
 				continue
