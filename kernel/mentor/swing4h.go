@@ -227,9 +227,9 @@ func SwingTick(s *SwingState, bars5m []market.Kline, cfg SwingCfg, now int64) []
 		if !touchesLine(b, line, cfg.LineOffsetPts) {
 			continue
 		}
-		approach := SideLong
-		if prev.Close < line {
-			approach = SideShort // came from below → resistance
+		approach, hasApproach := swingApproach(prev.Close, line)
+		if !hasApproach {
+			continue // tie: prev closed exactly on the line — no approach yet
 		}
 		if approach == SideLong && s.ClearLongAt != 0 && b.Low > s.ClearLongAt {
 			continue // not yet re-armed
@@ -302,6 +302,20 @@ func targetOnSide(side Side, entry, ema float64) bool {
 // within the placement offset — "KHÔNG ĐƯỢC GẦN ĐỤNG" [D5.2 p2 @ 09:15].
 func touchesLine(b market.Kline, line, offset float64) bool {
 	return b.Low <= line+offset && b.High >= line-offset
+}
+
+// swingApproach is the approach side from the previous bar's close vs the
+// line. A close EXACTLY on the line is a tie: no approach yet — wait for a
+// bar that closes off the level (CTO 2026-10-03, mirror of touch.go's
+// approachSide rule).
+func swingApproach(prevClose, line float64) (Side, bool) {
+	if prevClose == line {
+		return "", false
+	}
+	if prevClose < line {
+		return SideShort, true // came from below → resistance
+	}
+	return SideLong, true // came from above → support
 }
 
 // closedBack reports the corrected §3 reject: the close is BACK on the side
