@@ -167,29 +167,40 @@ func TestTriggerLineOnRecorded5mTape(t *testing.T) {
 	t.Logf("recorded 5m tape: line %q @ %.2f", got.Dir, got.Price)
 }
 
-// TestISBConflictVerdict — §5.3 / §12 [D4.2 p1 @ 13:59, 14:35]: a live 5m ISB
-// and a live 15m churn in OPPOSITE directions → no trade at all.
+// TestISBConflictVerdict — B8 [D4.2 p1 @ 14:24–14:52; D5.1 p2 @ 01:55]: a live
+// 5m ISB and a live 15m ISB (the REAL 15m TF, not three 5m bars) in OPPOSITE
+// directions → no trade at all. Directions are the inside candle's colour
+// (candle 1); a doji candle 1 is no ISB.
 func TestISBConflictVerdict(t *testing.T) {
-	// 15m churn: bars 0-2 inside bar 0's range, bar 0 direction long.
-	// 5m ISB: bar 3 inside bar 2, bar 3 direction short → conflict.
-	bars := []market.Kline{
-		{Open: 100, Close: 110, High: 112, Low: 98}, // 15m first (long)
-		{Open: 104, Close: 108, High: 111, Low: 100},
-		{Open: 105, Close: 109, High: 110, Low: 101}, // 15m ends
-		{Open: 109, Close: 106, High: 110, Low: 102}, // 5m ISB (short) inside bar 2
-	}
-	if !ISBConflictVerdict(bars) {
-		t.Fatal("opposite 15m/5m ISB directions must conflict")
+	// 5m pair: p5 green inside bar, c5 breaks out of it (body inside p5's
+	// range) → 5m ISB direction LONG.
+	p5 := market.Kline{Open: 104, Close: 108, High: 111, Low: 100}
+	c5 := market.Kline{Open: 109, Close: 106, High: 110, Low: 102}
+	// 15m pair: p15 red inside bar → 15m ISB direction SHORT.
+	p15 := market.Kline{Open: 110, Close: 105, High: 112, Low: 98}
+	c15 := market.Kline{Open: 106, Close: 108, High: 111, Low: 99}
+	if !ISBConflictVerdict([]market.Kline{p5, c5}, []market.Kline{p15, c15}) {
+		t.Fatal("opposite 5m/15m ISB directions must conflict")
 	}
 	// same direction → no conflict
-	bars[3] = market.Kline{Open: 106, Close: 109.5, High: 110, Low: 102} // long
-	if ISBConflictVerdict(bars) {
+	p15b := market.Kline{Open: 105, Close: 110, High: 112, Low: 98}
+	if ISBConflictVerdict([]market.Kline{p5, c5}, []market.Kline{p15b, c15}) {
 		t.Fatal("same-direction ISBs must not conflict")
 	}
-	// no 5m ISB → no conflict even with a churn
-	bars[3] = market.Kline{Open: 102, Close: 113, High: 114, Low: 101} // body escapes
-	if ISBConflictVerdict(bars) {
+	// no 5m ISB → no conflict (c5's body escapes p5's range)
+	c5b := market.Kline{Open: 102, Close: 113, High: 114, Low: 101}
+	if ISBConflictVerdict([]market.Kline{p5, c5b}, []market.Kline{p15, c15}) {
 		t.Fatal("no live 5m ISB must never conflict")
+	}
+	// no 15m ISB → no conflict
+	c15b := market.Kline{Open: 95, Close: 114, High: 115, Low: 94}
+	if ISBConflictVerdict([]market.Kline{p5, c5}, []market.Kline{p15, c15b}) {
+		t.Fatal("no live 15m ISB must never conflict")
+	}
+	// doji candle 1 → no ISB → no conflict
+	p5d := market.Kline{Open: 106, Close: 106, High: 111, Low: 100}
+	if ISBConflictVerdict([]market.Kline{p5d, c5}, []market.Kline{p15, c15}) {
+		t.Fatal("a doji candle 1 is no ISB — must not conflict")
 	}
 }
 
