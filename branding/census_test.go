@@ -61,6 +61,9 @@ var censusTable = map[string][]censusEntry{
 	"internal/updaterjob/testdata/job_full.golden.json": {
 		{count: 22, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
+	"internal/updaterjob/testdata/legacy-jobs/e1dcc173751ccbfe0b2a7268fd40451a.json": {
+		{count: 11, phase: "final", reason: "2026-10-02 #307: real pre-rename job file kept verbatim as a canon-53 fixture (paths are historical data, not code)"},
+	},
 	"internal/updaterworker/rename_r1a_test.go": {
 		{count: 22, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
@@ -651,8 +654,9 @@ var censusTable = map[string][]censusEntry{
 	},
 }
 
-// Ceiling = sum of allowed counts at the R1b merge (1160).
-const censusCeiling = 1160
+// Ceiling = sum of allowed counts at the R1b merge (1160) + 11 for the
+// e1dcc173 legacy job fixture (2026-10-02 #307).
+const censusCeiling = 1171
 
 func TestCensusGuard(t *testing.T) {
 	tok := "no" + "fx" // runtime assembly — never the literal
