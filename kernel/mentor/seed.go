@@ -74,9 +74,14 @@ func Seed(e *Evaluator, bars1m, bars1h []market.Kline, now int64) []string {
 	e.missing = SeedMissing(bars1m, bars1h, now)
 
 	// 1H RTH key levels from the FULL stored history (F7, no cap).
-	e.State.SeedLevels = keyLevelsFromCandles(keyLevel1HBars(bars1h), e.Cfg.KeyLevelPrunePts)
-	if n := len(keyLevel1HBars(bars1h)); n > 0 {
-		e.State.Seed1HWatermark = keyLevel1HBars(bars1h)[n-1].OpenTime
+	candles1h := keyLevel1HBars(bars1h)
+	e.State.SeedLevels = keyLevelsFromCandles(candles1h, e.Cfg.KeyLevelPrunePts)
+	if n := len(candles1h); n > 0 {
+		e.State.Seed1HWatermark = candles1h[n-1].OpenTime
+		// The colour the incremental walk continues from — without it the first
+		// extension compares against false and draws a phantom level whenever
+		// the last seeded candle was green.
+		e.State.Seed1HLastColour = candleColour(candles1h[n-1])
 	}
 
 	// 1m EMA 34/9 from the closed 1m history (full recompute at seed, once).
