@@ -262,3 +262,88 @@ func TestWorkerSwapLinkFailureLeavesOldIntact(t *testing.T) {
 		t.Fatalf("temp not cleaned up: %v", err)
 	}
 }
+
+// TestWorkerSwapSecondRunDoesNotSwap: the binary already carries the release
+// revision — no re-swap, exactly ONE .old file, the exit signal closed on a
+// fresh worker (the already path is also a completion).
+func TestWorkerSwapSecondRunDoesNotSwap(t *testing.T) {
+	t.Setenv("VL_UPDATER_SELF_UPDATE", "1")
+	dir := t.TempDir()
+	exe := filepath.Join(dir, workerBinaryName)
+	writeExecutable(t, exe, "new-binary")
+	relDir := t.TempDir()
+	candidate := filepath.Join(relDir, "updater", workerBinaryName)
+	writeExecutable(t, candidate, "new-binary")
+	rel := suRel{
+		verdict: Verdict{ReleaseID: "v1.2.3", SourceSHA: suNewSHA, ReleaseDir: relDir},
+		facts: ReleaseFacts{ReleaseID: "v1.2.3", SourceSHA: suNewSHA,
+			Artifacts: map[string]string{"updater/" + workerBinaryName: shaOf("new-binary")}},
+	}
+	host := suHost{exe: exe, revs: map[string][2]string{
+		exe: {suNewSHA, "false"}, candidate: {suNewSHA, "false"}}}
+	w := suWorker(t, rel, host)
+	res := w.stepWorkerSwap(context.Background(), suJob())
+	ev := res.receipts[0].Evidence
+	if ev["already"] != "true" {
+		t.Fatalf("receipt = %+v, want already", ev)
+	}
+	entries, _ := os.ReadDir(dir)
+	olds := 0
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), workerBinaryName+".old.") {
+			olds++
+		}
+	}
+	if olds != 0 {
+		t.Fatalf("%d .old files after an already-swapped run, want 0", olds)
+	}
+	select {
+	case <-w.SwapDone():
+	default:
+		t.Fatal("SwapDone not closed on the already-swapped path")
+	}
+}
+
+// TestWorkerSwapPrunesOldAndOrphans: the swap deletes orphan .new files and
+// keeps only the newest 3 .old files.
+func TestWorkerSwapPrunesOldAndOrphans(t *testing.T) {
+	t.Setenv("VL_UPDATER_SELF_UPDATE", "1")
+	dir := t.TempDir()
+	exe := filepath.Join(dir, workerBinaryName)
+	writeExecutable(t, exe, "old-binary")
+	for _, n := range []string{"a", "b", "c", "d", "e"} {
+		writeExecutable(t, filepath.Join(dir, workerBinaryName+".old."+strings.Repeat(n, 40)), "stale")
+	}
+	writeExecutable(t, filepath.Join(dir, workerBinaryName+".new.orphan1"), "orphan")
+	writeExecutable(t, filepath.Join(dir, workerBinaryName+".new.orphan2"), "orphan")
+	relDir := t.TempDir()
+	candidate := filepath.Join(relDir, "updater", workerBinaryName)
+	writeExecutable(t, candidate, "new-binary")
+	rel := suRel{
+		verdict: Verdict{ReleaseID: "v1.2.3", SourceSHA: suNewSHA, ReleaseDir: relDir},
+		facts: ReleaseFacts{ReleaseID: "v1.2.3", SourceSHA: suNewSHA,
+			Artifacts: map[string]string{"updater/" + workerBinaryName: shaOf("new-binary")}},
+	}
+	host := suHost{exe: exe, revs: map[string][2]string{
+		exe: {suOldSHA, "false"}, candidate: {suNewSHA, "false"}}}
+	res := suWorker(t, rel, host).stepWorkerSwap(context.Background(), suJob())
+	if res.err != nil {
+		t.Fatal(res.err)
+	}
+	entries, _ := os.ReadDir(dir)
+	olds, news := 0, 0
+	for _, e := range entries {
+		switch {
+		case strings.HasPrefix(e.Name(), workerBinaryName+".old."):
+			olds++
+		case strings.HasPrefix(e.Name(), workerBinaryName+".new."):
+			news++
+		}
+	}
+	if olds != 3 {
+		t.Fatalf("%d .old files after the swap, want 3 (prune keeps the newest 3 + the new keep)", olds)
+	}
+	if news != 0 {
+		t.Fatalf("%d orphan .new files after the swap, want 0", news)
+	}
+}

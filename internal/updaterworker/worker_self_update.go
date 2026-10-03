@@ -24,6 +24,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"vl/internal/envcompat"
 	"vl/internal/updaterjob"
@@ -112,11 +114,18 @@ func (w *Worker) swapWorkerBinary(ctx context.Context, j updaterjob.Job, ev map[
 	if oldRev == rev {
 		ev["already"] = "true"
 		ev["old_sha"], ev["new_sha"] = oldRev, rev
+		closeSwapDone(w)
 		return nil
 	}
 
-	// Atomic sequence: temp write → fsync → hard-link old → fsync → rename.
+	// Atomic sequence: orphan cleanup → temp write → fsync → hard-link old →
+	// fsync → rename. Orphans are only vl-updater.new.* files — never the
+	// running exe, never the .old being kept.
 	dir := filepath.Dir(exe)
+	if err := pruneOrphans(dir); err != nil {
+		refuse("orphan cleanup: " + err.Error())
+		return nil
+	}
 	tmp := filepath.Join(dir, workerBinaryName+".new."+j.JobID)
 	if err := copyExecutable(candidate, tmp); err != nil {
 		refuse("temp write: " + err.Error())
@@ -145,11 +154,63 @@ func (w *Worker) swapWorkerBinary(ctx context.Context, j updaterjob.Job, ev map[
 		w.logf("updater: worker self-update: dir sync after swap: %v", err)
 	}
 	ev["old_sha"], ev["new_sha"], ev["path"] = oldRev, rev, exe
+	if err := pruneOldBinaries(dir); err != nil {
+		w.logf("updater: worker self-update: prune: %v", err)
+	}
 	w.logf("updater: worker self-update: swapped %s %s -> %s", workerBinaryName, oldRev, rev)
+	closeSwapDone(w)
+	return nil
+}
+
+// closeSwapDone closes the exit signal exactly once.
+func closeSwapDone(w *Worker) {
 	select {
 	case <-w.swapDone:
 	default:
 		close(w.swapDone)
+	}
+}
+
+// pruneOrphans removes every vl-updater.new.* file in dir (crash leftovers).
+func pruneOrphans(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), workerBinaryName+".new.") && e.Type().IsRegular() {
+			if err := os.Remove(filepath.Join(dir, e.Name())); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// pruneOldBinaries keeps only the newest 3 vl-updater.old.* files (by mtime).
+func pruneOldBinaries(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	var olds []os.DirEntry
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), workerBinaryName+".old.") && e.Type().IsRegular() {
+			olds = append(olds, e)
+		}
+	}
+	if len(olds) <= 3 {
+		return nil
+	}
+	sort.Slice(olds, func(i, j int) bool {
+		fi, _ := olds[i].Info()
+		fj, _ := olds[j].Info()
+		return fi.ModTime().After(fj.ModTime())
+	})
+	for _, e := range olds[3:] {
+		if err := os.Remove(filepath.Join(dir, e.Name())); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -161,10 +222,6 @@ func copyExecutable(src, dst string) error {
 		return err
 	}
 	defer in.Close()
-	fi, err := in.Stat()
-	if err != nil {
-		return err
-	}
 	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o700)
 	if err != nil {
 		return err
@@ -183,7 +240,7 @@ func copyExecutable(src, dst string) error {
 		os.Remove(dst)
 		return err
 	}
-	if err := os.Chmod(dst, fi.Mode().Perm()|0o100); err != nil {
+	if err := os.Chmod(dst, 0o755); err != nil {
 		os.Remove(dst)
 		return err
 	}

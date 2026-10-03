@@ -962,3 +962,22 @@ func TestTheUpdaterBinaryNeverLinksTheReleaseFixture(t *testing.T) {
 		}
 	}
 }
+
+// TestWarnSelfUpdateRestart (worker-self-update P1): the boot WARN is READ,
+// never literal — n/a when systemctl is unavailable; silent when the knob is
+// off.
+func TestWarnSelfUpdateRestart(t *testing.T) {
+	var buf bytes.Buffer
+	t.Setenv("VL_UPDATER_SELF_UPDATE", "0")
+	warnSelfUpdateRestart(&buf)
+	if buf.Len() != 0 {
+		t.Fatalf("knob off must be silent, got %q", buf.String())
+	}
+	t.Setenv("VL_UPDATER_SELF_UPDATE", "1")
+	t.Setenv("PATH", t.TempDir()) // no systemctl on this PATH
+	buf.Reset()
+	warnSelfUpdateRestart(&buf)
+	if !strings.Contains(buf.String(), "n/a") {
+		t.Fatalf("unavailable systemctl must read n/a, got %q", buf.String())
+	}
+}
