@@ -15,9 +15,13 @@ import (
 func TestISBNotLocationGated(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
+	// a head bar with a high close so the EMA 34 target sits well BEYOND the
+	// entry: the E-2 floor ("the target is never smaller than the stop"
+	// [D1.2 p1 @ 07:48]) refuses a sub-1:1 target.
+	head := rthBars(0, 121, 121.5, 120.5, 120)
 	prev := rthBars(1, 99, 106, 98.5, 106)
 	cur := rthBars(2, 101, 102.1, 100.9, 102)
-	bars := []market.Kline{prev, cur}
+	bars := []market.Kline{head, prev, cur}
 	if !IsISB(prev, cur) {
 		t.Fatal("fixture: must be an ISB")
 	}
