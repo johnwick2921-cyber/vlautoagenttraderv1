@@ -2,6 +2,8 @@ package mentor
 
 import (
 	"testing"
+
+	"vl/market"
 )
 
 // TestTriggerFormingBucketCommittedOnce — B2: the forming bucket may fire a
