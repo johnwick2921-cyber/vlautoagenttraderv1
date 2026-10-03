@@ -2,6 +2,7 @@ package trader
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -538,6 +539,52 @@ func TestMentorHistoryDepthGate(t *testing.T) {
 	at.mentorPlaceIntent(in, choice, 1000, 1100)
 	if placed != 2 {
 		t.Fatalf("with the source restored the placement must proceed, placed=%d", placed)
+	}
+}
+
+// TestMentor4hEMA34WarmupGate (P0 seed change): the 4h EMA 34 floor is the
+// seed's stated warm-up — the gate reads the constant, never the hard-coded
+// 34. The mutant that hard-codes 34 fails the larger-warm-up rows.
+func TestMentor4hEMA34WarmupGate(t *testing.T) {
+	old := mentor4hEMA34Warmup
+	t.Cleanup(func() { mentor4hEMA34Warmup = old })
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireMentorPlacementSeams(t)
+	// absolute minimum 34: below it refuses.
+	mentor4hEMA34Warmup = mentorMin4hEMA34
+	mentorSourceDepthSource = func(name string) (int, bool) {
+		if name == "4h EMA34" {
+			return 33, true
+		}
+		return 9999, true
+	}
+	if missing := strings.Join(at.mentorSourcesMissing(), ", "); !textHas(missing, "4h EMA34 (33/34)") {
+		t.Fatalf("33 candles must be refused against the 34 floor: %q", missing)
+	}
+	// DS-103 states a larger warm-up (100): the gate reads the constant.
+	SetMentor4hEMA34Warmup(100)
+	mentorSourceDepthSource = func(name string) (int, bool) {
+		if name == "4h EMA34" {
+			return 50, true
+		}
+		return 9999, true
+	}
+	if missing := strings.Join(at.mentorSourcesMissing(), ", "); !textHas(missing, "4h EMA34 (50/100)") {
+		t.Fatalf("50 candles must be refused against the 100 warm-up: %q", missing)
+	}
+	mentorSourceDepthSource = func(name string) (int, bool) {
+		if name == "4h EMA34" {
+			return 100, true
+		}
+		return 9999, true
+	}
+	if missing := at.mentorSourcesMissing(); len(missing) != 0 {
+		t.Fatalf("100 candles must pass the 100 warm-up: %q", strings.Join(missing, ", "))
+	}
+	// a warm-up below the absolute minimum clamps to 34.
+	SetMentor4hEMA34Warmup(10)
+	if mentor4hEMA34Warmup != mentorMin4hEMA34 {
+		t.Fatalf("the warm-up must clamp to the absolute minimum 34, got %d", mentor4hEMA34Warmup)
 	}
 }
 

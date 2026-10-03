@@ -542,6 +542,24 @@ func (at *AutoTrader) mentorAddGate(in mentor.Intent) (bool, string) {
 	return false, ""
 }
 
+// mentorMin4hEMA34 is the ABSOLUTE minimum 4h-candle floor: 34 is the EMA's
+// FIRST value, not a warmed-up one.
+const mentorMin4hEMA34 = 34
+
+// mentor4hEMA34Warmup is the 4h EMA 34 floor the seed actually requires —
+// DS-103's stated warm-up (his P0 PR). It defaults to the absolute minimum;
+// the live driver raises it via SetMentor4hEMA34Warmup.
+var mentor4hEMA34Warmup = mentorMin4hEMA34
+
+// SetMentor4hEMA34Warmup is DS-103's seed hook: the stated 4h EMA 34 warm-up
+// in 4h candles. Values below the absolute minimum are clamped to it.
+func SetMentor4hEMA34Warmup(n int) {
+	if n < mentorMin4hEMA34 {
+		n = mentorMin4hEMA34
+	}
+	mentor4hEMA34Warmup = n
+}
+
 // mentorDepthRequirement is one per-source history floor (P0 seed plan point
 // 1): depth per source, not one number — the refusal names the short source.
 type mentorDepthRequirement struct {
@@ -551,12 +569,13 @@ type mentorDepthRequirement struct {
 
 // mentorDepthRequirements lists every source the seed must provide. DS-103's
 // PR states the exact warm-up per source; these floors are the fail-closed
-// gate (the 4h EMA 34 warm-up is 34 four-hour candles derived from 1h at the
+// gate (the 4h EMA 34 floor is mentor4hEMA34Warmup — the seed's stated
+// warm-up, never below the absolute minimum 34 — derived from 1h at the
 // 17:00 CT anchor; the 1m EMA 34 needs 34 one-minute candles; the 1H RTH level
 // set reads the FULL stored history — no cap; today's session feeds the
 // boxes/ORB/day latch; the 15m source must have a closed candle).
 var mentorDepthRequirements = []mentorDepthRequirement{
-	{Name: "4h EMA34", Min: 34},
+	{Name: "4h EMA34", Min: mentorMin4hEMA34},
 	{Name: "1m EMA34", Min: 34},
 	{Name: "1h level set", Min: 1},
 	{Name: "today session", Min: 1},
@@ -604,15 +623,21 @@ func (at *AutoTrader) mentorSourcesMissing() []string {
 		missing = append(missing, "5m feed")
 	}
 	for _, req := range mentorDepthRequirements {
+		min := req.Min
+		// the 4h EMA 34 floor is the seed's stated warm-up (the constant, not
+		// the absolute minimum) — DS-103 raises it via SetMentor4hEMA34Warmup.
+		if req.Name == "4h EMA34" {
+			min = mentor4hEMA34Warmup
+		}
 		depth, known := mentorSourceDepth(req.Name)
 		if !known {
 			mentorCount("history_depth_short")
 			missing = append(missing, fmt.Sprintf("history: %s (n/a)", req.Name))
 			continue
 		}
-		if depth < req.Min {
+		if depth < min {
 			mentorCount("history_depth_short")
-			missing = append(missing, fmt.Sprintf("history: %s (%d/%d)", req.Name, depth, req.Min))
+			missing = append(missing, fmt.Sprintf("history: %s (%d/%d)", req.Name, depth, min))
 		}
 	}
 	return missing
