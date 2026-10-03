@@ -66,3 +66,33 @@ func PHLPLH(t Touch, oldExtreme Level, extremeIdx, barIdx int, cfg Config) (Inte
 		Reason: "PHL/PLH: stop order beyond the rejecting candle, target near the old extreme [D4.1 p1 @ 07:27, 09:40 written]",
 	}, true, ""
 }
+
+// PHLPLHGated is the call site the evaluator uses for every PHL/PLH: the
+// §2.2 rules in PHLPLH, then the two direction gates on top —
+//
+//	§5.4 (fold item 3): entries only WITH the 4h trigger direction; the 1h
+//	agreeing or silent. A 1h opposite the 4h refuses the setup until it
+//	flips [D4.4 p1 @ 16:00].
+//
+//	§7 (fold item 4): a 4h/1h conflict shuts the day off; a spent day
+//	(run ≥ SpentPts, agreeing) caps the target at TargetCapPts
+//	("15 điểm bán, 10 điểm bán") [D5.1 p1 @ 15:57].
+//
+// A touch-and-reject at a level IS a PHL/PLH and carries these rules
+// unchanged (fold item 2) — the location itself is gated upstream by the
+// evaluator's key-level gate (DS-103's item 1).
+func PHLPLHGated(t Touch, oldExtreme Level, extremeIdx, barIdx int, cfg Config, htf HTF, day DayVerdict, dg DayGate) (Intent, bool, string) {
+	in, ok, reason := PHLPLH(t, oldExtreme, extremeIdx, barIdx, cfg)
+	if !ok {
+		return in, false, reason
+	}
+	if htfOK, side, htfReason := HTFVerdict(htf); !htfOK {
+		return in, false, "HTF direction gate: no trade — " + htfReason
+	} else if side != in.Side {
+		return in, false, "HTF direction gate: entry side " + string(in.Side) + " against the " + string(side) + " trigger — entries only with the 4h direction [D4.4 p1 @ 16:00]"
+	}
+	if day == DayOff {
+		return in, false, "day gate: 4h/1h conflict — 'TẮT MÁY NGHỈ LUÔN CHO EM', no trades today [D5.1 p1 @ 19:22]"
+	}
+	return CapTargetForDay(in, day, dg), true, ""
+}
