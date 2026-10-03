@@ -93,11 +93,6 @@ type Intent struct {
 	// (the setup carries its own explicit CancelArm instead).
 	ExpiryMs int64
 
-	// Confluence is the R2 flag [00-METHOD Risk-reward, D3.4 p3 @ 07:38]:
-	// box edge + a key level inside the box or within 2 pts of its edge +
-	// the 5m trigger agrees — DS-102's exit-C / size-10 branch reads it.
-	Confluence bool
-
 	// CancelArm / LevelInvalid fields.
 	ArmID    string
 	LevelKey string

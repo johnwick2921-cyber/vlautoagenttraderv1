@@ -28,11 +28,9 @@ import (
 //   - Draw at once and EXTEND RIGHT. The box is reused indefinitely
 //     [D3.2 p2 @ 06:21]. Valid by construction — no 3rd-touch TEST for the
 //     box [@ 03:45]; the 3rd-touch rule belongs to the TRADE [@ 04:29],
-//     exposed as Box.Returns (the first return after formation).
-//   - NEVER deleted intraday. An escape (a BODY closes outside) only means
-//     you may trade again — it does NOT delete the box [D3.2 p1
-//     @ 18:30–19:30]. A box lives to the end of its day, then dies
-//     [D4.1 p2 @ 02:39–03:09: "ve roi thi de y nguyen do toi cuoi ngay"].
+//     exposed as Box.Touches.
+//   - Deleted only on escape (a BODY closes outside) [D3.2 p1 @ 19:05;
+//     D3.4 p2 @ 12:11] or at the end of the day [D4.1 p2 @ 02:39–03:31].
 //   - "NEVER trade inside the box" [D3.2 p1 @ 06:59] → InsideAnyBox.
 //   - "Draw TWO zones, never a third." [D3.2 p2 @ 09:14] → one floor +
 //     one ceiling.
@@ -57,23 +55,20 @@ const (
 	KindFTGLEdge LevelKind = "ftgl_edge"
 )
 
-// Box is one drawn FTGH/FTGL zone. Never redrawn and never deleted
-// intraday: once built, the edges do not move and the box lives to the end
-// of its day. An escape only re-arms trading [D3.2 p1 @ 18:30–19:30].
+// Box is one drawn FTGH/FTGL zone. Never redrawn: once built, the edges do
+// not move. Escaped boxes are deleted (dropped from the set).
 type Box struct {
 	Kind   BoxKind
 	Top    float64 // FTGH: highest wick of the earlier high · FTGL: body of the nearest low
 	Bottom float64 // FTGH: body of the nearest high · FTGL: lowest wick of the earlier low
 	Key    string  // stable id "ftgh:<top>:<bottom>"
-	// Returns counts post-formation return visits, one per visit (not
-	// per candle). A return = price was outside the box on the approach
-	// side, then a candle touches an edge. The trade reference is the
-	// FIRST return — the third touch overall, counting the two extremes
-	// that BUILT the box [D3.2 p1 @ 04:29] — and EVERY return trades
-	// [D3.2 p2 @ 06:25]; the per-visit reference bars come from
-	// BoxReturnBars.
-	Returns int
-	// FormedAt is the bar index the box was drawn (extend-right origin).
+	// Touches counts closed candles whose wick reached an edge since the
+	// box formed — the entry layer requires the THIRD touch [@ 04:29].
+	Touches int
+	// FormedAt is the bar index the box was drawn (extend-right origin):
+	// max(nearest idx, extreme idx + 1) — born when the extreme's confirming
+	// bar closes, and never earlier than the later pairing candle, so a
+	// pairing candle is never walked as a return (B10 T1 ruling + T3).
 	FormedAt int
 }
 
@@ -149,7 +144,9 @@ func barsForTF(bars []market.Kline, tf string) []market.Kline {
 
 // swings3 is the role detector [B]: a rolling 3-candle extreme — candle i is
 // a LOW when its low is the min of the last three lows, a HIGH when its high
-// is the max of the last three highs.
+// is the max of the last three highs. LEFT-only, deliberately: the NEAREST
+// pairing swing keeps no right-side confirmation (B10 T1 ruling 21:00Z);
+// only the EXTREME is confirmed, by swingConfirmed, at the pairing site.
 func swings3(bars []market.Kline) []swingPairAt {
 	var seq []swingPairAt
 	for i := 2; i < len(bars); i++ {
@@ -175,12 +172,27 @@ func swings3(bars []market.Kline) []swingPairAt {
 	return seq
 }
 
+// swingConfirmed is the B10 T1 fractal right side (CTO ruling 21:00Z),
+// applied to the EXTREME only: a swing low is the extreme only when the NEXT
+// closed bar has a HIGHER low (the spike failed to go lower); a swing high,
+// only when the NEXT closed bar has a LOWER high. A one-way tape never
+// confirms, so no extreme and no box. The box is BORN when the confirming
+// bar closes.
+func swingConfirmed(bars []market.Kline, s swingPairAt) bool {
+	if s.idx+1 >= len(bars) || bars[s.idx+1].CloseTime == 0 {
+		return false
+	}
+	if s.kind == kernel.KindSWGL {
+		return bars[s.idx+1].Low > s.price
+	}
+	return bars[s.idx+1].High < s.price
+}
+
 // BoxesBuild is the pure, deterministic box scan: role extremes pair with
 // the NEAREST same-role extreme (in time, on the non-broken side) with NO
-// tolerance; boxes are never dropped on escape; only boxes of the current
-// trading day survive. The same history always rebuilds the same set — a
-// drawn box is never redrawn. At most one floor and one ceiling ("two
-// zones").
+// tolerance; escaped boxes are dropped; only boxes of the current trading
+// day survive. The same history always rebuilds the same set — a drawn box
+// is never redrawn. At most one floor and one ceiling ("two zones").
 func BoxesBuild(bars []market.Kline, cfg BoxCfg, now time.Time) []Box {
 	if cfg.TF == "" {
 		cfg = DefaultBoxCfg()
@@ -188,11 +200,28 @@ func BoxesBuild(bars []market.Kline, cfg BoxCfg, now time.Time) []Box {
 	tfBars := barsForTF(bars, cfg.TF)
 	seq := swings3(tfBars)
 	today := tradingDayKey(now.In(ctime()))
+	// B10 T2 (CTO 2026-10-03): pick the extreme among TODAY's swings only.
+	// The slice is 1500 1m bars since A9; pairing against a yesterday extreme
+	// and dropping the box at the day check left a day whose low sits above
+	// yesterday's with no floor at all.
+	var seqToday []swingPairAt
+	for _, s := range seq {
+		if tradingDayKey(time.UnixMilli(tfBars[s.idx].OpenTime).In(ctime())) == today {
+			seqToday = append(seqToday, s)
+		}
+	}
+	seq = seqToday
 	var out []Box
 	for _, role := range []kernel.LevelKind{kernel.KindSWGL, kernel.KindSWGH} {
 		extreme := -1
 		for i, s := range seq {
 			if s.kind != role {
+				continue
+			}
+			// B10 T1 (CTO ruling 21:00Z): only a CONFIRMED swing can be the
+			// extreme — the next closed bar failed to break it. A one-way
+			// tape has no confirmed swing, so no extreme and no box.
+			if !swingConfirmed(tfBars, s) {
 				continue
 			}
 			if extreme < 0 {
@@ -211,6 +240,8 @@ func BoxesBuild(bars []market.Kline, cfg BoxCfg, now time.Time) []Box {
 		}
 		nearest := -1
 		for i, s := range seq {
+			// the NEAREST keeps no confirmation (B10 T1 ruling): the
+			// left-only swing nearest in time that did not break the extreme.
 			if i == extreme || s.kind != role {
 				continue
 			}
@@ -244,15 +275,25 @@ func BoxesBuild(bars []market.Kline, cfg BoxCfg, now time.Time) []Box {
 		if b == nil {
 			continue
 		}
-		if tradingDayKey(time.UnixMilli(tfBars[seq[extreme].idx].OpenTime).In(ctime())) != today {
-			continue // the box does not outlive its day
-		}
-		b.Returns = countBoxReturns(tfBars, *b, seq[extreme].idx, cfg)
+		b.Touches = countBoxTouches(tfBars, *b, seq[extreme].idx, cfg)
+		// B4 (10-03 ruling, PLAN.md: "NEVER deleted during the session… delete
+		// at the end of the day" [D4.1 p2 @02:39–03:09]): an escaped body does
+		// NOT delete the box — v3's "delete on escape" mixed in the 5m ISB box
+		// rule and killed every box trade. The today-only candidate filter
+		// above is the box's only death.
 		b.Key = "ftgh:" + fnum(b.Top) + ":" + fnum(b.Bottom)
 		if b.Kind == FTGL {
 			b.Key = "ftgl:" + fnum(b.Top) + ":" + fnum(b.Bottom)
 		}
-		b.FormedAt = seq[extreme].idx
+		// B10 T3 (CTO 2026-10-03): the box exists only once BOTH pairing
+		// candles are known, so the formation completes at the LATER of the
+		// two — the return walk must never include the pairing candles. Per
+		// the T1 ruling the box is BORN when the extreme's confirming bar
+		// closes, so the origin is at least extreme+1.
+		b.FormedAt = seq[extreme].idx + 1
+		if seq[nearest].idx > b.FormedAt {
+			b.FormedAt = seq[nearest].idx
+		}
 		out = append(out, *b)
 	}
 	return out
@@ -288,8 +329,7 @@ func boxFromPair(bars []market.Kline, s1, s2 swingPairAt) *Box {
 
 // escaped reports whether a closed candle AFTER formation had its whole
 // body outside the zone — "ESCAPE = the candle's BODY outside (whole candle
-// better)" [D3.2 p1 @ 19:05]. An escape re-arms trading; it does NOT delete
-// the box [D3.2 p1 @ 18:30–19:30].
+// better)" [D3.2 p1 @ 19:05].
 func escaped(bars []market.Kline, b Box, formedAt int) bool {
 	for _, c := range bars[formedAt+1:] {
 		if c.CloseTime == 0 {
@@ -309,10 +349,19 @@ func escaped(bars []market.Kline, b Box, formedAt int) bool {
 	return false
 }
 
-// countBoxReturns is the number of post-formation return visits — see
-// BoxReturnBars for the per-visit reference bars.
-func countBoxReturns(bars []market.Kline, b Box, formedAt int, cfg BoxCfg) int {
-	return len(BoxReturnBars(bars, b, formedAt, cfg))
+// countBoxTouches counts closed candles after formation whose wick reached
+// an edge — the third touch is the trade [D3.2 p1 @ 04:29].
+func countBoxTouches(bars []market.Kline, b Box, formedAt int, cfg BoxCfg) int {
+	n := 0
+	for _, c := range bars[formedAt+1:] {
+		if c.CloseTime == 0 {
+			continue
+		}
+		if touchesEdge(b, c, cfg) {
+			n++
+		}
+	}
+	return n
 }
 
 // touchesEdge reports a wick touch of either edge within TouchBandPts.
