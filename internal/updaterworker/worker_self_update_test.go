@@ -30,9 +30,14 @@ type suHost struct {
 	exe  string
 }
 
-func (h suHost) Now() (t time.Time)                         { return time.Now().UTC() }
+func (h suHost) Now() time.Time                             { return time.Now().UTC() }
 func (h suHost) Sleep(context.Context, time.Duration) error { return nil }
 func (h suHost) MainTreeLockHeld() (bool, string, error)    { return true, "", nil }
+func (h suHost) LockAcquire(string, string, int) (bool, string, error) {
+	return true, "", nil
+}
+func (h suHost) LockHolder() (string, error) { return "", nil }
+func (h suHost) LockRelease(string) error    { return nil }
 func (h suHost) BuildInfo(binary string) (string, string, error) {
 	if r, ok := h.revs[binary]; ok {
 		return r[0], r[1], nil
