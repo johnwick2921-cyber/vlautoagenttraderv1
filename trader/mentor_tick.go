@@ -123,6 +123,10 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 	for _, in := range intents {
 		switch in.Action {
 		case mentor.PlaceStopEntry:
+			// R2 STUB: the confluence flag feeds the size tier (10/20) and the
+			// exit fork (C) — nil seam → false, so neither fires until
+			// DS-103's tagged intents land.
+			extra.Confluence = mentorConfluenceFlag(in)
 			if why := mentorRuleGate(in, extra); why != "" {
 				rule := "other"
 				if i := strings.Index(why, ":"); i > 0 {
@@ -200,6 +204,12 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 			return
 		}
 	}
+	// A/B/C EXIT FORK AT ENTRY (CTO 1791029620038): the branch is chosen from
+	// the intent flags NOW and recorded; the P1 exit loop drives the chosen
+	// branch per fill. A PHL/PLH starts as B with the resonance watch armed.
+	forkMode, forkTP, forkWhy := mentorExitFork(in, mentorConfluenceFlag(in))
+	mentorCount("exit_fork_" + forkMode)
+	at.logInfof("🧑‍🏫 mentor exit fork: %s — %s (leg 1 TP %.2f)", forkMode, forkWhy, forkTP)
 	if mentorPlaceRecorderForTest != nil {
 		mentorPlaceRecorderForTest(in, choice.Contracts)
 		return // test seam: the real pipeline is never reached from a test

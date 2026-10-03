@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
 	"vl/kernel"
 	"vl/kernel/mentor"
@@ -612,5 +613,88 @@ func TestMentorSizeForCountsAndLogsTier(t *testing.T) {
 	}
 	if choice.Why == "" {
 		t.Fatal("the tier must carry its why")
+	}
+}
+
+// TestMentorExitFork pins the A/B/C fork AT ENTRY (CTO 1791029620038): one
+// branch per case. Mutants: confluence ignored in the fork (C case RED),
+// mentorLeg1TPForC dropped (C leg-1 TP RED).
+func TestMentorExitFork(t *testing.T) {
+	cases := []struct {
+		name       string
+		in         mentor.Intent
+		confluence bool
+		wantMode   string
+		wantTP     float64
+	}{
+		{"swing holds by the 4h", mentor.Intent{Setup: "SWING4H", Side: mentor.SideLong, Price: 100, Stop: 90}, false, "swing", 0},
+		{"normal B ISB", mentor.Intent{Setup: "ISB", Side: mentor.SideShort, Price: 100, Stop: 106, StopPts: 6}, false, "B", 0},
+		{"PHL starts as B with the resonance watch", mentor.Intent{Setup: "PHL", Side: mentor.SideLong, Price: 100, Stop: 95, StopPts: 5}, false, "B", 0},
+		{"C confluence long holds 1:2", mentor.Intent{Setup: "PHL", Side: mentor.SideLong, Price: 100, Stop: 95, StopPts: 5}, true, "C", 110},
+		{"C confluence short holds 1:2", mentor.Intent{Setup: "PLH", Side: mentor.SideShort, Price: 100, Stop: 105, StopPts: 5}, true, "C", 90},
+		{"C geometry risk when StopPts unset", mentor.Intent{Setup: "ISB", Side: mentor.SideLong, Price: 100, Stop: 92}, true, "C", 116},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mode, tp, why := mentorExitFork(tc.in, tc.confluence)
+			if mode != tc.wantMode || tp != tc.wantTP {
+				t.Fatalf("fork = (%s, %.2f) want (%s, %.2f); why=%q", mode, tp, tc.wantMode, tc.wantTP, why)
+			}
+		})
+	}
+
+	// the A branch: a PHL fill starting as B flips to A on a same-direction
+	// ISB within 3 candles — stops to BE, leg 1 TP pushed to the runner's
+	// target, no trail.
+	pos := &mentorPosition{
+		Origin: "PHL", Side: "long", Entry: 100, Stop: 95, Target: 112, R: 5,
+		Mode: "B", Leg1TP: 105,
+	}
+	armed, modTP := mentorMaybeArmResonance(pos, "long", 2)
+	if !armed || pos.Mode != "A-resonance" || pos.Stop != pos.Entry || modTP != 112 {
+		t.Fatalf("the A flip must arm: armed=%v mode=%s stop=%.2f modTP=%.2f", armed, pos.Mode, pos.Stop, modTP)
+	}
+}
+
+// TestMentorExitForkAtPlacement pins the fork WIRED at the placement call
+// site: the fork is computed before the recorder seam, so the branch counter
+// is observable. Mutant: the fork call removed from mentorPlaceIntent → the
+// counter stays 0 and this test goes RED.
+func TestMentorExitForkAtPlacement(t *testing.T) {
+	ResetMentorCountersForTest()
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireMentorPlacementSeams(t)
+	ct := time.FixedZone("CT", -5*3600)
+	mentorNowSource = func() time.Time { return time.Date(2026, 10, 2, 9, 0, 0, 0, ct) }
+	t.Cleanup(func() { mentorNowSource = nil })
+	mentorLatestPriceSource = func() (float64, bool) { return 99, true }
+	t.Cleanup(func() { mentorLatestPriceSource = nil })
+	placed := 0
+	mentorPlaceRecorderForTest = func(i mentor.Intent, n int) { placed++ }
+	t.Cleanup(func() { mentorPlaceRecorderForTest = nil })
+
+	// C: the stub flag is set — the fork must land on C.
+	mentorConfluenceForIntent = func(in mentor.Intent) bool { return true }
+	t.Cleanup(func() { mentorConfluenceForIntent = nil })
+	at.mentorPlaceIntent(mentor.Intent{
+		Action: mentor.PlaceStopEntry, Setup: "PHL", Side: mentor.SideLong,
+		Price: 100, Stop: 95, Target: 112, StopPts: 5,
+	}, mentorSizeChoice{Contracts: 10, Tier: "confluence"}, 0, 0)
+	if placed != 1 {
+		t.Fatalf("placement recorder must fire once, got %d", placed)
+	}
+	if got := MentorCountSnapshot()["exit_fork_C"]; got != 1 {
+		t.Fatalf("exit_fork_C counter = %d, want 1", got)
+	}
+
+	// B: seam nil → a normal ISB lands on B.
+	mentorConfluenceForIntent = nil
+	mentorLatestPriceSource = func() (float64, bool) { return 101, true }
+	at.mentorPlaceIntent(mentor.Intent{
+		Action: mentor.PlaceStopEntry, Setup: "ISB", Side: mentor.SideShort,
+		Price: 100, Stop: 106, Target: 88, StopPts: 6,
+	}, mentorSizeChoice{Contracts: 5, Tier: "base"}, 0, 0)
+	if got := MentorCountSnapshot()["exit_fork_B"]; got != 1 {
+		t.Fatalf("exit_fork_B counter = %d, want 1", got)
 	}
 }

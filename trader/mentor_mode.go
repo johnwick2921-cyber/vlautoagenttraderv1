@@ -2,6 +2,7 @@ package trader
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 
@@ -349,6 +350,59 @@ func mentorLeg1TPForC(entry, r float64, side string) float64 {
 		return entry - 2*r
 	}
 	return entry + 2*r
+}
+
+// mentorConfluenceForIntent is the R2 STUB (CTO 1791029620038: "use a stub
+// flag until DS-106's lands"): reports whether the intent carries the
+// confluence flag (box edge + key level inside the box or within 2 pts of its
+// edge + 5m trigger agrees). nil → false — C and size 10 never fire until
+// DS-103's tagged intents replace this seam.
+var mentorConfluenceForIntent func(in mentor.Intent) bool
+
+// mentorConfluenceFlag resolves the stub seam for one intent.
+func mentorConfluenceFlag(in mentor.Intent) bool {
+	return mentorConfluenceForIntent != nil && mentorConfluenceForIntent(in)
+}
+
+// mentorIntentRisk is |entry − stop| from the intent (StopPts when the emit
+// site set it, the geometry otherwise).
+func mentorIntentRisk(in mentor.Intent) float64 {
+	r := in.StopPts
+	if r <= 0 {
+		r = math.Abs(in.Price - in.Stop)
+	}
+	return r
+}
+
+// mentorExitFork chooses the exit branch AT ENTRY from the intent flags (CTO
+// 1791029620038 — the fork is DS-102's, wired now, driven when the P1 exit
+// loop lands):
+//
+//	swing — SWING4H: hold by the 4h (DS-106's rules).
+//	C     — the confluence flag: hold ≥ 1:2, stop never moves up, size 10
+//	        (20 with 4h+1h agree + room ≥ 2× + target ≥ 30). Leg 1's TP at
+//	        2× risk is set AT ENTRY (mentorLeg1TPForC).
+//	B     — normal: BE once price covers half the distance to leg 1's target,
+//	        leg 1 exits at its +1R TP, the runner trails each closed 1m
+//	        candle. A PHL/PLH fill starts as B with the resonance watch armed:
+//	        a same-direction ISB within 3 candles flips it to A
+//	        (mentorMaybeArmResonance).
+func mentorExitFork(in mentor.Intent, confluence bool) (mode string, leg1TP float64, why string) {
+	switch {
+	case in.Setup == "SWING4H":
+		return "swing", 0, "SWING4H: hold by the 4h (DS-106's rules)"
+	case confluence:
+		r := mentorIntentRisk(in)
+		side := "long"
+		if in.Side == mentor.SideShort {
+			side = "short"
+		}
+		return "C", mentorLeg1TPForC(in.Price, r, side), "confluence flag: hold ≥ 1:2, stop never moves up"
+	case in.Setup == "PHL" || in.Setup == "PLH":
+		return "B", 0, "PHL/PLH: B at entry, resonance watch armed — a same-direction ISB within 3 candles flips to A (BE, no trail, no 1:1 scale-out)"
+	default:
+		return "B", 0, "normal: BE at half the distance to leg 1's target, leg 1 TP +1R, runner trails each closed 1m candle"
+	}
 }
 
 // modifyBracketWire modifies leg 1's TP (modify_bracket). nil → the action is
