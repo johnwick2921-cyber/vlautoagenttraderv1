@@ -113,7 +113,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"branding/census_test.go": {
-		{count: 10, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 FORWARD (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
+		{count: 11, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 FORWARD (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
 	},
 	"branding/scope_test.go": {
 		{count: 6, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -378,6 +378,9 @@ var censusTable = map[string][]censusEntry{
 	},
 	"docs/superpowers/reports/2026-09-22-vl-partner-verification.md": {
 		{count: 5, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 FORWARD (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
+	},
+	"docs/superpowers/reports/2026-10-02-vl-partner-sync-52f1989ca.md": {
+		{count: 12, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 FORWARD (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
 	},
 	"docs/superpowers/reports/2026-10-02-vl-partner-sync-92d50acdb.md": {
 		{count: 8, phase: "R5", reason: "2026-10-02 PARTNER-SYNC-1002 FORWARD (CTO ruling): partner-only content, exact counts; nofx-side census unchanged"},
@@ -679,7 +682,7 @@ var censusTable = map[string][]censusEntry{
 // nofx 92d50acdb → 52f1989ca0a5, 2026-10-02).
 // 2026-10-02 PARTNER-SYNC-1002 FORWARD (CTO ruling): partner-only content, exact
 // counts, ceiling = exact sum; nofx-side census unchanged.
-const censusCeiling = 1218
+const censusCeiling = 1231
 
 func TestCensusGuard(t *testing.T) {
 	tok := "no" + "fx" // runtime assembly — never the literal
