@@ -269,3 +269,40 @@ func TestUpsertArmReauthorizesOnVersionBump(t *testing.T) {
 		t.Fatalf("state=%q version=%d, want armed v3 (version bump re-authorizes)", got.State, got.Version)
 	}
 }
+
+// SetArmExpiry (PR B stop-limit, 2026-10-03): an expiry can only be stamped on
+// an unfilled arm. A positive stamp lands and survives; a filled or terminal
+// row refuses it (never silent) — the caller's intent and the ledger
+// disagreeing must not be papered over.
+func TestSetArmExpiryStampsOnlyUnfilledRows(t *testing.T) {
+	db := newArmedTestDB(t)
+	st := NewArmedOrderStore(db)
+	now := time.Now()
+	armed := &ArmedOrderDB{
+		TraderID: "t1", PlanID: "2026-10-03:planZ", Version: 1, Session: "RTH",
+		Scenario: "S1", Side: "long", EntryPx: 100, StopPx: 99, TargetPx: 102,
+		State: "armed", CreatedAt: now, UpdatedAt: now,
+	}
+	if err := st.UpsertArm(armed); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+	expiry := now.UnixMilli() + 60_000
+	if err := st.SetArmExpiry(armed.ID, expiry); err != nil {
+		t.Fatalf("an unfilled arm must accept its expiry: %v", err)
+	}
+	if err := st.SetArmExpiry(armed.ID, 0); err == nil {
+		t.Fatal("a non-positive expiry must be refused")
+	}
+	if err := st.SetState(armed.ID, StateWorking, "filled"); err != nil {
+		t.Fatalf("fill: %v", err)
+	}
+	if err := st.SetArmExpiry(armed.ID, expiry); err == nil {
+		t.Fatal("a filled row must refuse an expiry stamp")
+	}
+	if err := st.SetState(armed.ID, StateCancelled, "owner"); err != nil {
+		t.Fatalf("cancel: %v", err)
+	}
+	if err := st.SetArmExpiry(armed.ID, expiry); err == nil {
+		t.Fatal("a terminal row must refuse an expiry stamp")
+	}
+}

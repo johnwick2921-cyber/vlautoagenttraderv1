@@ -4,7 +4,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"vl/store"
 )
@@ -48,54 +47,56 @@ func TestStopLimitKnobRoutesStopEntriesThroughTheLimitVariant(t *testing.T) {
 	}
 }
 
-// N12 predicate pin (PR B, 2026-10-03): an unfilled stop-limit is stale at the
-// candle close; nothing else is. Remove the state or the knob guard and a
-// filled/terminal row gets re-cancelled, or a knob-OFF row changes behaviour.
-func TestStopLimitStaleAtCandleClose(t *testing.T) {
-	lastClose := time.Date(2026, 10, 3, 9, 31, 0, 0, time.UTC)
-	before := lastClose.Add(-time.Minute)
-	after := lastClose.Add(time.Minute)
-	row := store.ArmedOrderDB{
-		Kind: "stop_entry", State: store.StateArmed, UpdatedAt: before,
+// N12 expiry pin (PR B, 2026-10-03): an unfilled order with a stored expiry is
+// due at now >= expiry_ms; nothing else is. A missing expiry (0) is never
+// swept — no intent expired it. Remove the state guard and a filled/terminal
+// row gets re-cancelled.
+func TestArmExpired(t *testing.T) {
+	nowMs := int64(1760000000000)
+	row := store.ArmedOrderDB{State: store.StateArmed}
+	if armExpired(row, nowMs) {
+		t.Fatalf("no stored expiry → never due (a blanket sweep is exactly what the CTO vetoed)")
 	}
-	t.Setenv("MENTOR_STOP_LIMIT", "1")
-	if !stopLimitStaleAtCandleClose(row, lastClose) {
-		t.Fatalf("an unfilled stop-limit placed before the close must be stale")
+	row.ExpiryMs = nowMs + 60_000
+	if armExpired(row, nowMs) {
+		t.Fatalf("an expiry in the future must be kept")
 	}
-	row.UpdatedAt = after
-	if stopLimitStaleAtCandleClose(row, lastClose) {
-		t.Fatalf("a stop-limit placed inside the current candle is never stale")
+	row.ExpiryMs = nowMs
+	if !armExpired(row, nowMs) {
+		t.Fatalf("an unfilled order at its expiry is due")
 	}
-	row.UpdatedAt = before
+	row.ExpiryMs = nowMs - 1
+	if !armExpired(row, nowMs) {
+		t.Fatalf("a lapsed unfilled order is due")
+	}
+	row.State = store.StatePlacePending
+	if !armExpired(row, nowMs) {
+		t.Fatalf("a place_pending order at its expiry is due")
+	}
 	row.State = store.StateWorking
-	if stopLimitStaleAtCandleClose(row, lastClose) {
-		t.Fatalf("a FILLED stop entry is never stale")
+	if armExpired(row, nowMs) {
+		t.Fatalf("a FILLED order is never swept by its expiry")
 	}
 	row.State = store.StateCancelPending
-	if stopLimitStaleAtCandleClose(row, lastClose) {
+	if armExpired(row, nowMs) {
 		t.Fatalf("a cancel_pending row is owned by the settlement pass, never this sweep")
 	}
-	row.State = store.StateArmed
-	row.Kind = "limit"
-	if stopLimitStaleAtCandleClose(row, lastClose) {
-		t.Fatalf("a limit arm is never swept by the stop-limit candle close")
-	}
-	t.Setenv("MENTOR_STOP_LIMIT", "")
-	if stopLimitStaleAtCandleClose(row, lastClose) {
-		t.Fatalf("the knob OFF must keep the behaviour byte-identical: never stale")
+	row.State = store.StateCancelled
+	if armExpired(row, nowMs) {
+		t.Fatalf("a terminal row is never swept by its expiry")
 	}
 }
 
-// N12 call-site pin (PR B, 2026-10-03): the candle-close sweep is READ in the
-// armed pass at the stop branch. Remove the branch and the predicate keeps
-// passing while no row is ever cancelled at the candle close — the exact
-// "built ≠ wired" class A29 named.
-func TestStopLimitCandleCloseSweepIsWiredInTheArmedPass(t *testing.T) {
+// N12 call-site pin (PR B, 2026-10-03): the expiry sweep is READ in the armed
+// pass before any placement branch. Remove the sweep and armExpired keeps
+// passing while no row is ever cancelled at its expiry — the exact "built ≠
+// wired" class A29 named.
+func TestExpirySweepIsWiredInTheArmedPass(t *testing.T) {
 	src, err := os.ReadFile("armed_executor.go")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(src), "stopLimitStaleAtCandleClose(r, time.UnixMilli(last.CloseTime))") {
-		t.Fatal("the N12 sweep must call the stale predicate in the armed pass stop branch")
+	if !strings.Contains(string(src), "armExpired(r, now.UnixMilli())") {
+		t.Fatal("the expiry sweep must call the due predicate in the armed pass row loop")
 	}
 }

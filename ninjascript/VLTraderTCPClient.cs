@@ -1130,10 +1130,10 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // N12 (PR B, 2026-10-03): LimitPrice == StopPrice leaves a
                 // RESTING limit when the market gaps through the trigger, and
                 // it can fill later at a stale price. The Go side closes that
-                // window: an unfilled stop-limit is CANCELLED at the candle
-                // close (see runArmedPlacementAt), so the resting window can
-                // never outlive its candle. The order itself keeps the
-                // mentor's exact shape — limit == stop (D1.4 p1 @24:41).
+                // window with a per-order EXPIRY (expiry_ms, authored by the
+                // evaluator's intent; the armed pass cancels an unfilled order
+                // when it lapses). The order itself keeps the mentor's exact
+                // shape — limit == stop (D1.4 p1 @24:41).
                 double limitArg = isLimit ? limitPx
                     : (isStopEntry && stopLimitWanted ? stopPx : 0);
                 double stopArg  = isStopEntry ? stopPx : 0;

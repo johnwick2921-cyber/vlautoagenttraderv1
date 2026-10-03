@@ -625,8 +625,11 @@ build StopMarket and fill sloppily). With the knob OFF the wire is
 byte-identical.
 
 N12: with limit == stop and Day time-in-force, a gap through the trigger leaves
-a RESTING limit that can fill later at a stale price. Go closes that window by
-cancelling an unfilled stop-limit at the candle close (runArmedPlacementAt:
-a non-terminal stop_entry row placed before the last closed 1m candle is
-requested for cancel; the settlement pass sends the cancel and reconciles it).
-The AddOn needs no new frame for this.
+a RESTING limit that can fill later at a stale price. Go closes that window
+with a per-order EXPIRY, authored by the evaluator's intent, not a blanket
+timer: armed_orders.expiry_ms is stamped when the evaluator places the order
+(DS-102 — a level touch or a single ISB expires at the close of the NEXT 1m
+candle; ISB stacking is extended while the candles stay inside and cancelled
+at the 4th; the swing runs its 5m rule). The armed pass requests cancel for an
+unfilled order at now >= expiry_ms through the existing settlement path; a row
+with no expiry is never auto-cancelled. The AddOn needs no new frame for this.

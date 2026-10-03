@@ -781,9 +781,9 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 // with stop_limit=true: the AddOn builds OrderType.StopLimit with
 // LimitPrice == StopPrice — fills at its price or misses, never a stop-MARKET
 // (D1.4 p1 @24:41, p2 @00:00). The N12 resting-limit window is closed Go-side:
-// the armed pass cancels an unfilled stop-limit at the candle close.
-// Fail-closed: refused when the far side does not prove MinAddonBuildStopLimit
-// (an older AddOn would build StopMarket).
+// the order's expiry (expiry_ms, authored by the evaluator's intent) cancels it
+// unfilled when it lapses. Fail-closed: refused when the far side does not
+// prove MinAddonBuildStopLimit (an older AddOn would build StopMarket).
 func (t *TCPTrader) PlaceStopEntryWithLimit(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error) {
 	return t.placeStopEntry(symbol, side, quantity, stopPx, sl, tp, true, beforeSend...)
 }

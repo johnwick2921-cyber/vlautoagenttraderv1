@@ -1341,6 +1341,19 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 		if r.TraderID != at.id {
 			continue
 		}
+		// N12 (REVIEW-309 r2, PR B 2026-10-03) — per-order EXPIRY, not a
+		// blanket timer. The evaluator's intent stores expiry_ms when it
+		// places a stop-limit (DS-102): a level touch or a single ISB expires
+		// at the close of the next 1m candle, ISB stacking is extended by the
+		// evaluator while the candles stay inside, the swing runs its own 5m
+		// rule. The pass cancels an unfilled order at now >= expiry_ms through
+		// the existing settlement path; no expiry stored → this code never
+		// sweeps it (additive, OFF by absence).
+		if armExpired(r, now.UnixMilli()) {
+			at.armLifecycleWrite("request_cancel(expiry_elapsed)", r,
+				ledger.RequestCancel(r.ID, "stop-limit expiry elapsed", now.UnixMilli()))
+			continue
+		}
 		if scope.skips(r.Scenario) {
 			at.noteZoneVerdictOnly(ledger, r, bars, price, now) // W3: the verdict on every pass; placement scoped
 			continue
@@ -1377,19 +1390,6 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 			if r.Kind == "stop_entry" {
 				if !stopEntrySeamOn() {
 					continue // seam off → the leg stays armed (never on the wire)
-				}
-				// N12 (REVIEW-309 r2, PR B 2026-10-03): a stop-limit entry is
-				// fill-or-miss. With the mentor knob ON, an UNFILLED stop entry
-				// placed before the last closed 1m candle is stale (a gap through
-				// the trigger would have left a resting limit that can fill later
-				// at a stale price) and is requested for cancel; the settlement
-				// pass below sends the cancel and reconciles it. Knob OFF: the
-				// wire and the behaviour stay byte-identical to today.
-				if last, ok := lastClosedBar(bars, now.UnixMilli()); ok &&
-					stopLimitStaleAtCandleClose(r, time.UnixMilli(last.CloseTime)) {
-					at.armLifecycleWrite("request_cancel(stop_limit_unfilled_at_candle_close)", r,
-						ledger.RequestCancel(r.ID, "stop-limit unfilled at the candle close", now.UnixMilli()))
-					continue
 				}
 				// D3 (2026-09-04): the window belongs to the E7 FALLBACK only.
 				// A reclaim's buy stop IS the entry — waiting for a no-retest

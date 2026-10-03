@@ -70,11 +70,12 @@ type SignalPayload struct {
 	// "stop_entry", the AddOn builds OrderType.StopLimit with
 	// LimitPrice == StopPrice — the mentor rule "fills at its price or misses,
 	// never a stop-MARKET" (D1.4 p1 @24:41, p2 @00:00). The N12 resting-limit
-	// window is closed Go-side: an unfilled stop-limit is cancelled at the
-	// candle close. Go sets this only when the mentor stop-limit knob is ON and
-	// the AddOn proves MinAddonBuildStopLimit; an older AddOn ignores the field
-	// and would build StopMarket, which is why the knob is fail-closed below
-	// the floor.
+	// window is closed Go-side by a per-order expiry (armed_orders.expiry_ms,
+	// authored by the evaluator's intent): an unfilled order is cancelled when
+	// its expiry lapses. Go sets this only when the mentor stop-limit knob is
+	// ON and the AddOn proves MinAddonBuildStopLimit; an older AddOn ignores
+	// the field and would build StopMarket, which is why the knob is
+	// fail-closed below the floor.
 	StopLimit bool `json:"stop_limit,omitempty"`
 }
 
