@@ -122,11 +122,12 @@ func Resolve(dir string) (Release, error) {
 }
 
 // releaseBinaryName returns the release dir's ONE binary name: vl-bin (R5
-// removed the old vl-bin branch). Missing is refused too: a release
-// without a binary would only fail later, after a kill.
+// removed the old pre-rename binary branch). Missing keeps the old lenient
+// reading (vl-bin) — the activate step fails on the missing binary, as it
+// always did, and the manifest gates keep their error ordering.
 func releaseBinaryName(dir string) (string, error) {
-	if st, err := os.Stat(filepath.Join(dir, "vl-bin")); err != nil || !st.Mode().IsRegular() {
-		return "", fmt.Errorf("release dir %s holds no vl-bin", dir)
+	if st, err := os.Stat(filepath.Join(dir, "vl-bin")); err == nil && st.Mode().IsRegular() {
+		return "vl-bin", nil
 	}
 	return "vl-bin", nil
 }
