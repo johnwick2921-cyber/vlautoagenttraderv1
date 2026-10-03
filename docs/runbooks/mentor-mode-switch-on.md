@@ -40,13 +40,14 @@ Default is OFF.
   `mentorPlaceEnv`, `trader/mentor_tick.go`). Until it is set, mentor entries
   are sized, logged and counted but NOT sent. The log you will see instead:
   ```
-  🧑‍🏫 mentor intent SIZED, NOT PLACED (MENTOR_PLACE off — P1 #309 first): ...
+  🧑‍🏫 mentor intent SIZED, NOT PLACED (MENTOR_PLACE env off — set MENTOR_PLACE=1 to place): ...
   ```
-  (the "#309" in that text predates the PR split into #312/#313 — ignore the
-  number; the gate is `MENTOR_PLACE=1`.)
 
-  To actually place: set `MENTOR_PLACE=1` (values `1`, `true`, `on`, `yes`).
-  SIM only — see precondition 3.
+  **Owner step — setting `MENTOR_PLACE=1`.** The `.env` is never edited by a
+  lane. The CTO drafts the exact `.env` line; the owner pastes it into `.env`
+  and restarts the bot (the update button, or the owner's own restart). After
+  the restart, `mentorPlaceEnv` reads the env knob (`1`, `true`, `on`, `yes`
+  all mean ON) and placements go live — SIM only, see precondition 3.
 
 ## 3. Boot / seed lines — is it really ready?
 
@@ -122,9 +123,11 @@ With `MENTOR_PLACE=1` and the seed line complete, verify these in order:
 ## 5. Switch OFF
 
 Set `"mentor_mode": false` in the strategy's `risk_control` (or flip the card
-off in the Risk Control editor once it ships) and unset `MENTOR_PLACE`. With
-`mentor_mode` OFF every mentor path returns before touching anything — the
-trader is byte-identical to AI mode (L4). There is no other switch.
+off in the Risk Control editor once it ships). To also unset `MENTOR_PLACE` in
+`.env`, use the same owner step as above (the CTO drafts the line, the owner
+pastes it, restart). With `mentor_mode` OFF every mentor path returns before
+touching anything — the trader is byte-identical to AI mode (L4). There is no
+other switch.
 
 ## Guide
 

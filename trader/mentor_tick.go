@@ -21,9 +21,10 @@ import (
 // ── MENTOR P3 — the cycle hook ─────────────────────────────────────────────
 //
 // One evaluator tick per NEW 1m close. Inert unless the per-strategy
-// mentor_mode is ON. Placements stay behind the MENTOR_PLACE env gate until
-// P1 (#309) lands — until then the hook sizes and LOGS/COUNTS every intent
-// (the size audit the spec demands) and places NOTHING (L4, default OFF).
+// mentor_mode is ON. Placements stay behind the MENTOR_PLACE env gate
+// (owner step; the former P1 #309 was split into PRs #312/#313) — until it
+// is set the hook sizes and LOGS/COUNTS every intent (the size audit the
+// spec demands) and places NOTHING (L4, default OFF).
 
 // mentorPlaceEnv resolves the placement gate (env MENTOR_PLACE, default OFF).
 func mentorPlaceEnv() bool {
@@ -155,7 +156,7 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 			}
 			mentorCount("intent_" + in.Setup)
 			if !mentorPlaceEnv() {
-				at.logInfof("🧑‍🏫 mentor intent SIZED, NOT PLACED (MENTOR_PLACE off — P1 #309 first): %s %s %d contracts @ %.2f (stop %.2f, target %.2f, tier %s)",
+				at.logInfof("🧑‍🏫 mentor intent SIZED, NOT PLACED (MENTOR_PLACE env off — set MENTOR_PLACE=1 to place): %s %s %d contracts @ %.2f (stop %.2f, target %.2f, tier %s)",
 					in.Setup, in.Side, choice.Contracts, in.Price, in.Stop, in.Target, choice.Tier)
 				mentorCount("placement_held")
 				continue
