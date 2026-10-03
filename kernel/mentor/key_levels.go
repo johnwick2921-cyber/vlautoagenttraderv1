@@ -95,7 +95,10 @@ func keyLevel1HBars(bars []market.Kline) []market.Kline {
 	)
 	// pre-bucketed 1H input: every bar is already a candle
 	if len(bars) >= 2 && bars[1].OpenTime-bars[0].OpenTime >= 60*60_000 {
-		res := bars[:0]
+		// Fresh slice: filtering into bars[:0] MUTATES the caller's backing
+		// array (Seed ran the 4h aggregation over a half-filtered tape —
+		// 81 buckets from the same 216 bars a clean call buckets into 53).
+		res := make([]market.Kline, 0, len(bars))
 		for _, b := range bars {
 			m := (b.OpenTime / 60_000) % (24 * 60)
 			if m >= 8*60 && m < rthEnd {

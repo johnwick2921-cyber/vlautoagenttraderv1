@@ -40,6 +40,15 @@ type State struct {
 	// ORB is the §7 step 0 opening-range gate state (drawn at 08:32 CT, escape
 	// latches on the first 1m body close outside). Per-session-day.
 	ORB ORB `json:"orb,omitempty"`
+
+	// Seeded state (P0 1791009358785): built by Seed from the STORED bars and
+	// updated incrementally — never rebuilt from the live slice.
+	SeedLevels       []Level `json:"seed_levels,omitempty"` // 1H RTH key levels, full stored history
+	Seed1HWatermark  int64   `json:"seed_1h_watermark,omitempty"`
+	Seed1HLastColour bool    `json:"seed_1h_last_colour,omitempty"`
+	Seed1mWatermark  int64   `json:"seed_1m_watermark,omitempty"`
+	EMA34            float64 `json:"ema34,omitempty"` // 1m EMA 34 (incremental)
+	EMA9             float64 `json:"ema9,omitempty"`  // 1m EMA 9 (incremental)
 	// ArmSeq names the next arm.
 	ArmSeq int `json:"arm_seq"`
 }
@@ -73,6 +82,11 @@ func UnmarshalState(b []byte) (State, error) {
 type Evaluator struct {
 	Cfg   Config
 	State State
+
+	// P0 seeding: seeded/missing set by Seed; seedLine is the one-line report.
+	seeded   bool
+	missing  []string
+	seedLine string
 }
 
 func New(cfg Config) *Evaluator {
@@ -266,6 +280,9 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		return nil
 	}
 	levels := Levels(bars, e.Cfg, now)
+	if e.seeded {
+		levels = e.seededLevels(bars, now)
+	}
 
 	// KEY-LEVEL RULING (item 5b, slide 31–32): a CLOSED 1H candle whose BODY
 	// closed through a key level DELETES it; a 1H wick through does not. The
@@ -525,6 +542,12 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	// on the opening range; the §8 swing is exempt (orbGateFilter).
 	out = orbGateFilter(out, e.State.ORB, e.Cfg)
 
+	// P0 fail-closed: seeded with a missing source → no ENTRIES, ever (cancels
+	// still flow — an arm left open must be closable).
+	if e.seeded && len(e.missing) > 0 {
+		out = failClosedFilter(out)
+	}
+
 	return out
 }
 
@@ -621,6 +644,52 @@ func swingZoneGate(ints []Intent, t TriggerLine, respect bool) []Intent {
 			continue // in the two-trigger zone — no trade at all there
 		}
 		out = append(out, in)
+	}
+	return out
+}
+
+// seededLevels is the Tick level source after Seed: SeedLevels (full stored
+// 1H history) + the incremental 1m EMAs + today's old extremes. The seeded set
+// is EXTENDED incrementally as new CLOSED candles arrive — never rebuilt from
+// the live slice (that is the whole point: the slice is ~2 days and cold).
+func (e *Evaluator) seededLevels(bars []market.Kline, now int64) []Level {
+	// Incremental 1m EMA 34/9: the EMA recurrence over the closed bars the
+	// seed has not seen yet. O(new bars) per tick, not O(all bars).
+	k34 := 2.0 / float64(e.Cfg.EMAPeriod34+1)
+	k9 := 2.0 / float64(e.Cfg.EMAPeriod9+1)
+	for _, b := range bars {
+		if b.CloseTime <= e.State.Seed1mWatermark || b.CloseTime > now {
+			continue
+		}
+		e.State.EMA34 += k34 * (b.Close - e.State.EMA34)
+		e.State.EMA9 += k9 * (b.Close - e.State.EMA9)
+		e.State.Seed1mWatermark = b.CloseTime
+	}
+
+	// Extend the 1H RTH key-level walk with the candles that closed since the
+	// seed watermark (colour-change level at the candle OPEN, prune newest-first).
+	for _, c := range keyLevel1HBars(bars) {
+		if c.OpenTime <= e.State.Seed1HWatermark || c.CloseTime > now {
+			continue
+		}
+		e.State.SeedLevels, e.State.Seed1HLastColour =
+			keyLevelsAppend(e.State.SeedLevels, c, e.State.Seed1HLastColour, e.Cfg.KeyLevelPrunePts)
+		e.State.Seed1HWatermark = c.OpenTime
+	}
+
+	var out []Level
+	out = append(out, e.State.SeedLevels...)
+	out = append(out, Level{Key: string(KindEMA34), Kind: KindEMA34, Price: e.State.EMA34})
+	out = append(out, Level{Key: string(KindEMA9), Kind: KindEMA9, Price: e.State.EMA9})
+	for _, d := range kernel.SwingPointLevels(bars, time.UnixMilli(now)) {
+		switch d.Kind {
+		case kernel.KindSWGH, kernel.KindSWGL:
+			out = append(out, Level{
+				Key:   fmt.Sprintf("%s:%.2f", KindOldExtreme, d.Price),
+				Kind:  KindOldExtreme,
+				Price: d.Price,
+			})
+		}
 	}
 	return out
 }
