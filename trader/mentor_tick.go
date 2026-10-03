@@ -542,6 +542,28 @@ func (at *AutoTrader) mentorAddGate(in mentor.Intent) (bool, string) {
 	return false, ""
 }
 
+// mentorMinHistory1mBars is the depth floor for mentor mode (P0): the 4h EMA
+// 34 warm-up is 34×4h ≈ 136h of RTH ≈ this many 1m bars. Less than this and
+// the levels are truncated and the EMA cold — never trade on it (fail-closed).
+const mentorMinHistory1mBars = 34 * 4 * 60 // 8,160
+
+// mentorHistoryDepthSource is the depth source for the P0 history gate: the
+// live driver sets it from DS-103's seeded state (data.db 1m/1h/1d bars); nil
+// → the BarCache fallback (≈2,500 bars — under the floor, so mentor refuses
+// until the seed lands).
+var mentorHistoryDepthSource func() int
+
+// mentorHistoryDepth reports how many 1m bars of history the evaluator can see.
+func (at *AutoTrader) mentorHistoryDepth() int {
+	if mentorHistoryDepthSource != nil {
+		return mentorHistoryDepthSource()
+	}
+	if market.FuturesBarsProvider == nil {
+		return 0
+	}
+	return len(market.FuturesBarsProvider("MNQ", "1m", mentorMinHistory1mBars))
+}
+
 // mentorSourcesMissing names every mentor source that is not wired. With
 // mentor_mode ON a missing source refuses the arm (fail-closed); the boot line
 // reports them in ONE error line.
@@ -564,6 +586,10 @@ func (at *AutoTrader) mentorSourcesMissing() []string {
 	}
 	if market.FuturesBarsProvider == nil {
 		missing = append(missing, "5m feed")
+	}
+	if depth := at.mentorHistoryDepth(); depth < mentorMinHistory1mBars {
+		mentorCount("history_depth_short")
+		missing = append(missing, fmt.Sprintf("bar history depth (%d/%d 1m bars)", depth, mentorMinHistory1mBars))
 	}
 	return missing
 }

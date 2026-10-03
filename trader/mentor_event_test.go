@@ -55,6 +55,7 @@ func wireMentorPlacementSeams(t *testing.T) {
 	mentorOpenSideSource = func() string { return "" }
 	mentorDayEventsForTest = func() ([]calendar.Event, bool) { return nil, true }
 	market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline { return nil }
+	mentorHistoryDepthSource = func() int { return mentorMinHistory1mBars }
 	t.Cleanup(func() {
 		mentorDayNetSource = nil
 		mentorClosedProfitSource = nil
@@ -62,6 +63,7 @@ func wireMentorPlacementSeams(t *testing.T) {
 		mentorOpenSideSource = nil
 		mentorDayEventsForTest = nil
 		market.FuturesBarsProvider = nil
+		mentorHistoryDepthSource = nil
 	})
 }
 
@@ -475,6 +477,54 @@ func TestMentorPlacementCarriesExpiry(t *testing.T) {
 	}
 }
 
+// TestMentorHistoryDepthGate (P0): mentor mode must never trade on a cold EMA
+// or truncated levels — with fewer than mentorMinHistory1mBars bars of history
+// EVERY entry refuses (fail-closed) and the boot line names the gap. The mutant
+// that drops the depth check makes the recorder fire on a short history.
+func TestMentorHistoryDepthGate(t *testing.T) {
+	ResetMentorCountersForTest()
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireMentorPlacementSeams(t)
+	ct := kernel.CTLocation()
+	mentorNowSource = func() time.Time { return time.Date(2026, 10, 2, 9, 0, 0, 0, ct) }
+	t.Cleanup(func() { mentorNowSource = nil })
+
+	in := mentor.Intent{Action: mentor.PlaceStopEntry, Side: mentor.SideLong,
+		Price: 21000, Stop: 20988, Target: 21024, Setup: "ISB", StopPts: 12}
+	choice := mentorSizeChoice{Contracts: 5, Tier: "base", Why: "test"}
+	var placed int
+	mentorPlaceRecorderForTest = func(i mentor.Intent, n int) { placed++ }
+	t.Cleanup(func() { mentorPlaceRecorderForTest = nil })
+
+	// exactly the floor → proceeds.
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 1 {
+		t.Fatalf("at the depth floor the placement must proceed, placed=%d", placed)
+	}
+	// one bar short → refuses every entry + counts.
+	mentorHistoryDepthSource = func() int { return mentorMinHistory1mBars - 1 }
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 1 {
+		t.Fatalf("a short history must refuse the entry, placed=%d", placed)
+	}
+	if got := MentorCountSnapshot()["mentor_sources_missing"]; got != 1 {
+		t.Fatalf("the depth refusal must be counted once, got %d", got)
+	}
+	if got := MentorCountSnapshot()["history_depth_short"]; got != 1 {
+		t.Fatalf("the short depth must be counted once, got %d", got)
+	}
+	line := MentorSourcesBootLine(map[string]*AutoTrader{"t1": at})
+	if !textHas(line, "bar history depth") {
+		t.Fatalf("the boot line must name the depth gap: %q", line)
+	}
+	// restore → proceeds again.
+	mentorHistoryDepthSource = func() int { return mentorMinHistory1mBars }
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 2 {
+		t.Fatalf("at the floor again the placement must proceed, placed=%d", placed)
+	}
+}
+
 // TestMentorSourcesBootLine: the boot wiring check — with mentor_mode ON every
 // source seam must be non-nil, or mentor_mode refuses to arm and ONE error line
 // names the missing seam. Each seam is tested nil in turn.
@@ -487,6 +537,7 @@ func TestMentorSourcesBootLine(t *testing.T) {
 		mentorOpenSideSource = func() string { return "" }
 		mentorDayEventsForTest = func() ([]calendar.Event, bool) { return nil, true }
 		market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline { return nil }
+		mentorHistoryDepthSource = func() int { return mentorMinHistory1mBars }
 	}
 	clearAll := func() {
 		mentorDayNetSource = nil
@@ -495,6 +546,7 @@ func TestMentorSourcesBootLine(t *testing.T) {
 		mentorOpenSideSource = nil
 		mentorDayEventsForTest = nil
 		market.FuturesBarsProvider = nil
+		mentorHistoryDepthSource = nil
 	}
 	t.Cleanup(clearAll)
 	loaded := map[string]*AutoTrader{"t1": at}
@@ -518,6 +570,7 @@ func TestMentorSourcesBootLine(t *testing.T) {
 		{"open side", func() { mentorOpenSideSource = nil }, "open side"},
 		{"news events", func() { mentorDayEventsForTest = nil }, "news events"},
 		{"5m feed", func() { market.FuturesBarsProvider = nil }, "5m feed"},
+		{"bar history depth", func() { mentorHistoryDepthSource = nil }, "bar history depth"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			wireAll()
