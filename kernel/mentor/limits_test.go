@@ -298,6 +298,47 @@ func TestLimitsBoxLossBlocksWholeBox(t *testing.T) {
 	}
 }
 
+// B22 follow-up (CTO 20:39:46Z): the MAIN box path carries the UNSUFFIXED box
+// key (boxEntryIntent sets AnchorKey = b.Key, box_trade.go) — it must be a box
+// place too. Pin at the PRODUCTION call site: an intent BUILT BY
+// boxEntryIntent, filled and stopped, then a wick still touching the box stays
+// blocked and a candle fully outside frees it.
+// MUTANT: drop the ftgh:/ftgl: prefix case in normalizePlace → the
+// fully-outside candle stays blocked → RED.
+func TestLimitsBoxReturnLossBlocksWholeBox(t *testing.T) {
+	var l Limits
+	cfg := limitsCfgNoLeg()
+	cfg.LocTriggerFilter = false // isolate the box gates
+	levels := []Level{{Key: "key_level:140", Kind: KindKeyLevel, Price: 140}}
+	b := Box{Key: "ftgl:120:80", Kind: FTGL, Top: 120, Bottom: 80}
+	// The return candle touches the low edge and closes above the top.
+	ref := market.Kline{Open: 75, High: 78, Low: 74, Close: 121}
+	prev := limitsK(94, 96, 94, 95, 0)
+
+	intent := boxEntryIntent(ref, b, []Box{b}, levels, TriggerLine{}, cfg)
+	if len(intent) != 1 {
+		t.Fatalf("boxEntryIntent: want 1 intent, got %d", len(intent))
+	}
+	if out := applyLevels(&l, intent, prev, limitsK(93, 94, 92, 93, 1), 1, cfg, levels); len(out) != 1 {
+		t.Fatalf("box return placement: want 1 entry, got %d", len(out))
+	}
+	// Fill + stop-out on the next candle → loss at the box.
+	applyLevels(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(77, 79, 73, 75, 2), 2, cfg, levels)
+	if l.Places == nil || l.Places["ftgl:120:80"] == nil || !l.Places["ftgl:120:80"].Box {
+		t.Fatalf("loss: want a box place under the unsuffixed key, got %+v", l.Places)
+	}
+	// A wick still touching the box (high 119 inside [80,120]) → blocked.
+	out3 := applyLevels(&l, boxEntryIntent(ref, b, []Box{b}, levels, TriggerLine{}, cfg), limitsK(77, 79, 73, 75, 2), limitsK(74, 119, 73, 78, 3), 3, cfg, levels)
+	if len(out3) != 0 {
+		t.Fatalf("wick-touching re-entry: want 0 entries, got %d", len(out3))
+	}
+	// Fully outside, wicks included → freed.
+	out4 := applyLevels(&l, boxEntryIntent(ref, b, []Box{b}, levels, TriggerLine{}, cfg), limitsK(74, 119, 73, 78, 3), limitsK(74, 79, 73, 78, 4), 4, cfg, levels)
+	if len(out4) != 1 {
+		t.Fatalf("fully-outside re-entry: want 1 entry, got %d", len(out4))
+	}
+}
+
 // G2 (e): two losses at one place -> that place is OFF FOR THE DAY — even a
 // departure does not clear it; the next trading day does. G1 is off.
 // MUTANT: change the off-for-day threshold to `p.Losses > 2` → this test

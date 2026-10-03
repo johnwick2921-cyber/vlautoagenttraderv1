@@ -513,27 +513,52 @@ func normalizePlace(in Intent, levels []Level) placeRef {
 			return ref
 		}
 		return placeRef{orphan: true} // K2: not a location — the trade should not exist
-	case strings.HasSuffix(ref.key, ":top") || strings.HasSuffix(ref.key, ":bottom"):
+	case strings.HasPrefix(ref.key, "ftgh:") || strings.HasPrefix(ref.key, "ftgl:"):
+		// B22 follow-up (CTO 20:39:46Z): boxEntryIntent carries the
+		// UNSUFFIXED box key (b.Key = ftgh:<top>:<bottom>, box_trade.go);
+		// the level-edge path carries the suffixed one. Either way it is
+		// ONE box place, with or without the suffix.
 		base := strings.TrimSuffix(strings.TrimSuffix(ref.key, ":top"), ":bottom")
-		lo, hi := boxBounds(levels, base, ref.anchor)
+		lo, hi, ok := boxBounds(levels, base)
+		if !ok {
+			lo, hi, ok = boxKeyBounds(base) // the bounds live in the key itself
+		}
+		if !ok {
+			lo, hi = ref.anchor, ref.anchor
+		}
 		return placeRef{key: base, anchor: (lo + hi) / 2, box: true, lo: lo, hi: hi}
 	}
 	return ref
 }
 
 // boxBounds returns the live box edges for base (the box key without the
-// edge suffix). Fallback: the touched edge itself.
-func boxBounds(levels []Level, base string, fallback float64) (lo, hi float64) {
-	lo, hi = fallback, fallback
+// edge suffix); ok = BOTH edges were found among the levels.
+func boxBounds(levels []Level, base string) (lo, hi float64, ok bool) {
+	var gotLo, gotHi bool
 	for _, l := range levels {
 		switch l.Key {
 		case base + ":bottom":
-			lo = l.Price
+			lo, gotLo = l.Price, true
 		case base + ":top":
-			hi = l.Price
+			hi, gotHi = l.Price, true
 		}
 	}
-	return lo, hi
+	return lo, hi, gotLo && gotHi
+}
+
+// boxKeyBounds parses the bounds from the box key itself
+// ("ftgh:<top>:<bottom>", box.go — b.Key carries both edges).
+func boxKeyBounds(key string) (lo, hi float64, ok bool) {
+	parts := strings.Split(key, ":")
+	if len(parts) != 3 {
+		return 0, 0, false
+	}
+	top, err1 := strconv.ParseFloat(parts[1], 64)
+	bot, err2 := strconv.ParseFloat(parts[2], 64)
+	if err1 != nil || err2 != nil {
+		return 0, 0, false
+	}
+	return bot, top, true
 }
 
 // nearestKeyLevelWithin is the coincident key level within tol of price
