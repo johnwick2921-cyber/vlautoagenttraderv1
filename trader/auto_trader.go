@@ -379,6 +379,7 @@ type AutoTrader struct {
 	// only consulted when the per-strategy mentor_mode is ON.
 	mentorEval         *mentor.Evaluator
 	mentorLastTickOpen int64
+	mentorFinalArrival atomic.Int64 // ms — when the FINAL frame hit the sink
 	fastTapePending    atomic.Bool
 	// lastClockHealthSession: which session the last clock-health line was
 	// logged for (PHASE 3.5) — one line per session roll, not per tick.
