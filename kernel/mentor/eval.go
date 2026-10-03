@@ -82,6 +82,16 @@ func Levels(bars []market.Kline, cfg Config, now int64) []Level {
 	return out
 }
 
+// closedBuckets returns the 5m buckets with the still-forming one dropped
+// (B4): a bucket whose close time has not been reached by `now` is forming.
+func closedBuckets(bars []market.Kline, now int64, cfg Config) []market.Kline {
+	b5 := barsTF(bars, 5)
+	if len(b5) > 0 && b5[len(b5)-1].CloseTime >= now {
+		return b5[:len(b5)-1]
+	}
+	return b5
+}
+
 // nextLevelBeyond is the §6 target ladder [D3.3 p1 @ 05:07]: the NEAREST level
 // beyond price in the trade direction ("the first thing standing in your way").
 // 0 = no level beyond.
@@ -150,7 +160,11 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	if IsISB(prev, cur) {
 		if dirOK, side, _ := TriggerVerdict(e.State.Trigger, cur.Close); dirOK {
 			if _, stopOK, _ := ISBStopVerdict(cur, e.Cfg); stopOK {
-				if conflict := ISBConflictVerdict(barsTF(bars, 5)); !conflict {
+				// B4: the 15m/5m conflict reads CLOSED buckets only — the
+				// still-forming 5m bucket is dropped [D4.2 p1 @ 05:10: "a
+				// 15-minute candle is only confirmed once CLOSED; trade from
+				// the next one"].
+				if conflict := ISBConflictVerdict(closedBuckets(bars, now, e.Cfg)); !conflict {
 					long, short := ISBOrders(cur, e.Cfg)
 					chosen := long
 					if side == SideShort {

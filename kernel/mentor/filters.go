@@ -17,61 +17,75 @@ import (
 type TriggerLine struct {
 	Dir   Side    // allowed direction ("" before the first break)
 	Price float64 // the broken extreme (wick included)
-	Moved bool    // the line has already moved on a reversal — no more moves
 
-	// OldPrice/oldDir are the line from BEFORE the reversal move; the zone
-	// strictly between the two lines is the no-trade zone [@ 16:38].
+	// OldPrice/oldDir are the line from BEFORE the last reversal move; the
+	// zone strictly between the two lines is the no-trade zone [@ 16:38].
 	OldPrice float64
 	OldDir   Side
+
+	// B2: persistence — the last PROCESSED bucket (clock-aligned open) and
+	// its bar. TriggerTick processes only newer buckets; the forming bucket
+	// may fire a break once and is never re-applied.
+	LastBucket int64
+	LastBar    market.Kline
 }
 
-// TriggerTick advances the trigger state over the closed 5m bars since the
-// last tick (at least 2 bars are needed for a break). The trigger candle need
-// not close [@ 08:19]; on closed bars the break is read from the candle's
-// extremes, which is the same test once the candle has closed.
+// TriggerTick advances the trigger state over the closed 5m buckets newer
+// than LastBucket (B2). The trigger candle need not close [@ 08:19]; a bucket
+// that exists (even forming) may fire a break, is committed once, and is never
+// re-applied. Buckets are compared only with the immediately PREVIOUS bucket
+// (a gap skips the test — law 2 compares adjacent candles).
 func TriggerTick(prev TriggerLine, bars5m []market.Kline, cfg Config) TriggerLine {
-	if !cfg.Enabled || len(bars5m) < 2 {
+	if !cfg.Enabled || len(bars5m) == 0 {
 		return prev
 	}
 	next := prev
-	for i := 1; i < len(bars5m); i++ {
-		cur, before := bars5m[i], bars5m[i-1]
-		brokeHigh := cur.High > before.High
-		brokeLow := cur.Low < before.Low
-		switch {
-		case brokeHigh && brokeLow:
-			// broke BOTH: draw both lines, keep the one price is NOW beyond
-			// [D3.4 p2 @ 18:49].
-			if cur.Close > before.High {
-				brokeLow = false
-			} else {
-				brokeHigh = false
-			}
-		}
-		if next.Dir == "" {
-			switch {
-			case brokeHigh:
-				next.Dir, next.Price = SideLong, before.High
-			case brokeLow:
-				next.Dir, next.Price = SideShort, before.Low
-			}
+	ms := int64(5) * 60_000
+	for _, b := range bars5m {
+		if b.OpenTime <= next.LastBucket {
 			continue
 		}
-		if next.Moved {
-			continue // "MỘT LẦN MỘT THÔI" — the line moves once [@ 11:48–13:33]
+		last := next.LastBar
+		if last.OpenTime > 0 && b.OpenTime == last.OpenTime+ms {
+			next = applyBreak(next, last, b)
 		}
-		reversal := next.Dir == SideLong && brokeLow || next.Dir == SideShort && brokeHigh
-		if !reversal {
-			continue
-		}
-		next.OldDir, next.OldPrice = next.Dir, next.Price
-		if brokeLow {
-			next.Dir, next.Price = SideShort, before.Low
-		} else {
-			next.Dir, next.Price = SideLong, before.High
-		}
-		next.Moved = true
+		// the first bucket ever, or a gap: record and move on
+		next.LastBar = b
+		next.LastBucket = b.OpenTime
 	}
+	return next
+}
+
+// applyBreak runs the §5.1 break logic for one bucket against the previous
+// adjacent bucket (B3: every reversal moves the line ONCE — later breaks in
+// the SAME direction never move it; the NEXT reversal moves it again).
+func applyBreak(next TriggerLine, before, cur market.Kline) TriggerLine {
+	brokeHigh := cur.High > before.High
+	brokeLow := cur.Low < before.Low
+	if brokeHigh && brokeLow {
+		// broke BOTH: draw both lines, keep the one price is NOW beyond
+		// [D3.4 p2 @ 18:49].
+		if cur.Close > before.High {
+			brokeLow = false
+		} else {
+			brokeHigh = false
+		}
+	}
+	switch {
+	case next.Dir == "": // the FIRST break draws the line [@ 19:48]
+		if brokeHigh {
+			next.Dir, next.Price = SideLong, before.High
+		} else if brokeLow {
+			next.Dir, next.Price = SideShort, before.Low
+		}
+	case next.Dir == SideLong && brokeLow: // reversal: move the line once
+		next.OldDir, next.OldPrice = next.Dir, next.Price
+		next.Dir, next.Price = SideShort, before.Low
+	case next.Dir == SideShort && brokeHigh: // reversal: move the line once
+		next.OldDir, next.OldPrice = next.Dir, next.Price
+		next.Dir, next.Price = SideLong, before.High
+	}
+	// same-direction breaks (including repeats) never move the line
 	return next
 }
 

@@ -135,9 +135,11 @@ func DefaultConfig() Config {
 	}
 }
 
-// barsTF aggregates 1m bars into the given timeframe on aligned open times.
-// The mentor reads every TF through one 1m series (DS-106: bar_resolver maps
-// TF minutes; 5m/15m aggregates are within one tick of native rows — DS-108 §1.3).
+// barsTF aggregates 1m bars into the given timeframe on CLOCK-ALIGNED buckets
+// in CT (B1, CTO review): 5m/15m/1h floor the open time to the TF; 4h anchors
+// to the CME session open 17:00 CT (17–21, 21–01, 01–05, 05–09, 09–13, 13–16)
+// the way NT8 draws them. Buckets never re-anchor when the window slides or a
+// gap appears.
 func barsTF(bars []market.Kline, tfMin int) []market.Kline {
 	if tfMin <= 1 || len(bars) == 0 {
 		return bars
@@ -152,10 +154,12 @@ func barsTF(bars []market.Kline, tfMin int) []market.Kline {
 		}
 	}
 	for _, b := range bars {
-		if cur == nil || b.OpenTime >= cur.OpenTime+ms {
+		bucket := bucketOpen(b.OpenTime, tfMin)
+		if cur == nil || bucket != cur.OpenTime {
 			flush()
 			c := b
-			c.CloseTime = b.OpenTime + ms - 1
+			c.OpenTime = bucket
+			c.CloseTime = bucket + ms - 1
 			cur = &c
 			continue
 		}
@@ -170,4 +174,22 @@ func barsTF(bars []market.Kline, tfMin int) []market.Kline {
 	}
 	flush()
 	return out
+}
+
+// bucketOpen floors a CT-based epoch-millis open time to its TF bucket. For
+// 240 minutes the anchor is the CME session open at 17:00 CT (B1).
+func bucketOpen(openMs int64, tfMin int) int64 {
+	t := openMs / 60_000 // minutes since epoch, CT basis (DS-108 §1.2)
+	if tfMin == 240 {
+		const sess = 17 * 60 // 17:00 CT
+		d := t - sess
+		day := d / (24 * 60)
+		rem := d % (24 * 60)
+		if rem < 0 {
+			day--
+			rem += 24 * 60
+		}
+		return (day*(24*60) + sess + (rem/240)*240) * 60_000
+	}
+	return (t / int64(tfMin)) * int64(tfMin) * 60_000
 }

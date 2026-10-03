@@ -6,6 +6,12 @@ import (
 	"vl/market"
 )
 
+// b5 builds a 5m bucket bar at minute offsets from 17:00 CT.
+func b5(minFrom1700 int, high, low, close float64) market.Kline {
+	ms := int64(17*60+minFrom1700) * 60_000
+	return market.Kline{OpenTime: ms, CloseTime: ms + 5*60_000 - 1, High: high, Low: low, Close: close}
+}
+
 // TestTriggerLineFirstBreakDrawsLine — §5.1 [D3.4 p1 @ 04:02, 08:04, 04:28]:
 // the first 5m candle breaking the previous extreme draws the line at the
 // BROKEN extreme, wick included, and fixes the direction.
@@ -13,13 +19,16 @@ func TestTriggerLineFirstBreakDrawsLine(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	bars := []market.Kline{
-		{High: 100, Low: 96},  // previous
-		{High: 103, Low: 97},  // breaks the HIGH → buy line at 100 (the broken extreme)
-		{High: 104, Low: 102}, // same-side break → ignored (FIRST break only [@ 19:48])
+		b5(0, 100, 96, 97),    // 17:00 bucket, recorded (no previous to break)
+		b5(5, 103, 97, 99),    // breaks the HIGH → buy line at 100
+		b5(10, 104, 102, 103), // same-side break → ignored (FIRST break only [@ 19:48])
 	}
 	got := TriggerTick(TriggerLine{}, bars, cfg)
 	if got.Dir != SideLong || got.Price != 100 {
 		t.Fatalf("line = %+v, want long @ 100 (the broken high, not the breaker's high)", got)
+	}
+	if got.LastBucket != bars[2].OpenTime {
+		t.Fatalf("LastBucket = %d, want %d", got.LastBucket, bars[2].OpenTime)
 	}
 }
 
@@ -29,8 +38,8 @@ func TestTriggerLineSellBreak(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	bars := []market.Kline{
-		{High: 100, Low: 96},
-		{High: 99, Low: 94}, // breaks the LOW → sell line at 96
+		b5(0, 100, 96, 98),
+		b5(5, 99, 94, 95), // breaks the LOW → sell line at 96
 	}
 	got := TriggerTick(TriggerLine{}, bars, cfg)
 	if got.Dir != SideShort || got.Price != 96 {
@@ -38,29 +47,49 @@ func TestTriggerLineSellBreak(t *testing.T) {
 	}
 }
 
-// TestTriggerLineMovesOnceOnReversal — [D3.4 p1 @ 11:48–13:33]: "MOVE THE LINE
-// ONLY ON A REVERSAL — MỘT LẦN MỘT THÔI". The first opposite break flips the
-// line; every later break leaves it alone.
-func TestTriggerLineMovesOnceOnReversal(t *testing.T) {
+// TestTriggerTickIsIdempotentAndIncremental — B2: the persisted LastBucket
+// means a re-tick on the same history changes nothing, and extending the
+// history by one bucket processes exactly that bucket.
+func TestTriggerTickIsIdempotentAndIncremental(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
-	tl := TriggerLine{Dir: SideLong, Price: 100}
 	bars := []market.Kline{
-		{High: 102, Low: 101},
-		{High: 99, Low: 97}, // reversal: breaks the low → line moves to sell @ 101
+		b5(0, 100, 96, 97),
+		b5(5, 103, 97, 99),
+	}
+	first := TriggerTick(TriggerLine{}, bars, cfg)
+	again := TriggerTick(first, bars, cfg)
+	if again != first {
+		t.Fatalf("re-tick changed state: %+v → %+v", first, again)
+	}
+	bars = append(bars, b5(10, 105, 100, 104)) // same-direction break → no move, but processed
+	third := TriggerTick(first, bars, cfg)
+	if third.LastBucket != bars[2].OpenTime {
+		t.Fatalf("extended tick did not process only the new bucket: %+v", third)
+	}
+	if third.Dir != first.Dir || third.Price != first.Price {
+		t.Fatalf("same-direction break moved the line: %+v → %+v", first, third)
+	}
+}
+
+// TestTriggerLineMovesOnEveryReversalOnceEach — B3 (CTO ruling): each
+// reversal moves the line once; later breaks in the SAME direction never move
+// it; the NEXT reversal moves it again [D3.4 p1 @ 11:48–13:33].
+func TestTriggerLineMovesOnEveryReversalOnceEach(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	tl := TriggerLine{Dir: SideLong, Price: 100, LastBucket: b5(0, 0, 0, 0).OpenTime, LastBar: b5(0, 102, 101, 102)}
+	bars := []market.Kline{
+		b5(5, 99, 97, 97),     // reversal: breaks the low → line moves to sell @ 101
+		b5(10, 98, 96, 96),    // same-direction short break → NO move
+		b5(15, 103, 100, 103), // next reversal: breaks the high → line moves to long @ 96
 	}
 	got := TriggerTick(tl, bars, cfg)
-	if got.Dir != SideShort || got.Price != 101 || !got.Moved {
-		t.Fatalf("after reversal = %+v, want short @ 101 moved=true", got)
+	if got.Dir != SideLong || got.Price != 98 {
+		t.Fatalf("after two reversals = %+v, want long @ 98 (the second reversal's broken high)", got)
 	}
-	// a later break on either side does NOT move the line again
-	more := []market.Kline{
-		{High: 100, Low: 98},
-		{High: 105, Low: 100}, // breaks the high — ignored (already moved)
-	}
-	got2 := TriggerTick(got, more, cfg)
-	if got2.Dir != SideShort || got2.Price != 101 || got2.OldPrice != 100 {
-		t.Fatalf("second move happened: %+v (must stay short @ 101, old line 100)", got2)
+	if got.OldPrice != 101 || got.OldDir != SideShort {
+		t.Fatalf("old line = %v/%q, want 101/short (the line before the LAST reversal)", got.OldPrice, got.OldDir)
 	}
 }
 
@@ -75,7 +104,7 @@ func TestTriggerVerdictSideAndNoTradeZone(t *testing.T) {
 		t.Fatalf("below the buy line must be refused with a reason")
 	}
 	// after a reversal the zone between old (100) and new (97) lines is no-trade
-	tl := TriggerLine{Dir: SideShort, Price: 97, Moved: true, OldPrice: 100, OldDir: SideLong}
+	tl := TriggerLine{Dir: SideShort, Price: 97, OldPrice: 100, OldDir: SideLong}
 	if ok, _, reason := TriggerVerdict(tl, 98.5); ok || reason == "" {
 		t.Fatalf("between two lines must be no-trade")
 	}
@@ -85,29 +114,25 @@ func TestTriggerVerdictSideAndNoTradeZone(t *testing.T) {
 }
 
 // TestTriggerLineOnRecorded5mTape — canon 53: the recorded 2026-09-15 5m tape
-// (84 bars incl. the pre-RTH lead-in) must produce a first break and the
-// line never moves more than once.
+// (84 buckets incl. the pre-RTH lead-in) must draw a line and process every
+// bucket exactly once.
 func TestTriggerLineOnRecorded5mTape(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	bars := loadFixture(t, "mnq_5m_2026-09-15_rth", "5m")
-	got := TriggerLine{}
-	movedCount := 0
-	prevMoved := false
-	for i := 1; i < len(bars); i++ {
-		got = TriggerTick(got, bars[i-1:i+1], cfg)
-		if got.Moved && !prevMoved {
-			movedCount++
-		}
-		prevMoved = got.Moved
-	}
+	got := TriggerTick(TriggerLine{}, bars, cfg)
 	if got.Dir == "" {
 		t.Fatal("no trigger line was drawn on the recorded 5m tape")
 	}
-	if movedCount > 1 {
-		t.Fatalf("line moved %d times — 'MỘT LẦN MỘT THÔI'", movedCount)
+	if got.LastBucket != bars[len(bars)-1].OpenTime {
+		t.Fatalf("LastBucket = %d, want the last bucket %d", got.LastBucket, bars[len(bars)-1].OpenTime)
 	}
-	t.Logf("recorded 5m tape: first line %q @ %.2f, moves=%d", got.Dir, got.Price, movedCount)
+	// re-tick idempotence on the real tape (B2)
+	again := TriggerTick(got, bars, cfg)
+	if again != got {
+		t.Fatal("re-tick on the recorded tape changed state (B2)")
+	}
+	t.Logf("recorded 5m tape: line %q @ %.2f", got.Dir, got.Price)
 }
 
 // TestISBConflictVerdict — §5.3 / §12 [D4.2 p1 @ 13:59, 14:35]: a live 5m ISB
