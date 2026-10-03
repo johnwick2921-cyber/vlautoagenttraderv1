@@ -175,6 +175,15 @@ type Config struct {
 	// intraday entry — nothing inside, no reversal at the edges, only the
 	// escape side after a 1m body close outside. The §8 swing is exempt.
 	OrbGateEnabled bool
+
+	// LegBudgetEnabled — G1 (R12, DS-107, CTO 2026-10-03): at most 2 entries
+	// per leg (the PHL/PLH + a same-direction ISB); a stop-out inside the leg
+	// closes it. Default ON.
+	LegBudgetEnabled bool
+	// LegResetOn — G1 parity knob: a NEW leg starts only on a break beyond
+	// the prior extreme. "close" (default): the previous candle's CLOSE
+	// strictly beyond the extreme; "touch": this candle's wick reaching it.
+	LegResetOn string
 }
 
 // DefaultConfig returns the mentor defaults per PLAN v1 (knob values start from
@@ -215,6 +224,9 @@ func DefaultConfig() Config {
 		Box: DefaultBoxCfg(),
 
 		OrbGateEnabled: true,
+
+		LegBudgetEnabled: true,
+		LegResetOn:       "close",
 	}
 }
 
