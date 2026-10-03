@@ -172,6 +172,41 @@ func TestTimeAuditRTHOnly(t *testing.T) {
 	}
 }
 
+func TestTimeAuditBucketOpen4h(t *testing.T) {
+	for _, c := range auditDates {
+		// the 4h bucket is anchored at 17:00 CT, DST-aware: on a CDT date
+		// 17:00 CT = 22:00 UTC; on a CST date = 23:00 UTC. Wall arithmetic
+		// shifts the anchor by the zone offset and goes RED.
+		for _, tt := range []struct {
+			hh, mm       int
+			dayOff       int
+			wantOff      int
+			wantH, wantM int
+		}{
+			{16, 59, -1, -1, 13, 0}, // [13:00,17:00) bucket
+			{17, 0, 0, 0, 17, 0},
+			{20, 59, 0, 0, 17, 0},
+			{21, 0, 0, 0, 21, 0},
+			{0, 59, 1, 0, 21, 0},
+			{1, 0, 1, 1, 1, 0},
+		} {
+			got := bucketOpen(auditMs(c.y, c.mo, c.d+tt.dayOff, tt.hh, tt.mm, 0), 240)
+			want := auditMs(c.y, c.mo, c.d+tt.wantOff, tt.wantH, tt.wantM, 0)
+			if got != want {
+				t.Fatalf("%s %02d:%02d CT: bucketOpen(240) = %d, want %d", c.label, tt.hh, tt.mm, got, want)
+			}
+		}
+		// 1h/5m/15m/1m buckets stay plain TF flooring of real-UTC epoch ms.
+		for _, tf := range []int{1, 5, 15, 60} {
+			ms := auditMs(c.y, c.mo, c.d, 9, 7, 0)
+			want := auditMs(c.y, c.mo, c.d, 9, 7-7%tf, 0)
+			if got := bucketOpen(ms, tf); got != want {
+				t.Fatalf("%s tf=%d: bucketOpen = %d, want %d", c.label, tf, got, want)
+			}
+		}
+	}
+}
+
 func TestTimeAuditCTOf(t *testing.T) {
 	for _, c := range auditDates {
 		_, hh, mm := ctOf(auditMs(c.y, c.mo, c.d, 8, 30, 0))
