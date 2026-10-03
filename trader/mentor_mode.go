@@ -356,9 +356,47 @@ func mentorRuleGate(in mentor.Intent, extra mentorTierInputs) string {
 	if in.Setup == "" {
 		return "untagged setup: no Setup tag — refuse fail-closed [kernel owner ruling, CTO 1791058442006]"
 	}
+	swing := strings.EqualFold(in.Setup, "SWING4H")
+	// GEOMETRY GATE (CTO 1791058631982): the trader's own backstop, before
+	// any sizing — a missing or inverted geometry is refused fail-closed
+	// (reason "bad geometry"). A Target-0 intraday entry would otherwise
+	// fall back to ~30000 pts of fake target and size BIG (20) with no
+	// take-profit at all. The swing carries no fixed target: stop-side only.
+	if !swing {
+		if in.Stop <= 0 || in.Target <= 0 {
+			return "bad geometry: missing stop/target — refuse fail-closed [CTO 1791058631982]"
+		}
+		switch in.Side {
+		case mentor.SideLong:
+			if !(in.Stop < in.Price && in.Price < in.Target) {
+				return fmt.Sprintf("bad geometry: long needs stop %.2f < entry %.2f < target %.2f [CTO 1791058631982]", in.Stop, in.Price, in.Target)
+			}
+		case mentor.SideShort:
+			if !(in.Target < in.Price && in.Price < in.Stop) {
+				return fmt.Sprintf("bad geometry: short needs target %.2f < entry %.2f < stop %.2f [CTO 1791058631982]", in.Target, in.Price, in.Stop)
+			}
+		default:
+			return fmt.Sprintf("bad geometry: unknown side %q [CTO 1791058631982]", in.Side)
+		}
+	} else {
+		if in.Stop <= 0 {
+			return "bad geometry: missing swing stop — refuse fail-closed [CTO 1791058631982]"
+		}
+		switch in.Side {
+		case mentor.SideLong:
+			if !(in.Stop < in.Price) {
+				return "bad geometry: long swing stop must sit below the entry [CTO 1791058631982]"
+			}
+		case mentor.SideShort:
+			if !(in.Stop > in.Price) {
+				return "bad geometry: short swing stop must sit above the entry [CTO 1791058631982]"
+			}
+		default:
+			return fmt.Sprintf("bad geometry: unknown side %q [CTO 1791058631982]", in.Side)
+		}
+	}
 	stop := mentorIntentRisk(in)
 	target := mentorIntentTargetPts(in)
-	swing := strings.EqualFold(in.Setup, "SWING4H")
 	if swing {
 		if stop > mentorSwingStopMaxPts {
 			return fmt.Sprintf("R8: SWING4H stop %.1f pts — ~100 is refused (allowed 30–60, no 25-pt ceiling for the swing)", stop)

@@ -589,36 +589,66 @@ func TestMentorExitMechSuspensionAppliesToAIOnly(t *testing.T) {
 // SWING4H: 30–60 allowed, ~100 refused, EXEMPT from the 25-pt ceiling.
 // R9: target never smaller than stop; spent-day cap 15 skips a stop over 15.
 func TestMentorRuleGateR8R9(t *testing.T) {
-	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", StopPts: 40, TargetPts: 80}, mentorTierInputs{}); why != "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", Side: "long", Price: 100, Stop: 60, StopPts: 40, TargetPts: 80}, mentorTierInputs{}); why != "" {
 		t.Fatalf("SWING4H 40-pt stop must pass (30–60 allowed): %q", why)
 	}
-	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", StopPts: 60, TargetPts: 120}, mentorTierInputs{}); why != "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", Side: "long", Price: 100, Stop: 40, StopPts: 60, TargetPts: 120}, mentorTierInputs{}); why != "" {
 		t.Fatalf("SWING4H 60-pt stop must pass: %q", why)
 	}
-	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", StopPts: 100, TargetPts: 200}, mentorTierInputs{}); why == "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", Side: "short", Price: 100, Stop: 200, StopPts: 100, TargetPts: 200}, mentorTierInputs{}); why == "" {
 		t.Fatal("SWING4H ~100-pt stop must be refused (R8)")
 	}
 	// the swing is the ONLY exemption from the 25-pt ceiling
-	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 30, TargetPts: 60}, mentorTierInputs{}); why == "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 70, Target: 130, StopPts: 30, TargetPts: 30}, mentorTierInputs{}); why == "" {
 		t.Fatal("a non-swing stop over 25 must be refused (R8 ceiling)")
 	}
 	// R9: target never smaller than stop
-	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 12, TargetPts: 10}, mentorTierInputs{}); why == "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 88, Target: 98, StopPts: 12, TargetPts: 2}, mentorTierInputs{}); why == "" {
 		t.Fatal("a target smaller than the stop must be refused (R9)")
 	}
-	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 12, TargetPts: 24}, mentorTierInputs{}); why != "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 88, Target: 112, StopPts: 12, TargetPts: 12}, mentorTierInputs{}); why != "" {
 		t.Fatalf("target ≥ stop must pass: %q", why)
 	}
 	// R9 spent-day cap: stop over 15 skips
-	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 18, TargetPts: 36}, mentorTierInputs{SpentDay: true}); why == "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 82, Target: 136, StopPts: 18, TargetPts: 36}, mentorTierInputs{SpentDay: true}); why == "" {
 		t.Fatal("a spent day must skip any stop over 15 (R9 cap)")
 	}
-	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", StopPts: 12, TargetPts: 24}, mentorTierInputs{SpentDay: true}); why != "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 88, Target: 124, StopPts: 12, TargetPts: 24}, mentorTierInputs{SpentDay: true}); why != "" {
 		t.Fatalf("a spent day with a 12-pt stop must pass: %q", why)
 	}
-	// ISB intents carry no target (0): the target check never fires on them
-	if why := mentorRuleGate(mentor.Intent{Setup: "ISB", StopPts: 5.75}, mentorTierInputs{}); why != "" {
-		t.Fatalf("a targetless ISB must pass the gate: %q", why)
+	// a targetless intraday entry is BAD GEOMETRY now (CTO 1791058631982) —
+	// the kernel always tags the ISB target, so a zero target is a bug
+	if why := mentorRuleGate(mentor.Intent{Setup: "ISB", Side: "long", Price: 100, Stop: 94, StopPts: 5.75}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "bad geometry") {
+		t.Fatalf("a targetless ISB must be refused as bad geometry, got %q", why)
+	}
+}
+
+// TestMentorRuleGateBadGeometry (CTO 1791058631982): before any sizing, every
+// non-swing entry must have Stop > 0, Target > 0 and the right sides (long:
+// stop < entry < target; short: target < entry < stop); the swing needs the
+// stop side only (no fixed target). The mutant (gate dropped) turns the
+// Target-0 pin RED — with the old fallback it would size BIG (20).
+func TestMentorRuleGateBadGeometry(t *testing.T) {
+	// a Target-0 confluence intent is refused, never big
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 90, Target: 0}, mentorTierInputs{Confluence: true}); why == "" || !strings.HasPrefix(why, "bad geometry") {
+		t.Fatalf("a Target-0 confluence intent must be refused as bad geometry, got %q", why)
+	}
+	// an inverted long is refused
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 110, Target: 120}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "bad geometry") {
+		t.Fatalf("an inverted long must be refused, got %q", why)
+	}
+	// a valid long, a valid short and a valid targetless swing still pass
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 90, Target: 120}, mentorTierInputs{}); why != "" {
+		t.Fatalf("a valid long must pass: %q", why)
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "short", Price: 100, Stop: 110, Target: 80}, mentorTierInputs{}); why != "" {
+		t.Fatalf("a valid short must pass: %q", why)
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", Side: "long", Price: 100, Stop: 60}, mentorTierInputs{}); why != "" {
+		t.Fatalf("a targetless swing with a correct stop side must pass: %q", why)
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "SWING4H", Side: "long", Price: 100, Stop: 110}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "bad geometry") {
+		t.Fatalf("a swing with the stop on the wrong side must be refused, got %q", why)
 	}
 }
 
@@ -631,13 +661,13 @@ func TestMentorRuleGateDefenceInDepth(t *testing.T) {
 	if why := mentorRuleGate(mentor.Intent{Price: 100, Stop: 90, Target: 120}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "untagged setup") {
 		t.Fatalf("an untagged setup must be refused with 'untagged setup', got %q", why)
 	}
-	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Price: 100, Stop: 78, Target: 130}, mentorTierInputs{}); why != "" {
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 78, Target: 130}, mentorTierInputs{}); why != "" {
 		t.Fatalf("geometry stop 22 / target 30 must pass: %q", why)
 	}
-	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Price: 100, Stop: 78, Target: 99}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "R9") {
-		t.Fatalf("geometry target 1 < stop 22 must be refused R9, got %q", why)
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 88, Target: 101}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "R9") {
+		t.Fatalf("geometry target 1 < stop 12 must be refused R9, got %q", why)
 	}
-	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Price: 100, Stop: 70, Target: 140}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "R8") {
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Side: "long", Price: 100, Stop: 70, Target: 140}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "R8") {
 		t.Fatalf("geometry stop 30 must hit the R8 ceiling, got %q", why)
 	}
 }
