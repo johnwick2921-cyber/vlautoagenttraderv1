@@ -626,10 +626,16 @@ byte-identical.
 
 N12: with limit == stop and Day time-in-force, a gap through the trigger leaves
 a RESTING limit that can fill later at a stale price. Go closes that window
-with a per-order EXPIRY, authored by the evaluator's intent, not a blanket
-timer: armed_orders.expiry_ms is stamped when the evaluator places the order
-(DS-102 — a level touch or a single ISB expires at the close of the NEXT 1m
-candle; ISB stacking is extended while the candles stay inside and cancelled
-at the 4th; the swing runs its 5m rule). The armed pass requests cancel for an
-unfilled order at now >= expiry_ms through the existing settlement path; a row
-with no expiry is never auto-cancelled. The AddOn needs no new frame for this.
+with a per-order EXPIRY, authored by the mentor evaluator's intent, not a
+blanket timer: armed_orders.expiry_ms will be stamped when the mentor injector
+lands (DS-102, #316 — a level touch or a single ISB expires at the close of
+the NEXT 1m candle; ISB stacking is extended while the candles stay inside and
+cancelled at the 4th; the swing runs its 5m rule). Stop-limit + expiry apply
+to MENTOR-MODE arms ONLY: the knob routes a stop entry through the limit
+variant only when expiry_ms > 0, and a mentor stop-limit arm without a stored
+expiry is REFUSED fail-closed. A planner arm never carries expiry_ms and stays
+a stop-market exactly as today, even with the knob ON. At now >= expiry_ms the
+armed pass sends the cancel_order frame on the SAME pass (an expired arm that
+was never placed — armed, no signal id — ends terminal 'expired' in the
+ledger); a row with no expiry is never auto-cancelled. The AddOn needs no new
+frame for this.

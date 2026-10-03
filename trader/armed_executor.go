@@ -1860,14 +1860,18 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// so everything after it is the send itself. An error before it is a
 	// refusal (build, account, permit, B3, the ledger CAS) — provably unsent.
 	stamped := false
-	// MENTOR STOP-LIMIT (PR B, 2026-10-03): with the knob ON the stop-entry
-	// routes through the limit variant — the AddOn builds OrderType.StopLimit
-	// (bounded limit offset past the trigger, N12) instead of StopMarket.
+	// MENTOR STOP-LIMIT (PR B, 2026-10-03, REVIEW-313 F3): stop-limit +
+	// expiry apply to MENTOR-MODE arms ONLY — the only author of expiry_ms is
+	// the mentor evaluator's intent (DS-102, #316). An arm without a stored
+	// expiry (planner arms included) stays stop-market exactly as today even
+	// with the knob ON. With expiry stored, the arm routes through the limit
+	// variant — the AddOn builds OrderType.StopLimit with
+	// LimitPrice == StopPrice, so the entry fills at its price or misses.
 	// Default OFF keeps the wire byte-identical to today. The send itself and
 	// the beforeSend callback are shared verbatim: the only difference is the
 	// stop_limit frame flag behind the far-side floor.
 	placeStopFn := pl.PlaceStopEntry
-	if stopLimitEntriesEnabled() {
+	if stopLimitEntriesEnabled() && r.ExpiryMs > 0 {
 		placeStopFn = pl.PlaceStopEntryWithLimit
 	}
 	sid, perr := placeStopFn(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error {

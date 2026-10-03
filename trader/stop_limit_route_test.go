@@ -8,19 +8,24 @@ import (
 	"vl/store"
 )
 
-// Routing pin (PR B, 2026-10-03) at the production call site: placeOneStopEntry
-// must route the stop entry through PlaceStopEntryWithLimit when
-// MENTOR_STOP_LIMIT is ON and through PlaceStopEntry when it is OFF. Remove the
-// branch and the knob silently keeps sending stop-MARKET frames — the exact
-// "built ≠ wired ≠ used" failure class A29 / N5 named.
+// Routing pin (PR B, 2026-10-03; REVIEW-313 F3) at the production call site:
+// placeOneStopEntry routes the stop entry through PlaceStopEntryWithLimit only
+// when MENTOR_STOP_LIMIT is ON AND the arm carries a stored expiry (the mentor
+// evaluator's intent is the sole author of expiry_ms). An arm without an
+// expiry — every planner arm — stays on PlaceStopEntry even with the knob ON.
+// Removing either half of the condition would either never send the limit
+// variant (built ≠ wired, A29/N5) or silently convert planner stop-markets.
 func TestStopLimitKnobRoutesStopEntriesThroughTheLimitVariant(t *testing.T) {
 	for _, tc := range []struct {
 		name      string
 		env       string
+		expiryMs  int64
 		wantLimit bool
 	}{
-		{"knob-off", "", false},
-		{"knob-on", "1", true},
+		{"knob-off-no-expiry", "", 0, false},
+		{"knob-off-with-expiry", "", 90_000, false},
+		{"knob-on-planner-no-expiry", "1", 0, false}, // planner arms stay as today even with the knob ON
+		{"knob-on-mentor-with-expiry", "1", 90_000, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("MENTOR_STOP_LIMIT", tc.env)
@@ -30,6 +35,7 @@ func TestStopLimitKnobRoutesStopEntriesThroughTheLimitVariant(t *testing.T) {
 				ID: 8, TraderID: at.id, PlanID: "2026-09-23:NY", Version: 1,
 				Session: "TEST-R", Scenario: "TEST-R", Side: "long",
 				EntryPx: 29650, StopPx: 29640, TargetPx: 29670,
+				ExpiryMs: tc.expiryMs,
 			}
 			d := decideStopEntry("LONG", r.EntryPx, testOffset(), testTick, 99)
 			if d.Action != stopEntryPlace {
