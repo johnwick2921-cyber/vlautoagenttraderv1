@@ -232,16 +232,32 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 // mentorIntentExpiry resolves the N12 per-order expiry (PR #313): the expiry
 // belongs to the RULES, not a blanket timer. An intent-carried expiry wins;
 // otherwise the injector computes the setup's default — a level touch or a
-// single ISB expires at the close of the NEXT 1m candle; the swing runs its
-// 5m rule (the 2-candle leeway → +2×5m).
+// single ISB expires at the close of the NEXT 1m candle; the swing lives until
+// the close of the current 4h candle (mentorSwingExpiry).
 func mentorIntentExpiry(in mentor.Intent, barCloseMs int64) int64 {
 	if in.ExpiryMs > 0 {
 		return in.ExpiryMs
 	}
 	if strings.EqualFold(in.Setup, "SWING4H") {
-		return barCloseMs + 10*60_000 // the 2-candle leeway runs on the 5m
+		return mentorSwingExpiry(barCloseMs)
 	}
 	return barCloseMs + 60_000 // the close of the NEXT 1m candle
+}
+
+// mentorSwingExpiry (RULING [C], knob swing_order_expiry): a swing stop order
+// lives until the CLOSE of the current 4h candle (17:00 CT anchor). At that
+// close the line re-bases, and any unfilled swing order is cancelled
+// [D5.2 p3 @12:30]. The 4h candles chain from the 17:00 CT anchor.
+func mentorSwingExpiry(nowMs int64) int64 {
+	loc := kernel.CTLocation()
+	now := time.UnixMilli(nowMs).In(loc)
+	anchor := time.Date(now.Year(), now.Month(), now.Day(), 17, 0, 0, 0, loc)
+	if now.Before(anchor) {
+		anchor = anchor.AddDate(0, 0, -1) // before 17:00 CT → the chain started yesterday
+	}
+	const fourH = 4 * time.Hour
+	k := now.Sub(anchor) / fourH
+	return anchor.Add(fourH * (k + 1)).UnixMilli()
 }
 
 // mentorLatestPrice is the latest live price for the no-chase check. The

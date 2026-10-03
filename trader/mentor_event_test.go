@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -376,9 +377,11 @@ func TestMentorSourcesMissingRefusesPlacement(t *testing.T) {
 
 // TestMentorIntentExpiry (N12, PR #313): the expiry belongs to the rules — an
 // intent-carried expiry wins; a level touch or a single ISB expires at the
-// close of the NEXT 1m candle; the swing runs its 5m rule (+2×5m).
+// close of the NEXT 1m candle; the swing lives until the close of the current
+// 4h candle (mentorSwingExpiry).
 func TestMentorIntentExpiry(t *testing.T) {
-	base := int64(1_700_000_000_000)
+	ct := kernel.CTLocation()
+	base := time.Date(2026, 10, 2, 8, 0, 0, 0, ct).UnixMilli()
 	if got := mentorIntentExpiry(mentor.Intent{ExpiryMs: 123456}, base); got != 123456 {
 		t.Fatalf("an intent-carried expiry must win, got %d", got)
 	}
@@ -388,8 +391,51 @@ func TestMentorIntentExpiry(t *testing.T) {
 	if got := mentorIntentExpiry(mentor.Intent{Setup: "PHL"}, base); got != base+60_000 {
 		t.Fatalf("a level touch expires at the next 1m candle close, got %d", got)
 	}
-	if got := mentorIntentExpiry(mentor.Intent{Setup: "SWING4H"}, base); got != base+600_000 {
-		t.Fatalf("the swing runs its 5m rule (+2 candles), got %d", got)
+	// 08:00 CT → the current 4h candle is [05:00, 09:00) → the swing expires
+	// at 09:00 CT.
+	want := time.Date(2026, 10, 2, 9, 0, 0, 0, ct).UnixMilli()
+	if got := mentorIntentExpiry(mentor.Intent{Setup: "SWING4H"}, base); got != want {
+		t.Fatalf("the swing expires at the 4h candle close 09:00 CT, got %d want %d", got, want)
+	}
+}
+
+// TestMentorSwingExpiry (RULING [C]): the 4h candles chain from the 17:00 CT
+// anchor — the swing order lives until the close of the CURRENT 4h candle.
+func TestMentorSwingExpiry(t *testing.T) {
+	ct := kernel.CTLocation()
+	cases := []struct {
+		hhmm    string // wall clock CT on 2026-10-02
+		want    string // the 4h candle close, HH:MM CT (the next day where it chains)
+		wantDay string
+	}{
+		{"00:15", "01:00", "2026-10-02"},
+		{"01:15", "05:00", "2026-10-02"},
+		{"08:00", "09:00", "2026-10-02"},
+		{"11:30", "13:00", "2026-10-02"},
+		{"15:00", "17:00", "2026-10-02"},
+		{"17:00", "21:00", "2026-10-02"},
+		{"19:00", "21:00", "2026-10-02"},
+		{"22:30", "01:00", "2026-10-03"},
+	}
+	for _, c := range cases {
+		t.Run(c.hhmm, func(t *testing.T) {
+			var hh, mm int
+			if _, err := fmt.Sscanf(c.hhmm, "%d:%d", &hh, &mm); err != nil {
+				t.Fatal(err)
+			}
+			now := time.Date(2026, 10, 2, hh, mm, 0, 0, ct)
+			var wh, wm int
+			fmt.Sscanf(c.want, "%d:%d", &wh, &wm)
+			wd := now
+			if c.wantDay != now.Format("2006-01-02") {
+				wd, _ = time.ParseInLocation("2006-01-02", c.wantDay, ct)
+			}
+			want := time.Date(wd.Year(), wd.Month(), wd.Day(), wh, wm, 0, 0, ct).UnixMilli()
+			if got := mentorSwingExpiry(now.UnixMilli()); got != want {
+				t.Fatalf("mentorSwingExpiry(%s CT) = %s, want %s CT", c.hhmm,
+					time.UnixMilli(got).In(ct).Format("15:04"), c.want)
+			}
+		})
 	}
 }
 
