@@ -455,13 +455,14 @@ func TestMentorResonanceFork(t *testing.T) {
 	if !armed {
 		t.Fatal("ISB same side within 3 candles of a PHL fill must arm resonance")
 	}
-	if modifyTP != 130 {
-		t.Fatalf("the resonance modify must push leg 1's TP to the runner's target 130, got %.2f", modifyTP)
+	// R-RES (CTO 1791040643329): the resonance STILL takes the 1:1 partial —
+	// leg 1's +1R TP STAYS resting (no modify). Mutant: moving leg 1's TP to
+	// the runner's target (the old X2) → RED.
+	if modifyTP != 0 {
+		t.Fatalf("the resonance flip must NOT modify leg 1's TP (R-RES), got modifyTP %.2f", modifyTP)
 	}
-	// X2: after the flip NO +1R TP order remains — leg 1's TP is the runner's
-	// target (130), never the resting 110. Mutant: skip the TP change → RED.
-	if pos.Leg1TP != 130 {
-		t.Fatalf("after the flip leg 1's TP must be the runner's target 130 (no +1R order remains), got %.2f", pos.Leg1TP)
+	if pos.Leg1TP != 110 {
+		t.Fatalf("after the flip leg 1's +1R TP must be UNCHANGED (110), got %.2f", pos.Leg1TP)
 	}
 	if pos.Mode != "A-resonance" || !pos.ArmedBE || pos.Stop != pos.Entry {
 		t.Fatalf("resonance arm: mode=%s armed=%v stop=%.2f — want A-resonance, BE stop 100", pos.Mode, pos.ArmedBE, pos.Stop)
@@ -654,15 +655,15 @@ func TestMentorExitFork(t *testing.T) {
 	}
 
 	// the A branch: a PHL fill starting as B flips to A on a same-direction
-	// ISB within 3 candles — stops to BE, leg 1 TP pushed to the runner's
-	// target, no trail.
+	// ISB within 3 candles — the REST's stop to BE, no trail, leg 1's +1R TP
+	// unchanged (R-RES).
 	pos := &mentorPosition{
 		Origin: "PHL", Side: "long", Entry: 100, Stop: 95, Target: 112, R: 5,
 		Mode: "B", Leg1TP: 105,
 	}
 	armed, modTP := mentorMaybeArmResonance(pos, "long", 2)
-	if !armed || pos.Mode != "A-resonance" || pos.Stop != pos.Entry || modTP != 112 {
-		t.Fatalf("the A flip must arm: armed=%v mode=%s stop=%.2f modTP=%.2f", armed, pos.Mode, pos.Stop, modTP)
+	if !armed || pos.Mode != "A-resonance" || pos.Stop != pos.Entry || modTP != 0 || pos.Leg1TP != 105 {
+		t.Fatalf("the A flip must arm: armed=%v mode=%s stop=%.2f modTP=%.2f leg1TP=%.2f", armed, pos.Mode, pos.Stop, modTP, pos.Leg1TP)
 	}
 }
 

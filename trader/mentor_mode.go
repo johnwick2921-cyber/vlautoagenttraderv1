@@ -670,11 +670,11 @@ const mentorResonanceMaxCandles = 3
 
 // mentorMaybeArmResonance flips an open PHL/PLH position into mode A the
 // moment an ISB in the SAME direction appears within 3 candles of the fill:
-// BOTH legs' stops go to BREAK-EVEN immediately and leg 1's TP is modified OUT
-// to the runner's target — NO 1:1 scale-out, NO candle trail. It runs to the
-// next level / the old high and beyond (EOD flat still applies). Returns
-// whether it armed and the modify-bracket TP for leg 1 (X2: after the flip no
-// +1R TP order remains — leg 1's resting TP is the runner's target).
+// the REST's stop goes to BREAK-EVEN immediately, NO candle trail. R-RES
+// (CTO 1791040643329, D2.4 p1 @02:17-02:29 "@03:36-03:45"): the resonance
+// STILL takes the 1:1 partial — "RISK REWARD 1-1 toi van se ban bot" — so
+// leg 1's +1R TP STAYS (no modify, returned 0); leg 2 runs with its stop at
+// BE. Returns whether it armed and the modify-bracket TP (0 = no modify).
 func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill int) (armed bool, modifyTP float64) {
 	if pos == nil || pos.Mode == "A-resonance" {
 		return false, 0
@@ -691,9 +691,9 @@ func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill 
 	pos.Mode = "A-resonance"
 	pos.ArmedBE = true
 	pos.Stop = pos.Entry
-	pos.Leg1TP = pos.Target // X2: the resting +1R bracket is gone — both legs run
 	mentorCount("resonance_armed")
-	return true, pos.Target
+	// R-RES: leg 1's +1R take-profit STAYS resting — no TP modify.
+	return true, 0
 }
 
 // mentorExitHold applies the stop-only holds: the stop NEVER moves and nothing
@@ -720,9 +720,9 @@ func mentorExitC(pos mentorPosition, l, h float64) (exitPrice float64, exitReaso
 	return mentorExitHold(pos, l, h, "stop")
 }
 
-// mentorExitA applies the resonance hold (A): stops at BE, no trail, no
-// scale-out — leg 1's TP was already pushed out to the runner's target at the
-// arming moment. Let it run [D2.4 p1 @01:36–02:59]. EOD flat still applies.
+// mentorExitA applies the resonance hold (A): leg 2's stop is at BE, no
+// candle trail — leg 1's +1R TP STAYS resting (R-RES: the 1:1 partial is
+// still taken). EOD flat still applies.
 func mentorExitA(pos mentorPosition, l, h float64) (exitPrice float64, exitReason string, exited bool) {
 	return mentorExitHold(pos, l, h, "resonance_be")
 }
