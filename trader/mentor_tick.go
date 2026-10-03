@@ -447,21 +447,21 @@ var (
 )
 
 // mentorDoneAfterWinGate is the call-site half of (a); the knob is default ON
-// (nil → ON, an explicit false disables).
+// (nil → ON, an explicit false disables). FAIL-CLOSED: a missing day-net or
+// closed-profit source refuses the entry — an unknown is not "no win".
 func (at *AutoTrader) mentorDoneAfterWinGate() (bool, string) {
 	if at.config.StrategyConfig != nil {
 		if v := at.config.StrategyConfig.RiskControl.MentorDoneAfterWin; v != nil && !*v {
 			return false, "" // the knob is explicitly OFF
 		}
 	}
-	var net float64
-	var closed bool
-	if mentorDayNetSource != nil {
-		net = mentorDayNetSource()
+	if mentorDayNetSource == nil || mentorClosedProfitSource == nil {
+		mentorCount("done_after_win_no_data")
+		at.logWarnf("🧑‍🏫 mentor done-after-win source missing (day net / closed profit) — refusing the entry (fail-closed)")
+		return true, "done-after-win: day P&L or closed-trade source not wired — an unknown is not 'no win'; refusing (fail-closed) [D1.2 p1 @20:53–21:16]"
 	}
-	if mentorClosedProfitSource != nil {
-		closed = mentorClosedProfitSource()
-	}
+	net := mentorDayNetSource()
+	closed := mentorClosedProfitSource()
 	if mentorDoneAfterWin(net, closed) {
 		mentorCount("done_after_win_refused")
 		return true, "done for the day after a win — a trade closed in profit and the day is net positive; no new entries until the next trading day (17:00 CT) [D1.2 p1 @20:53–21:16]"
@@ -477,10 +477,13 @@ func (at *AutoTrader) mentorDoneAfterWinGate() (bool, string) {
 // mentor position (nil → none open; the live driver fills it at P1).
 var mentorOpenSideSource func() string
 
-// mentorAddGate is the call-site half of (d).
+// mentorAddGate is the call-site half of (d). FAIL-CLOSED: with no open-side
+// source the entry refuses — an unknown open side could hide a same-direction
+// add.
 func (at *AutoTrader) mentorAddGate(in mentor.Intent) (bool, string) {
 	if mentorOpenSideSource == nil {
-		return false, ""
+		mentorCount("add_no_source")
+		return true, "never-add guard: open-position source not wired — refusing the entry (fail-closed) [D1.1 p1 @17:06–17:44]"
 	}
 	open := mentorOpenSideSource()
 	if open == "" {
@@ -491,6 +494,54 @@ func (at *AutoTrader) mentorAddGate(in mentor.Intent) (bool, string) {
 		return true, fmt.Sprintf("never add/average [D1.1 p1 @17:06–17:44]: %s already open — the resonance ISB is a hold signal, not an entry", open)
 	}
 	return false, ""
+}
+
+// mentorSourcesMissing names every mentor source that is not wired. With
+// mentor_mode ON a missing source refuses the arm (fail-closed); the boot line
+// reports them in ONE error line.
+func (at *AutoTrader) mentorSourcesMissing() []string {
+	var missing []string
+	if mentorDayNetSource == nil {
+		missing = append(missing, "day net")
+	}
+	if mentorClosedProfitSource == nil {
+		missing = append(missing, "closed profit")
+	}
+	if mentorOpenStopSource == nil {
+		missing = append(missing, "open stop")
+	}
+	if mentorOpenSideSource == nil {
+		missing = append(missing, "open side")
+	}
+	if at.store == nil && mentorDayEventsForTest == nil {
+		missing = append(missing, "news events")
+	}
+	if market.FuturesBarsProvider == nil {
+		missing = append(missing, "5m feed")
+	}
+	return missing
+}
+
+// MentorSourcesBootLine is the boot wiring check: with mentor_mode ON every
+// mentor source seam must be non-nil, or mentor_mode refuses to arm — one ERROR
+// line names the missing seams per trader.
+func MentorSourcesBootLine(loaded map[string]*AutoTrader) string {
+	var lines []string
+	for id, at := range loaded {
+		if at == nil || !at.mentorEnabled() {
+			continue
+		}
+		if missing := at.mentorSourcesMissing(); len(missing) > 0 {
+			logger.Errorf("🧑‍🏫 mentor sources MISSING for trader %s: [%s] — mentor_mode refuses to arm (fail-closed)", id, strings.Join(missing, ", "))
+			lines = append(lines, fmt.Sprintf("🧑‍🏫 mentor sources MISSING for trader %s: [%s] — mentor_mode refuses to arm (fail-closed)", id, strings.Join(missing, ", ")))
+		} else {
+			lines = append(lines, fmt.Sprintf("🧑‍🏫 mentor sources wired for trader %s", id))
+		}
+	}
+	if len(lines) == 0 {
+		return "🧑‍🏫 mentor sources: n/a (no mentor-mode trader)"
+	}
+	return strings.Join(lines, " | ")
 }
 
 // ── LATENCY (§2: measure it) ───────────────────────────────────────────────

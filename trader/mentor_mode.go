@@ -535,6 +535,13 @@ var mentorOpenStopSource func() (float64, bool)
 // never-widen guard (c) first: an amendment that increases open risk never
 // reaches the wire.
 func (at *AutoTrader) mentorMoveStop(nt *ntTrader.TCPTrader, side string, newStop float64) error {
+	// FAIL-CLOSED (c): with mentor mode ON and no open-stop source, refuse the
+	// move — the stop stays where it is.
+	if at.mentorEnabled() && mentorOpenStopSource == nil {
+		mentorCount("stop_move_no_source")
+		at.logWarnf("🧑‍🏫 mentor stop move refused: open-stop source not wired (fail-closed) — the stop stays where it is")
+		return fmt.Errorf("mentor stop move refused: open-stop source not wired (fail-closed)")
+	}
 	if mentorOpenStopSource != nil {
 		if cur, ok := mentorOpenStopSource(); ok {
 			if refuse, why := mentorNeverWiden(side, cur, newStop); refuse {

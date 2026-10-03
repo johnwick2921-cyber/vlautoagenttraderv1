@@ -43,6 +43,20 @@ func TestMentorNoChaseRule(t *testing.T) {
 	}
 }
 
+// wireMentorPlacementSeams sets the source seams to a wired, no-data state so
+// the fail-closed gates stay open for a test that targets a later gate.
+func wireMentorPlacementSeams(t *testing.T) {
+	t.Helper()
+	mentorDayNetSource = func() float64 { return 0 }
+	mentorClosedProfitSource = func() bool { return false }
+	mentorOpenSideSource = func() string { return "" }
+	t.Cleanup(func() {
+		mentorDayNetSource = nil
+		mentorClosedProfitSource = nil
+		mentorOpenSideSource = nil
+	})
+}
+
 // TestMentorNoChaseAtPlacementCallSite: the placement path consults the latest
 // live price BEFORE sending. The mutant that drops the check makes the
 // recorder fire on a through-price intent and this test goes RED.
@@ -54,6 +68,7 @@ func TestMentorNoChaseAtPlacementCallSite(t *testing.T) {
 	ct := kernel.CTLocation()
 	mentorNowSource = func() time.Time { return time.Date(2026, 10, 2, 9, 0, 0, 0, ct) }
 	t.Cleanup(func() { mentorNowSource = nil })
+	wireMentorPlacementSeams(t)
 
 	in := mentor.Intent{Action: mentor.PlaceStopEntry, Side: mentor.SideLong,
 		Price: 21000, Stop: 20988, Target: 21024, Setup: "ISB", StopPts: 12}
@@ -102,6 +117,7 @@ func TestMentorWindowActivePure(t *testing.T) {
 func TestMentorWindowGateAtPlacementCallSite(t *testing.T) {
 	ResetMentorCountersForTest()
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireMentorPlacementSeams(t)
 	ct := kernel.CTLocation()
 	mentorNowSource = func() time.Time { return time.Date(2026, 10, 2, 10, 0, 0, 0, ct) }
 	t.Cleanup(func() { mentorNowSource = nil })
@@ -146,6 +162,7 @@ func TestMentorDoneAfterWinGateAtPlacementCallSite(t *testing.T) {
 	}
 	ResetMentorCountersForTest()
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireMentorPlacementSeams(t)
 	ct := kernel.CTLocation()
 	mentorNowSource = func() time.Time { return time.Date(2026, 10, 2, 9, 0, 0, 0, ct) }
 	mentorDayNetSource = func() float64 { return 120 }
@@ -194,6 +211,18 @@ func TestMentorDoneAfterWinGateAtPlacementCallSite(t *testing.T) {
 	if placed != 3 {
 		t.Fatalf("a negative day must not end the mentor's day, placed=%d", placed)
 	}
+	// FAIL-CLOSED: missing P&L sources refuse the entry (an unknown is not
+	// "no win").
+	mentorDayNetSource = nil
+	mentorClosedProfitSource = nil
+	ResetMentorCountersForTest()
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 3 {
+		t.Fatalf("missing P&L sources must refuse (fail-closed), placed=%d", placed)
+	}
+	if got := MentorCountSnapshot()["done_after_win_no_data"]; got != 1 {
+		t.Fatalf("the fail-closed refusal must be counted done_after_win_no_data once, got %d", got)
+	}
 }
 
 // TestMentorNeverWidenAtStopMoveCallSite (c): a stop amendment that increases
@@ -219,6 +248,13 @@ func TestMentorNeverWidenAtStopMoveCallSite(t *testing.T) {
 	// call site: the widening move never reaches the wire.
 	ResetMentorCountersForTest()
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	// FAIL-CLOSED: no open-stop source (mentor mode ON) refuses the move.
+	if err := at.mentorMoveStop(&ntTrader.TCPTrader{}, "long", 99); err == nil {
+		t.Fatal("a stop move with no open-stop source must be refused (fail-closed)")
+	}
+	if got := MentorCountSnapshot()["stop_move_no_source"]; got != 1 {
+		t.Fatalf("the fail-closed stop-move refusal must be counted once, got %d", got)
+	}
 	var sentSide string
 	var sentPx float64
 	moveStopWire = func(nt *ntTrader.TCPTrader, side string, newStop float64) error {
@@ -249,6 +285,7 @@ func TestMentorNeverWidenAtStopMoveCallSite(t *testing.T) {
 func TestMentorNeverAddAtPlacementCallSite(t *testing.T) {
 	ResetMentorCountersForTest()
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireMentorPlacementSeams(t)
 	ct := kernel.CTLocation()
 	mentorNowSource = func() time.Time { return time.Date(2026, 10, 2, 9, 0, 0, 0, ct) }
 	mentorOpenSideSource = func() string { return "long" }
@@ -275,6 +312,75 @@ func TestMentorNeverAddAtPlacementCallSite(t *testing.T) {
 	at.mentorPlaceIntent(in, choice, 1000, 1100)
 	if placed != 1 {
 		t.Fatalf("an opposite-side entry must proceed, placed=%d", placed)
+	}
+	// FAIL-CLOSED: no open-side source refuses the entry.
+	mentorOpenSideSource = nil
+	ResetMentorCountersForTest()
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 1 {
+		t.Fatalf("a missing open-side source must refuse (fail-closed), placed=%d", placed)
+	}
+	if got := MentorCountSnapshot()["add_no_source"]; got != 1 {
+		t.Fatalf("the fail-closed refusal must be counted add_no_source once, got %d", got)
+	}
+}
+
+// TestMentorSourcesBootLine: the boot wiring check — with mentor_mode ON every
+// source seam must be non-nil, or mentor_mode refuses to arm and ONE error line
+// names the missing seam. Each seam is tested nil in turn.
+func TestMentorSourcesBootLine(t *testing.T) {
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireAll := func() {
+		mentorDayNetSource = func() float64 { return 0 }
+		mentorClosedProfitSource = func() bool { return false }
+		mentorOpenStopSource = func() (float64, bool) { return 0, false }
+		mentorOpenSideSource = func() string { return "" }
+		mentorDayEventsForTest = func() ([]calendar.Event, bool) { return nil, true }
+		market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline { return nil }
+	}
+	clearAll := func() {
+		mentorDayNetSource = nil
+		mentorClosedProfitSource = nil
+		mentorOpenStopSource = nil
+		mentorOpenSideSource = nil
+		mentorDayEventsForTest = nil
+		market.FuturesBarsProvider = nil
+	}
+	t.Cleanup(clearAll)
+	loaded := map[string]*AutoTrader{"t1": at}
+
+	wireAll()
+	if line := MentorSourcesBootLine(loaded); !textHas(line, "wired") {
+		t.Fatalf("all seams wired: %q", line)
+	}
+	clearAll()
+	if line := MentorSourcesBootLine(loaded); !textHas(line, "MISSING") {
+		t.Fatalf("nothing wired must report MISSING: %q", line)
+	}
+	for _, c := range []struct {
+		name  string
+		clear func()
+		want  string
+	}{
+		{"day net", func() { mentorDayNetSource = nil }, "day net"},
+		{"closed profit", func() { mentorClosedProfitSource = nil }, "closed profit"},
+		{"open stop", func() { mentorOpenStopSource = nil }, "open stop"},
+		{"open side", func() { mentorOpenSideSource = nil }, "open side"},
+		{"news events", func() { mentorDayEventsForTest = nil }, "news events"},
+		{"5m feed", func() { market.FuturesBarsProvider = nil }, "5m feed"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			wireAll()
+			c.clear()
+			line := MentorSourcesBootLine(loaded)
+			if !textHas(line, c.want) {
+				t.Fatalf("a missing %s must be named in %q", c.want, line)
+			}
+		})
+	}
+	// a non-mentor trader is not reported.
+	if line := MentorSourcesBootLine(map[string]*AutoTrader{"off": mentoredTrader(t, store.RiskControlConfig{})}); textHas(line, "off") {
+		t.Fatalf("a non-mentor trader must not be reported: %q", line)
 	}
 }
 
@@ -401,6 +507,7 @@ func TestMentorNewsGateAtPlacementCallSite(t *testing.T) {
 	ResetMentorCountersForTest()
 	// the trading window (b) runs first: 07:00–09:00 CT covers every now below.
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true, MentorWindowStart: "07:00", MentorWindowMinutes: 120})
+	wireMentorPlacementSeams(t)
 
 	ct := kernel.CTLocation()
 	cpi := []calendar.Event{{Title: "CPI m/m", Impact: calendar.T1,

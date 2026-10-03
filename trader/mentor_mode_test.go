@@ -391,6 +391,10 @@ func TestMentorExitMechSuspensionAppliesToAIOnly(t *testing.T) {
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
 	ResetExitMechSuspendNoticeForTest()
 
+	// the never-widen guard needs a wired open stop (99 → 100.25 tightens).
+	mentorOpenStopSource = func() (float64, bool) { return 99, true }
+	t.Cleanup(func() { mentorOpenStopSource = nil })
+
 	var sent string
 	var sentPx float64
 	moveStopWire = func(nt *ntTrader.TCPTrader, side string, newStop float64) error {
