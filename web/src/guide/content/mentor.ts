@@ -818,7 +818,7 @@ export const mentor: GuideSection = {
         {
           label: 'Loss departure distance',
           where: 'Strategy → Mentor mode → limits',
-          what: 'After a loss at a place (level, box edge or the EMA line), a closed candle AFTER the loss candle whose close is this many pts away from the loss price is the departure that un-blocks it. One number for every place.',
+          what: 'After a loss at a place (level, box edge or the EMA line), a closed candle AFTER the loss candle whose close is this many pts away from the loss price is the departure that un-blocks it. The loss price is the level price, the EMA loss price, or the box MIDPOINT. One number for every place.',
           trader: '20 pts — “leave the area”, no stated number.',
           consumer: 'kernel/mentor loss_departure_pts',
           range: 'pts',
