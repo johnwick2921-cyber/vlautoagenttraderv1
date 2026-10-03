@@ -30,11 +30,18 @@ const (
 
 // SeedMissing checks the per-source history depth at boot. Every short source
 // is named (the same strings the injector's mentorSourcesMissing expects).
-func SeedMissing(bars1m, bars1h []market.Kline, now int64) []string {
+func SeedMissing(bars1m []market.Kline, now int64) []string {
+	// P1 (CTO 12:44:08Z / 12:47:11Z): ONE bar source — every higher timeframe
+	// is AGGREGATED FROM 1m; the store's native 1h is never read. The LEVEL
+	// walk uses the RTH-filtered 1h aggregation; the 4h EMA uses the ALL-HOURS
+	// 1h aggregation (keyLevel1HBars drops non-RTH candles, which would gut the
+	// Globex 4h buckets).
+	bars1hRTH := keyLevel1HBars(bars1m)
+	bars1hAll := barsTF(bars1m, 60)
 	var missing []string
 	// 4h EMA 34: 4h buckets from the 1h history, 17:00 CT anchor, closed only.
 	// The gate reads the WARM-UP (102), not the bare minimum (34).
-	if n := len(fourHClosedBuckets(bars1h, now)); n < FourHEMA34Warmup {
+	if n := len(fourHClosedBuckets(bars1hAll, now)); n < FourHEMA34Warmup {
 		missing = append(missing, fmt.Sprintf("bar history depth: 4h EMA34 warm-up (%d/%d 4h candles)", n, FourHEMA34Warmup))
 	}
 	// 1m EMA 34.
@@ -42,7 +49,7 @@ func SeedMissing(bars1m, bars1h []market.Kline, now int64) []string {
 		missing = append(missing, fmt.Sprintf("bar history depth: 1m EMA34 warm-up (%d/%d 1m bars)", n, OneMEMA34Warmup))
 	}
 	// 1H RTH level set.
-	if n := len(keyLevel1HBars(bars1h)); n < OneHRTHLevelsMin {
+	if n := len(bars1hRTH); n < OneHRTHLevelsMin {
 		missing = append(missing, fmt.Sprintf("bar history depth: 1H RTH level history (%d candles)", n))
 	}
 	// Today's session: at least one 1m bar of the current CT day.
@@ -69,12 +76,19 @@ func SeedMissing(bars1m, bars1h []market.Kline, now int64) []string {
 // sources ("" names are never returned) — while any are missing the evaluator
 // REFUSES entries (fail-closed: never trade on a cold EMA or truncated
 // levels). Seeding is deterministic: the same bars rebuild the same state.
-func Seed(e *Evaluator, bars1m, bars1h []market.Kline, now int64) []string {
+func Seed(e *Evaluator, bars1m []market.Kline, now int64) []string {
+	// Defensive copy: the 15m depth check filters in place over the caller's
+	// backing array.
+	bars1m = append([]market.Kline(nil), bars1m...)
+	// P1 (CTO 12:44:08Z / 12:47:11Z): Seed takes 1m ONLY and builds 1h
+	// (clock-aligned aggregation) and the 4h buckets (17:00 CT anchor) from it.
+	// The level walk is RTH-filtered; the 4h EMA uses the all-hours aggregation.
+	bars1h := keyLevel1HBars(bars1m)
 	e.seeded = true
-	e.missing = SeedMissing(bars1m, bars1h, now)
+	e.missing = SeedMissing(bars1m, now)
 
 	// 1H RTH key levels from the FULL stored history (F7, no cap).
-	candles1h := keyLevel1HBars(bars1h)
+	candles1h := bars1h
 	e.State.SeedLevels = keyLevelsFromCandles(candles1h, e.Cfg.KeyLevelPrunePts)
 	if n := len(candles1h); n > 0 {
 		e.State.Seed1HWatermark = candles1h[n-1].OpenTime
@@ -102,10 +116,11 @@ func Seed(e *Evaluator, bars1m, bars1h []market.Kline, now int64) []string {
 
 	// The swing's 4h EMA 34 line: the last 34 closed 4h candles (17:00 anchor).
 	// The swing's 4h EMA line: the canonical recurrence over ALL closed 4h
-	// candles (17:00 anchor). The seed and every incremental step continue the
-	// SAME recurrence, so seed+ticks == full rebuild exactly. 34 closed candles
-	// are the warm-up MINIMUM (SeedMissing), not a cap — never re-window.
-	if b4 := fourHClosedBuckets(bars1h, now); len(b4) > 0 {
+	// candles (17:00 anchor), built from the ALL-HOURS 1h aggregation of the 1m
+	// history (P1). The seed and every incremental step continue the SAME
+	// recurrence, so seed+ticks == full rebuild exactly. 34 closed candles are
+	// the warm-up MINIMUM (SeedMissing), not a cap — never re-window.
+	if b4 := fourHClosedBuckets(barsTF(bars1m, 60), now); len(b4) > 0 {
 		closes4 := make([]float64, 0, len(b4))
 		for _, b := range b4 {
 			closes4 = append(closes4, b.Close)
@@ -115,17 +130,17 @@ func Seed(e *Evaluator, bars1m, bars1h []market.Kline, now int64) []string {
 		e.State.Swing.EmaCount = len(closes4)
 	}
 
-	e.seedLine = SeedLine(e.State, bars1m, bars1h, now)
+	e.seedLine = SeedLine(e.State, bars1m, now)
 	return e.missing
 }
 
 // SeedLine is the one boot/arm line: the seeded depth per source, n/a when
 // unknown.
-func SeedLine(s State, bars1m, bars1h []market.Kline, now int64) string {
+func SeedLine(s State, bars1m []market.Kline, now int64) string {
 	parts := []string{"mentor seed:"}
-	parts = append(parts, fmt.Sprintf("4h EMA34 %d/%d", len(fourHClosedBuckets(bars1h, now)), FourHEMA34Warmup))
+	parts = append(parts, fmt.Sprintf("4h EMA34 %d/%d", len(fourHClosedBuckets(barsTF(bars1m, 60), now)), FourHEMA34Warmup))
 	parts = append(parts, fmt.Sprintf("1m EMA34 %d/%d", closedCount(bars1m, now), OneMEMA34Warmup))
-	parts = append(parts, fmt.Sprintf("1H RTH levels %d candles", len(keyLevel1HBars(bars1h))))
+	parts = append(parts, fmt.Sprintf("1H RTH levels %d candles", len(keyLevel1HBars(bars1m))))
 	parts = append(parts, fmt.Sprintf("levels %d", len(s.SeedLevels)))
 	return strings.Join(parts, " ")
 }
