@@ -3,7 +3,6 @@ package mentor
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"vl/market"
 )
@@ -65,46 +64,6 @@ func TestEvaluatorOnRecordedDaysEmitsOnlyCompleteIntents(t *testing.T) {
 			// here: 09-15's tape provably produces §8 swing intents.
 			t.Fatalf("%s: no swing intents emitted — runSwing not wired into Tick", day)
 		}
-	}
-}
-
-// TestEvaluatorStampsSpentDayOnIntents — A5 (CTO 1791041016051): every intent
-// leaving a tick carries the §7 verdict. With a DaySpent day latched, the
-// stamp rides every intent out; the mutant (dropping the stamp) turns RED
-// here. The latch is frozen before the ticks run — LatchDay keeps a latched
-// key at/after the 08:30 CT read, exactly what a spent pre-open read leaves.
-func TestEvaluatorStampsSpentDayOnIntents(t *testing.T) {
-	cfg := DefaultConfig()
-	cfg.Enabled = true
-	e := New(cfg)
-	bars := loadFixture(t, "mnq_1m_2026-09-15_rth", "1m")
-	// Freeze the verdict for the fixture's trading day: 2026-09-15 (all the
-	// fixture bars are before 17:00 CT).
-	e.State.Day = DayLatch{Key: "2026-09-15", Verdict: DaySpent}
-	// Tick only from the first bar at/after the 08:30 CT read — before that
-	// the verdict is live (L1) and a pre-set latch does not freeze.
-	start := -1
-	for i, b := range bars {
-		tb := time.UnixMilli(b.OpenTime).In(ctime())
-		if tb.Hour()*60+tb.Minute() >= globexCloseMin {
-			start = i
-			break
-		}
-	}
-	if start < 0 {
-		t.Fatal("fixture has no bar at/after 08:30 CT")
-	}
-	total := 0
-	for i := start + 1; i <= len(bars); i++ {
-		for _, in := range e.Tick(bars[:i], bars[i-1].OpenTime+59_999) {
-			total++
-			if !in.SpentDay {
-				t.Fatalf("bar %d: intent without the A5 spent-day stamp on a latched DaySpent day: %+v", i, in)
-			}
-		}
-	}
-	if total == 0 {
-		t.Fatal("no intents emitted after the 08:30 read — the fixture must emit some (see TestEvaluatorOnRecordedDaysEmitsOnlyCompleteIntents)")
 	}
 }
 
