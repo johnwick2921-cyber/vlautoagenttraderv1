@@ -46,21 +46,22 @@ func TestMentorContractsForSizeTable(t *testing.T) {
 		{"spent day beats twenties", mentorTierInputs{Setup: "PLH", StopPts: 23, TargetPts: 46, SpentDay: true}, mentorSizeChoice{2, "spent_day", ""}},
 		{"SWING4H", mentorTierInputs{Setup: "SWING4H", StopPts: 12, TargetPts: 24}, mentorSizeChoice{3, "swing4h", ""}},
 		{"hard cap", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true}, mentorSizeChoice{20, "big", ""}},
-		// S9 (D5.2 p2 @05:21): a strong day cuts EVERY tier to 1–2, even a big
-		// confluence setup — checked FIRST.
-		{"strong day cuts big to 2", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true, StrongDay: true}, mentorSizeChoice{2, "strong_day", ""}},
-		{"strong day cuts base to 2", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true}, mentorSizeChoice{2, "strong_day", ""}},
+		// S9 (D5.2 p2 @05:21–05:57, S15 ruling): a strong day cuts the SWING
+		// only — "nhưng chỉ cùng 4 giờ". Other setups keep their tiers.
+		{"strong day does NOT cut big (swing-only)", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true, StrongDay: true}, mentorSizeChoice{20, "big", ""}},
+		{"strong day does NOT cut base (swing-only)", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true}, mentorSizeChoice{5, "base", ""}},
+		{"strong day cuts the SWING to 2", mentorTierInputs{Setup: "SWING4H", StopPts: 30, StrongDay: true}, mentorSizeChoice{2, "strong_day", ""}},
 		// ISB at an old high/low → reduce size, tier 3 (owner ruling 00:1x CT,
 		// D4.1 p1 written rule 2).
 		{"ISB at old extreme → 3", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, ISBOldExtreme: true}, mentorSizeChoice{3, "isb_old_extreme", ""}},
 		{"old extreme beats confluence", mentorTierInputs{Setup: "ISB", StopPts: 11.25, Confluence: true, ISBOldExtreme: true}, mentorSizeChoice{3, "isb_old_extreme", ""}},
-		{"strong day beats old extreme", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true, ISBOldExtreme: true}, mentorSizeChoice{2, "strong_day", ""}},
+		{"strong day does not beat old extreme (swing-only)", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true, ISBOldExtreme: true}, mentorSizeChoice{3, "isb_old_extreme", ""}},
 		{"spent day beats old extreme", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, SpentDay: true, ISBOldExtreme: true}, mentorSizeChoice{2, "spent_day", ""}},
 		// ISB in a range → reduce size, tier 3 (written rule 3, D4.1 p1
 		// @08:05/09:40) — same rank as the old-extreme reduction.
 		{"ISB in range → 3", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, ISBInRange: true}, mentorSizeChoice{3, "isb_in_range", ""}},
 		{"in range beats confluence", mentorTierInputs{Setup: "ISB", StopPts: 11.25, Confluence: true, ISBInRange: true}, mentorSizeChoice{3, "isb_in_range", ""}},
-		{"strong day beats in range", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true, ISBInRange: true}, mentorSizeChoice{2, "strong_day", ""}},
+		{"strong day does not beat in range (swing-only)", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true, ISBInRange: true}, mentorSizeChoice{3, "isb_in_range", ""}},
 		{"spent day beats in range", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, SpentDay: true, ISBInRange: true}, mentorSizeChoice{2, "spent_day", ""}},
 	}
 	for _, c := range cases {

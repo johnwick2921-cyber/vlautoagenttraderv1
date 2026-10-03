@@ -79,13 +79,6 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 		}
 		return n
 	}
-	// S9 (D5.2 p2 @05:21): a strong day — 5m candles running 50–80 pts — sizes
-	// 1–2 no matter the setup. Checked FIRST: the day's volatility overrides
-	// every tier, even a confluence big setup. The table takes 2, the top of
-	// the band.
-	if in.StrongDay {
-		return mentorSizeChoice{Contracts: clamp(2), Tier: "strong_day", Why: "5m candles running 50–80 pts → size 1–2 [D5.2 p2 @05:21]"}, nil
-	}
 	if in.SpentDay {
 		return mentorSizeChoice{Contracts: clamp(spentCap), Tier: "spent_day", Why: "§7 spent day — hold 1–2 only [D5.1 p1 @ 16:13]"}, nil
 	}
@@ -115,6 +108,13 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 			"stop %.1f pts in the twenties → reduce size or don't trade [D3.3 p1 @ 01:09]", in.StopPts)}, nil
 	}
 	if strings.EqualFold(in.Setup, "SWING4H") {
+		// S9 (D5.2 p2 @05:21–05:57): a strong day — 5m candles running 50–80
+		// pts — cuts the SWING to 1–2 ("50–60 điểm cứ vô 1-2 men kill... nhưng
+		// chỉ cùng 4 giờ"): the cut was said of the swing entry, not every
+		// setup. The table takes 2, the top of the band.
+		if in.StrongDay {
+			return mentorSizeChoice{Contracts: clamp(2), Tier: "strong_day", Why: "strong day — the SWING sizes 1–2 [D5.2 p2 @05:21–05:57]"}, nil
+		}
 		return mentorSizeChoice{Contracts: clamp(swing4h), Tier: "swing4h", Why: "SWING4H setup — 3 [D5.2 p1]"}, nil
 	}
 	return mentorSizeChoice{Contracts: clamp(base), Tier: "base", Why: fmt.Sprintf(
