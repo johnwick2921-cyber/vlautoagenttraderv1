@@ -1349,6 +1349,18 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 		// rule. The pass cancels an unfilled order at now >= expiry_ms through
 		// the existing settlement path; no expiry stored → this code never
 		// sweeps it (additive, OFF by absence).
+		//
+		// A working order with a PARTIAL fill is a trade in progress: expiry
+		// never cancels it — it is logged once and left to the position logic
+		// (the bot is one contract per leg anyway).
+		if r.ExpiryMs > 0 && now.UnixMilli() >= r.ExpiryMs &&
+			r.State == store.StateWorking && r.FillQuantity > 0 {
+			expKey := "expiry_partial_fill:" + strconv.FormatInt(r.ID, 10)
+			if armRefusalChanged(&at.armRefusalLast, expKey, "partial_fill_kept") {
+				at.logWarnf("⏳ armed %s row %d working with a partial fill at its expiry — KEPT (never auto-cancelled by expiry); the position logic owns it",
+					r.Scenario, r.ID)
+			}
+		}
 		if armExpired(r, now.UnixMilli()) {
 			at.armLifecycleWrite("request_cancel(expiry_elapsed)", r,
 				ledger.RequestCancel(r.ID, "stop-limit expiry elapsed", now.UnixMilli()))

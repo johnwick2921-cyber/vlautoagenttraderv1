@@ -74,9 +74,15 @@ func TestArmExpired(t *testing.T) {
 		t.Fatalf("a place_pending order at its expiry is due")
 	}
 	row.State = store.StateWorking
-	if armExpired(row, nowMs) {
-		t.Fatalf("a FILLED order is never swept by its expiry")
+	row.FillQuantity = 0
+	if !armExpired(row, nowMs) {
+		t.Fatalf("a working, UNFILLED order is due — a stop-limit resting at NT8 IS the order the expiry exists to cancel")
 	}
+	row.FillQuantity = 1
+	if armExpired(row, nowMs) {
+		t.Fatalf("a working order with a partial fill is a trade in progress — never due")
+	}
+	row.FillQuantity = 0
 	row.State = store.StateCancelPending
 	if armExpired(row, nowMs) {
 		t.Fatalf("a cancel_pending row is owned by the settlement pass, never this sweep")
@@ -88,9 +94,10 @@ func TestArmExpired(t *testing.T) {
 }
 
 // N12 call-site pin (PR B, 2026-10-03): the expiry sweep is READ in the armed
-// pass before any placement branch. Remove the sweep and armExpired keeps
-// passing while no row is ever cancelled at its expiry — the exact "built ≠
-// wired" class A29 named.
+// pass before any placement branch, and the partial-fill guard (a working row
+// with qty > 0 at its expiry is KEPT, logged, never cancelled) is wired beside
+// it. Remove either and armExpired keeps passing while live rows are missed —
+// the exact "built ≠ wired" class A29 named.
 func TestExpirySweepIsWiredInTheArmedPass(t *testing.T) {
 	src, err := os.ReadFile("armed_executor.go")
 	if err != nil {
@@ -98,5 +105,8 @@ func TestExpirySweepIsWiredInTheArmedPass(t *testing.T) {
 	}
 	if !strings.Contains(string(src), "armExpired(r, now.UnixMilli())") {
 		t.Fatal("the expiry sweep must call the due predicate in the armed pass row loop")
+	}
+	if !strings.Contains(string(src), "expiry_partial_fill:") {
+		t.Fatal("the partial-fill guard must be wired beside the expiry sweep")
 	}
 }

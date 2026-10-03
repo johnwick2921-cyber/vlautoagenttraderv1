@@ -24,16 +24,22 @@ func stopLimitEntriesEnabled() bool {
 }
 
 // armExpired is PURE (N12, PR B 2026-10-03): an order with a stored expiry is
-// due when now >= expiry_ms and the row is unfilled (armed or place_pending).
-// Filled (working), terminal, cancel_pending (the settlement pass owns
-// re-requests) and expiry-less rows are never due — 0 means no expiry was ever
-// authored, and this code never sweeps what no intent expired.
+// due when now >= expiry_ms and the order is UNFILLED AND LIVE — armed,
+// place_pending, or working with zero filled quantity (a stop-limit resting at
+// NT8 IS a working, unfilled order; it is exactly the order the expiry exists
+// to cancel). A working order with a partial fill is a trade in progress and
+// is never due (the position logic owns it); cancel_pending, terminal and
+// expiry-less rows are never due — 0 means no expiry was ever authored, and
+// this code never sweeps what no intent expired.
 func armExpired(r store.ArmedOrderDB, nowMs int64) bool {
 	if r.ExpiryMs <= 0 {
 		return false
 	}
-	if r.State != store.StateArmed && r.State != store.StatePlacePending {
-		return false
+	switch r.State {
+	case store.StateArmed, store.StatePlacePending:
+		return nowMs >= r.ExpiryMs
+	case store.StateWorking:
+		return r.FillQuantity == 0 && nowMs >= r.ExpiryMs
 	}
-	return nowMs >= r.ExpiryMs
+	return false
 }
