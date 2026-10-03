@@ -25,7 +25,7 @@
 | deploy/release_contract_test.go | carve-out (partner asserts) | 0dc3bf6dfbae | 9ffab2eb135a |
 | deploy/updater_worker_install_test.go | carve-out (partner REPO_URL assert) | 0a9d41d61e81 | 6d1c27bc2c92 |
 | internal/updatersource/source.go | carve-out (ONE-line `ReleaseRepo = "johnwick2921-cyber/vlautoagenttraderv1"`) | 447b9b640c90 | 5053fb7b13eb |
-| branding/census_test.go | carve-out (partner census pin, re-derived on the nofx@52f1989ca0a5 base) | 019b65e68d08 | 6624a7dc2e5c |
+| branding/census_test.go | carve-out (partner census pin, re-derived on the nofx@52f1989ca0a5 base) | 019b65e68d08 | c6fda32fed64 |
 | docs/superpowers/reports/2026-09-22-vl-partner-verification.md | partner-only doc | — | 6942ad5673c4 |
 | docs/superpowers/runbooks/2026-09-22-vl-partner-update.md | partner-only doc | — | c74d36977c99 |
 | docs/superpowers/reports/2026-10-02-vl-partner-sync-92d50acdb.md | partner-only doc | — | 1afb9cc27de3 |
