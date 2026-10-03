@@ -120,7 +120,7 @@ func DefaultConfig() Config {
 		EMAPeriod9:        9,
 		EMATFMinutes:      1,
 
-		TouchBandPts: 4.0,
+		TouchBandPts: 0, // §3: wait for the LITERAL touch [D3.3 p1 @ 00:13]; §8's "KHÔNG ĐƯỢC GẦN ĐỤNG" is the same strictness
 
 		ISBBufferPts:   1.5,
 		ISBStopMinPts:  5,
