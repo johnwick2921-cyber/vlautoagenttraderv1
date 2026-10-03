@@ -612,3 +612,21 @@ A value the AddOn cannot read is **left out**, never guessed. The Go reply sets 
 its `accept_seq`, monotonic accept time and `remote_port`, as that connection's record.
 The verifier binds to that record, **never** to `FarSideBuildID()`. `VL_BUILD_ID` keeps
 its ISO-date prefix, because the capability floors compare it bytewise.
+
+## `signal.stop_limit` (2026-10-03-c2) — mentor stop-LIMIT entries (PR B)
+
+The `signal` payload gains `stop_limit` (bool, omitempty). When true and
+`order_type` is `stop_entry`, the AddOn builds `OrderType.StopLimit` with
+`LimitPrice == StopPrice` — the entry fills at its price or misses, never a
+stop-MARKET (D1.4 p1 @24:41, p2 @00:00). Go sets the flag only when its
+`MENTOR_STOP_LIMIT` knob is ON and the far side proves
+`MinAddonBuildStopLimit` = `2026-10-03-c2` (fail-closed: an older AddOn would
+build StopMarket and fill sloppily). With the knob OFF the wire is
+byte-identical.
+
+N12: with limit == stop and Day time-in-force, a gap through the trigger leaves
+a RESTING limit that can fill later at a stale price. Go closes that window by
+cancelling an unfilled stop-limit at the candle close (runArmedPlacementAt:
+a non-terminal stop_entry row placed before the last closed 1m candle is
+requested for cancel; the settlement pass sends the cancel and reconciles it).
+The AddOn needs no new frame for this.

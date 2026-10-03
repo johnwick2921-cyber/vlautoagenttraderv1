@@ -1378,6 +1378,19 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				if !stopEntrySeamOn() {
 					continue // seam off → the leg stays armed (never on the wire)
 				}
+				// N12 (REVIEW-309 r2, PR B 2026-10-03): a stop-limit entry is
+				// fill-or-miss. With the mentor knob ON, an UNFILLED stop entry
+				// placed before the last closed 1m candle is stale (a gap through
+				// the trigger would have left a resting limit that can fill later
+				// at a stale price) and is requested for cancel; the settlement
+				// pass below sends the cancel and reconciles it. Knob OFF: the
+				// wire and the behaviour stay byte-identical to today.
+				if last, ok := lastClosedBar(bars, now.UnixMilli()); ok &&
+					stopLimitStaleAtCandleClose(r, time.UnixMilli(last.CloseTime)) {
+					at.armLifecycleWrite("request_cancel(stop_limit_unfilled_at_candle_close)", r,
+						ledger.RequestCancel(r.ID, "stop-limit unfilled at the candle close", now.UnixMilli()))
+					continue
+				}
 				// D3 (2026-09-04): the window belongs to the E7 FALLBACK only.
 				// A reclaim's buy stop IS the entry — waiting for a no-retest
 				// window would miss the reclaim it exists to catch.
@@ -1726,6 +1739,7 @@ func decideStopEntry(rawSide string, entryPx, offset, tick, price float64) stopE
 // sent, not by grepping this file for the call's spelling.
 type stopEntryPlacer interface {
 	PlaceStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error)
+	PlaceStopEntryWithLimit(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error)
 }
 
 // armStateWriter is the ledger seam: atomic pre-send registration plus refusal.
@@ -1811,7 +1825,17 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// so everything after it is the send itself. An error before it is a
 	// refusal (build, account, permit, B3, the ledger CAS) — provably unsent.
 	stamped := false
-	sid, perr := pl.PlaceStopEntry(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error {
+	// MENTOR STOP-LIMIT (PR B, 2026-10-03): with the knob ON the stop-entry
+	// routes through the limit variant — the AddOn builds OrderType.StopLimit
+	// (bounded limit offset past the trigger, N12) instead of StopMarket.
+	// Default OFF keeps the wire byte-identical to today. The send itself and
+	// the beforeSend callback are shared verbatim: the only difference is the
+	// stop_limit frame flag behind the far-side floor.
+	placeStopFn := pl.PlaceStopEntry
+	if stopLimitEntriesEnabled() {
+		placeStopFn = pl.PlaceStopEntryWithLimit
+	}
+	sid, perr := placeStopFn(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error {
 		if err := ledger.BeginPlacement(r.ID, sid); err != nil {
 			return err
 		}

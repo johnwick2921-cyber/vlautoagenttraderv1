@@ -59,7 +59,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         // + the hello epoch fields. 2026-09-23-m21 (M2.1): census `settled`,
         // no nested census locks, source_hash at activation. The ISO-date
         // prefix is kept (CTO ruling Q3).
-        private const string  VL_BUILD_ID             = "2026-10-03-c1";
+        private const string  VL_BUILD_ID             = "2026-10-03-c2";
         private const int    MAX_FRAME_BYTES         = 1 << 20; // 1 MB, spec L4376
 
         // === State ===
@@ -1106,7 +1106,14 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // trigger price (the tick offset was applied Go-side).
                 bool isLimit    = orderType == "limit" && limitPx > 0;
                 bool isStopEntry = orderType == "stop_entry" && stopPx > 0;
-                OrderType orderT = isLimit ? OrderType.Limit : (isStopEntry ? OrderType.StopMarket : OrderType.Market);
+                // MENTOR STOP-LIMIT (PR B, 2026-10-03): stop_limit=true builds
+                // OrderType.StopLimit instead of StopMarket — fills at its
+                // price or misses, never a stop-MARKET (D1.4 p1 @24:41,
+                // p2 @00:00). Go sets the flag only when its mentor knob is ON
+                // and the far side proved the floor.
+                bool stopLimitWanted = string.Equals(GetString(p, "stop_limit"), "true", StringComparison.OrdinalIgnoreCase);
+                OrderType orderT = isLimit ? OrderType.Limit
+                    : (isStopEntry ? (stopLimitWanted ? OrderType.StopLimit : OrderType.StopMarket) : OrderType.Market);
                 // WAVE B / D1 (2026-09-05) — ONE ORDER, CORRECT SLOTS.
                 // Account.CreateOrder is POSITIONAL: after `quantity` come
                 // (limitPrice, stopPrice, oco, name, gtd, customOrder). Until
@@ -1119,8 +1126,16 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // The correct shape was always in this file: the bracket stop
                 // loss below builds a StopMarket as (b.Qty, 0, b.Sl) and fills.
                 // A limit entry keeps the shape it has today: price in
-                // limitPrice, 0 in stopPrice. StopMarket only — no stop-limit.
-                double limitArg = isLimit ? limitPx : 0;
+                // limitPrice, 0 in stopPrice.
+                // N12 (PR B, 2026-10-03): LimitPrice == StopPrice leaves a
+                // RESTING limit when the market gaps through the trigger, and
+                // it can fill later at a stale price. The Go side closes that
+                // window: an unfilled stop-limit is CANCELLED at the candle
+                // close (see runArmedPlacementAt), so the resting window can
+                // never outlive its candle. The order itself keeps the
+                // mentor's exact shape — limit == stop (D1.4 p1 @24:41).
+                double limitArg = isLimit ? limitPx
+                    : (isStopEntry && stopLimitWanted ? stopPx : 0);
                 double stopArg  = isStopEntry ? stopPx : 0;
                 var entryOrder = submitAccount.CreateOrder(
                     instrument, entryAction, orderT, OrderEntry.Manual,
@@ -1898,6 +1913,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                         {
                             if (o.OrderType == OrderType.Limit)           otype = "limit";
                             else if (o.OrderType == OrderType.StopMarket) otype = "stop";
+                            else if (o.OrderType == OrderType.StopLimit)  otype = "stop-limit";
                             else if (o.OrderType == OrderType.StopLimit)  otype = "stop_limit";
                         }
                         catch { }

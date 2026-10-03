@@ -1385,6 +1385,20 @@ const pictureHtf: KnobSpec[] = [
     whenToTouch: 'To set a stricter floor than risk control.',
     perSession: 'No.',
   },
+  {
+    label: 'Mentor stop-limit entries',
+    where: 'Environment only (MENTOR_STOP_LIMIT, default OFF)',
+    what: 'D1.4: never a stop-MARKET. With the knob ON, stop entries carry stop_limit=true and the AddOn builds OrderType.StopLimit with LimitPrice == StopPrice: the entry fills at its price or misses. An unfilled stop-limit is cancelled at the candle close (N12: with limit == stop, a gap through the trigger would otherwise leave a resting limit that can fill later at a stale price).',
+    trader: 'The mentor evaluator drives this knob; the AI path never sets it.',
+    consumer:
+      'provider/ninjatrader/tcp_framing.go (SignalPayload.StopLimit, MinAddonBuildStopLimit) · trader/ninjatrader/tcp_trader.go (PlaceStopEntryWithLimit) · trader/armed_executor.go (placeOneStopEntry routing + the candle-close cancel) · ninjascript VLTraderTCPClient.cs (stop_limit).',
+    range: 'off | on · default off',
+    systemDefault: 'off',
+    recommended:
+      '⭐ keep OFF until Mentor mode; then ON with SIM-only trading.',
+    whenToTouch: 'Only with Mentor mode.',
+    perSession: 'No.',
+  },
 ]
 
 const sessions: KnobSpec[] = [
