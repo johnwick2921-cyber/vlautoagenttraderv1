@@ -23,6 +23,10 @@ const (
 	// stop-limit whose limit equals the stop (trigger) price — the order
 	// simply does not fill past the limit [D1.4 p1 @ 24:41–24:55].
 	PlaceStopLimitEntry Action = "place_stop_limit_entry"
+	// ExtendArm asks the injector to push a resting order's expiry_ms forward
+	// (N12 correction, CTO 1791007969871): the evaluator extends a stacked ISB
+	// arm while the candles stay inside the mother candle.
+	ExtendArm Action = "extend_arm"
 	// CancelArm asks the injector to cancel a previously emitted arm
 	// (ArmID names it). Reason says which rule demands the cancel.
 	CancelArm Action = "cancel_arm"
@@ -82,6 +86,12 @@ type Intent struct {
 	Stop   float64 // stop-loss
 	Target float64 // take-profit level
 	Flag   string  // sizing/routing flags for the injector (e.g. "isb_at_old_extreme")
+
+	// ExpiryMs is the per-order expiry the injector arms on placement (N12
+	// correction): cancel when now >= expiry_ms and the order is unfilled.
+	// 0 = no expiry — the order is never auto-cancelled by the expiry sweep
+	// (the setup carries its own explicit CancelArm instead).
+	ExpiryMs int64
 
 	// CancelArm / LevelInvalid fields.
 	ArmID    string

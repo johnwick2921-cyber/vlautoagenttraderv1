@@ -374,6 +374,10 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 						if touchesOldExtreme(cur, levels) {
 							chosen.Flag = "isb_at_old_extreme"
 						}
+						// N12: a single ISB fills by the close of the NEXT 1m candle
+						// or it is cancelled ("cancel if the next candle does not
+						// fill" [D1.4 p1 @ 18:32–18:45]); stacking extends it below.
+						chosen.ExpiryMs = cur.CloseTime + 60_000
 						e.State.ArmSeq++
 						id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
 						e.State.ISBArms[id] = ISBArm{FirstBar: cur}
@@ -392,6 +396,9 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	// trades WITH the trend [D5.4].
 	if e.Cfg.ISBReverseEMA9Enabled && IsISB(prev, cur) {
 		if in, ok, _ := ReverseISBAtEMA9(prev, cur, emaValue(bars, e.Cfg.EMAPeriod9), e.State.Trigger.Dir, e.Cfg); ok {
+			// N12: an R7 reverse ISB fills by the close of the NEXT 1m candle
+			// (the R1 family rule).
+			in.ExpiryMs = cur.CloseTime + 60_000
 			out = append(out, in)
 		}
 	}
@@ -402,13 +409,23 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 			delete(e.State.ISBArms, id)
 			continue
 		}
+		var cancelled bool
 		for _, in := range ISBStackTick(&arm, cur, e.Cfg) {
 			in.ArmID = id
+			if in.Action == CancelArm {
+				cancelled = true
+			}
 			out = append(out, in)
 		}
 		if arm.Inside < 0 {
 			delete(e.State.ISBArms, id)
 		} else {
+			// N12: while the candles stay inside the mother candle the expiry
+			// is pushed to the close of the NEXT 1m candle; the cancel at the
+			// 4th inside candle comes from ISBStackTick.
+			if !cancelled {
+				out = append(out, Intent{Action: ExtendArm, ArmID: id, ExpiryMs: cur.CloseTime + 60_000, Reason: "ISB stacking: inside — extend the expiry [N12, D4.2 p2 @ 08:21–16:05]"})
+			}
 			e.State.ISBArms[id] = arm
 		}
 	}
@@ -450,6 +467,8 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		for _, ex := range oldExtremes {
 			in, ok, _ := PHLPLHGatedR2(tr, ex.level, ex.idx, len(bars)-1, priorSameRole(ex, oldExtremes), e.Cfg, e.State.HTF, e.State.Day.Verdict, dg)
 			if ok {
+				// N12: a level touch fills by the close of the NEXT 1m candle.
+				in.ExpiryMs = cur.CloseTime + 60_000
 				out = append(out, in)
 				break
 			}
@@ -533,7 +552,16 @@ func priorSameRole(ex oldExtreme, extremes []oldExtreme) float64 {
 // gate on [C]: not stated in the method (CTO swing ruling, mails
 // 1791001124127 / 1791001760445).
 func runSwing(e *Evaluator, bars []market.Kline, now int64) []Intent {
-	ints := SwingTick(&e.State.Swing, closedBuckets(bars, now, e.Cfg), e.Cfg.Swing, now)
+	closed := closedBuckets(bars, now, e.Cfg)
+	ints := SwingTick(&e.State.Swing, closed, e.Cfg.Swing, now)
+	// N12: the swing's expiry is its OWN 5m rule — the touch candle plus the
+	// 2-candle leeway on the 5m (SwingTick also emits its own CancelArm when
+	// the leeway runs out).
+	for i := range ints {
+		if ints[i].Action == PlaceStopEntry && len(closed) > 0 {
+			ints[i].ExpiryMs = closed[len(closed)-1].OpenTime + 3*300_000 - 1
+		}
+	}
 	return swingZoneGate(ints, e.State.Trigger, e.Cfg.Swing.Respects5mZone)
 }
 
