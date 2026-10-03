@@ -53,7 +53,8 @@ type mentorTierInputs struct {
 	HTFAgree      bool    // 4h AND 1h agree
 	SpentDay      bool    // §7 spent day
 	StrongDay     bool    // S9: 5m candles running 50–80 pts → size 1–2
-	ISBOldExtreme bool    // ISB at an old high/low → reduce size, tier 3 [D4.1 p1]
+	ISBOldExtreme bool    // ISB at an old high/low → reduce size, tier 3 [D4.1 p1 rule 2]
+	ISBInRange    bool    // ISB traded inside a range → reduce size, tier 3 [D4.1 p1 rule 3]
 }
 
 // mentorSizeChoice is the tier decision: contracts, the tier name and why.
@@ -92,6 +93,12 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 	// REDUCES whatever the setup would otherwise earn.
 	if in.ISBOldExtreme {
 		return mentorSizeChoice{Contracts: clamp(3), Tier: "isb_old_extreme", Why: "ISB at an old high/low → reduce size, tier 3 [D4.1 p1 written rule 2]"}, nil
+	}
+	// ISB traded inside a range → reduce size, tier 3 (written rule 3, D4.1 p1
+	// @08:05/09:40: "Khi trade isb in-range bắt buộc giảm size"). Ranks the
+	// same as the old-extreme reduction; strong day and spent day (2) win.
+	if in.ISBInRange {
+		return mentorSizeChoice{Contracts: clamp(3), Tier: "isb_in_range", Why: "ISB traded inside a range → reduce size, tier 3 [D4.1 p1 written rule 3 @08:05/09:40]"}, nil
 	}
 	if in.Confluence && in.HTFAgree && in.RoomMultiple >= mentorRoomBigMultiple && in.TargetPts >= mentorTargetBigPts {
 		return mentorSizeChoice{Contracts: clamp(big), Tier: "big", Why: fmt.Sprintf(

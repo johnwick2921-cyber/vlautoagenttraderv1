@@ -55,6 +55,12 @@ func TestMentorContractsForSizeTable(t *testing.T) {
 		{"old extreme beats confluence", mentorTierInputs{Setup: "ISB", StopPts: 11.25, Confluence: true, ISBOldExtreme: true}, mentorSizeChoice{3, "isb_old_extreme", ""}},
 		{"strong day beats old extreme", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true, ISBOldExtreme: true}, mentorSizeChoice{2, "strong_day", ""}},
 		{"spent day beats old extreme", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, SpentDay: true, ISBOldExtreme: true}, mentorSizeChoice{2, "spent_day", ""}},
+		// ISB in a range → reduce size, tier 3 (written rule 3, D4.1 p1
+		// @08:05/09:40) — same rank as the old-extreme reduction.
+		{"ISB in range → 3", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, ISBInRange: true}, mentorSizeChoice{3, "isb_in_range", ""}},
+		{"in range beats confluence", mentorTierInputs{Setup: "ISB", StopPts: 11.25, Confluence: true, ISBInRange: true}, mentorSizeChoice{3, "isb_in_range", ""}},
+		{"strong day beats in range", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true, ISBInRange: true}, mentorSizeChoice{2, "strong_day", ""}},
+		{"spent day beats in range", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, SpentDay: true, ISBInRange: true}, mentorSizeChoice{2, "spent_day", ""}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
