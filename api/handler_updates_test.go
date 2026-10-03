@@ -110,7 +110,7 @@ func mintJWT(t *testing.T, userID, email string, iat, exp time.Time, secret stri
 	t.Helper()
 	c := auth.Claims{UserID: userID, Email: email, RegisteredClaims: jwt.RegisteredClaims{
 		IssuedAt: jwt.NewNumericDate(iat), NotBefore: jwt.NewNumericDate(iat.Add(-time.Minute)),
-		ExpiresAt: jwt.NewNumericDate(exp), Issuer: "nofxAI",
+		ExpiresAt: jwt.NewNumericDate(exp), Issuer: "vlAI",
 	}}
 	s, err := jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString([]byte(secret))
 	if err != nil {
@@ -744,14 +744,14 @@ func TestUpdatePreflightNeverAllowsTheUpdateHeader(t *testing.T) {
 		r.RemoteAddr, r.Host = "127.0.0.1:52000", "127.0.0.1:8080"
 		r.Header.Set("Origin", "http://evil.test")
 		r.Header.Set("Access-Control-Request-Method", "POST")
-		r.Header.Set("Access-Control-Request-Headers", "x-nofx-update,authorization,content-type")
+		r.Header.Set("Access-Control-Request-Headers", "x-vl-update,authorization,content-type")
 		w := httptest.NewRecorder()
 		e.s.router.ServeHTTP(w, r)
 		allow := strings.ToLower(strings.Join(w.Header().Values("Access-Control-Allow-Headers"), ","))
 		if allow == "" {
 			t.Fatalf("%s: positive control: the CORS middleware did not answer the preflight", p)
 		}
-		if strings.Contains(allow, "x-nofx-update") || strings.Contains(allow, "*") {
+		if strings.Contains(allow, "x-vl-update") || strings.Contains(allow, "*") {
 			t.Fatalf("%s: preflight allows the update header: %q", p, allow)
 		}
 	}

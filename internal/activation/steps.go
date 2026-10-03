@@ -488,7 +488,7 @@ func Snapshot(install Release, dest string) (Receipt, error) {
 	out := Release{
 		Dir:         dest,
 		SHA:         install.SHA,
-		Binary:      filepath.Join(dest, filepath.Base(install.Binary)), // snapshot keeps the install's basename (vl-bin or nofx-bin — R5 removes the nofx name)
+		Binary:      filepath.Join(dest, filepath.Base(install.Binary)), // snapshot keeps the install's basename (vl-bin)
 		Dist:        filepath.Join(dest, "web", "dist"),
 		ReleaseFile: filepath.Join(dest, "RELEASE"),
 	}
