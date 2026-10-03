@@ -54,6 +54,10 @@ func wireMentorPlacementSeams(t *testing.T) {
 	mentorClosedProfitSource = func() bool { return false }
 	mentorOpenStopSource = func() (float64, bool) { return 0, false }
 	mentorOpenSideSource = func() string { return "" }
+	mentorLegProtectedSource = func(leg string) bool { return true }
+	mentorLatestPriceSource = func() (float64, bool) { return 0, false } // bound, inert: no-chase sees no price
+	mentorConfluenceForIntent = func(in mentor.Intent) bool { return false }
+	mentorSetArmExpiryWire = func(armID int64, expiryMs int64) error { return nil }
 	mentorDayEventsForTest = func() ([]calendar.Event, bool) { return nil, true }
 	market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline { return nil }
 	mentorSourceDepthSource = func(name string) (int, bool) { return 9999, true }
@@ -62,6 +66,10 @@ func wireMentorPlacementSeams(t *testing.T) {
 		mentorClosedProfitSource = nil
 		mentorOpenStopSource = nil
 		mentorOpenSideSource = nil
+		mentorLegProtectedSource = nil
+		mentorLatestPriceSource = nil
+		mentorConfluenceForIntent = nil
+		mentorSetArmExpiryWire = nil
 		mentorDayEventsForTest = nil
 		market.FuturesBarsProvider = nil
 		mentorSourceDepthSource = nil
@@ -630,6 +638,11 @@ func TestMentorSourcesBootLine(t *testing.T) {
 		mentorClosedProfitSource = func() bool { return false }
 		mentorOpenStopSource = func() (float64, bool) { return 0, false }
 		mentorOpenSideSource = func() string { return "" }
+		mentorLegProtectedSource = func(leg string) bool { return true }
+		mentorLatestPriceSource = func() (float64, bool) { return 0, false }
+		mentorNowSource = func() time.Time { return time.Now() }
+		mentorConfluenceForIntent = func(in mentor.Intent) bool { return false }
+		mentorSetArmExpiryWire = func(armID int64, expiryMs int64) error { return nil }
 		mentorDayEventsForTest = func() ([]calendar.Event, bool) { return nil, true }
 		market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline { return nil }
 		mentorSourceDepthSource = func(name string) (int, bool) { return 9999, true }
@@ -639,6 +652,11 @@ func TestMentorSourcesBootLine(t *testing.T) {
 		mentorClosedProfitSource = nil
 		mentorOpenStopSource = nil
 		mentorOpenSideSource = nil
+		mentorLegProtectedSource = nil
+		mentorLatestPriceSource = nil
+		mentorNowSource = nil
+		mentorConfluenceForIntent = nil
+		mentorSetArmExpiryWire = nil
 		mentorDayEventsForTest = nil
 		market.FuturesBarsProvider = nil
 		mentorSourceDepthSource = nil
@@ -661,8 +679,8 @@ func TestMentorSourcesBootLine(t *testing.T) {
 	}{
 		{"day net", func() { mentorDayNetSource = nil }, "day net"},
 		{"closed profit", func() { mentorClosedProfitSource = nil }, "closed profit"},
-		{"open stop", func() { mentorOpenStopSource = nil }, "open stop"},
-		{"open side", func() { mentorOpenSideSource = nil }, "open side"},
+		{"open stop", func() { mentorOpenStopSource = nil }, "open_stop"},
+		{"open side", func() { mentorOpenSideSource = nil }, "open_side"},
 		{"news events", func() { mentorDayEventsForTest = nil }, "news events"},
 		{"5m feed", func() { market.FuturesBarsProvider = nil }, "5m feed"},
 		{"4h EMA34", func() {

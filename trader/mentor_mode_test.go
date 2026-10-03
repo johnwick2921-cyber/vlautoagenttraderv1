@@ -697,8 +697,8 @@ func TestMentorExitForkAtPlacement(t *testing.T) {
 		t.Fatalf("exit_fork_C counter = %d, want 1", got)
 	}
 
-	// B: seam nil → a normal ISB lands on B.
-	mentorConfluenceForIntent = nil
+	// B: the seam stays bound but returns false → a normal ISB lands on B.
+	mentorConfluenceForIntent = func(in mentor.Intent) bool { return false }
 	mentorLatestPriceSource = func() (float64, bool) { return 101, true }
 	at.mentorPlaceIntent(mentor.Intent{
 		Action: mentor.PlaceStopEntry, Setup: "ISB", Side: mentor.SideShort,

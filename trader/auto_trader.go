@@ -866,7 +866,10 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	// P0 SPLICE (CTO 1791030462901) — a mentor-mode trader seeds the evaluator
 	// from the stored 1m+1h bars at start (read-only); while any source is
 	// missing every mentor entry is refused with the named source.
+	// P0 WIRING (CTO 1791039541371) — the production seams bind FIRST; a
+	// missing seam refuses entries, named, on the same boot line.
 	if at.mentorEnabled() {
+		at.mentorWireProductionSeams()
 		at.mentorSeedAtStart()
 	}
 	return at, nil

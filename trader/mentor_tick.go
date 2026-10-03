@@ -272,11 +272,9 @@ func mentorExpiryGuard(expiryMs int64) (refuse bool, why string) {
 
 // mentorSetArmExpiryWire is the F3 binding seam (CTO 1791035117415): the
 // mentor injector must call SetArmExpiry with the intent's ExpiryMs when the
-// arm is created. PR #313's frame (store.SetArmExpiry on armed rows) is NOT
-// on any branch the injector can build against yet — when it lands, this seam
-// binds to it in ONE line at the arm-creation call site. nil → nothing is
-// stamped (the frame does not exist).
-var mentorSetArmExpiryWire func(armID string, expiryMs int64) error
+// arm is created. Production wiring binds it to store.SetArmExpiry (dev via
+// #313). nil → nothing is stamped (the frame does not exist).
+var mentorSetArmExpiryWire func(armID int64, expiryMs int64) error
 
 // mentorIntentExpiry resolves the N12 per-order expiry (PR #313): the expiry
 // belongs to the RULES, not a blanket timer. An intent-carried expiry wins;
@@ -729,6 +727,7 @@ func (at *AutoTrader) mentorSeedAtStart() {
 		return d, ok
 	}
 	at.logInfof("🧑‍🏫 %s", mentor.SeedLine(at.mentorEval.State, bars1m, bars1h, now))
+	at.logInfof("%s", mentorSeamBootLine())
 	if len(missing) > 0 {
 		mentorCount("seed_missing")
 		at.logErrorf("🧑‍🏫 mentor seed REFUSING entries — missing: %s", strings.Join(missing, "; "))
@@ -740,17 +739,14 @@ func (at *AutoTrader) mentorSeedAtStart() {
 // reports them in ONE error line.
 func (at *AutoTrader) mentorSourcesMissing() []string {
 	var missing []string
+	for _, n := range mentorSeamMissing() {
+		missing = append(missing, "seam: "+n)
+	}
 	if mentorDayNetSource == nil {
 		missing = append(missing, "day net")
 	}
 	if mentorClosedProfitSource == nil {
 		missing = append(missing, "closed profit")
-	}
-	if mentorOpenStopSource == nil {
-		missing = append(missing, "open stop")
-	}
-	if mentorOpenSideSource == nil {
-		missing = append(missing, "open side")
 	}
 	if at.store == nil && mentorDayEventsForTest == nil {
 		missing = append(missing, "news events")
