@@ -256,9 +256,14 @@ func TestBotClockSeamsAreTheRealClockInProduction(t *testing.T) {
 	}
 }
 
-// F4b × F7: the bot's token blacklisted in the second it was minted. The
-// re-mint in that second is the SAME string, still blacklisted — refresh
-// must not report it as a success.
+// F4b × F7, the jti world (token-iat-same-second, owner order 2026-10-02):
+// every mint carries a distinct jti, so a re-mint in the same second as a
+// blacklisted token is a NEW string and refresh succeeds with zero waits —
+// the old byte-identical re-mint can no longer exist. The bounded-refusal
+// invariant (one wait, one extra mint, never install a refused token) is
+// unchanged and is re-asserted here through the retire path, which is still
+// what refuses a re-mint deterministically (a frozen mint clock keeps both
+// mints in the credential epoch's second).
 func TestBotRefreshSameSecondReMintAfterABlacklistIsBoundedAtItsCallSite(t *testing.T) {
 	base, st := btBoot(t)
 	btPrivateSecret(t)
@@ -266,36 +271,63 @@ func TestBotRefreshSameSecondReMintAfterABlacklistIsBoundedAtItsCallSite(t *test
 	if !ident.refresh() {
 		t.Fatal("refresh with an account on the box = false")
 	}
+
+	// The mint clock is frozen into the current whole second, so the re-mint
+	// lands in the blacklisted token's own second deterministically (the
+	// auth.Now seam — never a sleep).
+	cur := time.Now().Truncate(time.Second).Add(300 * time.Millisecond)
+	prevAuthNow := auth.Now
+	auth.Now = func() time.Time { return cur }
+	t.Cleanup(func() { auth.Now = prevAuthNow })
+
+	// Phase A — blacklisted token: the same-second re-mint is a distinct
+	// string (jti) and is admitted immediately, with no wait.
+	before, beforeAgents := ident.token, ident.agents
+	cl, err := auth.ValidateJWT(before)
+	if err != nil || cl.ExpiresAt == nil || cl.IssuedAt == nil {
+		t.Fatalf("the bot's token does not parse to iat/exp: %v", err)
+	}
+	auth.BlacklistToken(before, cl.ExpiresAt.Time)
 	w := btRecordWaits(t, false)
-	for attempt := 1; ; attempt++ {
-		if attempt > btSameSecondAttempts {
-			t.Fatalf("the same-second path was never reached in %d attempts", btSameSecondAttempts)
-		}
-		before, beforeAgents := ident.token, ident.agents
-		cl, err := auth.ValidateJWT(before)
-		if err != nil || cl.ExpiresAt == nil || cl.IssuedAt == nil {
-			t.Fatalf("the bot's token does not parse to iat/exp: %v", err)
-		}
-		auth.BlacklistToken(before, cl.ExpiresAt.Time)
-		w.reset()
-		ok := ident.refresh()
-		btNeverSucceedsRefused(t, base, ok, ident)
-		if len(w.d) > 1 {
-			t.Fatalf("refresh waited %d times — the re-mint must be bounded to ONE extra mint", len(w.d))
-		}
-		if len(w.d) == 0 && !ok {
-			t.Fatal("refresh failed closed without its one wait to the next second")
-		}
-		if len(w.d) == 0 || ok {
-			continue // a re-mint landed past the blacklisted token's second (a new string): admitted; retry on it
-		}
-		btWaitReachesPast(t, w, cl.IssuedAt.Unix())
-		// By construction the token half cannot fire here: this path is only
-		// reached when the re-mint IS `before`, byte for byte. The manager
-		// half (agents != beforeAgents) is the check that can catch a mutant.
-		if ident.token != before || ident.agents != beforeAgents {
-			t.Fatal("refresh failed but installed a new token / manager — a token the API refuses must never be installed")
-		}
-		return
+	ok := ident.refresh()
+	btNeverSucceedsRefused(t, base, ok, ident)
+	if !ok {
+		t.Fatal("refresh = false after the blacklist — the same-second re-mint is a NEW string (jti) and must be admitted")
+	}
+	if len(w.d) != 0 {
+		t.Fatalf("refresh waited %d times — a distinct re-mint needs no wait", len(w.d))
+	}
+	if ident.token == before || ident.agents == beforeAgents {
+		t.Fatal("refresh reported success without re-minting / rebuilding the manager")
+	}
+	if code, body := btCall(t, base, "GET", "/api/my-traders", ident.token, ""); code != http.StatusOK {
+		t.Fatalf("the re-minted token on GET /api/my-traders = %d %s — want 200", code, body)
+	}
+	if code, _ := btCall(t, base, "GET", "/api/my-traders", before, ""); code != http.StatusUnauthorized {
+		t.Fatalf("control: the blacklisted token on GET /api/my-traders = %d — want 401", code)
+	}
+
+	// Phase B — the bound the old test asserted: a re-mint that IS still
+	// refused (the credential epoch's second, not the blacklist) must wait
+	// ONCE, mint ONE more time, and install nothing.
+	btSetOwnerUpdatedAt(t, st, cur.Truncate(time.Second).Add(100*time.Millisecond))
+	// ident.token is phase A's re-mint, stamped in the frozen current second
+	// — retired by the epoch stamped in that same second.
+	before, beforeAgents = ident.token, ident.agents
+	w.reset()
+	ok = ident.refresh()
+	btNeverSucceedsRefused(t, base, ok, ident)
+	if len(w.d) > 1 {
+		t.Fatalf("refresh waited %d times — the re-mint must be bounded to ONE extra mint", len(w.d))
+	}
+	if len(w.d) == 0 {
+		t.Fatal("refresh failed closed without its one wait to the next second")
+	}
+	if ok {
+		t.Fatal("refresh reported success although every mint in the frozen epoch's second is retired")
+	}
+	btWaitReachesPast(t, w, cur.Truncate(time.Second).Unix())
+	if ident.token != before || ident.agents != beforeAgents {
+		t.Fatal("refresh failed but installed a new token / manager — a token the API refuses must never be installed")
 	}
 }
