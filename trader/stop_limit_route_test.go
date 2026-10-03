@@ -1,11 +1,16 @@
 package trader
 
 import (
-	"os"
+	"context"
+	"net"
 	"strings"
 	"testing"
+	"time"
 
+	"vl/market"
+	ntwire "vl/provider/ninjatrader"
 	"vl/store"
+	nttrader "vl/trader/ninjatrader"
 )
 
 // Routing pin (PR B, 2026-10-03; REVIEW-313 F3) at the production call site:
@@ -99,20 +104,148 @@ func TestArmExpired(t *testing.T) {
 	}
 }
 
-// N12 call-site pin (PR B, 2026-10-03): the expiry sweep is READ in the armed
-// pass before any placement branch, and the partial-fill guard (a working row
-// with qty > 0 at its expiry is KEPT, logged, never cancelled) is wired beside
-// it. Remove either and armExpired keeps passing while live rows are missed —
-// the exact "built ≠ wired" class A29 named.
-func TestExpirySweepIsWiredInTheArmedPass(t *testing.T) {
-	src, err := os.ReadFile("armed_executor.go")
+// expiryFixture stands up the real TCPServer + TCPTrader + store fixture the
+// expiry sweep pins run on — the same harness the stop-entry latch test uses.
+// The far side proves the given build; every frame the server writes is
+// mirrored into frames.
+func expiryFixture(t *testing.T, buildID string) (at *AutoTrader, st *store.Store, ledger *store.ArmedOrderStore, frames chan ntwire.FrameType, conn net.Conn) {
+	t.Helper()
+	t.Setenv("STOP_ENTRY_SEAM", "on")
+	withMaintenanceDir(t)
+	at, st = resetTrader(t, store.StrategyConfig{})
+	s := ntwire.NewTCPServer(nil)
+	s.SetAddrForTest("127.0.0.1:0")
+	s.SetAccountsList([]ntwire.AccountInfo{{Name: "Sim101", IsSim: true}}, "Sim101")
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := s.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Stop(); cancel() })
+	conn, err := net.Dial("tcp", s.ListenAddrForTest().String())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(src), "armExpired(r, now.UnixMilli())") {
-		t.Fatal("the expiry sweep must call the due predicate in the armed pass row loop")
+	t.Cleanup(func() { _ = conn.Close() })
+	waitAddonRegistered(t, s)
+	frames = make(chan ntwire.FrameType, 16)
+	go func() {
+		for {
+			env, err := ntwire.ReadFrame(conn)
+			if err != nil {
+				return
+			}
+			frames <- env.Type
+		}
+	}()
+	if buildID != "" {
+		if err := ntwire.WriteFrame(conn, ntwire.FrameHeartbeat, ntwire.HeartbeatPayload{BuildID: buildID}); err != nil {
+			t.Fatal(err)
+		}
+		for deadline := time.Now().Add(2 * time.Second); !ntwire.FarSideProven(s.FarSideBuildID(), buildID) && time.Now().Before(deadline); {
+			time.Sleep(time.Millisecond)
+		}
+		if !ntwire.FarSideProven(s.FarSideBuildID(), buildID) {
+			t.Fatal("fixture: far-side build never proven")
+		}
 	}
-	if !strings.Contains(string(src), "expiry_partial_fill:") {
-		t.Fatal("the partial-fill guard must be wired beside the expiry sweep")
+	broker := nttrader.NewTCPTrader(s, "MNQ", "Sim101")
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
+	broker.StartCloseSync(at.id, "fixture", "ninjatrader", st)
+	at.trader = broker
+	at.config.NinjaTraderSymbol = "MNQ"
+	ledger = st.ArmedOrders()
+	return at, st, ledger, frames, conn
+}
+
+// sawFrame drains frames until deadline and reports whether want ever arrived.
+func sawFrame(t *testing.T, frames chan ntwire.FrameType, want ntwire.FrameType, within time.Duration) bool {
+	t.Helper()
+	deadline := time.After(within)
+	for {
+		select {
+		case f := <-frames:
+			if f == want {
+				return true
+			}
+		case <-deadline:
+			return false
+		}
+	}
+}
+
+// REVIEW-313 M10 + M11 + F1 pin, behavioural at the production call site: an
+// expired WORKING row (a stop-limit resting at NT8) must become cancel_pending
+// AND emit a cancel_order frame on the SAME pass. Disabling the sweep (M10) or
+// the cancel inside it (M11) kept the old source-grep test green — no grep can
+// see this.
+func TestExpirySweepCancelsARestingOrderOnTheWire(t *testing.T) {
+	at, _, ledger, frames, _ := expiryFixture(t, ntwire.MinAddonBuildStopLimit)
+	now := rthInstant()
+	row := store.ArmedOrderDB{TraderID: at.id, PlanID: "expwire", Scenario: "S1", Version: 1, State: "armed",
+		Side: "long", EntryPx: 29600, StopPx: 29590, TargetPx: 29630, Kind: "stop_entry", Condition: "reclaim"}
+	if err := ledger.UpsertArm(&row); err != nil {
+		t.Fatal(err)
+	}
+	s := at.armedTrader().GetServer()
+	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now,
+		armAdmission{armAdmitKey("expwire", "S1", 0): true})
+	if !sawFrame(t, frames, ntwire.FrameSignal, 300*time.Millisecond) {
+		t.Fatal("fixture: the placement never reached the wire")
+	}
+	var got store.ArmedOrderDB
+	if err := ledger.DB().First(&got, row.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if got.State != store.StatePlacePending || got.SignalID == "" {
+		t.Fatalf("fixture: row must be place_pending with a signal id after placement, got state=%q signal=%q", got.State, got.SignalID)
+	}
+	// The evaluator stamps the expiry, and the broker receipt makes it working.
+	if err := ledger.SetArmExpiry(got.ID, now.UnixMilli()+60_000); err != nil {
+		t.Fatal(err)
+	}
+	if err := ledger.ApplyPlacementReceipt(at.id, got.SignalID, store.StateWorking, "test order_update"); err != nil {
+		t.Fatal(err)
+	}
+	now2 := now.Add(61 * time.Second)
+	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{
+		{Name: got.SignalID, State: "Working", Type: "stop_limit"}}}, now2)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now2,
+		armAdmission{armAdmitKey("expwire", "S1", 0): true})
+	if !sawFrame(t, frames, ntwire.FrameCancelOrder, 500*time.Millisecond) {
+		t.Fatal("the expiry sweep must send cancel_order on the same pass the order lapses")
+	}
+	if err := ledger.DB().First(&got, row.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if got.State != store.StateCancelPending || !strings.Contains(got.StateReason, "stop-limit expiry elapsed") {
+		t.Fatalf("the lapsed row must be cancel_pending with the expiry reason, got state=%q reason=%q", got.State, got.StateReason)
+	}
+}
+
+// REVIEW-313 F2 pin, behavioural: an expired arm that was NEVER SENT (armed,
+// no signal id) ends terminal 'expired' in the ledger — no broker cancel, no
+// stranded cancel_pending with an empty signal id that no regime can settle.
+func TestExpiredUnsentArmEndsTerminal(t *testing.T) {
+	at, _, ledger, frames, _ := expiryFixture(t, ntwire.MinAddonBuildStopLimit)
+	now := rthInstant()
+	row := store.ArmedOrderDB{TraderID: at.id, PlanID: "expunsent", Scenario: "S1", Version: 1, State: "armed",
+		Side: "long", EntryPx: 29600, StopPx: 29590, TargetPx: 29630, Kind: "stop_entry", Condition: "reclaim"}
+	if err := ledger.UpsertArm(&row); err != nil {
+		t.Fatal(err)
+	}
+	if err := ledger.SetArmExpiry(row.ID, now.UnixMilli()-1); err != nil {
+		t.Fatal(err)
+	}
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now, nil)
+	var got store.ArmedOrderDB
+	if err := ledger.DB().First(&got, row.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if got.State != "expired" || !strings.Contains(got.StateReason, "never placed") {
+		t.Fatalf("an expired never-sent arm must end terminal expired, got state=%q reason=%q", got.State, got.StateReason)
+	}
+	if sawFrame(t, frames, ntwire.FrameCancelOrder, 300*time.Millisecond) {
+		t.Fatal("an arm that never reached the wire must not emit a broker cancel")
 	}
 }
