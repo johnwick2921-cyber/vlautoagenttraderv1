@@ -1418,7 +1418,8 @@ const sessions: KnobSpec[] = [
     systemDefault: 'off',
     recommended:
       '⭐ keep OFF for the AI path; the owner turns it ON before Mentor mode places its first live (SIM) stop entry.',
-    whenToTouch: 'Only with a deliberate move of the Mentor-mode gate.',
+    whenToTouch:
+      'Only with a deliberate move of the Mentor-mode gate — and do NOT turn ON until: (1) lost-report recovery works across every SIM account (SendCancelReport currently scans only the active account); (2) the slot refusal also raises the book-outage P0 with an uncertified or disconnected AddOn; (3) part-filled entries can never be cancelled by a report; (4) an operator path exists to clear a cancel_pending row that can never receive a report.',
     perSession: 'No.',
   },
 ]
