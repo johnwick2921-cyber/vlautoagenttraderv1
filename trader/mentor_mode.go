@@ -244,19 +244,40 @@ func (at *AutoTrader) mentorSizeFor(in mentor.Intent, extra mentorTierInputs) (m
 	return choice, nil
 }
 
-// ── EXITS (§6) ─────────────────────────────────────────────────────────────
+// ── EXITS — EXIT-SPEC-v3 (mail 2026-10-03 04:59Z, replaces §6) ────────────
+//
+// The exit is a FORK, chosen by whether the resonance appears (D2.4 p1):
+//   A. RESONANCE — a PHL/PLH filled, then an ISB in the SAME direction within
+//      3 candles of the fill: the moment that ISB appears the stop goes to
+//      BREAK-EVEN. NO candle trail. NO 1:1 scale-out ("nhưng" — the mentor
+//      contrasts with "1-1 tôi vẫn sẽ bán bớt"). Let it run to the next level
+//      / the old high and beyond; EOD flat still applies.
+//   B. NO RESONANCE (normal) — at +0.5R (halfway to a 1:1 target) stop → BE,
+//      keeping the live R:R at 1:1; at +1R take ceil(n/2) off; then the stop
+//      trails behind each CLOSED 1m candle (long under the low, short over
+//      the high); exit on the first candle that takes the prior candle's
+//      extreme. Knob trail_tf: 1m default, 30s/45s allowed, off = video-8
+//      legacy (SUPERSEDED by the course frame — kept as a knob).
+//   C. CONFLUENCE — hold to at least 1:2, and the stop does not move up.
+//   D. SPENT DAY — at most 2 contracts left running; the 15-pt cap (R9)
+//      still applies.
+//   SWING — hold by the 4h (DS-106's rules).
+//
+// The LIVE drive loop over filled mentor positions lands with P1 (#309); these
+// pure functions are the rules that loop will call.
 
 // mentorPosition is one open mentor trade's exit-driver state.
 type mentorPosition struct {
 	Symbol    string
 	Side      string // "long" | "short"
+	Origin    string // the entry setup: "PHL", "PLH", "ISB", "SWING4H"
 	Entry     float64
 	Stop      float64
 	R         float64
 	Contracts int
-	Mode      string // "B", "A-resonance", "C"
-	ArmedBE   bool   // +1R seen → stop is at entry
-	Scaled    bool   // the ceil(n/2) scale-out already happened
+	Mode      string // "A-resonance", "B", "C", "swing"
+	ArmedBE   bool   // stop is at entry (B: +0.5R seen; A: resonance armed)
+	Scaled    bool   // the ceil(n/2) scale-out at +1R already happened (B only)
 }
 
 // mentorStopEntryPlacer is the broker's stop-entry surface (E7 frame on the
@@ -279,8 +300,8 @@ const (
 	scaleOutFallback mentorScaleOutOutcome = "fallback_all_or_nothing"
 )
 
-// mentorScaleOut attempts the ceil(n/2) reduction. With no reduce_position
-// frame it returns the logged fallback.
+// mentorScaleOut attempts the ceil(n/2) reduction (B only — A and C never
+// scale). With no reduce_position frame it returns the logged fallback.
 func (at *AutoTrader) mentorScaleOut(pos *mentorPosition) mentorScaleOutOutcome {
 	take := (pos.Contracts + 1) / 2 // ceil(n/2)
 	if reducePositionWire == nil {
@@ -301,53 +322,104 @@ func (at *AutoTrader) mentorScaleOut(pos *mentorPosition) mentorScaleOutOutcome 
 	return scaleOutSent
 }
 
-// mentorExitB applies the B rules to ONE closed 1m candle (pure). It returns
-// the new stop and whether the position exits (with the exit price + reason).
-// Rules: before arming → stop or +1R (arm BE); after arming → BE/trail check
-// against the NEW stop behind the candle just closed (the trail moves AFTER a
-// candle closes — no look-ahead).
-func mentorExitB(pos mentorPosition, h, l float64) (newStop float64, exitPrice float64, exitReason string, exited bool) {
+// mentorExitB applies the v3 B rules to ONE closed 1m candle (pure). Phases:
+// pre-BE → stop or +0.5R (arm BE, the live R:R stays 1:1); BE → stop or +1R
+// (scale signal); after the scale the stop trails behind each CLOSED candle
+// (long: the candle's low, short: its high) unless trail is off (video-8
+// legacy knob). A candle trading through both the stop and a further level
+// takes the WORSE outcome (the stop). The trail moves only AFTER a candle
+// closes — no look-ahead.
+func mentorExitB(pos mentorPosition, h, l float64, trail bool) (newStop float64, exitPrice float64, exitReason string, exited, scaleOut bool) {
 	newStop = pos.Stop
 	long := pos.Side == "long"
-	var hitStop, hit1R bool
+	var hitStop, hitHalfR, hit1R bool
 	if long {
 		hitStop = l <= pos.Stop
+		hitHalfR = h >= pos.Entry+0.5*pos.R
 		hit1R = h >= pos.Entry+pos.R
 	} else {
 		hitStop = h >= pos.Stop
+		hitHalfR = l <= pos.Entry-0.5*pos.R
 		hit1R = l <= pos.Entry-pos.R
 	}
 	if !pos.ArmedBE {
-		if hitStop && hit1R {
-			return pos.Stop, pos.Stop, "stop(worse-same-bar)", true
+		if hitStop && (hitHalfR || hit1R) {
+			return pos.Stop, pos.Stop, "stop(worse-same-bar)", true, false
 		}
 		if hitStop {
-			return pos.Stop, pos.Stop, "stop", true
+			return pos.Stop, pos.Stop, "stop", true, false
 		}
 		if hit1R {
-			return pos.Entry, 0, "", false // arm BE (trail from the NEXT candle)
+			// one candle crossed both +0.5R and +1R: BE first, then scale.
+			return pos.Entry, 0, "", false, true
 		}
-		return pos.Stop, 0, "", false
+		if hitHalfR {
+			return pos.Entry, 0, "", false, false // arm BE (live R:R 1:1)
+		}
+		return pos.Stop, 0, "", false, false
 	}
-	// armed: the stop is BE or a trailed level; a candle touching it exits at
-	// the stop (no intra-bar order knowledge).
 	if hitStop {
-		return pos.Stop, pos.Stop, "trail", true
-	}
-	if long {
-		if l > pos.Stop {
-			newStop = l // trail behind the closed candle
+		reason := "be"
+		if (long && pos.Stop > pos.Entry) || (!long && pos.Stop < pos.Entry) {
+			reason = "trail"
 		}
-	} else {
-		if h < pos.Stop {
-			newStop = h
+		return pos.Stop, pos.Stop, reason, true, false
+	}
+	if !pos.Scaled {
+		if hit1R {
+			return pos.Stop, 0, "", false, true // scale at +1R; trail from the NEXT candle
+		}
+		return pos.Stop, 0, "", false, false
+	}
+	// scaled: the candle trail (knob trail_tf). off → the stop never moves.
+	if trail {
+		if long {
+			if l > pos.Stop {
+				newStop = l
+			}
+		} else {
+			if h < pos.Stop {
+				newStop = h
+			}
 		}
 	}
-	return newStop, 0, "", false
+	return newStop, 0, "", false, false
 }
 
-// mentorExitC applies the confluence hold: the stop NEVER moves (pure).
-func mentorExitC(pos mentorPosition, l, h float64) (exitPrice float64, exitReason string, exited bool) {
+// mentorResonanceMaxCandles is the A window: the resonance ISB must appear
+// within 3 candles of the PHL/PLH fill [D2.4 p1 @01:36–02:59].
+const mentorResonanceMaxCandles = 3
+
+// mentorMaybeArmResonance flips an open PHL/PLH position into mode A the
+// moment an ISB in the SAME direction appears within 3 candles of the fill:
+// the stop goes to BREAK-EVEN immediately, and A has NO candle trail and NO
+// 1:1 scale-out — it runs to the next level / the old high and beyond (EOD
+// flat still applies). Returns whether the position switched.
+func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill int) bool {
+	if pos == nil || pos.Mode == "A-resonance" {
+		return false
+	}
+	if pos.Origin != "PHL" && pos.Origin != "PLH" {
+		return false // only a PHL/PLH fill can resonate
+	}
+	if barsSinceFill < 1 || barsSinceFill > mentorResonanceMaxCandles {
+		return false
+	}
+	if !strings.EqualFold(pos.Side, isbSide) {
+		return false
+	}
+	pos.Mode = "A-resonance"
+	pos.ArmedBE = true
+	pos.Stop = pos.Entry
+	mentorCount("resonance_armed")
+	return true
+}
+
+// mentorExitHold applies the stop-only holds: the stop NEVER moves and nothing
+// scales. C (§6 confluence): hold to at least 1:2, the stop does not move up.
+// A (resonance): the stop is already at BE and runs. A touch exits at the
+// stop; EOD flat is the caller's rule.
+func mentorExitHold(pos mentorPosition, l, h float64, reason string) (exitPrice float64, exitReason string, exited bool) {
 	var hitStop bool
 	if pos.Side == "long" {
 		hitStop = l <= pos.Stop
@@ -355,14 +427,52 @@ func mentorExitC(pos mentorPosition, l, h float64) (exitPrice float64, exitReaso
 		hitStop = h >= pos.Stop
 	}
 	if hitStop {
-		return pos.Stop, "stop", true
+		return pos.Stop, reason, true
 	}
 	return 0, "", false
 }
 
-// mentorSpentDayClamp is the §7 rule: at most 2 contracts running on a spent
-// day (pure — the caller sizes the entry with it; here for the exit side the
-// caller re-sizes the ride before placing).
+// mentorExitC applies the confluence hold (C): the stop NEVER moves and there
+// is NO scale-out at +1R — hold to at least 1:2 [§6].
+func mentorExitC(pos mentorPosition, l, h float64) (exitPrice float64, exitReason string, exited bool) {
+	return mentorExitHold(pos, l, h, "stop")
+}
+
+// mentorExitA applies the resonance hold (A): stop at BE, no trail, no
+// scale-out — let it run [D2.4 p1 @01:36–02:59]. EOD flat still applies.
+func mentorExitA(pos mentorPosition, l, h float64) (exitPrice float64, exitReason string, exited bool) {
+	return mentorExitHold(pos, l, h, "resonance_be")
+}
+
+// mentorTrailTFDefault is the B candle-trail timeframe: 1m (the course frame
+// D2.4 p1 @08:35 is on the 1-MINUTE chart; 30s/45s allowed @09:07).
+const mentorTrailTFDefault = "1m"
+
+// mentorTrailTF resolves the trail_tf knob. "" → 1m; 1m/30s/45s pass; off =
+// the video-8 legacy "never trail on the 1m" (SUPERSEDED, kept as a knob);
+// any other value refuses to trail fail-closed and is counted.
+func (at *AutoTrader) mentorTrailTF() string {
+	raw := ""
+	if at.config.StrategyConfig != nil {
+		raw = at.config.StrategyConfig.RiskControl.MentorTrailTF
+	}
+	switch v := strings.ToLower(strings.TrimSpace(raw)); v {
+	case "":
+		return mentorTrailTFDefault
+	case "1m", "30s", "45s", "off":
+		return v
+	default:
+		mentorCount("trail_tf_bad_value")
+		at.logWarnf("🧑‍🏫 mentor trail_tf %q invalid (1m/30s/45s/off) — trail refused for safety", raw)
+		return "off"
+	}
+}
+
+// mentorTrailEnabled reports whether the candle trail runs (off = video-8).
+func mentorTrailEnabled(tf string) bool { return tf != "off" }
+
+// mentorSpentDayClamp is the §7 rule (D): at most 2 contracts LEFT RUNNING on
+// a spent day; the 15-pt stop cap (R9) still applies upstream in the gate.
 func mentorSpentDayClamp(contracts, spentCap int) int {
 	if spentCap <= 0 {
 		return contracts
@@ -383,6 +493,6 @@ func (at *AutoTrader) mentorMoveStop(nt *ntTrader.TCPTrader, side string, newSto
 
 // mentorLogPositionState dumps the driver state for the daily log.
 func (at *AutoTrader) mentorLogPositionState(pos *mentorPosition, event string) {
-	at.logInfof("🧑‍🏫 mentor exit driver [%s]: %s side=%s entry=%.2f stop=%.2f R=%.2f contracts=%d mode=%s armedBE=%v scaled=%v",
-		event, pos.Symbol, pos.Side, pos.Entry, pos.Stop, pos.R, pos.Contracts, pos.Mode, pos.ArmedBE, pos.Scaled)
+	at.logInfof("🧑‍🏫 mentor exit driver [%s]: %s side=%s origin=%s entry=%.2f stop=%.2f R=%.2f contracts=%d mode=%s armedBE=%v scaled=%v",
+		event, pos.Symbol, pos.Side, pos.Origin, pos.Entry, pos.Stop, pos.R, pos.Contracts, pos.Mode, pos.ArmedBE, pos.Scaled)
 }

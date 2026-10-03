@@ -2013,13 +2013,17 @@ type RiskControlConfig struct {
 	// them): base setup at a location 5; confluence 10; confluence+4h/1h agree
 	// + room≥2× target≥30pts 20 (hard cap); stop 20–25 pts or spent day 3;
 	// SWING4H 3; never above MentorMaxContracts (default 20).
-	MentorBaseContracts        int `json:"mentor_base_contracts,omitempty"`
-	MentorConfluenceContracts  int `json:"mentor_confluence_contracts,omitempty"`
-	MentorBigContracts         int `json:"mentor_big_contracts,omitempty"`
-	MentorReducedContracts     int `json:"mentor_reduced_contracts,omitempty"`
-	MentorSwing4HContracts     int `json:"mentor_swing4h_contracts,omitempty"`
-	MentorSpentDayContracts    int `json:"mentor_spent_day_contracts,omitempty"`
-	MentorMaxContracts         int `json:"mentor_max_contracts,omitempty"`
+	MentorBaseContracts       int `json:"mentor_base_contracts,omitempty"`
+	MentorConfluenceContracts int `json:"mentor_confluence_contracts,omitempty"`
+	MentorBigContracts        int `json:"mentor_big_contracts,omitempty"`
+	MentorReducedContracts    int `json:"mentor_reduced_contracts,omitempty"`
+	MentorSwing4HContracts    int `json:"mentor_swing4h_contracts,omitempty"`
+	MentorSpentDayContracts   int `json:"mentor_spent_day_contracts,omitempty"`
+	MentorMaxContracts        int `json:"mentor_max_contracts,omitempty"`
+	// EXIT-SPEC-v3 (B): the candle-trail timeframe. "1m" default (course frame
+	// D2.4 p1 @08:35 on the 1-MINUTE chart); 30s/45s allowed (@09:07); "off" =
+	// the video-8 legacy "never trail on the 1m" (SUPERSEDED, kept as a knob).
+	MentorTrailTF string `json:"mentor_trail_tf,omitempty"`
 	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the
 	// contracts clamp is always-on venue safety. Field kept so old stored
 	// configs still parse; nothing reads it, the UI no longer writes it.

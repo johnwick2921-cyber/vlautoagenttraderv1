@@ -174,48 +174,168 @@ func TestMentorScaleOutWireAndFallback(t *testing.T) {
 	}
 }
 
-// TestMentorExitRules: B arms BE at +1R and trails behind closed candles
-// (no look-ahead: the arming candle is never trailed against); same-bar
-// stop+1R is worse (stop); C never moves the stop.
+// TestMentorExitRules (EXIT-SPEC-v3): B arms BE at +0.5R, scales at +1R, and
+// trails behind closed candles only AFTER the scale (no look-ahead: the
+// arming/scale candles are never trailed against); same-bar stop+level is
+// worse (stop); a BE touch exits "be", a trailed-stop touch exits "trail";
+// trail off (video-8 knob) never moves the stop; C never moves the stop and
+// never scales even at +2R.
 func TestMentorExitRules(t *testing.T) {
 	long := mentorPosition{Symbol: "MNQ", Side: "long", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
-	// arming candle reaches +1R (high 110): arm BE, NO exit, NO trail of THIS
-	// candle (its low 95 is below entry — trailing it would look ahead).
-	stop, px, why, exited := mentorExitB(long, 110, 95)
-	if exited || px != 0 || why != "" {
-		t.Fatalf("arming candle: exited=%v px=%v why=%q — must only arm", exited, px, why)
+	// +0.5R candle (high 105, low 95): arm BE, NO exit, NO scale, NO trail of
+	// THIS candle (its low 95 is below entry — trailing it would look ahead).
+	stop, px, why, exited, scaled := mentorExitB(long, 105, 95, true)
+	if exited || px != 0 || why != "" || scaled {
+		t.Fatalf("arming candle: exited=%v px=%v why=%q scaled=%v — must only arm BE", exited, px, why, scaled)
 	}
 	if stop != long.Entry {
 		t.Fatalf("arming candle must move the stop to entry (BE), got %.2f", stop)
 	}
-	// a candle that does NOT touch the BE stop trails behind its close, no exit.
 	long.ArmedBE = true
 	long.Stop = long.Entry
-	stop, _, _, exited = mentorExitB(long, 103, 101)
-	if exited || stop != 101 {
-		t.Fatalf("trail candle: exited=%v stop=%.2f — want stop trailed to the closed low 101 (no touch, no exit)", exited, stop)
+	// +1R candle (high 110, low above BE): scale signal, stop stays at BE.
+	stop, px, why, exited, scaled = mentorExitB(long, 110, 100.5, true)
+	if exited || px != 0 || why != "" || !scaled {
+		t.Fatalf("scale candle: exited=%v px=%v why=%q scaled=%v — want the +1R scale signal only", exited, px, why, scaled)
+	}
+	if stop != long.Entry {
+		t.Fatalf("the scale candle must keep the stop at BE, got %.2f", stop)
+	}
+	long.Scaled = true
+	// a candle that does NOT touch the BE stop trails behind its close, no exit.
+	stop, _, _, exited, _ = mentorExitB(long, 102, 100.5, true)
+	if exited || stop != 100.5 {
+		t.Fatalf("trail candle: exited=%v stop=%.2f — want stop trailed to the closed low 100.5 (no touch, no exit)", exited, stop)
 	}
 	// a candle touching the trailed stop exits at the stop.
-	long.Stop = 101
-	_, px, why, exited = mentorExitB(long, 102, 100.5)
-	if !exited || px != 101 || why != "trail" {
-		t.Fatalf("trail exit: exited=%v px=%.2f why=%q — want exited at 101 trail", exited, px, why)
+	long.Stop = 100.5
+	_, px, why, exited, _ = mentorExitB(long, 101.5, 100.4, true)
+	if !exited || px != 100.5 || why != "trail" {
+		t.Fatalf("trail exit: exited=%v px=%.2f why=%q — want exited at 100.5 trail", exited, px, why)
 	}
-	// same-bar worse before arming.
+	// BE touch (scaled, never trailed): exits "be" at entry.
+	be := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 100, R: 10, Contracts: 2, Mode: "B", ArmedBE: true, Scaled: true}
+	_, px, why, exited, _ = mentorExitB(be, 101, 99.9, true)
+	if !exited || px != 100 || why != "be" {
+		t.Fatalf("BE exit: exited=%v px=%.2f why=%q — want exited at 100 be", exited, px, why)
+	}
+	// trail off (video-8 knob): after the scale the stop NEVER moves.
+	off := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 100, R: 10, Contracts: 2, Mode: "B", ArmedBE: true, Scaled: true}
+	stop, _, _, exited, _ = mentorExitB(off, 102, 101, false)
+	if exited || stop != 100 {
+		t.Fatalf("trail off: exited=%v stop=%.2f — want the stop pinned at BE 100", exited, stop)
+	}
+	// same-bar worse before arming (stop + halfR in one candle).
 	pre := mentorPosition{Symbol: "MNQ", Side: "long", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
-	_, px, why, exited = mentorExitB(pre, 110, 89)
+	_, px, why, exited, _ = mentorExitB(pre, 105, 89, true)
 	if !exited || px != 90 || why != "stop(worse-same-bar)" {
 		t.Fatalf("same-bar worse: exited=%v px=%.2f why=%q", exited, px, why)
 	}
-	// C: the stop never moves.
-	c := mentorPosition{Symbol: "MNQ", Side: "short", Entry: 100, Stop: 112, R: 12, Contracts: 4, Mode: "C"}
+	// short side: BE arm at −0.5R, scale at −1R, trail over the high.
+	short := mentorPosition{Symbol: "MNQ", Side: "short", Entry: 100, Stop: 110, R: 10, Contracts: 4, Mode: "B"}
+	stop, _, _, exited, _ = mentorExitB(short, 96, 94.5, true)
+	if exited || stop != 100 {
+		t.Fatalf("short arming candle: exited=%v stop=%.2f — want BE at 100", exited, stop)
+	}
+	short.ArmedBE = true
+	short.Stop = 100
+	_, _, _, exited, scaled = mentorExitB(short, 96, 89.5, true)
+	if exited || !scaled {
+		t.Fatalf("short scale candle: exited=%v scaled=%v — want the −1R scale signal", exited, scaled)
+	}
+	short.Scaled = true
+	stop, _, _, exited, _ = mentorExitB(short, 99.5, 98, true)
+	if exited || stop != 99.5 {
+		t.Fatalf("short trail: exited=%v stop=%.2f — want stop trailed to the closed high 99.5", exited, stop)
+	}
+	// C: the stop never moves and nothing scales, even at +0.5R/+1R/+2R.
+	c := mentorPosition{Symbol: "MNQ", Side: "short", Origin: "ISB", Entry: 100, Stop: 112, R: 12, Contracts: 4, Mode: "C"}
 	for i := 0; i < 5; i++ {
 		if _, why, exited := mentorExitC(c, 108, 109); exited || why != "" {
 			t.Fatalf("C hold: exited=%v why=%q on a non-stop candle", exited, why)
 		}
 	}
+	for _, cc := range [][2]float64{{100, 95}, {95, 90}, {90, 75}} {
+		if _, why, exited := mentorExitC(c, cc[0], cc[1]); exited || why != "" {
+			t.Fatalf("C must hold through +0.5R/+1R/+2R candles, exited=%v why=%q", exited, why)
+		}
+	}
 	if px, why, exited := mentorExitC(c, 111, 113); !exited || px != 112 || why != "stop" {
 		t.Fatalf("C stop: exited=%v px=%.2f why=%q", exited, px, why)
+	}
+}
+
+// TestMentorResonanceFork (EXIT-SPEC-v3 A): a PHL/PLH fill followed by an ISB
+// in the SAME direction within 3 candles flips the position to A — stop to BE
+// at that moment, then A NEVER trails and NEVER scales (candles that would
+// scale/trail in B are ignored); it exits only on a BE touch.
+func TestMentorResonanceFork(t *testing.T) {
+	ResetMentorCountersForTest()
+	pos := &mentorPosition{Symbol: "MNQ", Side: "long", Origin: "PHL", Entry: 100, Stop: 90, R: 10, Contracts: 5, Mode: "B"}
+	if !mentorMaybeArmResonance(pos, "long", 2) {
+		t.Fatal("ISB same side within 3 candles of a PHL fill must arm resonance")
+	}
+	if pos.Mode != "A-resonance" || !pos.ArmedBE || pos.Stop != pos.Entry {
+		t.Fatalf("resonance arm: mode=%s armed=%v stop=%.2f — want A-resonance, BE stop 100", pos.Mode, pos.ArmedBE, pos.Stop)
+	}
+	if got := MentorCountSnapshot()["resonance_armed"]; got != 1 {
+		t.Fatalf("resonance_armed must be counted once, got %d", got)
+	}
+	// A holds through candles that would arm/scale/trail in B (+1R, +2R highs).
+	for _, cc := range [][2]float64{{105, 101}, {110, 101}, {120, 102}} {
+		if px, why, exited := mentorExitA(*pos, cc[1], cc[0]); exited || px != 0 || why != "" {
+			t.Fatalf("A must hold a %v candle: exited=%v px=%.2f why=%q", cc, exited, px, why)
+		}
+	}
+	// only the BE touch exits, at entry, with the resonance reason.
+	if px, why, exited := mentorExitA(*pos, 99.5, 102); !exited || px != 100 || why != "resonance_be" {
+		t.Fatalf("A BE exit: exited=%v px=%.2f why=%q — want exited at 100 resonance_be", exited, px, why)
+	}
+	// refused arms: too late (4th candle), wrong side, non-PHL/PLH origin, the
+	// fill bar itself, already-armed.
+	if mentorMaybeArmResonance(pos, "long", 4) {
+		t.Fatal("an ISB 4 candles after the fill must NOT arm resonance")
+	}
+	if mentorMaybeArmResonance(&mentorPosition{Origin: "PHL", Mode: "B"}, "short", 2) {
+		t.Fatal("an ISB against the position must NOT arm resonance")
+	}
+	if mentorMaybeArmResonance(&mentorPosition{Origin: "PHL", Mode: "B"}, "long", 0) {
+		t.Fatal("the fill bar itself must NOT arm resonance (within 3 candles AFTER the fill)")
+	}
+	if mentorMaybeArmResonance(&mentorPosition{Origin: "ISB", Mode: "B"}, "long", 2) {
+		t.Fatal("a non-PHL/PLH origin must NOT arm resonance")
+	}
+	if mentorMaybeArmResonance(&mentorPosition{Origin: "PLH", Mode: "A-resonance"}, "long", 2) {
+		t.Fatal("an already-resonant position must NOT re-arm")
+	}
+}
+
+// TestMentorTrailTFKnob: the B candle trail runs on 1m (default) and 30s/45s;
+// off = the video-8 legacy (superseded); an unknown value refuses to trail
+// fail-closed and is counted.
+func TestMentorTrailTFKnob(t *testing.T) {
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	if got := at.mentorTrailTF(); got != "1m" {
+		t.Fatalf("unset knob → %q, want the 1m default", got)
+	}
+	for _, tc := range []struct{ in, want string }{
+		{"1m", "1m"}, {"30s", "30s"}, {"45s", "45s"}, {"off", "off"}, {" OFF ", "off"},
+	} {
+		at.config.StrategyConfig.RiskControl.MentorTrailTF = tc.in
+		if got := at.mentorTrailTF(); got != tc.want {
+			t.Fatalf("trail_tf %q → %q, want %q", tc.in, got, tc.want)
+		}
+	}
+	ResetMentorCountersForTest()
+	at.config.StrategyConfig.RiskControl.MentorTrailTF = "garbage"
+	if got := at.mentorTrailTF(); got != "off" {
+		t.Fatalf("bad trail_tf → %q, want off (fail-closed, no trail)", got)
+	}
+	if got := MentorCountSnapshot()["trail_tf_bad_value"]; got != 1 {
+		t.Fatalf("the bad trail_tf must be counted once, got %d", got)
+	}
+	if !mentorTrailEnabled("1m") || mentorTrailEnabled("off") {
+		t.Fatal("mentorTrailEnabled: 1m must trail, off must not")
 	}
 }
 
