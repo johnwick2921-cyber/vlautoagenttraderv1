@@ -112,6 +112,31 @@ func TestPreflightPassesOnANeverHeldConnection(t *testing.T) {
 	}
 }
 
+// prehold-stale-census (owner order 2026-10-02 10:15 CT): a STALE FLAT census
+// — the held:false release ack left by the PREVIOUS install's hold on this
+// process's connection, which the wire never refreshes — must pass preflight
+// exactly like no census and reach the hold step. The second install of one
+// bot process must never demand an NT8 or bot restart. (RED before the fix:
+// the old rule failed the prehold leg on any stale ack, flat or not.)
+func TestPreflightStaleFlatCensusReachesTheHold(t *testing.T) {
+	r := newRig(t)
+	r.ackStale = true // 20 s old — past the 15 s freshness max; the census itself is flat
+	r.install()
+	if err := r.drive(); err != nil {
+		t.Fatal(err)
+	}
+	j := r.job()
+	if j.State == updaterjob.StateRefused {
+		t.Fatalf("preflight refused a stale flat census: %q", j.Error)
+	}
+	if strings.Contains(j.Error, "addon_census_prehold") {
+		t.Fatalf("the stale flat census must not block preflight: %q", j.Error)
+	}
+	if r.callCount("hold_write") != 1 {
+		t.Fatalf("preflight must pass and write the hold; hold_write ran %d times (job %s)", r.callCount("hold_write"), j.State)
+	}
+}
+
 // brief §3.4.3: a step that keeps crashing is retried at most MaxAttempts
 // times in all, then recovery_needed (the hold kept) — never a crash loop.
 func TestAStepThatKeepsCrashingIsRecoveryNeeded(t *testing.T) {

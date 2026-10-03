@@ -782,14 +782,24 @@ func (b *box) gateView() GateView {
 	}
 	// The prehold census leg (trader/installation_gate.go): a never-held
 	// connection (no ack) PASSES — the other flat legs vouch for it; an ack
-	// that exists must be fresh AND flat.
+	// that exists must be fresh AND flat — except a STALE FLAT census, which
+	// passes exactly like no census (prehold-stale-census, owner order
+	// 2026-10-02 10:15 CT): a stale census is never stronger evidence than no
+	// census, so the second install of one bot process needs no restart.
 	preholdCensusPass, preholdCensusDetail := true, "no census — never held"
 	if a != nil {
-		if a.AgeMs > ackMaxAgeMs {
-			preholdCensusPass, preholdCensusDetail = false, fmt.Sprintf("census ack is %d ms old (max %d)", a.AgeMs, ackMaxAgeMs)
-		} else {
+		switch {
+		case a.AgeMs > ackMaxAgeMs && flat:
+			preholdCensusPass, preholdCensusDetail = true, fmt.Sprintf("census is %d ms old (from an earlier hold) — flat, treated as no census", a.AgeMs)
+		case a.AgeMs > ackMaxAgeMs:
+			preholdCensusPass, preholdCensusDetail = false, fmt.Sprintf("census ack is %d ms old (max %d) and not flat", a.AgeMs, ackMaxAgeMs)
+		default:
 			preholdCensusPass, preholdCensusDetail = flat, fmt.Sprintf("flat=%v", flat)
 		}
+	}
+	censusAge := "n/a"
+	if a != nil {
+		censusAge = fmt.Sprintf("%dms", a.AgeMs)
 	}
 	legs := []GateLeg{
 		{Name: "hold", Pass: st.Held, Detail: "held=" + fmt.Sprint(st.Held)},
@@ -799,7 +809,7 @@ func (b *box) gateView() GateView {
 		{Name: "planner_in_flight", Pass: true, Detail: "none"},
 		{Name: "traders_nt8", Pass: true, Detail: "1 NT8 trader"},
 		{Name: "addon_ack", Pass: st.Held && a != nil && a.Held && a.JobID == job, Detail: "ack"},
-		{Name: "addon_census", Pass: flat, Detail: fmt.Sprintf("flat=%v", flat)},
+		{Name: "addon_census", Pass: flat, Detail: fmt.Sprintf("age=%s — flat=%v", censusAge, flat)},
 		{Name: "addon_census_prehold", Pass: preholdCensusPass, Detail: preholdCensusDetail},
 		{Name: "ledger_exposure", Pass: flat, Detail: "arms"},
 		{Name: "trader_cutover:t1", Pass: flat, Detail: "legs 1,2,4"},
