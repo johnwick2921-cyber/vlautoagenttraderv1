@@ -43,17 +43,24 @@ func TestMentorNoChaseRule(t *testing.T) {
 	}
 }
 
-// wireMentorPlacementSeams sets the source seams to a wired, no-data state so
-// the fail-closed gates stay open for a test that targets a later gate.
+// wireMentorPlacementSeams sets EVERY source seam to a wired, no-data state so
+// the placement-level fail-closed check and the other gates stay open for a
+// test that targets a later gate.
 func wireMentorPlacementSeams(t *testing.T) {
 	t.Helper()
 	mentorDayNetSource = func() float64 { return 0 }
 	mentorClosedProfitSource = func() bool { return false }
+	mentorOpenStopSource = func() (float64, bool) { return 0, false }
 	mentorOpenSideSource = func() string { return "" }
+	mentorDayEventsForTest = func() ([]calendar.Event, bool) { return nil, true }
+	market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline { return nil }
 	t.Cleanup(func() {
 		mentorDayNetSource = nil
 		mentorClosedProfitSource = nil
+		mentorOpenStopSource = nil
 		mentorOpenSideSource = nil
+		mentorDayEventsForTest = nil
+		market.FuturesBarsProvider = nil
 	})
 }
 
@@ -212,13 +219,13 @@ func TestMentorDoneAfterWinGateAtPlacementCallSite(t *testing.T) {
 		t.Fatalf("a negative day must not end the mentor's day, placed=%d", placed)
 	}
 	// FAIL-CLOSED: missing P&L sources refuse the entry (an unknown is not
-	// "no win").
+	// "no win") — asserted on the gate directly, since the placement-level
+	// sources check refuses first at the full path.
 	mentorDayNetSource = nil
 	mentorClosedProfitSource = nil
 	ResetMentorCountersForTest()
-	at.mentorPlaceIntent(in, choice, 1000, 1100)
-	if placed != 3 {
-		t.Fatalf("missing P&L sources must refuse (fail-closed), placed=%d", placed)
+	if refuse, why := at.mentorDoneAfterWinGate(); !refuse || why == "" {
+		t.Fatalf("missing P&L sources must refuse (fail-closed): refuse=%v why=%q", refuse, why)
 	}
 	if got := MentorCountSnapshot()["done_after_win_no_data"]; got != 1 {
 		t.Fatalf("the fail-closed refusal must be counted done_after_win_no_data once, got %d", got)
@@ -313,15 +320,57 @@ func TestMentorNeverAddAtPlacementCallSite(t *testing.T) {
 	if placed != 1 {
 		t.Fatalf("an opposite-side entry must proceed, placed=%d", placed)
 	}
-	// FAIL-CLOSED: no open-side source refuses the entry.
+	// FAIL-CLOSED: no open-side source refuses the entry — asserted on the
+	// gate directly (the placement-level sources check refuses first at the
+	// full path).
 	mentorOpenSideSource = nil
 	ResetMentorCountersForTest()
-	at.mentorPlaceIntent(in, choice, 1000, 1100)
-	if placed != 1 {
-		t.Fatalf("a missing open-side source must refuse (fail-closed), placed=%d", placed)
+	if refuse, why := at.mentorAddGate(in); !refuse || why == "" {
+		t.Fatalf("a missing open-side source must refuse (fail-closed): refuse=%v why=%q", refuse, why)
 	}
 	if got := MentorCountSnapshot()["add_no_source"]; got != 1 {
 		t.Fatalf("the fail-closed refusal must be counted add_no_source once, got %d", got)
+	}
+}
+
+// TestMentorSourcesMissingRefusesPlacement: with any mentor source seam
+// missing, EVERY entry refuses at the placement call site (mentor_sources_missing).
+// The mutant that removes the check makes the recorder fire with a nil seam.
+func TestMentorSourcesMissingRefusesPlacement(t *testing.T) {
+	ResetMentorCountersForTest()
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireMentorPlacementSeams(t)
+	ct := kernel.CTLocation()
+	mentorNowSource = func() time.Time { return time.Date(2026, 10, 2, 9, 0, 0, 0, ct) }
+	t.Cleanup(func() { mentorNowSource = nil })
+
+	in := mentor.Intent{Action: mentor.PlaceStopEntry, Side: mentor.SideLong,
+		Price: 21000, Stop: 20988, Target: 21024, Setup: "ISB", StopPts: 12}
+	choice := mentorSizeChoice{Contracts: 5, Tier: "base", Why: "test"}
+
+	var placed int
+	mentorPlaceRecorderForTest = func(i mentor.Intent, n int) { placed++ }
+	t.Cleanup(func() { mentorPlaceRecorderForTest = nil })
+
+	// all wired → proceeds.
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 1 {
+		t.Fatalf("all seams wired: the placement must proceed, placed=%d", placed)
+	}
+	// one seam missing → every entry refuses at the placement call site.
+	mentorOpenStopSource = nil
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 1 {
+		t.Fatalf("a missing seam must refuse every entry, placed=%d", placed)
+	}
+	if got := MentorCountSnapshot()["mentor_sources_missing"]; got != 1 {
+		t.Fatalf("the placement-level refusal must be counted mentor_sources_missing once, got %d", got)
+	}
+	// restore → proceeds again.
+	mentorOpenStopSource = func() (float64, bool) { return 0, false }
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 2 {
+		t.Fatalf("with the seam restored the placement must proceed, placed=%d", placed)
 	}
 }
 

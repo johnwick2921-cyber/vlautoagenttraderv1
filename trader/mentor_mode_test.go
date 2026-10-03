@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -153,113 +154,194 @@ func TestMentorNotionalRoundTripsThroughTheExecutorSizing(t *testing.T) {
 	}
 }
 
-// TestMentorScaleOutWireAndFallback: ceil(n/2) goes through the
-// reduce_position frame; a missing frame falls back to all-or-nothing B,
-// logged + counted (the spec's explicit fallback).
-func TestMentorScaleOutWireAndFallback(t *testing.T) {
-	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
-	ResetMentorCountersForTest()
-	pos := &mentorPosition{Symbol: "MNQ", Side: "long", Entry: 21000, Stop: 20988, R: 12, Contracts: 5, Mode: "B"}
-
-	var took int
-	reducePositionWire = func(quantity int) error { took = quantity; return nil }
-	if out := at.mentorScaleOut(pos); out != scaleOutSent {
-		t.Fatalf("scale-out outcome = %s, want sent", out)
+// TestMentorSplitLegs (CTO ruling 2026-10-03 05:42Z): n → leg 1 = ceil(n/2)
+// with its own TP; leg 2 = the runner. n = 1 → a single leg. runnerCap (spent
+// day: 2) caps the runner. Parity: ceil(n/2) equals DS-108's replay half.
+func TestMentorSplitLegs(t *testing.T) {
+	cases := []struct {
+		n, cap, want1, want2 int
+	}{
+		{0, 0, 0, 0},
+		{1, 0, 1, 0},
+		{2, 0, 1, 1},
+		{3, 0, 2, 1},
+		{4, 0, 2, 2},
+		{5, 0, 3, 2},
+		{20, 0, 10, 10},
+		{5, 2, 3, 2}, // spent day: at most 2 run after leg 1
+		{6, 2, 3, 2}, // the runner is capped, not the total
+		{20, 2, 10, 2},
 	}
-	if took != 3 || pos.Contracts != 2 || !pos.Scaled {
-		t.Fatalf("scale-out: took %d, remaining %d, scaled %v — want took 3, remaining 2, scaled", took, pos.Contracts, pos.Scaled)
-	}
-
-	// fallback: no frame
-	reducePositionWire = nil
-	pos2 := &mentorPosition{Symbol: "MNQ", Side: "short", Entry: 21000, Stop: 21012, R: 12, Contracts: 5, Mode: "B"}
-	if out := at.mentorScaleOut(pos2); out != scaleOutFallback {
-		t.Fatalf("missing frame outcome = %s, want fallback_all_or_nothing", out)
-	}
-	if pos2.Contracts != 5 {
-		t.Fatalf("fallback must keep every contract riding: %d", pos2.Contracts)
-	}
-	if got := MentorCountSnapshot()["scaleout_fallback"]; got != 1 {
-		t.Fatalf("the fallback must be counted once, got %d", got)
+	for _, c := range cases {
+		l1, l2 := mentorSplitLegs(c.n, c.cap)
+		if l1 != c.want1 || l2 != c.want2 {
+			t.Fatalf("mentorSplitLegs(%d, %d) = (%d, %d), want (%d, %d)", c.n, c.cap, l1, l2, c.want1, c.want2)
+		}
 	}
 }
 
-// TestMentorExitRules (EXIT-SPEC-v3): B arms BE at +0.5R, scales at +1R, and
-// trails behind closed candles only AFTER the scale (no look-ahead: the
-// arming/scale candles are never trailed against); same-bar stop+level is
-// worse (stop); a BE touch exits "be", a trailed-stop touch exits "trail";
-// trail off (video-8 knob) never moves the stop; C never moves the stop and
-// never scales even at +2R.
-func TestMentorExitRules(t *testing.T) {
-	long := mentorPosition{Symbol: "MNQ", Side: "long", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
-	// +0.5R candle (high 105, low 95): arm BE, NO exit, NO scale, NO trail of
-	// THIS candle (its low 95 is below entry — trailing it would look ahead).
-	stop, px, why, exited, scaled := mentorExitB(long, 105, 95, true)
-	if exited || px != 0 || why != "" || scaled {
-		t.Fatalf("arming candle: exited=%v px=%v why=%q scaled=%v — must only arm BE", exited, px, why, scaled)
+// TestMentorLeg1TPForC: C sets leg 1's TP at ≥1:2 AT ENTRY.
+func TestMentorLeg1TPForC(t *testing.T) {
+	if got := mentorLeg1TPForC(100, 10, "long"); got != 120 {
+		t.Fatalf("C leg-1 TP long = %.2f, want 120 (2R)", got)
 	}
-	if stop != long.Entry {
-		t.Fatalf("arming candle must move the stop to entry (BE), got %.2f", stop)
+	if got := mentorLeg1TPForC(100, 10, "short"); got != 80 {
+		t.Fatalf("C leg-1 TP short = %.2f, want 80 (2R)", got)
+	}
+}
+
+// TestMentorApplyExitResult: a failed or unwired modify_bracket / move_stop is
+// logged and counted; wired actions reach their wires per leg.
+func TestMentorApplyExitResult(t *testing.T) {
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	ResetMentorCountersForTest()
+	tp := 103.0
+
+	// unwired: both actions counted, never sent.
+	at.mentorApplyExitResult(&ntTrader.TCPTrader{}, "long", mentorExitResult{
+		MoveStops: []string{"leg1", "leg2"}, NewStop: 100, ModifyTP: &tp,
+	})
+	snap := MentorCountSnapshot()
+	if snap["move_stop_unwired"] != 2 || snap["modify_bracket_unwired"] != 1 {
+		t.Fatalf("unwired actions must be counted (2 move_stop, 1 modify): %v", snap)
+	}
+	// wired: each leg moves and the TP modifies.
+	ResetMentorCountersForTest()
+	var moved []string
+	var modLeg string
+	var modTP float64
+	moveStopWire = func(nt *ntTrader.TCPTrader, side string, newStop float64) error {
+		moved = append(moved, side)
+		return nil
+	}
+	modifyBracketWire = func(leg string, newTP float64) error { modLeg, modTP = leg, newTP; return nil }
+	t.Cleanup(func() { moveStopWire = nil; modifyBracketWire = nil })
+	at.mentorApplyExitResult(&ntTrader.TCPTrader{}, "long", mentorExitResult{
+		MoveStops: []string{"leg1", "leg2"}, NewStop: 100, ModifyTP: &tp,
+	})
+	if len(moved) != 2 || modLeg != "leg1" || modTP != 103 {
+		t.Fatalf("wired actions: moved=%v modLeg=%q modTP=%.2f", moved, modLeg, modTP)
+	}
+	// a failing modify is counted, not silent.
+	ResetMentorCountersForTest()
+	modifyBracketWire = func(leg string, newTP float64) error { return fmt.Errorf("boom") }
+	at.mentorApplyExitResult(&ntTrader.TCPTrader{}, "long", mentorExitResult{ModifyTP: &tp})
+	if got := MentorCountSnapshot()["modify_bracket_failed"]; got != 1 {
+		t.Fatalf("the failed modify must be counted once, got %d", got)
+	}
+}
+
+// TestMentorConfirmLegProtection: a leg whose protection cannot be confirmed
+// on the next snapshot is FLATTENED (that leg only, fail-closed).
+func TestMentorConfirmLegProtection(t *testing.T) {
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	ResetMentorCountersForTest()
+	var flattened []string
+	flattenLegWire = func(leg string) error { flattened = append(flattened, leg); return nil }
+	t.Cleanup(func() { flattenLegWire = nil })
+
+	// no confirmation source → EVERY leg is flattened.
+	at.mentorConfirmLegProtection([]string{"leg1", "leg2"})
+	if len(flattened) != 2 {
+		t.Fatalf("nil protection source must flatten both legs, flattened=%v", flattened)
+	}
+	snap := MentorCountSnapshot()
+	if snap["leg_protection_lost_leg1"] != 1 || snap["leg_protection_lost_leg2"] != 1 {
+		t.Fatalf("the lost protection must be counted per leg: %v", snap)
+	}
+	// leg1 confirmed, leg2 not → only leg2 flattens.
+	ResetMentorCountersForTest()
+	flattened = nil
+	mentorLegProtectedSource = func(leg string) bool { return leg == "leg1" }
+	t.Cleanup(func() { mentorLegProtectedSource = nil })
+	at.mentorConfirmLegProtection([]string{"leg1", "leg2"})
+	if len(flattened) != 1 || flattened[0] != "leg2" {
+		t.Fatalf("only the unconfirmed leg flattens, flattened=%v", flattened)
+	}
+}
+
+// TestMentorExitRules (EXIT-SPEC-v3 on SPLIT LEGS): at +0.5R BOTH legs' stops
+// arm BE; leg 1's +1R TP candle marks the runner's trail start (the bracket
+// closes leg 1 — no wire action); the runner trails behind closed candles only
+// AFTER that (no look-ahead); same-bar stop+level is worse (stop); a BE touch
+// exits "be", a trailed-stop touch "trail"; trail off (video-8 knob) never
+// moves the stop; C never moves the stop, even at +2R.
+func TestMentorExitRules(t *testing.T) {
+	long := mentorPosition{Symbol: "MNQ", Side: "long", Entry: 100, Stop: 90, R: 10, Leg1: 2, Leg2: 2, Mode: "B"}
+	// +0.5R candle (high 105, low 95): arm BE for BOTH legs, no exit, no leg-1
+	// crossing, no trail of THIS candle (its low 95 is below entry).
+	res := mentorExitB(long, 104, 105, 95, true)
+	if res.Exited || res.ExitPrice != 0 || res.ExitReason != "" || res.Leg1AtTarget {
+		t.Fatalf("arming candle: %+v — must only arm BE", res)
+	}
+	if res.NewStop != long.Entry || len(res.MoveStops) != 2 {
+		t.Fatalf("arming candle must move BOTH legs to BE 100: %+v", res)
 	}
 	long.ArmedBE = true
 	long.Stop = long.Entry
-	// +1R candle (high 110, low above BE): scale signal, stop stays at BE.
-	stop, px, why, exited, scaled = mentorExitB(long, 110, 100.5, true)
-	if exited || px != 0 || why != "" || !scaled {
-		t.Fatalf("scale candle: exited=%v px=%v why=%q scaled=%v — want the +1R scale signal only", exited, px, why, scaled)
+	// +1R candle (high 110, low above BE): leg 1's TP is hit — the bracket
+	// closes leg 1 (no wire action); the runner trails from the NEXT candle.
+	res = mentorExitB(long, 109, 110, 100.5, true)
+	if res.Exited || !res.Leg1AtTarget || res.ModifyTP != nil {
+		t.Fatalf("leg-1-at-target candle: %+v", res)
 	}
-	if stop != long.Entry {
-		t.Fatalf("the scale candle must keep the stop at BE, got %.2f", stop)
+	if res.NewStop != long.Entry {
+		t.Fatalf("the +1R candle must keep the stop at BE, got %.2f", res.NewStop)
 	}
 	long.Scaled = true
-	// a candle that does NOT touch the BE stop trails behind its close, no exit.
-	stop, _, _, exited, _ = mentorExitB(long, 102, 100.5, true)
-	if exited || stop != 100.5 {
-		t.Fatalf("trail candle: exited=%v stop=%.2f — want stop trailed to the closed low 100.5 (no touch, no exit)", exited, stop)
+	// a candle that does NOT touch the BE stop trails the RUNNER behind its close.
+	res = mentorExitB(long, 101.5, 102, 100.5, true)
+	if res.Exited || res.NewStop != 100.5 {
+		t.Fatalf("trail candle: %+v — want the runner trailed to the closed low 100.5", res)
+	}
+	if len(res.MoveStops) != 1 || res.MoveStops[0] != "leg2" {
+		t.Fatalf("only the runner trails, got %v", res.MoveStops)
 	}
 	// a candle touching the trailed stop exits at the stop.
 	long.Stop = 100.5
-	_, px, why, exited, _ = mentorExitB(long, 101.5, 100.4, true)
-	if !exited || px != 100.5 || why != "trail" {
-		t.Fatalf("trail exit: exited=%v px=%.2f why=%q — want exited at 100.5 trail", exited, px, why)
+	res = mentorExitB(long, 101.4, 101.5, 100.4, true)
+	if !res.Exited || res.ExitPrice != 100.5 || res.ExitReason != "trail" {
+		t.Fatalf("trail exit: %+v — want exited at 100.5 trail", res)
 	}
-	// BE touch (scaled, never trailed): exits "be" at entry.
-	be := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 100, R: 10, Contracts: 2, Mode: "B", ArmedBE: true, Scaled: true}
-	_, px, why, exited, _ = mentorExitB(be, 101, 99.9, true)
-	if !exited || px != 100 || why != "be" {
-		t.Fatalf("BE exit: exited=%v px=%.2f why=%q — want exited at 100 be", exited, px, why)
+	// BE touch (after leg 1's target, never trailed): exits "be" at entry.
+	be := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 100, R: 10, Mode: "B", ArmedBE: true, Scaled: true}
+	res = mentorExitB(be, 100.9, 101, 99.9, true)
+	if !res.Exited || res.ExitPrice != 100 || res.ExitReason != "be" {
+		t.Fatalf("BE exit: %+v — want exited at 100 be", res)
 	}
-	// trail off (video-8 knob): after the scale the stop NEVER moves.
-	off := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 100, R: 10, Contracts: 2, Mode: "B", ArmedBE: true, Scaled: true}
-	stop, _, _, exited, _ = mentorExitB(off, 102, 101, false)
-	if exited || stop != 100 {
-		t.Fatalf("trail off: exited=%v stop=%.2f — want the stop pinned at BE 100", exited, stop)
+	// trail off (video-8 knob): after leg 1's target the stop NEVER moves.
+	off := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 100, R: 10, Mode: "B", ArmedBE: true, Scaled: true}
+	res = mentorExitB(off, 101.5, 102, 101, false)
+	if res.Exited || res.NewStop != 100 || len(res.MoveStops) != 0 {
+		t.Fatalf("trail off: %+v — want the stop pinned at BE 100", res)
 	}
 	// same-bar worse before arming (stop + halfR in one candle).
-	pre := mentorPosition{Symbol: "MNQ", Side: "long", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
-	_, px, why, exited, _ = mentorExitB(pre, 105, 89, true)
-	if !exited || px != 90 || why != "stop(worse-same-bar)" {
-		t.Fatalf("same-bar worse: exited=%v px=%.2f why=%q", exited, px, why)
+	pre := mentorPosition{Symbol: "MNQ", Side: "long", Entry: 100, Stop: 90, R: 10, Mode: "B"}
+	res = mentorExitB(pre, 104, 105, 89, true)
+	if !res.Exited || res.ExitPrice != 90 || res.ExitReason != "stop(worse-same-bar)" {
+		t.Fatalf("same-bar worse: %+v", res)
 	}
-	// short side: BE arm at −0.5R, scale at −1R, trail over the high.
-	short := mentorPosition{Symbol: "MNQ", Side: "short", Entry: 100, Stop: 110, R: 10, Contracts: 4, Mode: "B"}
-	stop, _, _, exited, _ = mentorExitB(short, 96, 94.5, true)
-	if exited || stop != 100 {
-		t.Fatalf("short arming candle: exited=%v stop=%.2f — want BE at 100", exited, stop)
+	// short side: BE arm at −0.5R for both legs; leg 1 at −1R; runner trails
+	// over the high.
+	short := mentorPosition{Symbol: "MNQ", Side: "short", Entry: 100, Stop: 110, R: 10, Mode: "B"}
+	res = mentorExitB(short, 95, 96, 94.5, true)
+	if res.Exited || res.NewStop != 100 || len(res.MoveStops) != 2 {
+		t.Fatalf("short arming candle: %+v — want both stops at BE 100", res)
 	}
 	short.ArmedBE = true
 	short.Stop = 100
-	_, _, _, exited, scaled = mentorExitB(short, 96, 89.5, true)
-	if exited || !scaled {
-		t.Fatalf("short scale candle: exited=%v scaled=%v — want the −1R scale signal", exited, scaled)
+	res = mentorExitB(short, 90, 96, 89.5, true)
+	if res.Exited || !res.Leg1AtTarget {
+		t.Fatalf("short leg-1 candle: %+v — want the −1R leg-1 mark", res)
 	}
 	short.Scaled = true
-	stop, _, _, exited, _ = mentorExitB(short, 99.5, 98, true)
-	if exited || stop != 99.5 {
-		t.Fatalf("short trail: exited=%v stop=%.2f — want stop trailed to the closed high 99.5", exited, stop)
+	res = mentorExitB(short, 98, 99.5, 98, true)
+	if res.Exited || res.NewStop != 99.5 || len(res.MoveStops) != 1 || res.MoveStops[0] != "leg2" {
+		t.Fatalf("short trail: %+v — want the runner trailed to the closed high 99.5", res)
 	}
-	// C: the stop never moves and nothing scales, even at +0.5R/+1R/+2R.
-	c := mentorPosition{Symbol: "MNQ", Side: "short", Origin: "ISB", Entry: 100, Stop: 112, R: 12, Contracts: 4, Mode: "C"}
+	// C: the stop never moves, even at +0.5R/+1R/+2R (leg 1's TP is set at
+	// entry — mentorLeg1TPForC; nothing modifies it).
+	c := mentorPosition{Symbol: "MNQ", Side: "short", Origin: "ISB", Entry: 100, Stop: 112, R: 12, Mode: "C"}
 	for i := 0; i < 5; i++ {
 		if _, why, exited := mentorExitC(c, 108, 109); exited || why != "" {
 			t.Fatalf("C hold: exited=%v why=%q on a non-stop candle", exited, why)
@@ -275,50 +357,55 @@ func TestMentorExitRules(t *testing.T) {
 	}
 }
 
-// TestMentorISBFillCandleExit [D1.4 p1 @12:23–13:27]: for an ISB trade the
-// first partial is MANDATORY when the candle that FILLED you closes — it
-// REPLACES the +1R scale for ISB trades only; the trail rules after it are
-// unchanged. Non-ISB origins keep the +1R scale.
+// TestMentorISBFillCandleExit [D1.4 p1 @12:23–13:27]: for an ISB trade leg 1
+// is closed at the FILL candle's close — modify_bracket of leg 1's TP to the
+// current price (a limit at or through the market). The runner continues.
+// Non-ISB origins keep leg 1's +1R TP.
 func TestMentorISBFillCandleExit(t *testing.T) {
-	// fill candle closes at 103 — between entry and +0.5R: the partial fires
-	// anyway (bắt buộc), the stop does NOT move.
-	pos := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
-	stop, px, why, exited, scaled := mentorExitB(pos, 103, 101, true)
-	if exited || px != 0 || why != "" || !scaled {
-		t.Fatalf("ISB fill candle close: exited=%v px=%v why=%q scaled=%v — want the mandatory partial only", exited, px, why, scaled)
+	// fill candle closes at 103 — between entry and +0.5R: leg 1's TP is
+	// modified to the close; the runner's stop does NOT move.
+	pos := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Mode: "B"}
+	res := mentorExitB(pos, 103, 103, 101, true)
+	if res.Exited || res.ModifyTP == nil || *res.ModifyTP != 103 {
+		t.Fatalf("ISB fill candle close: %+v — want leg1 TP modified to the close 103", res)
 	}
-	if stop != pos.Stop {
-		t.Fatalf("a sub-+0.5R fill candle must NOT move the stop, got %.2f", stop)
+	if res.NewStop != pos.Stop || len(res.MoveStops) != 0 {
+		t.Fatalf("a sub-+0.5R fill candle must NOT move the stops: %+v", res)
 	}
-	// fill candle closes above +0.5R: BE arm and the partial happen together.
-	pos2 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
-	stop, _, _, _, scaled = mentorExitB(pos2, 105, 101, true)
-	if !scaled || stop != 100 {
-		t.Fatalf("ISB fill candle above +0.5R: scaled=%v stop=%.2f — want the partial AND the BE arm", scaled, stop)
+	// fill candle closes above +0.5R: BE for both legs AND the modify.
+	pos2 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Mode: "B"}
+	res = mentorExitB(pos2, 105, 105, 101, true)
+	if res.ModifyTP == nil || *res.ModifyTP != 105 || res.NewStop != 100 || len(res.MoveStops) != 2 {
+		t.Fatalf("ISB fill candle above +0.5R: %+v — want the modify AND both stops at BE", res)
 	}
 	// the stop on the fill candle still wins (worse same bar: stop + halfR).
-	pos3 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
-	_, px, why, exited, scaled = mentorExitB(pos3, 105, 89, true)
-	if !exited || px != 90 || why != "stop(worse-same-bar)" || scaled {
-		t.Fatalf("ISB fill candle through the stop: exited=%v px=%.2f why=%q scaled=%v — the stop must win", exited, px, why, scaled)
+	pos3 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Mode: "B"}
+	res = mentorExitB(pos3, 104, 105, 89, true)
+	if !res.Exited || res.ExitPrice != 90 || res.ExitReason != "stop(worse-same-bar)" || res.ModifyTP != nil {
+		t.Fatalf("ISB fill candle through the stop: %+v — the stop must win", res)
 	}
-	// a non-ISB origin keeps the +1R scale: the same 103 candle only holds.
-	pos4 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "PHL", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
-	stop, _, _, exited, scaled = mentorExitB(pos4, 103, 101, true)
-	if exited || scaled || stop != 90 {
-		t.Fatalf("PHL origin on the same candle: exited=%v scaled=%v stop=%.2f — no partial below +1R", exited, scaled, stop)
+	// a non-ISB origin keeps leg 1's +1R TP: the same 103 candle only holds.
+	pos4 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "PHL", Entry: 100, Stop: 90, R: 10, Mode: "B"}
+	res = mentorExitB(pos4, 103, 103, 101, true)
+	if res.Exited || res.ModifyTP != nil || res.NewStop != 90 || len(res.MoveStops) != 0 {
+		t.Fatalf("PHL origin on the same candle: %+v — no modify below +1R", res)
 	}
 }
 
-// TestMentorResonanceFork (EXIT-SPEC-v3 A): a PHL/PLH fill followed by an ISB
-// in the SAME direction within 3 candles flips the position to A — stop to BE
-// at that moment, then A NEVER trails and NEVER scales (candles that would
-// scale/trail in B are ignored); it exits only on a BE touch.
+// TestMentorResonanceFork (EXIT-SPEC-v3 A on SPLIT LEGS): a PHL/PLH fill
+// followed by an ISB in the SAME direction within 3 candles flips the position
+// to A — both stops to BE at that moment and leg 1's TP modified OUT to the
+// runner's target (no 1:1 scale-out). Then A NEVER trails (candles that would
+// trail in B are ignored); it exits only on a BE touch.
 func TestMentorResonanceFork(t *testing.T) {
 	ResetMentorCountersForTest()
-	pos := &mentorPosition{Symbol: "MNQ", Side: "long", Origin: "PHL", Entry: 100, Stop: 90, R: 10, Contracts: 5, Mode: "B"}
-	if !mentorMaybeArmResonance(pos, "long", 2) {
+	pos := &mentorPosition{Symbol: "MNQ", Side: "long", Origin: "PHL", Entry: 100, Stop: 90, Target: 130, R: 10, Mode: "B"}
+	armed, modifyTP := mentorMaybeArmResonance(pos, "long", 2)
+	if !armed {
 		t.Fatal("ISB same side within 3 candles of a PHL fill must arm resonance")
+	}
+	if modifyTP != 130 {
+		t.Fatalf("the resonance modify must push leg 1's TP to the runner's target 130, got %.2f", modifyTP)
 	}
 	if pos.Mode != "A-resonance" || !pos.ArmedBE || pos.Stop != pos.Entry {
 		t.Fatalf("resonance arm: mode=%s armed=%v stop=%.2f — want A-resonance, BE stop 100", pos.Mode, pos.ArmedBE, pos.Stop)
@@ -326,7 +413,7 @@ func TestMentorResonanceFork(t *testing.T) {
 	if got := MentorCountSnapshot()["resonance_armed"]; got != 1 {
 		t.Fatalf("resonance_armed must be counted once, got %d", got)
 	}
-	// A holds through candles that would arm/scale/trail in B (+1R, +2R highs).
+	// A holds through candles that would trail in B (+1R, +2R highs).
 	for _, cc := range [][2]float64{{105, 101}, {110, 101}, {120, 102}} {
 		if px, why, exited := mentorExitA(*pos, cc[1], cc[0]); exited || px != 0 || why != "" {
 			t.Fatalf("A must hold a %v candle: exited=%v px=%.2f why=%q", cc, exited, px, why)
@@ -338,19 +425,19 @@ func TestMentorResonanceFork(t *testing.T) {
 	}
 	// refused arms: too late (4th candle), wrong side, non-PHL/PLH origin, the
 	// fill bar itself, already-armed.
-	if mentorMaybeArmResonance(pos, "long", 4) {
+	if armed, _ := mentorMaybeArmResonance(pos, "long", 4); armed {
 		t.Fatal("an ISB 4 candles after the fill must NOT arm resonance")
 	}
-	if mentorMaybeArmResonance(&mentorPosition{Origin: "PHL", Mode: "B"}, "short", 2) {
+	if armed, _ := mentorMaybeArmResonance(&mentorPosition{Origin: "PHL", Mode: "B"}, "short", 2); armed {
 		t.Fatal("an ISB against the position must NOT arm resonance")
 	}
-	if mentorMaybeArmResonance(&mentorPosition{Origin: "PHL", Mode: "B"}, "long", 0) {
+	if armed, _ := mentorMaybeArmResonance(&mentorPosition{Origin: "PHL", Mode: "B"}, "long", 0); armed {
 		t.Fatal("the fill bar itself must NOT arm resonance (within 3 candles AFTER the fill)")
 	}
-	if mentorMaybeArmResonance(&mentorPosition{Origin: "ISB", Mode: "B"}, "long", 2) {
+	if armed, _ := mentorMaybeArmResonance(&mentorPosition{Origin: "ISB", Mode: "B"}, "long", 2); armed {
 		t.Fatal("a non-PHL/PLH origin must NOT arm resonance")
 	}
-	if mentorMaybeArmResonance(&mentorPosition{Origin: "PLH", Mode: "A-resonance"}, "long", 2) {
+	if armed, _ := mentorMaybeArmResonance(&mentorPosition{Origin: "PLH", Mode: "A-resonance"}, "long", 2); armed {
 		t.Fatal("an already-resonant position must NOT re-arm")
 	}
 }

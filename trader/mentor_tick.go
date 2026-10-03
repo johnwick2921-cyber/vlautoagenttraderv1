@@ -158,6 +158,13 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 // The no-chase rule runs FIRST: a stop entry whose price is already through the
 // trigger is skipped — he never enters at market (§3).
 func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoice, barCloseMs, emitMs int64) {
+	// WIRING PROOF (fail-closed): with any mentor source seam missing, EVERY
+	// entry refuses here — the boot line logs it, this line enforces it.
+	if missing := at.mentorSourcesMissing(); len(missing) > 0 {
+		mentorCount("mentor_sources_missing")
+		at.logErrorf("🧑‍🏫 mentor sources MISSING [%s] — refusing the entry (fail-closed)", strings.Join(missing, ", "))
+		return
+	}
 	// STOP RULES (owner ruling 00:1x CT, "exactly like he said") — class
 	// rules, default ON: (b) the trading window (swing exempt), (a) done for
 	// the day after a win, F11 news 07:30, (d) never add/average. Then the

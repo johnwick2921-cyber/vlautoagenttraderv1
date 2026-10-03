@@ -260,22 +260,26 @@ func (at *AutoTrader) mentorSizeFor(in mentor.Intent, extra mentorTierInputs) (m
 	return choice, nil
 }
 
-// ── EXITS — EXIT-SPEC-v3 (mail 2026-10-03 04:59Z, replaces §6) ────────────
+// ── EXITS — EXIT-SPEC-v3 on SPLIT LEGS AT ENTRY (rulings 2026-10-03) ──────
 //
-// The exit is a FORK, chosen by whether the resonance appears (D2.4 p1):
+// A mentor entry of n contracts = leg 1 (ceil(n/2), its OWN TP) + leg 2 (the
+// rest, the runner). n = 1 → a single leg. NO reduce_position anywhere in the
+// mentor path — the frame stays in the AddOn, unwired. The exit is a FORK,
+// chosen by whether the resonance appears (D2.4 p1):
 //   A. RESONANCE — a PHL/PLH filled, then an ISB in the SAME direction within
-//      3 candles of the fill: the moment that ISB appears the stop goes to
-//      BREAK-EVEN. NO candle trail. NO 1:1 scale-out ("nhưng" — the mentor
-//      contrasts with "1-1 tôi vẫn sẽ bán bớt"). Let it run to the next level
-//      / the old high and beyond; EOD flat still applies.
-//   B. NO RESONANCE (normal) — at +0.5R (halfway to a 1:1 target) stop → BE,
-//      keeping the live R:R at 1:1; at +1R take ceil(n/2) off; then the stop
-//      trails behind each CLOSED 1m candle (long under the low, short over
-//      the high); exit on the first candle that takes the prior candle's
-//      extreme. Knob trail_tf: 1m default, 30s/45s allowed, off = video-8
-//      legacy (SUPERSEDED by the course frame — kept as a knob).
-//   C. CONFLUENCE — hold to at least 1:2, and the stop does not move up.
-//   D. SPENT DAY — at most 2 contracts left running; the 15-pt cap (R9)
+//      3 candles of the fill: BOTH stops → BE at that moment and leg 1's TP is
+//      modified OUT to the runner's target — NO 1:1 scale-out, NO candle
+//      trail. Let it run; EOD flat still applies.
+//   B. NO RESONANCE (normal) — at +0.5R BOTH legs' stops → BE (move_stop on
+//      each, the live R:R stays 1:1); leg 1 exits at its +1R TP (native
+//      bracket); the runner trails behind each CLOSED 1m candle (move_stop);
+//      exit on the first candle that takes the prior candle's extreme. Knob
+//      trail_tf: 1m default, 30s/45s allowed, off = video-8 legacy
+//      (SUPERSEDED — kept as a knob). ISB: leg 1's TP is modified to the
+//      fill-candle close (a limit at or through the market) — the partial is
+//      mandatory [D1.4 p1 @12:23–13:27]; the runner continues.
+//   C. CONFLUENCE — leg 1's TP at ≥1:2 set AT ENTRY; the stop does not move up.
+//   D. SPENT DAY — the runner is capped at 2 contracts; the 15-pt cap (R9)
 //      still applies.
 //   SWING — hold by the 4h (DS-106's rules).
 //
@@ -289,11 +293,14 @@ type mentorPosition struct {
 	Origin    string // the entry setup: "PHL", "PLH", "ISB", "SWING4H"
 	Entry     float64
 	Stop      float64
+	Target    float64 // the runner's target (A pushes leg 1's TP out to it)
 	R         float64
 	Contracts int
+	Leg1      int    // ceil(n/2), its own TP
+	Leg2      int    // the runner
 	Mode      string // "A-resonance", "B", "C", "swing"
-	ArmedBE   bool   // stop is at entry (B: +0.5R seen; A: resonance armed)
-	Scaled    bool   // the ceil(n/2) scale-out at +1R already happened (B only)
+	ArmedBE   bool   // stops are at entry (B: +0.5R seen; A: resonance armed)
+	Scaled    bool   // leg 1's +1R TP candle seen → the runner's trail begins
 }
 
 // mentorStopEntryPlacer is the broker's stop-entry surface (E7 frame on the
@@ -302,51 +309,121 @@ type mentorStopEntryPlacer interface {
 	PlaceStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64) (map[string]interface{}, error)
 }
 
-// reducePositionWire is the LAST hop before the socket for the mentor
-// scale-out. DS-101's reduce_position frame plugs in here; until the AddOn
-// carries it the function is nil and the driver falls back to all-or-nothing
-// B, logged + counted (the spec's explicit fallback).
-var reducePositionWire func(quantity int) error
+// ── SPLIT LEGS AT ENTRY (CTO ruling 2026-10-03 05:42Z) ─────────────────────
+//
+// Size n from the tier table → leg 1 (ceil(n/2), its OWN TP at +1R) + leg 2
+// (the rest, the runner). n = 1 → a single leg, no scale-out. No
+// reduce_position anywhere in the mentor path.
 
-// mentorScaleOutOutcome reports what a scale-out attempt did.
-type mentorScaleOutOutcome string
-
-const (
-	scaleOutSent     mentorScaleOutOutcome = "sent"
-	scaleOutFallback mentorScaleOutOutcome = "fallback_all_or_nothing"
-)
-
-// mentorScaleOut attempts the ceil(n/2) reduction (B only — A and C never
-// scale). With no reduce_position frame it returns the logged fallback.
-func (at *AutoTrader) mentorScaleOut(pos *mentorPosition) mentorScaleOutOutcome {
-	take := (pos.Contracts + 1) / 2 // ceil(n/2)
-	if reducePositionWire == nil {
-		mentorCount("scaleout_fallback")
-		at.logWarnf("🧑‍🏫 mentor scale-out skipped: the AddOn carries no reduce_position frame — all-or-nothing B for %s (%d contracts ride)",
-			pos.Symbol, pos.Contracts)
-		return scaleOutFallback
+// mentorSplitLegs splits n into leg 1 (ceil(n/2)) and leg 2 (the runner).
+// runnerCap (spent day: 2) caps the runner so at most that many contracts run
+// after leg 1. Parity: ceil(n/2) equals DS-108's replay half.
+func mentorSplitLegs(n, runnerCap int) (leg1, leg2 int) {
+	if n <= 0 {
+		return 0, 0
 	}
-	if err := reducePositionWire(take); err != nil {
-		mentorCount("scaleout_failed")
-		at.logErrorf("🧑‍🏫 mentor scale-out FAILED: %v — all-or-nothing B for %s", err, pos.Symbol)
-		return scaleOutFallback
+	leg1 = (n + 1) / 2
+	leg2 = n - leg1
+	if runnerCap > 0 && leg2 > runnerCap {
+		leg2 = runnerCap
 	}
-	mentorCount("scaleout_sent")
-	pos.Contracts -= take
-	pos.Scaled = true
-	at.logInfof("🧑‍🏫 mentor scale-out: %d contracts off at +1R, %d riding for %s", take, pos.Contracts, pos.Symbol)
-	return scaleOutSent
+	return leg1, leg2
 }
 
-// mentorExitB applies the v3 B rules to ONE closed 1m candle (pure). Phases:
-// pre-BE → stop or +0.5R (arm BE, the live R:R stays 1:1); BE → stop or +1R
-// (scale signal); after the scale the stop trails behind each CLOSED candle
-// (long: the candle's low, short: its high) unless trail is off (video-8
-// legacy knob). A candle trading through both the stop and a further level
-// takes the WORSE outcome (the stop). The trail moves only AFTER a candle
-// closes — no look-ahead.
-func mentorExitB(pos mentorPosition, h, l float64, trail bool) (newStop float64, exitPrice float64, exitReason string, exited, scaleOut bool) {
-	newStop = pos.Stop
+// mentorSpentDayRunnerCap is D: at most 2 contracts run after leg 1.
+const mentorSpentDayRunnerCap = 2
+
+// mentorLeg1TPForC is the C (confluence) leg-1 target: hold to at least 1:2 —
+// leg 1's TP at 2× risk, set AT ENTRY; the stop never moves up.
+func mentorLeg1TPForC(entry, r float64, side string) float64 {
+	if side == "short" {
+		return entry - 2*r
+	}
+	return entry + 2*r
+}
+
+// modifyBracketWire modifies leg 1's TP (modify_bracket). nil → the action is
+// logged + counted, never sent.
+var modifyBracketWire func(leg string, newTP float64) error
+
+// flattenLegWire flattens ONE leg (fail-closed on lost protection).
+var flattenLegWire func(leg string) error
+
+// mentorLegProtectedSource confirms a leg's protection on the NEXT snapshot
+// (nil → nothing is ever confirmed → the leg is flattened).
+var mentorLegProtectedSource func(leg string) bool
+
+// mentorExitResult is one closed candle's driver output.
+type mentorExitResult struct {
+	NewStop      float64  // the stop for the MoveStops legs
+	MoveStops    []string // legs to move_stop to NewStop
+	ModifyTP     *float64 // modify_bracket leg 1's TP to this (nil = no change)
+	Leg1AtTarget bool     // the candle crossed leg 1's +1R TP (the runner's trail begins next candle)
+	ExitPrice    float64
+	ExitReason   string
+	Exited       bool
+}
+
+// mentorApplyExitResult sends the leg actions. A failed or unwired
+// modify_bracket / move_stop is logged AND counted — never silent.
+func (at *AutoTrader) mentorApplyExitResult(nt *ntTrader.TCPTrader, side string, res mentorExitResult) {
+	for _, leg := range res.MoveStops {
+		if moveStopWire == nil {
+			mentorCount("move_stop_unwired")
+			at.logWarnf("🧑‍🏫 mentor %s move_stop unwired (stop %.2f) — logged, not sent", leg, res.NewStop)
+			continue
+		}
+		if err := moveStopWire(nt, side, res.NewStop); err != nil {
+			mentorCount("move_stop_failed")
+			at.logErrorf("🧑‍🏫 mentor %s move_stop FAILED: %v", leg, err)
+			continue
+		}
+		mentorCount("move_stop_sent_" + leg)
+	}
+	if res.ModifyTP != nil {
+		if modifyBracketWire == nil {
+			mentorCount("modify_bracket_unwired")
+			at.logWarnf("🧑‍🏫 mentor leg1 modify_bracket unwired (TP %.2f) — logged, not sent", *res.ModifyTP)
+		} else if err := modifyBracketWire("leg1", *res.ModifyTP); err != nil {
+			mentorCount("modify_bracket_failed")
+			at.logErrorf("🧑‍🏫 mentor leg1 modify_bracket FAILED: %v", err)
+		} else {
+			mentorCount("modify_bracket_sent")
+		}
+	}
+}
+
+// mentorConfirmLegProtection is the next-snapshot fail-closed check: a leg
+// whose protection cannot be confirmed is FLATTENED (that leg only).
+func (at *AutoTrader) mentorConfirmLegProtection(legs []string) {
+	for _, leg := range legs {
+		protected := mentorLegProtectedSource != nil && mentorLegProtectedSource(leg)
+		if protected {
+			continue
+		}
+		mentorCount("leg_protection_lost_" + leg)
+		at.logWarnf("🧑‍🏫 mentor %s protection unconfirmed — FLATTENING that leg (fail-closed)", leg)
+		if flattenLegWire != nil {
+			if err := flattenLegWire(leg); err != nil {
+				mentorCount("flatten_leg_failed")
+				at.logErrorf("🧑‍🏫 mentor %s flatten FAILED: %v", leg, err)
+			}
+		}
+	}
+}
+
+// mentorExitB applies the v3 B rules to ONE closed 1m candle (pure) on the
+// SPLIT-LEGS model: leg 1 carries its own TP at +1R set AT ENTRY, so the
+// driver never scales — it only arms BE at +0.5R (BOTH legs), records leg 1's
+// +1R crossing (the runner's trail begins on the NEXT candle), and trails the
+// runner behind each CLOSED candle (long: the candle's low, short: its high)
+// unless trail is off (video-8 legacy knob). For an ISB trade the fill-candle
+// close modifies leg 1's TP to the current price — the partial is mandatory
+// [D1.4 p1 @12:23–13:27], replacing the +1R TP for ISB only. A candle trading
+// through both the stop and a further level takes the WORSE outcome (the
+// stop). No look-ahead: the trail moves only AFTER a candle closes.
+func mentorExitB(pos mentorPosition, c, h, l float64, trail bool) mentorExitResult {
+	res := mentorExitResult{NewStop: pos.Stop}
 	long := pos.Side == "long"
 	var hitStop, hitHalfR, hit1R bool
 	if long {
@@ -360,57 +437,69 @@ func mentorExitB(pos mentorPosition, h, l float64, trail bool) (newStop float64,
 	}
 	if !pos.ArmedBE {
 		if hitStop && (hitHalfR || hit1R) {
-			return pos.Stop, pos.Stop, "stop(worse-same-bar)", true, false
+			res.ExitPrice, res.ExitReason, res.Exited = pos.Stop, "stop(worse-same-bar)", true
+			return res
 		}
 		if hitStop {
-			return pos.Stop, pos.Stop, "stop", true, false
+			res.ExitPrice, res.ExitReason, res.Exited = pos.Stop, "stop", true
+			return res
 		}
-		// ISB EXIT [D1.4 p1 @12:23–13:27]: for an ISB trade the first partial
-		// is MANDATORY when the candle that filled you closes ("khi cây nến
-		// trend kế tiếp đóng… bắt buộc… một setup có 3 phần, không có phần thứ
-		// 4") — it REPLACES the +1R scale for ISB trades only; the trail rules
-		// after it are unchanged.
+		// ISB EXIT [D1.4]: the fill candle's close closes leg 1 — modify its
+		// TP to the current price (a limit at or through the market). The
+		// runner continues.
 		if pos.Origin == "ISB" {
+			tp := c
+			res.ModifyTP = &tp
 			if hitHalfR {
-				return pos.Entry, 0, "", false, true // BE + the partial on the fill candle's close
+				res.NewStop = pos.Entry
+				res.MoveStops = []string{"leg1", "leg2"} // BE for BOTH legs
 			}
-			return pos.Stop, 0, "", false, true
+			return res
 		}
 		if hit1R {
-			// one candle crossed both +0.5R and +1R: BE first, then scale.
-			return pos.Entry, 0, "", false, true
+			// one candle crossed both +0.5R and +1R: BE for both legs and leg
+			// 1's +1R TP is hit (the runner trails from the NEXT candle).
+			res.NewStop = pos.Entry
+			res.MoveStops = []string{"leg1", "leg2"}
+			res.Leg1AtTarget = true
+			return res
 		}
 		if hitHalfR {
-			return pos.Entry, 0, "", false, false // arm BE (live R:R 1:1)
+			res.NewStop = pos.Entry
+			res.MoveStops = []string{"leg1", "leg2"} // arm BE for BOTH legs
 		}
-		return pos.Stop, 0, "", false, false
+		return res
 	}
 	if hitStop {
 		reason := "be"
 		if (long && pos.Stop > pos.Entry) || (!long && pos.Stop < pos.Entry) {
 			reason = "trail"
 		}
-		return pos.Stop, pos.Stop, reason, true, false
+		res.ExitPrice, res.ExitReason, res.Exited = pos.Stop, reason, true
+		return res
 	}
 	if !pos.Scaled {
 		if hit1R {
-			return pos.Stop, 0, "", false, true // scale at +1R; trail from the NEXT candle
+			res.Leg1AtTarget = true // leg 1 exits at its own TP; the runner trails next
 		}
-		return pos.Stop, 0, "", false, false
+		return res
 	}
-	// scaled: the candle trail (knob trail_tf). off → the stop never moves.
+	// after leg 1's target: the runner trails (knob trail_tf). off → the stop
+	// never moves.
 	if trail {
 		if long {
 			if l > pos.Stop {
-				newStop = l
+				res.NewStop = l
+				res.MoveStops = []string{"leg2"}
 			}
 		} else {
 			if h < pos.Stop {
-				newStop = h
+				res.NewStop = h
+				res.MoveStops = []string{"leg2"}
 			}
 		}
 	}
-	return newStop, 0, "", false, false
+	return res
 }
 
 // mentorResonanceMaxCandles is the A window: the resonance ISB must appear
@@ -419,27 +508,28 @@ const mentorResonanceMaxCandles = 3
 
 // mentorMaybeArmResonance flips an open PHL/PLH position into mode A the
 // moment an ISB in the SAME direction appears within 3 candles of the fill:
-// the stop goes to BREAK-EVEN immediately, and A has NO candle trail and NO
-// 1:1 scale-out — it runs to the next level / the old high and beyond (EOD
-// flat still applies). Returns whether the position switched.
-func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill int) bool {
+// BOTH legs' stops go to BREAK-EVEN immediately and leg 1's TP is modified OUT
+// to the runner's target — NO 1:1 scale-out, NO candle trail. It runs to the
+// next level / the old high and beyond (EOD flat still applies). Returns
+// whether it armed and the modify-bracket TP for leg 1.
+func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill int) (armed bool, modifyTP float64) {
 	if pos == nil || pos.Mode == "A-resonance" {
-		return false
+		return false, 0
 	}
 	if pos.Origin != "PHL" && pos.Origin != "PLH" {
-		return false // only a PHL/PLH fill can resonate
+		return false, 0 // only a PHL/PLH fill can resonate
 	}
 	if barsSinceFill < 1 || barsSinceFill > mentorResonanceMaxCandles {
-		return false
+		return false, 0
 	}
 	if !strings.EqualFold(pos.Side, isbSide) {
-		return false
+		return false, 0
 	}
 	pos.Mode = "A-resonance"
 	pos.ArmedBE = true
 	pos.Stop = pos.Entry
 	mentorCount("resonance_armed")
-	return true
+	return true, pos.Target
 }
 
 // mentorExitHold applies the stop-only holds: the stop NEVER moves and nothing
@@ -460,13 +550,15 @@ func mentorExitHold(pos mentorPosition, l, h float64, reason string) (exitPrice 
 }
 
 // mentorExitC applies the confluence hold (C): the stop NEVER moves and there
-// is NO scale-out at +1R — hold to at least 1:2 [§6].
+// is NO scale-out — hold to at least 1:2. Leg 1's TP at 2× risk is set AT
+// ENTRY (mentorLeg1TPForC); the driver never modifies it.
 func mentorExitC(pos mentorPosition, l, h float64) (exitPrice float64, exitReason string, exited bool) {
 	return mentorExitHold(pos, l, h, "stop")
 }
 
-// mentorExitA applies the resonance hold (A): stop at BE, no trail, no
-// scale-out — let it run [D2.4 p1 @01:36–02:59]. EOD flat still applies.
+// mentorExitA applies the resonance hold (A): stops at BE, no trail, no
+// scale-out — leg 1's TP was already pushed out to the runner's target at the
+// arming moment. Let it run [D2.4 p1 @01:36–02:59]. EOD flat still applies.
 func mentorExitA(pos mentorPosition, l, h float64) (exitPrice float64, exitReason string, exited bool) {
 	return mentorExitHold(pos, l, h, "resonance_be")
 }
