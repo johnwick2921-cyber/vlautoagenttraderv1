@@ -2257,6 +2257,14 @@ func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *st
 			u.State, u.SignalID, u.Account, u.FillPrice)
 	}
 	logArmedOrderUpdateSummary()
+	// P1-7 (review 2026-10-03): the AddOn's cancel echo is a REPORT, not a
+	// state event. With the regime OFF it must be a complete no-op — a live
+	// echo appends accepted_risk and a cancelled echo would settle rows
+	// through SetState, bypassing ConfirmCancel and the zone re-arm. The echo
+	// is only meaningful to the report regime.
+	if u.CancelReport && !cancelConfirmRequireReport() {
+		return
+	}
 	if u.OrderName != "" && u.OrderName != u.SignalID {
 		return
 	}

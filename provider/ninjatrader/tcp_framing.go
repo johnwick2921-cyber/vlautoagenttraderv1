@@ -14,6 +14,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 )
 
 // FrameType enumerates the 4 wire envelope types per spec L4382.
@@ -369,6 +371,21 @@ const MinAddonBuildCancelReport = "2026-10-03-c1"
 // not assumed (same rule as every other floor).
 func CancelReportProven(buildID string) bool {
 	return FarSideProven(buildID, MinAddonBuildCancelReport)
+}
+
+// CancelReportRegimeOn mirrors the trader's CANCEL_CONFIRM_REQUIRE_REPORT knob
+// (the provider package cannot import the trader package). N9 (review r2,
+// 2026-10-03): with the regime OFF the read loop DROPS cancel-report echo
+// frames BEFORE NoteEntryExecution, the ordered worker's snapshot wait,
+// RetryPendingNT8Exits and the picture-HTF consumer can see them — a report
+// frame is only meaningful to the regime, and the wire stays byte-identical
+// with the knob OFF.
+func CancelReportRegimeOn() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("CANCEL_CONFIRM_REQUIRE_REPORT"))) {
+	case "1", "true", "on", "yes":
+		return true
+	}
+	return false
 }
 
 // ErrAddonBuildTooOld is the sentinel behind a stop entry refused because the

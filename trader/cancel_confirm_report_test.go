@@ -310,3 +310,72 @@ func TestConfirmPendingCancelsReportTimeoutCensusAndRerequest(t *testing.T) {
 		t.Fatalf("the re-request must be counted, got attempts=%d", rows[0].CancelAttempts)
 	}
 }
+
+// ── REVIEW r2 MUTANT PINS (M6, M9) AT THE PRODUCTION CALL SITES ─────────────
+
+// M6 pin: remove the knob-OFF echo no-op in onArmedOrderUpdate and a
+// cancel-report echo settles a cancel_pending row through SetState while the
+// regime is OFF — the exact bypass the regime exists to remove. The echo is
+// a report, never a state event.
+func TestEchoIsANoOpWithTheRegimeOFF(t *testing.T) {
+	t.Setenv("CANCEL_CONFIRM_REQUIRE_REPORT", "")
+	if cancelConfirmRequireReport() {
+		t.Fatalf("fixture: the regime must be OFF")
+	}
+	ledger, _, _ := newReportLedger(t)
+	at := &AutoTrader{id: "t1"}
+	seedPendingRow(t, ledger, time.Now().UnixMilli())
+	at.onArmedOrderUpdate(nt.OrderUpdatePayload{
+		OrderName: "sig-a", SignalID: "sig-a", State: "cancelled", CancelReport: true,
+	}, ledger)
+	rows := pendingRows(t, ledger)
+	if len(rows) != 1 || rows[0].State != store.StateCancelPending {
+		t.Fatalf("an echo with the regime OFF must be a complete no-op, got %+v", rows)
+	}
+	if rows[0].CancelReportMs != 0 || rows[0].CancelReportState != "" {
+		t.Fatalf("an echo with the regime OFF must not record a report, got ms=%d state=%q", rows[0].CancelReportMs, rows[0].CancelReportState)
+	}
+}
+
+// M9 pin: remove the settledIDs skip and a row the pass just settled is
+// re-requested (resurrected to cancel_pending) by the census loop. cancelFn
+// must fire EXACTLY once — for the still-pending row only.
+func TestReportPassNeverResurrectsSettledRows(t *testing.T) {
+	ledger, cancelFn, sends := newReportLedger(t)
+	at := &AutoTrader{id: "t1"}
+	reqMs := time.Now().UnixMilli()
+	// Row A: qualifies for settlement AND is past the timeout.
+	a := seedPendingRow(t, ledger, reqMs)
+	if err := ledger.RecordCancelReport(a.ID, reqMs+5_000, "cancelled"); err != nil {
+		t.Fatalf("record report A: %v", err)
+	}
+	// Row B: no report, past the timeout — the one re-request is for B.
+	seedPendingRowB := &store.ArmedOrderDB{
+		TraderID: "t1", PlanID: "2026-10-03:planY", Version: 1, Session: "RTH",
+		Scenario: "S2", Side: "short", EntryPx: 100, StopPx: 101, TargetPx: 98,
+		State: "armed", CreatedAt: time.Now(), UpdatedAt: time.Now(),
+	}
+	if err := ledger.UpsertArm(seedPendingRowB); err != nil {
+		t.Fatalf("upsert B: %v", err)
+	}
+	if err := ledger.SetSignal(seedPendingRowB.ID, "sig-b"); err != nil {
+		t.Fatalf("signal B: %v", err)
+	}
+	if err := ledger.RequestCancel(seedPendingRowB.ID, "gate changed", reqMs); err != nil {
+		t.Fatalf("request B: %v", err)
+	}
+	now := time.UnixMilli(reqMs + 2*60_000) // both rows past the 1-min timeout
+	settled, still, reReq := at.confirmPendingCancelsReport(ledger, cancelFn, pendingRows(t, ledger), now, time.Minute, 5, nt.MinAddonBuildCancelReport)
+	if settled != 1 || still != 1 || reReq != 1 {
+		t.Fatalf("want settled=1 still=1 reRequested=1, got settled=%d still=%d reRequested=%d", settled, still, reReq)
+	}
+	if sends() != 1 {
+		t.Fatalf("the only re-request must be for the still-pending row, got %d sends", sends())
+	}
+	// A must be settled, B still pending — never resurrected.
+	for _, r := range pendingRows(t, ledger) {
+		if r.SignalID == "sig-a" {
+			t.Fatalf("settled row A was resurrected: %+v", r)
+		}
+	}
+}

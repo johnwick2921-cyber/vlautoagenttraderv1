@@ -633,6 +633,11 @@ func (at *AutoTrader) confirmPendingCancelsReport(ledger *store.ArmedOrderStore,
 			buildStr, nt.MinAddonBuildCancelReport, len(rows))
 		return 0, len(rows), 0
 	}
+	// P1-2 (review 2026-10-03): loop 2 must NEVER touch a row loop 1 settled.
+	// The census and the re-request walk the SAME stale `rows` slice — a row
+	// just confirmed (or re-armed) would otherwise get cancelFn + RequestCancel
+	// and be resurrected into cancel_pending.
+	settledIDs := map[int64]bool{}
 	for i := range rows {
 		r := rows[i]
 		ok, why := cancelReportQualifies(r)
@@ -645,6 +650,7 @@ func (at *AutoTrader) confirmPendingCancelsReport(ledger *store.ArmedOrderStore,
 				continue
 			}
 			settled++
+			settledIDs[r.ID] = true
 			at.logInfof("🧾 cancel-report CONFIRMED %s signal=%s — %s (report_ms=%d state=%s attempts=%d) — returned to armed-unplaced, re-placeable",
 				r.Scenario, shortID(r.SignalID), why, r.CancelReportMs, r.CancelReportState, r.CancelAttempts)
 			continue
@@ -657,6 +663,7 @@ func (at *AutoTrader) confirmPendingCancelsReport(ledger *store.ArmedOrderStore,
 			continue
 		}
 		settled++
+		settledIDs[r.ID] = true
 		at.logInfof("🧾 cancel-report CONFIRMED %s signal=%s — %s (report_ms=%d state=%s attempts=%d)",
 			r.Scenario, shortID(r.SignalID), why, r.CancelReportMs, r.CancelReportState, r.CancelAttempts)
 	}
@@ -664,6 +671,9 @@ func (at *AutoTrader) confirmPendingCancelsReport(ledger *store.ArmedOrderStore,
 	var overdue []store.ArmedOrderDB
 	for i := range rows {
 		r := rows[i]
+		if settledIDs[r.ID] {
+			continue // settled in loop 1 — never re-requested, never resurrected
+		}
 		if r.CancelRequestedAtMs <= 0 {
 			continue
 		}
