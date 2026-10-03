@@ -109,6 +109,16 @@ type ArmedOrderDB struct {
 	// 0 on a row that reached 'cancelled' any other way, which is every row
 	// written before this wave.
 	CancelSettledSnapshotID int64 `gorm:"default:0"`
+	// ── CANCEL-REPORT REGIME (2026-10-03) ───────────────────────────────────
+	//
+	// The positive per-order terminal report the AddOn certifies from
+	// MinAddonBuildCancelReport: emitted on every cancel_order receipt (the
+	// echo) and again as the real OnOrderUpdate terminal transition. Recorded
+	// latest-wins. 0 / '' = NO report has been recorded, which is the truth
+	// for every historical row — never a fabricated zero. The report regime
+	// (CANCEL_CONFIRM_REQUIRE_REPORT) settles cancels ONLY on these columns.
+	CancelReportMs    int64  `gorm:"default:0"`
+	CancelReportState string `gorm:"default:''"`
 
 	// W3 market_in_zone (2026-09-23). Every field is ABSENT (NULL / '') on a
 	// legacy or planned_order row — 0 is a real value for slippage and a real
@@ -256,6 +266,11 @@ func (s *ArmedOrderStore) Migrate() error {
 			// were accumulated by a process that is gone.
 			{"cancel_attempts_boot", "TEXT NOT NULL DEFAULT ''"},
 			{"cancel_settled_snapshot_id", "INTEGER NOT NULL DEFAULT 0"},
+			// CANCEL-REPORT REGIME (2026-10-03) — the positive per-order
+			// terminal report columns. 0 / '' on every historical row: the
+			// report was never recorded, and absent ≠ 0.
+			{"cancel_report_ms", "INTEGER NOT NULL DEFAULT 0"},
+			{"cancel_report_state", "TEXT NOT NULL DEFAULT ''"},
 			// W3 market_in_zone (2026-09-23): NULLable where 0 would be a
 			// fabricated value (absent ≠ 0); '' where the text is a label.
 			{"policy", "TEXT NOT NULL DEFAULT ''"},
@@ -834,6 +849,69 @@ func (s *ArmedOrderStore) ConfirmCancel(id int64, snapshotID int64, reason strin
 			"state_reason":               reasonKeepingWithdraw(reason),
 			"cancel_settled_snapshot_id": snapshotID,
 		})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected != 1 {
+			return fmt.Errorf("arm %d changed during cancel confirmation", id)
+		}
+		return nil
+	})
+}
+
+// RecordCancelReport stores the AddOn's positive per-order report for a row
+// (CANCEL-REPORT REGIME, 2026-10-03). Latest-wins and monotonic: a report
+// older than the recorded one is a duplicate and is ignored — the C# echo and
+// the real OnOrderUpdate transition both report, and either may arrive twice.
+// A report older than the last is still evidence for nothing new, so the row
+// keeps the newest it has.
+func (s *ArmedOrderStore) RecordCancelReport(id int64, reportMs int64, state string) error {
+	if s == nil || s.db == nil {
+		return fmt.Errorf("armed order store unavailable")
+	}
+	if reportMs <= 0 || strings.TrimSpace(state) == "" {
+		return fmt.Errorf("a cancel report requires its receipt time and state")
+	}
+	res := s.db.Model(&ArmedOrderDB{}).
+		Where("id = ? AND (cancel_report_ms = 0 OR cancel_report_ms < ?)", id, reportMs).
+		Updates(map[string]any{
+			"cancel_report_ms":    reportMs,
+			"cancel_report_state": state,
+		})
+	return res.Error
+}
+
+// ConfirmCancelByReport is the report regime's confirmation: the ONLY way a row
+// becomes 'cancelled' through the cancel path while CANCEL_CONFIRM_REQUIRE_REPORT
+// is ON. The evidence is the positive terminal report recorded by
+// RecordCancelReport — received at-or-after the cancel request (F9), terminal
+// ('cancelled'). A 'filled' report NEVER settles a cancel here: that is the
+// filled path's outcome, not a cancellation (the row leaves cancel_pending by
+// the filled branch, never through this door).
+func (s *ArmedOrderStore) ConfirmCancelByReport(id int64, reason string) error {
+	if s == nil || s.db == nil {
+		return fmt.Errorf("armed order store unavailable")
+	}
+	return immediateOrPlainTxAny(s.db, func(tx *gorm.DB) error {
+		var row ArmedOrderDB
+		if err := tx.First(&row, id).Error; err != nil {
+			return err
+		}
+		if row.State != StateCancelPending {
+			return fmt.Errorf("arm %d is %s, not cancel_pending", id, row.State)
+		}
+		if row.CancelReportMs <= 0 ||
+			strings.ToLower(strings.TrimSpace(row.CancelReportState)) != "cancelled" {
+			return fmt.Errorf("arm %d has no qualifying terminal report (report_ms=%d state=%q)", id, row.CancelReportMs, row.CancelReportState)
+		}
+		if row.CancelRequestedAtMs <= 0 || row.CancelReportMs < row.CancelRequestedAtMs {
+			return fmt.Errorf("arm %d report predates the cancel request (report %d < request %d)", id, row.CancelReportMs, row.CancelRequestedAtMs)
+		}
+		res := tx.Model(&ArmedOrderDB{}).Where("id = ? AND state = ?", id, StateCancelPending).
+			Updates(map[string]any{
+				"state":        StateCancelled,
+				"state_reason": reasonKeepingWithdraw(reason),
+			})
 		if res.Error != nil {
 			return res.Error
 		}
