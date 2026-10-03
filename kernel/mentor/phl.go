@@ -1,45 +1,72 @@
 package mentor
 
-// PHL / PLH [§2.2] — the return trade at a level whose old extreme lies at
-// least PHLMinCandlesFromExtreme candles away [D4.1 p1 @ 09:40 written:
-// "Phải đợi đi xa đỉnh/đáy cũ trước đó (ít nhất là 3 cây nến backtest)"].
-// Target: "gần đỉnh cũ" — NEAR the old extreme, not exactly at it
-// [D4.1 p1 @ 07:27], PHLTargetShyPts short (Q2 knob; worked example 5–15
-// [D2.2 p1 @ 06:50]).
+// PHL / PLH [§2.2] — R2 mechanics, verbatim [D2.2 p1 @ 19:34–19:58, 23:22]:
 //
-// A PHL is the higher low: reject-touch at a support level → buy stop beyond
-// the reference candle, target near the old HIGH. A PLH is the lower high:
-// reject-touch at a resistance level → sell stop, target near the old LOW.
+//   - PHL = LONG: in an uptrend price pulls back; a buy stop sits at the
+//     PREVIOUS candle's high and the candle that breaks it fills you
+//     [@ 19:34–19:58]. STOP = the low of the candle that was broken
+//     [@ 04:58, 07:28]. TARGET near the old high, not at it [@ 07:33].
+//   - PLH = SHORT, the exact mirror: a downtrend bounce; sell stop at the
+//     previous candle's low; stop = the high of the broken candle
+//     [@ 23:22–23:52, 11:50–11:59].
+//   - The entry must be far from the old high: wait for 1–2 more pullback
+//     candles [p2 @ 05:25, 07:02] → PHLMinCandlesFromExtreme.
+//   - A HIGHER low is required — a flat low is an FTGL, not a PHL (and the
+//     mirror for PLH) → PHLPLHR2's priorSwing.
+//   - At a level, the touching reference candle IS the previous candle
+//     (§3 first-touch reference) — the stop order sits on its extreme,
+//     NO buffer.
 
 // PHLPLH builds the setup intent from a reject touch (§3) at a level, or
 // reports why it is not a trade. barIdx and extremeIdx are indexes into the
-// 1m series the evaluator ticks on.
+// 1m series the evaluator ticks on. Compatibility wrapper: the higher-low
+// check is skipped (priorSwing 0) — the evaluator should call PHLPLHR2.
 func PHLPLH(t Touch, oldExtreme Level, extremeIdx, barIdx int, cfg Config) (Intent, bool, string) {
+	return PHLPLHR2(t, oldExtreme, extremeIdx, barIdx, 0, cfg)
+}
+
+// PHLPLHR2 is the R2 PHL/PLH: priorSwing is the previous same-role swing
+// price (0 = skip the higher-low / lower-high check).
+func PHLPLHR2(t Touch, oldExtreme Level, extremeIdx, barIdx int, priorSwing float64, cfg Config) (Intent, bool, string) {
 	if !cfg.Enabled {
 		return Intent{}, false, "mentor mode off"
 	}
 	if t.Outcome != TouchReject {
 		return Intent{}, false, "not a reject touch — no PHL/PLH [D5.2 p1 @ 19:51]"
 	}
-	side, price, ok := RejectEntry(t, cfg)
+	side, _, ok := RejectEntry(t, cfg)
 	if !ok {
 		return Intent{}, false, "no reject entry"
 	}
+	// R2: the buy stop sits at the PREVIOUS candle's high; stop = the low
+	// of that broken candle. The previous candle = the touch reference.
+	price := t.RefBar.High
+	stop := t.RefBar.Low
+	if side == SideShort {
+		price = t.RefBar.Low
+		stop = t.RefBar.High
+	}
+	if priorSwing != 0 {
+		if side == SideLong && stop <= priorSwing {
+			return Intent{}, false, "not a higher low — a flat low is an FTGL, not a PHL [D2.2 p1 R2]"
+		}
+		if side == SideShort && stop >= priorSwing {
+			return Intent{}, false, "not a lower high — a flat high is an FTGH, not a PLH [D2.2 p1 R2]"
+		}
+	}
 	// The old extreme must be on the TARGET side: long → old high above;
-	// short → old low below. The dispatch's "higher low / lower high at the
-	// level" names exactly this pairing.
+	// short → old low below.
 	onTargetSide := side == SideLong && oldExtreme.Price > price ||
 		side == SideShort && oldExtreme.Price < price
 	if !onTargetSide {
 		return Intent{}, false, "old extreme not on the target side"
 	}
 	if barIdx-extremeIdx < cfg.PHLMinCandlesFromExtreme {
-		return Intent{}, false, "too close to the old extreme — need at least " + itoa(cfg.PHLMinCandlesFromExtreme) + " candles [D4.1 p1 @ 09:40 written]"
+		return Intent{}, false, "too close to the old extreme — wait 1–2 more pullback candles [D2.2 p2 @ 05:25, 07:02]"
 	}
-	stop := t.RefBar.Low - cfg.ISBBufferPts
+	// Target: NEAR the old extreme, not exactly at it [D2.2 p1 @ 07:33].
 	target := oldExtreme.Price - cfg.PHLTargetShyPts
 	if side == SideShort {
-		stop = t.RefBar.High + cfg.ISBBufferPts
 		target = oldExtreme.Price + cfg.PHLTargetShyPts
 	}
 	risk := price - stop
@@ -63,7 +90,7 @@ func PHLPLH(t Touch, oldExtreme Level, extremeIdx, barIdx int, cfg Config) (Inte
 		Price:  price,
 		Stop:   stop,
 		Target: target,
-		Reason: "PHL/PLH: stop order beyond the rejecting candle, target near the old extreme [D4.1 p1 @ 07:27, 09:40 written]",
+		Reason: "PHL/PLH: buy stop at the previous candle's high, stop at the broken candle's low, target near the old extreme [D2.2 p1 @ 19:34, 04:58, 07:33]",
 	}, true, ""
 }
 
@@ -100,6 +127,16 @@ func PHLPLHGated(t Touch, oldExtreme Level, extremeIdx, barIdx int, cfg Config, 
 	}
 	if day == DayNotMeasured {
 		return in, false, "day gate: day run not measured — no mentor entries ('any trade you are vague about — don't' [§12])"
+	}
+	if day == DaySpent {
+		risk := in.Price - in.Stop
+		if in.Side == SideShort {
+			risk = in.Stop - in.Price
+		}
+		// R9: on a spent day (cap 15), skip any setup whose stop is over 15
+		if risk > dg.TargetCapPts {
+			return in, false, "spent day: stop over the 15-pt cap — skip the setup [R9, D1.2 p1 @ 07:48–09:00]"
+		}
 	}
 	return CapTargetForDay(in, day, dg), true, ""
 }

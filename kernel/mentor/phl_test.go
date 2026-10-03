@@ -6,10 +6,11 @@ import (
 	"vl/market"
 )
 
-// TestPHLPLHWorkedExampleGeometry — §2.2 worked example [D2.2 p1 @ 06:50]:
-// entry 29,397.25, stop 29,386.00, target 29,425.75 = 11.25 risk, 28.5 reward
-// (2.5R), target visibly below the old high 29,430–29,440. The setup must
-// PASS the room rule (2.53R ≥ 2×) and the stop ceiling.
+// TestPHLPLHWorkedExampleGeometry — §2.2 [D2.2 p1 @ 06:50, R2 @ 19:34]:
+// the buy stop sits at the PREVIOUS candle's high (29,395.75, no buffer),
+// stop = the low of that broken candle (29,387.50), target 29,425.75 —
+// visibly below the old high 29,430–29,440. The setup must PASS the room
+// rule (reward 30 vs risk 8.25 = 3.6R ≥ 2×) and the stop ceiling.
 func TestPHLPLHWorkedExampleGeometry(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
@@ -25,8 +26,8 @@ func TestPHLPLHWorkedExampleGeometry(t *testing.T) {
 	if !ok {
 		t.Fatalf("worked example refused: %s", reason)
 	}
-	if in.Side != SideLong || in.Price != 29_397.25 || in.Stop != 29_386.0 {
-		t.Fatalf("entry = %+v, want long price 29397.25 stop 29386.00", in)
+	if in.Side != SideLong || in.Price != 29_395.75 || in.Stop != 29_387.5 {
+		t.Fatalf("entry = %+v, want long price 29395.75 stop 29387.50 (R2: tight on the previous candle)", in)
 	}
 	// target = old high − shy = 29,425.75
 	if in.Target != 29_425.75 {

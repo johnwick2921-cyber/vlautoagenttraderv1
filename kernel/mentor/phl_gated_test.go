@@ -89,18 +89,50 @@ func TestPHLPLHGatedNotMeasuredRefuses(t *testing.T) {
 
 // TestPHLPLHGatedSpentDayCapsTarget — spent + agree: the target distance is
 // capped at 15 pts ("15 điểm bán, 10 điểm bán" [D5.1 p1 @ 15:57]). The
-// worked example targets 28.5 pts away; the cap pulls it to 29,412.25.
+// worked example targets 30 pts away; the cap pulls it to 29,410.75.
 func TestPHLPLHGatedSpentDayCapsTarget(t *testing.T) {
 	htf := HTF{FourH: TriggerLine{Dir: SideLong, Price: 29400}}
 	in, ok, _ := PHLPLHGated(workedTouch(), Level{Kind: KindOldExtreme, Price: 29_431.75}, 0, 3, workedCfg(), htf, DaySpent, DefaultDayGate())
 	if !ok {
 		t.Fatal("spent+agree (1h silent = follow the 4h) must still trade")
 	}
-	if in.Target != 29_412.25 {
-		t.Fatalf("target = %.2f, want the 15-pt cap 29412.25 (entry 29397.25 + 15)", in.Target)
+	if in.Target != 29_410.75 {
+		t.Fatalf("target = %.2f, want the 15-pt cap 29410.75 (entry 29395.75 + 15)", in.Target)
 	}
-	if in.Stop != 29_386.0 || in.Price != 29_397.25 {
+	if in.Stop != 29_387.5 || in.Price != 29_395.75 {
 		t.Fatalf("the cap must only touch the target: %+v", in)
+	}
+}
+
+// TestPHLPLHR2HigherLowRequired — R2: a HIGHER low is required; a flat low
+// is an FTGL, not a PHL [D2.2 p1 R2]. The mirror refuses a flat high.
+func TestPHLPLHR2HigherLowRequired(t *testing.T) {
+	cfg := workedCfg()
+	// prior swing low 29,387.5 — the reference low EQUALS it → flat → FTGL
+	if _, ok, reason := PHLPLHR2(workedTouch(), Level{Kind: KindOldExtreme, Price: 29_431.75}, 0, 3, 29_387.5, cfg); ok || reason == "" {
+		t.Fatalf("flat low shipped: ok=%v reason=%q", ok, reason)
+	}
+	// a higher low passes
+	if _, ok, _ := PHLPLHR2(workedTouch(), Level{Kind: KindOldExtreme, Price: 29_431.75}, 0, 3, 29_380.0, cfg); !ok {
+		t.Fatal("a higher low must pass")
+	}
+	// mirror: short, prior swing high == ref high → flat high refused
+	shortTouch := Touch{Outcome: TouchReject, ApproachedFrom: SideShort, RefBar: market.Kline{High: 29_440, Low: 29_431, Close: 29_438}}
+	if _, ok, _ := PHLPLHR2(shortTouch, Level{Kind: KindOldExtreme, Price: 29_400}, 0, 3, 29_440, cfg); ok {
+		t.Fatal("flat high shipped — must be an FTGH, not a PLH")
+	}
+}
+
+// TestPHLPLHGatedSpentDaySkipStopOver15 — R9: on a spent day, skip any
+// setup whose stop is over the 15-pt cap [D1.2 p1 @ 07:48–09:00].
+func TestPHLPLHGatedSpentDaySkipStopOver15(t *testing.T) {
+	cfg := workedCfg()
+	htf := HTF{FourH: TriggerLine{Dir: SideLong, Price: 29400}}
+	// reference candle 20 pts tall → stop distance 20 > 15; the old extreme
+	// sits far enough that ONLY R9 can refuse (reward 44 ≥ 2×20).
+	touch := Touch{Outcome: TouchReject, ApproachedFrom: SideLong, RefBar: market.Kline{High: 29_400, Low: 29_380, Close: 29_385}}
+	if _, ok, reason := PHLPLHGated(touch, Level{Kind: KindOldExtreme, Price: 29_450}, 0, 3, cfg, htf, DaySpent, DefaultDayGate()); ok || reason == "" {
+		t.Fatalf("spent day with a 20-pt stop shipped: ok=%v reason=%q", ok, reason)
 	}
 }
 
