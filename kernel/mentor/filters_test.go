@@ -23,7 +23,7 @@ func TestTriggerLineFirstBreakDrawsLine(t *testing.T) {
 		b5(5, 103, 97, 99),    // breaks the HIGH → buy line at 100
 		b5(10, 104, 102, 103), // same-side break → ignored (FIRST break only [@ 19:48])
 	}
-	got := TriggerTick(TriggerLine{}, bars, cfg)
+	got := TriggerTick(TriggerLine{}, bars, 5, cfg)
 	if got.Dir != SideLong || got.Price != 100 {
 		t.Fatalf("line = %+v, want long @ 100 (the broken high, not the breaker's high)", got)
 	}
@@ -41,7 +41,7 @@ func TestTriggerLineSellBreak(t *testing.T) {
 		b5(0, 100, 96, 98),
 		b5(5, 99, 94, 95), // breaks the LOW → sell line at 96
 	}
-	got := TriggerTick(TriggerLine{}, bars, cfg)
+	got := TriggerTick(TriggerLine{}, bars, 5, cfg)
 	if got.Dir != SideShort || got.Price != 96 {
 		t.Fatalf("line = %+v, want short @ 96", got)
 	}
@@ -57,13 +57,13 @@ func TestTriggerTickIsIdempotentAndIncremental(t *testing.T) {
 		b5(0, 100, 96, 97),
 		b5(5, 103, 97, 99),
 	}
-	first := TriggerTick(TriggerLine{}, bars, cfg)
-	again := TriggerTick(first, bars, cfg)
+	first := TriggerTick(TriggerLine{}, bars, 5, cfg)
+	again := TriggerTick(first, bars, 5, cfg)
 	if again != first {
 		t.Fatalf("re-tick changed state: %+v → %+v", first, again)
 	}
 	bars = append(bars, b5(10, 105, 100, 104)) // same-direction break → no move, but processed
-	third := TriggerTick(first, bars, cfg)
+	third := TriggerTick(first, bars, 5, cfg)
 	if third.LastBucket != bars[2].OpenTime {
 		t.Fatalf("extended tick did not process only the new bucket: %+v", third)
 	}
@@ -84,7 +84,7 @@ func TestTriggerLineMovesOnEveryReversalOnceEach(t *testing.T) {
 		b5(10, 98, 96, 96),    // same-direction short break → NO move
 		b5(15, 103, 100, 103), // next reversal: breaks the high → line moves to long @ 96
 	}
-	got := TriggerTick(tl, bars, cfg)
+	got := TriggerTick(tl, bars, 5, cfg)
 	if got.Dir != SideLong || got.Price != 98 {
 		t.Fatalf("after two reversals = %+v, want long @ 98 (the second reversal's broken high)", got)
 	}
@@ -120,7 +120,7 @@ func TestTriggerLineOnRecorded5mTape(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	bars := loadFixture(t, "mnq_5m_2026-09-15_rth", "5m")
-	got := TriggerTick(TriggerLine{}, bars, cfg)
+	got := TriggerTick(TriggerLine{}, bars, 5, cfg)
 	if got.Dir == "" {
 		t.Fatal("no trigger line was drawn on the recorded 5m tape")
 	}
@@ -128,7 +128,7 @@ func TestTriggerLineOnRecorded5mTape(t *testing.T) {
 		t.Fatalf("LastBucket = %d, want the last bucket %d", got.LastBucket, bars[len(bars)-1].OpenTime)
 	}
 	// re-tick idempotence on the real tape (B2)
-	again := TriggerTick(got, bars, cfg)
+	again := TriggerTick(got, bars, 5, cfg)
 	if again != got {
 		t.Fatal("re-tick on the recorded tape changed state (B2)")
 	}

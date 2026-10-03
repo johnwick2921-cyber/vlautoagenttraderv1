@@ -18,8 +18,8 @@ type HTF struct {
 // trigger lines (aggregated by the evaluator from the 1m series). Pure:
 // state in, state out.
 func HTFAdvance(h HTF, bars4h, bars1h []market.Kline, cfg Config) HTF {
-	h.FourH = TriggerTick(h.FourH, bars4h, cfg)
-	h.OneH = TriggerTick(h.OneH, bars1h, cfg)
+	h.FourH = TriggerTick(h.FourH, bars4h, 240, cfg)
+	h.OneH = TriggerTick(h.OneH, bars1h, 60, cfg)
 	return h
 }
 

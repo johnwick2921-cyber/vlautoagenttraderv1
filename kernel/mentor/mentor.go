@@ -116,6 +116,11 @@ type Config struct {
 	StopCeilingPts float64 // hard stop ceiling; default 25 [D3.3 p1 @ 02:04]
 	RoomMultiple   float64 // room rule: reward >= RoomMultiple x risk; default 2 [D5.3 p1 @ 09:16]
 	RangeGapPts    float64 // mid-range: levels bracketing price within this gap both sides; default 0 = disabled
+
+	// §7 day gate knobs (fold item 4, DS-106): the method defaults until the
+	// routed Config integration lands.
+	DayGateSpentPts     float64 // run >= this before the open = spent; default 300 [D5.1 p1 @ 15:57]
+	DayGateTargetCapPts float64 // spent-day target cap; default 15 ("15 điểm bán, 10 điểm bán")
 }
 
 // DefaultConfig returns the mentor defaults per PLAN v1 (knob values start from
@@ -145,6 +150,9 @@ func DefaultConfig() Config {
 		StopCeilingPts: 25,
 		RoomMultiple:   2,
 		RangeGapPts:    0,
+
+		DayGateSpentPts:     300,
+		DayGateTargetCapPts: 15,
 	}
 }
 

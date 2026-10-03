@@ -30,18 +30,18 @@ type TriggerLine struct {
 	LastBar    market.Kline
 }
 
-// TriggerTick advances the trigger state over the closed 5m buckets newer
-// than LastBucket (B2). The trigger candle need not close [@ 08:19]; a bucket
-// that exists (even forming) may fire a break, is committed once, and is never
+// TriggerTick advances the trigger state over the closed buckets newer than
+// LastBucket (B2). The trigger candle need not close [@ 08:19]; a bucket that
+// exists (even forming) may fire a break, is committed once, and is never
 // re-applied. Buckets are compared only with the immediately PREVIOUS bucket
-// (a gap skips the test — law 2 compares adjacent candles).
-func TriggerTick(prev TriggerLine, bars5m []market.Kline, cfg Config) TriggerLine {
-	if !cfg.Enabled || len(bars5m) == 0 {
+// of the SAME timeframe (tfMin minutes — law 2 compares adjacent candles).
+func TriggerTick(prev TriggerLine, bars []market.Kline, tfMin int, cfg Config) TriggerLine {
+	if !cfg.Enabled || len(bars) == 0 {
 		return prev
 	}
 	next := prev
-	ms := int64(5) * 60_000
-	for _, b := range bars5m {
+	ms := int64(tfMin) * 60_000
+	for _, b := range bars {
 		if b.OpenTime <= next.LastBucket {
 			continue
 		}

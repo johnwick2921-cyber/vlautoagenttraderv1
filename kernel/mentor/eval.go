@@ -22,6 +22,10 @@ type State struct {
 	ISBArms map[string]ISBArm `json:"isb_arms,omitempty"`
 	// Trigger is the 5m trigger-line state (§5.1).
 	Trigger TriggerLine `json:"trigger"`
+	// HTF is the §5.4 4h/1h direction state (DS-106, fold item 3).
+	HTF HTF `json:"htf,omitempty"`
+	// Day is the §7 pre-session verdict latch (DS-106, fold item 4).
+	Day DayLatch `json:"day_latch,omitempty"`
 	// ArmSeq names the next arm.
 	ArmSeq int `json:"arm_seq"`
 }
@@ -133,7 +137,16 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	var out []Intent
 
 	// 5m trigger line advances every 1m close (aggregated 5m bars).
-	e.State.Trigger = TriggerTick(e.State.Trigger, barsTF(bars, 5), e.Cfg)
+	e.State.Trigger = TriggerTick(e.State.Trigger, barsTF(bars, 5), 5, e.Cfg)
+
+	// §5.4 HTF direction (DS-106, fold item 3): the 4h/1h lines advance with
+	// the same bar history.
+	e.State.HTF = HTFAdvance(e.State.HTF, barsTF(bars, 240), barsTF(bars, 60), e.Cfg)
+
+	// §7 day gate (fold item 4): Globex run → per-trading-day latch (L1/L2).
+	dg := DayGate{SpentPts: e.Cfg.DayGateSpentPts, TargetCapPts: e.Cfg.DayGateTargetCapPts}
+	run, haveRun := GlobexRun(bars, now, ctime())
+	e.State.Day = LatchDay(e.State.Day, now, ctime(), run, haveRun, HTFConflict(e.State.HTF), dg)
 
 	// the location set grows by the trigger-line retest and the EMA34-HTF
 	// line (fold item 1).
@@ -178,24 +191,35 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 					// inside bars are not setups.
 					if loc, where := LocationVerdict(cur, levels, e.State.Trigger, bars, e.Cfg); loc {
 						_ = where
-						long, short := ISBOrders(cur, e.Cfg)
-						chosen := long
-						if side == SideShort {
-							chosen = short
-						}
-						// §6 [D3.3 p1 @ 05:07]: "TARGET LÀ VỀ NHỮNG LEVEL KẾ
-						// TIẾP" — a setup gives entry, stop AND target
-						// [D4.1 p1 @ 01:39]; no level beyond → no trade.
-						if target := nextLevelBeyond(levels, chosen.Price, side); target != 0 {
-							chosen.Target = target
+						// fold item 3: entries only with the 4h trigger direction
+						// (1h agreeing or silent); fold item 4: a DayOff shuts the
+						// machine off for the day.
+						if htfOK, htfSide, htfReason := HTFVerdict(e.State.HTF); !htfOK {
+							_ = htfReason
+						} else if side != "" && side != htfSide {
+							// 5m trigger side against the 4h — no entry
+						} else if e.State.Day.Verdict == DayOff {
+							// day off — no mentor entries today
 						} else {
-							return out // missing target — not a setup [D4.1 p1 @ 01:45]
+							long, short := ISBOrders(cur, e.Cfg)
+							chosen := long
+							if side == SideShort {
+								chosen = short
+							}
+							// §6 [D3.3 p1 @ 05:07]: "TARGET LÀ VỀ NHỮNG LEVEL KẾ
+							// TIẾP" — a setup gives entry, stop AND target
+							// [D4.1 p1 @ 01:39]; no level beyond → no trade.
+							if target := nextLevelBeyond(levels, chosen.Price, side); target != 0 {
+								chosen.Target = target
+							} else {
+								return out // missing target — not a setup [D4.1 p1 @ 01:45]
+							}
+							e.State.ArmSeq++
+							id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
+							e.State.ISBArms[id] = ISBArm{FirstBar: cur}
+							chosen.ArmID = id
+							out = append(out, chosen)
 						}
-						e.State.ArmSeq++
-						id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
-						e.State.ISBArms[id] = ISBArm{FirstBar: cur}
-						chosen.ArmID = id
-						out = append(out, chosen)
 					}
 				} else {
 					out = append(out, Intent{Action: CancelArm, Reason: "15m/5m ISB conflict — no trade [D4.2 p1 @ 14:35]"})
@@ -245,7 +269,7 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 			continue
 		}
 		for _, ex := range oldExtremes {
-			in, ok, _ := PHLPLH(tr, ex.level, ex.idx, len(bars)-1, e.Cfg)
+			in, ok, _ := PHLPLHGated(tr, ex.level, ex.idx, len(bars)-1, e.Cfg, e.State.HTF, e.State.Day.Verdict, dg)
 			if ok {
 				out = append(out, in)
 				break

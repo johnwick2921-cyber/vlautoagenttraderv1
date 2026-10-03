@@ -70,10 +70,10 @@ func TestHTFTriggerOnRecordedTapes(t *testing.T) {
 	j := 0
 	verdicts := 0
 	for i := 1; i < len(bars4h); i++ {
-		h.FourH = TriggerTick(h.FourH, bars4h[i-1:i+1], cfg)
+		h.FourH = TriggerTick(h.FourH, bars4h[i-1:i+1], 240, cfg)
 		for j+1 < len(bars1h) && bars1h[j+1].OpenTime < bars4h[i].OpenTime {
 			j++
-			h.OneH = TriggerTick(h.OneH, bars1h[j-1:j+1], cfg)
+			h.OneH = TriggerTick(h.OneH, bars1h[j-1:j+1], 60, cfg)
 		}
 		if h.FourH.Dir == "" {
 			continue

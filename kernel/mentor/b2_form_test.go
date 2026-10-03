@@ -17,7 +17,7 @@ func TestTriggerFormingBucketCommittedOnce(t *testing.T) {
 	first := TriggerTick(TriggerLine{}, []market.Kline{
 		b5(0, 100, 96, 97),
 		b5(5, 99, 97, 98), // high 99 does NOT break 100, low 97 not < 96
-	}, cfg)
+	}, 5, cfg)
 	if first.Dir != "" {
 		t.Fatalf("no break should have fired: %+v", first)
 	}
@@ -26,7 +26,7 @@ func TestTriggerFormingBucketCommittedOnce(t *testing.T) {
 	second := TriggerTick(first, []market.Kline{
 		b5(0, 100, 96, 97),
 		b5(5, 104, 97, 99), // grown: high 104 > 100 — but already processed
-	}, cfg)
+	}, 5, cfg)
 	if second.Dir != "" {
 		t.Fatalf("the forming bucket was re-applied after growing: %+v", second)
 	}
@@ -35,7 +35,7 @@ func TestTriggerFormingBucketCommittedOnce(t *testing.T) {
 		b5(0, 100, 96, 97),
 		b5(5, 104, 97, 99),
 		b5(10, 99, 95, 95), // breaks the LOW of the (now past) bucket → sell line at 97
-	}, cfg)
+	}, 5, cfg)
 	if third.Dir != SideShort || third.Price != 97 {
 		t.Fatalf("next bucket break = %+v, want short @ 97", third)
 	}
