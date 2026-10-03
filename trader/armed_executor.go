@@ -1962,11 +1962,16 @@ func StopEntryBootLine(received, expected string, seamOn bool) string {
 		build = build[:i]
 	}
 	// The seam leads, and says what it MEANS rather than only what it is: an
-	// owner ruling (2026-09-05) holds stop entries off until a cancel-confirmation
-	// wave lands, because nt.CancelOrder reports success on a SEND and the broker
-	// was once seen holding nine working stop orders for one arm slot
-	// (nt8_order_snapshots id 1664) on an account capped at two contracts.
-	seam := "OFF — NO stop entry is placed (owner ruling 2026-09-05: cancel-confirmation wave owed; broker-side stacking)"
+	// owner ruling (2026-09-05) holds stop entries off. The snapshot-based
+	// cancel-confirmation wave landed 2026-09-06 (confirm=broker-snapshot),
+	// but the seam stays OFF by the same ruling: snapshot absence cannot
+	// distinguish "cancelled" from "never answered" (the AddOn omits terminal
+	// orders from the book), the broker was once seen holding nine working
+	// stop orders for one arm slot (nt8_order_snapshots id 1664) on an account
+	// capped at two contracts, and the positive-report regime
+	// (CANCEL_CONFIRM_REQUIRE_REPORT, 2026-10-03) is the gate that decides
+	// when re-placing is safe. The switch stays the owner's.
+	seam := "OFF — NO stop entry is placed (owner ruling 2026-09-05: cancel-report regime is the owed gate; broker-side stacking)"
 	if seamOn {
 		seam = "on"
 	}
@@ -2290,6 +2295,19 @@ func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *st
 			at.stampArmedFillLineage(r, u.FillPrice)
 			at.logInfof("⚡ armed fill %s @ %.2f (entry_class=armed_fill — stale_reeval NOT applied)", r.Scenario, u.FillPrice)
 		case "cancelled":
+			// CANCEL-REPORT REGIME (2026-10-03, knob default OFF): for a row
+			// awaiting cancel confirmation, the AddOn's positive report is
+			// RECORDED, and the settlement pass (confirmPendingCancelsReport)
+			// is the single writer that promotes it — preserving the original
+			// cancel reason and the zone-rest re-arm semantics. A direct
+			// SetState here would skip both and let a send-shaped success
+			// stand in for a report.
+			if cancelConfirmRequireReport() && r.State == store.StateCancelPending {
+				if err := ledger.RecordCancelReport(r.ID, armedReportNow(), "cancelled"); err != nil {
+					at.logWarnf("🧾 cancel-report record failed for %s: %v", r.Scenario, err)
+				}
+				return
+			}
 			at.armLifecycleWrite("set_state(cancelled)", r, ledger.SetState(r.ID, "cancelled", "cancelled in NT8"))
 			at.logInfof("✕ armed %s cancelled in NT8", r.Scenario)
 		default:

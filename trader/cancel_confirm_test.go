@@ -154,7 +154,7 @@ func TestCancelSettlesOnlyOnAFreshBookWithoutIt(t *testing.T) {
 // before a book exists rather than print a zero it did not measure (A24: an
 // uncomputed value is not 0).
 func TestCancelBootLineReadsItsFieldsAndSaysNaBeforeAnyBook(t *testing.T) {
-	line := CancelBootLine(nil, ReconcileCounts{}, 0)
+	line := CancelBootLine(nil, ReconcileCounts{}, 0, "")
 	for _, want := range []string{
 		"cancels:", "confirm=broker-snapshot", "pending=0", "unconfirmed=0",
 		"slot-guard=on(refuse-on-live|stale)", "timeout=", "stale-bound=",
@@ -165,7 +165,7 @@ func TestCancelBootLineReadsItsFieldsAndSaysNaBeforeAnyBook(t *testing.T) {
 		}
 	}
 	// Once a pass has run, the real counts appear — and n/a must be gone.
-	ran := CancelBootLine(nil, ReconcileCounts{Ran: true, ConfirmedGone: 3, LiveAtBroker: 9, Unconfirmed: 1, SnapshotID: 1664}, 0)
+	ran := CancelBootLine(nil, ReconcileCounts{Ran: true, ConfirmedGone: 3, LiveAtBroker: 9, Unconfirmed: 1, SnapshotID: 1664}, 0, "")
 	if !strings.Contains(ran, "reconciled(confirmed=3 live=9 unconfirmed=1 snapshot=1664)") {
 		t.Fatalf("measured counts must replace n/a:\n%s", ran)
 	}
