@@ -18,6 +18,10 @@ type State struct {
 	// ISBOnly marks levels invalidated by a wrong-way close — only ISBs may
 	// ever trade there after [D5.2 p2 @ 20:48].
 	ISBOnly map[string]bool `json:"isb_only,omitempty"`
+	// DeletedLevels holds key levels deleted by a CLOSED 1H candle whose BODY
+	// closed through (KEY-LEVEL ruling 5b, slide 31–32): they stay deleted for
+	// the session. A 1H wick through does NOT delete.
+	DeletedLevels map[string]bool `json:"deleted_levels,omitempty"`
 	// ISBArms are the live inside-bar orders (stacking counter, §2.1).
 	ISBArms map[string]ISBArm `json:"isb_arms,omitempty"`
 	// Trigger is the 5m trigger-line state (§5.1).
@@ -46,6 +50,9 @@ func UnmarshalState(b []byte) (State, error) {
 	if s.ISBOnly == nil {
 		s.ISBOnly = map[string]bool{}
 	}
+	if s.DeletedLevels == nil {
+		s.DeletedLevels = map[string]bool{}
+	}
 	if s.ISBArms == nil {
 		s.ISBArms = map[string]ISBArm{}
 	}
@@ -63,9 +70,10 @@ type Evaluator struct {
 
 func New(cfg Config) *Evaluator {
 	return &Evaluator{Cfg: cfg, State: State{
-		Touches: map[string]Touch{},
-		ISBOnly: map[string]bool{},
-		ISBArms: map[string]ISBArm{},
+		Touches:       map[string]Touch{},
+		ISBOnly:       map[string]bool{},
+		DeletedLevels: map[string]bool{},
+		ISBArms:       map[string]ISBArm{},
 	}}
 }
 
@@ -84,6 +92,21 @@ func Levels(bars []market.Kline, cfg Config, now int64) []Level {
 				Kind:  KindOldExtreme,
 				Price: d.Price,
 			})
+		}
+	}
+	return out
+}
+
+// withoutDeleted drops the deleted key levels from the level set (deletion is
+// by key; recomputed levels re-derive the same keys).
+func withoutDeleted(levels []Level, deleted map[string]bool) []Level {
+	if len(deleted) == 0 {
+		return levels
+	}
+	out := make([]Level, 0, len(levels))
+	for _, l := range levels {
+		if !deleted[l.Key] {
+			out = append(out, l)
 		}
 	}
 	return out
@@ -137,6 +160,21 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		return nil
 	}
 	levels := Levels(bars, e.Cfg, now)
+
+	// KEY-LEVEL RULING (item 5b, slide 31–32): a CLOSED 1H candle whose BODY
+	// closed through a key level DELETES it; a 1H wick through does not. The
+	// deletion is permanent for the session and the level leaves the set at
+	// once — it can no longer be touched, located, or laddered to.
+	for _, l := range levels {
+		if l.Kind != KindKeyLevel || e.State.DeletedLevels[l.Key] {
+			continue
+		}
+		if levelDeletedBy1HBody(l, bars, now) {
+			e.State.DeletedLevels[l.Key] = true
+		}
+	}
+	levels = withoutDeleted(levels, e.State.DeletedLevels)
+
 	var out []Intent
 
 	// 5m trigger line advances every 1m close (aggregated 5m bars).

@@ -94,6 +94,31 @@ func candleColour(b market.Kline) bool {
 	return b.Close > b.Open
 }
 
+// levelDeletedBy1HBody implements the KEY-LEVEL RULING (item 5b, slide 31–32):
+// "Xác nhận" is a 1H candle CLOSE judged by the BODY. A 1H candle whose BODY
+// crosses the level — open on one side, close on the other — DELETES it
+// (step 4). A 1H wick through does NOT (the body never crossed). Only a 1H
+// candle that CLOSED at or after the level was drawn can delete it, and the
+// still-forming 1H candle (whose close time has not been reached) never
+// counts.
+func levelDeletedBy1HBody(lvl Level, bars []market.Kline, now int64) bool {
+	b60 := barsTF(bars, 60)
+	if len(b60) > 0 && b60[len(b60)-1].CloseTime >= now {
+		b60 = b60[:len(b60)-1] // the forming 1H candle has not closed
+	}
+	for _, b := range b60 {
+		if b.CloseTime < lvl.AtTime {
+			continue // this 1H candle closed before the level existed
+		}
+		crossed := b.Open < lvl.Price && b.Close > lvl.Price ||
+			b.Open > lvl.Price && b.Close < lvl.Price
+		if crossed {
+			return true // the BODY closed through the level
+		}
+	}
+	return false
+}
+
 func keyLevelKey(b market.Kline) string {
 	return fmt.Sprintf("%s:%s:%d", KindKeyLevel, fnum(b.Open), b.OpenTime)
 }

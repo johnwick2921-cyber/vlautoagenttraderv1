@@ -131,6 +131,81 @@ func countColourChanges(bars []market.Kline) int {
 
 // TestKeyLevelsDisabledIsNil — L4: with mentor_mode OFF the evaluator emits
 // nothing (byte-identical bot).
+// TestKeyLevelDeletedBy1HBodyCloseOnly — KEY-LEVEL RULING item 5b (verified
+// on slide 31–32): "Xác nhận" is a 1H candle CLOSE judged by the BODY. A 1H
+// BODY closing through the level deletes it; a 1H wick through does NOT. The
+// evaluator persists the deletion in State.DeletedLevels and the level leaves
+// the set at once.
+func TestKeyLevelDeletedBy1HBodyCloseOnly(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	cfg.KeyLevelRTHOnly = false // synthetic bars run on plain epoch minutes
+	// a colour change draws a key level at the second candle's open: price 100.
+	// (red -> green: open of the green candle is the line, §4.3 step 3)
+	mk := func(i int, o, h, l, c float64) market.Kline {
+		return market.Kline{OpenTime: int64(i) * 60_000, CloseTime: int64(i)*60_000 + 59_999, Open: o, High: h, Low: l, Close: c}
+	}
+	head := []market.Kline{
+		mk(0, 101, 101.5, 100.5, 101),  // red (close < open)
+		mk(1, 100, 100.5, 99.5, 100.4), // green — level at 100
+	}
+	// pad the rest of hour 1 (green, no new levels, body does not cross 100)
+	pad := func() []market.Kline {
+		out := make([]market.Kline, 58)
+		for j := 0; j < 58; j++ {
+			out[j] = mk(2+j, 99.6, 100.3, 99.4, 100.2)
+		}
+		return out
+	}
+	// hour 2 is the confirming 1H candle: BODY case — body crosses 100 (delete);
+	// WICK case — wick pokes above 100, body stays below (level survives).
+	hour := func(bodyThrough bool) []market.Kline {
+		out := make([]market.Kline, 60)
+		for j := 0; j < 60; j++ {
+			if bodyThrough {
+				out[j] = mk(60+j, 99.5, 101.8, 99.2, 101.2) // open below, close above
+			} else {
+				out[j] = mk(60+j, 99.6, 101.5, 99.3, 99.8) // body below, wick through
+			}
+		}
+		return out
+	}
+	// one bar of hour 3 so hour 2's 1H candle is closed on the final tick
+	next := mk(120, 100.8, 101.4, 100.4, 101)
+
+	makeBars := func(bodyThrough bool) []market.Kline {
+		bars := append([]market.Kline{}, head...)
+		bars = append(bars, pad()...)
+		bars = append(bars, hour(bodyThrough)...)
+		bars = append(bars, next)
+		return bars
+	}
+	body := makeBars(true)
+	wick := makeBars(false)
+	now := next.OpenTime + 59_999
+
+	t.Run("body close through deletes", func(t *testing.T) {
+		e := New(cfg)
+		e.Tick(body, now)
+		deleted := false
+		for k := range e.State.DeletedLevels {
+			if k == keyLevelKey(head[1]) {
+				deleted = true
+			}
+		}
+		if !deleted {
+			t.Fatalf("a 1H BODY close through must delete the level; state=%v", e.State.DeletedLevels)
+		}
+	})
+	t.Run("wick through keeps", func(t *testing.T) {
+		e := New(cfg)
+		e.Tick(wick, now)
+		if len(e.State.DeletedLevels) != 0 {
+			t.Fatalf("a 1H wick through must NOT delete the level; state=%v", e.State.DeletedLevels)
+		}
+	})
+}
+
 func TestKeyLevelsDisabledIsNil(t *testing.T) {
 	bars := loadFixture(t, "mnq_1m_2026-09-15_rth", "1m")
 	if got := KeyLevels(bars, Config{}); got != nil {
