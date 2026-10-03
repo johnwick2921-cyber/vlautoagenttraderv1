@@ -90,15 +90,23 @@ func applyBreak(next TriggerLine, before, cur market.Kline) TriggerLine {
 }
 
 // TriggerVerdict filters an entry by the trigger line: allowed side only,
-// nothing between two opposing lines [@ 16:38].
+// and NOTHING between two opposing trigger lines — "KHỎI ĐÁNH… đợi nó thoát
+// ra khỏi 2 cái" [D3.4 p1 @ 16:56–17:17]. The ban covers the whole zone
+// between the lines INCLUDING the lines themselves: price must escape BOTH
+// (beyond the outer line) before anything may trade there — not even an ISB
+// [@ 16:38, D3.4 p1 @ 16:56].
 func TriggerVerdict(t TriggerLine, price float64) (ok bool, side Side, reason string) {
 	if t.Dir == "" {
 		return true, "", ""
 	}
-	between := t.OldPrice != 0 &&
-		(price > t.Price && price < t.OldPrice || price < t.Price && price > t.OldPrice)
-	if between {
-		return false, "", "price between two opposing trigger lines — no trade [D3.4 p1 @ 16:38]"
+	if t.OldPrice != 0 {
+		lo, hi := t.Price, t.OldPrice
+		if lo > hi {
+			lo, hi = hi, lo
+		}
+		if price >= lo && price <= hi {
+			return false, "", "between two opposing trigger lines — no trade at all, ISB included [D3.4 p1 @ 16:38, 16:56–17:17]"
+		}
 	}
 	if t.Dir == SideLong && price < t.Price {
 		return false, "", "below the buy trigger line — do nothing [D3.4 p1 @ 06:22]"
