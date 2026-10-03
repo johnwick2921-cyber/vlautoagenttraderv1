@@ -42,7 +42,7 @@ export const mentor: GuideSection = {
       cards: [
         {
           title: 'Inside bar (ISB)',
-          body: "Candle 2's BODY inside candle 1's FULL range (wicks included). Direction = candle 1's colour. Entry at the ISB candle's own extreme + 1–1.5 pt buffer, stop at its opposite extreme, no fixed stop size — skip only when the stop is \"in the twenties\". Cancel if the next candle does not fill. 1 candle inside → cancel; 2–3 → hold; 4 → cancel.",
+          body: "Candle 2's BODY inside candle 1's FULL range (wicks included). Direction = candle 1's colour. Entry at the ISB candle's own extreme + 1–1.5 pt buffer, stop at its opposite extreme, no fixed stop size — skip only when the stop is \"in the twenties\". If the next candle does not fill the order and is NOT itself inside the mother candle → cancel. If the following candles stay inside the same mother candle, keep the order through the 2nd and 3rd inside candle; at the 4th, cancel.",
           tag: 'D1.4 p1',
         },
         {
@@ -63,7 +63,8 @@ export const mentor: GuideSection = {
     },
     {
       kind: 'table',
-      title: 'A setup is only valid at one of these',
+      title:
+        'A PHL/PLH is only valid at one of these (the ISB may be anywhere — see the ruling below)',
       head: ['Location', 'Where it comes from', 'Note'],
       rows: [
         [
@@ -86,6 +87,37 @@ export const mentor: GuideSection = {
           'FTGH/FTGL boxes, 1m regular candles, paired by role with no tolerance',
           'A box edge is used again and again; a box dies only on escape (a 1m BODY closes outside) or at day end',
         ],
+      ],
+    },
+    {
+      kind: 'callout',
+      title: 'OWNER RULING — the ISB may be taken ANYWHERE',
+      items: [
+        {
+          title: 'PHL/PLH still need a location',
+          body: 'Only the ISB is anywhere. The PHL/PLH and the SWING4H still need their locations above.',
+          cite: 'OWNER RULING 00:1x CT',
+        },
+        {
+          title: 'Never between two trigger lines',
+          body: 'Between two opposing 5m trigger lines there is NO trade at all, ISB included.',
+          cite: 'trigger zone filter — merged',
+        },
+        {
+          title: 'Only same-direction inside a 5m ISB box',
+          body: 'The latest 5m ISB candle is boxed; only a same-direction 1m ISB trades inside it.',
+          cite: 'ISB rest box filter — merged',
+        },
+        {
+          title: 'Smaller size at an old high/low',
+          body: 'An ISB at an old high/low trades the reduced size.',
+          cite: 'coming with Mentor mode',
+        },
+        {
+          title: 'Skip a stop in the twenties',
+          body: 'A stop of 20–29.99 pts must not be taken — the only stop-size skip the method has.',
+          cite: 'ISBTwentiesPts 20 — merged',
+        },
       ],
     },
     {
@@ -127,6 +159,32 @@ export const mentor: GuideSection = {
           'Between-boxes mid-range ban (NO PHL/PLH regardless of width, ISB only) · 15m-confirm conflict (R6) · loss box — two losses at one place, the level is off for the day (R11) · news 07:30 CT — no resting order through the print (R12) · EMA 34 turned off while price cuts through it (§11)',
           '—',
         ],
+      ],
+    },
+    {
+      kind: 'callout',
+      title: 'Daily limits',
+      items: [
+        {
+          title: 'Done for the day after a win',
+          body: 'One win and the machine is done for the day.',
+          cite: 'coming with Mentor mode',
+        },
+        {
+          title: 'Trading window 08:30–09:30 CT',
+          body: 'The day is only 08:30–09:30 CT. The SWING4H is exempt.',
+          cite: 'knob — coming with Mentor mode',
+        },
+        {
+          title: 'Never widen a stop, never add',
+          body: 'A stop only ever moves toward break-even. Never add to a position.',
+          cite: 'coming with Mentor mode',
+        },
+        {
+          title: '"One loss → done" is NOT used',
+          body: 'His personal one-loss rule stays his. The machine does not copy it.',
+          cite: 'OWNER RULING 00:1x CT',
+        },
       ],
     },
     {
@@ -486,9 +544,9 @@ export const mentor: GuideSection = {
         {
           label: 'Mid-range gap',
           where: 'Strategy → Mentor mode → filters',
-          what: 'Mid-range ban: price between two levels within this gap → PHL/PLH banned, ISB only.',
+          what: 'Mid-range ban. Coming with Mentor mode: when price sits between an FTGL below and an FTGH above, ANY width, PHL/PLH are banned — ISB only.',
           trader:
-            '0 = DISABLED. Coming with Mentor mode: enabled for price between an FTGL below and an FTGH above, with no width threshold.',
+            '0 = DISABLED. Coming with Mentor mode: enabled for price between an FTGL below and an FTGH above, any width.',
           consumer: 'kernel/mentor/mentor.go RangeGapPts',
           range: 'pts (0 = off)',
           systemDefault: '0 (disabled)',
