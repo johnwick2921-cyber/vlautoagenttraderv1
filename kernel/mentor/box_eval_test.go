@@ -118,6 +118,9 @@ func TestEvaluatorBoxPathEveryReturnTrades(t *testing.T) {
 	}
 	e := New(cfg)
 	now := bars[8].OpenTime + 59_999
+	// ORB preset (the §7 gate is drawn+escaped long; the tape alone never
+	// draws an ORB and the gate would refuse every intraday entry).
+	e.State.ORB = ORB{Day: dayStartCT(now), High: 90, Low: 85, Drawn: true, Escaped: SideLong}
 	boxIntents := func(ins []Intent) []Intent {
 		var out []Intent
 		for _, in := range ins {
@@ -142,5 +145,67 @@ func TestEvaluatorBoxPathEveryReturnTrades(t *testing.T) {
 	second := boxIntents(e.Tick(bars2[:10], bars2[9].OpenTime+59_999))
 	if len(second) != 0 {
 		t.Fatalf("tick 2 box intents = %d (%+v), want 0 — a return is evaluated once", len(second), second)
+	}
+}
+
+// TestBoxReturnExactlyOneEntry — BOX PATH DECISION (CTO 12:38:50Z): one box
+// return visit yields EXACTLY ONE entry intent — the box path's. The box
+// edges are OUT of the level touch loop, so the level path must not add a
+// second entry for the same return. Mutant (edges back in the loop) → 2 != 1.
+func TestBoxReturnExactlyOneEntry(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	cfg.KeyLevelTFMinutes = 1
+	cfg.EMAPeriod34 = 0
+	cfg.EMAPeriod9 = 0
+	cfg.RoomMultiple = 0.05
+	t0 := time.Date(2026, time.September, 15, 9, 0, 0, 0, ctime()).UnixMilli()
+	mk := func(i int, o, h, l, c float64) market.Kline {
+		return market.Kline{OpenTime: t0 + int64(i)*60_000, CloseTime: t0 + int64(i)*60_000 + 59_000, Open: o, High: h, Low: l, Close: c}
+	}
+	bars := []market.Kline{
+		mk(0, 100, 101, 99, 100), mk(1, 100, 102, 99, 101), mk(2, 101, 103, 95, 96),
+		mk(3, 97.3, 98.3, 96.5, 97.5), mk(4, 97, 98, 94, 95), mk(5, 98, 98.2, 96.5, 97.2),
+		mk(6, 97.5, 98, 96.7, 97.6), // spacer: the return sits >=3 candles from the extreme
+		mk(7, 96.5, 97.1, 95.9, 97), // the ONE reject return (touches 96, closes above)
+	}
+	e := New(cfg)
+	now := bars[7].OpenTime + 59_999
+	e.State.ORB = ORB{Day: dayStartCT(now), High: 90, Low: 85, Drawn: true, Escaped: SideLong}
+	// Presets so the LEVEL path could emit a PHL from the edge too (under the
+	// mutant): trigger long, 4h long (1h silent), day measured OK.
+	e.State.Trigger = TriggerLine{Dir: SideLong, Price: 93}
+	e.State.HTF = HTF{FourH: TriggerLine{Dir: SideLong, Price: 93}}
+	e.State.Day = DayLatch{Verdict: DayTrade}
+
+	ins := e.Tick(bars[:8], now)
+	entries := 0
+	for _, in := range ins {
+		if in.Action == PlaceStopEntry {
+			entries++
+		}
+	}
+	if entries != 1 {
+		t.Fatalf("one box return yielded %d entries, want EXACTLY ONE: %+v", entries, ins)
+	}
+	// The box edges must NEVER be classified by the level touch loop — if
+	// they were, the same return would trade twice (box path + level path).
+	for _, lvl := range BoxEdgeLocations(BoxesBuild(bars, cfg.Box, time.UnixMilli(now))) {
+		if tr, ok := e.State.Touches[lvl.Key]; ok && tr.Outcome != TouchNone {
+			t.Fatalf("box edge %s was touched as a LEVEL (outcome %q) — the edge must be out of the level touch loop", lvl.Key, tr.Outcome)
+		}
+	}
+
+	if ins[0].Reason != "" && !strings.HasPrefix(ins[0].Reason, "box edge return") && entries > 0 {
+		// the single entry must be the box path's
+		var boxOne bool
+		for _, in := range ins {
+			if in.Action == PlaceStopEntry && strings.HasPrefix(in.Reason, "box edge return") {
+				boxOne = true
+			}
+		}
+		if !boxOne {
+			t.Fatalf("the single entry is not the box path's: %+v", ins)
+		}
 	}
 }

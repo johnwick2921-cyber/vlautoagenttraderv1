@@ -80,7 +80,10 @@ func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig T
 	if ok, ts, _ := TriggerVerdict(trig, price); !ok || ts != "" && ts != side {
 		return nil
 	}
-	if allowed, _ := SetupPermittedVerdict("PHL", levels, price, cfg); !allowed {
+	// Mid-range ban, box-native (CTO 12:38:50Z: the box path's semantics are
+	// the box facts — the level MidRange gate is the level path's; here the
+	// ban is between an FTGL floor and an FTGH ceiling, same as the PHL loop).
+	if midRangeBoxed(boxes, price) {
 		return nil
 	}
 	if InsideAnyBox(boxes, price) {
