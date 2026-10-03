@@ -542,26 +542,42 @@ func (at *AutoTrader) mentorAddGate(in mentor.Intent) (bool, string) {
 	return false, ""
 }
 
-// mentorMinHistory1mBars is the depth floor for mentor mode (P0): the 4h EMA
-// 34 warm-up is 34×4h ≈ 136h of RTH ≈ this many 1m bars. Less than this and
-// the levels are truncated and the EMA cold — never trade on it (fail-closed).
-const mentorMinHistory1mBars = 34 * 4 * 60 // 8,160
+// mentorDepthRequirement is one per-source history floor (P0 seed plan point
+// 1): depth per source, not one number — the refusal names the short source.
+type mentorDepthRequirement struct {
+	Name string // named in the refusal and the boot line
+	Min  int    // minimum depth in the source's own bars (presence for 1)
+}
 
-// mentorHistoryDepthSource is the depth source for the P0 history gate: the
-// live driver sets it from DS-103's seeded state (data.db 1m/1h/1d bars); nil
-// → the BarCache fallback (≈2,500 bars — under the floor, so mentor refuses
-// until the seed lands).
-var mentorHistoryDepthSource func() int
+// mentorDepthRequirements lists every source the seed must provide. DS-103's
+// PR states the exact warm-up per source; these floors are the fail-closed
+// gate (the 4h EMA 34 warm-up is 34 four-hour candles derived from 1h at the
+// 17:00 CT anchor; the 1m EMA 34 needs 34 one-minute candles; the 1H RTH level
+// set reads the FULL stored history — no cap; today's session feeds the
+// boxes/ORB/day latch; the 15m source must have a closed candle).
+var mentorDepthRequirements = []mentorDepthRequirement{
+	{Name: "4h EMA34", Min: 34},
+	{Name: "1m EMA34", Min: 34},
+	{Name: "1h level set", Min: 1},
+	{Name: "today session", Min: 1},
+	{Name: "closed 15m", Min: 1},
+}
 
-// mentorHistoryDepth reports how many 1m bars of history the evaluator can see.
-func (at *AutoTrader) mentorHistoryDepth() int {
-	if mentorHistoryDepthSource != nil {
-		return mentorHistoryDepthSource()
+// mentorSourceDepthSource reports one source's seeded depth (names as in
+// mentorDepthRequirements). nil or !known → the boot line prints n/a and the
+// gate refuses (fail-closed). The live driver sets it from DS-103's seed.
+var mentorSourceDepthSource func(name string) (depth int, known bool)
+
+// mentorSourceDepth asks the seam, with a 1m BarCache fallback for the 1m
+// source. Unknown means the seed has not provided it yet.
+func mentorSourceDepth(name string) (int, bool) {
+	if mentorSourceDepthSource != nil {
+		return mentorSourceDepthSource(name)
 	}
-	if market.FuturesBarsProvider == nil {
-		return 0
+	if name == "1m EMA34" && market.FuturesBarsProvider != nil {
+		return len(market.FuturesBarsProvider("MNQ", "1m", 34)), true
 	}
-	return len(market.FuturesBarsProvider("MNQ", "1m", mentorMinHistory1mBars))
+	return 0, false
 }
 
 // mentorSourcesMissing names every mentor source that is not wired. With
@@ -587,16 +603,25 @@ func (at *AutoTrader) mentorSourcesMissing() []string {
 	if market.FuturesBarsProvider == nil {
 		missing = append(missing, "5m feed")
 	}
-	if depth := at.mentorHistoryDepth(); depth < mentorMinHistory1mBars {
-		mentorCount("history_depth_short")
-		missing = append(missing, fmt.Sprintf("bar history depth (%d/%d 1m bars)", depth, mentorMinHistory1mBars))
+	for _, req := range mentorDepthRequirements {
+		depth, known := mentorSourceDepth(req.Name)
+		if !known {
+			mentorCount("history_depth_short")
+			missing = append(missing, fmt.Sprintf("history: %s (n/a)", req.Name))
+			continue
+		}
+		if depth < req.Min {
+			mentorCount("history_depth_short")
+			missing = append(missing, fmt.Sprintf("history: %s (%d/%d)", req.Name, depth, req.Min))
+		}
 	}
 	return missing
 }
 
 // MentorSourcesBootLine is the boot wiring check: with mentor_mode ON every
 // mentor source seam must be non-nil, or mentor_mode refuses to arm — one ERROR
-// line names the missing seams per trader.
+// line names the missing seams per trader. A wired trader prints the seeded
+// depth per source on the same line (n/a when unknown).
 func MentorSourcesBootLine(loaded map[string]*AutoTrader) string {
 	var lines []string
 	for id, at := range loaded {
@@ -607,7 +632,16 @@ func MentorSourcesBootLine(loaded map[string]*AutoTrader) string {
 			logger.Errorf("🧑‍🏫 mentor sources MISSING for trader %s: [%s] — mentor_mode refuses to arm (fail-closed)", id, strings.Join(missing, ", "))
 			lines = append(lines, fmt.Sprintf("🧑‍🏫 mentor sources MISSING for trader %s: [%s] — mentor_mode refuses to arm (fail-closed)", id, strings.Join(missing, ", ")))
 		} else {
-			lines = append(lines, fmt.Sprintf("🧑‍🏫 mentor sources wired for trader %s", id))
+			var depths []string
+			for _, req := range mentorDepthRequirements {
+				depth, known := mentorSourceDepth(req.Name)
+				if !known {
+					depths = append(depths, fmt.Sprintf("%s=n/a", req.Name))
+				} else {
+					depths = append(depths, fmt.Sprintf("%s=%d", req.Name, depth))
+				}
+			}
+			lines = append(lines, fmt.Sprintf("🧑‍🏫 mentor sources wired for trader %s — seeded depths: %s", id, strings.Join(depths, ", ")))
 		}
 	}
 	if len(lines) == 0 {

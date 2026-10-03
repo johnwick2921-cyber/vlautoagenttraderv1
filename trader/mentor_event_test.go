@@ -55,7 +55,7 @@ func wireMentorPlacementSeams(t *testing.T) {
 	mentorOpenSideSource = func() string { return "" }
 	mentorDayEventsForTest = func() ([]calendar.Event, bool) { return nil, true }
 	market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline { return nil }
-	mentorHistoryDepthSource = func() int { return mentorMinHistory1mBars }
+	mentorSourceDepthSource = func(name string) (int, bool) { return 9999, true }
 	t.Cleanup(func() {
 		mentorDayNetSource = nil
 		mentorClosedProfitSource = nil
@@ -63,7 +63,7 @@ func wireMentorPlacementSeams(t *testing.T) {
 		mentorOpenSideSource = nil
 		mentorDayEventsForTest = nil
 		market.FuturesBarsProvider = nil
-		mentorHistoryDepthSource = nil
+		mentorSourceDepthSource = nil
 	})
 }
 
@@ -478,9 +478,9 @@ func TestMentorPlacementCarriesExpiry(t *testing.T) {
 }
 
 // TestMentorHistoryDepthGate (P0): mentor mode must never trade on a cold EMA
-// or truncated levels — with fewer than mentorMinHistory1mBars bars of history
-// EVERY entry refuses (fail-closed) and the boot line names the gap. The mutant
-// that drops the depth check makes the recorder fire on a short history.
+// or truncated levels — with any history source short or unknown EVERY entry
+// refuses (fail-closed) and the boot line names the gap. The mutant that drops
+// the per-source depth loop makes the recorder fire on a short history.
 func TestMentorHistoryDepthGate(t *testing.T) {
 	ResetMentorCountersForTest()
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
@@ -496,32 +496,48 @@ func TestMentorHistoryDepthGate(t *testing.T) {
 	mentorPlaceRecorderForTest = func(i mentor.Intent, n int) { placed++ }
 	t.Cleanup(func() { mentorPlaceRecorderForTest = nil })
 
-	// exactly the floor → proceeds.
+	// every source at/above its floor → proceeds.
 	at.mentorPlaceIntent(in, choice, 1000, 1100)
 	if placed != 1 {
-		t.Fatalf("at the depth floor the placement must proceed, placed=%d", placed)
+		t.Fatalf("with every source seeded the placement must proceed, placed=%d", placed)
 	}
-	// one bar short → refuses every entry + counts.
-	mentorHistoryDepthSource = func() int { return mentorMinHistory1mBars - 1 }
+	// one source short (the 4h EMA 34 at 33) → refuses + names it.
+	mentorSourceDepthSource = func(name string) (int, bool) {
+		if name == "4h EMA34" {
+			return 33, true
+		}
+		return 9999, true
+	}
 	at.mentorPlaceIntent(in, choice, 1000, 1100)
 	if placed != 1 {
-		t.Fatalf("a short history must refuse the entry, placed=%d", placed)
+		t.Fatalf("a short 4h EMA history must refuse the entry, placed=%d", placed)
 	}
 	if got := MentorCountSnapshot()["mentor_sources_missing"]; got != 1 {
 		t.Fatalf("the depth refusal must be counted once, got %d", got)
 	}
-	if got := MentorCountSnapshot()["history_depth_short"]; got != 1 {
-		t.Fatalf("the short depth must be counted once, got %d", got)
-	}
 	line := MentorSourcesBootLine(map[string]*AutoTrader{"t1": at})
-	if !textHas(line, "bar history depth") {
-		t.Fatalf("the boot line must name the depth gap: %q", line)
+	if !textHas(line, "4h EMA34 (33/34)") {
+		t.Fatalf("the boot line must name the short source: %q", line)
+	}
+	// an unknown source (not seeded yet) refuses too, printed as n/a.
+	mentorSourceDepthSource = func(name string) (int, bool) {
+		if name == "1h level set" {
+			return 0, false
+		}
+		return 9999, true
+	}
+	at.mentorPlaceIntent(in, choice, 1000, 1100)
+	if placed != 1 {
+		t.Fatalf("an unknown level-set source must refuse the entry, placed=%d", placed)
+	}
+	if line := MentorSourcesBootLine(map[string]*AutoTrader{"t1": at}); !textHas(line, "1h level set (n/a)") {
+		t.Fatalf("the boot line must print n/a for the unknown source: %q", line)
 	}
 	// restore → proceeds again.
-	mentorHistoryDepthSource = func() int { return mentorMinHistory1mBars }
+	mentorSourceDepthSource = func(name string) (int, bool) { return 9999, true }
 	at.mentorPlaceIntent(in, choice, 1000, 1100)
 	if placed != 2 {
-		t.Fatalf("at the floor again the placement must proceed, placed=%d", placed)
+		t.Fatalf("with the source restored the placement must proceed, placed=%d", placed)
 	}
 }
 
@@ -537,7 +553,7 @@ func TestMentorSourcesBootLine(t *testing.T) {
 		mentorOpenSideSource = func() string { return "" }
 		mentorDayEventsForTest = func() ([]calendar.Event, bool) { return nil, true }
 		market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline { return nil }
-		mentorHistoryDepthSource = func() int { return mentorMinHistory1mBars }
+		mentorSourceDepthSource = func(name string) (int, bool) { return 9999, true }
 	}
 	clearAll := func() {
 		mentorDayNetSource = nil
@@ -546,7 +562,7 @@ func TestMentorSourcesBootLine(t *testing.T) {
 		mentorOpenSideSource = nil
 		mentorDayEventsForTest = nil
 		market.FuturesBarsProvider = nil
-		mentorHistoryDepthSource = nil
+		mentorSourceDepthSource = nil
 	}
 	t.Cleanup(clearAll)
 	loaded := map[string]*AutoTrader{"t1": at}
@@ -570,7 +586,14 @@ func TestMentorSourcesBootLine(t *testing.T) {
 		{"open side", func() { mentorOpenSideSource = nil }, "open side"},
 		{"news events", func() { mentorDayEventsForTest = nil }, "news events"},
 		{"5m feed", func() { market.FuturesBarsProvider = nil }, "5m feed"},
-		{"bar history depth", func() { mentorHistoryDepthSource = nil }, "bar history depth"},
+		{"4h EMA34", func() {
+			mentorSourceDepthSource = func(name string) (int, bool) {
+				if name == "4h EMA34" {
+					return 0, false
+				}
+				return 9999, true
+			}
+		}, "4h EMA34"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			wireAll()
