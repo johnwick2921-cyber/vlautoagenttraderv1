@@ -2003,6 +2003,23 @@ type RiskControlConfig struct {
 	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 2-contract
 	// default (the prior hidden const maxFuturesContracts). Toggle default ON.
 	MaxContractsPerOrder int `json:"max_contracts_per_order,omitempty"`
+
+	// MENTOR P3 — mentor mode, per strategy. OFF by default: while off the bot
+	// is byte-identical (L4). A mentor-mode trader takes AI entries off, sizes
+	// from the mentor table, and its exits follow the mentor §6 modes; the AI
+	// 0B size clamp and EXIT_MECHS_SUSPENDED do not apply to it.
+	MentorMode bool `json:"mentor_mode,omitempty"`
+	// Mentor size-table knobs (CTO defaults when unset — the owner can change
+	// them): base setup at a location 5; confluence 10; confluence+4h/1h agree
+	// + room≥2× target≥30pts 20 (hard cap); stop 20–25 pts or spent day 3;
+	// SWING4H 3; never above MentorMaxContracts (default 20).
+	MentorBaseContracts        int `json:"mentor_base_contracts,omitempty"`
+	MentorConfluenceContracts  int `json:"mentor_confluence_contracts,omitempty"`
+	MentorBigContracts         int `json:"mentor_big_contracts,omitempty"`
+	MentorReducedContracts     int `json:"mentor_reduced_contracts,omitempty"`
+	MentorSwing4HContracts     int `json:"mentor_swing4h_contracts,omitempty"`
+	MentorSpentDayContracts    int `json:"mentor_spent_day_contracts,omitempty"`
+	MentorMaxContracts         int `json:"mentor_max_contracts,omitempty"`
 	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the
 	// contracts clamp is always-on venue safety. Field kept so old stored
 	// configs still parse; nothing reads it, the UI no longer writes it.

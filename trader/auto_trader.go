@@ -10,6 +10,7 @@ import (
 	"time"
 	"vl/discipline"
 	"vl/kernel"
+	"vl/kernel/mentor"
 	"vl/logger"
 	"vl/market"
 	"vl/mcp"
@@ -373,6 +374,11 @@ type AutoTrader struct {
 	// F3 fast-market wake reads (waterfall-class wave, 2026-08-28): the price
 	// at the last successful plan write + a one-shot flag for the next read.
 	lastPlanWritePrice atomic.Uint64 // math.Float64bits
+
+	// MENTOR P3 — evaluator instance + one-tick-per-1m-close dedup. Both are
+	// only consulted when the per-strategy mentor_mode is ON.
+	mentorEval         *mentor.Evaluator
+	mentorLastTickOpen int64
 	fastTapePending    atomic.Bool
 	// lastClockHealthSession: which session the last clock-health line was
 	// logged for (PHASE 3.5) — one line per session roll, not per tick.

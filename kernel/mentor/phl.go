@@ -84,6 +84,10 @@ func PHLPLHR2(t Touch, oldExtreme Level, extremeIdx, barIdx int, priorSwing floa
 	if reward < cfg.RoomMultiple*risk {
 		return Intent{}, false, "room rule: reward < " + fnum(cfg.RoomMultiple) + "x risk — not enough room [D5.3 p1 @ 09:16]"
 	}
+	setup := "PHL"
+	if side == SideShort {
+		setup = "PLH"
+	}
 	return Intent{
 		Action: PlaceStopEntry,
 		Side:   side,
@@ -91,6 +95,9 @@ func PHLPLHR2(t Touch, oldExtreme Level, extremeIdx, barIdx int, priorSwing floa
 		Stop:   stop,
 		Target: target,
 		Reason: "PHL/PLH: buy stop at the previous candle's high, stop at the broken candle's low, target near the old extreme [D2.2 p1 @ 19:34, 04:58, 07:33]",
+		Setup:     setup,
+		StopPts:   risk,
+		TargetPts: reward,
 	}, true, ""
 }
 

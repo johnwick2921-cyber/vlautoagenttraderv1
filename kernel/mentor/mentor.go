@@ -101,6 +101,11 @@ type Intent struct {
 	// CancelArm / LevelInvalid fields.
 	ArmID    string
 	LevelKey string
+
+	// P3 size-tier inputs (the trader's mentorContractsFor reads these).
+	Setup     string  // "ISB", "PHL", "PLH" (SWING4H when it lands)
+	StopPts   float64 // |entry - stop|
+	TargetPts float64 // |target - entry|
 }
 
 // Config is every knob. Enabled is mentor_mode and defaults to false (L4):

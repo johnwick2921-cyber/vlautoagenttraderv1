@@ -55,6 +55,7 @@ func curLow(b market.Kline) float64 {
 //
 // Risk = (High − Low) + 2×buffer.
 func ISBOrders(candle market.Kline, cfg Config) (long, short Intent) {
+	stopPts := (candle.High - candle.Low) + 2*cfg.ISBBufferPts
 	long = Intent{
 		Action: PlaceStopLimitEntry,
 		Side:   SideLong,
@@ -62,6 +63,8 @@ func ISBOrders(candle market.Kline, cfg Config) (long, short Intent) {
 		Limit:  candle.High + cfg.ISBBufferPts,
 		Stop:   candle.Low - cfg.ISBBufferPts,
 		Reason: "ISB: buy stop-limit above the ISB high + buffer, stop below the ISB low − buffer [D1.4 p1 @ 10:33–11:25, 14:42–14:44, 22:22–22:30, 24:41–24:55]",
+		Setup:  "ISB",
+		StopPts: stopPts,
 	}
 	short = Intent{
 		Action: PlaceStopLimitEntry,
@@ -70,6 +73,8 @@ func ISBOrders(candle market.Kline, cfg Config) (long, short Intent) {
 		Limit:  candle.Low - cfg.ISBBufferPts,
 		Stop:   candle.High + cfg.ISBBufferPts,
 		Reason: "ISB: sell stop-limit below the ISB low − buffer, stop above the ISB high + buffer [D1.4 p1 @ 10:33–11:25, 14:42–14:44, 22:22–22:30, 24:41–24:55]",
+		Setup:  "ISB",
+		StopPts: stopPts,
 	}
 	return long, short
 }
