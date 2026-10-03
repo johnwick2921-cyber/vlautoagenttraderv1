@@ -20,6 +20,13 @@ func limitsNow(minute int) int64 {
 
 var limitsLvls = []Level{{Key: "old_extreme:100", Kind: KindOldExtreme, Price: 100}}
 
+// limitsLvlsG2 adds a KEY LEVEL at 97 (distinct from the old extreme 100) so
+// the G2 tests prove the loss box keys on the setup's PLACE, not the extreme.
+var limitsLvlsG2 = []Level{
+	{Key: "key_level:97", Kind: KindKeyLevel, Price: 97},
+	{Key: "old_extreme:100", Kind: KindOldExtreme, Price: 100},
+}
+
 func limitsCfg() Config {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
@@ -41,6 +48,15 @@ func limitsPHL(entry, stop, target float64, expiry int64) Intent {
 	}
 }
 
+// limitsPHLAt is a long PHL entry at a named place (the touch level).
+func limitsPHLAt(entry, stop, target float64, expiry int64, place string, anchor float64) Intent {
+	return Intent{
+		Action: PlaceStopEntry, Side: SideLong,
+		Price: entry, Stop: stop, Target: target, ExpiryMs: expiry,
+		Anchor: anchor, AnchorKey: place,
+	}
+}
+
 // limitsISB is a long ISB entry.
 func limitsISB(entry, stop, target float64, expiry int64) Intent {
 	return Intent{
@@ -55,6 +71,10 @@ func applyAt(l *Limits, in []Intent, prev, cur market.Kline, minute int) []Inten
 
 func applyAtCfg(l *Limits, in []Intent, prev, cur market.Kline, minute int, cfg Config) []Intent {
 	return l.Apply(in, prev, cur, limitsNow(minute), limitsLvls, cfg)
+}
+
+func applyAtG2(l *Limits, in []Intent, prev, cur market.Kline, minute int, cfg Config) []Intent {
+	return l.Apply(in, prev, cur, limitsNow(minute), limitsLvlsG2, cfg)
 }
 
 // G1 (a): the third entry in one leg is refused — the PHL fills, one
@@ -153,16 +173,16 @@ func TestLimitsLossBlocksUntilDeparture(t *testing.T) {
 	prev := limitsK(94, 96, 94, 95, 0)
 	exp := limitsNow(60) + 86400_000
 
-	applyAtCfg(&l, []Intent{limitsPHL(90, 88, 99, exp)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg)
-	applyAtCfg(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(89, 91, 87, 88, 2), 2, cfg) // fill + stop-out → loss at 100
+	applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg)
+	applyAtG2(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(89, 91, 87, 88, 2), 2, cfg) // fill + stop-out → loss at 97
 
 	// A candle that still TOUCHES the place keeps it blocked.
-	out3 := applyAtCfg(&l, []Intent{limitsPHL(90, 88, 99, exp)}, limitsK(89, 91, 87, 88, 2), limitsK(99, 100.2, 90, 99, 3), 3, cfg)
+	out3 := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(89, 91, 87, 88, 2), limitsK(99, 100.2, 90, 99, 3), 3, cfg)
 	if len(out3) != 0 {
 		t.Fatalf("re-entry at the blocked place: want 0 entries, got %d", len(out3))
 	}
 	// A departure candle (range below the place) clears the block.
-	out4 := applyAtCfg(&l, []Intent{limitsPHL(90, 88, 99, exp)}, limitsK(99, 100.2, 90, 99, 3), limitsK(98, 99, 97, 98, 4), 4, cfg)
+	out4 := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(99, 100.2, 90, 99, 3), limitsK(94, 95, 93, 94, 4), 4, cfg)
 	if len(out4) != 1 {
 		t.Fatalf("re-entry after departure: want 1 entry, got %d", len(out4))
 	}
@@ -178,28 +198,29 @@ func TestLimitsTwoLossesOffForDay(t *testing.T) {
 	prev := limitsK(94, 96, 94, 95, 0)
 	exp := limitsNow(60) + 86400_000
 
-	// Loss 1 (the loss candle never counts as the departure).
-	applyAtCfg(&l, []Intent{limitsPHL(90, 88, 99, exp)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg)
-	applyAtCfg(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(89, 91, 87, 88, 2), 2, cfg)
+	// Loss 1 at the key level 97 (the loss candle never counts as the
+	// departure).
+	applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg)
+	applyAtG2(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(89, 91, 87, 88, 2), 2, cfg)
 	// Departure candle 1 (clears the just-flag), departure candle 2
 	// (unblocks) — then loss 2.
-	applyAtCfg(&l, nil, limitsK(89, 91, 87, 88, 2), limitsK(98, 99, 97, 98, 3), 3, cfg)
-	if out := applyAtCfg(&l, []Intent{limitsPHL(90, 88, 99, exp)}, limitsK(98, 99, 97, 98, 3), limitsK(94, 95, 93, 94, 4), 4, cfg); len(out) != 1 {
+	applyAtG2(&l, nil, limitsK(89, 91, 87, 88, 2), limitsK(94, 95, 93, 94, 3), 3, cfg)
+	if out := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(94, 95, 93, 94, 3), limitsK(92, 93, 91, 92, 4), 4, cfg); len(out) != 1 {
 		t.Fatalf("re-entry after departure: want 1 entry, got %d", len(out))
 	}
-	applyAtCfg(&l, nil, limitsK(94, 95, 93, 94, 4), limitsK(89, 91, 87, 88, 5), 5, cfg)
-	if l.Places == nil || l.Places["400"] == nil || !l.Places["400"].OffDay {
+	applyAtG2(&l, nil, limitsK(92, 93, 91, 92, 4), limitsK(89, 91, 87, 88, 5), 5, cfg)
+	if l.Places == nil || l.Places["key_level:97"] == nil || !l.Places["key_level:97"].OffDay {
 		t.Fatalf("place after two losses: want OffDay=true, got %+v", l.Places)
 	}
 	// Departures do NOT clear an off-for-day place.
-	applyAtCfg(&l, nil, limitsK(89, 91, 87, 88, 5), limitsK(98, 99, 97, 98, 6), 6, cfg)
-	out7 := applyAtCfg(&l, []Intent{limitsPHL(90, 88, 99, exp)}, limitsK(98, 99, 97, 98, 6), limitsK(94, 95, 93, 94, 7), 7, cfg)
+	applyAtG2(&l, nil, limitsK(89, 91, 87, 88, 5), limitsK(94, 95, 93, 94, 6), 6, cfg)
+	out7 := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(94, 95, 93, 94, 6), limitsK(92, 93, 91, 92, 7), 7, cfg)
 	if len(out7) != 0 {
 		t.Fatalf("same-day re-entry after two losses: want 0 entries, got %d", len(out7))
 	}
 	// The next trading day clears the registry.
 	next := time.Date(2026, 10, 3, 9, 8, 0, 0, time.UTC).UnixMilli()
-	out8 := l.Apply([]Intent{limitsPHL(90, 88, 99, next+86400_000)}, limitsK(94, 95, 93, 94, 7), limitsK(93, 94, 92, 93, 8), next, limitsLvls, cfg)
+	out8 := l.Apply([]Intent{limitsPHLAt(90, 88, 99, next+86400_000, "key_level:97", 97)}, limitsK(92, 93, 91, 92, 7), limitsK(93, 94, 92, 93, 8), next, limitsLvlsG2, cfg)
 	if len(out8) != 1 {
 		t.Fatalf("next-day re-entry: want 1 entry, got %d", len(out8))
 	}

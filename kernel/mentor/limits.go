@@ -33,9 +33,10 @@ import (
 //
 // The leg is created at FILL (not placement), the budget is consulted at
 // placement, and a stop-out closes the leg — all three exactly as the replay
-// (engine.py LegBudget). Anchors mirror the replay: a PHL/PLH-family entry
-// anchors at the nearest old extreme beyond the entry in the trade
-// direction; a plain ISB carries no anchor and registers no place.
+// (engine.py LegBudget). G2 places (CTO R-b 2026-10-03): the setup's PLACE —
+// the level price, the box edge, or the EMA — carried on the intent
+// (AnchorKey/Anchor); a plain ISB carries none and is not loss-boxed. The
+// G1 leg extreme is separate: the nearest old extreme beyond the entry.
 type Limits struct {
 	Long  *Leg
 	Short *Leg
@@ -75,7 +76,8 @@ type pendOrder struct {
 	expiry int64
 	isISB  bool
 	legExt float64 // G1 extreme carried from placement; 0 = none
-	anchor float64 // G2 place; 0 = none (a plain ISB)
+	anchor float64 // G2 place price (the level / box edge / EMA); 0 = none
+	place  string  // G2 place key (AnchorKey); "" = use the quarter-tick
 }
 
 type openTrade struct {
@@ -83,6 +85,7 @@ type openTrade struct {
 	stop   float64
 	target float64
 	anchor float64
+	place  string
 }
 
 // Apply is the single Tick hook (DS-103 merges the call): it advances the
@@ -123,7 +126,7 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 			p.just = false
 			continue
 		}
-		if p.Blocked && !p.OffDay && (cur.High < p.Anchor || cur.Low > p.Anchor) {
+		if p.Blocked && !p.OffDay && p.Anchor != 0 && (cur.High < p.Anchor || cur.Low > p.Anchor) {
 			p.Blocked = false
 		}
 	}
@@ -138,8 +141,8 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 					continue // G1: second PHL in the leg / leg closed by a stop-out
 				}
 			}
-			if ext != 0 {
-				if p := l.Places[placeKey(ext)]; p != nil && (p.Blocked || p.OffDay) {
+			if pid := placeID(in.AnchorKey, in.Anchor); pid != "" {
+				if p := l.Places[pid]; p != nil && (p.Blocked || p.OffDay) {
 					continue // G2: the place is boxed after a loss
 				}
 			}
@@ -151,7 +154,8 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 				target: in.Target,
 				expiry: in.ExpiryMs,
 				legExt: ext,
-				anchor: ext,
+				anchor: in.Anchor,
+				place:  in.AnchorKey,
 			})
 		case PlaceStopLimitEntry:
 			if cfg.LegBudgetEnabled {
@@ -213,6 +217,7 @@ func (l *Limits) simulate(cur market.Kline, now int64, levels []Level) {
 				stop:   p.stop,
 				target: p.target,
 				anchor: p.anchor,
+				place:  p.place,
 			})
 			continue
 		}
@@ -228,7 +233,7 @@ func (l *Limits) simulate(cur market.Kline, now int64, levels []Level) {
 		stopped := t.side == SideLong && cur.Low <= t.stop ||
 			t.side == SideShort && cur.High >= t.stop
 		if stopped {
-			l.loss(t.anchor, t.side) // filled, then the stop hit — case (a)
+			l.loss(t.place, t.anchor, t.side) // filled, then the stop hit — case (a)
 			continue
 		}
 		targetHit := t.side == SideLong && cur.High >= t.target ||
@@ -262,16 +267,16 @@ func (l *Limits) registerLeg(side Side, ext float64, levels []Level, entry float
 
 // loss registers a stop-out: one loss at the place (G2) and the leg is
 // closed (G1).
-func (l *Limits) loss(anchor float64, side Side) {
-	if anchor != 0 {
+func (l *Limits) loss(place string, anchor float64, side Side) {
+	pid := placeID(place, anchor)
+	if pid != "" {
 		if l.Places == nil {
 			l.Places = map[string]*Place{}
 		}
-		k := placeKey(anchor)
-		p := l.Places[k]
+		p := l.Places[pid]
 		if p == nil {
 			p = &Place{Anchor: anchor, DayKey: l.dayKey}
-			l.Places[k] = p
+			l.Places[pid] = p
 		}
 		p.Losses++
 		p.Blocked = true
@@ -348,4 +353,17 @@ func nearestOldExtreme(levels []Level, price float64, side Side) float64 {
 // placeKey is the quarter-tick anchor key — the replay's round(anchor*4).
 func placeKey(price float64) string {
 	return strconv.FormatInt(int64(math.Round(price*4)), 10)
+}
+
+// placeID is the G2 registry key: the setup's place key when the emit site
+// named one (the level key, the box edge key, the EMA key), else the
+// quarter-tick anchor price. "" = no place (a plain ISB).
+func placeID(anchorKey string, anchor float64) string {
+	if anchorKey != "" {
+		return anchorKey
+	}
+	if anchor != 0 {
+		return placeKey(anchor)
+	}
+	return ""
 }
