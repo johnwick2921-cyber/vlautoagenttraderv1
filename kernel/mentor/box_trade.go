@@ -1,6 +1,10 @@
 package mentor
 
-import "vl/market"
+import (
+	"strings"
+
+	"vl/market"
+)
 
 // Box trade evaluation — BOX REUSE (R1) and CONFLUENCE (R2), CTO rulings
 // 2026-10-03 verified in the sources [A].
@@ -25,42 +29,31 @@ type BoxReturn struct {
 // on the approach side (the REJECT candle, fact 4: that is exactly the
 // trade reference). Consecutive touching candles are the same visit; a
 // candle closing outside the box (approach side) opens the next visit.
+//
+// B10 T1 FOLD (CTO 21:16Z): ONE seeding rule for both walks — the full walk
+// delegates to the incremental form, so both seed the outside-spell state
+// from the FormedAt candle's close and a return on the very next bar is
+// never lost.
 func BoxReturnBars(bars []market.Kline, b Box, formedAt int, cfg BoxCfg) []BoxReturn {
-	var out []BoxReturn
-	outside := false
-	for i := formedAt + 1; i < len(bars); i++ {
-		c := bars[i]
-		if c.CloseTime == 0 {
-			continue
-		}
-		if touchesEdge(b, c, cfg) && outside {
-			out = append(out, BoxReturn{N: len(out) + 1, RefBar: i})
-		}
-		switch b.Kind {
-		case FTGH:
-			outside = c.Close < b.Bottom
-		case FTGL:
-			outside = c.Close > b.Top
-		}
-	}
-	return out
+	return BoxReturnBarsFrom(bars, b, formedAt+1, cfg)
 }
 
 // BoxReturnBarsFrom is the INCREMENTAL call used by Tick: the same walk as
 // BoxReturnBars, starting at bar start with the outside-spell state already
 // known from bars[start-1] (the approach side). Running the full walk from
 // FormedAt every tick is O(n^2) on a long tape (the 30-day replay timed out
-// at 437s); the incremental form is O(new bars). The full walk starts with
-// outside=false at FormedAt+1 — the formation candle itself never opens a
-// spell — so only when start is past the first return does the previous
-// candle's close carry the spell state.
+// at 437s); the incremental form is O(new bars). Under B10 T1 the box is
+// BORN when the extreme's confirming bar closes (FormedAt = max(nearest,
+// extreme+1)) and the walk starts after it — so the FIRST walk seeds the
+// spell state from that formation candle's close (start-1 == FormedAt), and
+// a return visit on the very next bar is not lost.
 func BoxReturnBarsFrom(bars []market.Kline, b Box, start int, cfg BoxCfg) []BoxReturn {
 	var out []BoxReturn
 	if start >= len(bars) {
 		return out
 	}
 	outside := false
-	if start-1 > b.FormedAt && start-1 < len(bars) {
+	if start-1 >= b.FormedAt && start-1 < len(bars) {
 		c := bars[start-1]
 		switch b.Kind {
 		case FTGH:
@@ -106,7 +99,26 @@ func BoxReturnReject(b Box, ref market.Kline) bool {
 // ("danh ping pong — KHONG DUOC DANH GIUA", D3.2 p2 @07:50-09:14; D4.2 p2
 // @05:17). Below 50 pts it is refused: ping_pong_range_too_small. With fewer
 // than two boxes around the price there is no ping-pong context.
-func pingPongVerdict(boxes []Box, price float64) (ok bool, reason string) {
+// largestCandlePts — B21: the largest 1m range (High−Low) over the last
+// `lookback` closed bars; 0 when lookback <= 0 or the slice is empty.
+func largestCandlePts(bars []market.Kline, lookback int) float64 {
+	if lookback <= 0 || len(bars) == 0 {
+		return 0
+	}
+	n := len(bars)
+	if n > lookback {
+		n = lookback
+	}
+	var m float64
+	for _, b := range bars[len(bars)-n:] {
+		if r := b.High - b.Low; r > m {
+			m = r
+		}
+	}
+	return m
+}
+
+func pingPongVerdict(boxes []Box, bars []market.Kline, price float64, cfg Config) (ok bool, reason string) {
 	var floor, ceil *Box
 	for i := range boxes {
 		switch boxes[i].Kind {
@@ -123,8 +135,18 @@ func pingPongVerdict(boxes []Box, price float64) (ok bool, reason string) {
 	if floor == nil || ceil == nil {
 		return true, ""
 	}
-	if ceil.Bottom-floor.Top < 50 {
+	minGap := cfg.PingPongMinGapPts
+	if minGap <= 0 {
+		minGap = 50 // the historical hardcode; zero-value configs keep it
+	}
+	if ceil.Bottom-floor.Top < minGap {
 		return false, "ping_pong_range_too_small"
+	}
+	// B21 candle cap: "nến tầm mười mấy điểm" — a range where one candle is as
+	// big as the rank does not bounce (D4.2 p2 @05:17–06:37; the 61.5-pt range
+	// with 30–40-pt candles rejected at every minute @06:16–06:37).
+	if cfg.PingPongCandleMaxPts > 0 && largestCandlePts(bars, cfg.PingPongCandleLookback) > cfg.PingPongCandleMaxPts {
+		return false, "ping_pong_candle_too_big"
 	}
 	return true, ""
 }
@@ -136,7 +158,7 @@ func pingPongVerdict(boxes []Box, price float64) (ok bool, reason string) {
 // verdict (between two lines / wrong side), the mid-range ban, never-inside
 // the box, the stop ceiling, the §6 target ladder and the room rule. The R2
 // confluence flag [00-METHOD Risk-reward, D3.4 p3 @ 07:38] rides the intent.
-func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig TriggerLine, cfg Config) []Intent {
+func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig TriggerLine, bars []market.Kline, cfg Config) []Intent {
 	if !BoxReturnReject(b, ref) {
 		return nil // close inside the box = cancel
 	}
@@ -147,7 +169,7 @@ func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig T
 	} else {
 		side, price, stop = SideShort, ref.Low, ref.High
 	}
-	if cfg.LocTriggerFilter {
+	if cfg.LocTriggerFilter && cfg.TriggerSchool != 1 {
 		if ok, ts, _ := TriggerVerdict(trig, price); !ok || ts != "" && ts != side {
 			return nil
 		}
@@ -155,7 +177,7 @@ func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig T
 	// PING PONG (CTO 13:24:53Z): between two boxes the edge trade is legal
 	// only when the gap is >= 50 pts — below that, refused (the MIDDLE is for
 	// ping pong, not the edges, and a narrow range cannot support the bounce).
-	if ok, _ := pingPongVerdict(boxes, price); !ok {
+	if ok, _ := pingPongVerdict(boxes, bars, price, cfg); !ok {
 		return nil
 	}
 	if InsideAnyBox(boxes, price) {
@@ -172,9 +194,15 @@ func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig T
 	if abs(target-price) < cfg.RoomMultiple*risk {
 		return nil
 	}
-	fl := ConfluenceVerdict(b, side, levels, trig)
+	fl := ConfluenceVerdict(b, side, trig)
+	// G2 place (CTO R-b / 13:20:08Z): a box is ONE place — the key WITHOUT the
+	// ":top"/":bottom" suffix, the anchor is the box MIDPOINT (the replay's).
+	base := strings.TrimSuffix(strings.TrimSuffix(b.Key, ":top"), ":bottom")
 	return []Intent{{
+		AnchorKey:  base,
+		Anchor:     (b.Top + b.Bottom) / 2,
 		Action:     PlaceStopEntry,
+		Setup:      "BOX",
 		Side:       side,
 		Price:      price,
 		Stop:       stop,
@@ -183,11 +211,6 @@ func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig T
 		Reason:     "box edge return: reject close outside → stop order with the rejecting candle as the reference [D3.2 p1 @ 21:04–21:33; D3.4 p3 @ 07:02]",
 	}}
 }
-
-// ConfluenceWithinPts is the R2 "at" tolerance: the key level must lie
-// INSIDE the box or within 2 pts of its edge [00-METHOD Risk-reward;
-// D3.4 p3 @ 07:38].
-const ConfluenceWithinPts = 2.0
 
 // ConfluenceFlag is the R2 output for DS-102's exit-C / size-10 branch.
 // On=false means normal sizing; the size-20 escalation (4h AND 1h agree AND
@@ -206,7 +229,10 @@ type ConfluenceFlag struct {
 //
 // side is the trade side; trig is the 5m trigger line. Fail-closed: no
 // trigger line (empty direction) can never agree, so confluence stays off.
-func ConfluenceVerdict(b Box, side Side, keyLevels []Level, trig TriggerLine) ConfluenceFlag {
+// ConfluenceVerdict is B3 (10-03 ruling, D3.4 p3 @07:38–08:22): confluence
+// = an FTGL/FTGH entry + the 5m trigger agrees — NO key-level condition. LONG
+// = FTGL (support); SHORT = FTGH. Feeds DS-102's exit-C / size-10.
+func ConfluenceVerdict(b Box, side Side, trig TriggerLine) ConfluenceFlag {
 	if side != SideLong && side != SideShort {
 		return ConfluenceFlag{}
 	}
@@ -227,13 +253,5 @@ func ConfluenceVerdict(b Box, side Side, keyLevels []Level, trig TriggerLine) Co
 			return ConfluenceFlag{}
 		}
 	}
-	for _, l := range keyLevels {
-		if l.Kind != KindKeyLevel {
-			continue
-		}
-		if l.Price >= b.Bottom-ConfluenceWithinPts && l.Price <= b.Top+ConfluenceWithinPts {
-			return ConfluenceFlag{On: true, Side: side}
-		}
-	}
-	return ConfluenceFlag{}
+	return ConfluenceFlag{On: true, Side: side}
 }

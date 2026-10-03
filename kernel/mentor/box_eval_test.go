@@ -57,9 +57,9 @@ func TestBoxEntryIntentTriggerBlock(t *testing.T) {
 	}
 }
 
-// R2 [00-METHOD Risk-reward, D3.4 p3 @ 07:38]: box edge + key level inside
-// the box or within 2 pts of its edge + the 5m trigger agrees → the flag
-// rides the intent for DS-102's exit-C / size-10.
+// B3 [D3.4 p3 @ 07:38–08:22]: confluence = FTGL/FTGH entry + the 5m
+// trigger agrees, NO key-level condition → the flag rides the intent for
+// DS-102's exit-C / size-10.
 func TestBoxEntryIntentConfluenceFlag(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
@@ -84,10 +84,11 @@ func TestBoxEntryIntentConfluenceFlag(t *testing.T) {
 		t.Fatalf("no trigger line can never agree — got %+v", o)
 	}
 
-	// Key level far from the box: confluence off.
+	// B3: the key levels are irrelevant — even with only the far target level
+	// in the set, the FTGL + buy trigger still confluences.
 	far := []Level{{Kind: KindKeyLevel, Price: 99.5}}
-	if o := boxEntryIntent(ref, b, []Box{b}, far, trig, cfg); len(o) != 1 || o[0].Confluence {
-		t.Fatalf("key level outside the 2-pt band must not confluence — got %+v", o)
+	if o := boxEntryIntent(ref, b, []Box{b}, far, trig, cfg); len(o) != 1 || !o[0].Confluence {
+		t.Fatalf("FTGL + buy trigger must confluence without a key level in the box — got %+v", o)
 	}
 }
 
