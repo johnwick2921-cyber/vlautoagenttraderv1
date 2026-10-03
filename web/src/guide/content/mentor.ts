@@ -155,6 +155,11 @@ export const mentor: GuideSection = {
           'RoomMultiple 2 · StopCeilingPts 25',
         ],
         [
+          'ORB gate (opening range) — coming with Mentor mode',
+          'ORB = the high and the low of the FIRST 2-minute candle of the regular session (08:30–08:32 CT), drawn only once that candle has completed. NO trade inside the ORB and NO reversal trade at either edge. Trade only after price has LEFT the box — escape test: a 1m BODY close outside. Direction follows the escape side: below → shorts only (ISB short / PLH); above → longs only. The escape picks the side; it is NOT an entry. No ORB for pre-market. The SWING4H is exempt.',
+          'orb_gate_enabled = true (default ON) · X5 @01:52, 02:36, 03:29–03:47, 05:42',
+        ],
+        [
           'Coming with Mentor mode',
           'Between-boxes mid-range ban (NO PHL/PLH regardless of width, ISB only) · 15m-confirm conflict (R6) · loss box — two losses at one place, the level is off for the day (R11) · news 07:30 CT — no resting order through the print (R12) · EMA 34 turned off while price cuts through it (§11)',
           '—',
