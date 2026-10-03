@@ -48,6 +48,12 @@ func TestMentorContractsForSizeTable(t *testing.T) {
 		// confluence setup — checked FIRST.
 		{"strong day cuts big to 2", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true, StrongDay: true}, mentorSizeChoice{2, "strong_day", ""}},
 		{"strong day cuts base to 2", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true}, mentorSizeChoice{2, "strong_day", ""}},
+		// ISB at an old high/low → reduce size, tier 3 (owner ruling 00:1x CT,
+		// D4.1 p1 written rule 2).
+		{"ISB at old extreme → 3", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, ISBOldExtreme: true}, mentorSizeChoice{3, "isb_old_extreme", ""}},
+		{"old extreme beats confluence", mentorTierInputs{Setup: "ISB", StopPts: 11.25, Confluence: true, ISBOldExtreme: true}, mentorSizeChoice{3, "isb_old_extreme", ""}},
+		{"strong day beats old extreme", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true, ISBOldExtreme: true}, mentorSizeChoice{2, "strong_day", ""}},
+		{"spent day beats old extreme", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, SpentDay: true, ISBOldExtreme: true}, mentorSizeChoice{2, "spent_day", ""}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

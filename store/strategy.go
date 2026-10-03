@@ -2024,6 +2024,16 @@ type RiskControlConfig struct {
 	// D2.4 p1 @08:35 on the 1-MINUTE chart); 30s/45s allowed (@09:07); "off" =
 	// the video-8 legacy "never trail on the 1m" (SUPERSEDED, kept as a knob).
 	MentorTrailTF string `json:"mentor_trail_tf,omitempty"`
+	// STOP RULES (owner ruling 00:1x CT "exactly like he said") — class rules,
+	// NOT his personal routine. All default ON:
+	// (a) done for the day after a winning close with the day net positive
+	//     (nil → ON; explicit false disables);
+	// (b) the trading window: MentorWindowStart (HH:MM CT) + MentorWindowMinutes
+	//     (30/60/90/120; unset → 60). The SWING setup is exempt.
+	// (c)/(d) never-widen / never-add are guards, not knobs.
+	MentorDoneAfterWin  *bool  `json:"mentor_done_after_win,omitempty"`
+	MentorWindowStart   string `json:"mentor_window_start,omitempty"`
+	MentorWindowMinutes int    `json:"mentor_window_minutes,omitempty"`
 	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the
 	// contracts clamp is always-on venue safety. Field kept so old stored
 	// configs still parse; nothing reads it, the UI no longer writes it.

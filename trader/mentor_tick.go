@@ -158,8 +158,23 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 // The no-chase rule runs FIRST: a stop entry whose price is already through the
 // trigger is skipped — he never enters at market (§3).
 func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoice, barCloseMs, emitMs int64) {
+	// STOP RULES (owner ruling 00:1x CT, "exactly like he said") — class
+	// rules, default ON: (b) the trading window (swing exempt), (a) done for
+	// the day after a win, F11 news 07:30, (d) never add/average. Then the
+	// no-chase rule.
+	if refuse, why := at.mentorWindowGate(in); refuse {
+		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
+		return
+	}
+	if refuse, why := at.mentorDoneAfterWinGate(); refuse {
+		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
+		return
+	}
 	if hold, why := at.mentorNewsGate(); hold {
-		mentorCount("news_hold")
+		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
+		return
+	}
+	if refuse, why := at.mentorAddGate(in); refuse {
 		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
 		return
 	}
@@ -270,16 +285,23 @@ const (
 // mentorNewsPrintTitleTokens matches the BLS 07:30 CT prints the rule names.
 var mentorNewsPrintTitleTokens = []string{"cpi", "ppi", "unemployment"}
 
+// mentorNewsWindowActive reports whether `now` is inside the 07:20–07:35 CT
+// print window (pure).
+func mentorNewsWindowActive(now time.Time) bool {
+	loc := kernel.CTLocation()
+	ct := now.In(loc)
+	printAt := time.Date(ct.Year(), ct.Month(), ct.Day(), 7, 30, 0, 0, loc)
+	return !now.Before(printAt.Add(-mentorNewsPreWindow)) && now.Before(printAt.Add(mentorNewsPostWindow))
+}
+
 // mentorNewsHold is the pure gate: with the day's calendar events, reports
 // whether a placement at `now` would rest through a 07:30 CT T1 CPI/PPI/
 // Unemployment print.
 func mentorNewsHold(events []calendar.Event, now time.Time) (hold bool, why string) {
-	loc := kernel.CTLocation()
-	ct := now.In(loc)
-	printAt := time.Date(ct.Year(), ct.Month(), ct.Day(), 7, 30, 0, 0, loc)
-	if now.Before(printAt.Add(-mentorNewsPreWindow)) || !now.Before(printAt.Add(mentorNewsPostWindow)) {
+	if !mentorNewsWindowActive(now) {
 		return false, ""
 	}
+	loc := kernel.CTLocation()
 	for _, e := range events {
 		if e.Impact != calendar.T1 || e.Time.In(loc).Format("15:04") != "07:30" {
 			continue
@@ -294,42 +316,181 @@ func mentorNewsHold(events []calendar.Event, now time.Time) (hold bool, why stri
 	return false, ""
 }
 
-// mentorNewsNowSource / mentorDayEventsForTest are the test seams for the news
-// gate (nil in production: real clock + the stored calendar slice).
-var (
-	mentorNewsNowSource    func() time.Time
-	mentorDayEventsForTest func() []calendar.Event
-)
+// mentorNowSource is the clock seam for every mentor time gate (tests).
+var mentorNowSource func() time.Time
 
-// mentorDayEvents returns today's stored calendar events. No slice → nil (no
-// evidence of a print — the gate allows; the producer is the same one the
-// day-plan uses).
-func (at *AutoTrader) mentorDayEvents() []calendar.Event {
+// mentorClockNow is the one clock read for the time gates.
+func mentorClockNow() time.Time {
+	if mentorNowSource != nil {
+		return mentorNowSource()
+	}
+	return time.Now()
+}
+
+// mentorDayEventsForTest is the events seam (tests; nil → the stored slice).
+var mentorDayEventsForTest func() ([]calendar.Event, bool)
+
+// mentorDayEvents returns today's stored calendar events. ok=false means the
+// slice is missing or unreadable — the news gate then holds the window
+// FAIL-CLOSED (a missing calendar is not proof that there is no CPI).
+func (at *AutoTrader) mentorDayEvents() ([]calendar.Event, bool) {
 	if mentorDayEventsForTest != nil {
 		return mentorDayEventsForTest()
 	}
 	if at.store == nil {
-		return nil
+		return nil, false
 	}
 	slice, err := at.store.Calendar().GetSlice(plannerTradeDateCT(time.Now()))
 	if err != nil || slice == nil {
-		return nil
+		return nil, false
 	}
 	var evs []calendar.Event
 	if json.Unmarshal([]byte(slice.EventsJSON), &evs) != nil {
-		return nil
+		return nil, false
 	}
-	return evs
+	return evs, true
 }
 
 // mentorNewsGate is the call-site half of F11: refuse a placement inside the
-// 07:30 print window on a print day.
+// 07:30 print window on a print day; with no readable calendar, hold the
+// window anyway (fail-closed), counted news_hold_no_calendar.
 func (at *AutoTrader) mentorNewsGate() (bool, string) {
-	now := time.Now()
-	if mentorNewsNowSource != nil {
-		now = mentorNewsNowSource()
+	now := mentorClockNow()
+	evs, ok := at.mentorDayEvents()
+	if !ok {
+		if mentorNewsWindowActive(now) {
+			mentorCount("news_hold_no_calendar")
+			at.logWarnf("🧑‍🏫 news: calendar slice missing/unreadable — holding the 07:20–07:35 CT window fail-closed [F11]")
+			return true, "news: calendar slice missing/unreadable — the 07:20–07:35 CT window holds (fail-closed) [F11]"
+		}
+		return false, ""
 	}
-	return mentorNewsHold(at.mentorDayEvents(), now)
+	hold, why := mentorNewsHold(evs, now)
+	if hold {
+		mentorCount("news_hold")
+	}
+	return hold, why
+}
+
+// ── STOP RULES (owner ruling 00:1x CT, "exactly like he said") ─────────────
+
+// (b) TRADING WINDOW [D1.2 p1 @23:52–24:59]: a fixed window — when it ends, no
+// new entries. Default 08:30–09:30 CT, 60 minutes; knobs for the start and the
+// length (30/60/90/120; 0 disables the window). The SWING setup is exempt
+// (D5.2: the swing may be at any hour).
+const (
+	mentorWindowDefaultStart   = "08:30"
+	mentorWindowDefaultMinutes = 60
+)
+
+func (at *AutoTrader) mentorWindowKnobs() (start string, minutes int) {
+	start, minutes = mentorWindowDefaultStart, mentorWindowDefaultMinutes
+	if at.config.StrategyConfig == nil {
+		return
+	}
+	rc := at.config.StrategyConfig.RiskControl
+	if v := strings.TrimSpace(rc.MentorWindowStart); v != "" {
+		start = v
+	}
+	if rc.MentorWindowMinutes != 0 {
+		minutes = rc.MentorWindowMinutes
+	}
+	return
+}
+
+// mentorWindowActive is the pure window check: now inside [start, start+len)
+// CT. A bad start string refuses fail-closed (why carries the refusal).
+func mentorWindowActive(start string, minutes int, now time.Time) (active bool, why string) {
+	if minutes == 0 {
+		return true, "" // the window is disabled
+	}
+	hm, err := time.Parse("15:04", start)
+	if err != nil {
+		return false, fmt.Sprintf("trading window start %q unparseable — entries refused (fail-closed) [D1.2 p1 @23:52]", start)
+	}
+	loc := kernel.CTLocation()
+	ct := now.In(loc)
+	open := time.Date(ct.Year(), ct.Month(), ct.Day(), hm.Hour(), hm.Minute(), 0, 0, loc)
+	end := open.Add(time.Duration(minutes) * time.Minute)
+	if !now.Before(open) && now.Before(end) {
+		return true, ""
+	}
+	return false, fmt.Sprintf("outside the trading window %s–%s CT — no new entries [D1.2 p1 @23:52–24:59]", open.Format("15:04"), end.Format("15:04"))
+}
+
+// mentorWindowGate is the call-site half of (b); SWING4H is exempt.
+func (at *AutoTrader) mentorWindowGate(in mentor.Intent) (bool, string) {
+	if strings.EqualFold(in.Setup, "SWING4H") {
+		return false, "" // D5.2: the swing may be at any hour
+	}
+	start, minutes := at.mentorWindowKnobs()
+	active, why := mentorWindowActive(start, minutes, mentorClockNow())
+	if active {
+		return false, ""
+	}
+	mentorCount("window_refused")
+	return true, why
+}
+
+// (a) DONE FOR THE DAY AFTER A WIN [D1.2 p1 @20:53–21:16; p2 @05:28–06:27]:
+// once a trade closes in profit and the day's net P&L is above 0 → no new
+// mentor entries until the next trading day (17:00 CT).
+func mentorDoneAfterWin(dayNetPnl float64, closedInProfit bool) bool {
+	return closedInProfit && dayNetPnl > 0
+}
+
+// mentorDayNetSource / mentorClosedProfitSource are the session seams for (a)
+// (nil → no data → the gate stays open; the live driver fills them at P1).
+var (
+	mentorDayNetSource       func() float64
+	mentorClosedProfitSource func() bool
+)
+
+// mentorDoneAfterWinGate is the call-site half of (a); the knob is default ON
+// (nil → ON, an explicit false disables).
+func (at *AutoTrader) mentorDoneAfterWinGate() (bool, string) {
+	if at.config.StrategyConfig != nil {
+		if v := at.config.StrategyConfig.RiskControl.MentorDoneAfterWin; v != nil && !*v {
+			return false, "" // the knob is explicitly OFF
+		}
+	}
+	var net float64
+	var closed bool
+	if mentorDayNetSource != nil {
+		net = mentorDayNetSource()
+	}
+	if mentorClosedProfitSource != nil {
+		closed = mentorClosedProfitSource()
+	}
+	if mentorDoneAfterWin(net, closed) {
+		mentorCount("done_after_win_refused")
+		return true, "done for the day after a win — a trade closed in profit and the day is net positive; no new entries until the next trading day (17:00 CT) [D1.2 p1 @20:53–21:16]"
+	}
+	return false, ""
+}
+
+// (d) NEVER ADD / AVERAGE [D1.1 p1 @17:06–17:44]: no second same-direction
+// fill while a position is open. The resonance ISB is a hold signal, not an
+// entry.
+
+// mentorOpenSideSource is the session seam for (d): the side of the open
+// mentor position (nil → none open; the live driver fills it at P1).
+var mentorOpenSideSource func() string
+
+// mentorAddGate is the call-site half of (d).
+func (at *AutoTrader) mentorAddGate(in mentor.Intent) (bool, string) {
+	if mentorOpenSideSource == nil {
+		return false, ""
+	}
+	open := mentorOpenSideSource()
+	if open == "" {
+		return false, ""
+	}
+	if strings.EqualFold(open, string(in.Side)) {
+		mentorCount("add_refused")
+		return true, fmt.Sprintf("never add/average [D1.1 p1 @17:06–17:44]: %s already open — the resonance ISB is a hold signal, not an entry", open)
+	}
+	return false, ""
 }
 
 // ── LATENCY (§2: measure it) ───────────────────────────────────────────────

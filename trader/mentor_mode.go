@@ -45,14 +45,15 @@ const (
 // mentorTierInputs is everything the size table reads. The trader computes
 // these from the intent + evaluator filters; tests pin the table itself.
 type mentorTierInputs struct {
-	Setup        string  // "ISB", "PHL", "PLH", "SWING4H"
-	StopPts      float64 // |entry - stop|
-	TargetPts    float64 // |target - entry|
-	RoomMultiple float64 // reward/risk actually available
-	Confluence   bool    // box/zone + key level + 5m trigger agreeing (§6)
-	HTFAgree     bool    // 4h AND 1h agree
-	SpentDay     bool    // §7 spent day
-	StrongDay    bool    // S9: 5m candles running 50–80 pts → size 1–2
+	Setup         string  // "ISB", "PHL", "PLH", "SWING4H"
+	StopPts       float64 // |entry - stop|
+	TargetPts     float64 // |target - entry|
+	RoomMultiple  float64 // reward/risk actually available
+	Confluence    bool    // box/zone + key level + 5m trigger agreeing (§6)
+	HTFAgree      bool    // 4h AND 1h agree
+	SpentDay      bool    // §7 spent day
+	StrongDay     bool    // S9: 5m candles running 50–80 pts → size 1–2
+	ISBOldExtreme bool    // ISB at an old high/low → reduce size, tier 3 [D4.1 p1]
 }
 
 // mentorSizeChoice is the tier decision: contracts, the tier name and why.
@@ -82,6 +83,16 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 	if in.StrongDay {
 		return mentorSizeChoice{Contracts: clamp(2), Tier: "strong_day", Why: "5m candles running 50–80 pts → size 1–2 [D5.2 p2 @05:21]"}, nil
 	}
+	if in.SpentDay {
+		return mentorSizeChoice{Contracts: clamp(spentCap), Tier: "spent_day", Why: "§7 spent day — hold 1–2 only [D5.1 p1 @ 16:13]"}, nil
+	}
+	// ISB at an old high/low → reduce size, tier 3 (owner ruling 00:1x CT,
+	// written rule 2, D4.1 p1). The flag comes from DS-103's evaluator and is
+	// only ever set for ISB setups. It beats big/confluence — the location
+	// REDUCES whatever the setup would otherwise earn.
+	if in.ISBOldExtreme {
+		return mentorSizeChoice{Contracts: clamp(3), Tier: "isb_old_extreme", Why: "ISB at an old high/low → reduce size, tier 3 [D4.1 p1 written rule 2]"}, nil
+	}
 	if in.Confluence && in.HTFAgree && in.RoomMultiple >= mentorRoomBigMultiple && in.TargetPts >= mentorTargetBigPts {
 		return mentorSizeChoice{Contracts: clamp(big), Tier: "big", Why: fmt.Sprintf(
 			"confluence + 4h&1h agree + room %.1fx ≥ %.0fx + target %.1f pts ≥ %.0f (hard cap %d)",
@@ -89,9 +100,6 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 	}
 	if in.Confluence {
 		return mentorSizeChoice{Contracts: clamp(conf), Tier: "confluence", Why: "box/zone + key level + 5m trigger agreeing (§6)"}, nil
-	}
-	if in.SpentDay {
-		return mentorSizeChoice{Contracts: clamp(spentCap), Tier: "spent_day", Why: "§7 spent day — hold 1–2 only [D5.1 p1 @ 16:13]"}, nil
 	}
 	if in.StopPts >= mentorStopTwentiesMinPts && in.StopPts <= mentorStopTwentiesMaxPts {
 		return mentorSizeChoice{Contracts: clamp(reduced), Tier: "reduced", Why: fmt.Sprintf(
@@ -502,11 +510,40 @@ func mentorSpentDayClamp(contracts, spentCap int) int {
 	return contracts
 }
 
+// mentorNeverWiden is the pure guard (owner ruling (c), D1.2 p2 @00:08): a
+// stop amendment that increases open risk is refused — a long stop may only
+// move UP, a short stop only DOWN. Equal is not a widen.
+func mentorNeverWiden(side string, curStop, newStop float64) (refuse bool, why string) {
+	switch {
+	case side == "long" && newStop < curStop:
+		return true, fmt.Sprintf("stop widen refused: long stop %.2f → %.2f increases open risk [D1.2 p2 @00:08]", curStop, newStop)
+	case side == "short" && newStop > curStop:
+		return true, fmt.Sprintf("stop widen refused: short stop %.2f → %.2f increases open risk [D1.2 p2 @00:08]", curStop, newStop)
+	}
+	return false, ""
+}
+
+// mentorOpenStopSource is the current open stop for the never-widen guard
+// (nil → no open mentor position known; the live driver sets it from the
+// position registry at P1).
+var mentorOpenStopSource func() (float64, bool)
+
 // mentorMoveStop sends a mentor stop move through the SAME last hop the AI
 // mechanisms use, but WITHOUT the 0B suspension gate: EXIT_MECHS_SUSPENDED does
 // NOT apply to mentor mode (the AI mechanisms keep it — both sides are pinned
-// by TestMentorExitMechSuspensionAppliesToAIOnly).
+// by TestMentorExitMechSuspensionAppliesToAIOnly). Every move passes the
+// never-widen guard (c) first: an amendment that increases open risk never
+// reaches the wire.
 func (at *AutoTrader) mentorMoveStop(nt *ntTrader.TCPTrader, side string, newStop float64) error {
+	if mentorOpenStopSource != nil {
+		if cur, ok := mentorOpenStopSource(); ok {
+			if refuse, why := mentorNeverWiden(side, cur, newStop); refuse {
+				mentorCount("widen_refused")
+				at.logWarnf("🧑‍🏫 %s", why)
+				return fmt.Errorf("mentor stop move refused: %s", why)
+			}
+		}
+	}
 	return moveStopWire(nt, side, newStop)
 }
 
