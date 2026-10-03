@@ -2,10 +2,10 @@ package kernel
 
 import (
 	"fmt"
-	"vl/market"
 	"sort"
 	"strings"
 	"time"
+	"vl/market"
 )
 
 // ============================================================================
@@ -105,8 +105,8 @@ func formatAccountZH(ctx *Context) string {
 	var sb strings.Builder
 
 	sb.WriteString("## 账户状态\n\n")
-	sb.WriteString(fmt.Sprintf("总权益: %.2f USDT | ", acc.TotalEquity))
-	sb.WriteString(fmt.Sprintf("可用余额: %.2f USDT (%.1f%%) | ", acc.AvailableBalance, (acc.AvailableBalance/acc.TotalEquity)*100))
+	sb.WriteString(fmt.Sprintf("总权益: %.2f | ", acc.TotalEquity))
+	sb.WriteString(fmt.Sprintf("可用余额: %.2f (%.1f%%) | ", acc.AvailableBalance, (acc.AvailableBalance/acc.TotalEquity)*100))
 	sb.WriteString(fmt.Sprintf("总盈亏: %+.2f%% | ", acc.TotalPnLPct))
 	sb.WriteString(fmt.Sprintf("保证金使用率: %.1f%% | ", acc.MarginUsedPct))
 	sb.WriteString(fmt.Sprintf("持仓数: %d\n\n", acc.PositionCount))
@@ -147,8 +147,8 @@ func formatTradingStatsZH(stats *TradingStats) string {
 	sb.WriteString(fmt.Sprintf("- 盈亏比: %.2f\n", winLossRatio))
 	sb.WriteString("- " + TrackRecordLine(stats, LangChinese) + "\n")
 	sb.WriteString("- " + TrackRecordNote(LangChinese) + "\n")
-	sb.WriteString(fmt.Sprintf("- 平均盈利: +%.2f USDT\n", stats.AvgWin))
-	sb.WriteString(fmt.Sprintf("- 平均亏损: -%.2f USDT\n", stats.AvgLoss))
+	sb.WriteString(fmt.Sprintf("- 平均盈利: +%.2f\n", stats.AvgWin))
+	sb.WriteString(fmt.Sprintf("- 平均亏损: -%.2f\n", stats.AvgLoss))
 	sb.WriteString(fmt.Sprintf("- 最大回撤: %.1f%%\n\n", stats.MaxDrawdownPct))
 
 	// Comprehensive analysis and decision guidance
@@ -199,7 +199,7 @@ func formatRecentTradesZH(orders []RecentOrder) string {
 			profitOrLoss = "亏损"
 		}
 
-		sb.WriteString(fmt.Sprintf("%d. %s %s | 进场 %.4f 出场 %.4f | %s: %+.2f USDT (%+.2f%%) | %s → %s (%s)\n",
+		sb.WriteString(fmt.Sprintf("%d. %s %s | 进场 %.4f 出场 %.4f | %s: %+.2f (%+.2f%%) | %s → %s (%s)\n",
 			i+1,
 			order.Symbol,
 			order.Side,
@@ -230,12 +230,12 @@ func formatCurrentPositionsZH(ctx *Context) string {
 		sb.WriteString(fmt.Sprintf("%d. %s %s | ", i+1, pos.Symbol, strings.ToUpper(pos.Side)))
 		sb.WriteString(fmt.Sprintf("进场 %.4f 当前 %.4f | ", pos.EntryPrice, pos.MarkPrice))
 		sb.WriteString(fmt.Sprintf("数量 %.4f | ", pos.Quantity))
-		sb.WriteString(fmt.Sprintf("仓位价值 %.2f USDT | ", pos.Quantity*pos.MarkPrice))
+		sb.WriteString(fmt.Sprintf("仓位价值 %.2f | ", pos.Quantity*pos.MarkPrice))
 		sb.WriteString(fmt.Sprintf("盈亏 %+.2f%% | ", pos.UnrealizedPnLPct))
-		sb.WriteString(fmt.Sprintf("盈亏金额 %+.2f USDT | ", pos.UnrealizedPnL))
+		sb.WriteString(fmt.Sprintf("盈亏金额 %+.2f | ", pos.UnrealizedPnL))
 		sb.WriteString(fmt.Sprintf("峰值盈亏 %.2f%% | ", pos.PeakPnLPct))
 		sb.WriteString(fmt.Sprintf("杠杆 %dx | ", pos.Leverage))
-		sb.WriteString(fmt.Sprintf("保证金 %.0f USDT | ", pos.MarginUsed))
+		sb.WriteString(fmt.Sprintf("保证金 %.0f | ", pos.MarginUsed))
 		sb.WriteString(fmt.Sprintf("强平价 %.4f\n", pos.LiquidationPrice))
 
 		// Add analysis hints
@@ -340,8 +340,8 @@ func formatAccountEN(ctx *Context) string {
 	var sb strings.Builder
 
 	sb.WriteString("## Account Status\n\n")
-	sb.WriteString(fmt.Sprintf("Total Equity: %.2f USDT | ", acc.TotalEquity))
-	sb.WriteString(fmt.Sprintf("Available Balance: %.2f USDT (%.1f%%) | ", acc.AvailableBalance, (acc.AvailableBalance/acc.TotalEquity)*100))
+	sb.WriteString(fmt.Sprintf("Total Equity: %.2f | ", acc.TotalEquity))
+	sb.WriteString(fmt.Sprintf("Available Balance: %.2f (%.1f%%) | ", acc.AvailableBalance, (acc.AvailableBalance/acc.TotalEquity)*100))
 	sb.WriteString(fmt.Sprintf("Total PnL: %+.2f%% | ", acc.TotalPnLPct))
 	sb.WriteString(fmt.Sprintf("Margin Usage: %.1f%% | ", acc.MarginUsedPct))
 	sb.WriteString(fmt.Sprintf("Positions: %d\n\n", acc.PositionCount))
@@ -383,8 +383,8 @@ func formatTradingStatsEN(stats *TradingStats) string {
 	// P&L-TRUTH WAVE: never a bare total.
 	sb.WriteString("- " + TrackRecordLine(stats, LangEnglish) + "\n")
 	sb.WriteString("- " + TrackRecordNote(LangEnglish) + "\n")
-	sb.WriteString(fmt.Sprintf("- Avg Win: +%.2f USDT\n", stats.AvgWin))
-	sb.WriteString(fmt.Sprintf("- Avg Loss: -%.2f USDT\n", stats.AvgLoss))
+	sb.WriteString(fmt.Sprintf("- Avg Win: +%.2f\n", stats.AvgWin))
+	sb.WriteString(fmt.Sprintf("- Avg Loss: -%.2f\n", stats.AvgLoss))
 	sb.WriteString(fmt.Sprintf("- Max Drawdown: %.1f%%\n\n", stats.MaxDrawdownPct))
 
 	// Analysis and decision guidance
@@ -434,7 +434,7 @@ func formatRecentTradesEN(orders []RecentOrder) string {
 			profitOrLoss = "Loss"
 		}
 
-		sb.WriteString(fmt.Sprintf("%d. %s %s | Entry %.4f Exit %.4f | %s: %+.2f USDT (%+.2f%%) | %s → %s (%s)\n",
+		sb.WriteString(fmt.Sprintf("%d. %s %s | Entry %.4f Exit %.4f | %s: %+.2f (%+.2f%%) | %s → %s (%s)\n",
 			i+1,
 			order.Symbol,
 			order.Side,
@@ -464,12 +464,12 @@ func formatCurrentPositionsEN(ctx *Context) string {
 		sb.WriteString(fmt.Sprintf("%d. %s %s | ", i+1, pos.Symbol, strings.ToUpper(pos.Side)))
 		sb.WriteString(fmt.Sprintf("Entry %.4f Current %.4f | ", pos.EntryPrice, pos.MarkPrice))
 		sb.WriteString(fmt.Sprintf("Qty %.4f | ", pos.Quantity))
-		sb.WriteString(fmt.Sprintf("Value %.2f USDT | ", pos.Quantity*pos.MarkPrice))
+		sb.WriteString(fmt.Sprintf("Value %.2f | ", pos.Quantity*pos.MarkPrice))
 		sb.WriteString(fmt.Sprintf("PnL %+.2f%% | ", pos.UnrealizedPnLPct))
-		sb.WriteString(fmt.Sprintf("PnL Amount %+.2f USDT | ", pos.UnrealizedPnL))
+		sb.WriteString(fmt.Sprintf("PnL Amount %+.2f | ", pos.UnrealizedPnL))
 		sb.WriteString(fmt.Sprintf("Peak PnL %.2f%% | ", pos.PeakPnLPct))
 		sb.WriteString(fmt.Sprintf("Leverage %dx | ", pos.Leverage))
-		sb.WriteString(fmt.Sprintf("Margin %.0f USDT | ", pos.MarginUsed))
+		sb.WriteString(fmt.Sprintf("Margin %.0f | ", pos.MarginUsed))
 		sb.WriteString(fmt.Sprintf("Liq Price %.4f\n", pos.LiquidationPrice))
 
 		// Analysis hints
@@ -559,4 +559,3 @@ func formatKlineDataEN(symbol string, tfData map[string]*market.TimeframeSeriesD
 
 	return sb.String()
 }
-

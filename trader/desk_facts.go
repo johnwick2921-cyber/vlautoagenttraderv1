@@ -650,12 +650,18 @@ func (at *AutoTrader) deskBook(now time.Time) DeskLine {
 
 // FeedStatus is a received field, not the bar-based trading connectivity gate.
 func (at *AutoTrader) deskLinkStatus() (string, bool) {
-	if trader := at.armedTrader(); trader != nil && trader.GetServer() != nil {
-		if status := strings.TrimSpace(trader.FeedStatus()); status != "" {
-			return status, true
+	// P-D ruling: the owner-facing desk strip LINK follows the REAL TCP socket
+	// (the same helper health uses) — it must never read "up" on a latched
+	// edge-triggered feed_status frame after the socket is gone. "up"/"down"
+	// mirror the health link field; UNKNOWN only when there is no NT8 TCP
+	// trader to measure.
+	if connected, ok := at.HealthLinkConnected(); ok {
+		if connected {
+			return "up", true
 		}
+		return "down", true
 	}
-	return "UNKNOWN (no feed_status received)", false
+	return "UNKNOWN (no NT8 link)", false
 }
 
 func (at *AutoTrader) deskFeed(now time.Time) DeskLine {

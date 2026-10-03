@@ -242,7 +242,7 @@ func (s *Server) handleRegister(c *gin.Context) {
 	// SECURITY (P0 S3): registration deliberately does NOT adopt pre-existing
 	// ai_models/exchanges rows. It used to call adoptOrphanRecords(userID), which
 	// re-assigned every orphaned credential row — model API keys, exchange API
-	// keys, wallet private keys — to whoever registered next. Combined with the
+	// keys, private keys — to whoever registered next. Combined with the
 	// then-public reset-account, that was the payoff step of an unauthenticated
 	// takeover: wipe the users, register, inherit the keys.
 	//
@@ -458,7 +458,7 @@ func (s *Server) handleResetAccount(c *gin.Context) {
 		tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&store.Trader{})
 		tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&store.Strategy{})
 		// Delete users — ai_models and exchanges are intentionally kept
-		// so wallet private keys and exchange configs survive re-registration
+		// so private keys and exchange configs survive re-registration
 		if err := tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&store.User{}).Error; err != nil {
 			return fmt.Errorf("failed to delete users: %w", err)
 		}
@@ -469,14 +469,14 @@ func (s *Server) handleResetAccount(c *gin.Context) {
 		return
 	}
 
-	logger.Infof("✓ User accounts cleared (wallets preserved) — system reset to uninitialized")
+	logger.Infof("✓ User accounts cleared (private keys preserved) — system reset to uninitialized")
 	c.JSON(http.StatusOK, gin.H{"message": "Account reset successful, you can now register a new account"})
 }
 
 // adoptOrphanRecords was DELETED (P0 S3, 2026-08-16).
 //
 // It re-assigned every ai_models/exchanges row whose user_id no longer existed —
-// model API keys, exchange API keys, wallet private keys — to a newly registered
+// model API keys, exchange API keys, private keys — to a newly registered
 // user. That made credential inheritance an automatic side effect of signup and
 // was the payoff step of the unauthenticated-takeover chain in
 // docs/superpowers/reports/2026-08-16-acceptance-gate-v2.md (finding #1).

@@ -1,16 +1,19 @@
 package config
 
 import (
+	"os"
+	"strconv"
+	"strings"
+	"sync"
 	"vl/internal/installpath"
 	"vl/logger"
 	"vl/mcp"
 	"vl/telemetry"
-	"os"
-	"strconv"
-	"strings"
 )
 
 // Global configuration instance
+var tradingModeWarnOnce sync.Once // C2: the TRADING_MODE-ignored warning fires once per process
+
 var global *Config
 
 // InsecureDefaultJWTSecret is the PUBLIC fallback used when JWT_SECRET is
@@ -109,9 +112,6 @@ type Config struct {
 	// list HARD-blocks selecting any account not on it (e.g. keep a funded account off
 	// the list so it can never be chosen). This is the rail Stage-2 routing will enforce.
 	AllowedNTAccounts []string
-
-	// Trading mode: "crypto" (default, original behavior) or "futures"
-	TradingMode string
 
 	// Plan 3 Task 21 — Risk limits (hard server-side kill switches).
 	// Defaults: $500 daily loss, 2 concurrent trades, $50k notional, 5 contracts/order.
@@ -217,7 +217,15 @@ func Init() {
 			cfg.AllowedNTAccounts = append(cfg.AllowedNTAccounts, a)
 		}
 	}
-	cfg.TradingMode = getEnvOrDefault("TRADING_MODE", "crypto")
+	// C2 — futures-only build: TRADING_MODE is accepted only as "futures" (or
+	// unset); any other value is IGNORED with exactly ONE boot warning, never a
+	// refusal. (The env line survives in partner .env files without breaking the
+	// parse.)
+	if v := strings.TrimSpace(os.Getenv("TRADING_MODE")); v != "" && !strings.EqualFold(v, "futures") {
+		tradingModeWarnOnce.Do(func() {
+			logger.Warnf("TRADING_MODE=%s ignored — futures-only build", v)
+		})
+	}
 
 	// Plan 3 Task 21 — Risk limits
 	cfg.RiskMaxDailyLossUSD = getEnvFloat("RISK_MAX_DAILY_LOSS_USD", 500)

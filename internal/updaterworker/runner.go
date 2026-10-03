@@ -85,7 +85,9 @@ func (w *Worker) drive(ctx context.Context, id string) error {
 }
 
 // finished releases the worker from a job that is over. recovery_needed
-// latches the worker: install is refused until it is restarted (OQ-3).
+// latches the worker: install is refused until it is restarted (OQ-3). The
+// main-tree lock is settled EARLIER, in the terminal edge itself (finish's
+// failure edges + stepReleaseHold): a finished job file is immutable.
 func (w *Worker) finished(j updaterjob.Job) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -224,8 +226,21 @@ func (w *Worker) finish(ctx context.Context, j updaterjob.Job, res stepResult) (
 				reason = string(k.State) + " failed: " + k.Error
 			}
 			markRecovery(k, reason)
+			// WORKER-TAKES-THE-LOCK: recovery_needed KEEPS the lock and
+			// names it in the job — a human looks before anything else
+			// touches the tree.
+			if err := k.AddReceipt(keptLockReceipt(lockSessionFor(k.JobID), now), now); err != nil {
+				return err
+			}
 		case updaterjob.StateRollingBack:
 			rb(k)
+		}
+		if to == updaterjob.StateRefused {
+			// WORKER-TAKES-THE-LOCK: refused releases OUR lock (never a
+			// stranger's — an attended session's lock is left to its holder).
+			if err := k.AddReceipt(w.lockReleaseReceipt(lockSessionFor(k.JobID), now), now); err != nil {
+				return err
+			}
 		}
 		return k.Enter(to, now)
 	})

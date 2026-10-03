@@ -5,8 +5,8 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"vl/logger"
 	"sync"
+	"vl/logger"
 
 	"gorm.io/gorm"
 )
@@ -56,8 +56,8 @@ type Store struct {
 	matchedRandom     *MatchedRandomStore
 	telegramConfig    TelegramConfigStore
 	revokedTokens     *RevokedTokenStore
-
-	mu sync.RWMutex
+	workerEpoch       *WorkerEpochStore
+	mu                sync.RWMutex
 }
 
 // New creates new Store instance (SQLite mode for backward compatibility)
@@ -189,6 +189,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.RevokedTokens().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize revoked token tables: %w", err)
+	}
+	if err := s.WorkerEpoch().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize worker epoch table: %w", err)
 	}
 	if err := s.AICharge().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize AI charge tables: %w", err)
@@ -655,6 +658,16 @@ func (s *Store) RevokedTokens() *RevokedTokenStore {
 		s.revokedTokens = NewRevokedTokenStore(s.gdb)
 	}
 	return s.revokedTokens
+}
+
+// WorkerEpoch gets the worker_token_epoch storage (P-E E3).
+func (s *Store) WorkerEpoch() *WorkerEpochStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.workerEpoch == nil {
+		s.workerEpoch = NewWorkerEpochStore(s.gdb)
+	}
+	return s.workerEpoch
 }
 
 // Close closes database connection

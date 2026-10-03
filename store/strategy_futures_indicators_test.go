@@ -29,23 +29,3 @@ func TestApplyFuturesIndicatorDefaults(t *testing.T) {
 			ind.EnableMACD, ind.EnableBOLL)
 	}
 }
-
-// TestCryptoDefaultLeavesTechnicalIndicatorsOff confirms the crypto path stays
-// byte-identical: in the default (non-futures) environment, GetDefaultStrategyConfig
-// keeps EMA/RSI/ATR OFF (the futures helper is never applied). Skipped if the
-// env happens to be in futures mode.
-func TestCryptoDefaultLeavesTechnicalIndicatorsOff(t *testing.T) {
-	if isFuturesMode() {
-		t.Skip("test environment is in futures mode; crypto-default assertion N/A")
-	}
-	cfg := GetDefaultStrategyConfig("en")
-	if cfg.Indicators.EnableEMA || cfg.Indicators.EnableRSI || cfg.Indicators.EnableATR {
-		t.Errorf("crypto default must keep EMA/RSI/ATR OFF; got EMA=%v RSI=%v ATR=%v",
-			cfg.Indicators.EnableEMA, cfg.Indicators.EnableRSI, cfg.Indicators.EnableATR)
-	}
-	// D2-DEAD item 12: the NofxOS-backed coin pool is gone; a fresh crypto
-	// strategy seeds the static source (empty list, operator sets coins).
-	if cfg.CoinSource.SourceType != "static" {
-		t.Errorf("crypto default coin source must be static; got %q", cfg.CoinSource.SourceType)
-	}
-}

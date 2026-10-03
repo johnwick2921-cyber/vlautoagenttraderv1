@@ -41,10 +41,11 @@ func newOwnerLevelsServer(t *testing.T) (*Server, string) {
 	if err := st.AIModel().Create(olTestUser, "m-ol", "m", "deepseek", true, "sk-test-not-a-real-key", ""); err != nil {
 		t.Fatalf("ai model: %v", err)
 	}
-	// A binance CEX row: its trader constructs without any network or NT8
-	// TCP side effect, which is all the manager needs to seat the trader.
-	exID, err := st.Exchange().Create(olTestUser, "binance", "Default", true,
-		"test-key", "test-secret", "", false, "", true, "", "", "", "", "", "", 0, "", "", 0)
+	// A ninjatrader exchange row: its trader seats as the offline CSV transport
+	// (no NT8 TCP dial, no network side effect) — all the manager needs.
+	exID, err := st.Exchange().Create(olTestUser, "ninjatrader", "Default", true,
+		"", "", "", false,
+		filepath.Join(t.TempDir(), "nt-data"), "MNQ", 1)
 	if err != nil {
 		t.Fatalf("exchange: %v", err)
 	}
@@ -55,6 +56,7 @@ func newOwnerLevelsServer(t *testing.T) (*Server, string) {
 		t.Fatalf("trader: %v", err)
 	}
 	tm := manager.NewTraderManager()
+	t.Setenv("NT_TRANSPORT", "csv") // offline transport: no NT8 TCP dial in tests
 	if err := tm.LoadUserTradersFromStore(st, olTestUser); err != nil {
 		t.Fatalf("load traders: %v", err)
 	}

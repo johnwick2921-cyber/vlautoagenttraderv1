@@ -83,10 +83,18 @@ type box struct {
 	id      Identity // the unit's MainPID identity
 	running string   // the sha the running process serves
 
+	// the fake lock (WORKER-TAKES-THE-LOCK): lockHolder is the current
+	// holder ("" free); the counters pin the acquire/release edges.
+	lockHolder          string
+	lockAcquireCalls    int
+	lockAcquireSessions []string
+	lockReleaseCalls    int
+	lockAcquireErr      error
+
 	// knobs
-	lockHeld         bool
 	flat             bool
 	addonConnected   bool
+	pollHook         func() // run at every fake-host sleep boundary (planner-wait tests)
 	addonBuild       string // what the running AddOn reports
 	manifestBuild    string // the signed manifest's addon.build_id
 	refuseBoot       map[string]bool
@@ -110,13 +118,18 @@ type box struct {
 	reverifyTamper   func(*ReleaseFacts)
 
 	// UPDATER-NT8-CLOSED knobs
-	addonDownSince  time.Duration // >0: the AddOn is disconnected this long (stamped on the fake server's record); the ack is nil and the fake gate attaches its nt8_absent view
-	absentInflight  bool          // nt8_absent leg: an entry send holds a permit
-	absentQueued    int           // nt8_absent leg: queued_signals
-	absentPlanner   bool          // nt8_absent leg: a planner read is in flight
-	absentSim       bool          // nt8_absent leg: the bound account is SIM-tradeable
-	absentDbOpen    bool          // nt8_absent leg: an OPEN trader_positions row (the CTO P1 leg)
-	absentOverride  bool          // attach the view with the flags below instead of the computed ones (the K_elig mutant probe)
+	addonDownSince time.Duration // >0: the AddOn is disconnected this long (stamped on the fake server's record); the ack is nil and the fake gate attaches its nt8_absent view
+	absentInflight bool          // nt8_absent leg: an entry send holds a permit
+	absentQueued   int           // nt8_absent leg: queued_signals
+	absentPlanner  bool          // nt8_absent leg: a planner read is in flight
+	absentSim      bool          // nt8_absent leg: the bound account is SIM-tradeable
+	absentDbOpen   bool          // nt8_absent leg: an OPEN trader_positions row (the CTO P1 leg)
+	cutoverStale   bool          // P-D ruling item 3: the trader_cutover leg fails with the
+	// production "working_orders: snapshot stale" shape when the
+	// AddOn is gone (tonight's job 66383c7c preflight blocker)
+	plannerInFlight bool // F2: the planner_in_flight leg FAILS with the production
+	// "waiting for the AI plan (started hh:mm:ss)" detail
+	absentOverride  bool // attach the view with the flags below instead of the computed ones (the K_elig mutant probe)
 	absentEligible  bool
 	absentReady     bool
 	absentFlapAt    int // with absentOverride: from gate-read N onward the view flaps to eligible=false, ready=true (the gate must refuse — K_elig would let it through)
@@ -193,7 +206,7 @@ func newRig(t *testing.T, opts ...rigOpt) *rig {
 		inst: filepath.Join(root, "vl"), backupRoot: filepath.Join(root, "vl-backups", "updater"),
 		binName: "vl-bin",
 		id:      Identity{PID: 4242, StartTicks: 1000}, running: boxOld,
-		lockHeld: true, flat: true, addonConnected: true, addonBuild: boxOldBuild, manifestBuild: boxOldBuild,
+		flat: true, addonConnected: true, addonBuild: boxOldBuild, manifestBuild: boxOldBuild,
 		absentSim:  true,
 		refuseBoot: map[string]bool{}, watchFail: map[string]bool{},
 	}
@@ -644,14 +657,48 @@ func (h *fakeHost) Sleep(ctx context.Context, d time.Duration) error {
 		return err
 	}
 	h.b.clock.Advance(d)
+	if h.b.pollHook != nil {
+		h.b.pollHook()
+	}
 	return nil
 }
 
-func (h *fakeHost) MainTreeLockHeld() (bool, string, error) {
-	if h.b.lockHeld {
-		return true, "check rc=1", nil
+func (h *fakeHost) LockHolder() (string, error) {
+	h.b.mu.Lock()
+	defer h.b.mu.Unlock()
+	return h.b.lockHolder, nil
+}
+
+// LockAcquire simulates `vl-lock.sh acquire`. Free (lockHolder "") takes it
+// as our session; held refuses naming the holder; an error flag fails it.
+func (h *fakeHost) LockAcquire(session, task string, minutes int) (bool, string, error) {
+	h.b.mu.Lock()
+	defer h.b.mu.Unlock()
+	h.b.lockAcquireCalls++
+	h.b.lockAcquireSessions = append(h.b.lockAcquireSessions, session)
+	if h.b.lockAcquireErr != nil {
+		return false, "", h.b.lockAcquireErr
 	}
-	return false, "check rc=0", nil
+	if h.b.lockHolder == "" {
+		h.b.lockHolder = session
+		return true, "", nil
+	}
+	return false, h.b.lockHolder, nil
+}
+
+// LockRelease simulates `vl-lock.sh release` (only the holder may release).
+func (h *fakeHost) LockRelease(session string) error {
+	h.b.mu.Lock()
+	defer h.b.mu.Unlock()
+	h.b.lockReleaseCalls++
+	if h.b.lockHolder == "" {
+		return nil // the script's no-lock no-op
+	}
+	if h.b.lockHolder != session {
+		return fmt.Errorf("release refused: '%s' is not the holder ('%s')", session, h.b.lockHolder)
+	}
+	h.b.lockHolder = ""
+	return nil
 }
 
 func (h *fakeHost) BuildInfo(binary string) (string, string, error) {
@@ -773,7 +820,7 @@ func (b *box) maintenanceView() MaintenanceView {
 func (b *box) gateView() GateView {
 	st := store.ReadMaintenanceHold(b.data)
 	b.mu.Lock()
-	flat := b.flat
+	flat, plannerHeld := b.flat, b.plannerInFlight
 	b.mu.Unlock()
 	a := b.ack()
 	job := "n/a"
@@ -806,13 +853,23 @@ func (b *box) gateView() GateView {
 		{Name: "go_drained", Pass: st.Held, Detail: "barrier engaged"},
 		{Name: "in_flight_sends", Pass: true, Detail: "0"},
 		{Name: "queued_signals", Pass: true, Detail: "0"},
-		{Name: "planner_in_flight", Pass: true, Detail: "none"},
+		{Name: "planner_in_flight", Pass: !plannerHeld, Detail: func() string {
+			if plannerHeld {
+				return "waiting for the AI plan (started 12:03:05)"
+			}
+			return "none"
+		}()},
 		{Name: "traders_nt8", Pass: true, Detail: "1 NT8 trader"},
 		{Name: "addon_ack", Pass: st.Held && a != nil && a.Held && a.JobID == job, Detail: "ack"},
 		{Name: "addon_census", Pass: flat, Detail: fmt.Sprintf("age=%s — flat=%v", censusAge, flat)},
 		{Name: "addon_census_prehold", Pass: preholdCensusPass, Detail: preholdCensusDetail},
 		{Name: "ledger_exposure", Pass: flat, Detail: "arms"},
-		{Name: "trader_cutover:t1", Pass: flat, Detail: "legs 1,2,4"},
+		{Name: "trader_cutover:t1", Pass: flat && !b.cutoverStale, Detail: func() string {
+			if b.cutoverStale {
+				return "working_orders: snapshot stale (AddOn down)"
+			}
+			return "legs 1,2,4"
+		}()},
 	}
 	ready := true
 	for _, l := range legs {

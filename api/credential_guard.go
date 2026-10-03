@@ -72,6 +72,28 @@ func machineDenied(fullPath string) bool {
 	return false
 }
 
+// workerTokenRoutes are the ONLY routes a cutover-worker token (P-E E2) is
+// admitted on: the two read-only GETs the updater worker performs
+// (internal/updaterworker/app_http.go:142,165). Everything else is refused
+// BY DEFAULT, so the long-lived worker credential can never widen beyond the
+// worker's own need — narrower than the old hand-minted gate-jwt, which was
+// admitted on every protected route outside machineDeniedRoutes.
+var workerTokenRoutes = []string{
+	"/api/maintenance",
+	"/api/installation-gate",
+}
+
+// workerTokenAllowed reports whether a cutover-worker token may reach this
+// exact FullPath. Exact match only — a future sub-route is NOT admitted.
+func workerTokenAllowed(fullPath string) bool {
+	for _, r := range workerTokenRoutes {
+		if fullPath == r {
+			return true
+		}
+	}
+	return false
+}
+
 // agentOnlyHiddenRoutes are left out of the agent's route list (GetAPIDocs)
 // on top of every machine-denied route: session/account management a
 // machine token has no business with. They are NOT denied (the web UI's

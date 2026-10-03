@@ -5,7 +5,7 @@ package deploy
 // the REAL template and the REAL script on disk, run with bash.
 //
 // The CTO's mutations hit the script refusals: a run whose output carries the
-// token value, a NOFX_RELEASE_DIR inside ~/vl that passes, a non-hex sha
+// token value, a VL_RELEASE_DIR inside ~/vl that passes, a non-hex sha
 // that is accepted, a unit that re-joins the bot's cgroup or re-sets TZ.
 
 import (
@@ -57,12 +57,22 @@ func TestInstallUpdaterWorkerScript(t *testing.T) {
 		"$BUILD_DIR/vl-updater",
 		"$HOME/bin/vl-updater",
 		"systemd-user/vl-updater.service",
-		// the token has a 24-hour lifetime and there is no longer-lived type
-		"24-hour",
+		// P-E E4: the token is the cutover-worker credential enroll writes —
+		// never a hand-minted 24-hour gate-jwt.
+		"auth.ScopeCutoverWorker",
+		"vl-updater-bootstrap --install-dir <bot> enroll <owner-email>",
+		"never a hand-minted gate-jwt",
 	} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("install script must carry %q", want)
 		}
+	}
+	// P-E E4 (2026-10-02 follow-up): the old 24-hour gate-jwt tail is DEAD —
+	// the enroll token is the long-lived type, and the script's note must
+	// never resurrect the false claim.
+	if strings.Contains(content, "no longer-lived token type") {
+		t.Fatalf("install script note must not carry the dead " +
+			"\"no longer-lived token type\" tail")
 	}
 	// No privilege escalation anywhere: no line RUNS sudo.
 	for _, l := range strings.Split(content, "\n") {
@@ -78,7 +88,7 @@ func TestInstallUpdaterWorkerScript(t *testing.T) {
 		// ("bash", script, args...) — compile error "too many arguments".
 		// One literal + spread compiles; keep this shape.
 		cmd := exec.Command("bash", append([]string{script}, args...)...)
-		cmd.Env = append(os.Environ(), "HOME="+home, "NOFX_UPDATER_BUILD_REPO=/nonexistent-nofx-mirror")
+		cmd.Env = append(os.Environ(), "HOME="+home, "VL_UPDATER_BUILD_REPO=/nonexistent-vl-mirror")
 		out, err := cmd.CombinedOutput()
 		rc := 0
 		if err != nil {
@@ -127,30 +137,30 @@ func TestInstallUpdaterWorkerScript(t *testing.T) {
 
 	t.Run("an env file without the token is refused", func(t *testing.T) {
 		home := t.TempDir()
-		writeEnv(t, home, "NOFX_RELEASE_DIR="+filepath.Join(home, "releases")+"\n", 0o600)
+		writeEnv(t, home, "VL_RELEASE_DIR="+filepath.Join(home, "releases")+"\n", 0o600)
 		out, rc := run(t, home, "", strings.Repeat("b", 40))
-		if rc != 2 || !strings.Contains(out, "must set VL_RELEASE_DIR/NOFX_RELEASE_DIR") {
+		if rc != 2 || !strings.Contains(out, "must set VL_RELEASE_DIR") {
 			t.Fatalf("rc=%d out=%q", rc, out)
 		}
 	})
 
-	t.Run("a relative NOFX_RELEASE_DIR is refused", func(t *testing.T) {
+	t.Run("a relative VL_RELEASE_DIR is refused", func(t *testing.T) {
 		home := t.TempDir()
-		writeEnv(t, home, "NOFX_RELEASE_DIR=releases\nNOFX_CUTOVER_TOKEN=tok\n", 0o600)
+		writeEnv(t, home, "VL_RELEASE_DIR=releases\nVL_CUTOVER_TOKEN=tok\n", 0o600)
 		out, rc := run(t, home, "", strings.Repeat("c", 40))
 		if rc != 2 || !strings.Contains(out, "must be an absolute path") {
 			t.Fatalf("rc=%d out=%q", rc, out)
 		}
 	})
 
-	t.Run("NOFX_RELEASE_DIR inside the install is refused", func(t *testing.T) {
+	t.Run("VL_RELEASE_DIR inside the install is refused", func(t *testing.T) {
 		home := t.TempDir()
 		inst := filepath.Join(home, "vl")
 		if err := os.MkdirAll(inst, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		inside := filepath.Join(inst, "releases")
-		writeEnv(t, home, "NOFX_RELEASE_DIR="+inside+"\nNOFX_CUTOVER_TOKEN=tok\n", 0o600)
+		writeEnv(t, home, "VL_RELEASE_DIR="+inside+"\nVL_CUTOVER_TOKEN=tok\n", 0o600)
 		out, rc := run(t, home, "", strings.Repeat("d", 40))
 		if rc != 2 || !strings.Contains(out, "must be OUTSIDE the install") {
 			t.Fatalf("rc=%d out=%q", rc, out)
@@ -160,7 +170,7 @@ func TestInstallUpdaterWorkerScript(t *testing.T) {
 	t.Run("a run never prints the token value, on any refusal path", func(t *testing.T) {
 		home := t.TempDir()
 		writeEnv(t, home,
-			"NOFX_RELEASE_DIR="+filepath.Join(home, "releases")+"\nNOFX_CUTOVER_TOKEN=SECRETMARKER123\n",
+			"VL_RELEASE_DIR="+filepath.Join(home, "releases")+"\nVL_CUTOVER_TOKEN=SECRETMARKER123\n",
 			0o600)
 		// A valid sha + a valid env file: the NEXT refusal is the clone
 		// (the repo is /nonexistent-vl-mirror). The output must not carry
@@ -177,7 +187,7 @@ func TestInstallUpdaterWorkerScript(t *testing.T) {
 	t.Run("the env file must be mode 0600", func(t *testing.T) {
 		home := t.TempDir()
 		writeEnv(t, home,
-			"NOFX_RELEASE_DIR="+filepath.Join(home, "releases")+"\nNOFX_CUTOVER_TOKEN=tok\n",
+			"VL_RELEASE_DIR="+filepath.Join(home, "releases")+"\nVL_CUTOVER_TOKEN=tok\n",
 			0o644)
 		out, rc := run(t, home, "", strings.Repeat("f", 40))
 		if rc != 2 || !strings.Contains(out, "must be mode 0600") {

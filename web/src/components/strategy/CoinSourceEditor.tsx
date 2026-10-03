@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Plus, X, Database, TrendingUp, List, Ban, Layers } from 'lucide-react'
+import { Plus, X, Database, List, Ban } from 'lucide-react'
 import type { CoinSourceConfig } from '../../types'
 import { coinSource, ts } from '../../i18n/strategy-translations'
-import { VlSelect } from '../ui/select'
 import { isCMEFutures } from '../../lib/instrument'
 
 interface CoinSourceEditorProps {
@@ -23,22 +22,16 @@ export function CoinSourceEditor({
 
   const sourceTypes = [
     { value: 'static', icon: List, color: '#848E9C' },
-    { value: 'hyper_all', icon: Database, color: '#F0B90B' },
-    { value: 'hyper_main', icon: TrendingUp, color: '#0ECB81' },
-    { value: 'mixed', icon: Layers, color: '#a855f7' },
   ] as const
 
-  // CME futures (e.g. MNQ) only use the Static symbol list — Hyperliquid coin
-  // sources are crypto-only data feeds (and would make the engine fetch crypto
-  // data instead of trading MNQ). Hide them on futures (DISPLAY only — saved
-  // data is untouched) and treat the displayed type as Static there.
+  // CME futures (e.g. MNQ) only use the Static symbol list.
   const isFutures = isCMEFutures(config.static_coins?.[0])
   const visibleSourceTypes = isFutures
     ? sourceTypes.filter((s) => s.value === 'static')
     : sourceTypes
   const effectiveSourceType = isFutures ? 'static' : config.source_type
 
-  // xyz dex assets (stocks, forex, commodities) - should NOT get USDT suffix
+  // xyz dex assets (stocks, forex, commodities)
   const xyzDexAssets = new Set([
     // Stocks
     'TSLA',
@@ -75,10 +68,7 @@ export function CoinSourceEditor({
   ])
 
   const isXyzDexAsset = (symbol: string): boolean => {
-    const base = symbol
-      .toUpperCase()
-      .replace(/^XYZ:/, '')
-      .replace(/USDT$|USD$|-USDC$/, '')
+    const base = symbol.toUpperCase().replace(/^XYZ:/, '').replace(/USD$/, '')
     return xyzDexAssets.has(base)
   }
 
@@ -112,20 +102,17 @@ export function CoinSourceEditor({
 
     const symbol = newCoin.toUpperCase().trim()
 
-    // For xyz dex assets (stocks, forex, commodities), use xyz: prefix without USDT
+    // For xyz dex assets (stocks, forex, commodities), use xyz: prefix
     let formattedSymbol: string
     if (isXyzDexAsset(symbol)) {
       // Remove xyz: prefix (case-insensitive) and any USD suffixes
-      const base = symbol
-        .replace(/^xyz:/i, '')
-        .replace(/USDT$|USD$|-USDC$/i, '')
+      const base = symbol.replace(/^xyz:/i, '').replace(/USD$/i, '')
       formattedSymbol = `xyz:${base}`
     } else if (isCMEFutures(symbol)) {
-      // CME futures root (ES, MNQ, NG, …) — recognized as a futures symbol, NOT
-      // crypto; keep the bare root (no USDT suffix).
+      // CME futures root (ES, MNQ, NG, …) — recognized as a futures symbol.
       formattedSymbol = symbol
     } else {
-      formattedSymbol = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`
+      formattedSymbol = symbol
     }
 
     if (!currentCoins.includes(formattedSymbol)) {
@@ -148,19 +135,16 @@ export function CoinSourceEditor({
     if (!newExcludedCoin.trim()) return
     const symbol = newExcludedCoin.toUpperCase().trim()
 
-    // For xyz dex assets, use xyz: prefix without USDT
+    // For xyz dex assets, use xyz: prefix
     let formattedSymbol: string
     if (isXyzDexAsset(symbol)) {
-      const base = symbol
-        .replace(/^xyz:/i, '')
-        .replace(/USDT$|USD$|-USDC$/i, '')
+      const base = symbol.replace(/^xyz:/i, '').replace(/USD$/i, '')
       formattedSymbol = `xyz:${base}`
     } else if (isCMEFutures(symbol)) {
-      // CME futures root (ES, MNQ, NG, …) — recognized as a futures symbol, NOT
-      // crypto; keep the bare root (no USDT suffix).
+      // CME futures root (ES, MNQ, NG, …) — recognized as a futures symbol.
       formattedSymbol = symbol
     } else {
-      formattedSymbol = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`
+      formattedSymbol = symbol
     }
 
     const currentExcluded = config.excluded_coins || []
@@ -265,7 +249,7 @@ export function CoinSourceEditor({
                 value={newCoin}
                 onChange={(e) => setNewCoin(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddCoin()}
-                placeholder="e.g. MNQ, ES, BTC, ETH"
+                placeholder="e.g. MNQ, ES"
                 className="flex-1 px-4 py-2 rounded-lg bg-vl-neo-bg border border-vl-neo-gold/20 text-vl-neo-text"
               />
               <button
@@ -321,7 +305,7 @@ export function CoinSourceEditor({
               value={newExcludedCoin}
               onChange={(e) => setNewExcludedCoin(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddExcludedCoin()}
-              placeholder="e.g. MNQ, ES, BTC, ETH"
+              placeholder="e.g. MNQ, ES"
               className="flex-1 px-4 py-2 rounded-lg text-sm bg-vl-neo-bg border border-vl-neo-gold/20 text-vl-neo-text"
             />
             <button
@@ -334,99 +318,6 @@ export function CoinSourceEditor({
           </div>
         )}
       </div>
-
-      {/* Hyperliquid All options — for hyper_all or mixed */}
-      {(effectiveSourceType === 'hyper_all' ||
-        effectiveSourceType === 'mixed') && (
-        <div className="p-4 rounded-lg bg-vl-neo-gold/5 border border-vl-neo-gold/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-vl-neo-gold" />
-              <span className="text-sm font-medium text-vl-neo-text">
-                {ts(coinSource.hyperAll, language)}{' '}
-                {ts(coinSource.dataSourceConfig, language)}
-              </span>
-            </div>
-          </div>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={config.use_hyper_all}
-              onChange={(e) =>
-                !disabled &&
-                onChange({ ...config, use_hyper_all: e.target.checked })
-              }
-              disabled={disabled}
-              className="w-5 h-5 rounded accent-vl-neo-gold"
-            />
-            <span className="text-vl-neo-text">
-              {ts(coinSource.useHyperAll, language)}
-            </span>
-          </label>
-          <p className="text-xs pl-8 text-vl-neo-text-muted mt-1">
-            {ts(coinSource.hyperAllDesc, language)}
-          </p>
-        </div>
-      )}
-
-      {/* Hyperliquid Main options — for hyper_main or mixed */}
-      {(effectiveSourceType === 'hyper_main' ||
-        effectiveSourceType === 'mixed') && (
-        <div className="p-4 rounded-lg bg-vl-neo-success/5 border border-vl-neo-success/20">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-vl-neo-success" />
-              <span className="text-sm font-medium text-vl-neo-text">
-                {ts(coinSource.hyperMain, language)}{' '}
-                {ts(coinSource.dataSourceConfig, language)}
-              </span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.use_hyper_main}
-                onChange={(e) =>
-                  !disabled &&
-                  onChange({ ...config, use_hyper_main: e.target.checked })
-                }
-                disabled={disabled}
-                className="w-5 h-5 rounded accent-vl-neo-success"
-              />
-              <span className="text-vl-neo-text">
-                {ts(coinSource.useHyperMain, language)}
-              </span>
-            </label>
-            {config.use_hyper_main && (
-              <div className="flex items-center gap-3 pl-8">
-                <span className="text-sm text-vl-neo-text-muted">
-                  {ts(coinSource.hyperMainLimit, language)}:
-                </span>
-                <VlSelect
-                  value={config.hyper_main_limit || 20}
-                  onChange={(val) =>
-                    !disabled &&
-                    onChange({
-                      ...config,
-                      hyper_main_limit: parseInt(val) || 20,
-                    })
-                  }
-                  disabled={disabled}
-                  options={[5, 10, 15, 20, 30, 50].map((n) => ({
-                    value: n,
-                    label: String(n),
-                  }))}
-                  className="px-3 py-1.5 rounded bg-vl-neo-bg border border-vl-neo-gold/20 text-vl-neo-text"
-                />
-              </div>
-            )}
-            <p className="text-xs text-vl-neo-text-muted">
-              {ts(coinSource.hyperMainDesc, language)}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

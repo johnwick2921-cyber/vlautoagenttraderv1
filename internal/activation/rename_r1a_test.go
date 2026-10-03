@@ -91,11 +91,12 @@ func TestResolveRequiresVlBin(t *testing.T) {
 			t.Fatalf("Resolve = %+v/%v, want a vl-bin release", rel, err)
 		}
 	})
-	t.Run("missing binary is refused", func(t *testing.T) {
+	t.Run("missing keeps the old lenient reading", func(t *testing.T) {
 		dir := t.TempDir()
 		manifestFor(t, dir, sha)
-		if _, err := Resolve(dir); err == nil || !strings.Contains(err.Error(), "no vl-bin") {
-			t.Fatalf("Resolve on a binaryless dir = %v, want the no-vl-bin refusal", err)
+		rel, err := Resolve(dir)
+		if err != nil || filepath.Base(rel.Binary) != "vl-bin" {
+			t.Fatalf("Resolve on a binaryless dir = %+v/%v, want the lenient vl-bin reading", rel, err)
 		}
 	})
 }

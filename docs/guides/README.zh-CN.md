@@ -56,7 +56,7 @@ sudo apt-get install libta-lib0-dev
 ### 最佳实践
 
 **1. 风险管理**
-- 从小金额开始（100-500 USDT）
+- 从小仓位开始（1 手 MNQ 合约）
 - 使用子账户增加安全性
 - 设置合理的杠杆限制
 - 监控每日亏损限制
@@ -83,15 +83,12 @@ sudo apt-get install libta-lib0-dev
 - 实时比较性能
 - 识别表现最佳的策略
 
-### 自定义币种池
-- 使用外部 API 进行币种选择
-- 结合 AI500 + OI Top 数据
+### 品种选择
+- 在策略工作室中使用静态品种列表
 - 按流动性和交易量过滤
 
-### 交易所集成
-- Binance Futures（中心化交易所）
-- Hyperliquid（去中心化交易所）
-- Aster DEX（兼容 Binance）
+### 券商
+- NinjaTrader 8（CME 期货 — 模拟盘执行）
 
 ---
 

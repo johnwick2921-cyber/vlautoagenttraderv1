@@ -21,24 +21,13 @@ import (
 	"vl/security"
 	"vl/store"
 	"vl/trader"
-	"vl/trader/aster"
-	"vl/trader/binance"
-	"vl/trader/bitget"
-	"vl/trader/bybit"
-	"vl/trader/gate"
-	hyperliquidtrader "vl/trader/hyperliquid"
-	"vl/trader/indodax"
-	"vl/trader/kucoin"
-	"vl/trader/lighter"
 	ntTrader "vl/trader/ninjatrader"
-	"vl/trader/okx"
 )
 
 // cachedTools holds the static tool definitions (built once, reused per message).
 var cachedTools = buildAgentTools()
 
 var (
-	binanceFuturesAPIBaseURL    = "https://fapi.binance.com"
 	marketDataHTTPClient        = http.DefaultClient
 	traderInitialBalanceFetcher = defaultTraderInitialBalanceFetcher
 )
@@ -61,7 +50,7 @@ func plannerToolDomainForText(text string) string {
 	if containsAny(lower, []string{"诊断", "排查", "为什么", "为啥", "失败", "报错", "异常", "停止", "没下单", "failed", "error", "diagnose", "debug", "logs", "stopped", "not trading"}) {
 		return "diagnosis"
 	}
-	if hasExplicitManagementDomainCue(text, "exchange") || containsAny(lower, []string{"交易所", "exchange", "apikey", "secret", "passphrase", "wallet address", "api凭证"}) {
+	if hasExplicitManagementDomainCue(text, "exchange") || containsAny(lower, []string{"交易所", "exchange", "apikey", "secret", "passphrase", "api凭证"}) {
 		return "exchange"
 	}
 	if hasExplicitManagementDomainCue(text, "model") || containsAny(lower, []string{"ai model", "模型", "provider", "api key", "custom_model", "custom api"}) {
@@ -73,10 +62,10 @@ func plannerToolDomainForText(text string) string {
 	if hasExplicitManagementDomainCue(text, "trader") || containsAny(lower, []string{"交易员", "trader", "启动", "停止交易员", "扫描间隔", "竞技场"}) {
 		return "trader"
 	}
-	if containsAny(lower, []string{"余额", "资产", "仓位", "持仓", "订单", "成交", "交易历史", "balance", "position", "positions", "trade history", "account", "钱包", "wallet"}) {
+	if containsAny(lower, []string{"余额", "资产", "仓位", "持仓", "订单", "成交", "交易历史", "balance", "position", "positions", "trade history", "account"}) {
 		return "account"
 	}
-	if containsAny(lower, []string{"行情", "价格", "k线", "kline", "market", "price", "btc", "eth", "sol", "usdt", "股票", "stock"}) {
+	if containsAny(lower, []string{"行情", "价格", "k线", "kline", "market", "price", "股票", "stock"}) {
 		return "market"
 	}
 	return "general"
@@ -85,7 +74,7 @@ func plannerToolDomainForText(text string) string {
 func plannerToolNamesForDomain(domain string) []string {
 	switch domain {
 	case "market":
-		return []string{"get_market_snapshot", "get_market_price", "get_kline", "search_stock"}
+		return []string{"get_market_price", "search_stock"}
 	case "account":
 		return []string{"get_balance", "get_positions", "get_trade_history", "get_exchange_configs"}
 	case "trader":
@@ -107,7 +96,7 @@ func plannerToolNamesForDomain(domain string) []string {
 			"get_strategies", "manage_strategy",
 			"manage_trader",
 			"get_balance", "get_positions", "get_trade_history",
-			"get_market_snapshot", "get_market_price", "get_kline", "search_stock",
+			"get_market_price", "search_stock",
 		}
 	}
 }
@@ -281,9 +270,9 @@ func strategyConfigSchema() map[string]any {
 					"coin_source": map[string]any{
 						"type": "object",
 						"properties": map[string]any{
-							"source_type":    map[string]any{"type": "string", "enum": []string{"static", "hyper_all", "hyper_main"}, "description": "Manual page coin source: static, hyper_all, hyper_main."},
-							"static_coins":   stringArraySchema("Static coin symbols such as BTCUSDT or ETHUSDT. Manual page allows at most 10. xyz: assets such as xyz:TSLA, xyz:GOLD, xyz:XYZ100 are also supported."),
-							"excluded_coins": stringArraySchema("Coin symbols to exclude from all sources."),
+							"source_type":    map[string]any{"type": "string", "enum": []string{"static"}, "description": "Manual page coin source: static."},
+							"static_coins":   stringArraySchema("Static symbols. Manual page allows at most 10. xyz: assets such as xyz:TSLA, xyz:GOLD, xyz:XYZ100 are also supported."),
+							"excluded_coins": stringArraySchema("Symbols to exclude from all sources."),
 						},
 					},
 					"indicators": map[string]any{
@@ -319,8 +308,6 @@ func strategyConfigSchema() map[string]any {
 					"risk_control": map[string]any{
 						"type": "object",
 						"properties": map[string]any{
-							"btc_eth_max_leverage":  map[string]any{"type": "number", "minimum": 1, "maximum": 20},
-							"altcoin_max_leverage":  map[string]any{"type": "number", "minimum": 1, "maximum": 20},
 							"min_risk_reward_ratio": map[string]any{"type": "number", "minimum": 1, "maximum": 10, "description": "Manual page range 1-10, step 0.5."},
 							"min_confidence":        map[string]any{"type": "number", "minimum": 50, "maximum": 100, "description": "Manual page range 50-100."},
 						},
@@ -340,9 +327,9 @@ func strategyConfigSchema() map[string]any {
 				"description": "Grid trading only. Do not include this for ai_trading.",
 				"type":        "object",
 				"properties": map[string]any{
-					"symbol":                  map[string]any{"type": "string", "enum": []string{"BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT"}, "description": "Manual page dropdown options for grid trading symbols."},
+					"symbol":                  map[string]any{"type": "string", "description": "Grid trading symbol."},
 					"grid_count":              map[string]any{"type": "number", "minimum": 5, "maximum": 50, "description": "Manual page range 5-50."},
-					"total_investment":        map[string]any{"type": "number", "minimum": 100, "description": "User's actual capital/margin budget for the grid strategy, not leveraged notional exposure. Minimum 100 USDT."},
+					"total_investment":        map[string]any{"type": "number", "minimum": 100, "description": "User's actual capital/margin budget for the grid strategy, not leveraged notional exposure. Minimum 100 USD."},
 					"leverage":                map[string]any{"type": "number", "minimum": 1, "maximum": 5, "description": "Manual page range 1-5."},
 					"upper_price":             map[string]any{"type": "number"},
 					"lower_price":             map[string]any{"type": "number"},
@@ -377,7 +364,7 @@ func modelConfigFieldsSchema() map[string]any {
 		},
 		"provider": map[string]any{
 			"type":        "string",
-			"description": "Provider slug such as openai, claude, gemini, deepseek, qwen, kimi, grok, minimax, claw402, blockrun-base, or blockrun-sol.",
+			"description": "Provider slug such as openai, claude, gemini, deepseek, qwen, kimi, grok, minimax.",
 		},
 		"name": map[string]any{
 			"type":        "string",
@@ -389,11 +376,11 @@ func modelConfigFieldsSchema() map[string]any {
 		},
 		"api_key": map[string]any{
 			"type":        "string",
-			"description": "Provider credential. For standard providers this is an API key; for claw402/blockrun it is the wallet private key. Sensitive and never returned in full.",
+			"description": "Provider credential. For standard providers this is an API key. Sensitive and never returned in full.",
 		},
 		"custom_api_url": map[string]any{
 			"type":        "string",
-			"description": "Custom API base URL or endpoint override. Optional for standard providers; not used by claw402/blockrun.",
+			"description": "Custom API base URL or endpoint override. Optional for standard providers.",
 		},
 		"custom_model_name": map[string]any{
 			"type":        "string",
@@ -410,7 +397,7 @@ func exchangeConfigFieldsSchema() map[string]any {
 		},
 		"exchange_type": map[string]any{
 			"type":        "string",
-			"description": "Exchange type such as binance, bybit, okx, bitget, gate, kucoin, hyperliquid, aster, lighter, or indodax.",
+			"description": "Exchange type.",
 		},
 		"account_name": map[string]any{
 			"type":        "string",
@@ -420,19 +407,10 @@ func exchangeConfigFieldsSchema() map[string]any {
 			"type":        "boolean",
 			"description": "Whether this exchange binding should be enabled.",
 		},
-		"api_key":                     map[string]any{"type": "string", "description": "API key for CEX-style exchanges."},
-		"secret_key":                  map[string]any{"type": "string", "description": "Secret key for CEX-style exchanges."},
-		"passphrase":                  map[string]any{"type": "string", "description": "Optional passphrase, required by exchanges like OKX, Bitget, and KuCoin."},
-		"testnet":                     map[string]any{"type": "boolean", "description": "Whether to use the exchange testnet/sandbox."},
-		"hyperliquid_wallet_addr":     map[string]any{"type": "string", "description": "Hyperliquid wallet address."},
-		"hyperliquid_unified_account": map[string]any{"type": "boolean", "description": "Whether Hyperliquid unified account mode is enabled."},
-		"aster_user":                  map[string]any{"type": "string", "description": "Aster user address."},
-		"aster_signer":                map[string]any{"type": "string", "description": "Aster signer address."},
-		"aster_private_key":           map[string]any{"type": "string", "description": "Aster private key."},
-		"lighter_wallet_addr":         map[string]any{"type": "string", "description": "LIGHTER wallet address."},
-		"lighter_private_key":         map[string]any{"type": "string", "description": "LIGHTER private key."},
-		"lighter_api_key_private_key": map[string]any{"type": "string", "description": "LIGHTER API key private key."},
-		"lighter_api_key_index":       map[string]any{"type": "number", "description": "LIGHTER API key index."},
+		"api_key":    map[string]any{"type": "string", "description": "API key for CEX-style exchanges."},
+		"secret_key": map[string]any{"type": "string", "description": "Secret key for CEX-style exchanges."},
+		"passphrase": map[string]any{"type": "string", "description": "Optional passphrase."},
+		"testnet":    map[string]any{"type": "boolean", "description": "Whether to use the exchange testnet/sandbox."},
 	}
 }
 
@@ -531,7 +509,7 @@ func buildAgentTools() []mcp.Tool {
 			Type: "function",
 			Function: mcp.FunctionDef{
 				Name:        "manage_exchange_config",
-				Description: "Create, update, or delete an exchange account binding. Use this when the user asks to add/edit/remove an exchange account, API key, secret, passphrase, wallet address, or account name. Prefer passing exact field values instead of vague summaries. Sensitive fields are stored securely and are never returned in full.",
+				Description: "Create, update, or delete an exchange account binding. Use this when the user asks to add/edit/remove an exchange account, API key, secret, or account name. Prefer passing exact field values instead of vague summaries. Sensitive fields are stored securely and are never returned in full.",
 				Parameters: map[string]any{
 					"type": "object",
 					"properties": map[string]any{
@@ -539,23 +517,14 @@ func buildAgentTools() []mcp.Tool {
 							"type": "string",
 							"enum": []string{"create", "update", "delete"},
 						},
-						"exchange_id":                 exchangeConfigFieldsSchema()["exchange_id"],
-						"exchange_type":               exchangeConfigFieldsSchema()["exchange_type"],
-						"account_name":                exchangeConfigFieldsSchema()["account_name"],
-						"enabled":                     exchangeConfigFieldsSchema()["enabled"],
-						"api_key":                     exchangeConfigFieldsSchema()["api_key"],
-						"secret_key":                  exchangeConfigFieldsSchema()["secret_key"],
-						"passphrase":                  exchangeConfigFieldsSchema()["passphrase"],
-						"testnet":                     exchangeConfigFieldsSchema()["testnet"],
-						"hyperliquid_wallet_addr":     exchangeConfigFieldsSchema()["hyperliquid_wallet_addr"],
-						"hyperliquid_unified_account": exchangeConfigFieldsSchema()["hyperliquid_unified_account"],
-						"aster_user":                  exchangeConfigFieldsSchema()["aster_user"],
-						"aster_signer":                exchangeConfigFieldsSchema()["aster_signer"],
-						"aster_private_key":           exchangeConfigFieldsSchema()["aster_private_key"],
-						"lighter_wallet_addr":         exchangeConfigFieldsSchema()["lighter_wallet_addr"],
-						"lighter_private_key":         exchangeConfigFieldsSchema()["lighter_private_key"],
-						"lighter_api_key_private_key": exchangeConfigFieldsSchema()["lighter_api_key_private_key"],
-						"lighter_api_key_index":       exchangeConfigFieldsSchema()["lighter_api_key_index"],
+						"exchange_id":   exchangeConfigFieldsSchema()["exchange_id"],
+						"exchange_type": exchangeConfigFieldsSchema()["exchange_type"],
+						"account_name":  exchangeConfigFieldsSchema()["account_name"],
+						"enabled":       exchangeConfigFieldsSchema()["enabled"],
+						"api_key":       exchangeConfigFieldsSchema()["api_key"],
+						"secret_key":    exchangeConfigFieldsSchema()["secret_key"],
+						"passphrase":    exchangeConfigFieldsSchema()["passphrase"],
+						"testnet":       exchangeConfigFieldsSchema()["testnet"],
 					},
 					"required": []string{"action"},
 				},
@@ -681,7 +650,7 @@ func buildAgentTools() []mcp.Tool {
 			Type: "function",
 			Function: mcp.FunctionDef{
 				Name:        "execute_trade",
-				Description: "Execute a trade order (crypto or US stocks). Use this only when the user explicitly asks to trade. For stocks (e.g. AAPL, TSLA), use open_long to buy and close_long to sell. This creates a pending trade first; it does not execute immediately. Large orders require an extra confirmation with 确认大额 trade_xxx / confirm large trade_xxx, and pending trades expire after 5 minutes.",
+				Description: "Execute a trade order (US stocks). Use this only when the user explicitly asks to trade. For stocks (e.g. AAPL, TSLA), use open_long to buy and close_long to sell. This creates a pending trade first; it does not execute immediately. Large orders require an extra confirmation with 确认大额 trade_xxx / confirm large trade_xxx, and pending trades expire after 5 minutes.",
 				Parameters: map[string]any{
 					"type": "object",
 					"properties": map[string]any{
@@ -692,7 +661,7 @@ func buildAgentTools() []mcp.Tool {
 						},
 						"symbol": map[string]any{
 							"type":        "string",
-							"description": "Trading symbol. For crypto: BTCUSDT, ETHUSDT. For US stocks: AAPL, TSLA, NVDA (no suffix needed).",
+							"description": "Trading symbol. For US stocks: AAPL, TSLA, NVDA (no suffix needed).",
 						},
 						"quantity": map[string]any{
 							"type":        "number",
@@ -735,63 +704,13 @@ func buildAgentTools() []mcp.Tool {
 			Type: "function",
 			Function: mcp.FunctionDef{
 				Name:        "get_market_price",
-				Description: "Get the current market price for a crypto or stock symbol.",
+				Description: "Get the current market price for a stock symbol.",
 				Parameters: map[string]any{
 					"type": "object",
 					"properties": map[string]any{
 						"symbol": map[string]any{
 							"type":        "string",
-							"description": "Trading symbol, e.g. BTCUSDT for crypto, AAPL for stocks",
-						},
-					},
-					"required": []string{"symbol"},
-				},
-			},
-		},
-		{
-			Type: "function",
-			Function: mcp.FunctionDef{
-				Name:        "get_market_snapshot",
-				Description: "Get a real-time crypto market snapshot for analysis. Returns current price, 24h change, high/low, volume, funding rate, open interest, and recent K-line structure in one tool call. Prefer this when the user asks to analyze a coin, assess current行情, or wants a richer market read than a single price.",
-				Parameters: map[string]any{
-					"type": "object",
-					"properties": map[string]any{
-						"symbol": map[string]any{
-							"type":        "string",
-							"description": "Crypto trading symbol, for example BTC, ETH, BTCUSDT, or ETHUSDT.",
-						},
-						"interval": map[string]any{
-							"type":        "string",
-							"description": "Kline interval for the structure snapshot, for example 5m, 15m, 1h, or 4h. Defaults to 15m.",
-						},
-						"limit": map[string]any{
-							"type":        "number",
-							"description": "Number of recent candles to fetch for the structure snapshot. Defaults to 20 and is capped at 100.",
-						},
-					},
-					"required": []string{"symbol"},
-				},
-			},
-		},
-		{
-			Type: "function",
-			Function: mcp.FunctionDef{
-				Name:        "get_kline",
-				Description: "Get recent kline/candlestick data for a crypto symbol. Use this when the user asks for recent candles, K 线, recent price structure, or a short-term chart context.",
-				Parameters: map[string]any{
-					"type": "object",
-					"properties": map[string]any{
-						"symbol": map[string]any{
-							"type":        "string",
-							"description": "Crypto trading symbol, for example BTC, ETH, BTCUSDT, or ETHUSDT.",
-						},
-						"interval": map[string]any{
-							"type":        "string",
-							"description": "Kline interval, for example 1m, 5m, 15m, 1h, 4h, or 1d. Defaults to 15m.",
-						},
-						"limit": map[string]any{
-							"type":        "number",
-							"description": "Number of recent candles to fetch. Defaults to 50 and is capped at 300.",
+							"description": "Trading symbol, e.g. AAPL for stocks",
 						},
 					},
 					"required": []string{"symbol"},
@@ -818,7 +737,7 @@ func buildAgentTools() []mcp.Tool {
 			Type: "function",
 			Function: mcp.FunctionDef{
 				Name:        "get_candidate_coins",
-				Description: "Get the current candidate coin list for a trader or strategy, including AI500 coin-source settings and the selected symbols.",
+				Description: "Get the current candidate symbol list for a trader or strategy, including coin-source settings and the selected symbols.",
 				Parameters: map[string]any{
 					"type": "object",
 					"properties": map[string]any{
@@ -831,36 +750,6 @@ func buildAgentTools() []mcp.Tool {
 							"description": "Optional strategy id. Use this when asking about a strategy template directly.",
 						},
 					},
-				},
-			},
-		},
-		{
-			Type: "function",
-			Function: mcp.FunctionDef{
-				Name:        "get_watchlist",
-				Description: "Get the current Sentinel watchlist of monitored crypto symbols. Use this when the user asks which coins are being watched or monitored right now.",
-				Parameters:  map[string]any{"type": "object", "properties": map[string]any{}},
-			},
-		},
-		{
-			Type: "function",
-			Function: mcp.FunctionDef{
-				Name:        "manage_watchlist",
-				Description: "Add or remove a monitored crypto symbol from the Sentinel watchlist at runtime. Use this when the user asks to watch, monitor, unwatch, or stop monitoring a coin.",
-				Parameters: map[string]any{
-					"type": "object",
-					"properties": map[string]any{
-						"action": map[string]any{
-							"type":        "string",
-							"enum":        []string{"add", "remove"},
-							"description": "Whether to add or remove the symbol from the watchlist.",
-						},
-						"symbol": map[string]any{
-							"type":        "string",
-							"description": "Crypto symbol to watch, such as BTC, ETH, SOL, BTCUSDT, or ETHUSDT.",
-						},
-					},
-					"required": []string{"action", "symbol"},
 				},
 			},
 		},
@@ -902,42 +791,26 @@ func (a *Agent) handleToolCall(ctx context.Context, storeUserID string, userID i
 		return a.toolGetBalance(storeUserID)
 	case "get_market_price":
 		return a.toolGetMarketPrice(tc.Function.Arguments)
-	case "get_market_snapshot":
-		return a.toolGetMarketSnapshot(tc.Function.Arguments)
-	case "get_kline":
-		return a.toolGetKline(tc.Function.Arguments)
 	case "get_trade_history":
 		return a.toolGetTradeHistory(tc.Function.Arguments)
 	case "get_candidate_coins":
 		return a.toolGetCandidateCoins(storeUserID, userID, tc.Function.Arguments)
-	case "get_watchlist":
-		return a.toolGetWatchlist(lang)
-	case "manage_watchlist":
-		return a.toolManageWatchlist(lang, tc.Function.Arguments)
 	default:
 		return fmt.Sprintf(`{"error": "unknown tool: %s"}`, tc.Function.Name)
 	}
 }
 
 type safeExchangeToolConfig struct {
-	ID                    string `json:"id"`
-	ExchangeType          string `json:"exchange_type"`
-	AccountName           string `json:"account_name"`
-	Name                  string `json:"name"`
-	Type                  string `json:"type"`
-	Enabled               bool   `json:"enabled"`
-	HasAPIKey             bool   `json:"has_api_key"`
-	HasSecretKey          bool   `json:"has_secret_key"`
-	HasPassphrase         bool   `json:"has_passphrase"`
-	Testnet               bool   `json:"testnet"`
-	HyperliquidWalletAddr string `json:"hyperliquid_wallet_addr,omitempty"`
-	HasAsterPrivateKey    bool   `json:"has_aster_private_key"`
-	AsterUser             string `json:"aster_user,omitempty"`
-	AsterSigner           string `json:"aster_signer,omitempty"`
-	LighterWalletAddr     string `json:"lighter_wallet_addr,omitempty"`
-	LighterAPIKeyIndex    int    `json:"lighter_api_key_index,omitempty"`
-	HasLighterPrivateKey  bool   `json:"has_lighter_private_key"`
-	HasLighterAPIKey      bool   `json:"has_lighter_api_key_private_key"`
+	ID            string `json:"id"`
+	ExchangeType  string `json:"exchange_type"`
+	AccountName   string `json:"account_name"`
+	Name          string `json:"name"`
+	Type          string `json:"type"`
+	Enabled       bool   `json:"enabled"`
+	HasAPIKey     bool   `json:"has_api_key"`
+	HasSecretKey  bool   `json:"has_secret_key"`
+	HasPassphrase bool   `json:"has_passphrase"`
+	Testnet       bool   `json:"testnet"`
 }
 
 type safeModelToolConfig struct {
@@ -1024,24 +897,16 @@ type manageTraderArgs struct {
 
 func safeExchangeForTool(ex *store.Exchange) safeExchangeToolConfig {
 	return safeExchangeToolConfig{
-		ID:                    ex.ID,
-		ExchangeType:          ex.ExchangeType,
-		AccountName:           ex.AccountName,
-		Name:                  ex.Name,
-		Type:                  ex.Type,
-		Enabled:               ex.Enabled,
-		HasAPIKey:             ex.APIKey != "",
-		HasSecretKey:          ex.SecretKey != "",
-		HasPassphrase:         ex.Passphrase != "",
-		Testnet:               ex.Testnet,
-		HyperliquidWalletAddr: ex.HyperliquidWalletAddr,
-		HasAsterPrivateKey:    ex.AsterPrivateKey != "",
-		AsterUser:             ex.AsterUser,
-		AsterSigner:           ex.AsterSigner,
-		LighterWalletAddr:     ex.LighterWalletAddr,
-		LighterAPIKeyIndex:    ex.LighterAPIKeyIndex,
-		HasLighterPrivateKey:  ex.LighterPrivateKey != "",
-		HasLighterAPIKey:      ex.LighterAPIKeyPrivateKey != "",
+		ID:            ex.ID,
+		ExchangeType:  ex.ExchangeType,
+		AccountName:   ex.AccountName,
+		Name:          ex.Name,
+		Type:          ex.Type,
+		Enabled:       ex.Enabled,
+		HasAPIKey:     ex.APIKey != "",
+		HasSecretKey:  ex.SecretKey != "",
+		HasPassphrase: ex.Passphrase != "",
+		Testnet:       ex.Testnet,
 	}
 }
 
@@ -1062,40 +927,6 @@ func defaultTraderInitialBalanceFetcher(exchangeCfg *store.Exchange, userID stri
 
 func buildTraderExchangeProbe(exchangeCfg *store.Exchange, userID string) (trader.Trader, error) {
 	switch exchangeCfg.ExchangeType {
-	case "binance":
-		return binance.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID), nil
-	case "bybit":
-		return bybit.NewBybitTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey)), nil
-	case "okx":
-		return okx.NewOKXTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), string(exchangeCfg.Passphrase)), nil
-	case "bitget":
-		return bitget.NewBitgetTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), string(exchangeCfg.Passphrase)), nil
-	case "gate":
-		return gate.NewGateTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey)), nil
-	case "kucoin":
-		return kucoin.NewKuCoinTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), string(exchangeCfg.Passphrase)), nil
-	case "indodax":
-		return indodax.NewIndodaxTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey)), nil
-	case "hyperliquid":
-		return hyperliquidtrader.NewHyperliquidTrader(
-			string(exchangeCfg.APIKey),
-			exchangeCfg.HyperliquidWalletAddr,
-			exchangeCfg.Testnet,
-			exchangeCfg.HyperliquidUnifiedAcct,
-		)
-	case "aster":
-		return aster.NewAsterTrader(
-			exchangeCfg.AsterUser,
-			exchangeCfg.AsterSigner,
-			string(exchangeCfg.AsterPrivateKey),
-		)
-	case "lighter":
-		return lighter.NewLighterTraderV2(
-			exchangeCfg.LighterWalletAddr,
-			string(exchangeCfg.LighterAPIKeyPrivateKey),
-			exchangeCfg.LighterAPIKeyIndex,
-			false,
-		)
 	case "ninjatrader":
 		return ntTrader.New(ntTrader.Config{
 			DataDir: exchangeCfg.NTDataDir,
@@ -1142,17 +973,6 @@ func safeModelForTool(model *store.AIModel) safeModelToolConfig {
 		HasAPIKey:       model.APIKey != "",
 		CustomAPIURL:    model.CustomAPIURL,
 		CustomModelName: model.CustomModelName,
-	}
-	if agentProviderSupportsUSDCBalance(model.Provider) {
-		privateKey := strings.TrimSpace(string(model.APIKey))
-		if privateKey != "" {
-			if walletAddress, err := agentWalletAddressFromPrivateKey(privateKey); err == nil && strings.TrimSpace(walletAddress) != "" {
-				safeModel.WalletAddress = walletAddress
-				if balance, balanceErr := agentQueryUSDCBalanceCached(walletAddress); balanceErr == nil {
-					safeModel.BalanceUSDC = fmt.Sprintf("%.6f", balance)
-				}
-			}
-		}
 	}
 	return safeModel
 }
@@ -1460,24 +1280,18 @@ func (a *Agent) toolManageExchangeConfig(storeUserID, argsJSON string) string {
 		return `{"error":"store unavailable"}`
 	}
 	var args struct {
-		Action                    string `json:"action"`
-		ExchangeID                string `json:"exchange_id"`
-		ExchangeType              string `json:"exchange_type"`
-		AccountName               string `json:"account_name"`
-		Enabled                   *bool  `json:"enabled"`
-		APIKey                    string `json:"api_key"`
-		SecretKey                 string `json:"secret_key"`
-		Passphrase                string `json:"passphrase"`
-		Testnet                   *bool  `json:"testnet"`
-		HyperliquidWalletAddr     string `json:"hyperliquid_wallet_addr"`
-		HyperliquidUnifiedAccount *bool  `json:"hyperliquid_unified_account"`
-		AsterUser                 string `json:"aster_user"`
-		AsterSigner               string `json:"aster_signer"`
-		AsterPrivateKey           string `json:"aster_private_key"`
-		LighterWalletAddr         string `json:"lighter_wallet_addr"`
-		LighterPrivateKey         string `json:"lighter_private_key"`
-		LighterAPIKeyPrivateKey   string `json:"lighter_api_key_private_key"`
-		LighterAPIKeyIndex        *int   `json:"lighter_api_key_index"`
+		Action               string `json:"action"`
+		ExchangeID           string `json:"exchange_id"`
+		ExchangeType         string `json:"exchange_type"`
+		AccountName          string `json:"account_name"`
+		Enabled              *bool  `json:"enabled"`
+		APIKey               string `json:"api_key"`
+		SecretKey            string `json:"secret_key"`
+		Passphrase           string `json:"passphrase"`
+		Testnet              *bool  `json:"testnet"`
+		NTDataDir            string `json:"nt_data_dir"`
+		NTInstrumentName     string `json:"nt_instrument_name"`
+		NTDefaultContractQty int    `json:"nt_default_contract_qty"`
 	}
 	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
 		return fmt.Sprintf(`{"error":"invalid arguments: %s"}`, err)
@@ -1501,27 +1315,13 @@ func (a *Agent) toolManageExchangeConfig(storeUserID, argsJSON string) string {
 		if args.Testnet != nil {
 			testnet = *args.Testnet
 		}
-		unified := true
-		if args.HyperliquidUnifiedAccount != nil {
-			unified = *args.HyperliquidUnifiedAccount
-		}
-		lighterIndex := 0
-		if args.LighterAPIKeyIndex != nil {
-			lighterIndex = *args.LighterAPIKeyIndex
-		}
 		if err := (exchangeConfigValidator{
-			exchangeType:            exchangeType,
-			enabled:                 enabled,
-			apiKey:                  strings.TrimSpace(args.APIKey),
-			secretKey:               strings.TrimSpace(args.SecretKey),
-			passphrase:              strings.TrimSpace(args.Passphrase),
-			hyperliquidWalletAddr:   strings.TrimSpace(args.HyperliquidWalletAddr),
-			asterUser:               strings.TrimSpace(args.AsterUser),
-			asterSigner:             strings.TrimSpace(args.AsterSigner),
-			asterPrivateKey:         strings.TrimSpace(args.AsterPrivateKey),
-			lighterWalletAddr:       strings.TrimSpace(args.LighterWalletAddr),
-			lighterPrivateKey:       strings.TrimSpace(args.LighterPrivateKey),
-			lighterAPIKeyPrivateKey: strings.TrimSpace(args.LighterAPIKeyPrivateKey),
+			exchangeType: exchangeType,
+			enabled:      enabled,
+			apiKey:       strings.TrimSpace(args.APIKey),
+			secretKey:    strings.TrimSpace(args.SecretKey),
+			passphrase:   strings.TrimSpace(args.Passphrase),
+			ntDataDir:    strings.TrimSpace(args.NTDataDir),
 		}).Validate(); err != nil {
 			return fmt.Sprintf(`{"error":"%s"}`, err)
 		}
@@ -1537,16 +1337,9 @@ func (a *Agent) toolManageExchangeConfig(storeUserID, argsJSON string) string {
 			strings.TrimSpace(args.SecretKey),
 			strings.TrimSpace(args.Passphrase),
 			testnet,
-			strings.TrimSpace(args.HyperliquidWalletAddr),
-			unified,
-			strings.TrimSpace(args.AsterUser),
-			strings.TrimSpace(args.AsterSigner),
-			strings.TrimSpace(args.AsterPrivateKey),
-			strings.TrimSpace(args.LighterWalletAddr),
-			strings.TrimSpace(args.LighterPrivateKey),
-			strings.TrimSpace(args.LighterAPIKeyPrivateKey),
-			lighterIndex,
-			"", "", 0, // NinjaTrader fields not exposed via the agent tool
+			strings.TrimSpace(args.NTDataDir),
+			strings.TrimSpace(args.NTInstrumentName),
+			args.NTDefaultContractQty,
 		)
 		if err != nil {
 			return fmt.Sprintf(`{"error":"failed to create exchange config: %s"}`, err)
@@ -1596,30 +1389,6 @@ func (a *Agent) toolManageExchangeConfig(storeUserID, argsJSON string) string {
 		if args.Testnet != nil {
 			testnet = *args.Testnet
 		}
-		unified := existing.HyperliquidUnifiedAcct
-		if args.HyperliquidUnifiedAccount != nil {
-			unified = *args.HyperliquidUnifiedAccount
-		}
-		lighterIndex := existing.LighterAPIKeyIndex
-		if args.LighterAPIKeyIndex != nil {
-			lighterIndex = *args.LighterAPIKeyIndex
-		}
-		hyperWallet := existing.HyperliquidWalletAddr
-		if strings.TrimSpace(args.HyperliquidWalletAddr) != "" {
-			hyperWallet = strings.TrimSpace(args.HyperliquidWalletAddr)
-		}
-		asterUser := existing.AsterUser
-		if strings.TrimSpace(args.AsterUser) != "" {
-			asterUser = strings.TrimSpace(args.AsterUser)
-		}
-		asterSigner := existing.AsterSigner
-		if strings.TrimSpace(args.AsterSigner) != "" {
-			asterSigner = strings.TrimSpace(args.AsterSigner)
-		}
-		lighterWallet := existing.LighterWalletAddr
-		if strings.TrimSpace(args.LighterWalletAddr) != "" {
-			lighterWallet = strings.TrimSpace(args.LighterWalletAddr)
-		}
 		effectiveAPIKey := strings.TrimSpace(string(existing.APIKey))
 		if trimmed := strings.TrimSpace(args.APIKey); trimmed != "" {
 			effectiveAPIKey = trimmed
@@ -1632,31 +1401,25 @@ func (a *Agent) toolManageExchangeConfig(storeUserID, argsJSON string) string {
 		if trimmed := strings.TrimSpace(args.Passphrase); trimmed != "" {
 			effectivePassphrase = trimmed
 		}
-		effectiveAsterPrivateKey := strings.TrimSpace(string(existing.AsterPrivateKey))
-		if trimmed := strings.TrimSpace(args.AsterPrivateKey); trimmed != "" {
-			effectiveAsterPrivateKey = trimmed
+		ntDataDir := existing.NTDataDir
+		if trimmed := strings.TrimSpace(args.NTDataDir); trimmed != "" {
+			ntDataDir = trimmed
 		}
-		effectiveLighterPrivateKey := strings.TrimSpace(string(existing.LighterPrivateKey))
-		if trimmed := strings.TrimSpace(args.LighterPrivateKey); trimmed != "" {
-			effectiveLighterPrivateKey = trimmed
+		ntInstrument := existing.NTInstrumentName
+		if trimmed := strings.TrimSpace(args.NTInstrumentName); trimmed != "" {
+			ntInstrument = trimmed
 		}
-		effectiveLighterAPIKeyPrivateKey := strings.TrimSpace(string(existing.LighterAPIKeyPrivateKey))
-		if trimmed := strings.TrimSpace(args.LighterAPIKeyPrivateKey); trimmed != "" {
-			effectiveLighterAPIKeyPrivateKey = trimmed
+		ntQty := existing.NTDefaultContractQty
+		if args.NTDefaultContractQty != 0 {
+			ntQty = args.NTDefaultContractQty
 		}
 		validator := exchangeConfigValidator{
-			exchangeType:            existing.ExchangeType,
-			enabled:                 true,
-			apiKey:                  effectiveAPIKey,
-			secretKey:               effectiveSecretKey,
-			passphrase:              effectivePassphrase,
-			hyperliquidWalletAddr:   hyperWallet,
-			asterUser:               asterUser,
-			asterSigner:             asterSigner,
-			asterPrivateKey:         effectiveAsterPrivateKey,
-			lighterWalletAddr:       lighterWallet,
-			lighterPrivateKey:       effectiveLighterPrivateKey,
-			lighterAPIKeyPrivateKey: effectiveLighterAPIKeyPrivateKey,
+			exchangeType: existing.ExchangeType,
+			enabled:      true,
+			apiKey:       effectiveAPIKey,
+			secretKey:    effectiveSecretKey,
+			passphrase:   effectivePassphrase,
+			ntDataDir:    ntDataDir,
 		}
 		if err := validator.Validate(); err != nil {
 			return fmt.Sprintf(`{"error":"%s"}`, err)
@@ -1669,16 +1432,7 @@ func (a *Agent) toolManageExchangeConfig(storeUserID, argsJSON string) string {
 			strings.TrimSpace(args.SecretKey),
 			strings.TrimSpace(args.Passphrase),
 			testnet,
-			hyperWallet,
-			unified,
-			asterUser,
-			asterSigner,
-			strings.TrimSpace(args.AsterPrivateKey),
-			lighterWallet,
-			strings.TrimSpace(args.LighterPrivateKey),
-			strings.TrimSpace(args.LighterAPIKeyPrivateKey),
-			lighterIndex,
-			"", "", 0, // NinjaTrader fields not exposed via the agent tool
+			ntDataDir, ntInstrument, ntQty,
 		); err != nil {
 			return fmt.Sprintf(`{"error":"failed to update exchange config: %s"}`, err)
 		}
@@ -3010,217 +2764,6 @@ func (a *Agent) toolGetMarketPrice(argsJSON string) string {
 	return fmt.Sprintf(`{"error": "could not get price for %s"}`, sym)
 }
 
-func binanceFuturesGET(path string, out any) error {
-	req, err := http.NewRequest(http.MethodGet, binanceFuturesAPIBaseURL+path, nil)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-	defer cancel()
-	req = req.WithContext(ctx)
-
-	resp, err := marketDataHTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("source returned status %d", resp.StatusCode)
-	}
-	return json.NewDecoder(resp.Body).Decode(out)
-}
-
-func (a *Agent) toolGetMarketSnapshot(argsJSON string) string {
-	var args struct {
-		Symbol   string `json:"symbol"`
-		Interval string `json:"interval"`
-		Limit    int    `json:"limit"`
-	}
-	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
-		return fmt.Sprintf(`{"error":"invalid arguments: %s"}`, err)
-	}
-
-	symbol := strings.ToUpper(strings.TrimSpace(args.Symbol))
-	if symbol == "" {
-		return `{"error":"symbol is required"}`
-	}
-	if isStockSymbol(symbol) || isCMEFuturesChatSymbol(symbol) {
-		return `{"error":"get_market_snapshot currently supports crypto symbols only"}`
-	}
-	if !strings.HasSuffix(symbol, "USDT") {
-		symbol += "USDT"
-	}
-
-	interval := strings.TrimSpace(strings.ToLower(args.Interval))
-	if interval == "" {
-		interval = "15m"
-	}
-	if !validKlineInterval(interval) {
-		return fmt.Sprintf(`{"error":"invalid interval %q"}`, interval)
-	}
-
-	limit := args.Limit
-	switch {
-	case limit <= 0:
-		limit = 20
-	case limit > 100:
-		limit = 100
-	}
-
-	var ticker24h struct {
-		Symbol             string `json:"symbol"`
-		LastPrice          string `json:"lastPrice"`
-		PriceChange        string `json:"priceChange"`
-		PriceChangePercent string `json:"priceChangePercent"`
-		HighPrice          string `json:"highPrice"`
-		LowPrice           string `json:"lowPrice"`
-		Volume             string `json:"volume"`
-		QuoteVolume        string `json:"quoteVolume"`
-		Count              int64  `json:"count"`
-	}
-	if err := binanceFuturesGET("/fapi/v1/ticker/24hr?symbol="+symbol, &ticker24h); err != nil {
-		return fmt.Sprintf(`{"error":"failed to fetch 24h ticker for %s: %s"}`, symbol, err)
-	}
-
-	var premiumIndex struct {
-		Symbol          string `json:"symbol"`
-		MarkPrice       string `json:"markPrice"`
-		IndexPrice      string `json:"indexPrice"`
-		LastFundingRate string `json:"lastFundingRate"`
-		NextFundingTime int64  `json:"nextFundingTime"`
-		Time            int64  `json:"time"`
-	}
-	if err := binanceFuturesGET("/fapi/v1/premiumIndex?symbol="+symbol, &premiumIndex); err != nil {
-		return fmt.Sprintf(`{"error":"failed to fetch funding data for %s: %s"}`, symbol, err)
-	}
-
-	var openInterest struct {
-		OpenInterest string `json:"openInterest"`
-		Symbol       string `json:"symbol"`
-		Time         int64  `json:"time"`
-	}
-	if err := binanceFuturesGET("/fapi/v1/openInterest?symbol="+symbol, &openInterest); err != nil {
-		return fmt.Sprintf(`{"error":"failed to fetch open interest for %s: %s"}`, symbol, err)
-	}
-
-	var rawKlines [][]any
-	if err := binanceFuturesGET(fmt.Sprintf("/fapi/v1/klines?symbol=%s&interval=%s&limit=%d", symbol, interval, limit), &rawKlines); err != nil {
-		return fmt.Sprintf(`{"error":"failed to fetch kline for %s: %s"}`, symbol, err)
-	}
-	if len(rawKlines) == 0 {
-		return fmt.Sprintf(`{"error":"empty kline response for %s"}`, symbol)
-	}
-
-	klines := make([]map[string]any, 0, len(rawKlines))
-	highestHigh := 0.0
-	lowestLow := 0.0
-	firstClose := 0.0
-	lastClose := 0.0
-	totalVolume := 0.0
-	for i, row := range rawKlines {
-		if len(row) < 7 {
-			continue
-		}
-		openVal := toSnapshotFloat(row[1])
-		highVal := toSnapshotFloat(row[2])
-		lowVal := toSnapshotFloat(row[3])
-		closeVal := toSnapshotFloat(row[4])
-		volumeVal := toSnapshotFloat(row[5])
-		if i == 0 {
-			firstClose = closeVal
-			highestHigh = highVal
-			lowestLow = lowVal
-		}
-		if highVal > highestHigh {
-			highestHigh = highVal
-		}
-		if lowestLow == 0 || (lowVal > 0 && lowVal < lowestLow) {
-			lowestLow = lowVal
-		}
-		lastClose = closeVal
-		totalVolume += volumeVal
-		klines = append(klines, map[string]any{
-			"open_time":  row[0],
-			"open":       openVal,
-			"high":       highVal,
-			"low":        lowVal,
-			"close":      closeVal,
-			"volume":     volumeVal,
-			"close_time": row[6],
-		})
-	}
-
-	periodChangePercent := 0.0
-	if firstClose > 0 && lastClose > 0 {
-		periodChangePercent = ((lastClose - firstClose) / firstClose) * 100
-	}
-
-	tickerLastPrice, _ := strconv.ParseFloat(strings.TrimSpace(ticker24h.LastPrice), 64)
-	tickerPriceChange, _ := strconv.ParseFloat(strings.TrimSpace(ticker24h.PriceChange), 64)
-	tickerPriceChangePercent, _ := strconv.ParseFloat(strings.TrimSpace(ticker24h.PriceChangePercent), 64)
-	tickerHighPrice, _ := strconv.ParseFloat(strings.TrimSpace(ticker24h.HighPrice), 64)
-	tickerLowPrice, _ := strconv.ParseFloat(strings.TrimSpace(ticker24h.LowPrice), 64)
-	tickerVolume, _ := strconv.ParseFloat(strings.TrimSpace(ticker24h.Volume), 64)
-	tickerQuoteVolume, _ := strconv.ParseFloat(strings.TrimSpace(ticker24h.QuoteVolume), 64)
-	markPrice, _ := strconv.ParseFloat(strings.TrimSpace(premiumIndex.MarkPrice), 64)
-	indexPrice, _ := strconv.ParseFloat(strings.TrimSpace(premiumIndex.IndexPrice), 64)
-	fundingRate, _ := strconv.ParseFloat(strings.TrimSpace(premiumIndex.LastFundingRate), 64)
-	oiValue, _ := strconv.ParseFloat(strings.TrimSpace(openInterest.OpenInterest), 64)
-
-	out, _ := json.Marshal(map[string]any{
-		"symbol": symbol,
-		"price":  tickerLastPrice,
-		"ticker_24h": map[string]any{
-			"price_change":         tickerPriceChange,
-			"price_change_percent": tickerPriceChangePercent,
-			"high_price":           tickerHighPrice,
-			"low_price":            tickerLowPrice,
-			"volume":               tickerVolume,
-			"quote_volume":         tickerQuoteVolume,
-			"trade_count":          ticker24h.Count,
-		},
-		"perp_metrics": map[string]any{
-			"mark_price":        markPrice,
-			"index_price":       indexPrice,
-			"funding_rate":      fundingRate,
-			"next_funding_time": premiumIndex.NextFundingTime,
-			"open_interest":     oiValue,
-		},
-		"kline_snapshot": map[string]any{
-			"interval":              interval,
-			"limit":                 len(klines),
-			"period_change_percent": periodChangePercent,
-			"highest_high":          highestHigh,
-			"lowest_low":            lowestLow,
-			"average_volume":        totalVolume / float64(maxInt(len(klines), 1)),
-			"recent_klines":         klines,
-		},
-	})
-	return string(out)
-}
-
-func toSnapshotFloat(value any) float64 {
-	switch v := value.(type) {
-	case string:
-		f, _ := strconv.ParseFloat(strings.TrimSpace(v), 64)
-		return f
-	case float64:
-		return v
-	case json.Number:
-		f, _ := v.Float64()
-		return f
-	default:
-		return 0
-	}
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func strategyLockedFieldError(lang, field string) string {
 	switch strings.TrimSpace(field) {
 	case "max_positions":
@@ -3228,16 +2771,6 @@ func strategyLockedFieldError(lang, field string) string {
 			return "最大持仓数是 System enforced 字段，策略编辑页不提供普通输入控件，Agent 不能修改。"
 		}
 		return "Max positions is System enforced in the strategy editor and cannot be changed by the agent."
-	case "btceth_max_position_value_ratio":
-		if lang == "zh" {
-			return "BTC/ETH 单币仓位上限是 System enforced 字段，策略编辑页不提供普通输入控件，Agent 不能修改。"
-		}
-		return "BTC/ETH position value ratio is System enforced in the strategy editor and cannot be changed by the agent."
-	case "altcoin_max_position_value_ratio":
-		if lang == "zh" {
-			return "山寨币单币仓位上限是 System enforced 字段，策略编辑页不提供普通输入控件，Agent 不能修改。"
-		}
-		return "Altcoin position value ratio is System enforced in the strategy editor and cannot be changed by the agent."
 	case "max_margin_usage":
 		if lang == "zh" {
 			return "最大保证金使用率是 System enforced 字段，策略编辑页不提供普通输入控件，Agent 不能修改。"
@@ -3245,9 +2778,9 @@ func strategyLockedFieldError(lang, field string) string {
 		return "Max margin usage is System enforced in the strategy editor and cannot be changed by the agent."
 	case "min_position_size":
 		if lang == "zh" {
-			return "最小开仓金额是系统固定值 12 USDT，手动面板里也是 System enforced，Agent 不能修改。"
+			return "最小开仓金额是系统固定值 12 USD，手动面板里也是 System enforced，Agent 不能修改。"
 		}
-		return "The minimum position size is a fixed system value of 12 USDT. It is System enforced in the manual panel and cannot be changed by the agent."
+		return "The minimum position size is a fixed system value of 12 USD. It is System enforced in the manual panel and cannot be changed by the agent."
 	default:
 		if lang == "zh" {
 			return "这个字段是系统固定项，Agent 不能修改。"
@@ -3264,7 +2797,7 @@ func strategyConfigContainsLockedField(config map[string]any) (string, bool) {
 		return "min_position_size", true
 	}
 	if risk, ok := config["risk_control"].(map[string]any); ok {
-		for _, field := range []string{"max_positions", "btc_eth_max_position_value_ratio", "btceth_max_position_value_ratio", "altcoin_max_position_value_ratio", "max_margin_usage", "min_position_size"} {
+		for _, field := range []string{"max_positions", "max_margin_usage", "min_position_size"} {
 			if _, ok := risk[field]; ok {
 				return field, true
 			}
@@ -3272,7 +2805,7 @@ func strategyConfigContainsLockedField(config map[string]any) (string, bool) {
 	}
 	if aiConfig, ok := config["ai_config"].(map[string]any); ok {
 		if risk, ok := aiConfig["risk_control"].(map[string]any); ok {
-			for _, field := range []string{"max_positions", "btc_eth_max_position_value_ratio", "btceth_max_position_value_ratio", "altcoin_max_position_value_ratio", "max_margin_usage", "min_position_size"} {
+			for _, field := range []string{"max_positions", "max_margin_usage", "min_position_size"} {
 				if _, ok := risk[field]; ok {
 					return field, true
 				}
@@ -3280,97 +2813,6 @@ func strategyConfigContainsLockedField(config map[string]any) (string, bool) {
 		}
 	}
 	return "", false
-}
-
-func validKlineInterval(interval string) bool {
-	switch strings.TrimSpace(strings.ToLower(interval)) {
-	case "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w", "1mo":
-		return true
-	default:
-		return false
-	}
-}
-
-func (a *Agent) toolGetKline(argsJSON string) string {
-	var args struct {
-		Symbol   string `json:"symbol"`
-		Interval string `json:"interval"`
-		Limit    int    `json:"limit"`
-	}
-	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
-		return fmt.Sprintf(`{"error": "invalid arguments: %s"}`, err)
-	}
-
-	symbol := strings.ToUpper(strings.TrimSpace(args.Symbol))
-	if symbol == "" {
-		return `{"error": "symbol is required"}`
-	}
-	if !strings.HasSuffix(symbol, "USDT") {
-		symbol += "USDT"
-	}
-
-	interval := strings.TrimSpace(strings.ToLower(args.Interval))
-	if interval == "" {
-		interval = "15m"
-	}
-	if !validKlineInterval(interval) {
-		return fmt.Sprintf(`{"error":"invalid interval %q"}`, interval)
-	}
-
-	limit := args.Limit
-	switch {
-	case limit <= 0:
-		limit = 50
-	case limit > 300:
-		limit = 300
-	}
-
-	url := fmt.Sprintf("https://fapi.binance.com/fapi/v1/klines?symbol=%s&interval=%s&limit=%d", symbol, interval, limit)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return fmt.Sprintf(`{"error":"failed to create request: %s"}`, err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-	defer cancel()
-	req = req.WithContext(ctx)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Sprintf(`{"error":"failed to fetch kline for %s: %s"}`, symbol, err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Sprintf(`{"error":"kline source returned status %d for %s"}`, resp.StatusCode, symbol)
-	}
-
-	var raw [][]any
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return fmt.Sprintf(`{"error":"failed to parse kline response: %s"}`, err)
-	}
-
-	candles := make([]map[string]any, 0, len(raw))
-	for _, row := range raw {
-		if len(row) < 7 {
-			continue
-		}
-		candles = append(candles, map[string]any{
-			"open_time":  row[0],
-			"open":       row[1],
-			"high":       row[2],
-			"low":        row[3],
-			"close":      row[4],
-			"volume":     row[5],
-			"close_time": row[6],
-		})
-	}
-
-	out, _ := json.Marshal(map[string]any{
-		"symbol":   symbol,
-		"interval": interval,
-		"limit":    limit,
-		"klines":   candles,
-	})
-	return string(out)
 }
 
 func (a *Agent) toolGetTradeHistory(argsJSON string) string {
@@ -3606,12 +3048,9 @@ func candidateCoinSourceSummary(cfg *store.StrategyConfig) map[string]any {
 		return nil
 	}
 	return map[string]any{
-		"source_type":      cfg.CoinSource.SourceType,
-		"use_hyper_all":    cfg.CoinSource.UseHyperAll,
-		"use_hyper_main":   cfg.CoinSource.UseHyperMain,
-		"hyper_main_limit": cfg.CoinSource.HyperMainLimit,
-		"static_coins":     cfg.CoinSource.StaticCoins,
-		"excluded_coins":   cfg.CoinSource.ExcludedCoins,
+		"source_type":    cfg.CoinSource.SourceType,
+		"static_coins":   cfg.CoinSource.StaticCoins,
+		"excluded_coins": cfg.CoinSource.ExcludedCoins,
 	}
 }
 
@@ -3634,117 +3073,6 @@ func candidateCoinDetails(coins []kernel.CandidateCoin) []map[string]any {
 	return out
 }
 
-func normalizeWatchSymbol(raw string) string {
-	symbol := strings.ToUpper(strings.TrimSpace(raw))
-	symbol = strings.ReplaceAll(symbol, " ", "")
-	if symbol == "" {
-		return ""
-	}
-	hasQuoteSuffix := strings.HasSuffix(symbol, "USDT") || strings.HasSuffix(symbol, "BUSD") || strings.HasSuffix(symbol, "USDC")
-	if !hasQuoteSuffix && isStockSymbol(symbol) == false && !isCMEFuturesChatSymbol(symbol) {
-		return symbol + "USDT"
-	}
-	return symbol
-}
-
-func (a *Agent) toolGetWatchlist(lang string) string {
-	if a.sentinel == nil {
-		return fmt.Sprintf(`{"error":"%s"}`, a.msg(lang, "sentinel_off"))
-	}
-	symbols := a.sentinel.Symbols()
-	payload := map[string]any{
-		"enabled": true,
-		"count":   len(symbols),
-		"symbols": symbols,
-		"text":    a.sentinel.FormatWatchlist(lang),
-	}
-	raw, _ := json.Marshal(payload)
-	return string(raw)
-}
-
-func (a *Agent) toolManageWatchlist(lang, argsJSON string) string {
-	if a.sentinel == nil {
-		return fmt.Sprintf(`{"error":"%s"}`, a.msg(lang, "sentinel_off"))
-	}
-
-	var args struct {
-		Action string `json:"action"`
-		Symbol string `json:"symbol"`
-	}
-	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
-		return fmt.Sprintf(`{"error":"invalid arguments: %s"}`, err)
-	}
-
-	action := strings.ToLower(strings.TrimSpace(args.Action))
-	symbol := normalizeWatchSymbol(args.Symbol)
-	if symbol == "" {
-		return `{"error":"symbol is required"}`
-	}
-
-	switch action {
-	case "add":
-		a.sentinel.AddSymbol(symbol)
-	case "remove":
-		a.sentinel.RemoveSymbol(symbol)
-	default:
-		return `{"error":"unsupported action"}`
-	}
-
-	symbols := a.sentinel.Symbols()
-	if a.config != nil {
-		a.config.WatchSymbols = symbols
-	}
-
-	message := ""
-	if lang == "zh" {
-		if action == "add" {
-			message = fmt.Sprintf("已把 %s 加入监控。", symbol)
-		} else {
-			message = fmt.Sprintf("已把 %s 移出监控。", symbol)
-		}
-	} else {
-		if action == "add" {
-			message = fmt.Sprintf("Added %s to the watchlist.", symbol)
-		} else {
-			message = fmt.Sprintf("Removed %s from the watchlist.", symbol)
-		}
-	}
-
-	payload := map[string]any{
-		"ok":      true,
-		"action":  action,
-		"symbol":  symbol,
-		"count":   len(symbols),
-		"symbols": symbols,
-		"message": message,
-	}
-	raw, _ := json.Marshal(payload)
-	return string(raw)
-}
-
-// knownCryptoSymbols is a set of well-known cryptocurrency base symbols.
-// Without this, isStockSymbol("BTC") would incorrectly return true because
-// "BTC" is 3 uppercase letters and the suffix check only catches "BTCUSDT"-style pairs.
-var knownCryptoSymbols = map[string]bool{
-	"BTC": true, "ETH": true, "SOL": true, "BNB": true, "XRP": true,
-	"DOGE": true, "ADA": true, "AVAX": true, "DOT": true, "LINK": true,
-	"PEPE": true, "SHIB": true, "ARB": true, "OP": true, "SUI": true,
-	"APT": true, "SEI": true, "TIA": true, "JUP": true, "WIF": true,
-	"NEAR": true, "ATOM": true, "FTM": true, "MATIC": true, "INJ": true,
-	"RENDER": true, "FET": true, "TAO": true, "WLD": true, "USDT": true,
-	"USDC": true, "BUSD": true, "DAI": true, "UNI": true, "AAVE": true,
-	"LDO": true, "MKR": true, "CRV": true, "PENDLE": true, "ENA": true,
-	"ONDO": true, "TRUMP": true, "TON": true, "TRX": true, "LTC": true,
-	"BCH": true, "ETC": true, "FIL": true, "ICP": true, "HBAR": true,
-	"VET": true, "ALGO": true, "SAND": true, "MANA": true, "AXS": true,
-	"GMT": true, "APE": true, "GALA": true, "IMX": true, "BLUR": true,
-	"STRK": true, "ZK": true, "W": true, "IO": true, "ZRO": true,
-	"BONK": true, "FLOKI": true, "ORDI": true, "STX": true, "RUNE": true,
-}
-
-// isCMEFuturesChatSymbol reports whether a chat symbol is a CME futures
-// symbol (W1b FOLD-5): market.IsCMEFuturesSymbol, or a known CME root in any
-// form (market.FuturesRoot: "mnq", "MNQU6", "MNQ.c.0", "MNQ 06-26").
 func isCMEFuturesChatSymbol(sym string) bool {
 	return market.IsCMEFuturesSymbol(sym) || market.FuturesRoot(sym) != ""
 }
@@ -3752,8 +3080,8 @@ func isCMEFuturesChatSymbol(sym string) bool {
 // chatTradeSymbol is the ONE canonicalizer for a symbol a chat trade names
 // (W1b FOLD-5, canon 28), called where it enters: a CME futures symbol is its
 // ROOT ("MNQU6" → "MNQ" — the NT8 trader trades its own resolved front month,
-// and the pending trade the owner confirms shows the root), stock tickers
-// (AAPL, TSLA) stay as-is, crypto gets its USDT quote.
+// and the pending trade the owner confirms shows the root); stock tickers
+// (AAPL, TSLA) stay as-is.
 func chatTradeSymbol(raw string) string {
 	if isCMEFuturesChatSymbol(raw) {
 		if root := market.FuturesRoot(raw); root != "" {
@@ -3761,17 +3089,11 @@ func chatTradeSymbol(raw string) string {
 		}
 		return strings.ToUpper(strings.TrimSpace(raw))
 	}
-	sym := strings.ToUpper(raw)
-	// Only append USDT for crypto symbols; stock tickers (e.g. AAPL, TSLA) stay as-is
-	if !isStockSymbol(sym) && !strings.HasSuffix(sym, "USDT") {
-		sym += "USDT"
-	}
-	return sym
+	return strings.ToUpper(raw)
 }
 
-// isStockSymbol heuristically determines if a symbol is a stock ticker (not crypto).
-// Stock tickers are 1-5 uppercase letters without numeric suffixes like "USDT".
-// Known crypto base symbols (BTC, ETH, SOL etc.) are excluded.
+// isStockSymbol heuristically determines if a symbol is a stock ticker.
+// Stock tickers are 1-5 uppercase letters.
 func isStockSymbol(sym string) bool {
 	// W1b FOLD-5 — a CME futures symbol is NEVER a stock, checked BEFORE the
 	// letters heuristic: "MNQ" is three uppercase letters, and as a "stock"
@@ -3781,19 +3103,6 @@ func isStockSymbol(sym string) bool {
 		return false
 	}
 	sym = strings.ToUpper(sym)
-
-	// Check known crypto base symbols first (critical: "BTC", "ETH" etc. are NOT stocks)
-	if knownCryptoSymbols[sym] {
-		return false
-	}
-
-	// If it already has a crypto quote suffix, it's crypto
-	cryptoSuffixes := []string{"USDT", "BUSD", "USDC", "BTC", "ETH", "BNB"}
-	for _, suffix := range cryptoSuffixes {
-		if strings.HasSuffix(sym, suffix) && len(sym) > len(suffix) {
-			return false
-		}
-	}
 	// Pure uppercase letters, 1-5 chars = likely a stock ticker
 	if len(sym) >= 1 && len(sym) <= 5 {
 		allLetters := true

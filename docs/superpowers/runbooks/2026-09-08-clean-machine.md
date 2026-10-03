@@ -1,3 +1,5 @@
+> R5 rename note (2026-10-02): names in this file were rewritten from the pre-rename repo name to `vl`.
+
 names rewritten to vl on 2026-09-30 (VL rename)
 # CLEAN-MACHINE READINESS RUNBOOK — second machine, vl
 
@@ -129,8 +131,8 @@ below BY NAME ONLY, never valued). The code reads 162 distinct `os.Getenv` keys
 (machine A `.env` sets only 27 of them).
 
 **Machine A `.env` keys (names only):** `AI_HTTP_TIMEOUT_SECONDS AI_MAX_RETRIES
-AI_MAX_TOKENS ARMED_TEST_SEAM CLAW402_DEFAULT_MODEL CLAW402_WALLET_ADDRESS
-CLAW402_WALLET_KEY DATABENTO_API_KEY DATABENTO_DATASET DATA_ENCRYPTION_KEY
+AI_MAX_TOKENS ARMED_TEST_SEAM
+DATABENTO_API_KEY DATABENTO_DATASET DATA_ENCRYPTION_KEY
 DB_PATH DB_TYPE EOD_FLAT_LIMIT_TICKS EOD_FLAT_MARKET_AFTER_SEC HTF_VETO_MODE
 JWT_SECRET NINJATRADER_DATA_DIR VL_BACKEND_PORT VL_FRONTEND_PORT
 VL_TIMEZONE NT_EXTRA_SYMBOLS NT_RUNTIME_SYMBOLS NT_TRANSPORT RSA_PRIVATE_KEY
@@ -179,7 +181,7 @@ synthetic bars + canned planner, no live trading; `main.go:530-534`),
 `ALLOW_ACCOUNT_RESET` (`api/handler_user.go:230-240`), `TRANSPORT_ENCRYPTION`
 (`config/config.go:146-149`), `API_SERVER_HOST`/`API_SERVER_PORT` (bind control;
 default loopback 127.0.0.1:8080, `config/config.go:103-104,127-142`),
-`CLAW402_*` (the payment-proxy model family), `NT_EXTRA_SYMBOLS`
+`NT_EXTRA_SYMBOLS`
 (`trader/ninjatrader/transport.go:132-134`), `NT_RUNTIME_SYMBOLS`
 (`api/handler_debug.go:14-18`), `EXPERIENCE_IMPROVEMENT` (`config/config.go:151-155`).
 
@@ -387,7 +389,7 @@ anything I could not execute is marked **UNTESTED**.
 
 ## Step 2 — Clone
 
-2.1 `git clone git@github.com:johnwick2921-cyber/nofx.git ~/vl` (origin per AGENTS.md
+2.1 `git clone git@github.com:johnwick2921-cyber/vl.git ~/vl` (origin per AGENTS.md
     repo ownership; this is the user's own project).
 2.2 Decide the pin: machine A's running rev is `f8bc7044` and dev tip is
     `59af58fd` (measured). For a parallel test machine, check out the SAME commit

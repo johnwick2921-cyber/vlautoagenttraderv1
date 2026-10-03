@@ -143,7 +143,7 @@ git commit -m "chore: fix frontend issues"
 <type>(<scope>): <description>
 
 示例：
-feat(exchange): add OKX integration
+feat(exchange): add NinjaTrader bridge integration
 fix(trader): resolve position tracking bug
 docs(readme): update installation guide
 ```

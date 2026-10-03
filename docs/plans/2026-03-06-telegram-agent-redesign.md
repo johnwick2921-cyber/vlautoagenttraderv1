@@ -822,7 +822,7 @@ func TestAgentAPIResultInContext(t *testing.T) {
 
 	llm := &mockLLM{responses: []string{
 		`<api_call>{"method":"GET","path":"/api/account","body":{}}</api_call>`,
-		"Balance is 1234.56 USDT.",
+		"Balance is 1234.56 USD.",
 	}}
 	a := New(port, "tok", mockGetLLM(llm), testPrompt)
 	a.Run("show balance")
@@ -1034,6 +1034,6 @@ Manual verification — none of these scenarios need any special code:
 - [ ] "check balance then stop trader if loss > 5%" → multi-step: GET /api/account → POST /api/traders/:id/stop
 - [ ] "create a BTC strategy with 5% stop loss" → GET /api/strategies/default-config → POST /api/strategies
 - [ ] "show latest trading decisions" → GET /api/decisions/latest
-- [ ] "what's the BTC 1h chart looking like" → GET /api/klines?symbol=BTCUSDT&interval=1h
+- [ ] "what's the BTC 1h chart looking like" → GET /api/klines?symbol=MNQ&interval=1h
 - [ ] "delete trader xxx" → DELETE /api/traders/:id
 - [ ] Any unrecognized input → LLM replies naturally, no error

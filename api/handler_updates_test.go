@@ -101,6 +101,10 @@ func newUpdEnv(t *testing.T) *updEnv {
 	// P2-11: the login limiter is process-global; every env starts clean so
 	// one test's failed logins cannot block another's (the IP key is shared).
 	resetLoginLimiter()
+	// install-with-password lockout limiter: same process-global hygiene.
+	apiInstallPasswordLimiter.mu.Lock()
+	apiInstallPasswordLimiter.m = make(map[string]*loginLimiterEntry)
+	apiInstallPasswordLimiter.mu.Unlock()
 	return e
 }
 
@@ -347,8 +351,8 @@ func TestUpdateRoutesAreNotAdvertisedToTheAgent(t *testing.T) {
 			found++
 		}
 	}
-	if found != 5 {
-		t.Fatalf("router has %d /api/updates routes, want 5", found)
+	if found != 6 {
+		t.Fatalf("router has %d /api/updates routes, want 6 (status, check, install, install-with-password, jobs, jobs/receipt)", found)
 	}
 	re := regexp.MustCompile(`s\.route(WithSchema)?\([^)]*"/updates`)
 	for _, f := range []string{"server.go", "handler_updates.go"} {
@@ -666,25 +670,6 @@ func TestUpdatesRequireTheUpdateHeader(t *testing.T) {
 		e.expectAllForbidden("header "+name, mut)
 	}
 	e.expectAllAdmitted("header 1")
-}
-
-// TestLegacyUpdateHeaderAcceptedUntilR5 — transition entry (d): the
-// pre-rename header name stays accepted until R5 removes it. Exactly one value
-// in total across both names is admitted; anything else is refused.
-func TestLegacyUpdateHeaderAcceptedUntilR5(t *testing.T) {
-	e := newUpdEnv(t)
-	e.expectAllAdmitted("legacy header 1", func(r *http.Request) {
-		r.Header.Del(UpdateHeader)
-		r.Header.Set(LegacyUpdateHeader, "1")
-	})
-	e.expectAllForbidden("new + legacy", func(r *http.Request) {
-		r.Header.Set(LegacyUpdateHeader, "1")
-	})
-	e.expectAllForbidden("legacy twice", func(r *http.Request) {
-		r.Header.Del(UpdateHeader)
-		r.Header.Add(LegacyUpdateHeader, "1")
-		r.Header.Add(LegacyUpdateHeader, "1")
-	})
 }
 
 func TestUpdatesRefuseCrossOrigin(t *testing.T) {

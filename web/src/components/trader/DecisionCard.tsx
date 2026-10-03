@@ -116,7 +116,7 @@ function ActionCard({
             onClick={() => onSymbolClick?.(action.symbol)}
             title="Click to view chart"
           >
-            {action.symbol.replace('USDT', '')}
+            {action.symbol.replace('USD', '')}
           </span>
           <span
             className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"

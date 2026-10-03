@@ -2,7 +2,7 @@ package market
 
 // FuturesBarsProvider, when non-nil, supplies OHLCV klines for CME futures
 // symbols from the live NT8 bar feed (provider/ninjatrader BarCache),
-// bypassing the crypto CoinAnk path entirely. It is wired at startup by the
+// bypassing the legacy crypto market path entirely. It is wired at startup by the
 // ninjatrader transport layer (trader/ninjatrader) so the market package
 // itself takes no provider/trader dependency — keeping the dependency edge
 // one-directional (trader/ninjatrader -> market) and cycle-free.

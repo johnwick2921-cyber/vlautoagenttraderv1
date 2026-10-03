@@ -29,11 +29,6 @@
     - any-glob-to-any-file:
       - 'internal/exchange/**/*'
       - 'pkg/exchange/**/*'
-      - '**/binance*.go'
-      - '**/hyperliquid*.go'
-      - '**/aster*.go'
-      - '**/okx*.go'
-      - '**/bybit*.go'
 
 # Area: AI
 'area: ai':

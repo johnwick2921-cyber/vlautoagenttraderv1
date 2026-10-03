@@ -20,7 +20,7 @@ import { PunkAvatar, getTraderAvatar } from '../components/common/PunkAvatar'
 import { confirmToast, notify } from '../lib/notify'
 import { formatPrice, formatQuantity } from '../utils/format'
 import { t, type Language } from '../i18n/translations'
-import { LogOut, Loader2, Eye, EyeOff, Copy, Check } from 'lucide-react'
+import { LogOut, Loader2 } from 'lucide-react'
 import { DeepVoidBackground } from '../components/common/DeepVoidBackground'
 import { VlSelect } from '../components/ui/select'
 import { GridRiskPanel } from '../components/strategy/GridRiskPanel'
@@ -71,39 +71,10 @@ function getExchangeTypeFromList(
   exchangeId: string | undefined,
   exchanges: Exchange[] | undefined
 ): string {
-  if (!exchangeId) return 'binance'
+  if (!exchangeId) return 'ninjatrader'
   const exchange = exchanges?.find((e) => e.id === exchangeId)
-  if (!exchange) return 'binance' // Default to binance for charts
-  return exchange.exchange_type?.toLowerCase() || 'binance'
-}
-
-// Helper function to check if exchange is a perp-dex type (wallet-based)
-function isPerpDexExchange(exchangeType: string | undefined): boolean {
-  if (!exchangeType) return false
-  const perpDexTypes = ['hyperliquid', 'lighter', 'aster']
-  return perpDexTypes.includes(exchangeType.toLowerCase())
-}
-
-// Helper function to get wallet address for perp-dex exchanges
-function getWalletAddress(exchange: Exchange | undefined): string | undefined {
-  if (!exchange) return undefined
-  const type = exchange.exchange_type?.toLowerCase()
-  switch (type) {
-    case 'hyperliquid':
-      return exchange.hyperliquidWalletAddr
-    case 'lighter':
-      return exchange.lighterWalletAddr
-    case 'aster':
-      return exchange.asterSigner
-    default:
-      return undefined
-  }
-}
-
-// Helper function to truncate wallet address for display
-function truncateAddress(address: string, startLen = 6, endLen = 4): string {
-  if (address.length <= startLen + endLen + 3) return address
-  return `${address.slice(0, startLen)}...${address.slice(-endLen)}`
+  if (!exchange) return 'ninjatrader' // Default to ninjatrader for charts
+  return exchange.exchange_type?.toLowerCase() || 'ninjatrader'
 }
 
 // --- Components ---
@@ -202,8 +173,6 @@ export function TraderDashboardPage({
     }
   }, [selectedTraderId])
   const chartSectionRef = useRef<HTMLDivElement>(null)
-  const [showWalletAddress, setShowWalletAddress] = useState<boolean>(false)
-  const [copiedAddress, setCopiedAddress] = useState<boolean>(false)
   // Plan 4 Task 23.4 — Dashboard tab switcher (Overview / Decisions).
   const [dashboardTab, setDashboardTab] = useState<'overview' | 'decisions'>(
     'overview'
@@ -234,28 +203,12 @@ export function TraderDashboardPage({
     }
   }, [status?.strategy_type, status?.grid_symbol])
 
-  // Get current exchange info for perp-dex wallet display
   const currentExchange = exchanges?.find(
     (e) => e.id === selectedTrader?.exchange_id
   )
-  const walletAddress = getWalletAddress(currentExchange)
-  const isPerpDex = isPerpDexExchange(currentExchange?.exchange_type)
-  // Plan 4.3: NT futures don't use USDT quote, leverage, or liquidation price
   const isFutures =
     currentExchange?.exchange_type?.toLowerCase() === 'ninjatrader'
-  const currencyUnit = isFutures ? 'USD' : 'USDT'
-
-  // Copy wallet address to clipboard
-  const handleCopyAddress = async () => {
-    if (!walletAddress) return
-    try {
-      await navigator.clipboard.writeText(walletAddress)
-      setCopiedAddress(true)
-      setTimeout(() => setCopiedAddress(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy address:', err)
-    }
-  }
+  const currencyUnit = 'USD'
 
   // Handle symbol click from Decision Card
   const handleSymbolClick = (symbol: string) => {
@@ -510,53 +463,6 @@ export function TraderDashboardPage({
                     )
                   }}
                 />
-              )}
-
-              {/* Wallet Address Display for Perp-DEX */}
-              {exchanges && isPerpDex && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg vl-neo-glass border border-vl-neo-gold/20">
-                  {walletAddress ? (
-                    <>
-                      <span className="text-xs font-mono text-vl-neo-gold">
-                        {showWalletAddress
-                          ? walletAddress
-                          : truncateAddress(walletAddress)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowWalletAddress(!showWalletAddress)}
-                        className="p-1 rounded hover:bg-white/10 transition-colors"
-                        title={
-                          showWalletAddress
-                            ? t('traderDashboard.hideAddress', language)
-                            : t('traderDashboard.showFullAddress', language)
-                        }
-                      >
-                        {showWalletAddress ? (
-                          <EyeOff className="w-3.5 h-3.5 text-vl-neo-text-muted" />
-                        ) : (
-                          <Eye className="w-3.5 h-3.5 text-vl-neo-text-muted" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCopyAddress}
-                        className="p-1 rounded hover:bg-white/10 transition-colors"
-                        title={t('traderDashboard.copyAddress', language)}
-                      >
-                        {copiedAddress ? (
-                          <Check className="w-3.5 h-3.5 text-vl-neo-green" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5 text-vl-neo-text-muted" />
-                        )}
-                      </button>
-                    </>
-                  ) : (
-                    <span className="text-xs text-vl-neo-text-muted">
-                      {t('traderDashboard.noAddressConfigured', language)}
-                    </span>
-                  )}
-                </div>
               )}
             </div>
           </div>
@@ -835,7 +741,6 @@ export function TraderDashboardPage({
                 selectedTrader.exchange_id,
                 exchanges
               )}
-              isFutures={isFutures}
             />
           </div>
 
@@ -843,10 +748,7 @@ export function TraderDashboardPage({
             className="min-w-0"
             aria-label={t('accountEquityCurve', language)}
           >
-            <EquityChart
-              traderId={selectedTrader.trader_id}
-              isFutures={isFutures}
-            />
+            <EquityChart traderId={selectedTrader.trader_id} />
           </section>
           {/* Day Plan card — futures only (day_plan is a futures feature);
                 additive + dormant: renders its no-plan state until a plan arms. */}

@@ -61,11 +61,6 @@ export const faqCategories: FAQCategory[] = [
         answerKey: 'faqIsProfitableAnswer',
       },
       {
-        id: 'supported-exchanges',
-        questionKey: 'faqSupportedExchanges',
-        answerKey: 'faqSupportedExchangesAnswer',
-      },
-      {
         id: 'supported-ai-models',
         questionKey: 'faqSupportedAIModels',
         answerKey: 'faqSupportedAIModelsAnswer',
@@ -129,21 +124,6 @@ export const faqCategories: FAQCategory[] = [
         answerKey: 'faqConfigureAIModelsAnswer',
       },
       {
-        id: 'configure-exchanges',
-        questionKey: 'faqConfigureExchanges',
-        answerKey: 'faqConfigureExchangesAnswer',
-      },
-      {
-        id: 'binance-api-setup',
-        questionKey: 'faqBinanceAPISetup',
-        answerKey: 'faqBinanceAPISetupAnswer',
-      },
-      {
-        id: 'hyperliquid-setup',
-        questionKey: 'faqHyperliquidSetup',
-        answerKey: 'faqHyperliquidSetupAnswer',
-      },
-      {
         id: 'create-strategy',
         questionKey: 'faqCreateStrategy',
         answerKey: 'faqCreateStrategyAnswer',
@@ -176,16 +156,6 @@ export const faqCategories: FAQCategory[] = [
         id: 'no-trades-executing',
         questionKey: 'faqNoTradesExecuting',
         answerKey: 'faqNoTradesExecutingAnswer',
-      },
-      {
-        id: 'only-short-positions',
-        questionKey: 'faqOnlyShortPositions',
-        answerKey: 'faqOnlyShortPositionsAnswer',
-      },
-      {
-        id: 'leverage-settings',
-        questionKey: 'faqLeverageSettings',
-        answerKey: 'faqLeverageSettingsAnswer',
       },
       {
         id: 'stop-loss-take-profit',
@@ -235,16 +205,6 @@ export const faqCategories: FAQCategory[] = [
         id: 'ai-api-timeout',
         questionKey: 'faqAIAPITimeout',
         answerKey: 'faqAIAPITimeoutAnswer',
-      },
-      {
-        id: 'binance-position-mode',
-        questionKey: 'faqBinancePositionMode',
-        answerKey: 'faqBinancePositionModeAnswer',
-      },
-      {
-        id: 'balance-shows-zero',
-        questionKey: 'faqBalanceShowsZero',
-        answerKey: 'faqBalanceShowsZeroAnswer',
       },
       {
         id: 'docker-pull-failed',

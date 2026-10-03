@@ -60,7 +60,7 @@ func (h *CryptoHandler) HandleGetPublicKey(c *gin.Context) {
 // SECURITY (P0 S4): this was PUBLIC and ungated — a decryption oracle for the
 // server's long-term RSA key. Anyone who could reach the port could post a
 // payload and get plaintext back, using the same key that protects exchange API
-// keys and wallet private keys in transit. It is now (a) registered on the
+// keys in transit. It is now (a) registered on the
 // JWT-protected group and (b) refused unless TRANSPORT_ENCRYPTION is actually
 // on, mirroring HandleGetPublicKey above. The frontend never calls it — the
 // client method exists with zero callers — so this closes an unused hole.

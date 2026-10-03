@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"vl/internal/activation"
-	"vl/internal/envcompat"
+	"vl/internal/installpath"
 )
 
 func main() {
@@ -81,7 +81,7 @@ func run(cmd string, o opts) (activation.Receipt, error) {
 	case "backup":
 		dest := o.dest
 		if dest == "" {
-			dest = filepath.Join(envcompat.BackupRoot(), "updater", // R5 removes: vl-backups wins, nofx-backups only while ~/nofx exists
+			dest = filepath.Join(installpath.BackupRoot(), "updater",
 				time.Now().Format("20060102-150405"), "data.db")
 		}
 		return activation.Backup(o.dbPath, dest)

@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"vl/branding"
 	"sort"
 	"strings"
 	"time"
+	"vl/branding"
 
 	"vl/mcp"
 	"vl/safe"
@@ -154,7 +154,7 @@ func isConfigOrTraderIntent(text string) bool {
 	keywords := []string{
 		"交易员", "trader", "exchange", "交易所", "模型", "model", "api key", "apikey",
 		"绑定", "配置", "setup", "configure", "deepseek", "openai", "claude", "gemini",
-		"okx", "binance", "bybit", "gate", "kucoin", "hyperliquid", "aster", "lighter",
+		"ninjatrader",
 	}
 	for _, kw := range keywords {
 		if strings.Contains(lower, kw) {
@@ -1749,7 +1749,7 @@ func shouldSuspendInterruptedTask(text string) bool {
 		return isEphemeralReadFastPathKind(req.Kind)
 	}
 	return containsAny(lower, []string{
-		"btc", "eth", "sol", "价格", "行情", "balance", "position", "positions", "portfolio",
+		"sol", "价格", "行情", "balance", "position", "positions", "portfolio",
 		"market", "price", "仓位", "持仓", "余额", "账户", "trade history", "历史成交",
 	})
 }
@@ -2257,7 +2257,7 @@ func looksLikeNewTopLevelIntent(text string) bool {
 		return true
 	}
 	return containsAny(lower, []string{
-		"btc", "eth", "sol", "市场", "行情", "余额", "仓位", "持仓", "订单", "账户",
+		"sol", "市场", "行情", "余额", "仓位", "持仓", "订单", "账户",
 		"price", "market", "balance", "position", "portfolio", "account",
 	})
 }
@@ -2667,7 +2667,7 @@ Choose the immediate next action batch. Do not generate a long multi-step execut
 
 CRITICAL — Minimal tool principle:
 - Only call tools that DIRECTLY answer the user's Goal.
-- Do NOT call extra tools "just in case" or "for context". If the user asks about their wallet address, do NOT also fetch market data or balances.
+- Do NOT call extra tools "just in case" or "for context". If the user asks about their account, do NOT also fetch market data or balances.
 - If the user asks one question, call one tool (or zero if you already have the answer).
 
 Allowed step types:
@@ -3764,9 +3764,9 @@ func (a *Agent) thinkAndActLegacyWithStore(ctx context.Context, storeUserID stri
 	}
 	// NOTE: We intentionally do NOT inject conversation history into the legacy
 	// loop. Even a single prior round causes DeepSeek to hallucinate data from
-	// earlier topics (e.g. outputting strategy details when asked about a wallet).
+	// earlier topics (e.g. outputting strategy details when asked about their account).
 	// The planner path handles multi-turn context properly; the legacy loop is
-	// a single-turn fallback. References like "那binance的钱包呢" still work
+	// a single-turn fallback. References like "那NinjaTrader的账户呢" still work
 	// because the text itself contains enough keywords for domain routing.
 	messages = append(messages, mcp.NewUserMessage(userPrompt))
 

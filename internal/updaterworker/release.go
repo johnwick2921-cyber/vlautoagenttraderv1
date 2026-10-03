@@ -748,12 +748,9 @@ func rehashTree(root *os.Root, artifacts []Artifact, exempt map[string]bool) err
 }
 
 // binaryInRoot returns the staged release's ONE binary name: vl-bin. A
-// missing binary keeps the old reading (vl-bin); the layout check fails on
-// the missing binary, as it always did.
-func binaryInRoot(root *os.Root) (string, error) {
-	if _, err := root.Lstat(binaryName); err != nil {
-		return binaryName, err
-	}
+// missing binary keeps the old lenient reading (vl-bin); the layout check
+// fails on the missing binary, as it always did.
+func binaryInRoot(_ *os.Root) (string, error) {
 	return binaryName, nil
 }
 

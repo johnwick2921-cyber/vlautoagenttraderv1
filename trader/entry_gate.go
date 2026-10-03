@@ -356,7 +356,7 @@ func EntryGate(in EntryIntent) (reason string, refused bool) {
 //
 // Only a CME futures symbol is rounded (verifier defect 1): the tick grid is
 // the NT8 wire's, and a non-CME venue (a crypto trader still reaches EntryGate
-// through admitEntry) fell through to the 0.25 index default — DOGEUSDT entry
+// through admitEntry) fell through to the 0.25 index default — a frozen-ticker entry
 // 0.12 rounded to 0 and legs 5/6 skipped a R:R 0.10 open that base refused.
 // Any other symbol is judged on the authored prices, exactly as at base. The
 // tick comes from ntTrader.InstrumentTickSize, the SAME root-resolving lookup

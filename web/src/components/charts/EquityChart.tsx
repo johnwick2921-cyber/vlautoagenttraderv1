@@ -35,15 +35,10 @@ interface EquityPoint {
 interface EquityChartProps {
   traderId?: string
   embedded?: boolean // 嵌入模式（不显示外层卡片）
-  isFutures?: boolean // NT futures: show USD instead of USDT (Plan 4.3.1)
 }
 
-export function EquityChart({
-  traderId,
-  embedded = false,
-  isFutures = false,
-}: EquityChartProps) {
-  const currencyLabel = isFutures ? 'USD' : 'USDT'
+export function EquityChart({ traderId, embedded = false }: EquityChartProps) {
+  const currencyLabel = 'USD'
   const { language } = useLanguage()
   const { user, token } = useAuth()
   const [displayMode, setDisplayMode] = useState<'dollar' | 'percent'>('dollar')
@@ -228,7 +223,7 @@ export function EquityChart({
     }
   }
 
-  // 自定义Tooltip - Binance Style
+  // 自定义Tooltip - Brand Style
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload

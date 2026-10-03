@@ -74,9 +74,9 @@ export function PositionsPanel() {
         const color = isProfit ? '#00e5a0' : '#F6465D'
         const side = pos.side?.toUpperCase() || (pos.quantity > 0 ? 'LONG' : 'SHORT')
         const rawSymbol = pos.symbol || ''
-        // Stock symbols are pure letters (1-5 chars), crypto has USDT suffix
-        const isStock = /^[A-Z]{1,5}$/.test(rawSymbol) && !rawSymbol.endsWith('USDT')
-        const symbol = isStock ? rawSymbol : rawSymbol.replace('USDT', '')
+        // Stock symbols are pure letters (1-5 chars)
+        const isStock = /^[A-Z]{1,5}$/.test(rawSymbol)
+        const symbol = rawSymbol
         const currencyPrefix = isStock ? '$' : ''
 
         return (

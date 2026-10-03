@@ -41,7 +41,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 - **Imports:**
   - React: `useState`, `useRef`, `useEffect`
   - `framer-motion::{motion, AnimatePresence}`
-  - lucide-react: `PanelRightClose`, `PanelRightOpen`, `TrendingUp`, `Wallet`, `Bot`, `Bookmark`, `ChevronDown`, `ChevronRight`
+  - lucide-react: `PanelRightClose`, `PanelRightOpen`, `TrendingUp`, `Bot`, `Bookmark`, `ChevronDown`, `ChevronRight`
   - Contexts: `useLanguage`, `useAuth`
   - All 6 sub-panels (MarketTicker / PositionsPanel / TraderStatusPanel / WelcomeScreen / ChatMessages / ChatInput / UserPreferencesPanel)
   - Zustand store: `useAgentChatStore`
@@ -69,7 +69,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 - **File:** [web/src/components/agent/MarketTicker.tsx:21-209](web/src/components/agent/MarketTicker.tsx#L21-L209)
 - **Props:** none (self-fetches)
 - **Module constants:**
-  - `SYMBOLS = ['MNQ']` ([line 14](web/src/components/agent/MarketTicker.tsx#L14)) — Plan 4.7 fix shipped. Audit-era constant was `['BTCUSDT', 'ETHUSDT', 'SOLUSDT']`.
   - `SYMBOL_ICONS = { MNQ: 'N', NQ: 'N' }` ([line 16-19](web/src/components/agent/MarketTicker.tsx#L16-L19)) — string letter as the "icon" (no proper exchange-icons asset for MNQ)
 - **State:** `tickers: Record<string, TickerData>`, `loading: boolean`
 - **Effect:** fetch on mount + `setInterval(fetchTickers, 15000)`
@@ -173,13 +172,9 @@ Both authenticated routes inject `agent.WithStoreUserID(ctx, userID)` AND `agent
 - **Helpers:** `writeSSE(w, flusher, event, data)` ([line 191](agent/web.go#L191)), `sseEscape(s)` ([line 199](agent/web.go#L199))
 
 ### `GET /api/agent/tickers?symbols=…` → `WebHandler.HandleTickers` ([agent/web.go:246](agent/web.go#L246))
-- **Source:** proxies Binance Futures public ticker endpoint (`binanceFuturesAPIBaseURL = "https://fapi.binance.com"` at line 35)
 - **`splitComma(s)`** at line 329 — `strings.Split(s, ",")` with trim
-- **`proxyBinance(rw, ctx, url)`** at line 339 — HTTP GET via `marketDataHTTPClient`
-- **MNQ-specific behavior:** unclear from this read whether the handler has an NT/Databento branch or if it just blindly proxies "MNQ" to Binance (where it returns no result). Tested live: `GET /api/agent/tickers?symbols=MNQ` returned 200, but the actual response shape was not inspected. **Probable gap:** the MNQ symbol returns empty data from the Binance proxy, which is why MarketTicker can't render values — needs verification.
 
 ### `GET /api/agent/klines` → `WebHandler.HandleKlines` ([agent/web.go:207](agent/web.go#L207))
-- Same Binance proxy approach
 - **Plan 4.4/4.5 implication:** this is a SEPARATE endpoint from the main `/api/klines` consumed by ChartTabs on Dashboard. The agent's chart fetches go here. Plan 4.5 fix-needed status is the SAME — both endpoints need an NT/Databento branch.
 
 ### `GET /api/agent/health` → `WebHandler.HandleHealth` ([agent/web.go:77](agent/web.go#L77))
@@ -208,13 +203,11 @@ Both authenticated routes inject `agent.WithStoreUserID(ctx, userID)` AND `agent
   | 755 | `get_market_snapshot` | Multi-data view (OHLC + indicators + funding rate + OI) |
   | 780 | `get_kline` | Historical OHLCV by interval |
   | 805 | `get_trade_history` | Closed trades |
-  | 821 | `get_candidate_coins` | AI500 / OI top / etc. |
   | 841 | `get_watchlist` | User-saved symbols |
   | 849 | `manage_watchlist` | Add / remove watchlist entry |
   | — | (the audit document calls out 23, all accounted for above) |
 - **Tool cache:** `var cachedTools = buildAgentTools()` ([line 36](agent/tools.go#L36)) — built once at package init, reused across requests.
 - **`plannerToolsForText(text)`** ([line 41](agent/tools.go#L41)) — narrows the tool set by classifying user intent into a "domain" before sending to the LLM. Domain comes from `plannerToolDomainForText(text)`. Strategy-mutation intents get the full `manage_strategy` schema; others get a compacted version via `compactManageStrategyTool` ([line 140](agent/tools.go#L140)).
-- **Broker imports** ([line 14-30](agent/tools.go#L14-L30)): `aster`, `binance`, `bitget`, `bybit`, `gate`, `hyperliquidtrader`, `indodax`, `kucoin`, `lighter`, `ninjatrader (ntTrader)`, `okx` — **all 11 brokers including NT**. The `execute_trade` and balance tools route to the correct broker package by the trader's `exchange_type`.
 - **Safe DTOs at the bottom of the file** ([line 1024+](agent/tools.go)): `safeExchangeForTool`, `safeModelForTool`, `safeTraderForTool`, `safeStrategyForTool` — sanitize sensitive fields before exposing to the LLM context.
 - **System prompt at line ~2166** — note the literal `"默认策略"` (Chinese "Default Strategy") — i18n debt.
 
@@ -224,7 +217,6 @@ Both authenticated routes inject `agent.WithStoreUserID(ctx, userID)` AND `agent
 
 | Plan | File:line | What |
 |---|---|---|
-| Plan 4.7 | `MarketTicker.tsx:14` | Symbol list narrowed from `['BTCUSDT','ETHUSDT','SOLUSDT']` to `['MNQ']` |
 | Plan 4.7 | `WelcomeScreen.tsx:17-70` | Suggestion cards rewritten to MNQ-focused prompts (en + zh) |
 | Plan 4.7.1 | `UserPreferencesPanel.tsx` | Placeholder panel ("No persistent preferences yet…") merged via PR #25 on 2026-05-26 |
 
@@ -232,10 +224,7 @@ Both authenticated routes inject `agent.WithStoreUserID(ctx, userID)` AND `agent
 
 | Gap | Plan | File:line | Symptom | Scope |
 |---|---|---|---|---|
-| `GET /api/agent/tickers?symbols=MNQ` proxies Binance — MNQ not a Binance symbol | open / Plan 4.5 follow-on | `agent/web.go:246-329, 339-368` | Ticker likely returns empty data; MarketTicker UI shows blank or fallback | Bundle with Plan 4.5 backend NT/Databento branch |
-| `GET /api/agent/klines` also Binance-only | Plan 4.5 | `agent/web.go:207-228` | Agent's chart-related tool calls hit wrong data source for NT traders | Bundle with Plan 4.5 |
 | Hardcoded `"默认策略"` in tools.go | i18n debt | `agent/tools.go:2166` | Strategy-creation flow in EN chat shows Chinese label | 5-min: thread through agent i18n module |
-| Tool descriptions still mention crypto-only assumptions (funding rate, OI, USDT) | Plan 4.6-adjacent | various `Description:` fields in tools.go | LLM may suggest crypto-only paths to a NT user | bundled into a future "agent NT awareness" pass |
 
 ### NEW observations
 
@@ -251,8 +240,6 @@ Both authenticated routes inject `agent.WithStoreUserID(ctx, userID)` AND `agent
 
 ### Open questions
 
-- What does `GET /api/agent/tickers?symbols=MNQ` actually return when proxied to Binance? Likely an empty array (since Binance has no MNQ symbol). The MarketTicker UI doesn't visibly fail — does it render an empty card, a "fetching" spinner, or a fallback?
-- Where does `binanceFuturesAPIBaseURL = "https://fapi.binance.com"` come from configurationally? Hardcoded module-level var. Bypassing via the `agent.Configure*` hooks? Worth checking if there's an env-var override.
 - Does the `manage_trader` tool gracefully refuse to create a NT trader without the right exchange configured? Worth a sanity check.
 - Does `execute_trade` route correctly to `ntTrader` for NT traders? The broker import is present but the dispatch logic wasn't read in this pass.
 - `cachedTools = buildAgentTools()` builds at package init — but the tool catalog references things like enabled-exchanges-list which can change at runtime. Is the cache actually static metadata only, or are dynamic catalogs rebuilt per-request elsewhere?

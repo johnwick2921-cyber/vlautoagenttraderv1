@@ -11,17 +11,7 @@ import (
 	"vl/logger"
 	"vl/store"
 	"vl/trader"
-	"vl/trader/aster"
-	"vl/trader/binance"
-	"vl/trader/bitget"
-	"vl/trader/bybit"
-	"vl/trader/gate"
-	hyperliquidtrader "vl/trader/hyperliquid"
-	"vl/trader/indodax"
-	"vl/trader/kucoin"
-	"vl/trader/lighter"
 	ntTrader "vl/trader/ninjatrader"
-	"vl/trader/okx"
 
 	"github.com/gin-gonic/gin"
 	"vl/safe"
@@ -245,40 +235,6 @@ func probeExchangeAccountState(exchangeCfg *store.Exchange, userID string) Excha
 
 func buildExchangeProbeTrader(exchangeCfg *store.Exchange, userID string) (trader.Trader, error) {
 	switch exchangeCfg.ExchangeType {
-	case "binance":
-		return binance.NewFuturesTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), userID), nil
-	case "bybit":
-		return bybit.NewBybitTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey)), nil
-	case "okx":
-		return okx.NewOKXTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), string(exchangeCfg.Passphrase)), nil
-	case "bitget":
-		return bitget.NewBitgetTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), string(exchangeCfg.Passphrase)), nil
-	case "gate":
-		return gate.NewGateTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey)), nil
-	case "kucoin":
-		return kucoin.NewKuCoinTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey), string(exchangeCfg.Passphrase)), nil
-	case "indodax":
-		return indodax.NewIndodaxTrader(string(exchangeCfg.APIKey), string(exchangeCfg.SecretKey)), nil
-	case "hyperliquid":
-		return hyperliquidtrader.NewHyperliquidTrader(
-			string(exchangeCfg.APIKey),
-			exchangeCfg.HyperliquidWalletAddr,
-			exchangeCfg.Testnet,
-			exchangeCfg.HyperliquidUnifiedAcct,
-		)
-	case "aster":
-		return aster.NewAsterTrader(
-			exchangeCfg.AsterUser,
-			exchangeCfg.AsterSigner,
-			string(exchangeCfg.AsterPrivateKey),
-		)
-	case "lighter":
-		return lighter.NewLighterTraderV2(
-			exchangeCfg.LighterWalletAddr,
-			string(exchangeCfg.LighterAPIKeyPrivateKey),
-			exchangeCfg.LighterAPIKeyIndex,
-			false,
-		)
 	case "ninjatrader":
 		return ntTrader.New(ntTrader.Config{
 			DataDir: exchangeCfg.NTDataDir,
@@ -336,12 +292,8 @@ func formatDisplayBalance(value float64, asset string) string {
 }
 
 func accountAssetForExchange(exchangeType string) string {
-	switch exchangeType {
-	case "hyperliquid", "aster", "lighter":
-		return "USDC"
-	default:
-		return "USDT"
-	}
+	// Futures-only build: the value currency is USD on every venue.
+	return "USD"
 }
 
 func missingExchangeCredentials(exchangeCfg *store.Exchange) (status string, code string, message string, missing bool) {
@@ -350,12 +302,7 @@ func missingExchangeCredentials(exchangeCfg *store.Exchange) (status string, cod
 		string(exchangeCfg.APIKey),
 		string(exchangeCfg.SecretKey),
 		string(exchangeCfg.Passphrase),
-		exchangeCfg.HyperliquidWalletAddr,
-		exchangeCfg.AsterUser,
-		exchangeCfg.AsterSigner,
-		string(exchangeCfg.AsterPrivateKey),
-		exchangeCfg.LighterWalletAddr,
-		string(exchangeCfg.LighterAPIKeyPrivateKey),
+		exchangeCfg.NTDataDir,
 	)
 	if len(missingFields) > 0 {
 		if len(missingFields) == 1 && missingFields[0] == "exchange_type" {

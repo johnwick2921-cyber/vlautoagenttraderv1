@@ -823,7 +823,7 @@ func (h *Handler) queryPositions(params map[string]string) string {
 	var sb strings.Builder
 	sb.WriteString("📊 当前持仓：\n")
 	for _, p := range positions {
-		sb.WriteString(fmt.Sprintf("• %s %s | 入场: %.4f | 未实现P&L: %.2f USDT\n",
+		sb.WriteString(fmt.Sprintf("• %s %s | 入场: %.4f | 未实现P&L: %.2f USD\n",
 			p.Symbol, p.Side, p.EntryPrice, p.UnrealizedPnl))
 	}
 	return sb.String()
@@ -842,7 +842,7 @@ func (h *Handler) queryEquity(params map[string]string) string {
 	if err != nil {
 		return fmt.Sprintf("❌ 查询余额失败: %v", err)
 	}
-	return fmt.Sprintf("💰 账户余额：%.2f USDT", eq.TotalBalance)
+	return fmt.Sprintf("💰 账户余额：%.2f USD", eq.TotalBalance)
 }
 
 func (h *Handler) startTrader(params map[string]string) string {
@@ -1050,7 +1050,7 @@ func welcomeMessage() string {
 
 📋 *配置功能*
 • 「帮我创建一个 BTC 策略，RSI+MACD，止损 8%」
-• 「配置 Binance 交易所」
+• 「配置 NinjaTrader 交易所」
 • 「添加 DeepSeek 大模型」
 • 「创建一个交易员」
 

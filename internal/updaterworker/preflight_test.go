@@ -23,7 +23,7 @@ func TestPreflightRefusalsNeverHold(t *testing.T) {
 		want  string
 	}{
 		{"C22: not flat before the hold", func(r *rig) { r.flat = false }, "addon_census_prehold"},
-		{"C19: the main-tree lock is not held", func(r *rig) { r.lockHeld = false }, "main-tree lock is not held"},
+		{"C19: the main-tree lock is held by another session", func(r *rig) { r.lockHolder = "other-lane" }, "main-tree lock is not held by this job (C19: held by \"other-lane\")"},
 		{"C20: the calendar differs", func(r *rig) {
 			writeFile(r.t, filepath.Join(r.inst, calendarFile), `[{"time":"2026-10-01T12:30:00Z","title":"owner edit"}]`+"\n")
 		}, "calendar_static_t1.json differs"},

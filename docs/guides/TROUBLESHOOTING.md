@@ -20,65 +20,15 @@ Before reporting a bug, please check:
 
 ### 1. Trading Issues
 
-#### ❌ Only Opening Short Positions (Issue #202)
-
-**Symptom:** AI only opens short positions, never long positions, even when market is bullish.
-
-**Root Cause:** Binance account is in **One-way Mode** instead of **Hedge Mode**.
-
-**Solution:**
-1. Login to [Binance Futures](https://www.binance.com/futures/BTCUSDT)
-2. Click **⚙️ Preferences** (top right)
-3. Select **Position Mode**
-4. Switch to **Hedge Mode** (双向持仓)
-5. ⚠️ **Important:** Close all positions before switching
-
-**Why this happens:**
-- Code uses `PositionSide(LONG)` and `PositionSide(SHORT)` parameters
-- These only work in Hedge Mode
-- In One-way Mode, orders fail or only one direction works
-
-**For Subaccounts:**
-- Some Binance subaccounts may not have permission to change position mode
-- Use main account or contact Binance support to enable this permission
-
----
-
-#### ❌ Order Error: `code=-4061` Position Side Mismatch
-
-**Error Message:** `Order's position side does not match user's setting`
-
-**Solution:** Same as above - switch to Hedge Mode.
-
----
-
-#### ❌ Leverage Error: `Subaccounts restricted to 5x leverage`
-
-**Symptom:** Orders fail with leverage error when trying to use >5x leverage.
-
-**Solution:**
-1. Open Web UI → Trader Settings
-2. Set leverage to 5x or lower:
-   ```json
-   {
-     "btc_eth_leverage": 5,
-     "altcoin_leverage": 5
-   }
-   ```
-3. Or use main account (supports up to 50x BTC/ETH, 20x altcoins)
-
----
-
 #### ❌ Positions Not Executing
 
 **Check these:**
-1. **API Permissions**:
-   - Go to Binance → API Management
-   - Verify "Enable Futures" is checked
-   - Check IP whitelist (if enabled)
+1. **NT8 Connection**:
+   - Verify the NinjaTrader AddOn is connected (boot-line transport: TCP wired)
+   - Check the 📊 market data boot line shows bars=<NT8 BarCache>
 
 2. **Account Balance**:
-   - Ensure sufficient USDT in Futures wallet
+   - Ensure the SIM account has sufficient buying power
    - Check margin usage is not at 100%
 
 3. **Symbol Status**:
@@ -274,77 +224,6 @@ VL_BACKEND_PORT=8081
 
 ---
 
-#### ❌ Exchange API Errors
-
-**Common Errors:**
-- `code=-1021, msg=Timestamp for this request is outside of the recvWindow`
-- `invalid signature`
-- `timestamp` errors
-
-**Root Cause:**
-System time is inaccurate, differing from Binance server time by more than allowed range (typically 5 seconds).
-
-**Solution 1: Sync System Time (Recommended)**
-
-```bash
-# Method 1: Use ntpdate (most common)
-sudo ntpdate pool.ntp.org
-
-# Method 2: Use other NTP servers
-sudo ntpdate -s time.nist.gov
-sudo ntpdate -s ntp.aliyun.com  # Aliyun NTP (fast in China)
-
-# Method 3: Enable automatic time sync (Linux)
-sudo timedatectl set-ntp true
-
-# Verify time is correct
-date
-# Should show current accurate time
-```
-
-**Docker Environment Special Note:**
-
-If using Docker, container time may be out of sync with host:
-
-```bash
-# Check container time
-docker exec vl-backend date
-
-# If time is wrong, restart Docker service
-sudo systemctl restart docker
-
-# Or add timezone in docker-compose.yml
-environment:
-  - TZ=Asia/Shanghai  # or your timezone
-```
-
-**Solution 2: Verify API Keys**
-
-If errors persist after time sync:
-
-1. **Check API Keys:**
-   - Not expired
-   - Have correct permissions (Futures enabled)
-   - IP whitelist includes your server IP
-
-2. **Regenerate API Keys:**
-   - Login to Binance → API Management
-   - Delete old key
-   - Create new key
-   - Update VL configuration
-
-**Solution 3: Check Rate Limits**
-
-Binance has strict API rate limits:
-
-- **Requests per minute limit**
-- Reduce number of traders
-- Increase decision interval (e.g., from 1min to 3-5min)
-
-**Related Issue:** [#60](upstream github link (removed in the VL rename))
-
----
-
 ### 4. Frontend Issues
 
 #### ❌ UI Not Updating / Showing Old Data
@@ -478,7 +357,7 @@ ls -lt decision_logs/your_trader_id/ | head -10
 cat decision_logs/your_trader_id/$(ls -t decision_logs/your_trader_id/ | head -1) | jq .
 
 # Search for specific symbol
-grep -r "BTCUSDT" decision_logs/your_trader_id/
+grep -r "MNQ" decision_logs/your_trader_id/
 
 # Find decisions that resulted in trades
 grep -r '"action": "open_' decision_logs/your_trader_id/

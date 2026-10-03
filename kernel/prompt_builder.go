@@ -82,7 +82,7 @@ func (pb *PromptBuilder) buildSystemPromptZH() string {
 ` + "```json" + `
 [
   {
-    "symbol": "BTCUSDT",
+    "symbol": "MNQ",
     "action": "HOLD|PARTIAL_CLOSE|FULL_CLOSE|ADD_POSITION|OPEN_NEW|WAIT",
     "leverage": 3,
     "position_size_usd": 1000,
@@ -105,7 +105,7 @@ func (pb *PromptBuilder) buildSystemPromptZH() string {
   - OPEN_NEW: 开设新仓位
   - WAIT: 等待，不采取任何行动
 - **leverage**: 杠杆倍数（开新仓时必需）
-- **position_size_usd**: 仓位大小（USDT，开新仓时必需）
+- **position_size_usd**: 仓位大小（开新仓时必需）
 - **stop_loss**: 止损价格（开新仓时建议提供）
 - **take_profit**: 止盈价格（开新仓时建议提供）
 - **confidence**: 信心度（0-100）
@@ -155,21 +155,11 @@ func (pb *PromptBuilder) getDecisionRequirementsZH() string {
 ` + "```json" + `
 [
   {
-    "symbol": "PIPPINUSDT",
+    "symbol": "MNQ",
     "action": "PARTIAL_CLOSE",
     "confidence": 85,
     "reasoning": "当前PnL +2.96%，接近历史峰值+2.99%（回撤仅0.03%）。建议部分平仓锁定利润，因为：1) 持仓时间仅11分钟，已获得3%收益；2) 5分钟K线显示价格接近短期阻力位；3) 成交量开始萎缩，上涨动能减弱。建议平仓50%，剩余仓位设置跟踪止盈在峰值回撤20%处。"
   },
-  {
-    "symbol": "HUSDT",
-    "action": "OPEN_NEW",
-    "leverage": 3,
-    "position_size_usd": 500,
-    "stop_loss": 0.1560,
-    "take_profit": 0.1720,
-    "confidence": 75,
-    "reasoning": "HUSDT在5分钟时间框架突破关键阻力位0.1630，持仓量1小时内增加+1.57M (+0.89%)，配合价格上涨+4.92%，符合'OI增加+价格上涨'的强多头模式。15分钟和1小时时间框架均呈现上涨趋势，多周期共振。建议开仓做多，止损设在突破点下方-5%，止盈目标+8%。"
-  }
 ]
 ` + "```" + `
 
@@ -217,7 +207,7 @@ func (pb *PromptBuilder) buildSystemPromptEN() string {
 ` + "```json" + `
 [
   {
-    "symbol": "BTCUSDT",
+    "symbol": "MNQ",
     "action": "HOLD|PARTIAL_CLOSE|FULL_CLOSE|ADD_POSITION|OPEN_NEW|WAIT",
     "leverage": 3,
     "position_size_usd": 1000,
@@ -240,7 +230,7 @@ func (pb *PromptBuilder) buildSystemPromptEN() string {
   - OPEN_NEW: Open new position
   - WAIT: Wait, take no action
 - **leverage**: Leverage multiplier (required for new positions)
-- **position_size_usd**: Position size in USDT (required for new positions)
+- **position_size_usd**: Position size (required for new positions)
 - **stop_loss**: Stop-loss price (recommended for new positions)
 - **take_profit**: Take-profit price (recommended for new positions)
 - **confidence**: Confidence level (0-100)
@@ -290,21 +280,11 @@ func (pb *PromptBuilder) getDecisionRequirementsEN() string {
 ` + "```json" + `
 [
   {
-    "symbol": "PIPPINUSDT",
+    "symbol": "MNQ",
     "action": "PARTIAL_CLOSE",
     "confidence": 85,
     "reasoning": "Current PnL +2.96%, near historical peak +2.99% (only 0.03% pullback). Suggest partial close to lock profits because: 1) Only 11 minutes holding time with 3% gain; 2) 5M chart shows price approaching short-term resistance; 3) Volume declining, upward momentum weakening. Recommend closing 50%, set trailing stop at 20% pullback from peak for remainder."
   },
-  {
-    "symbol": "HUSDT",
-    "action": "OPEN_NEW",
-    "leverage": 3,
-    "position_size_usd": 500,
-    "stop_loss": 0.1560,
-    "take_profit": 0.1720,
-    "confidence": 75,
-    "reasoning": "HUSDT broke key resistance 0.1630 on 5M timeframe. OI increased +1.57M (+0.89%) in 1H paired with price +4.92%, matching 'OI up + price up' strong bullish pattern. Both 15M and 1H timeframes show uptrend, multi-timeframe resonance confirmed. Recommend long entry, stop-loss -5% below breakout, target +8% profit."
-  }
 ]
 ` + "```" + `
 
@@ -316,7 +296,7 @@ func (pb *PromptBuilder) getDecisionRequirementsEN() string {
 // FormatDecisionExample formats a decision example (for documentation)
 func FormatDecisionExample(lang Language) string {
 	example := Decision{
-		Symbol:          "BTCUSDT",
+		Symbol:          "MNQ",
 		Action:          "OPEN_NEW",
 		Leverage:        3,
 		PositionSizeUSD: 1000,

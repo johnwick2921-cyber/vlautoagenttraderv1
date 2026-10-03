@@ -30,7 +30,7 @@ type TraderOrder struct {
 	FilledQuantity    float64 `gorm:"column:filled_quantity;default:0" json:"filled_quantity"`
 	AvgFillPrice      float64 `gorm:"column:avg_fill_price;default:0" json:"avg_fill_price"`
 	Commission        float64 `gorm:"column:commission;default:0" json:"commission"`
-	CommissionAsset   string  `gorm:"column:commission_asset;default:USDT" json:"commission_asset"`
+	CommissionAsset   string  `gorm:"column:commission_asset" json:"commission_asset"`
 	Leverage          int     `gorm:"column:leverage;default:1" json:"leverage"`
 	ReduceOnly        bool    `gorm:"column:reduce_only;default:false" json:"reduce_only"`
 	ClosePosition     bool    `gorm:"column:close_position;default:false" json:"close_position"`
@@ -387,7 +387,7 @@ func (s *OrderStore) GetMaxTradeIDsByExchange(exchangeID string) (map[string]int
 	var results []symbolTradeID
 
 	// Query all trade IDs grouped by symbol, find max in Go to avoid database-specific CAST issues
-	// (PostgreSQL INTEGER is 32-bit, can't handle Binance trade IDs > 2.1B)
+	// (PostgreSQL INTEGER is 32-bit, can't handle large exchange trade IDs)
 	err := s.db.Model(&TraderFill{}).
 		Select("symbol, exchange_trade_id").
 		Where("exchange_id = ? AND exchange_trade_id != ''", exchangeID).
