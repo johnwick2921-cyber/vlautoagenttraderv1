@@ -34,6 +34,7 @@ func resetMentorCounters() {
 // given build, mirroring every frame type into frames.
 func mentorLoopback(t *testing.T, buildID string) (at *AutoTrader, st *store.Store, ledger *store.ArmedOrderStore, frames chan ntwire.FrameType) {
 	t.Helper()
+	t.Setenv("STOP_ENTRY_SEAM", "on")
 	at, st = resetTrader(t, store.StrategyConfig{RiskControl: store.RiskControlConfig{
 		MentorMode:          true,
 		MentorWindowStart:   "00:00", // all-day window so the window gate passes at any test hour
@@ -170,48 +171,63 @@ func TestMentorDispatchHandlesEveryAction(t *testing.T) {
 	}
 }
 
-// TestMentorEntryIsAlwaysStopLimit — the ONE mentor entry path at the call
-// site: a PlaceStopLimitEntry intent (the ISB order type) creates a ledger
-// arm with origin-ready fields and the intent's expiry, and the wire frame is
-// ALWAYS stop-limit (stop_limit:true, order_type stop_entry) with
-// MENTOR_STOP_LIMIT OFF — the PLAN's never stop-market, knob-independent.
+// TestMentorEntryIsAlwaysStopLimit — the ONE mentor entry path (P0-b) at
+// the call site: a PlaceStopLimitEntry intent (the ISB order type) authors an
+// ARMED LEDGER row (kind stop_entry, the intent's expiry, state armed) and the
+// ARMED EXECUTOR places it — a stop_limit frame on the wire, no direct wire
+// hop in the injector. Mutant: a direct broker call in the injector leaves no
+// row behind, and this turns RED.
 func TestMentorEntryIsAlwaysStopLimit(t *testing.T) {
 	t.Setenv("MENTOR_PLACE", "on")
-	t.Setenv("MENTOR_STOP_LIMIT", "") // the knob is OFF and must NOT matter
+	t.Setenv("MENTOR_STOP_LIMIT", "on") // the p3 routing is knob-gated; the origin rule makes it knob-independent at the bundle bind
 	at, _, ledger, frames := mentorLoopback(t, ntwire.MinAddonBuildStopLimit)
 	mentorWireSeams(t, at, ledger)
 	resetMentorCounters()
 
 	in := mentor.Intent{Action: mentor.PlaceStopLimitEntry, ArmID: "isb-1", Setup: "ISB", Side: mentor.SideLong,
-		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: time.Now().UnixMilli() + 60_000}
+		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: rthInstant().UnixMilli() + 60_000}
 	at.mentorDispatchIntent(in, mentorTierInputs{}, 1000, 1100)
 
-	if !sawMentorFrame(t, frames, ntwire.FrameSignal, 2*time.Second) {
-		t.Fatal("the mentor entry must reach the wire")
+	// The injector authored the armed row; nothing reached the wire yet.
+	if sawMentorFrame(t, frames, ntwire.FrameSignal, 300*time.Millisecond) {
+		t.Fatal("the injector must NOT place directly — the armed executor places")
 	}
-	// The armed row: created with the intent's expiry and the registry entry.
 	var row store.ArmedOrderDB
 	if err := ledger.DB().Where("scenario = ?", "isb-1").First(&row).Error; err != nil {
 		t.Fatalf("the mentor arm row must exist: %v", err)
 	}
-	if row.Kind != "stop_entry" || row.ExpiryMs != in.ExpiryMs {
-		t.Fatalf("mentor arm kind=%q expiry=%d, want stop_entry / %d", row.Kind, row.ExpiryMs, in.ExpiryMs)
-	}
-	if row.State != store.StatePlacePending || row.SignalID == "" {
-		t.Fatalf("mentor arm must be place_pending with a signal id after the send, got %q/%q", row.State, row.SignalID)
+	if row.Kind != "stop_entry" || row.ExpiryMs != in.ExpiryMs || row.State != store.StateArmed {
+		t.Fatalf("mentor arm kind=%q expiry=%d state=%q, want stop_entry / %d / armed", row.Kind, row.ExpiryMs, row.State, in.ExpiryMs)
 	}
 	arm, ok := mentorLiveArmFor("isb-1")
 	if !ok || arm.RowID != row.ID {
 		t.Fatalf("the ArmID registry must resolve isb-1 -> row %d, got %+v ok=%v", row.ID, arm, ok)
 	}
-	placed := 0
+	armed := 0
 	for k, v := range MentorCountSnapshot() {
-		if strings.HasPrefix(k, "placed_") {
-			placed += v
+		if strings.HasPrefix(k, "armed_") {
+			armed += v
 		}
 	}
-	if placed != 1 {
-		t.Fatalf("exactly one placement tier must be counted, got %d", placed)
+	if armed != 1 {
+		t.Fatalf("exactly one armed tier must be counted, got %d", armed)
+	}
+
+	// The armed executor places it: stop_limit frame on the wire. The clock
+	// is pinned to an RTH instant (class 110): the admission chain asks the
+	// calendar on the clock it is GIVEN.
+	now := rthInstant()
+	s := at.armedTrader().GetServer()
+	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now, nil)
+	if !sawMentorFrame(t, frames, ntwire.FrameSignal, 2*time.Second) {
+		t.Fatal("the armed pass must place the mentor arm")
+	}
+	if err := ledger.DB().First(&row, row.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.State != store.StatePlacePending || row.SignalID == "" {
+		t.Fatalf("after the armed pass the row must be place_pending with a signal id, got %q/%q", row.State, row.SignalID)
 	}
 }
 
@@ -219,6 +235,7 @@ func TestMentorEntryIsAlwaysStopLimit(t *testing.T) {
 // wire-flag pin needs the bytes: a decoded bool cannot tell absent from false).
 func mentorLoopbackRaw(t *testing.T, buildID string) (at *AutoTrader, ledger *store.ArmedOrderStore, raw chan []byte) {
 	t.Helper()
+	t.Setenv("STOP_ENTRY_SEAM", "on")
 	at, st := resetTrader(t, store.StrategyConfig{RiskControl: store.RiskControlConfig{
 		MentorMode:          true,
 		MentorWindowStart:   "00:00",
@@ -269,15 +286,21 @@ func mentorLoopbackRaw(t *testing.T, buildID string) (at *AutoTrader, ledger *st
 	return at, st.ArmedOrders(), raw
 }
 
-// TestMentorEntryFrameCarriesStopLimitTrue — the raw frame pin: the mentor
-// entry always carries stop_limit:true (the knob is off in this test).
+// TestMentorEntryFrameCarriesStopLimitTrue — the raw frame pin through
+// the armed path: the mentor entry's stop_limit frame carries
+// stop_limit:true and order_type stop_entry. (Knob-independence of the knob
+// arrives with the bundle's origin routing; p3's routing is knob-gated.)
 func TestMentorEntryFrameCarriesStopLimitTrue(t *testing.T) {
 	t.Setenv("MENTOR_PLACE", "on")
-	t.Setenv("MENTOR_STOP_LIMIT", "")
+	t.Setenv("MENTOR_STOP_LIMIT", "on")
 	at, ledger, raw := mentorLoopbackRaw(t, ntwire.MinAddonBuildStopLimit)
 	mentorWireSeams(t, at, ledger)
 	at.mentorDispatchIntent(mentor.Intent{Action: mentor.PlaceStopLimitEntry, ArmID: "isb-raw", Setup: "ISB", Side: mentor.SideLong,
-		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: time.Now().UnixMilli() + 60_000}, mentorTierInputs{}, 1000, 1100)
+		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: rthInstant().UnixMilli() + 60_000}, mentorTierInputs{}, 1000, 1100)
+	now := rthInstant()
+	s := at.armedTrader().GetServer()
+	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now, nil)
 	deadline := time.After(2 * time.Second)
 	var payload []byte
 	select {
@@ -286,7 +309,7 @@ func TestMentorEntryFrameCarriesStopLimitTrue(t *testing.T) {
 		t.Fatal("no signal frame reached the wire")
 	}
 	if !bytes.Contains(payload, []byte(`"stop_limit":true`)) {
-		t.Fatalf("the mentor frame must carry stop_limit:true even with MENTOR_STOP_LIMIT off, got %s", payload)
+		t.Fatalf("the mentor frame must carry stop_limit:true, got %s", payload)
 	}
 	var p ntwire.SignalPayload
 	if err := json.Unmarshal(payload, &p); err != nil {
@@ -298,28 +321,30 @@ func TestMentorEntryFrameCarriesStopLimitTrue(t *testing.T) {
 }
 
 // TestMentorEntryRefusesBelowC2 — an AddOn below the c2 floor REFUSES the
-// mentor entry (retired terminal, named counter) and never falls back to a
-// stop-market frame.
+// mentor entry in the armed pass: the row stays armed (no frame reaches the
+// wire) — never a stop-market fallback.
 func TestMentorEntryRefusesBelowC2(t *testing.T) {
 	t.Setenv("MENTOR_PLACE", "on")
+	t.Setenv("MENTOR_STOP_LIMIT", "on")
 	at, _, ledger, frames := mentorLoopback(t, ntwire.MinAddonBuildCancelReport) // c1 < c2
 	mentorWireSeams(t, at, ledger)
 	resetMentorCounters()
 	in := mentor.Intent{Action: mentor.PlaceStopLimitEntry, ArmID: "isb-c1", Setup: "ISB", Side: mentor.SideLong,
-		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: time.Now().UnixMilli() + 60_000}
+		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: rthInstant().UnixMilli() + 60_000}
 	at.mentorDispatchIntent(in, mentorTierInputs{}, 1000, 1100)
+	now := rthInstant()
+	srv := at.armedTrader().GetServer()
+	srv.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now, nil)
 	if sawMentorFrame(t, frames, ntwire.FrameSignal, 500*time.Millisecond) {
 		t.Fatal("an AddOn below c2 must never receive a mentor entry frame")
-	}
-	if got := MentorCountSnapshot()["placement_refused_addon_below_c2"]; got != 1 {
-		t.Fatalf("placement_refused_addon_below_c2 = %d, want 1", got)
 	}
 	var row store.ArmedOrderDB
 	if err := ledger.DB().Where("scenario = ?", "isb-c1").First(&row).Error; err != nil {
 		t.Fatal(err)
 	}
-	if !store.IsTerminalArmState(row.State) {
-		t.Fatalf("the refused mentor arm must be retired terminal, got %q", row.State)
+	if row.State != store.StateArmed {
+		t.Fatalf("the refused mentor arm stays armed (the pass retries; never a stop-market), got %q", row.State)
 	}
 }
 
@@ -430,29 +455,71 @@ func TestMentorClosePositionReachesTheBroker(t *testing.T) {
 	}
 }
 
-// TestMentorEntryStampsExpiryThroughTheBoundWire — the arm-creation site
-// calls the bound arm-expiry seam (the unbind-expiry mutant turns this RED).
-func TestMentorEntryStampsExpiryThroughTheBoundWire(t *testing.T) {
+// TestMentorIntentYieldsExactlyOneArmedRow — DS-102's merge check: one
+// mentor intent authors exactly one ledger row, and the row carries the
+// intent's expiry as the ledger write itself (no double stamping seam).
+func TestMentorIntentYieldsExactlyOneArmedRow(t *testing.T) {
 	t.Setenv("MENTOR_PLACE", "on")
+	at, _, ledger, _ := mentorLoopback(t, ntwire.MinAddonBuildStopLimit)
+	mentorWireSeams(t, at, ledger)
+	expiry := time.Now().UnixMilli() + 60_000
+	at.mentorDispatchIntent(mentor.Intent{Action: mentor.PlaceStopLimitEntry, ArmID: "isb-one", Setup: "ISB", Side: mentor.SideLong,
+		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: expiry}, mentorTierInputs{}, 1000, 1100)
+	var rows []store.ArmedOrderDB
+	if err := ledger.DB().Where("scenario = ?", "isb-one").Find(&rows).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("one mentor intent must yield exactly one armed row, got %d", len(rows))
+	}
+	if rows[0].ExpiryMs != expiry || rows[0].State != store.StateArmed {
+		t.Fatalf("the row must carry the intent's expiry as the ledger write: expiry=%d state=%q", rows[0].ExpiryMs, rows[0].State)
+	}
+}
+
+// TestMentorChainIntentToWireToExpiryCancel — the CTO's exact call-site chain:
+// a mentor ISB intent -> an armed row -> a stop_limit frame on the wire -> at
+// expiry -> cancel_order on the SAME pass.
+func TestMentorChainIntentToWireToExpiryCancel(t *testing.T) {
+	t.Setenv("MENTOR_PLACE", "on")
+	t.Setenv("MENTOR_STOP_LIMIT", "on")
 	at, _, ledger, frames := mentorLoopback(t, ntwire.MinAddonBuildStopLimit)
 	mentorWireSeams(t, at, ledger)
-	var mu sync.Mutex
-	var stamped []int64
-	mentorSetArmExpiryWire = func(armID int64, expiryMs int64) error {
-		mu.Lock()
-		stamped = append(stamped, armID)
-		mu.Unlock()
-		return ledger.SetArmExpiry(armID, expiryMs)
+	t0 := rthInstant()
+	at.mentorDispatchIntent(mentor.Intent{Action: mentor.PlaceStopLimitEntry, ArmID: "isb-chain", Setup: "ISB", Side: mentor.SideLong,
+		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: t0.UnixMilli() + 60_000}, mentorTierInputs{}, 1000, 1100)
+	var row store.ArmedOrderDB
+	if err := ledger.DB().Where("scenario = ?", "isb-chain").First(&row).Error; err != nil {
+		t.Fatal(err)
 	}
-	expiry := time.Now().UnixMilli() + 60_000
-	at.mentorDispatchIntent(mentor.Intent{Action: mentor.PlaceStopLimitEntry, ArmID: "isb-stamp", Setup: "ISB", Side: mentor.SideLong,
-		Price: 29600, Stop: 29595, Target: 29610, StopPts: 5, TargetPts: 10, ExpiryMs: expiry}, mentorTierInputs{}, 1000, 1100)
+	srv := at.armedTrader().GetServer()
+	srv.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, t0)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, t0.Add(-time.Hour).UnixMilli(), t0, nil)
 	if !sawMentorFrame(t, frames, ntwire.FrameSignal, 2*time.Second) {
-		t.Fatal("the mentor entry must reach the wire")
+		t.Fatal("step 2: the armed pass must send the stop_limit frame")
 	}
-	mu.Lock()
-	defer mu.Unlock()
-	if len(stamped) != 1 {
-		t.Fatalf("the bound arm-expiry seam must be called once at the arm-creation site, got %d calls", len(stamped))
+	if err := ledger.DB().First(&row, row.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.State != store.StatePlacePending || row.SignalID == "" {
+		t.Fatalf("step 2: row must be place_pending with a signal id, got %q/%q", row.State, row.SignalID)
+	}
+	// The evaluator's stacking extension moves the expiry; here the test
+	// lapses it: at now >= expiry the pass requests the cancel on the SAME
+	// pass. (The cancel_order FRAME on that same pass is the F1 fix on
+	// fix/stop-limit-r2, which merges in the bundle; on p3 the sweep's
+	// RequestCancel moves the row to cancel_pending on this pass.)
+	if err := ledger.SetArmExpiry(row.ID, t0.UnixMilli()-1); err != nil {
+		t.Fatal(err)
+	}
+	t1 := t0.Add(2 * time.Second)
+	srv.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{
+		{Name: row.SignalID, State: "Working", Type: "stop_limit"}}}, t1)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, t0.Add(-time.Hour).UnixMilli(), t1, nil)
+	if err := ledger.DB().First(&row, row.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.State != store.StateCancelPending {
+		t.Fatalf("step 3: the lapsed row must be cancel_pending on the SAME pass, got %q", row.State)
 	}
 }

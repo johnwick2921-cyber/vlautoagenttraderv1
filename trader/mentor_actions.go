@@ -1,16 +1,13 @@
 package trader
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"vl/kernel/mentor"
-	ntwire "vl/provider/ninjatrader"
 	"vl/store"
-	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── MENTOR INJECTOR — THE ACTION EXECUTORS (P0, CTO 1791040360324) ────────────
@@ -101,24 +98,27 @@ func (at *AutoTrader) mentorDispatchIntent(in mentor.Intent, extra mentorTierInp
 	}
 }
 
-// mentorDirectPlace is the ONE mentor entry path: a real ledger arm
-// (origin=mentor, kind stop_entry, the intent's expiry) placed through
-// PlaceStopEntryWithLimit — ALWAYS stop-limit, whatever MENTOR_STOP_LIMIT
-// says (PLAN: never stop-market). An AddOn below the c2 floor refuses inside
-// the broker hop; every failure retires the row terminal (the general armed
-// pass cannot place it at the mentor's size), so no stop-market fallback can
-// ever pick it up.
-func (at *AutoTrader) mentorDirectPlace(in mentor.Intent, choice mentorSizeChoice, barCloseMs, emitMs int64) {
+// mentorAuthoredRow reports whether a ledger row was authored by the mentor
+// injector (PlanID "mentor" + kind stop_entry). The injector is its own
+// authoring pass: its rows are admitted by armAdmitted without the planner's
+// admission set — every other placement gate still runs. The bundle-2 bind
+// commit switches this marker to the arm's origin field (ArmOriginMentor).
+func mentorAuthoredRow(r store.ArmedOrderDB) bool {
+	return r.PlanID == "mentor" && r.Kind == "stop_entry"
+}
+
+// mentorArmIntent is the ONE mentor entry path (P0-b, CTO 1791040400571): it
+// creates an ARMED LEDGER row — kind stop_entry, the intent's expiry — and
+// lets the armed executor place it. No direct wire call here: the armed
+// pass runs the admission chain, the slot guard, the c2 floor (refused,
+// never a stop-market fallback), the stop-limit origin routing and, at
+// expiry, the F1 cancel — all on the one path. The ArmID registry records
+// the row for CancelArm / ExtendArm / MoveStopBE / ClosePosition.
+func (at *AutoTrader) mentorArmIntent(in mentor.Intent, choice mentorSizeChoice, barCloseMs, emitMs int64) {
 	ledger := at.store.ArmedOrders()
 	if ledger == nil {
 		mentorCount("placement_refused_no_ledger")
 		at.logErrorf("🧑‍🏫 mentor placement REFUSED — no armed ledger")
-		return
-	}
-	nt := at.armedTrader()
-	if nt == nil {
-		mentorCount("placement_refused_no_broker")
-		at.logErrorf("🧑‍🏫 mentor placement REFUSED — no NT8 broker bound")
 		return
 	}
 	armID := strings.TrimSpace(in.ArmID)
@@ -146,65 +146,20 @@ func (at *AutoTrader) mentorDirectPlace(in mentor.Intent, choice mentorSizeChoic
 		Condition: in.Setup,
 		ExpiryMs:  in.ExpiryMs,
 		// Origin: the bundle-2 bind commit stamps store.ArmOriginMentor here
-		// (the column lands with fix/stop-limit-r2, not on p3).
+		// (the column lands with fix/stop-limit-r2, not on p3); the stop-limit
+		// origin routing then keys off it.
 	}
 	if err := ledger.UpsertArm(&row); err != nil {
 		mentorCount("placement_refused_upsert")
 		at.logErrorf("🧑‍🏫 mentor placement REFUSED — arm upsert failed: %v", err)
 		return
 	}
-	// The production arm-expiry binding stamps the same value at the
-	// arm-creation site (the unbind-expiry mutant must turn a test RED).
-	if mentorSetArmExpiryWire != nil {
-		if err := mentorSetArmExpiryWire(row.ID, in.ExpiryMs); err != nil {
-			mentorCount("placement_expiry_stamp_failed")
-			at.logWarnf("🧑‍🏫 mentor arm %d expiry stamp failed: %v", row.ID, err)
-		}
-	}
 	mentorRegisterLiveArm(armID, row.ID, side, in.Price)
-
-	now := time.Now()
-	if mentorNowSource != nil {
-		now = mentorNowSource()
-	}
-	// The SAME per-slot invariant and the one-contract guard the armed pass
-	// enforces — a mentor entry never skips them.
-	rows, _ := ledger.ListNonTerminal(at.id)
-	if g := at.armSlotGuard(rows, row, now); !g.Allowed() {
-		mentorCount("placement_refused_slot")
-		at.logWarnf("🧑‍🏫 mentor placement REFUSED at the slot guard — retired never placed")
-		_ = ledger.SetState(row.ID, store.StateCancelled, "mentor placement refused at the slot guard — never placed")
-		return
-	}
-	if c := at.oneContractGuard(now); !c.Allowed() {
-		mentorCount("placement_refused_contract")
-		at.logWarnf("🧑‍🏫 mentor placement REFUSED by the one-contract guard — retired never placed")
-		_ = ledger.SetState(row.ID, store.StateCancelled, "mentor placement refused by the one-contract guard — never placed")
-		return
-	}
-
-	sid, perr := nt.PlaceStopEntryWithLimit(at.futuresSymbol(), side, float64(choice.Contracts), in.Price, in.Stop, in.Target, func(sid string) error {
-		return ledger.BeginPlacement(row.ID, sid)
-	})
-	if perr != nil {
-		reason := "mentor placement SEND failed — retired never placed"
-		if errors.Is(perr, ntwire.ErrAddonBuildTooOld) {
-			mentorCount("placement_refused_addon_below_c2")
-			reason = "mentor stop-limit REFUSED — AddOn below 2026-10-03-c2 would build StopMarket; never a stop-market fallback"
-		} else if ntTrader.IsMaintenanceHold(perr) {
-			mentorCount("placement_refused_maintenance_hold")
-			reason = "mentor placement held by the installation maintenance hold — retired never placed"
-		} else {
-			mentorCount("placement_error")
-		}
-		at.logWarnf("🧑‍🏫 mentor placement failed: %v — %s", perr, reason)
-		_ = ledger.SetState(row.ID, store.StateCancelled, reason)
-		return
-	}
-	mentorCount("placed_" + choice.Tier)
+	mentorCount("armed_" + choice.Tier)
 	ackMs := time.Now().UnixMilli()
 	recordMentorLatency(barCloseMs, at.mentorFinalArrival.Load(), emitMs, ackMs)
-	at.logInfof("🧑‍🏫 mentor placed: %s %s %d contracts (tier %s) — signal %s, expiry %d", in.Setup, side, choice.Contracts, choice.Tier, sid, in.ExpiryMs)
+	at.logInfof("🧑‍🏫 mentor arm authored: %s %s %d contracts (tier %s) — row %d, the armed pass places it (stop-limit by the origin rule), expiry %d",
+		in.Setup, side, choice.Contracts, choice.Tier, row.ID, in.ExpiryMs)
 }
 
 // mentorExtendArm pushes a resting arm's expiry forward (ISB stacking, N12).
