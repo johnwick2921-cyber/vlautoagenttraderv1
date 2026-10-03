@@ -1,6 +1,7 @@
 package mentor
 
 import (
+	"sync"
 	"time"
 
 	"vl/market"
@@ -80,9 +81,17 @@ type DayLatch struct {
 // ctime loads America/Chicago (the mentor quotes all times in US Central
 // [D4.4 p1 @ 01:45 "em tính giờ Texas"]). Falls back to a fixed −6h zone if
 // tzdata is unavailable.
+var chicagoOnce sync.Once
+var chicagoLoc *time.Location
+var chicagoErr error
+
 func ctime() *time.Location {
-	if loc, err := time.LoadLocation("America/Chicago"); err == nil {
-		return loc
+	// LoadLocation per call is the replay killer: bucketOpen/rthHourAnchor/
+	// rthMinuteOf call ctime() PER BAR, and O(n) per tick over 12k ticks is
+	// O(n^2) LoadLocation calls. Load once; the rest is a cached pointer.
+	chicagoOnce.Do(func() { chicagoLoc, chicagoErr = time.LoadLocation("America/Chicago") })
+	if chicagoErr == nil {
+		return chicagoLoc
 	}
 	return time.FixedZone("CST6", -6*3600)
 }

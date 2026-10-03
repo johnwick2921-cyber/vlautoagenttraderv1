@@ -200,8 +200,13 @@ func candleColour(b market.Kline) bool {
 // (keyLevel1HBars), and only a candle that CLOSED at or after the level was
 // drawn can delete it. The still-forming candle (whose close time has not
 // been reached) never counts.
-func levelDeletedBy1HBody(lvl Level, bars []market.Kline, now int64) bool {
-	b60 := keyLevel1HBars(bars)
+// b60 is the PRE-COMPUTED 1H RTH candle series (keyLevel1HBars). It was
+// hoisted out of the per-level loop: re-aggregating the full slice for every
+// level on every tick is O(levels x bars) per tick and timed the replay out
+// once site 4 made the aggregation per-bar time.Date calls. The caller owns
+// the b60 lifecycle (seeded: State.Seed1HBars, incremental; cold: one
+// keyLevel1HBars per tick).
+func levelDeletedBy1HBody(lvl Level, b60 []market.Kline, now int64) bool {
 	if len(b60) > 0 && b60[len(b60)-1].CloseTime >= now {
 		b60 = b60[:len(b60)-1] // the forming 1H candle has not closed
 	}
