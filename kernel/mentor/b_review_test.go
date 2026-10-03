@@ -49,25 +49,27 @@ func TestBarsTFClockAlignedOverlap(t *testing.T) {
 }
 
 // TestBarsTF4HAnchoredTo1700CT — B1: the 4h buckets anchor to the CME session
-// open 17:00 CT: 17–21, 21–01, 01–05, 05–09, 09–13, 13–16.
+// open 17:00 CT: 17–21, 21–01, 01–05, 05–09, 09–13, 13–16. Inputs are REAL
+// UTC epoch ms (EPOCH RULING 2026-10-03 — wall-as-epoch inputs were migrated).
 func TestBarsTF4HAnchoredTo1700CT(t *testing.T) {
 	for _, c := range []struct {
-		openMin int // minutes since 1970-01-01 00:00 CT… (any day works)
-		wantMin int
+		hh, mm  int
+		wantHH  int
+		wantOff int
 	}{
-		{17 * 60, 17 * 60}, // 17:00 → bucket 17:00
-		{20 * 60, 17 * 60}, // 20:00 → 17:00 bucket
-		{21 * 60, 21 * 60}, // 21:00 → new bucket
-		{0 * 60, -3 * 60},  // 00:00 belongs to the previous session's 21:00 bucket (-180 min at the epoch day)
-		{1 * 60, 1 * 60},   // 01:00 → 01:00 bucket
-		{9 * 60, 9 * 60},   // 09:00 → 09:00
-		{13 * 60, 13 * 60}, // 13:00 → 13:00
-		{16 * 60, 13 * 60}, // 16:00 → 13:00 bucket (last, 13–16)
+		{17, 0, 17, 0}, // 17:00 → bucket 17:00
+		{20, 59, 17, 0}, // inside [17,21)
+		{21, 0, 21, 0},  // 21:00 → new bucket
+		{0, 59, 21, -1}, // after midnight belongs to the previous day's 21:00 bucket
+		{1, 0, 1, 0},
+		{9, 0, 9, 0},
+		{13, 0, 13, 0},
+		{16, 59, 13, 0}, // last bucket [13,17)
 	} {
-		got := bucketOpen(int64(c.openMin)*60_000, 240)
-		want := int64(c.wantMin) * 60_000
+		got := bucketOpen(auditMs(2026, 9, 15, c.hh, c.mm, 0), 240)
+		want := auditMs(2026, 9, 15+c.wantOff, c.wantHH, 0, 0)
 		if got != want {
-			t.Fatalf("bucketOpen(%dmin, 4h) = %d, want %d", c.openMin, got/60_000, want/60_000)
+			t.Fatalf("bucketOpen(%02d:%02d CT, 4h) = %d, want %d", c.hh, c.mm, got, want)
 		}
 	}
 }

@@ -388,3 +388,58 @@ func chooseStop(ref market.Kline, side Side) float64 {
 	}
 	return ref.High
 }
+
+// TestBoxPathRecordedTapeWeekdayRTH — the same census test on a WEEKDAY RTH
+// tape (Tue 15 Sep 2026, mnq_1m_2026-09-15_rth) with the ORB gate ON: either
+// at least one box entry fires, or every return's death is a
+// ruling-sanctioned gate, named.
+func TestBoxPathRecordedTapeWeekdayRTH(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true // ORB gate stays ON: the RTH tape can draw a real ORB
+	bars := loadFixture(t, "mnq_1m_2026-09-15_rth", "1m")
+
+	e := New(cfg)
+	boxEntries := 0
+	for i := 2; i <= len(bars); i++ {
+		now := bars[i-1].CloseTime + 1
+		for _, in := range e.Tick(bars[:i], now) {
+			if in.Action == PlaceStopEntry && strings.HasPrefix(in.Reason, "box edge return") {
+				boxEntries++
+			}
+		}
+	}
+
+	now := bars[len(bars)-1].CloseTime + 1
+	boxes := BoxesBuild(bars, cfg.Box, time.UnixMilli(now))
+	levels := Levels(bars, cfg, now)
+	census := map[string]int{}
+	returns := 0
+	for _, b := range boxes {
+		for _, r := range BoxReturnBars(bars, b, b.FormedAt, cfg.Box) {
+			returns++
+			ref := bars[r.RefBar]
+			gate := censusBoxReturn(ref, b, boxes, levels, e.State.Trigger, cfg)
+			if gate == "trigger verdict" && cfg.LocTriggerFilter {
+				gate = "trigger verdict"
+			}
+			census[gate]++
+		}
+	}
+	if returns == 0 {
+		t.Skipf("weekday RTH tape 15 Sep: no box returns on this tape (0 boxes/returns) — nothing to census")
+	}
+	if boxEntries > 0 {
+		t.Logf("weekday RTH tape 15 Sep: %d box-return entries FIRED; %d returns, deaths: %v", boxEntries, returns, census)
+		return
+	}
+	for gate, n := range census {
+		switch gate {
+		case "reject (close inside the box)", "trigger verdict", "room",
+			"no level beyond", "stop ceiling", "ping_pong_range_too_small", "inside a box":
+		default:
+			t.Fatalf("weekday RTH tape: %d returns died at an UNEXPECTED gate %q (census %v)",
+				n, gate, census)
+		}
+	}
+	t.Logf("weekday RTH tape 15 Sep: 0 box-return entries fired; %d returns, deaths: %v", returns, census)
+}
