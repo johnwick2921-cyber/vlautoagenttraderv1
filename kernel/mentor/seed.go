@@ -308,14 +308,15 @@ func keyLevelsAppend(levels []Level, candle market.Kline, lastColour bool, prune
 // failClosedFilter drops every entry intent while any seeded source is missing
 // (cancels survive — an open arm must stay closable). Unseeded evaluators never
 // call it: legacy behaviour is untouched.
-func failClosedFilter(out []Intent) []Intent {
-	kept := out[:0]
+func failClosedFilter(out []Intent) (kept []Intent, refusals []string) {
+	kept = out[:0]
 	for _, in := range out {
 		switch in.Action {
 		case PlaceStopEntry, PlaceStopLimitEntry:
+			refusals = append(refusals, "seed_missing_source")
 			continue
 		}
 		kept = append(kept, in)
 	}
-	return kept
+	return kept, refusals
 }

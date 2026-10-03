@@ -128,7 +128,7 @@ func TestSeedFailClosed(t *testing.T) {
 		{Action: CancelArm, ArmID: "a"},
 		{Action: ExtendArm, ArmID: "a", ExpiryMs: 123},
 	}
-	got := failClosedFilter(ins)
+	got, _ := failClosedFilter(ins)
 	if len(got) != 2 || got[0].Action != CancelArm || got[1].Action != ExtendArm {
 		t.Fatalf("failClosedFilter kept %v", got)
 	}

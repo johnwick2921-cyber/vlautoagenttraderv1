@@ -109,11 +109,11 @@ func ORBVerdict(orb ORB, side Side, price float64, cfg Config) (ok bool, reason 
 // orbGateFilter applies the ORB gate to every intraday entry intent. The §8
 // swing is EXEMPT (its reasons start with "swing") — the ORB is a gate on
 // intraday entries only.
-func orbGateFilter(ints []Intent, orb ORB, cfg Config) []Intent {
+func orbGateFilter(ints []Intent, orb ORB, cfg Config) (out []Intent, refusals []string) {
 	if !cfg.OrbGateEnabled {
-		return ints
+		return ints, nil
 	}
-	out := make([]Intent, 0, len(ints))
+	out = make([]Intent, 0, len(ints))
 	for _, in := range ints {
 		if in.Action != PlaceStopEntry && in.Action != PlaceStopLimitEntry {
 			out = append(out, in)
@@ -125,9 +125,29 @@ func orbGateFilter(ints []Intent, orb ORB, cfg Config) []Intent {
 		}
 		if ok, _ := ORBVerdict(orb, in.Side, in.Price, cfg); ok {
 			out = append(out, in)
+		} else {
+			refusals = append(refusals, orbRefusalStage(orb, in.Side, in.Price, cfg))
 		}
 	}
-	return out
+	return out, refusals
+}
+
+// orbRefusalStage names the B-rules funnel stage an ORB refusal lands in
+// (the long reason strings stay in ORBVerdict).
+func orbRefusalStage(orb ORB, side Side, price float64, cfg Config) string {
+	if !cfg.OrbGateEnabled {
+		return ""
+	}
+	if !orb.Drawn {
+		return "orb_not_drawn"
+	}
+	if orb.Escaped == "" {
+		return "orb_not_escaped"
+	}
+	if side != orb.Escaped {
+		return "orb_wrong_side"
+	}
+	return "orb_inside"
 }
 
 func maxf(a, b float64) float64 {

@@ -46,6 +46,11 @@ type Limits struct {
 	// anchor price (round(anchor*4)) — the replay's key. It lives for one
 	// trading day.
 	Places map[string]*Place
+	// Refusals is the B-rules refusal ledger for the G1/G2 drops (CTO
+	// 13:51:31Z): leg_budget_second_phl / leg_budget_stopped /
+	// leg_budget_full / loss_box_blocked / loss_box_off_day /
+	// orphan_not_location.
+	Refusals map[string]int
 
 	dayKey string
 	pend   []*pendOrder
@@ -99,6 +104,13 @@ type openTrade struct {
 // G1 leg budget and G2 loss box to the emitted entries, and registers the
 // surviving entries for the next tick's simulation. prev is the candle
 // before cur (its close is the leg-reset input for the "close" knob).
+func (l *Limits) refuse(reason string) {
+	if l.Refusals == nil {
+		l.Refusals = map[string]int{}
+	}
+	l.Refusals[reason]++
+}
+
 func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels []Level, cfg Config) []Intent {
 	day := tradingDayKey(time.UnixMilli(now).In(ctime()))
 	if l.dayKey != "" && l.dayKey != day {
@@ -142,15 +154,22 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 			ext := nearestOldExtreme(levels, in.Price, in.Side)
 			if cfg.LegBudgetEnabled {
 				if ban := l.legVerdict(in.Side, false); ban != "" {
-					continue // G1: second PHL in the leg / leg closed by a stop-out
+					l.refuse(ban) // G1: second PHL / leg closed by a stop-out
+					continue
 				}
 			}
 			pkey, panchor, orphan := normalizePlace(in, levels)
 			if orphan {
-				continue // K2: an old extreme with no coincident key level is not a location
+				l.refuse("orphan_not_location") // K2: not a location
+				continue
 			}
 			if pid := placeID(pkey, panchor); pid != "" {
 				if p := l.Places[pid]; p != nil && (p.Blocked || p.OffDay) {
+					if p.OffDay {
+						l.refuse("loss_box_off_day")
+					} else {
+						l.refuse("loss_box_blocked")
+					}
 					continue // G2: the place is boxed after a loss
 				}
 			}
@@ -168,7 +187,8 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 		case PlaceStopLimitEntry:
 			if cfg.LegBudgetEnabled {
 				if ban := l.legVerdict(in.Side, true); ban != "" {
-					continue // G1: the leg is full (the PHL + one ISB)
+					l.refuse(ban) // G1: the leg is full (the PHL + one ISB)
+					continue
 				}
 			}
 			kept = append(kept, in)
