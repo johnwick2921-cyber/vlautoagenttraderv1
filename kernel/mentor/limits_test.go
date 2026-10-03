@@ -254,6 +254,40 @@ func TestLimitsOldExtremeLossBlocksCoincidentKeyLevel(t *testing.T) {
 	}
 }
 
+// BOX (CTO 13:20:08Z): a box is ONE place — a loss at either edge blocks the
+// WHOLE box until price leaves it. The place key is the box key WITHOUT the
+// ":top"/":bottom" edge suffix.
+// MUTANT: in normalizePlace, keep the edge suffix → this test goes RED (the
+// top-edge re-entry is not blocked after a bottom-edge loss).
+func TestLimitsBoxLossBlocksWholeBox(t *testing.T) {
+	var l Limits
+	cfg := limitsCfgNoLeg()
+	levels := []Level{
+		{Key: "ftgh:120:80:top", Kind: KindFTGHEdge, Price: 120},
+		{Key: "ftgh:120:80:bottom", Kind: KindFTGLEdge, Price: 80},
+	}
+	prev := limitsK(94, 96, 94, 95, 0)
+	exp := limitsNow(60) + 86400_000
+
+	// Loss at the BOTTOM edge.
+	applyLevels(&l, []Intent{limitsPHLAt(70, 68, 99, exp, "ftgh:120:80:bottom", 80)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg, levels)
+	applyLevels(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(69, 71, 67, 68, 2), 2, cfg, levels) // fill + stop → loss at the box
+	if l.Places == nil || l.Places["ftgh:120:80"] == nil {
+		t.Fatalf("loss: want it under the box key, got %+v", l.Places)
+	}
+	// Re-entry at the TOP edge while the candle stays inside the box →
+	// blocked (the whole box, not just the edge).
+	out3 := applyLevels(&l, []Intent{limitsPHLAt(118, 116, 99, exp, "ftgh:120:80:top", 120)}, limitsK(69, 71, 67, 68, 2), limitsK(100, 121, 99, 101, 3), 3, cfg, levels)
+	if len(out3) != 0 {
+		t.Fatalf("top-edge re-entry inside the box: want 0 entries, got %d", len(out3))
+	}
+	// Price leaves the box (range below it) → the block clears.
+	out4 := applyLevels(&l, []Intent{limitsPHLAt(118, 116, 99, exp, "ftgh:120:80:top", 120)}, limitsK(100, 121, 99, 101, 3), limitsK(74, 79, 73, 78, 4), 4, cfg, levels)
+	if len(out4) != 1 {
+		t.Fatalf("top-edge re-entry after leaving the box: want 1 entry, got %d", len(out4))
+	}
+}
+
 // G2 (e): two losses at one place -> that place is OFF FOR THE DAY — even a
 // departure does not clear it; the next trading day does. G1 is off.
 // MUTANT: change the off-for-day threshold to `p.Losses > 2` → this test
