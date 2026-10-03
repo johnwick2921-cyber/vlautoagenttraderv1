@@ -42,6 +42,25 @@ type Touch struct {
 	PriceAtTouch float64
 }
 
+// touchesLevel — L2 (CTO 12:19:20Z): key levels use LITERAL touch
+// (touch_tol = 0) no matter what TouchBandPts says: from below (resistance,
+// approach short) a candle touches when its HIGH reaches the level; from
+// above (support) when its LOW reaches it. Every other kind (EMA, box edge,
+// trigger retest) keeps the configured band.
+func touchesLevel(level Level, approach Side, bar market.Kline, cfg Config) bool {
+	if level.Kind == KindKeyLevel {
+		switch approach {
+		case SideShort:
+			return bar.High >= level.Price
+		case SideLong:
+			return bar.Low <= level.Price
+		default:
+			return bar.High >= level.Price || bar.Low <= level.Price
+		}
+	}
+	return !(bar.Low > level.Price+cfg.TouchBandPts || bar.High < level.Price-cfg.TouchBandPts)
+}
+
 // TouchTick evaluates one closed 1m candle against one level (§3 steps 1–3,
 // CTO-corrected reading 2026-10-02):
 //
@@ -59,14 +78,14 @@ func TouchTick(t *Touch, level Level, prevClose float64, bar market.Kline, cfg C
 	if !cfg.Enabled || t.Outcome != TouchNone {
 		return nil
 	}
-	if bar.Low > level.Price+cfg.TouchBandPts || bar.High < level.Price-cfg.TouchBandPts {
-		return nil // no touch
-	}
 	t.ApproachedFrom = approachSide(prevClose, level.Price)
 	if t.ApproachedFrom == "" {
 		// tie: the previous close sat exactly ON the level — no approach side
 		// yet (CTO review 2d3aad1ef). Wait for a bar that closes off the level.
 		return nil
+	}
+	if !touchesLevel(level, t.ApproachedFrom, bar, cfg) {
+		return nil // no touch
 	}
 	t.RefBar = bar
 	t.PriceAtTouch = level.Price
@@ -127,4 +146,23 @@ func approachSide(prevClose, price float64) Side {
 		return SideShort // below → resistance, approached from below
 	}
 	return "" // tie: no approach yet (CTO review 2d3aad1ef)
+}
+
+// visitTick — L1 (CTO 12:19:20Z): the touch reference is per VISIT, not per
+// day. After a visit's first touch, one CLOSED candle that did not touch the
+// level (from the visit's approach side) ends the visit, provided its close
+// departed by at least LvlRevisitMinPts (default 0 — he never states an extra
+// distance). The NEXT touching candle starts a new visit and becomes the new
+// reference; within a visit the first touching candle keeps its prices and
+// stop. Touched_levels must NOT block a level for the rest of the day.
+func visitTick(t *Touch, level Level, prev, bar market.Kline, cfg Config) []Intent {
+	if t.Outcome != TouchNone && !touchesLevel(level, t.ApproachedFrom, bar, cfg) {
+		if cfg.LvlRevisitMinPts <= 0 || abs(bar.Close-level.Price) >= cfg.LvlRevisitMinPts {
+			t.Outcome = TouchNone
+			t.RefBar = market.Kline{}
+			t.ApproachedFrom = ""
+			t.PriceAtTouch = 0
+		}
+	}
+	return TouchTick(t, level, prev.Close, bar, cfg)
 }

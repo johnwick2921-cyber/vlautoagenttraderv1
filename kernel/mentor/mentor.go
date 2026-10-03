@@ -121,6 +121,11 @@ type Config struct {
 
 	// Touch / close-side (PLAN v1 §2).
 	TouchBandPts float64 // literal-touch band around a level; default 4.0 (the bot's 16-tick touch band)
+	// LvlRevisitMinPts — L1 knob (CTO 12:19:20Z): the extra departure distance
+	// (from the level close) a closed non-touching candle needs to END a visit.
+	// Default 0: any closed candle that did not touch ends the visit ("he never
+	// states one"). Key-level touch references are per VISIT, not per day.
+	LvlRevisitMinPts float64
 
 	// ISB (PLAN v1 §3).
 	ISBBufferPts   float64 // order buffer beyond the wick extremes, BOTH sides; default 1.5 [D1.4 p1 @ 22:22–22:30]

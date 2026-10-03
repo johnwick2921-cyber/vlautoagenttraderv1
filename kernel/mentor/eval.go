@@ -340,7 +340,7 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		// a MOVING line (EMA) that drifted away from where it was touched is
 		// a fresh line for touch purposes — reset the classification.
 		tr = freshTouch(tr, lvl)
-		intents := TouchTick(&tr, lvl, bars[len(bars)-2].Close, bars[len(bars)-1], e.Cfg)
+		intents := visitTick(&tr, lvl, bars[len(bars)-2], bars[len(bars)-1], e.Cfg)
 		e.State.Touches[lvl.Key] = tr
 		out = append(out, handleTouchIntents(e, lvl, intents)...)
 	}
