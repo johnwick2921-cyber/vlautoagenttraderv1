@@ -239,11 +239,6 @@ type Config struct {
 	// the prior extreme. "close" (default): the previous candle's CLOSE
 	// strictly beyond the extreme; "touch": this candle's wick reaching it.
 	LegResetOn string
-	// LossDeparturePts — G2 departure knob (CTO 13:24:53Z): a blocked place
-	// clears when a closed candle AFTER the loss candle closes this far from
-	// the loss price (|close - loss_price| >= knob). Default 20 — the replay
-	// already uses it; ONE rule for E2 and G2.
-	LossDeparturePts float64
 }
 
 // DefaultConfig returns the mentor defaults per PLAN v1 (knob values start from
@@ -294,8 +289,6 @@ func DefaultConfig() Config {
 
 		LegBudgetEnabled: true,
 		LegResetOn:       "close",
-
-		LossDeparturePts: 20,
 	}
 }
 

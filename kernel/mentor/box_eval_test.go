@@ -209,3 +209,89 @@ func TestBoxReturnExactlyOneEntry(t *testing.T) {
 		}
 	}
 }
+
+// TestPingPongVerdict — PING PONG (CTO 13:24:53Z): between an FTGL floor and an
+// FTGH ceiling the edge trade needs a >=50-pt gap; below that it is refused.
+func TestPingPongVerdict(t *testing.T) {
+	floor := Box{Kind: FTGL, Top: 100, Bottom: 90, Key: "ftgl"}
+	ceil := Box{Kind: FTGH, Top: 210, Bottom: 150, Key: "ftgh"}
+
+	if ok, _ := pingPongVerdict([]Box{floor}, 110); !ok {
+		t.Fatal("a single box around the price is not a ping-pong context")
+	}
+	if ok, _ := pingPongVerdict([]Box{floor, ceil}, 110); !ok {
+		t.Fatalf("gap 50 (150-100) must be allowed, got refused")
+	}
+	narrow := ceil
+	narrow.Bottom = 140 // gap 40
+	if ok, reason := pingPongVerdict([]Box{floor, narrow}, 110); ok {
+		t.Fatal("gap 40 must be refused")
+	} else if reason != "ping_pong_range_too_small" {
+		t.Fatalf("reason = %q, want ping_pong_range_too_small", reason)
+	}
+}
+
+// TestBoxEntryPingPongRange — the call site: a box return between two boxes
+// fires only when the ping-pong range is >= 50 pts.
+func TestBoxEntryPingPongRange(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	cfg.RoomMultiple = 0.05
+	floor := Box{Kind: FTGL, Top: 100, Bottom: 90, Key: "ftgl:100.00:90.00"}
+	ceil := Box{Kind: FTGH, Top: 210, Bottom: 150, Key: "ftgh:210.00:150.00"}
+	// the return: a reject at the FTGL top edge from above
+	ref := market.Kline{High: 101, Low: 99, Close: 101}
+	levels := []Level{{Key: "k", Kind: KindKeyLevel, Price: 160}}
+	trig := TriggerLine{Dir: SideLong, Price: 95}
+
+	out := boxEntryIntent(ref, floor, []Box{floor, ceil}, levels, trig, cfg)
+	if len(out) != 1 {
+		t.Fatalf("gap 50 must fire one entry, got %d", len(out))
+	}
+
+	narrow := ceil
+	narrow.Bottom = 140 // gap 40
+	out = boxEntryIntent(ref, floor, []Box{floor, narrow}, levels, trig, cfg)
+	if len(out) != 0 {
+		t.Fatalf("gap 40 must refuse, got %+v", out)
+	}
+}
+
+// TestLocTriggerFilterBox — v5_loc_notrig mirror: false switches the 5m
+// trigger filter off for BOX rejects.
+func TestLocTriggerFilterBox(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	cfg.RoomMultiple = 0.05
+	floor := Box{Kind: FTGL, Top: 100, Bottom: 90, Key: "ftgl:100.00:90.00"}
+	ref := market.Kline{High: 101, Low: 99, Close: 101}
+	levels := []Level{{Key: "k", Kind: KindKeyLevel, Price: 160}}
+	// the long entry sits BELOW a sell trigger: the filter refuses it.
+	sellTrig := TriggerLine{Dir: SideShort, Price: 105}
+
+	if out := boxEntryIntent(ref, floor, []Box{floor}, levels, sellTrig, cfg); len(out) != 0 {
+		t.Fatalf("trigger filter ON must refuse the against-trigger box entry, got %+v", out)
+	}
+	cfg.LocTriggerFilter = false
+	if out := boxEntryIntent(ref, floor, []Box{floor}, levels, sellTrig, cfg); len(out) != 1 {
+		t.Fatalf("LocTriggerFilter=false must allow the box entry, got %+v", out)
+	}
+}
+
+// TestBetweenTriggerLinesBox — the R4 ban rides the box path through
+// TriggerVerdict: a price between two opposing trigger lines refuses.
+func TestBetweenTriggerLinesBox(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	cfg.RoomMultiple = 0.05
+	floor := Box{Kind: FTGL, Top: 100, Bottom: 90, Key: "ftgl:100.00:90.00"}
+	ref := market.Kline{High: 101, Low: 99, Close: 101}
+	levels := []Level{{Key: "k", Kind: KindKeyLevel, Price: 160}}
+	// long at 95, then a reversal to short at 120: the zone [95,120] is dead.
+	trig := TriggerLine{Dir: SideShort, Price: 120, OldPrice: 95}
+
+	out := boxEntryIntent(ref, floor, []Box{floor}, levels, trig, cfg)
+	if len(out) != 0 {
+		t.Fatalf("entry between two opposing trigger lines must refuse, got %+v", out)
+	}
+}

@@ -59,6 +59,35 @@ func BoxReturnReject(b Box, ref market.Kline) bool {
 	return false
 }
 
+// pingPongVerdict — PING PONG (CTO 13:24:53Z): when the entry sits between
+// an FTGL floor and an FTGH ceiling, the edge trade is allowed only when the
+// gap between the floor TOP and the ceiling BOTTOM is >= 50 pts
+// ("danh ping pong — KHONG DUOC DANH GIUA", D3.2 p2 @07:50-09:14; D4.2 p2
+// @05:17). Below 50 pts it is refused: ping_pong_range_too_small. With fewer
+// than two boxes around the price there is no ping-pong context.
+func pingPongVerdict(boxes []Box, price float64) (ok bool, reason string) {
+	var floor, ceil *Box
+	for i := range boxes {
+		switch boxes[i].Kind {
+		case FTGL:
+			if boxes[i].Top < price && (floor == nil || boxes[i].Top > floor.Top) {
+				floor = &boxes[i]
+			}
+		case FTGH:
+			if boxes[i].Bottom > price && (ceil == nil || boxes[i].Bottom < ceil.Bottom) {
+				ceil = &boxes[i]
+			}
+		}
+	}
+	if floor == nil || ceil == nil {
+		return true, ""
+	}
+	if ceil.Bottom-floor.Top < 50 {
+		return false, "ping_pong_range_too_small"
+	}
+	return true, ""
+}
+
 // boxEntryIntent is the CALL SITE of the box trade: one return visit's
 // reference candle becomes a stop order [D3.4 p3 @ 07:02 — "stop order away
 // from the box, with the REJECTING candle as the reference"] when the
@@ -77,13 +106,15 @@ func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig T
 	} else {
 		side, price, stop = SideShort, ref.Low, ref.High
 	}
-	if ok, ts, _ := TriggerVerdict(trig, price); !ok || ts != "" && ts != side {
-		return nil
+	if cfg.LocTriggerFilter {
+		if ok, ts, _ := TriggerVerdict(trig, price); !ok || ts != "" && ts != side {
+			return nil
+		}
 	}
-	// Mid-range ban, box-native (CTO 12:38:50Z: the box path's semantics are
-	// the box facts — the level MidRange gate is the level path's; here the
-	// ban is between an FTGL floor and an FTGH ceiling, same as the PHL loop).
-	if midRangeBoxed(boxes, price) {
+	// PING PONG (CTO 13:24:53Z): between two boxes the edge trade is legal
+	// only when the gap is >= 50 pts — below that, refused (the MIDDLE is for
+	// ping pong, not the edges, and a narrow range cannot support the bounce).
+	if ok, _ := pingPongVerdict(boxes, price); !ok {
 		return nil
 	}
 	if InsideAnyBox(boxes, price) {
