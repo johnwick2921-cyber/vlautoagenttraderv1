@@ -357,6 +357,45 @@ func TestMentorExitRules(t *testing.T) {
 	}
 }
 
+// TestMentorBEHalfDistanceTarget (REPLAY AUDIT v5 (h), D1.2 p1 @10:31–15:20):
+// the B BE trigger is half the distance to LEG 1'S TARGET — +0.5R only when
+// the target is 1:1; a deeper target arms BE deeper. The mutant that fixes it
+// back to +0.5R fails the deep-target rows.
+func TestMentorBEHalfDistanceTarget(t *testing.T) {
+	// default leg 1 TP (+1R) → BE at +0.5R.
+	base := mentorPosition{Side: "long", Entry: 100, Stop: 90, R: 10, Mode: "B"}
+	if got := mentorBEHalfDistance(base); got != 5 {
+		t.Fatalf("half of a 1:1 target = 5, got %.2f", got)
+	}
+	if res := mentorExitB(base, 104, 105, 95, true); res.NewStop != 100 {
+		t.Fatalf("1:1 target: BE must arm at +0.5R (105), got stop %.2f", res.NewStop)
+	}
+	// a deeper leg 1 TP (1.5R away) → BE only once price covers half of THAT
+	// distance (+0.75R). A +0.55R candle (high 105.5) must NOT arm.
+	deep := mentorPosition{Side: "long", Entry: 100, Stop: 90, R: 10, Leg1TP: 115, Mode: "B"}
+	if got := mentorBEHalfDistance(deep); got != 7.5 {
+		t.Fatalf("half of a 1.5R target = 7.5, got %.2f", got)
+	}
+	if res := mentorExitB(deep, 104, 105.5, 95, true); res.NewStop != 90 {
+		t.Fatalf("a +0.55R candle must NOT arm BE for a 1.5R target, stop %.2f", res.NewStop)
+	}
+	// +0.75R (high 107.5) arms both legs.
+	if res := mentorExitB(deep, 106, 107.5, 95, true); res.NewStop != 100 || len(res.MoveStops) != 2 {
+		t.Fatalf("half the distance to the 1.5R target must arm both legs, %+v", res)
+	}
+	// short mirrored.
+	short := mentorPosition{Side: "short", Entry: 100, Stop: 110, R: 10, Leg1TP: 85, Mode: "B"}
+	if got := mentorBEHalfDistance(short); got != -7.5 {
+		t.Fatalf("short half-distance = -7.5, got %.2f", got)
+	}
+	if res := mentorExitB(short, 93, 95, 93.5, true); res.NewStop != 110 {
+		t.Fatalf("a -0.45R candle must NOT arm BE for a 1.5R short target, stop %.2f", res.NewStop)
+	}
+	if res := mentorExitB(short, 92, 95, 92.4, true); res.NewStop != 100 {
+		t.Fatalf("half the distance to the 1.5R short target must arm BE, %+v", res)
+	}
+}
+
 // TestMentorISBFillCandleExit [D1.4 p1 @12:23–13:27]: for an ISB trade leg 1
 // is closed at the FILL candle's close — modify_bracket of leg 1's TP to the
 // current price (a limit at or through the market). The runner continues.

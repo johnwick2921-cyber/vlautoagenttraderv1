@@ -270,14 +270,15 @@ func (at *AutoTrader) mentorSizeFor(in mentor.Intent, extra mentorTierInputs) (m
 //      3 candles of the fill: BOTH stops → BE at that moment and leg 1's TP is
 //      modified OUT to the runner's target — NO 1:1 scale-out, NO candle
 //      trail. Let it run; EOD flat still applies.
-//   B. NO RESONANCE (normal) — at +0.5R BOTH legs' stops → BE (move_stop on
-//      each, the live R:R stays 1:1); leg 1 exits at its +1R TP (native
-//      bracket); the runner trails behind each CLOSED 1m candle (move_stop);
-//      exit on the first candle that takes the prior candle's extreme. Knob
-//      trail_tf: 1m default, 30s/45s allowed, off = video-8 legacy
-//      (SUPERSEDED — kept as a knob). ISB: leg 1's TP is modified to the
-//      fill-candle close (a limit at or through the market) — the partial is
-//      mandatory [D1.4 p1 @12:23–13:27]; the runner continues.
+//   B. NO RESONANCE (normal) — once price has covered HALF THE DISTANCE TO
+//      LEG 1'S TARGET both legs' stops → BE (move_stop on each, the live R:R
+//      stays 1:1); leg 1 exits at its +1R TP (native bracket); the runner
+//      trails behind each CLOSED 1m candle (move_stop); exit on the first
+//      candle that takes the prior candle's extreme. Knob trail_tf: 1m
+//      default, 30s/45s allowed, off = video-8 legacy (SUPERSEDED — kept as a
+//      knob). ISB: leg 1's TP is modified to the fill-candle close (a limit
+//      at or through the market) — the partial is mandatory [D1.4 p1
+//      @12:23–13:27]; the runner continues.
 //   C. CONFLUENCE — leg 1's TP at ≥1:2 set AT ENTRY; the stop does not move up.
 //   D. SPENT DAY — the runner is capped at 2 contracts; the 15-pt cap (R9)
 //      still applies.
@@ -296,11 +297,12 @@ type mentorPosition struct {
 	Target    float64 // the runner's target (A pushes leg 1's TP out to it)
 	R         float64
 	Contracts int
-	Leg1      int    // ceil(n/2), its own TP
-	Leg2      int    // the runner
-	Mode      string // "A-resonance", "B", "C", "swing"
-	ArmedBE   bool   // stops are at entry (B: +0.5R seen; A: resonance armed)
-	Scaled    bool   // leg 1's +1R TP candle seen → the runner's trail begins
+	Leg1      int     // ceil(n/2), its own TP
+	Leg2      int     // the runner
+	Mode      string  // "A-resonance", "B", "C", "swing"
+	ArmedBE   bool    // stops are at entry (B: half the target distance seen; A: resonance armed)
+	Scaled    bool    // leg 1's +1R TP candle seen → the runner's trail begins
+	Leg1TP    float64 // leg 1's TP (0 → the +1R default: entry ± R)
 }
 
 // mentorStopEntryPlacer is the broker's stop-entry surface (E7 frame on the
@@ -412,27 +414,47 @@ func (at *AutoTrader) mentorConfirmLegProtection(legs []string) {
 	}
 }
 
+// mentorBEHalfDistance is the B BE trigger (REPLAY AUDIT v5 (h), D1.2 p1
+// @10:31–15:20): the stop goes to BE once price has covered HALF THE DISTANCE
+// TO LEG 1'S TARGET — that is +0.5R only when the target is 1:1 (the B
+// default), and deeper when the target is deeper. Returns the signed
+// entry-relative distance (negative for shorts).
+func mentorBEHalfDistance(pos mentorPosition) float64 {
+	tp := pos.Leg1TP
+	if tp == 0 {
+		if pos.Side == "short" {
+			tp = pos.Entry - pos.R
+		} else {
+			tp = pos.Entry + pos.R
+		}
+	}
+	return (tp - pos.Entry) / 2
+}
+
 // mentorExitB applies the v3 B rules to ONE closed 1m candle (pure) on the
 // SPLIT-LEGS model: leg 1 carries its own TP at +1R set AT ENTRY, so the
-// driver never scales — it only arms BE at +0.5R (BOTH legs), records leg 1's
-// +1R crossing (the runner's trail begins on the NEXT candle), and trails the
-// runner behind each CLOSED candle (long: the candle's low, short: its high)
-// unless trail is off (video-8 legacy knob). For an ISB trade the fill-candle
-// close modifies leg 1's TP to the current price — the partial is mandatory
-// [D1.4 p1 @12:23–13:27], replacing the +1R TP for ISB only. A candle trading
-// through both the stop and a further level takes the WORSE outcome (the
-// stop). No look-ahead: the trail moves only AFTER a candle closes.
+// driver never scales — it only arms BE once price has covered HALF THE
+// DISTANCE TO LEG 1'S TARGET (mentorBEHalfDistance — +0.5R only for a 1:1
+// target; BOTH legs), records leg 1's +1R crossing (the runner's trail begins
+// on the NEXT candle), and trails the runner behind each CLOSED candle (long:
+// the candle's low, short: its high) unless trail is off (video-8 legacy
+// knob). For an ISB trade the fill-candle close modifies leg 1's TP to the
+// current price — the partial is mandatory [D1.4 p1 @12:23–13:27], replacing
+// the +1R TP for ISB only. A candle trading through both the stop and a
+// further level takes the WORSE outcome (the stop). No look-ahead: the trail
+// moves only AFTER a candle closes.
 func mentorExitB(pos mentorPosition, c, h, l float64, trail bool) mentorExitResult {
 	res := mentorExitResult{NewStop: pos.Stop}
 	long := pos.Side == "long"
+	half := mentorBEHalfDistance(pos) // half the distance to leg 1's target
 	var hitStop, hitHalfR, hit1R bool
 	if long {
 		hitStop = l <= pos.Stop
-		hitHalfR = h >= pos.Entry+0.5*pos.R
+		hitHalfR = h >= pos.Entry+half
 		hit1R = h >= pos.Entry+pos.R
 	} else {
 		hitStop = h >= pos.Stop
-		hitHalfR = l <= pos.Entry-0.5*pos.R
+		hitHalfR = l <= pos.Entry+half
 		hit1R = l <= pos.Entry-pos.R
 	}
 	if !pos.ArmedBE {
