@@ -781,3 +781,18 @@ func TestMentorKnobRoutingDefaults(t *testing.T) {
 			naked.Enabled, naked.LvlRevisitMinPts, naked.EmaMaxCross30m)
 	}
 }
+
+// TestMentorExpiryGuard pins the F3 fail-closed guard (CTO 1791035117415): a
+// mentor arm without an expiry is refused with a named reason. Mutant: the
+// guard inverted (a zero expiry passes) → RED.
+func TestMentorExpiryGuard(t *testing.T) {
+	if refuse, why := mentorExpiryGuard(0); !refuse || !textHas(why, "without an expiry") {
+		t.Fatalf("a zero expiry must refuse with a named reason: refuse=%v why=%q", refuse, why)
+	}
+	if refuse, _ := mentorExpiryGuard(-1); !refuse {
+		t.Fatal("a negative expiry must refuse")
+	}
+	if refuse, why := mentorExpiryGuard(60_000); refuse || why != "" {
+		t.Fatalf("a positive expiry must pass: refuse=%v why=%q", refuse, why)
+	}
+}

@@ -210,6 +210,13 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 		in.ExpiryMs = mentorIntentExpiry(in, barCloseMs)
 		mentorCount("expiry_defaulted")
 	}
+	// F3 (CTO 1791035117415): every mentor arm must carry an expiry — an arm
+	// without one is REFUSED fail-closed (it must never sit unexpiring).
+	if refuse, why := mentorExpiryGuard(in.ExpiryMs); refuse {
+		mentorCount("expiry_missing_refused")
+		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
+		return
+	}
 	if latest, ok := at.mentorLatestPrice(); ok {
 		if skip, why := mentorNoChase(in.Side, latest, in.Price); skip {
 			mentorCount("no_chase_skip")
@@ -251,6 +258,24 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 	recordMentorLatency(barCloseMs, at.mentorFinalArrival.Load(), emitMs, ackMs)
 	at.logInfof("🧑‍🏫 mentor placed: %s %s %d contracts (tier %s) — close→ack %dms, expiry %d", in.Setup, in.Side, choice.Contracts, choice.Tier, ackMs-barCloseMs, in.ExpiryMs)
 }
+
+// mentorExpiryGuard is the F3 fail-closed pin (CTO 1791035117415): a mentor
+// stop-limit arm MUST carry an expiry. Zero/negative refuses with a named
+// reason — an unexpiring mentor arm must never sit at the broker.
+func mentorExpiryGuard(expiryMs int64) (refuse bool, why string) {
+	if expiryMs <= 0 {
+		return true, "F3: a mentor stop-limit arm without an expiry is refused — the injector always stamps ExpiryMs"
+	}
+	return false, ""
+}
+
+// mentorSetArmExpiryWire is the F3 binding seam (CTO 1791035117415): the
+// mentor injector must call SetArmExpiry with the intent's ExpiryMs when the
+// arm is created. PR #313's frame (store.SetArmExpiry on armed rows) is NOT
+// on any branch the injector can build against yet — when it lands, this seam
+// binds to it in ONE line at the arm-creation call site. nil → nothing is
+// stamped (the frame does not exist).
+var mentorSetArmExpiryWire func(armID string, expiryMs int64) error
 
 // mentorIntentExpiry resolves the N12 per-order expiry (PR #313): the expiry
 // belongs to the RULES, not a blanket timer. An intent-carried expiry wins;
