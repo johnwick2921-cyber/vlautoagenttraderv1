@@ -153,11 +153,13 @@ func TestLimitsCloseBeyondExtremeOpensNewLeg(t *testing.T) {
 	if l.Long != nil {
 		t.Fatalf("leg: want the stopped leg cleared by the break, got %+v", l.Long)
 	}
-	// The candle after the break departs the lost place — the next PHL is a
+	// A closed candle >= 20 pts from the loss price 100 departs the place.
+	applyAt(&l, nil, limitsK(98, 99, 97, 98, 4), limitsK(74, 79, 73, 78, 5), 5)
+	// The candle after the break and the departure — the next PHL is a
 	// new leg.
-	out5 := applyAt(&l, []Intent{limitsPHL(90, 88, 99, exp)}, limitsK(98, 99, 97, 98, 4), limitsK(94, 95, 93, 94, 5), 5)
-	if len(out5) != 1 {
-		t.Fatalf("PHL after the break: want 1 entry (new leg), got %d", len(out5))
+	out6 := applyAt(&l, []Intent{limitsPHL(90, 88, 99, exp)}, limitsK(74, 79, 73, 78, 5), limitsK(94, 95, 93, 94, 6), 6)
+	if len(out6) != 1 {
+		t.Fatalf("PHL after the break: want 1 entry (new leg), got %d", len(out6))
 	}
 	// The leg is created at FILL, not placement — the fresh placement has
 	// not filled yet.
@@ -167,10 +169,10 @@ func TestLimitsCloseBeyondExtremeOpensNewLeg(t *testing.T) {
 }
 
 // G2 (d): a loss at a level blocks re-entry there until price departs —
-// the departure is a closed candle whose range does NOT touch the place
-// (the same rule as DS-103's E2). G1 is off to isolate G2.
-// MUTANT: delete the departure unblock in Apply → this test goes RED (the
-// post-departure PHL stays refused).
+// ONE rule (CTO 13:24:53Z): a closed candle AFTER the loss candle whose
+// CLOSE is >= LossDeparturePts (20) from the loss price. G1 is off.
+// MUTANT: revert to the old "candle not touching" departure → this test
+// goes RED (the 8-pt-away candle would unblock).
 func TestLimitsLossBlocksUntilDeparture(t *testing.T) {
 	var l Limits
 	cfg := limitsCfgNoLeg() // G2 only — the leg budget must not shadow it
@@ -180,13 +182,14 @@ func TestLimitsLossBlocksUntilDeparture(t *testing.T) {
 	applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg)
 	applyAtG2(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(89, 91, 87, 88, 2), 2, cfg) // fill + stop-out → loss at 97
 
-	// A candle that still TOUCHES the place keeps it blocked.
-	out3 := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(89, 91, 87, 88, 2), limitsK(99, 100.2, 90, 99, 3), 3, cfg)
+	// A candle 8 pts away does NOT touch the place but its close is within
+	// 20 — still blocked (the 20-pt rule, not the touching rule).
+	out3 := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(89, 91, 87, 88, 2), limitsK(89, 90, 88, 89, 3), 3, cfg)
 	if len(out3) != 0 {
 		t.Fatalf("re-entry at the blocked place: want 0 entries, got %d", len(out3))
 	}
-	// A departure candle (range below the place) clears the block.
-	out4 := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(99, 100.2, 90, 99, 3), limitsK(94, 95, 93, 94, 4), 4, cfg)
+	// A candle closing >= 20 pts from the place clears the block.
+	out4 := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(89, 90, 88, 89, 3), limitsK(72, 76, 71, 75, 4), 4, cfg)
 	if len(out4) != 1 {
 		t.Fatalf("re-entry after departure: want 1 entry, got %d", len(out4))
 	}
@@ -213,8 +216,9 @@ func TestLimitsEMALossBlocksAfterMove(t *testing.T) {
 	if len(out3) != 0 {
 		t.Fatalf("moved-EMA re-entry while touching the loss price: want 0 entries, got %d", len(out3))
 	}
-	// Departure (range below the loss-time price) clears the block.
-	out4 := applyLevels(&l, []Intent{limitsPHLAt(94, 92, 99, exp, "ema34", 105)}, limitsK(99, 100.5, 90, 99, 3), limitsK(94, 95, 93, 94, 4), 4, cfg, levels)
+	// Departure (a close >= 20 pts from the loss-time price) clears the
+	// block.
+	out4 := applyLevels(&l, []Intent{limitsPHLAt(94, 92, 99, exp, "ema34", 105)}, limitsK(99, 100.5, 90, 99, 3), limitsK(74, 79, 73, 78, 4), 4, cfg, levels)
 	if len(out4) != 1 {
 		t.Fatalf("moved-EMA re-entry after departure: want 1 entry, got %d", len(out4))
 	}
@@ -241,14 +245,14 @@ func TestLimitsOldExtremeLossBlocksCoincidentKeyLevel(t *testing.T) {
 		t.Fatalf("loss: want it under the coincident key level, got %+v", l.Places)
 	}
 
-	// Re-entry AT the key level while the just-closed candle still touches
-	// it → blocked.
+	// Re-entry AT the key level while the just-closed candle's close is
+	// within 20 pts of it → blocked.
 	out3 := applyLevels(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:99.5:1", 99.5)}, limitsK(89, 91, 87, 88, 2), limitsK(99, 100.2, 90, 99, 3), 3, cfg, levels)
 	if len(out3) != 0 {
 		t.Fatalf("key-level re-entry at the blocked place: want 0 entries, got %d", len(out3))
 	}
-	// Departure clears the block.
-	out4 := applyLevels(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:99.5:1", 99.5)}, limitsK(99, 100.2, 90, 99, 3), limitsK(94, 95, 93, 94, 4), 4, cfg, levels)
+	// A close >= 20 pts from the place clears the block.
+	out4 := applyLevels(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:99.5:1", 99.5)}, limitsK(99, 100.2, 90, 99, 3), limitsK(72, 76, 71, 75, 4), 4, cfg, levels)
 	if len(out4) != 1 {
 		t.Fatalf("key-level re-entry after departure: want 1 entry, got %d", len(out4))
 	}
@@ -275,13 +279,13 @@ func TestLimitsBoxLossBlocksWholeBox(t *testing.T) {
 	if l.Places == nil || l.Places["ftgh:120:80"] == nil {
 		t.Fatalf("loss: want it under the box key, got %+v", l.Places)
 	}
-	// Re-entry at the TOP edge while the candle stays inside the box →
-	// blocked (the whole box, not just the edge).
+	// Re-entry at the TOP edge while the close stays within 20 pts of the
+	// box midpoint → blocked (the whole box, not just the edge).
 	out3 := applyLevels(&l, []Intent{limitsPHLAt(118, 116, 99, exp, "ftgh:120:80:top", 120)}, limitsK(69, 71, 67, 68, 2), limitsK(100, 121, 99, 101, 3), 3, cfg, levels)
 	if len(out3) != 0 {
 		t.Fatalf("top-edge re-entry inside the box: want 0 entries, got %d", len(out3))
 	}
-	// Price leaves the box (range below it) → the block clears.
+	// A close >= 20 pts from the midpoint clears the box.
 	out4 := applyLevels(&l, []Intent{limitsPHLAt(118, 116, 99, exp, "ftgh:120:80:top", 120)}, limitsK(100, 121, 99, 101, 3), limitsK(74, 79, 73, 78, 4), 4, cfg, levels)
 	if len(out4) != 1 {
 		t.Fatalf("top-edge re-entry after leaving the box: want 1 entry, got %d", len(out4))
@@ -302,10 +306,9 @@ func TestLimitsTwoLossesOffForDay(t *testing.T) {
 	// departure).
 	applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg)
 	applyAtG2(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(89, 91, 87, 88, 2), 2, cfg)
-	// Departure candle 1 (clears the just-flag), departure candle 2
-	// (unblocks) — then loss 2.
-	applyAtG2(&l, nil, limitsK(89, 91, 87, 88, 2), limitsK(94, 95, 93, 94, 3), 3, cfg)
-	if out := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(94, 95, 93, 94, 3), limitsK(92, 93, 91, 92, 4), 4, cfg); len(out) != 1 {
+	// A closed candle >= 20 pts from the place departs it — then loss 2.
+	applyAtG2(&l, nil, limitsK(89, 91, 87, 88, 2), limitsK(72, 76, 71, 75, 3), 3, cfg)
+	if out := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(72, 76, 71, 75, 3), limitsK(92, 93, 91, 92, 4), 4, cfg); len(out) != 1 {
 		t.Fatalf("re-entry after departure: want 1 entry, got %d", len(out))
 	}
 	applyAtG2(&l, nil, limitsK(92, 93, 91, 92, 4), limitsK(89, 91, 87, 88, 5), 5, cfg)

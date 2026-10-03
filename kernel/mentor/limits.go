@@ -28,9 +28,10 @@ import (
 //
 // G2 LOSS BOX AT A PLACE (PLAN Filters, D4.2 p2 @01:56, @03:48): after a
 // LOSS at a place (entry filled, then the stop hit), no re-entry there until
-// price departs — the same departure rule as DS-103's E2: a closed candle
-// whose range does NOT touch the place. Two losses at one place -> that
-// place is OFF FOR THE DAY (cleared at the trading-day rollover).
+// price departs — ONE rule (CTO 13:24:53Z): a closed candle AFTER the loss
+// candle whose CLOSE is >= LossDeparturePts (default 20) from the loss
+// price. Two losses at one place -> that place is OFF FOR THE DAY (cleared
+// at the trading-day rollover).
 //
 // The leg is created at FILL (not placement), the budget is consulted at
 // placement, and a stop-out closes the leg — all three exactly as the replay
@@ -59,13 +60,13 @@ type Leg struct {
 	Stopped bool    // a stop-out inside the leg closed it
 }
 
-// Place is the G2 loss box at one place. Lo/Hi bound the place for the
-// departure test: a level / EMA is a single price (Lo == Hi), a box spans
-// its edges (CTO 13:20:08Z: a loss at either edge blocks the WHOLE box
-// until price leaves it).
+// Place is the G2 loss box at one place, keyed by the setup's place (R-b).
+// Anchor is the loss price — the departure test measures |close - Anchor|
+// against LossDeparturePts. For a box the anchor is the box midpoint (the
+// replay's box anchor), and the key is the box key (ONE place, CTO
+// 13:20:08Z).
 type Place struct {
-	Lo      float64
-	Hi      float64
+	Anchor  float64
 	Losses  int
 	Blocked bool
 	OffDay  bool // two losses — the place is off for the day
@@ -81,17 +82,15 @@ type pendOrder struct {
 	expiry int64
 	isISB  bool
 	legExt float64 // G1 extreme carried from placement; 0 = none
-	lo     float64 // G2 place bounds (a level/EMA: lo == hi); 0/0 = none
-	hi     float64
-	place  string // G2 place key (AnchorKey); "" = use the quarter-tick
+	anchor float64 // G2 loss price (level / EMA / box midpoint); 0 = none
+	place  string  // G2 place key (AnchorKey); "" = use the quarter-tick
 }
 
 type openTrade struct {
 	side   Side
 	stop   float64
 	target float64
-	lo     float64
-	hi     float64
+	anchor float64
 	place  string
 }
 
@@ -122,18 +121,16 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 	// against the just-closed candle.
 	l.simulate(cur, now, levels)
 
-	// G2 departure: a blocked place clears when a closed candle does NOT
-	// touch it — the same rule as DS-103's E2. A box clears only when price
-	// LEAVES it (outside [Lo, Hi]). The loss candle itself never counts as
-	// the departure; off-for-day places never clear by departure. Loss
-	// counts survive the day — two losses at one place turn it off for the
-	// day.
+	// G2 departure (CTO 13:24:53Z): a blocked place clears when a closed
+	// candle AFTER the loss candle closes >= LossDeparturePts from the loss
+	// price. Off-for-day places never clear. Loss counts survive the day —
+	// two losses at one place turn it off for the day.
 	for _, p := range l.Places {
 		if p.just {
 			p.just = false
 			continue
 		}
-		if p.Blocked && !p.OffDay && p.Lo != 0 && (cur.High < p.Lo || cur.Low > p.Hi) {
+		if p.Blocked && !p.OffDay && p.Anchor != 0 && abs(cur.Close-p.Anchor) >= cfg.LossDeparturePts {
 			p.Blocked = false
 		}
 	}
@@ -148,11 +145,11 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 					continue // G1: second PHL in the leg / leg closed by a stop-out
 				}
 			}
-			pkey, plo, phi, orphan := normalizePlace(in, levels)
+			pkey, panchor, orphan := normalizePlace(in, levels)
 			if orphan {
 				continue // K2: an old extreme with no coincident key level is not a location
 			}
-			if pid := placeID(pkey, plo); pid != "" {
+			if pid := placeID(pkey, panchor); pid != "" {
 				if p := l.Places[pid]; p != nil && (p.Blocked || p.OffDay) {
 					continue // G2: the place is boxed after a loss
 				}
@@ -165,8 +162,7 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 				target: in.Target,
 				expiry: in.ExpiryMs,
 				legExt: ext,
-				lo:     plo,
-				hi:     phi,
+				anchor: panchor,
 				place:  pkey,
 			})
 		case PlaceStopLimitEntry:
@@ -228,8 +224,7 @@ func (l *Limits) simulate(cur market.Kline, now int64, levels []Level) {
 				side:   p.side,
 				stop:   p.stop,
 				target: p.target,
-				lo:     p.lo,
-				hi:     p.hi,
+				anchor: p.anchor,
 				place:  p.place,
 			})
 			continue
@@ -246,7 +241,7 @@ func (l *Limits) simulate(cur market.Kline, now int64, levels []Level) {
 		stopped := t.side == SideLong && cur.Low <= t.stop ||
 			t.side == SideShort && cur.High >= t.stop
 		if stopped {
-			l.loss(t.place, t.lo, t.hi, t.side) // filled, then the stop hit — case (a)
+			l.loss(t.place, t.anchor, t.side) // filled, then the stop hit — case (a)
 			continue
 		}
 		targetHit := t.side == SideLong && cur.High >= t.target ||
@@ -279,16 +274,16 @@ func (l *Limits) registerLeg(side Side, ext float64, levels []Level, entry float
 }
 
 // loss registers a stop-out: one loss at the place (G2) and the leg is
-// closed (G1). lo/hi bound the place for the departure test.
-func (l *Limits) loss(place string, lo, hi float64, side Side) {
-	pid := placeID(place, lo)
+// closed (G1). anchor is the loss price the departure measures from.
+func (l *Limits) loss(place string, anchor float64, side Side) {
+	pid := placeID(place, anchor)
 	if pid != "" {
 		if l.Places == nil {
 			l.Places = map[string]*Place{}
 		}
 		p := l.Places[pid]
 		if p == nil {
-			p = &Place{Lo: lo, Hi: hi, DayKey: l.dayKey}
+			p = &Place{Anchor: anchor, DayKey: l.dayKey}
 			l.Places[pid] = p
 		}
 		p.Losses++
@@ -386,43 +381,40 @@ func placeID(anchorKey string, anchor float64) string {
 //
 //	K1 — every EMA keys on its CONSTANT line key ("ema34"/"ema9"/
 //	"ema34_htf", which is what the EMA levels already carry); a moving line
-//	cannot be keyed by price. The loss price is kept on the Place for the
-//	departure test.
+//	cannot be keyed by price. The anchor is the loss-time price.
 //	K2 — an old-extreme entry keys on the COINCIDENT KEY LEVEL within
 //	±LocationCoincidePts (the level that makes it a location). An old
 //	extreme with no coincident key level is NOT a location: orphan=true —
 //	the trade should not exist and the caller drops it.
 //	BOX — a box is ONE place: the edge suffix (":top"/":bottom") is
-//	stripped, and the place spans the box edges — a loss at either edge
-//	blocks the WHOLE box until price leaves it.
+//	stripped and the anchor is the box midpoint (the replay's box anchor).
 //	Everything else (key levels, trigger retest, plain prices) passes
-//	through unchanged with lo == hi.
-func normalizePlace(in Intent, levels []Level) (key string, lo, hi float64, orphan bool) {
+//	through unchanged.
+func normalizePlace(in Intent, levels []Level) (key string, anchor float64, orphan bool) {
 	key = in.AnchorKey
-	lo, hi = in.Anchor, in.Anchor
+	anchor = in.Anchor
 	if key == "" {
-		return "", 0, 0, false // a plain ISB — no place at all
+		return "", 0, false // a plain ISB — no place at all
 	}
 	switch {
 	case key == string(KindEMA34) || key == string(KindEMA9) || key == string(KindEMA34HTF):
-		return key, lo, hi, false // constant line key, loss price for departure
+		return key, anchor, false // constant line key, loss price for departure
 	case strings.HasPrefix(key, string(KindOldExtreme)):
-		if kl := nearestKeyLevelWithin(levels, lo, LocationCoincidePts); kl != nil {
-			return kl.Key, kl.Price, kl.Price, false
+		if kl := nearestKeyLevelWithin(levels, anchor, LocationCoincidePts); kl != nil {
+			return kl.Key, kl.Price, false
 		}
-		return "", 0, 0, true // K2: not a location — the trade should not exist
+		return "", 0, true // K2: not a location — the trade should not exist
 	case strings.HasSuffix(key, ":top") || strings.HasSuffix(key, ":bottom"):
 		base := strings.TrimSuffix(strings.TrimSuffix(key, ":top"), ":bottom")
-		blo, bhi := boxRange(levels, base, lo)
-		return base, blo, bhi, false // the box is ONE place
+		return base, boxAnchor(levels, base, anchor), false // the box is ONE place
 	}
-	return key, lo, hi, false
+	return key, anchor, false
 }
 
-// boxRange returns the live box edges for base (the box key without the
-// edge suffix). Fallback: the touched edge itself (lo == hi).
-func boxRange(levels []Level, base string, fallback float64) (lo, hi float64) {
-	lo, hi = fallback, fallback
+// boxAnchor is the box's loss anchor: the midpoint of its live edges (the
+// replay's box anchor). Fallback: the touched edge itself.
+func boxAnchor(levels []Level, base string, fallback float64) float64 {
+	lo, hi := fallback, fallback
 	for _, l := range levels {
 		switch l.Key {
 		case base + ":bottom":
@@ -431,7 +423,7 @@ func boxRange(levels []Level, base string, fallback float64) (lo, hi float64) {
 			hi = l.Price
 		}
 	}
-	return lo, hi
+	return (lo + hi) / 2
 }
 
 // nearestKeyLevelWithin is the coincident key level within tol of price
