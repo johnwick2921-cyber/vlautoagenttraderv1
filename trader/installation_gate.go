@@ -439,7 +439,16 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			if ok && positions == 0 && working == 0 {
 				return true, fmt.Sprintf("census is %s old (from an earlier hold) — flat, treated as no census; the ledger, planner and trader legs vouch for flat, and drain re-checks a fresh census after the hold", wire.AckAge.Round(time.Second))
 			}
-			return false, fmt.Sprintf("the census ack is %s old (max %s) and not flat — a pre-hold census must be fresh (restart the bot for a fresh connection, or hold it for fresh acks)", wire.AckAge.Round(time.Second), ntwire.MaintenanceAckMaxAge())
+			if !ok {
+				// No account census at all: there is no flat evidence to
+				// judge, so the refusal says exactly that — never "not flat".
+				why := "connections/accounts not enumerated"
+				if a.CensusError != "" {
+					why = a.CensusError
+				}
+				return false, fmt.Sprintf("the census ack is %s old (max %s) and carries no account census (%s) — a pre-hold census must be fresh (restart the bot for a fresh connection, or hold it for fresh acks)", wire.AckAge.Round(time.Second), ntwire.MaintenanceAckMaxAge(), why)
+			}
+			return false, fmt.Sprintf("the census ack is %s old (max %s) and NOT flat (positions=%d working=%d) — a pre-hold census must be fresh (restart the bot for a fresh connection, or hold it for fresh acks)", wire.AckAge.Round(time.Second), ntwire.MaintenanceAckMaxAge(), positions, working)
 		}
 		return censusVerdict(a)
 	})

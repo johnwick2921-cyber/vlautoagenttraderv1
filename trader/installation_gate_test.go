@@ -263,14 +263,41 @@ func TestInstallationGatePreholdCensusStaleFlatPasses(t *testing.T) {
 }
 
 // The stale-flat pass only covers FLATNESS: a stale census that shows exposure
-// must still fail the pre-hold leg (fail-closed), positions and working alike.
+// must still fail the pre-hold leg (fail-closed), positions and working alike,
+// and the refusal names the counts.
 func TestInstallationGatePreholdCensusStaleButExposed(t *testing.T) {
 	cases := map[string]struct {
 		mut  func(a *ntwire.MaintenanceAckPayload)
 		want string
 	}{
-		"3h-old census with an open position": {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Positions = 1 }, "not flat"},
-		"3h-old census with a working order":  {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Working = 1 }, "not flat"},
+		"3h-old census with an open position": {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Positions = 1 }, "NOT flat (positions=1 working=0)"},
+		"3h-old census with a working order":  {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Working = 1 }, "NOT flat (positions=0 working=1)"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := newGateFixture(t)
+			f.wire.Rec.Ack.Held = false
+			f.wire.AckAge = 3 * time.Hour
+			c.mut(f.wire.Rec.Ack)
+			mustFail(t, f.run(), "addon_census_prehold", c.want)
+		})
+	}
+}
+
+// A stale census that carries NO account census at all has no flat evidence
+// to judge — the refusal must say exactly that (never "not flat", which
+// would fabricate a verdict over evidence that does not exist).
+func TestInstallationGatePreholdCensusStaleWithoutAnAccountCensus(t *testing.T) {
+	cases := map[string]struct {
+		mut  func(a *ntwire.MaintenanceAckPayload)
+		want string
+	}{
+		"3h-old census that failed to take": {func(a *ntwire.MaintenanceAckPayload) {
+			a.CensusError, a.Connections, a.Accounts = "census failed: X", nil, nil
+		}, "carries no account census (census failed: X)"},
+		"3h-old census with accounts not enumerated": {func(a *ntwire.MaintenanceAckPayload) {
+			a.CensusError, a.Accounts = "", nil
+		}, "carries no account census (connections/accounts not enumerated)"},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
