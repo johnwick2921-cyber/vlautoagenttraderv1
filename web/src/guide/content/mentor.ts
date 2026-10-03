@@ -816,6 +816,18 @@ export const mentor: GuideSection = {
           perSession: 'No.',
         },
         {
+          label: 'Loss departure distance',
+          where: 'Strategy → Mentor mode → limits',
+          what: 'After a loss at a place (level, box edge or the EMA line), a closed candle AFTER the loss candle whose close is this many pts away from the loss price is the departure that un-blocks it. One number for every place.',
+          trader: '20 pts — “leave the area”, no stated number.',
+          consumer: 'kernel/mentor loss_departure_pts',
+          range: 'pts',
+          systemDefault: '20',
+          recommended: '20 — departure ruling 2026-10-03.',
+          whenToTouch: 'Rarely.',
+          perSession: 'No.',
+        },
+        {
           label: '5m trigger at locations',
           where: 'Strategy → Mentor mode → levels',
           what: 'The 5m trigger filter at levels and boxes (“bat buoc”). OFF only for the sensitivity row that measures what it costs.',
