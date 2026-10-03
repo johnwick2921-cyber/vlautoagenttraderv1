@@ -128,7 +128,7 @@ func TestBootVerifyRefusesARefusedBootLine(t *testing.T) {
 		t.Fatalf("a REFUSED boot ended %s, want rolled_back\n%v", j.State, states(j))
 	}
 	steps := strings.Join(receiptSteps(j), ",")
-	if !strings.Contains(steps, "activate,watch,boot_verify(fail),rollback,watch,boot_verify,release_hold") {
+	if !strings.Contains(steps, "activate,watch,boot_verify(fail),rollback,watch,boot_verify,release_hold,main_tree_lock") {
 		t.Fatalf("receipts %s", steps)
 	}
 	if !strings.Contains(j.Error, "REFUSED boot line") {

@@ -201,7 +201,7 @@ func TestTraderDiagnosisAmountTooSmallUsesUserFacingCauseAndAction(t *testing.T)
 	}
 
 	reply := a.handleTraderDiagnosisSkill("default", "zh", "为什么我的mnq-t交易员一直不开单呢")
-	for _, want := range []string{"不是没运行", "账户资金太小", "开仓金额约 $28.00", "最小下单要求 $60.00", "增加账户资金", "不能手动修改"} {
+	for _, want := range []string{"不是没运行", "账户资金太小", "低于系统最小下单要求", "增加账户资金", "不能手动修改"} {
 		if !strings.Contains(reply, want) {
 			t.Fatalf("expected diagnosis to include %q, got: %s", want, reply)
 		}

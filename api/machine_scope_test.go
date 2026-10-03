@@ -64,8 +64,9 @@ func TestBotTokenCarriesTheTelegramScope(t *testing.T) {
 	}
 }
 
-// User tokens are unchanged: the login token's claim set is exactly what it
-// was (no scope key at all — absent, not "").
+// User tokens: the login token's claim set is exactly the reviewed shape — no
+// scope key at all (absent, not ""), and a jti so same-second mints can never
+// share a string (token-iat-same-second, owner order 2026-10-02).
 func TestLoginTokenCarriesNoScope(t *testing.T) {
 	e := newUpdEnv(t)
 	tok, code := credLogin(t, e, updAdminEmail, updAdminPass)
@@ -77,7 +78,7 @@ func TestLoginTokenCarriesNoScope(t *testing.T) {
 	for k := range p {
 		keys[k] = true
 	}
-	want := []string{"user_id", "email", "exp", "iat", "nbf", "iss"}
+	want := []string{"user_id", "email", "exp", "iat", "nbf", "iss", "jti"}
 	if len(keys) != len(want) {
 		b, _ := json.Marshal(p)
 		t.Fatalf("login token claim keys = %s — want exactly %v", b, want)

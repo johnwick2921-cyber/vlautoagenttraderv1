@@ -2,15 +2,14 @@ package trader
 
 import (
 	"fmt"
-	"math"
+	"strings"
+	"time"
 	"vl/discipline"
 	"vl/kernel"
 	"vl/logger"
 	"vl/market"
 	"vl/store"
 	"vl/telemetry"
-	"strings"
-	"time"
 )
 
 // saveEquitySnapshot saves equity snapshot independently (for drawing profit curve, decoupled from AI decision)
@@ -158,7 +157,6 @@ func (at *AutoTrader) GetAccountInfo() (map[string]interface{}, error) {
 	}
 
 	totalMarginUsed := 0.0
-	totalUnrealizedPnLCalculated := 0.0
 	for _, pos := range positions {
 		// Comma-ok asserts: NT futures positions may omit some Binance-style
 		// keys; a hard assert would panic /api/account (Plan 4.11 fix).
@@ -167,8 +165,6 @@ func (at *AutoTrader) GetAccountInfo() (map[string]interface{}, error) {
 		if quantity < 0 {
 			quantity = -quantity
 		}
-		unrealizedPnl, _ := pos["unRealizedProfit"].(float64)
-		totalUnrealizedPnLCalculated += unrealizedPnl
 
 		leverage := 10
 		if lev, ok := pos["leverage"].(float64); ok {
@@ -176,14 +172,6 @@ func (at *AutoTrader) GetAccountInfo() (map[string]interface{}, error) {
 		}
 		marginUsed := (quantity * markPrice) / float64(leverage)
 		totalMarginUsed += marginUsed
-	}
-
-	// Verify unrealized P&L consistency (API value vs calculated from positions)
-	// Note: Lighter API may return 0 for unrealized PnL, this is a known limitation
-	diff := math.Abs(totalUnrealizedProfit - totalUnrealizedPnLCalculated)
-	if diff > 5.0 { // Only warn if difference is significant (> 5 USDT)
-		logger.Infof("⚠️ Unrealized P&L inconsistency (Lighter API limitation): API=%.4f, Calculated=%.4f, Diff=%.4f",
-			totalUnrealizedProfit, totalUnrealizedPnLCalculated, diff)
 	}
 
 	totalPnL := totalEquity - at.initialBalance
@@ -357,14 +345,6 @@ func (at *AutoTrader) recordAndConfirmOrderAs(orderResult map[string]interface{}
 	var actualQty = quantity
 	var fee float64
 
-	// Exchanges with OrderSync: Skip immediate order recording, let OrderSync handle it
-	// This ensures accurate data from GetTrades API and avoids duplicate records
-	switch at.exchange {
-	case "binance", "lighter", "hyperliquid", "bybit", "okx", "bitget", "aster", "kucoin", "gate":
-		logger.Infof("  📝 Order submitted (id: %s), will be synced by OrderSync", orderID)
-		return
-	}
-
 	// NinjaTrader has no order-sync; an NT8 position transitions to CLOSED ONLY via
 	// the position_close fill frame (trader/ninjatrader close_sync.recordClose —
 	// fill-confirmed and futures-point-value-correct), exactly as SL/TP exits do.
@@ -379,7 +359,6 @@ func (at *AutoTrader) recordAndConfirmOrderAs(orderResult map[string]interface{}
 		return
 	}
 
-	// For exchanges without OrderSync (e.g., Binance): record immediately and poll for fill data
 	orderRecord := at.createOrderRecord(orderID, symbol, action, positionSide, quantity, price, leverage)
 	if err := at.store.Order().CreateOrder(orderRecord); err != nil {
 		logger.Infof("  ⚠️ Failed to record order: %v", err)
@@ -521,7 +500,7 @@ func (at *AutoTrader) recordPositionChangeAs(orderID, symbol, side, action strin
 			TraderID:        at.id,
 			Account:         at.currentAccountName(), // ITEM 2 per-account attribution
 			ExchangeID:      at.exchangeID,           // Exchange account UUID
-			ExchangeType:    at.exchange,             // Exchange type: binance/bybit/okx/etc
+			ExchangeType:    at.exchange,
 			Symbol:          symbol,
 			Side:            side, // LONG or SHORT
 			Quantity:        quantity,

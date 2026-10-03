@@ -57,6 +57,129 @@ var preflightFlatLegs = []string{"addon_census_prehold", "ledger_exposure", "pla
 // AddOn acked THIS job, flat, no working orders, nothing in flight.
 var drainLegs = []string{"hold", "go_drained", "in_flight_sends", "queued_signals", "addon_ack", "addon_census", "ledger_exposure", "planner_in_flight"}
 
+// ── the main-tree lock (WORKER-TAKES-THE-LOCK, owner order 10-02 12:1x) ────
+//
+// The worker ACQUIRES the main-tree lock itself, as session
+// "updater-<job id first 12>", right before preflight — the SAME atomic
+// acquire verb humans use, with an expiry covering the job budget. It never
+// reclaims, never takes a held or stale lock, and never clears-incomplete.
+// A lock held by anyone else refuses preflight naming the holder: an
+// attended install is just a button install — humans never hold the lock
+// across one. The worker releases its own lock at complete / rolled_back /
+// refused; on recovery_needed it KEEPS the lock and names it in the job, so
+// a human looks before anything else touches the tree. A worker restart
+// mid-job finds its own lock by the deterministic session name and continues
+// — it never double-acquires.
+
+// lockSessionPrefix is the session name a worker lock always starts with.
+const lockSessionPrefix = "updater-"
+
+// lockSessionFor is the worker's lock identity for a job. It is DETERMINISTIC
+// from the job id, so a worker restart mid-job recognises its own lock.
+func lockSessionFor(jobID string) string {
+	id := jobID
+	if len(id) > 12 {
+		id = id[:12]
+	}
+	return lockSessionPrefix + id
+}
+
+// lockWindowMinutes is the acquire expiry: every job budget plus the three
+// planner waits plus a rollback, plus margin. The lock's keeper beats until
+// this window and then stops; OUR OWN stale lock does not block us (the
+// holder name is ours), and a park can outlast the keeper — only the holder
+// name matters to us.
+func (w *Worker) lockWindowMinutes() int {
+	b := w.cfg.Budgets
+	total := b.PreflightFlat + b.Drain + b.Gate + 3*b.PlannerWait + 3*b.Reprove +
+		2*b.Watch + 2*b.PostBootAck + 2*b.IdentityRetry + 2*b.HoldClear + 20*time.Minute
+	return int(total.Minutes()) + 1
+}
+
+// ensureMainTreeLock acquires-or-verifies the main-tree lock for THIS job
+// and returns the outcome: "acquired" (we took a free lock) or "ours" (the
+// lock already names our session — a restart mid-job). Any other state
+// refuses, naming the holder.
+func (w *Worker) ensureMainTreeLock(j updaterjob.Job) (string, error) {
+	session := lockSessionFor(j.JobID)
+	holder, err := w.host.LockHolder()
+	if err != nil {
+		return "", fmt.Errorf("the main-tree lock status is unreadable (C19: %v)", err)
+	}
+	switch {
+	case holder == "":
+		acquired, holderNow, err := w.host.LockAcquire(session, "worker job "+j.JobID, w.lockWindowMinutes())
+		if err != nil {
+			return "", fmt.Errorf("the main-tree lock acquire failed (C19: %v)", err)
+		}
+		if acquired {
+			return "acquired", nil
+		}
+		// Lost the race to another acquirer: refuse naming whoever won.
+		return "", fmt.Errorf("the main-tree lock is not held by this job (C19: held by %q) — the worker never takes a held or stale lock", orNA(holderNow))
+	case holder == session:
+		// Ours from before a restart: continue, never double-acquire. This
+		// includes our OWN stale lock — the keeper window is a bound, not
+		// liveness for a holder that is still running.
+		return "ours", nil
+	default:
+		return "", fmt.Errorf("the main-tree lock is not held by this job (C19: held by %q) — the worker never takes a held or stale lock", holder)
+	}
+}
+
+// releaseOurLock releases the main-tree lock ONLY when it is ours: a free
+// lock is a no-op, and a lock held by anyone else is never touched. It is
+// the ONE release path the worker uses.
+func (w *Worker) releaseOurLock(session string) error {
+	holder, err := w.host.LockHolder()
+	if err != nil {
+		return err
+	}
+	if holder == "" || holder == session {
+		return w.host.LockRelease(session)
+	}
+	return nil // not ours — leave it to its holder
+}
+
+// lockReleaseReceipt performs the terminal release and renders its receipt:
+// outcome "released" (ours, now free), "free" (nothing to release), or
+// "not_ours" (an attended/foreign holder keeps it), and "release_failed"
+// with the error.
+func (w *Worker) lockReleaseReceipt(session string, now time.Time) updaterjob.Receipt {
+	ev := map[string]string{"session": session}
+	holder, herr := w.host.LockHolder()
+	var err error
+	switch {
+	case herr != nil:
+		err = herr
+	case holder == "":
+		ev["outcome"] = "free"
+	case holder != session:
+		ev["outcome"] = "not_ours"
+		ev["holder"] = holder
+	default:
+		if err = w.host.LockRelease(session); err == nil {
+			ev["outcome"] = "released"
+		} else {
+			ev["outcome"] = "release_failed"
+		}
+	}
+	rec := updaterjob.Receipt{Step: "main_tree_lock", StartedAt: now, EndedAt: w.host.Now(), OK: err == nil, Evidence: ev}
+	if err != nil {
+		rec.Err = clipText(err.Error())
+	}
+	return rec
+}
+
+// keptLockReceipt names the kept lock on recovery_needed: the lock stays
+// held by our session and a human looks before anything else touches the
+// tree. It performs NO release.
+func keptLockReceipt(session string, now time.Time) updaterjob.Receipt {
+	return updaterjob.Receipt{Step: "main_tree_lock", StartedAt: now, EndedAt: now, OK: false,
+		Evidence: map[string]string{"session": session, "outcome": "kept"},
+		Err:      "recovery_needed: the lock stays held by this job — a human looks first"}
+}
+
 // drainPathNT8Absent is the drain path taken when NT8 is CLOSED
 // (UPDATER-NT8-CLOSED, owner ruling 22:1x CT 09-27): the link has been down
 // ≥ 60s continuously, so no AddOn ack can exist. The drain then passes on the
@@ -142,11 +265,11 @@ func (w *Worker) stepPreflight(ctx context.Context, j updaterjob.Job) stepResult
 		if m := firstMarkerLine(marker); !revisionsAgree(m, rev) {
 			return fmt.Errorf("the install's RELEASE marker names %q, the running binary is %s", m, rev)
 		}
-		held, detail, err := w.host.MainTreeLockHeld()
-		ev["main_tree_lock"] = orNA(detail)
-		if err != nil || !held {
-			return fmt.Errorf("the main-tree lock is not held (C19: %s) — the attended deploy acquires it; the worker never does", orNA(detail))
+		lockState, err := w.ensureMainTreeLock(j)
+		if err != nil {
+			return err
 		}
+		ev["main_tree_lock_state"] = lockState
 		if cal, err := calendarVerdict(rel.Dir, inst.Dir); err != nil {
 			return err
 		} else {
@@ -187,13 +310,23 @@ func (w *Worker) stepPreflight(ctx context.Context, j updaterjob.Job) stepResult
 		}
 		// C22: flat BEFORE the hold, or the job is refused with no hold. A 401
 		// here is the token proof failing: refused at once.
-		return w.poll(ctx, j, w.cfg.Budgets.PreflightFlat, func() (string, error) {
+		return w.pollPlanner(ctx, j, w.cfg.Budgets.PreflightFlat, w.cfg.Budgets.PlannerWait, func() (string, error) {
 			g, err := w.app.InstallationGate(ctx)
 			if errors.Is(err, ErrUnauthorized) {
 				return "", err
 			}
 			if err != nil {
 				return "installation-gate: " + err.Error(), nil
+			}
+			// UPDATER-NT8-CLOSED (P-D ruling item 3): with the AddOn's
+			// socket gone >= the window, preflight runs the ABSENT leg set --
+			// the census/ack/cutover legs cannot be answered by a closed
+			// NT8 and must not refuse the safest install moment.
+			if a := g.NT8Absent; a != nil && a.Eligible {
+				if names, ok := absentPreflightLegs(a); ok {
+					return firstFailingNamedLegs(GateView{Legs: a.Legs}, names), nil
+				}
+				return "nt8_absent: eligible but no preflight legs computed", nil
 			}
 			return firstFailingLeg(g, preflightFlatLegs), nil
 		})
@@ -265,7 +398,7 @@ func (w *Worker) stepHold(j updaterjob.Job) stepResult {
 // legs apply again, never grandfathered.
 func (w *Worker) stepDrain(ctx context.Context, j updaterjob.Job) stepResult {
 	start, ev := w.host.Now(), map[string]string{}
-	err := w.poll(ctx, j, w.cfg.Budgets.Drain, func() (string, error) {
+	err := w.pollPlanner(ctx, j, w.cfg.Budgets.Drain, w.cfg.Budgets.PlannerWait, func() (string, error) {
 		g, gerr := w.app.InstallationGate(ctx)
 		if gerr != nil {
 			return "installation-gate: " + gerr.Error(), nil
@@ -300,7 +433,7 @@ func (w *Worker) stepDrain(ctx context.Context, j updaterjob.Job) stepResult {
 		ev["drain_path"] = "normal"
 		return firstFailingLeg(g, drainLegs), nil
 	})
-	return stepResult{
+	res := stepResult{
 		receipts: []Receipt{w.receipt("drain", start, ev, err)},
 		err:      err,
 		set: func(k *updaterjob.Job) {
@@ -312,6 +445,22 @@ func (w *Worker) stepDrain(ctx context.Context, j updaterjob.Job) stepResult {
 			}
 		},
 	}
+	// F2: a live AI-plan read outlived the planner wait — a KNOWN BENIGN
+	// blocker must not keep the desk held. Release THIS job's hold and refuse
+	// (nothing was installed). If the release itself fails, the hold stays and
+	// the failure is recovery_needed, never a refused job with a hold on disk.
+	var pe plannerExpired
+	if errors.As(err, &pe) {
+		relStart := w.host.Now()
+		if relErr := ReleaseJob(w.dataDir(), j.JobID); relErr != nil {
+			return stepResult{receipts: res.receipts, err: err, failTo: updaterjob.StateRecoveryNeeded,
+				reason: "AI plan still running and the hold could not be released: " + clipText(relErr.Error())}
+		}
+		rev := map[string]string{"reason": "planner wait expired", "hold_after": "released"}
+		res.receipts = append(res.receipts, w.receipt("release_hold", relStart, rev, nil))
+		res.failTo, res.reason = updaterjob.StateRefused, "AI plan still running — hold released, nothing installed"
+	}
+	return res
 }
 
 // legEvidence renders one leg's verdict for the receipt: its own detail text
@@ -401,7 +550,7 @@ func ackFor(a *AckView, jobID string) string {
 func (w *Worker) stepGate(ctx context.Context, j updaterjob.Job) stepResult {
 	start, ev := w.host.Now(), map[string]string{}
 	var firstArrival time.Time
-	err := w.poll(ctx, j, w.cfg.Budgets.Gate, func() (string, error) {
+	err := w.pollPlanner(ctx, j, w.cfg.Budgets.Gate, w.cfg.Budgets.PlannerWait, func() (string, error) {
 		// UPDATER-NT8-CLOSED: with NT8 absent there is no ack to double-read.
 		// The absent verdict is ready (every ledger leg + the hold on disk
 		// ours); a reconnect flips eligible=false and the normal two-ack path
@@ -449,7 +598,21 @@ func (w *Worker) stepGate(ctx context.Context, j updaterjob.Job) stepResult {
 		ev["ack_2_at"] = arrival.Format(time.RFC3339Nano)
 		return "", nil
 	})
-	return stepResult{receipts: []Receipt{w.receipt("gate", start, ev, err)}, err: err}
+	res := stepResult{receipts: []Receipt{w.receipt("gate", start, ev, err)}, err: err}
+	// F2: same planner-wait expiry as the drain — release THIS job's hold and
+	// refuse; a benign blocker must not keep the desk held.
+	var pe plannerExpired
+	if errors.As(err, &pe) {
+		relStart := w.host.Now()
+		if relErr := ReleaseJob(w.dataDir(), j.JobID); relErr != nil {
+			return stepResult{receipts: res.receipts, err: err, failTo: updaterjob.StateRecoveryNeeded,
+				reason: "AI plan still running and the hold could not be released: " + clipText(relErr.Error())}
+		}
+		rev := map[string]string{"reason": "planner wait expired", "hold_after": "released"}
+		res.receipts = append(res.receipts, w.receipt("release_hold", relStart, rev, nil))
+		res.failTo, res.reason = updaterjob.StateRefused, "AI plan still running — hold released, nothing installed"
+	}
+	return res
 }
 
 // reprove is R-i: one more ready:true for THIS job, polled for the Reprove
@@ -847,13 +1010,50 @@ func (w *Worker) stepReleaseHold(ctx context.Context, j updaterjob.Job) stepResu
 		s, _ := ReadHoldFor(w.dataDir(), j.JobID)
 		ev["hold_after"] = s.String()
 	}
-	return stepResult{receipts: []Receipt{w.receipt("release_hold", start, ev, err)}, err: err}
+	receipts := []Receipt{w.receipt("release_hold", start, ev, err)}
+	if err == nil {
+		// WORKER-TAKES-THE-LOCK: complete/rolled_back also release OUR
+		// main-tree lock. A failed release keeps the job recoverable (the
+		// lock stays; the failure edge names it).
+		lrec := w.lockReleaseReceipt(lockSessionFor(j.JobID), w.host.Now())
+		receipts = append(receipts, lrec)
+		if !lrec.OK {
+			return stepResult{receipts: receipts, err: errors.New(lrec.Err), reason: clipText("the main-tree lock could not be released: " + lrec.Err)}
+		}
+	}
+	return stepResult{receipts: receipts, err: err}
 }
+
+// plannerExpired is the F2 expiry error: the step waited the full planner
+// budget while an AI plan read stayed in flight. Preflight refuses (no hold,
+// as today); drain/gate RELEASE the hold and refuse — a known benign blocker
+// must not leave the desk held.
+type plannerExpired struct{ budget time.Duration }
+
+func (e plannerExpired) Error() string {
+	return fmt.Sprintf("AI plan still running after %s", e.budget)
+}
+
+// plannerBlocker reports whether the blocker is the planner_in_flight leg (the
+// gate names it as "planner_in_flight: <detail>").
+func plannerBlocker(b string) bool { return strings.HasPrefix(b, "planner_in_flight") }
 
 // poll re-reads until check passes ("" blocker) or the budget runs out. Each
 // NEW blocker is persisted (M5 shows it). A fatal error ends it at once.
 func (w *Worker) poll(ctx context.Context, j updaterjob.Job, budget time.Duration, check func() (string, error)) error {
-	deadline := w.host.Now().Add(budget)
+	return w.pollPlanner(ctx, j, budget, 0, check)
+}
+
+// pollPlanner is poll plus the F2 planner wait: while the CURRENT blocker is a
+// live AI-plan read, the step waits up to plannerBudget (a benign blocker must
+// not fail the step on its normal budget) and the live blocker — "waiting for
+// the AI plan (started hh:mm:ss)" — is what the job shows. On planner-wait
+// expiry it returns plannerExpired; every other blocker keeps the normal
+// budget and the normal "not passed within" failure.
+func (w *Worker) pollPlanner(ctx context.Context, j updaterjob.Job, budget, plannerBudget time.Duration, check func() (string, error)) error {
+	start := w.host.Now()
+	deadline := start.Add(budget)
+	plannerDeadline := start.Add(plannerBudget)
 	last := ""
 	for {
 		b, fatal := check()
@@ -873,7 +1073,11 @@ func (w *Worker) poll(ctx context.Context, j updaterjob.Job, budget time.Duratio
 				return err
 			}
 		}
-		if !w.host.Now().Before(deadline) {
+		if plannerBlocker(b) && plannerBudget > 0 {
+			if !w.host.Now().Before(plannerDeadline) {
+				return plannerExpired{plannerBudget}
+			}
+		} else if !w.host.Now().Before(deadline) {
 			return fmt.Errorf("not passed within %s: %s", budget, b)
 		}
 		if err := w.host.Sleep(ctx, w.cfg.Budgets.Poll); err != nil {
@@ -885,12 +1089,27 @@ func (w *Worker) poll(ctx context.Context, j updaterjob.Job, budget time.Duratio
 // firstFailingLeg is "" when every leg named in want (and every
 // trader_cutover:* leg) is present and passes; with want nil, every leg.
 func firstFailingLeg(g GateView, want []string) string {
+	if b := firstFailingNamedLegs(g, want); b != "" {
+		return b
+	}
+	for _, l := range g.Legs {
+		if strings.HasPrefix(l.Name, "trader_cutover:") && !l.Pass {
+			return l.Name + ": " + l.Detail
+		}
+	}
+	return ""
+}
+
+// firstFailingNamedLegs is the named-lookup half of firstFailingLeg (the
+// trader_cutover sweep lives in firstFailingLeg). The nt8_absent preflight
+// uses this directly: with NT8 closed the cutover legs cannot answer and must
+// not be demanded (P-D ruling item 3).
+func firstFailingNamedLegs(g GateView, want []string) string {
 	legs := map[string]GateLeg{}
 	for _, l := range g.Legs {
 		legs[l.Name] = l
 	}
-	names := want
-	if names == nil {
+	if want == nil {
 		for _, l := range g.Legs {
 			if !l.Pass {
 				return l.Name + ": " + l.Detail
@@ -901,7 +1120,7 @@ func firstFailingLeg(g GateView, want []string) string {
 		}
 		return ""
 	}
-	for _, n := range names {
+	for _, n := range want {
 		l, ok := legs[n]
 		if !ok {
 			return n + ": leg missing from the installation gate"
@@ -910,12 +1129,23 @@ func firstFailingLeg(g GateView, want []string) string {
 			return n + ": " + l.Detail
 		}
 	}
-	for _, l := range g.Legs {
-		if strings.HasPrefix(l.Name, "trader_cutover:") && !l.Pass {
-			return l.Name + ": " + l.Detail
-		}
-	}
 	return ""
+}
+
+// absentPreflightLegs is the preflight leg set when the gate's nt8_absent
+// verdict is eligible (the AddOn's socket has been down ≥ the window): the
+// absent legs minus hold/go_drained, which only engage at drain (the hold and
+// the barrier do not exist before the hold step). P-D ruling item 3 — preflight
+// must use the absent leg set when the wire has been down long enough, or an
+// NT8-closed install is refused on legs the AddOn can never answer.
+func absentPreflightLegs(absent *NT8AbsentView) (names []string, ok bool) {
+	for _, l := range absent.Legs {
+		if l.Name == "hold" || l.Name == "go_drained" {
+			continue
+		}
+		names = append(names, l.Name)
+	}
+	return names, len(names) > 0
 }
 
 // facts re-proves the release (verdict + signature NOW) for a step that reads

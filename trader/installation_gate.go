@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
+	"vl/kernel"
 	ntwire "vl/provider/ninjatrader"
 	"vl/store"
 	ntTrader "vl/trader/ninjatrader"
@@ -76,6 +78,24 @@ type NT8AbsentView struct {
 	Ready         bool                  `json:"ready"`
 	LinkDownSince string                `json:"link_down_since,omitempty"` // RFC3339 of the disconnect stamp; absent when unknown
 	Legs          []InstallationGateLeg `json:"legs,omitempty"`            // computed ONLY when eligible; absent otherwise
+}
+
+// plannerClaimStarts returns the OLDEST claim-started wall time across the
+// four planner in-flight maps, or ok=false when nothing is claimed or no claim
+// carried a time (F1). The claim sites (claimPlannerRead / claimWeeklyRead /
+// flipRereadInFlight / deathRereadInFlight) store time.Time; a held claim with
+// no time (a test fixture storing the old struct{}/bool shape) is tolerated —
+// its identity is reported by the leg, the started time is simply absent.
+func plannerClaimStarts() (oldest time.Time, ok bool) {
+	for _, m := range []*sync.Map{&plannerReadInFlight, &weeklyReadClaim, &flipRereadInFlight, &deathRereadInFlight} {
+		m.Range(func(_, v any) bool {
+			if t, isTime := v.(time.Time); isTime && (!ok || t.Before(oldest)) {
+				oldest, ok = t, true
+			}
+			return true
+		})
+	}
+	return oldest, ok
 }
 
 // nt8AbsentMinLinkDown is the continuous link-down the absent path requires
@@ -244,7 +264,11 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			}
 		}
 		if len(held) > 0 {
-			return false, "IN FLIGHT: " + strings.Join(held, ", ")
+			inFlight := strings.Join(held, ", ")
+			if start, ok := plannerClaimStarts(); ok {
+				return false, fmt.Sprintf("waiting for the AI plan (started %s) — IN FLIGHT: %s", kernel.ClockCTSeconds(start), inFlight)
+			}
+			return false, "waiting for the AI plan — IN FLIGHT: " + inFlight
 		}
 		return true, "no planner-class read claimed, any trader"
 	}
@@ -388,8 +412,26 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 		if a == nil {
 			return false, "addon_ack=n/a — no census"
 		}
-		return censusVerdict(a)
+		ok, detail := censusVerdict(a)
+		// The AGE rides the detail so a preflight read shows staleness
+		// (prehold-stale-census, owner order 2026-10-02 10:15 CT) — text only,
+		// the verdict is censusVerdict's.
+		return ok, fmt.Sprintf("age=%s — %s", wire.AckAge.Round(time.Second), detail)
 	})
+
+	// censusExposure totals a census that ENUMERATED its accounts; ok is
+	// false when the census failed or never enumerated (no evidence of
+	// flatness, never mistaken for flat).
+	censusExposure := func(a *ntwire.MaintenanceAckPayload) (positions, working int, ok bool) {
+		if a.CensusError != "" || a.Connections == nil || a.Accounts == nil {
+			return 0, 0, false
+		}
+		for _, ac := range a.Accounts {
+			positions += ac.Positions
+			working += ac.Working
+		}
+		return positions, working, true
+	}
 
 	// addon_census_prehold — the C22 pre-hold flat evidence (#206 review
 	// fold). The wire sends maintenance frames ONLY while held
@@ -398,11 +440,17 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 	// will not have one until the worker's own hold step. That absence is a
 	// STATE, not missing evidence: the other preflight legs (ledger, planner,
 	// traders) still fail closed on their own evidence, and drain re-checks a
-	// FRESH census right after the hold exists. When a census DOES exist (a
-	// held:false release ack after a prior hold or an operator drill), it is
-	// evidence only while FRESH: a census of any age proves nothing about
-	// right now, so a stale one fails the leg.
-	leg("addon_census_prehold", "maintenance_ack census, pre-hold (C22): fresh when present; never-held connections carry no census yet", func() (bool, string) {
+	// FRESH census right after the hold exists. When a census DOES exist it
+	// was sent while held and froze at release — prehold-stale-census (owner
+	// order 2026-10-02 10:15 CT): a stale census is NEVER stronger evidence
+	// than no census, so a STALE census that is FLAT passes exactly like the
+	// no-census state (the ledger, planner and trader legs vouch for flat,
+	// and drain re-checks a fresh census after the hold), a STALE census that
+	// is NOT flat fails the leg, and a FRESH census takes the content
+	// verdict. Without this, the previous install's held:false release ack —
+	// which nothing refreshes until the next hold — failed every second
+	// install on one bot process until an NT8 or bot restart.
+	leg("addon_census_prehold", "maintenance_ack census, pre-hold (C22): stale flat = no census; stale non-flat refuses; fresh takes the content verdict", func() (bool, string) {
 		if !haveWire {
 			return false, noWire
 		}
@@ -411,7 +459,20 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			return true, "no census — this connection has never been held (flat is vouched for by the ledger, planner and trader legs; drain re-checks a fresh census after the hold)"
 		}
 		if wire.AckAge < 0 || wire.AckAge > ntwire.MaintenanceAckMaxAge() {
-			return false, fmt.Sprintf("the census ack is %s old (max %s) — a pre-hold census must be fresh (restart the bot for a fresh connection, or hold it for fresh acks)", wire.AckAge.Round(time.Second), ntwire.MaintenanceAckMaxAge())
+			positions, working, ok := censusExposure(a)
+			if ok && positions == 0 && working == 0 {
+				return true, fmt.Sprintf("census is %s old (from an earlier hold) — flat, treated as no census; the ledger, planner and trader legs vouch for flat, and drain re-checks a fresh census after the hold", wire.AckAge.Round(time.Second))
+			}
+			if !ok {
+				// No account census at all: there is no flat evidence to
+				// judge, so the refusal says exactly that — never "not flat".
+				why := "connections/accounts not enumerated"
+				if a.CensusError != "" {
+					why = a.CensusError
+				}
+				return false, fmt.Sprintf("the census ack is %s old (max %s) and carries no account census (%s) — a pre-hold census must be fresh (restart the bot for a fresh connection, or hold it for fresh acks)", wire.AckAge.Round(time.Second), ntwire.MaintenanceAckMaxAge(), why)
+			}
+			return false, fmt.Sprintf("the census ack is %s old (max %s) and NOT flat (positions=%d working=%d) — a pre-hold census must be fresh (restart the bot for a fresh connection, or hold it for fresh acks)", wire.AckAge.Round(time.Second), ntwire.MaintenanceAckMaxAge(), positions, working)
 		}
 		return censusVerdict(a)
 	})

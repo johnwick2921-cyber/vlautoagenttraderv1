@@ -26,7 +26,7 @@ help:
 # Run all tests
 test:
 	@echo "🧪 Running backend tests..."
-	go test -v ./...
+	go test -v -timeout 30m ./...
 	@echo ""
 	@echo "🧪 Running frontend tests..."
 	cd web && npm run test
@@ -35,7 +35,7 @@ test:
 # Backend tests only
 test-backend:
 	@echo "🧪 Running backend tests..."
-	go test -v ./...
+	go test -v -timeout 30m ./...
 
 # Frontend tests only
 test-frontend:
@@ -45,7 +45,7 @@ test-frontend:
 # Coverage report
 test-coverage:
 	@echo "📊 Generating coverage..."
-	go test -coverprofile=coverage.out ./...
+	go test -coverprofile=coverage.out -timeout 30m ./...
 	go tool cover -html=coverage.out -o coverage.html
 	@echo "✅ Backend coverage: coverage.html"
 

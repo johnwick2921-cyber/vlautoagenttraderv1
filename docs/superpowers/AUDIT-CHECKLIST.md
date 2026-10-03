@@ -7833,3 +7833,54 @@ that parses a binary's output, diff the asserted jq/sed paths against the
 producer's actual struct tags/output. rule: every script that parses a binary's
 output has ≥1 test running the REAL binary (or its real serializer), never a
 hand-shaped fake.
+
+## CLASS NN (assigned at merge) — edge-triggered latch: a boolean derived from an edge-triggered frame latches after the source is gone
+
+P-D stale-link-latch (2026-10-02): /api/health's nt8 link read "up" for ~5 h
+after the :36974 socket was gone, because it derived from the last feed_status
+FRAME — and feed_status is edge-triggered (sent only on change), so its last
+value outlives the socket indefinitely. The same latch also fed the desk strip's
+LINK row. probe: for every "connected/up/down" display or gate, ask "what would
+this read 6 hours after the source dies with no further events?"; if the answer
+is the last value, it is a latch. rule: any link/up/down display reads the LIVE
+socket (TCPServer.IsConnected / HealthLinkConnected), never a stored frame value.
+KNOWN LIMIT by CTO ruling (P-D item 2): the trading feed gate IsFeedConnected
+keeps today's latched behaviour — entries are protected on a dead socket by the
+dead-man watchdog (ninjaLinkConnected → IsConnected), and the close path must
+never be stricter (exits are never blocked). Recorded in the PR body.
+
+## CLASS NN (assigned at merge) — stale evidence stricter than absent evidence
+
+symptom: a gate treats a stale-but-present signal as STRICTER evidence than the
+absence of the signal, so the same physical state (flat, nothing new to report)
+passes when the source never spoke and fails when it spoke long ago — the
+second install of one bot process sat at preflight until an NT8/bot restart,
+because the previous install's held:false release ack (never refreshed until
+the next hold) made the pre-hold census "present but old", while a never-held
+connection's missing census passed. probe: for every freshness gate, compare
+the stale-present case against the absent case and ask which is really stronger
+evidence; if the absent case passes on other legs, a stale case carrying no
+NEW violation must not be judged harder than it. rule: stale + no violation =
+same verdict as absent, with the age printed; stale + violation still fails
+closed. Reference: trader/installation_gate.go addon_census_prehold
+(prehold-stale-census, owner order 2026-10-02 10:15 CT).
+
+## CLASS NN (assigned at merge) — a button-only operator has no path to satisfy a terminal-side precondition
+
+symptom: PARTNER-ALONE-AUDIT (2026-10-02, DS-102): a partner could do Check →
+password → Update now entirely from the browser, but every install was refused
+at preflight because C19 required the main-tree lock to be HELD and only an
+attended terminal (`deploy/vl-lock.sh acquire`) could hold it — the worker ran
+`check` only and never acquired. probe: for every operator class (owner, CTO,
+partner), walk each gate's preconditions end to end and ask "can THIS operator
+satisfy this precondition with the controls they actually have?" — a
+precondition satisfied only from a terminal is a hard blocker for a
+button-only operator. rule: the worker acquires the lock itself as session
+`updater-<job id first 12>` before preflight (atomic acquire, budget-sized
+expiry), refuses a lock held by ANYONE naming the holder (an attended
+install is just a button install — humans never hold the lock across one),
+releases at complete/rolled_back/refused, and KEEPS + names the lock in the
+job on recovery_needed; after the release the CTO acquires for the
+RELEASE-marker commit as usual. Reference:
+internal/updaterworker/steps.go ensureMainTreeLock +
+runner.go finish failure edges + stepReleaseHold.

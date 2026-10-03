@@ -182,7 +182,7 @@ func (a *Agent) validateModelDraft(storeUserID, modelID, provider string, enable
 	}).Validate()
 }
 
-func (a *Agent) validateExchangeDraft(storeUserID, exchangeID, exchangeType string, enabled bool, apiKey, secretKey, passphrase, _, _, _, _, _, _ string, ntDataDir string) error {
+func (a *Agent) validateExchangeDraft(storeUserID, exchangeID, exchangeType string, enabled bool, apiKey, secretKey, passphrase, _, _, _, _ string, ntDataDir string) error {
 	if a == nil || a.store == nil {
 		return fmt.Errorf("store unavailable")
 	}

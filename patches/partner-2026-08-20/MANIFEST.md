@@ -455,7 +455,7 @@ hash | date | area | one-line | bucket
 | `81e54fc9` | 2026-08-15 | security | fix(security): S1 — bind the API to 127.0.0.1 by default (was 0.0.0.0) | PROPAGATE |
 | `821c895a` | 2026-08-15 | security | fix(security): S2 — reset-password disabled; reset-account behind JWT + env flag + confirm token | PROPAGATE |
 | `0d97a672` | 2026-08-15 | security | docs(security): document API_SERVER_HOST and ALLOW_ACCOUNT_RESET in .env.example | PROPAGATE |
-| `92969990` | 2026-08-15 | security | fix(security): S5 — stop writing plaintext API keys and wallet private keys to the logs | PROPAGATE |
+| `92969990` | 2026-08-15 | security | fix(security): S5 — stop writing plaintext API keys and private keys to the logs | PROPAGATE |
 | `8dcc4521` | 2026-08-15 | security | fix(security): S4 — close the unauthenticated RSA decryption oracle (/api/crypto/decrypt) | PROPAGATE |
 | `fb3d5f65` | 2026-08-15 | security | docs(security): P0 fix report — takeover chain closed, 2 extra holes found, 7 open items | OWNER-ONLY |
 | `b75b0cb9` | 2026-08-16 | docs | docs: demo plan seed — clickable day plan on the live dashboard, isolated from Monday | OWNER-ONLY |

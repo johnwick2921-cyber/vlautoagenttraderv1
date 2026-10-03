@@ -323,9 +323,19 @@ func TestDeskBookUsesReceivedFrameAndUnknownLink(t *testing.T) {
 					if !strings.Contains(line.Text, "received-test-build") || !strings.Contains(line.Text, "received ") || !strings.Contains(line.Text, "age ") {
 						t.Fatalf("book metadata hidden: %+v", line)
 					}
-				case "mode", "feed":
-					if line.State != "unknown" || line.Verified || !strings.Contains(line.Text, "link UNKNOWN") {
-						t.Fatalf("missing link became known: %+v", line)
+				case "mode":
+					// P-D ruling: the desk LINK follows the REAL socket — a received
+					// book frame never makes the link known. With no client connected
+					// the link reads DOWN (known) and the mode row is verified.
+					if line.State != "ok" || !line.Verified || !strings.Contains(line.Text, "link down") {
+						t.Fatalf("link must read down on the real socket, never a received frame: %+v", line)
+					}
+				case "feed":
+					// The feed row's state follows the BAR age (the fixture's bar is
+					// always 3 s old → ok in both subtests); the link text is the
+					// real socket ("down" — no client), never the received frame.
+					if line.State != "ok" || !strings.Contains(line.Text, "link down") {
+						t.Fatalf("feed must stay ok on fresh bars and the link must read down: %+v", line)
 					}
 				}
 			}

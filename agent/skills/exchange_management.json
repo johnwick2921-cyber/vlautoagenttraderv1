@@ -28,7 +28,6 @@
     },
     "passphrase": {
       "type": "credential",
-      "required_for": ["okx", "bitget", "kucoin"],
       "description": ""
     },
     "testnet": {

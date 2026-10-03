@@ -231,9 +231,21 @@ type Host interface {
 	Now() time.Time
 	// Sleep waits d or until ctx ends.
 	Sleep(ctx context.Context, d time.Duration) error
-	// MainTreeLockHeld runs the installation's deploy/vl-lock.sh check
-	// (C19: rc 1 = held). The worker NEVER acquires the lock.
-	MainTreeLockHeld() (held bool, detail string, err error)
+	// LockAcquire runs `bash <LockScript> acquire <session> <task>
+	// <minutes>`: the same atomic acquire humans use. acquired=true when
+	// rc 0 (the lock is now ours). When rc 1 (held), holder names the
+	// current holder when the script's status line parses. The worker
+	// never acquires a held/stale lock and never clears an incomplete one.
+	LockAcquire(session, task string, minutes int) (acquired bool, holder string, err error)
+	// LockHolder reports the current lock holder: "" when free; the named
+	// session when held (fresh OR stale — both name their holder). An
+	// incomplete or abandoned-incomplete lock is an error: the worker
+	// never proceeds on a lock it cannot positively attribute.
+	LockHolder() (holder string, err error)
+	// LockRelease runs `bash <LockScript> release <session>` — only the
+	// holder may release. A no-lock release is a no-op success (the script
+	// prints "no lock" with rc 0).
+	LockRelease(session string) error
 	// BuildInfo reads vcs.revision and vcs.modified from a binary.
 	BuildInfo(binary string) (revision, modified string, err error)
 	// ExeOf is /proc/<pid>/exe.

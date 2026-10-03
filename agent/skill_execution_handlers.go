@@ -312,19 +312,17 @@ type exchangeUpdatePatch struct {
 	SecretKey               string
 	Passphrase              string
 	Testnet                 *bool
-	HyperliquidWalletAddr   string
 	AsterUser               string
 	AsterSigner             string
 	AsterPrivateKey         string
-	LighterWalletAddr       string
 	LighterAPIKeyPrivateKey string
 	LighterAPIKeyIndex      *int
 }
 
 func (p exchangeUpdatePatch) hasAny() bool {
 	return p.AccountName != "" || p.Enabled != nil || p.APIKey != "" || p.SecretKey != "" ||
-		p.Passphrase != "" || p.Testnet != nil || p.HyperliquidWalletAddr != "" || p.AsterUser != "" ||
-		p.AsterSigner != "" || p.AsterPrivateKey != "" || p.LighterWalletAddr != "" ||
+		p.Passphrase != "" || p.Testnet != nil || p.AsterUser != "" ||
+		p.AsterSigner != "" || p.AsterPrivateKey != "" ||
 		p.LighterAPIKeyPrivateKey != "" || p.LighterAPIKeyIndex != nil
 }
 
@@ -347,9 +345,6 @@ func applyExchangeUpdatePatchToSession(session *skillSession, patch exchangeUpda
 	if patch.Testnet != nil {
 		setField(session, "testnet", strconv.FormatBool(*patch.Testnet))
 	}
-	if patch.HyperliquidWalletAddr != "" {
-		setField(session, "hyperliquid_wallet_addr", patch.HyperliquidWalletAddr)
-	}
 	if patch.AsterUser != "" {
 		setField(session, "aster_user", patch.AsterUser)
 	}
@@ -358,9 +353,6 @@ func applyExchangeUpdatePatchToSession(session *skillSession, patch exchangeUpda
 	}
 	if patch.AsterPrivateKey != "" {
 		setField(session, "aster_private_key", patch.AsterPrivateKey)
-	}
-	if patch.LighterWalletAddr != "" {
-		setField(session, "lighter_wallet_addr", patch.LighterWalletAddr)
 	}
 	if patch.LighterAPIKeyPrivateKey != "" {
 		setField(session, "lighter_api_key_private_key", patch.LighterAPIKeyPrivateKey)
@@ -389,9 +381,6 @@ func mergeExchangeUpdatePatch(base, patch exchangeUpdatePatch) exchangeUpdatePat
 	if patch.Testnet != nil {
 		base.Testnet = patch.Testnet
 	}
-	if patch.HyperliquidWalletAddr != "" {
-		base.HyperliquidWalletAddr = patch.HyperliquidWalletAddr
-	}
 	if patch.AsterUser != "" {
 		base.AsterUser = patch.AsterUser
 	}
@@ -400,9 +389,6 @@ func mergeExchangeUpdatePatch(base, patch exchangeUpdatePatch) exchangeUpdatePat
 	}
 	if patch.AsterPrivateKey != "" {
 		base.AsterPrivateKey = patch.AsterPrivateKey
-	}
-	if patch.LighterWalletAddr != "" {
-		base.LighterWalletAddr = patch.LighterWalletAddr
 	}
 	if patch.LighterAPIKeyPrivateKey != "" {
 		base.LighterAPIKeyPrivateKey = patch.LighterAPIKeyPrivateKey
@@ -427,11 +413,9 @@ func buildExchangeUpdatePatchFromSession(session skillSession) exchangeUpdatePat
 		parsed := value == "true"
 		patch.Testnet = &parsed
 	}
-	patch.HyperliquidWalletAddr = fieldValue(session, "hyperliquid_wallet_addr")
 	patch.AsterUser = fieldValue(session, "aster_user")
 	patch.AsterSigner = fieldValue(session, "aster_signer")
 	patch.AsterPrivateKey = fieldValue(session, "aster_private_key")
-	patch.LighterWalletAddr = fieldValue(session, "lighter_wallet_addr")
 	patch.LighterAPIKeyPrivateKey = fieldValue(session, "lighter_api_key_private_key")
 	if value := fieldValue(session, "lighter_api_key_index"); value != "" {
 		if parsed, err := strconv.Atoi(value); err == nil {
@@ -1506,12 +1490,12 @@ func (a *Agent) executeExchangeManagementAction(storeUserID string, userID int64
 				if selectedField != "" {
 					return fmt.Sprintf("还差一步：请告诉我你想把交易所配置里的%s改成什么。", displayCatalogFieldName(selectedField, lang))
 				}
-				return "你可以直接告诉我想改交易所配置里的哪一项，比如账户名、启用开关、API Key、Passphrase、钱包地址或 testnet。"
+				return "你可以直接告诉我想改交易所配置里的哪一项，比如账户名、启用开关、API Key、Passphrase 或 testnet。"
 			}
 			if selectedField != "" {
 				return fmt.Sprintf("One more thing: tell me what you want to change the exchange config %s to.", displayCatalogFieldName(selectedField, lang))
 			}
-			return "Tell me which exchange config field you want to change, for example the account name, enabled switch, API key, passphrase, wallet address, or testnet."
+			return "Tell me which exchange config field you want to change, for example the account name, enabled switch, API key, passphrase, or testnet."
 		}
 		if err := a.validateExchangeDraft(
 			storeUserID,
@@ -1521,11 +1505,9 @@ func (a *Agent) executeExchangeManagementAction(storeUserID string, userID int64
 			asString(payload["api_key"]),
 			asString(payload["secret_key"]),
 			asString(payload["passphrase"]),
-			asString(payload["hyperliquid_wallet_addr"]),
 			asString(payload["aster_user"]),
 			asString(payload["aster_signer"]),
 			asString(payload["aster_private_key"]),
-			asString(payload["lighter_wallet_addr"]),
 			asString(payload["lighter_api_key_private_key"]),
 			asString(payload["nt_data_dir"]),
 		); err != nil {
@@ -2497,16 +2479,10 @@ func primaryDiagnosisSymbol(candidates []string, decisionJSON string) string {
 func openingAmountAndMinimum(evidence string) (float64, float64) {
 	amount := 0.0
 	minimum := 0.0
-	if match := regexp.MustCompile(`(?i)opening amount too small \((\d+(?:\.\d+)?)\s*USDT\)`).FindStringSubmatch(evidence); len(match) >= 2 {
-		amount, _ = strconv.ParseFloat(match[1], 64)
-	}
 	if amount == 0 {
 		if match := regexp.MustCompile(`(?i)"position_size_usd"\s*:\s*(\d+(?:\.\d+)?)`).FindStringSubmatch(evidence); len(match) >= 2 {
 			amount, _ = strconv.ParseFloat(match[1], 64)
 		}
-	}
-	if match := regexp.MustCompile(`(?:must be|must be ≥|>=|≥)\s*(\d+(?:\.\d+)?)\s*USDT`).FindStringSubmatch(evidence); len(match) >= 2 {
-		minimum, _ = strconv.ParseFloat(match[1], 64)
 	}
 	return amount, minimum
 }

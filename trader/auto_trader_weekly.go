@@ -57,10 +57,10 @@ func (w *weeklyState) resetWeek(key string) {
 
 // weeklyReadClaim dedupes the async Sunday read across traders/restarts the
 // same way the planner-read claim does (one AI call per week per trader).
-var weeklyReadClaim sync.Map // "weekly:<traderID>:<monday>" → struct{}
+var weeklyReadClaim sync.Map // "weekly:<traderID>:<monday>" → claim-started time.Time (F1)
 
 func claimWeeklyRead(key string) bool {
-	_, loaded := weeklyReadClaim.LoadOrStore(key, struct{}{})
+	_, loaded := weeklyReadClaim.LoadOrStore(key, time.Now())
 	return !loaded
 }
 func releaseWeeklyRead(key string) { weeklyReadClaim.Delete(key) }

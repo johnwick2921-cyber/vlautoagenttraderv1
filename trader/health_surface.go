@@ -32,6 +32,23 @@ func (at *AutoTrader) HealthFeedStatus() string {
 	return nt.FeedStatus()
 }
 
+// HealthLinkConnected reports the REAL NT8 TCP socket state for the health
+// payload (P-D stale link latch): true only while a client is actually
+// connected. A latched feed_status frame alone is NOT link evidence —
+// feed_status is edge-triggered (sent only on change), so its last value can
+// outlive the socket by hours. ok=false when there is no NT8 TCP trader to
+// measure.
+func (at *AutoTrader) HealthLinkConnected() (connected, ok bool) {
+	if at == nil {
+		return false, false
+	}
+	nt := at.armedTrader()
+	if nt == nil {
+		return false, false
+	}
+	return nt.IsConnected(), true
+}
+
 // HealthLastBarAgeMs returns the age of the newest 1m bar from the shared
 // futures bars provider (the same source the kernel reads), or ok=false when
 // no bar is available.

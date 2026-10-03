@@ -3,10 +3,27 @@ package kernel
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"vl/store"
 	"vl/telemetry"
 )
+
+// pinDecisionCycleNow pins ShouldSkipDecisionCycle's clock to an in-session
+// CME-open instant (a Wednesday 10:00 CT) so the HOLD-path assertions below
+// never depend on the wall clock (they fail with cme_closed on weekends and
+// during the 16:00–17:00 CT break).
+func pinDecisionCycleNow(t *testing.T) {
+	t.Helper()
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		t.Fatalf("load Chicago tz: %v", err)
+	}
+	decisionCycleNow = func() time.Time {
+		return time.Date(2026, 9, 30, 10, 0, 0, 0, loc) // Wednesday, in session
+	}
+	t.Cleanup(func() { decisionCycleNow = time.Now })
+}
 
 // TestExecHoldPathsCountGateBlocks pins P2-7 at the PRODUCTION call site:
 // GetFullDecisionWithStrategy's two HOLD branches
@@ -14,6 +31,8 @@ import (
 // table that /api/risk/gate-blocks serves — a cycle-holding gate that is not
 // counted is invisible to the operator.
 func TestExecHoldPathsCountGateBlocks(t *testing.T) {
+	pinDecisionCycleNow(t)
+
 	trader := "p27-holder"
 	ctx := &Context{
 		TraderID: trader,

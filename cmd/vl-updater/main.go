@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
@@ -209,12 +210,21 @@ func serve(t updaterworker.Target, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "vl-updater serve:", err)
 		return 2
 	}
+	warnSelfUpdateRestart(stderr)
 	fmt.Fprintf(stderr, "🔧 vl-updater: serving %s · install %s · data %s · active=%s · recovery_needed=%s · stale_at_start=%s\n",
 		path, t.InstallDir, t.DataDir, na(rep.Active), na(strings.Join(rep.Recovery, ",")), na(strings.Join(rep.StaleAtStart, ",")))
 	done := make(chan error, 1)
 	safe.GoNamed("updater-http-serve", func() { done <- ln.Serve(w.Handle) })
 	select {
 	case <-ctx.Done():
+		ln.Close()
+		<-done
+		return 0
+	case <-w.SwapDone():
+		// worker-self-update: the worker swapped its own binary; exit so
+		// systemd restarts the unit on the new one (the unit's Restart=
+		// policy decides — see the PR body; today it is Restart=no).
+		fmt.Fprintln(stderr, "vl-updater serve: worker self-update swapped the binary; exiting for the unit restart")
 		ln.Close()
 		<-done
 		return 0
@@ -380,4 +390,24 @@ func na(s string) string {
 		return "n/a"
 	}
 	return s
+}
+
+// warnSelfUpdateRestart (worker-self-update P1): when the self-update knob is
+// ON, a swap ends in a worker exit that only systemd can turn into a restart —
+// warn when the running unit's Restart policy won't. The line is READ, never
+// literal: n/a when systemctl is unavailable or the unit is not loaded.
+func warnSelfUpdateRestart(stderr io.Writer) {
+	v, _ := envcompat.Env("UPDATER_SELF_UPDATE")
+	if v != "1" {
+		return
+	}
+	out, err := exec.Command("systemctl", "--user", "show", "vl-updater", "-p", "Restart").Output()
+	if err != nil {
+		fmt.Fprintln(stderr, "🔧 vl-updater serve: worker self-update ON but the unit Restart policy is n/a (systemctl unavailable) — a swap will leave the worker down until the owner restarts it")
+		return
+	}
+	restart := strings.TrimSpace(strings.TrimPrefix(string(out), "Restart="))
+	if restart != "always" && restart != "on-success" {
+		fmt.Fprintf(stderr, "🔧 vl-updater serve: worker self-update ON but the unit Restart=%s — a swap will leave the worker down until the owner restarts it\n", restart)
+	}
 }

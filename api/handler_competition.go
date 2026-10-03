@@ -1,12 +1,12 @@
 package api
 
 import (
-	"vl/kernel"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+	"vl/kernel"
 
 	"vl/logger"
 	"vl/store"
@@ -151,7 +151,7 @@ func (s *Server) handleEquityHistory(c *gin.Context) {
 	// Build return rate historical data points
 	type EquityPoint struct {
 		Timestamp        string  `json:"timestamp"`
-		TotalEquity      float64 `json:"total_equity"`      // Account equity (wallet + unrealized)
+		TotalEquity      float64 `json:"total_equity"`
 		AvailableBalance float64 `json:"available_balance"` // Available balance
 		TotalPnL         float64 `json:"total_pnl"`         // Total PnL (unrealized PnL)
 		TotalPnLPct      float64 `json:"total_pnl_pct"`     // Total PnL percentage
@@ -415,10 +415,6 @@ func (s *Server) getEquityHistoryForTraders(traderIDs []string, hours int) map[s
 					if v, ok := accountInfo["total_pnl"].(float64); ok {
 						totalPnL = v
 					}
-					walletBalance := 0.0
-					if v, ok := accountInfo["wallet_balance"].(float64); ok {
-						walletBalance = v
-					}
 					pnlPct := 0.0
 					if initialBalance > 0 {
 						pnlPct = (totalEquity - initialBalance) / initialBalance * 100
@@ -429,7 +425,6 @@ func (s *Server) getEquityHistoryForTraders(traderIDs []string, hours int) map[s
 						"total_equity":  totalEquity,
 						"total_pnl":     totalPnL,
 						"total_pnl_pct": pnlPct,
-						"balance":       walletBalance,
 					})
 				}
 			}
