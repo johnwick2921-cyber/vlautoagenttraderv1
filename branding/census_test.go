@@ -134,7 +134,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 10, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"ninjascript/VLTraderTCPClient.cs": {
-		{count: 10, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 3, phase: "final", reason: "PR A (2026-10-03): R5 fold dropped the legacy account.txt branch — 10 → 3"},
 	},
 	"deploy/bars-key-rollback.sh": {
 		{count: 9, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -146,7 +146,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 9, phase: "R4", reason: "transitional — re-pinned at final"},
 	},
 	"store/strategy_schema_test.go": {
-		{count: 9, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 8, phase: "final", reason: "PR A (2026-10-03): legacy provider label wording tightened — 9 → 8"},
 	},
 	"cmd/vl-updater/main_test.go": {
 		{count: 8, phase: "R5", reason: "transitional — re-pinned at final"},
@@ -272,7 +272,7 @@ var censusTable = map[string][]censusEntry{
 		{count: 4, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	".env.example": {
-		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 2, phase: "final", reason: "PR A (2026-10-03): one DB user/name line adjusted — 3 → 2"},
 	},
 	"agent/backend_logs_test.go": {
 		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},

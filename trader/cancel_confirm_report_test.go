@@ -1,6 +1,8 @@
 package trader
 
 import (
+	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -377,5 +379,101 @@ func TestReportPassNeverResurrectsSettledRows(t *testing.T) {
 		if r.SignalID == "sig-a" {
 			t.Fatalf("settled row A was resurrected: %+v", r)
 		}
+	}
+}
+
+// ── REVIEW-312 r3 MUTANT PINS AT THE PRODUCTION CALL SITES (P1-2) ────────────
+//
+// M3/M4/M5 stayed GREEN in the review because the round-2 call-site pins were
+// not carried into this split. Each pin below drives the PRODUCTION call site —
+// not the pure helper — so removing the guarded call goes RED.
+
+// M3 pin: delete the slotReportBlock call inside armSlotGuard. The guard must
+// refuse on an unconfirmed cancel BEFORE the broker book is even consulted.
+func TestArmSlotGuardReportBlockIsACallSite(t *testing.T) {
+	t.Setenv("CANCEL_CONFIRM_REQUIRE_REPORT", "1")
+	defer t.Setenv("CANCEL_CONFIRM_REQUIRE_REPORT", "")
+	at := &AutoTrader{id: "t1"}
+	r := store.ArmedOrderDB{TraderID: "t1", PlanID: "2026-10-03:planX", Scenario: "S1", LegIndex: 0, SignalID: "sig-a"}
+	ledgerRows := []store.ArmedOrderDB{{
+		TraderID: "t1", PlanID: "2026-10-03:planX", Scenario: "S1", LegIndex: 0,
+		SignalID: "sig-a", State: store.StateCancelPending, CancelRequestedAtMs: 1000,
+	}}
+	v := at.armSlotGuard(ledgerRows, r, time.Now())
+	if v.Allowed() {
+		t.Fatalf("the guard must refuse a slot with an unconfirmed cancel, got %+v", v)
+	}
+	if !v.ReportRegime {
+		t.Fatalf("the refusal must be the report regime's own, got %+v", v)
+	}
+	if !strings.Contains(v.Why, "terminal report") && !strings.Contains(v.Why, "certify") {
+		t.Fatalf("the refusal must name the missing report or the uncertified AddOn, got %q", v.Why)
+	}
+}
+
+// M4 pin: delete the RecordCancelReport branch in onArmedOrderUpdate. A
+// `cancelled` order_update for a cancel_pending row must RECORD the report and
+// leave the settlement to the pass — a direct SetState(cancelled) is the
+// bypass the regime exists to remove.
+func TestOnArmedOrderUpdateRecordsTheReportNotTheSettlement(t *testing.T) {
+	t.Setenv("CANCEL_CONFIRM_REQUIRE_REPORT", "1")
+	defer t.Setenv("CANCEL_CONFIRM_REQUIRE_REPORT", "")
+	ledger, _, _ := newReportLedger(t)
+	at := &AutoTrader{id: "t1"}
+	seedPendingRow(t, ledger, time.Now().UnixMilli())
+	at.onArmedOrderUpdate(nt.OrderUpdatePayload{
+		OrderName: "sig-a", SignalID: "sig-a", State: "cancelled",
+	}, ledger)
+	rows := pendingRows(t, ledger)
+	if len(rows) != 1 || rows[0].State != store.StateCancelPending {
+		t.Fatalf("the event must NOT settle the row — the settlement pass is the single writer, got %+v", rows)
+	}
+	if rows[0].CancelReportMs <= 0 || rows[0].CancelReportState != "cancelled" {
+		t.Fatalf("the event must RECORD the report, got ms=%d state=%q", rows[0].CancelReportMs, rows[0].CancelReportState)
+	}
+}
+
+// M5 pin: delete the dispatch from confirmPendingCancels to the report pass.
+// With the knob ON and a qualifying report recorded, a cancel settles EVEN
+// THOUGH the broker book still lists the order — the snapshot pass would not
+// settle it. If the dispatch is removed this goes RED.
+func TestConfirmPendingCancelsDispatchesToTheReportPass(t *testing.T) {
+	t.Setenv("CANCEL_CONFIRM_REQUIRE_REPORT", "1")
+	defer t.Setenv("CANCEL_CONFIRM_REQUIRE_REPORT", "")
+	dbPath := filepath.Join(t.TempDir(), "t.db")
+	st, err := store.New(dbPath)
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	// The book STILL LISTS the order as working — snapshot absence cannot
+	// settle this, only the recorded report can.
+	book := []nt.NT8Order{{OrderID: "o1", Name: "sig-a", State: "Working", Type: "stop"}}
+	bookJSON, err := json.Marshal(book)
+	if err != nil {
+		t.Fatalf("marshal book: %v", err)
+	}
+	if err := st.NT8OrderSnapshots().Insert(&store.NT8OrderSnapshot{
+		Account: "", Symbol: "", Reason: "test", OrdersJSON: string(bookJSON),
+		ReceivedMs: time.Now().UnixMilli(),
+	}); err != nil {
+		t.Fatalf("seed snapshot: %v", err)
+	}
+	ledger := st.ArmedOrders()
+	reqMs := time.Now().UnixMilli()
+	seedPendingRow(t, ledger, reqMs)
+	if err := ledger.RecordCancelReport(pendingRows(t, ledger)[0].ID, reqMs+5_000, "cancelled"); err != nil {
+		t.Fatalf("record report: %v", err)
+	}
+	at := &AutoTrader{id: "t1", store: st}
+	oldBuild := cancelReportBuildIDFor
+	cancelReportBuildIDFor = func(*AutoTrader) string { return nt.MinAddonBuildCancelReport }
+	defer func() { cancelReportBuildIDFor = oldBuild }()
+	settled, still, reReq := at.confirmPendingCancels(ledger, func(sid string) error { return nil }, time.UnixMilli(reqMs+30_000))
+	if settled != 1 || still != 0 || reReq != 0 {
+		t.Fatalf("the report pass must settle on the recorded report: settled=%d still=%d reRequested=%d", settled, still, reReq)
+	}
+	if got := pendingRows(t, ledger); len(got) != 0 {
+		t.Fatalf("the row must be settled, got %+v", got)
 	}
 }
