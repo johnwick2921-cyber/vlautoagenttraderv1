@@ -374,6 +374,61 @@ func TestMentorSourcesMissingRefusesPlacement(t *testing.T) {
 	}
 }
 
+// TestMentorIntentExpiry (N12, PR #313): the expiry belongs to the rules — an
+// intent-carried expiry wins; a level touch or a single ISB expires at the
+// close of the NEXT 1m candle; the swing runs its 5m rule (+2×5m).
+func TestMentorIntentExpiry(t *testing.T) {
+	base := int64(1_700_000_000_000)
+	if got := mentorIntentExpiry(mentor.Intent{ExpiryMs: 123456}, base); got != 123456 {
+		t.Fatalf("an intent-carried expiry must win, got %d", got)
+	}
+	if got := mentorIntentExpiry(mentor.Intent{Setup: "ISB"}, base); got != base+60_000 {
+		t.Fatalf("a single ISB expires at the next 1m candle close, got %d", got)
+	}
+	if got := mentorIntentExpiry(mentor.Intent{Setup: "PHL"}, base); got != base+60_000 {
+		t.Fatalf("a level touch expires at the next 1m candle close, got %d", got)
+	}
+	if got := mentorIntentExpiry(mentor.Intent{Setup: "SWING4H"}, base); got != base+600_000 {
+		t.Fatalf("the swing runs its 5m rule (+2 candles), got %d", got)
+	}
+}
+
+// TestMentorPlacementCarriesExpiry: the placement path carries an expiry on
+// every order — the intent's own when the evaluator set it, else the setup
+// default. The mutant that drops the expiry default makes the recorder see 0.
+func TestMentorPlacementCarriesExpiry(t *testing.T) {
+	ResetMentorCountersForTest()
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	wireMentorPlacementSeams(t)
+	ct := kernel.CTLocation()
+	mentorNowSource = func() time.Time { return time.Date(2026, 10, 2, 9, 0, 0, 0, ct) }
+	t.Cleanup(func() { mentorNowSource = nil })
+
+	in := mentor.Intent{Action: mentor.PlaceStopEntry, Side: mentor.SideLong,
+		Price: 21000, Stop: 20988, Target: 21024, Setup: "ISB", StopPts: 12}
+	choice := mentorSizeChoice{Contracts: 5, Tier: "base", Why: "test"}
+	barCloseMs := int64(1_700_000_000_000)
+
+	var placed []mentor.Intent
+	mentorPlaceRecorderForTest = func(i mentor.Intent, n int) { placed = append(placed, i) }
+	t.Cleanup(func() { mentorPlaceRecorderForTest = nil })
+
+	// no carried expiry → the injector sets the next-1m-close default.
+	at.mentorPlaceIntent(in, choice, barCloseMs, 1100)
+	if len(placed) != 1 || placed[0].ExpiryMs != barCloseMs+60_000 {
+		t.Fatalf("the placement must carry the setup default expiry, placed=%+v", placed)
+	}
+	if got := MentorCountSnapshot()["expiry_defaulted"]; got != 1 {
+		t.Fatalf("the injector-computed expiry must be counted once, got %d", got)
+	}
+	// a carried expiry (the evaluator's stacking extension) is preserved.
+	in.ExpiryMs = barCloseMs + 3*60_000
+	at.mentorPlaceIntent(in, choice, barCloseMs, 1100)
+	if len(placed) != 2 || placed[1].ExpiryMs != barCloseMs+3*60_000 {
+		t.Fatalf("an intent-carried expiry must be preserved, placed=%+v", placed)
+	}
+}
+
 // TestMentorSourcesBootLine: the boot wiring check — with mentor_mode ON every
 // source seam must be non-nil, or mentor_mode refuses to arm and ONE error line
 // names the missing seam. Each seam is tested nil in turn.

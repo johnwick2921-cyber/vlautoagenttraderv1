@@ -185,6 +185,14 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
 		return
 	}
+	// N12 per-order expiry (PR #313): the stop-limit is cancelled when
+	// unfilled at its expiry. An intent-carried expiry (evaluator rules,
+	// stacking extensions) wins; otherwise the injector sets the setup's
+	// default.
+	if in.ExpiryMs == 0 {
+		in.ExpiryMs = mentorIntentExpiry(in, barCloseMs)
+		mentorCount("expiry_defaulted")
+	}
 	if latest, ok := at.mentorLatestPrice(); ok {
 		if skip, why := mentorNoChase(in.Side, latest, in.Price); skip {
 			mentorCount("no_chase_skip")
@@ -218,7 +226,22 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 	mentorCount("placed_" + choice.Tier)
 	ackMs := time.Now().UnixMilli()
 	recordMentorLatency(barCloseMs, at.mentorFinalArrival.Load(), emitMs, ackMs)
-	at.logInfof("🧑‍🏫 mentor placed: %s %s %d contracts (tier %s) — close→ack %dms", in.Setup, in.Side, choice.Contracts, choice.Tier, ackMs-barCloseMs)
+	at.logInfof("🧑‍🏫 mentor placed: %s %s %d contracts (tier %s) — close→ack %dms, expiry %d", in.Setup, in.Side, choice.Contracts, choice.Tier, ackMs-barCloseMs, in.ExpiryMs)
+}
+
+// mentorIntentExpiry resolves the N12 per-order expiry (PR #313): the expiry
+// belongs to the RULES, not a blanket timer. An intent-carried expiry wins;
+// otherwise the injector computes the setup's default — a level touch or a
+// single ISB expires at the close of the NEXT 1m candle; the swing runs its
+// 5m rule (the 2-candle leeway → +2×5m).
+func mentorIntentExpiry(in mentor.Intent, barCloseMs int64) int64 {
+	if in.ExpiryMs > 0 {
+		return in.ExpiryMs
+	}
+	if strings.EqualFold(in.Setup, "SWING4H") {
+		return barCloseMs + 10*60_000 // the 2-candle leeway runs on the 5m
+	}
+	return barCloseMs + 60_000 // the close of the NEXT 1m candle
 }
 
 // mentorLatestPrice is the latest live price for the no-chase check. The
