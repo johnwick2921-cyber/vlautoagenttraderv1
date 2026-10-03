@@ -201,9 +201,14 @@ type StartReport struct {
 
 func (w *Worker) sweep() (StartReport, error) {
 	var rep StartReport
-	jobs, err := updaterjob.List(w.dataDir())
+	jobs, skipped, err := updaterjob.ListTolerant(w.dataDir())
 	if err != nil {
 		return rep, fmt.Errorf("updaterworker: start sweep: %w", err)
+	}
+	for _, id := range skipped {
+		// a TERMINAL job written by an older released worker may no longer
+		// validate; it is skipped, never fatal (worker-self-update P0).
+		w.logf("updater: start sweep: WARN terminal job %s is no longer validatable and was skipped", id)
 	}
 	var unfinished []updaterjob.Job
 	for _, j := range jobs {

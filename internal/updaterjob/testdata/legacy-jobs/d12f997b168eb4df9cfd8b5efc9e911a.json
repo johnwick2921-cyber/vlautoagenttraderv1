@@ -1,0 +1,383 @@
+{
+  "schema": 1,
+  "job_id": "d12f997b168eb4df9cfd8b5efc9e911a",
+  "release_id": "v2026.10.02.1",
+  "source_sha": "218150bc2f9ad7523af482f2df2ff6635990cbb6",
+  "state": "complete",
+  "phase": "done",
+  "attempts": 1,
+  "created_at": "2026-10-02T12:18:41.744240868Z",
+  "updated_at": "2026-10-02T12:19:44.445470125Z",
+  "transitions": [
+    {
+      "state": "requested",
+      "phase": "done",
+      "at": "2026-10-02T12:18:41.744240868Z",
+      "receipts": 0
+    },
+    {
+      "state": "downloaded",
+      "phase": "started",
+      "at": "2026-10-02T12:18:41.747304351Z",
+      "receipts": 0
+    },
+    {
+      "state": "downloaded",
+      "phase": "done",
+      "at": "2026-10-02T12:18:41.877117576Z",
+      "receipts": 1
+    },
+    {
+      "state": "verified",
+      "phase": "started",
+      "at": "2026-10-02T12:18:41.880480804Z",
+      "receipts": 1
+    },
+    {
+      "state": "verified",
+      "phase": "done",
+      "at": "2026-10-02T12:18:41.884079887Z",
+      "receipts": 2
+    },
+    {
+      "state": "preflight_ok",
+      "phase": "started",
+      "at": "2026-10-02T12:18:41.88966203Z",
+      "receipts": 2
+    },
+    {
+      "state": "preflight_ok",
+      "phase": "done",
+      "at": "2026-10-02T12:18:41.979606211Z",
+      "receipts": 4
+    },
+    {
+      "state": "maintenance_held",
+      "phase": "started",
+      "at": "2026-10-02T12:18:41.982651749Z",
+      "receipts": 4
+    },
+    {
+      "state": "maintenance_held",
+      "phase": "done",
+      "at": "2026-10-02T12:18:41.989038199Z",
+      "receipts": 5
+    },
+    {
+      "state": "drained_acked",
+      "phase": "started",
+      "at": "2026-10-02T12:18:41.991963993Z",
+      "receipts": 5
+    },
+    {
+      "state": "drained_acked",
+      "phase": "done",
+      "at": "2026-10-02T12:18:44.005321403Z",
+      "receipts": 6
+    },
+    {
+      "state": "gate_ok",
+      "phase": "started",
+      "at": "2026-10-02T12:18:44.008564554Z",
+      "receipts": 6
+    },
+    {
+      "state": "gate_ok",
+      "phase": "done",
+      "at": "2026-10-02T12:18:54.040987874Z",
+      "receipts": 7
+    },
+    {
+      "state": "backup_done",
+      "phase": "started",
+      "at": "2026-10-02T12:18:54.052664062Z",
+      "receipts": 7
+    },
+    {
+      "state": "backup_done",
+      "phase": "done",
+      "at": "2026-10-02T12:19:34.613690108Z",
+      "receipts": 10
+    },
+    {
+      "state": "nt8_skipped",
+      "phase": "started",
+      "at": "2026-10-02T12:19:34.620826828Z",
+      "receipts": 10
+    },
+    {
+      "state": "nt8_skipped",
+      "phase": "done",
+      "at": "2026-10-02T12:19:34.626435673Z",
+      "receipts": 11
+    },
+    {
+      "state": "activated",
+      "phase": "started",
+      "at": "2026-10-02T12:19:34.636283549Z",
+      "receipts": 11
+    },
+    {
+      "state": "activated",
+      "phase": "done",
+      "at": "2026-10-02T12:19:40.402939146Z",
+      "receipts": 12
+    },
+    {
+      "state": "booted",
+      "phase": "started",
+      "at": "2026-10-02T12:19:40.408831352Z",
+      "receipts": 12
+    },
+    {
+      "state": "booted",
+      "phase": "done",
+      "at": "2026-10-02T12:19:44.419733896Z",
+      "receipts": 13
+    },
+    {
+      "state": "boot_verified",
+      "phase": "started",
+      "at": "2026-10-02T12:19:44.422848776Z",
+      "receipts": 13
+    },
+    {
+      "state": "boot_verified",
+      "phase": "done",
+      "at": "2026-10-02T12:19:44.436423073Z",
+      "receipts": 14
+    },
+    {
+      "state": "complete",
+      "phase": "started",
+      "at": "2026-10-02T12:19:44.440215975Z",
+      "receipts": 14
+    },
+    {
+      "state": "complete",
+      "phase": "done",
+      "at": "2026-10-02T12:19:44.445470125Z",
+      "receipts": 15
+    }
+  ],
+  "receipts": [
+    {
+      "step": "download",
+      "started_at": "2026-10-02T12:18:41.750112911Z",
+      "ended_at": "2026-10-02T12:18:41.876996138Z",
+      "ok": true,
+      "evidence": {
+        "artifacts": "88",
+        "manifest_sha256": "c0a3948ce4fe6c1b83371f6a05bc2069015a34a9f5d6fbf4a45b9be708254d6c"
+      }
+    },
+    {
+      "step": "verify",
+      "started_at": "2026-10-02T12:18:41.883328102Z",
+      "ended_at": "2026-10-02T12:18:41.884028283Z",
+      "ok": true,
+      "evidence": {
+        "signer_fingerprint": "SHA256:IvzjG35bsg2Ak3pwpka4GP1HM2PUCriy65nRjOjw8/o",
+        "source_sha": "218150bc2f9ad7523af482f2df2ff6635990cbb6"
+      }
+    },
+    {
+      "step": "stage",
+      "started_at": "2026-10-02T12:18:41.900912931Z",
+      "ended_at": "2026-10-02T12:18:41.970353435Z",
+      "ok": true,
+      "evidence": {
+        "binary_md5": "e5d2e05931c730565d2cbc53e77dca3a",
+        "manifest.binary_md5": "e5d2e05931c730565d2cbc53e77dca3a",
+        "manifest.source_sha": "218150bc2f9ad7523af482f2df2ff6635990cbb6",
+        "vcs.modified": "false",
+        "vcs.revision": "218150bc2f9ad7523af482f2df2ff6635990cbb6"
+      }
+    },
+    {
+      "step": "preflight",
+      "started_at": "2026-10-02T12:18:41.893691573Z",
+      "ended_at": "2026-10-02T12:18:41.979500037Z",
+      "ok": true,
+      "evidence": {
+        "calendar": "equal",
+        "flat": "pass",
+        "health_revision": "ebb726977ef6",
+        "install_modified": "false",
+        "install_sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+        "main_tree_lock": "check rc=1",
+        "pid": "36258"
+      }
+    },
+    {
+      "step": "hold",
+      "started_at": "2026-10-02T12:18:41.985324732Z",
+      "ended_at": "2026-10-02T12:18:41.988085085Z",
+      "ok": true,
+      "evidence": {
+        "already": "false",
+        "owner": "updater"
+      }
+    },
+    {
+      "step": "drain",
+      "started_at": "2026-10-02T12:18:41.995032942Z",
+      "ended_at": "2026-10-02T12:18:44.005180457Z",
+      "ok": true,
+      "evidence": {
+        "ack_build_id": "2026-09-30-m22",
+        "ack_received": "2026-10-02T12:18:42.501928938Z",
+        "drain_path": "normal"
+      }
+    },
+    {
+      "step": "gate",
+      "started_at": "2026-10-02T12:18:44.011136563Z",
+      "ended_at": "2026-10-02T12:18:54.04085055Z",
+      "ok": true,
+      "evidence": {
+        "ack_1_age_ms": "527",
+        "ack_1_at": "2026-10-02T07:18:47.499846829-05:00",
+        "ack_2_age_ms": "1541",
+        "ack_2_at": "2026-10-02T07:18:52.499847275-05:00"
+      }
+    },
+    {
+      "step": "backup",
+      "started_at": "2026-10-02T12:18:54.057083798Z",
+      "ended_at": "2026-10-02T12:19:34.293472719Z",
+      "ok": true,
+      "evidence": {
+        "bytes": "2505170944",
+        "db": "/home/hoang/vl/data/data.db",
+        "dest": "/home/hoang/vl-backups/updater/d12f997b168eb4df9cfd8b5efc9e911a/data.db",
+        "integrity_check": "ok"
+      }
+    },
+    {
+      "step": "snapshot",
+      "started_at": "2026-10-02T12:19:34.293769302Z",
+      "ended_at": "2026-10-02T12:19:34.561094311Z",
+      "ok": true,
+      "evidence": {
+        "captured": "binary,dist,RELEASE",
+        "dest": "/home/hoang/vl-backups/updater/d12f997b168eb4df9cfd8b5efc9e911a/install",
+        "from": "/home/hoang/vl",
+        "release_marker": "ebb726977ef67c71cf6493a39886e74c005a3077"
+      }
+    },
+    {
+      "step": "snapshot_verify",
+      "started_at": "2026-10-02T12:19:34.561119278Z",
+      "ended_at": "2026-10-02T12:19:34.613149166Z",
+      "ok": true
+    },
+    {
+      "step": "nt8",
+      "started_at": "2026-10-02T12:19:34.62337049Z",
+      "ended_at": "2026-10-02T12:19:34.626277936Z",
+      "ok": true,
+      "evidence": {
+        "acked_build_id": "2026-09-30-m22",
+        "cs_unchanged": "true",
+        "decision": "skipped",
+        "manifest_build_id": "2026-09-30-m22"
+      }
+    },
+    {
+      "step": "activate",
+      "started_at": "2026-10-02T12:19:34.63985475Z",
+      "ended_at": "2026-10-02T12:19:40.402623735Z",
+      "ok": true,
+      "evidence": {
+        "installed": "binary,dist,RELEASE",
+        "killed": "SIGKILL",
+        "new_pid": "31409",
+        "old_pid": "36258",
+        "prev": "ebb726977ef67c71cf6493a39886e74c005a3077",
+        "release": "218150bc2f9ad7523af482f2df2ff6635990cbb6"
+      }
+    },
+    {
+      "step": "watch",
+      "started_at": "2026-10-02T12:19:40.412783963Z",
+      "ended_at": "2026-10-02T12:19:44.419488621Z",
+      "ok": true,
+      "evidence": {
+        "boot_line": "found after the kill",
+        "expect_sha": "218150bc2f9ad7523af482f2df2ff6635990cbb6",
+        "health_sha": "218150bc2f9a",
+        "pid": "31409",
+        "since": "2026-10-02T12:19:34Z"
+      }
+    },
+    {
+      "step": "boot_verify",
+      "started_at": "2026-10-02T12:19:44.425958448Z",
+      "ended_at": "2026-10-02T12:19:44.436123795Z",
+      "ok": true,
+      "evidence": {
+        "acked_age_ms": "3379",
+        "acked_at": "2026-10-02T07:19:41.055759194-05:00",
+        "acked_build_id": "2026-09-30-m22",
+        "boot_line": "OK rev 218150bc2f9a",
+        "boot_pid": "31409",
+        "health_revision": "218150bc2f9a",
+        "index_sha256": "11d1dda1ffd90c9cfffbffe31c0a2617bc3ee23ee7e51c0d266c101494100ade",
+        "log_offset": "0",
+        "manifest_build_id": "2026-09-30-m22"
+      }
+    },
+    {
+      "step": "release_hold",
+      "started_at": "2026-10-02T12:19:44.444109079Z",
+      "ended_at": "2026-10-02T12:19:44.44523895Z",
+      "ok": true,
+      "evidence": {
+        "hold_after": "absent"
+      }
+    }
+  ],
+  "release": {
+    "dir": "/home/hoang/vl-releases/218150bc2f9ad7523af482f2df2ff6635990cbb6",
+    "sha": "218150bc2f9ad7523af482f2df2ff6635990cbb6",
+    "binary": "/home/hoang/vl-releases/218150bc2f9ad7523af482f2df2ff6635990cbb6/vl-bin",
+    "dist": "/home/hoang/vl-releases/218150bc2f9ad7523af482f2df2ff6635990cbb6/web/dist",
+    "release_file": "/home/hoang/vl-releases/218150bc2f9ad7523af482f2df2ff6635990cbb6/RELEASE",
+    "manifest_path": "/home/hoang/vl-releases/218150bc2f9ad7523af482f2df2ff6635990cbb6/manifest.json"
+  },
+  "install": {
+    "dir": "/home/hoang/vl",
+    "sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+    "binary": "/home/hoang/vl/vl-bin",
+    "dist": "/home/hoang/vl/web/dist",
+    "release_file": "/home/hoang/vl/deploy/RELEASE"
+  },
+  "snapshot": {
+    "dir": "/home/hoang/vl-backups/updater/d12f997b168eb4df9cfd8b5efc9e911a/install",
+    "sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+    "binary": "/home/hoang/vl-backups/updater/d12f997b168eb4df9cfd8b5efc9e911a/install/vl-bin",
+    "dist": "/home/hoang/vl-backups/updater/d12f997b168eb4df9cfd8b5efc9e911a/install/web/dist",
+    "release_file": "/home/hoang/vl-backups/updater/d12f997b168eb4df9cfd8b5efc9e911a/install/RELEASE"
+  },
+  "backup_path": "/home/hoang/vl-backups/updater/d12f997b168eb4df9cfd8b5efc9e911a/data.db",
+  "identity_before": {
+    "pid": 36258,
+    "start_ticks": 59868892
+  },
+  "identity_after": {
+    "pid": 31409,
+    "start_ticks": 62590576
+  },
+  "log_path": "/home/hoang/vl/data/vl_2026-10-02.log",
+  "log_offset": 0,
+  "watch_since": "2026-10-02T12:19:34Z",
+  "nt8": {
+    "decision": "skipped",
+    "manifest_build_id": "2026-09-30-m22",
+    "acked_build_id": "2026-09-30-m22",
+    "acked_at": "2026-10-02T12:19:32.214457974Z",
+    "ack_accept_seq": 2,
+    "cs_unchanged": true
+  }
+}

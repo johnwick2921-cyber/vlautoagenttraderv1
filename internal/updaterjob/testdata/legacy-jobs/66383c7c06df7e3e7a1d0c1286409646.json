@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "job_id": "66383c7c06df7e3e7a1d0c1286409646",
+  "release_id": "v2026.10.01.1",
+  "source_sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+  "state": "refused",
+  "phase": "done",
+  "attempts": 0,
+  "created_at": "2026-10-02T04:33:04.348253217Z",
+  "updated_at": "2026-10-02T04:43:02.19578736Z",
+  "error": "not passed within 10m0s: planner_in_flight: IN FLIGHT: plannerReadInFlight[2026-10-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265]",
+  "transitions": [
+    {
+      "state": "requested",
+      "phase": "done",
+      "at": "2026-10-02T04:33:04.348253217Z",
+      "receipts": 0
+    },
+    {
+      "state": "downloaded",
+      "phase": "started",
+      "at": "2026-10-02T04:33:04.350841076Z",
+      "receipts": 0
+    },
+    {
+      "state": "downloaded",
+      "phase": "done",
+      "at": "2026-10-02T04:33:04.458006606Z",
+      "receipts": 1
+    },
+    {
+      "state": "verified",
+      "phase": "started",
+      "at": "2026-10-02T04:33:04.461634033Z",
+      "receipts": 1
+    },
+    {
+      "state": "verified",
+      "phase": "done",
+      "at": "2026-10-02T04:33:04.464642906Z",
+      "receipts": 2
+    },
+    {
+      "state": "preflight_ok",
+      "phase": "started",
+      "at": "2026-10-02T04:33:04.467156549Z",
+      "receipts": 2
+    },
+    {
+      "state": "refused",
+      "phase": "done",
+      "at": "2026-10-02T04:43:02.19578736Z",
+      "receipts": 4
+    }
+  ],
+  "receipts": [
+    {
+      "step": "download",
+      "started_at": "2026-10-02T04:33:04.353529182Z",
+      "ended_at": "2026-10-02T04:33:04.457667744Z",
+      "ok": true,
+      "evidence": {
+        "artifacts": "88",
+        "manifest_sha256": "07d9fa7465000857821a5b35a1d7a41996fd33708196b2d112fe412ae4ada038"
+      }
+    },
+    {
+      "step": "verify",
+      "started_at": "2026-10-02T04:33:04.464110507Z",
+      "ended_at": "2026-10-02T04:33:04.464603513Z",
+      "ok": true,
+      "evidence": {
+        "signer_fingerprint": "SHA256:IvzjG35bsg2Ak3pwpka4GP1HM2PUCriy65nRjOjw8/o",
+        "source_sha": "ebb726977ef67c71cf6493a39886e74c005a3077"
+      }
+    },
+    {
+      "step": "stage",
+      "started_at": "2026-10-02T04:33:04.473791219Z",
+      "ended_at": "2026-10-02T04:33:04.533178235Z",
+      "ok": true,
+      "evidence": {
+        "binary_md5": "09472020b39cba32014938076dee29c2",
+        "manifest.binary_md5": "09472020b39cba32014938076dee29c2",
+        "manifest.source_sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+        "vcs.modified": "false",
+        "vcs.revision": "ebb726977ef67c71cf6493a39886e74c005a3077"
+      }
+    },
+    {
+      "step": "preflight",
+      "started_at": "2026-10-02T04:33:04.469434441Z",
+      "ended_at": "2026-10-02T04:43:02.195605275Z",
+      "ok": false,
+      "evidence": {
+        "calendar": "equal",
+        "health_revision": "0b45081d33e3",
+        "install_modified": "false",
+        "install_sha": "0b45081d33e3f372fd2fde83fffda9f4268bb97a",
+        "main_tree_lock": "check rc=1",
+        "pid": "40390"
+      },
+      "err": "not passed within 10m0s: planner_in_flight: IN FLIGHT: plannerReadInFlight[2026-10-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265]"
+    }
+  ],
+  "release": {
+    "dir": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077",
+    "sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+    "binary": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077/vl-bin",
+    "dist": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077/web/dist",
+    "release_file": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077/RELEASE",
+    "manifest_path": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077/manifest.json"
+  },
+  "install": {
+    "dir": "/home/hoang/vl",
+    "sha": "0b45081d33e3f372fd2fde83fffda9f4268bb97a",
+    "binary": "/home/hoang/vl/vl-bin",
+    "dist": "/home/hoang/vl/web/dist",
+    "release_file": "/home/hoang/vl/deploy/RELEASE"
+  }
+}
