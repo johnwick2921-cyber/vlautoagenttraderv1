@@ -52,6 +52,7 @@ type mentorTierInputs struct {
 	Confluence   bool    // box/zone + key level + 5m trigger agreeing (§6)
 	HTFAgree     bool    // 4h AND 1h agree
 	SpentDay     bool    // §7 spent day
+	StrongDay    bool    // S9: 5m candles running 50–80 pts → size 1–2
 }
 
 // mentorSizeChoice is the tier decision: contracts, the tier name and why.
@@ -73,6 +74,13 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 			return maxContracts
 		}
 		return n
+	}
+	// S9 (D5.2 p2 @05:21): a strong day — 5m candles running 50–80 pts — sizes
+	// 1–2 no matter the setup. Checked FIRST: the day's volatility overrides
+	// every tier, even a confluence big setup. The table takes 2, the top of
+	// the band.
+	if in.StrongDay {
+		return mentorSizeChoice{Contracts: clamp(2), Tier: "strong_day", Why: "5m candles running 50–80 pts → size 1–2 [D5.2 p2 @05:21]"}, nil
 	}
 	if in.Confluence && in.HTFAgree && in.RoomMultiple >= mentorRoomBigMultiple && in.TargetPts >= mentorTargetBigPts {
 		return mentorSizeChoice{Contracts: clamp(big), Tier: "big", Why: fmt.Sprintf(
@@ -348,6 +356,17 @@ func mentorExitB(pos mentorPosition, h, l float64, trail bool) (newStop float64,
 		}
 		if hitStop {
 			return pos.Stop, pos.Stop, "stop", true, false
+		}
+		// ISB EXIT [D1.4 p1 @12:23–13:27]: for an ISB trade the first partial
+		// is MANDATORY when the candle that filled you closes ("khi cây nến
+		// trend kế tiếp đóng… bắt buộc… một setup có 3 phần, không có phần thứ
+		// 4") — it REPLACES the +1R scale for ISB trades only; the trail rules
+		// after it are unchanged.
+		if pos.Origin == "ISB" {
+			if hitHalfR {
+				return pos.Entry, 0, "", false, true // BE + the partial on the fill candle's close
+			}
+			return pos.Stop, 0, "", false, true
 		}
 		if hit1R {
 			// one candle crossed both +0.5R and +1R: BE first, then scale.

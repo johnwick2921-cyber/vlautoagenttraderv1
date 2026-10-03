@@ -44,6 +44,10 @@ func TestMentorContractsForSizeTable(t *testing.T) {
 		{"spent day beats twenties", mentorTierInputs{Setup: "PLH", StopPts: 23, TargetPts: 46, SpentDay: true}, mentorSizeChoice{2, "spent_day", ""}},
 		{"SWING4H", mentorTierInputs{Setup: "SWING4H", StopPts: 12, TargetPts: 24}, mentorSizeChoice{3, "swing4h", ""}},
 		{"hard cap", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true}, mentorSizeChoice{20, "big", ""}},
+		// S9 (D5.2 p2 @05:21): a strong day cuts EVERY tier to 1–2, even a big
+		// confluence setup — checked FIRST.
+		{"strong day cuts big to 2", mentorTierInputs{Setup: "PHL", StopPts: 12, TargetPts: 35, RoomMultiple: 2.5, Confluence: true, HTFAgree: true, StrongDay: true}, mentorSizeChoice{2, "strong_day", ""}},
+		{"strong day cuts base to 2", mentorTierInputs{Setup: "ISB", StopPts: 5.75, TargetPts: 11.5, StrongDay: true}, mentorSizeChoice{2, "strong_day", ""}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -262,6 +266,41 @@ func TestMentorExitRules(t *testing.T) {
 	}
 	if px, why, exited := mentorExitC(c, 111, 113); !exited || px != 112 || why != "stop" {
 		t.Fatalf("C stop: exited=%v px=%.2f why=%q", exited, px, why)
+	}
+}
+
+// TestMentorISBFillCandleExit [D1.4 p1 @12:23–13:27]: for an ISB trade the
+// first partial is MANDATORY when the candle that FILLED you closes — it
+// REPLACES the +1R scale for ISB trades only; the trail rules after it are
+// unchanged. Non-ISB origins keep the +1R scale.
+func TestMentorISBFillCandleExit(t *testing.T) {
+	// fill candle closes at 103 — between entry and +0.5R: the partial fires
+	// anyway (bắt buộc), the stop does NOT move.
+	pos := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
+	stop, px, why, exited, scaled := mentorExitB(pos, 103, 101, true)
+	if exited || px != 0 || why != "" || !scaled {
+		t.Fatalf("ISB fill candle close: exited=%v px=%v why=%q scaled=%v — want the mandatory partial only", exited, px, why, scaled)
+	}
+	if stop != pos.Stop {
+		t.Fatalf("a sub-+0.5R fill candle must NOT move the stop, got %.2f", stop)
+	}
+	// fill candle closes above +0.5R: BE arm and the partial happen together.
+	pos2 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
+	stop, _, _, _, scaled = mentorExitB(pos2, 105, 101, true)
+	if !scaled || stop != 100 {
+		t.Fatalf("ISB fill candle above +0.5R: scaled=%v stop=%.2f — want the partial AND the BE arm", scaled, stop)
+	}
+	// the stop on the fill candle still wins (worse same bar: stop + halfR).
+	pos3 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "ISB", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
+	_, px, why, exited, scaled = mentorExitB(pos3, 105, 89, true)
+	if !exited || px != 90 || why != "stop(worse-same-bar)" || scaled {
+		t.Fatalf("ISB fill candle through the stop: exited=%v px=%.2f why=%q scaled=%v — the stop must win", exited, px, why, scaled)
+	}
+	// a non-ISB origin keeps the +1R scale: the same 103 candle only holds.
+	pos4 := mentorPosition{Symbol: "MNQ", Side: "long", Origin: "PHL", Entry: 100, Stop: 90, R: 10, Contracts: 4, Mode: "B"}
+	stop, _, _, exited, scaled = mentorExitB(pos4, 103, 101, true)
+	if exited || scaled || stop != 90 {
+		t.Fatalf("PHL origin on the same candle: exited=%v scaled=%v stop=%.2f — no partial below +1R", exited, scaled, stop)
 	}
 }
 

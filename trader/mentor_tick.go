@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -8,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"vl/calendar"
 	"vl/kernel"
 	"vl/kernel/mentor"
 	"vl/logger"
@@ -112,10 +114,16 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 	}
 	emitMs := time.Now().UnixMilli()
 	intents := at.mentorEval.Tick(bars, last.OpenTime)
+	// S9 (D5.2 p2 @05:21): strong-day detection from the recent CLOSED 5m bars
+	// — 50–80 pt candles cut every tier to 1–2.
+	extra := mentorTierInputs{}
+	if bars5 := market.FuturesBarsProvider("MNQ", "5m", 12); len(bars5) > 0 && mentorStrongDayFrom5m(bars5) {
+		extra.StrongDay = true
+	}
 	for _, in := range intents {
 		switch in.Action {
 		case mentor.PlaceStopEntry:
-			if why := mentorRuleGate(in, mentorTierInputs{}); why != "" {
+			if why := mentorRuleGate(in, extra); why != "" {
 				rule := "other"
 				if i := strings.Index(why, ":"); i > 0 {
 					rule = strings.ToLower(strings.TrimSpace(why[:i]))
@@ -124,7 +132,7 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 				at.logWarnf("🧑‍🏫 mentor intent REFUSED — %s", why)
 				continue
 			}
-			choice, err := at.mentorSizeFor(in, mentorTierInputs{})
+			choice, err := at.mentorSizeFor(in, extra)
 			if err != nil {
 				continue
 			}
@@ -150,6 +158,11 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 // The no-chase rule runs FIRST: a stop entry whose price is already through the
 // trigger is skipped — he never enters at market (§3).
 func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoice, barCloseMs, emitMs int64) {
+	if hold, why := at.mentorNewsGate(); hold {
+		mentorCount("news_hold")
+		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
+		return
+	}
 	if latest, ok := at.mentorLatestPrice(); ok {
 		if skip, why := mentorNoChase(in.Side, latest, in.Price); skip {
 			mentorCount("no_chase_skip")
@@ -227,6 +240,97 @@ func mentorNoChase(side mentor.Side, latest float64, trigger float64) (skip bool
 // placement: the no-chase mutant (dropping the check) makes it fire on a
 // through-price intent and the test goes RED.
 var mentorPlaceRecorderForTest func(in mentor.Intent, contracts int)
+
+// ── STRONG DAY (S9) ────────────────────────────────────────────────────────
+
+const mentorStrongDayPtsMin = 50.0 // a 5m candle range ≥50 pts = the 50–80 band
+
+// mentorStrongDayFrom5m reports a strong day: a closed 5m candle in the window
+// ran 50–80 pts [D5.2 p2 @05:21] (anything wider is certainly strong — the 80
+// is the band's top as quoted, not a cutoff).
+func mentorStrongDayFrom5m(bars []market.Kline) bool {
+	for _, b := range bars {
+		if b.High-b.Low >= mentorStrongDayPtsMin {
+			return true
+		}
+	}
+	return false
+}
+
+// ── NEWS 07:30 CT (F11/R12) ────────────────────────────────────────────────
+
+// The 07:30 CT CPI/PPI/Unemployment print: NO resting order through it. The
+// hold window is the print minute −10m (no order may still be resting INTO the
+// print) to +5m (let the print shake out) — both named rule parameters.
+const (
+	mentorNewsPreWindow  = 10 * time.Minute
+	mentorNewsPostWindow = 5 * time.Minute
+)
+
+// mentorNewsPrintTitleTokens matches the BLS 07:30 CT prints the rule names.
+var mentorNewsPrintTitleTokens = []string{"cpi", "ppi", "unemployment"}
+
+// mentorNewsHold is the pure gate: with the day's calendar events, reports
+// whether a placement at `now` would rest through a 07:30 CT T1 CPI/PPI/
+// Unemployment print.
+func mentorNewsHold(events []calendar.Event, now time.Time) (hold bool, why string) {
+	loc := kernel.CTLocation()
+	ct := now.In(loc)
+	printAt := time.Date(ct.Year(), ct.Month(), ct.Day(), 7, 30, 0, 0, loc)
+	if now.Before(printAt.Add(-mentorNewsPreWindow)) || !now.Before(printAt.Add(mentorNewsPostWindow)) {
+		return false, ""
+	}
+	for _, e := range events {
+		if e.Impact != calendar.T1 || e.Time.In(loc).Format("15:04") != "07:30" {
+			continue
+		}
+		title := strings.ToLower(e.Title)
+		for _, tok := range mentorNewsPrintTitleTokens {
+			if strings.Contains(title, tok) {
+				return true, fmt.Sprintf("news: %s prints 07:30 CT — no resting order through the print [F11]", e.Title)
+			}
+		}
+	}
+	return false, ""
+}
+
+// mentorNewsNowSource / mentorDayEventsForTest are the test seams for the news
+// gate (nil in production: real clock + the stored calendar slice).
+var (
+	mentorNewsNowSource    func() time.Time
+	mentorDayEventsForTest func() []calendar.Event
+)
+
+// mentorDayEvents returns today's stored calendar events. No slice → nil (no
+// evidence of a print — the gate allows; the producer is the same one the
+// day-plan uses).
+func (at *AutoTrader) mentorDayEvents() []calendar.Event {
+	if mentorDayEventsForTest != nil {
+		return mentorDayEventsForTest()
+	}
+	if at.store == nil {
+		return nil
+	}
+	slice, err := at.store.Calendar().GetSlice(plannerTradeDateCT(time.Now()))
+	if err != nil || slice == nil {
+		return nil
+	}
+	var evs []calendar.Event
+	if json.Unmarshal([]byte(slice.EventsJSON), &evs) != nil {
+		return nil
+	}
+	return evs
+}
+
+// mentorNewsGate is the call-site half of F11: refuse a placement inside the
+// 07:30 print window on a print day.
+func (at *AutoTrader) mentorNewsGate() (bool, string) {
+	now := time.Now()
+	if mentorNewsNowSource != nil {
+		now = mentorNewsNowSource()
+	}
+	return mentorNewsHold(at.mentorDayEvents(), now)
+}
 
 // ── LATENCY (§2: measure it) ───────────────────────────────────────────────
 
