@@ -9,6 +9,7 @@ import (
 
 	"vl/kernel"
 	"vl/kernel/mentor"
+	"vl/market"
 	"vl/store"
 	ntTrader "vl/trader/ninjatrader"
 )
@@ -654,6 +655,62 @@ func TestMentorSizeForUsesGeometry(t *testing.T) {
 	}
 	if choice.Contracts != 3 || choice.Tier != "reduced" {
 		t.Fatalf("geometry sizing = %+v, want reduced 3 (a 22-pt stop, no confluence)", choice)
+	}
+}
+
+// TestMentorBars1mDepthP0A6 (CTO 1791058624275): both mentor 1m call sites
+// ask 1500 bars — enough for the §7 Globex window (17:00→08:30 CT, 930 bars)
+// plus the RTH day to 15:00 CT (1320 total). The old ask started mid-window:
+// past the 08:30 freeze the run window holds ZERO of its bars and the day
+// gate reads DayNotMeasured every day (pinned here via GlobexRun on the same
+// tape). The mutant — putting the old depth back — turns RED on the ask pin.
+func TestMentorBars1mDepthP0A6(t *testing.T) {
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	old := market.FuturesBarsProvider
+	gotN := 0
+	market.FuturesBarsProvider = func(symbol, tf string, n int) []market.Kline {
+		if symbol == "MNQ" && tf == "1m" {
+			gotN = n
+		}
+		return nil
+	}
+	t.Cleanup(func() { market.FuturesBarsProvider = old })
+	at.mentorTick(nil)
+	if gotN != 1500 {
+		t.Fatalf("mentorTick asks %d 1m bars, want 1500", gotN)
+	}
+	gotN = 0
+	at.mentorEventPassAt(time.Now())
+	if gotN != 1500 {
+		t.Fatalf("mentorEventPassAt asks %d 1m bars, want 1500", gotN)
+	}
+
+	// The window the depth must cover: a full tape 17:00 CT → 15:00 CT the
+	// next day (1320 bars). The full tape measures the Globex run; the last
+	// 240 bars (the old ask) hold no window bar past the freeze → not
+	// measured.
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		loc = time.FixedZone("CST6", -6*3600)
+	}
+	day := time.Date(2026, 9, 14, 17, 0, 0, 0, loc)
+	bars := make([]market.Kline, 0, 1320)
+	for i := 0; i < 1320; i++ {
+		ot := day.Add(time.Duration(i) * time.Minute).UnixMilli()
+		h, l := 20000.0, 19990.0
+		if i%2 == 0 {
+			h = 20350.0
+		} else {
+			l = 19950.0
+		}
+		bars = append(bars, market.Kline{OpenTime: ot, CloseTime: ot + 59_999, High: h, Low: l})
+	}
+	now := bars[len(bars)-1].CloseTime // 15:00 CT — the frozen 17:00→08:30 window applies
+	if run, ok := mentor.GlobexRun(bars, now, nil); !ok || run <= 0 {
+		t.Fatalf("the full 1320-bar tape must measure the Globex run, got ok=%v run=%.1f", ok, run)
+	}
+	if _, ok := mentor.GlobexRun(bars[len(bars)-240:], now, nil); ok {
+		t.Fatal("the old depth must read the day as not-measured past the freeze (zero window bars)")
 	}
 }
 
