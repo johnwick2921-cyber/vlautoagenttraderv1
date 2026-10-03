@@ -2043,11 +2043,15 @@ type RiskControlConfig struct {
 	//   MentorEmaMaxCross30m — E4 "xien len xien xuong" (0 = OFF, base);
 	//   MentorLocationTriggerFilter — the 5m trigger filter at locations
 	//     (nil → ON, L3: keep it ON in the base).
+	//   MentorLossDeparturePts — the ONE departure rule (CTO 13:24:53Z): a
+	//     blocked place unblocks on a closed candle AFTER the loss candle with
+	//     |close − loss price| ≥ this (default 20, "leave the area").
 	MentorLegBudgetEnabled      *bool   `json:"mentor_leg_budget_enabled,omitempty"`
 	MentorLegResetOn            string  `json:"mentor_leg_reset_on,omitempty"`
 	MentorLvlRevisitMinPts      float64 `json:"mentor_lvl_revisit_min_pts,omitempty"`
 	MentorEmaMaxCross30m        int     `json:"mentor_ema_max_cross_30m,omitempty"`
 	MentorLocationTriggerFilter *bool   `json:"mentor_loc_trigger_filter,omitempty"`
+	MentorLossDeparturePts      float64 `json:"mentor_loss_departure_pts,omitempty"`
 	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the
 	// contracts clamp is always-on venue safety. Field kept so old stored
 	// configs still parse; nothing reads it, the UI no longer writes it.

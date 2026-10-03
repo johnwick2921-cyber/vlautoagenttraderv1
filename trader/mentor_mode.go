@@ -263,6 +263,17 @@ func mentorLocationTriggerFilter(rc *store.RiskControlConfig) bool {
 	return rc == nil || rc.MentorLocationTriggerFilter == nil || *rc.MentorLocationTriggerFilter
 }
 
+// mentorLossDeparturePts — the ONE departure rule (CTO 13:24:53Z): a blocked
+// place unblocks on a closed candle AFTER the loss candle whose |close − loss
+// price| ≥ this. Default 20 ("leave the area", he never gives a number);
+// values ≤ 0 fail closed to 20.
+func mentorLossDeparturePts(rc *store.RiskControlConfig) float64 {
+	if rc != nil && rc.MentorLossDeparturePts > 0 {
+		return rc.MentorLossDeparturePts
+	}
+	return 20
+}
+
 // mentorSuppressAIEntry is the AI-entries-off half of the mode switch: a
 // mentor-mode trader takes NO AI open decisions (closes, flattens and safety
 // paths are untouched). Returns the refusal, "" when allowed.

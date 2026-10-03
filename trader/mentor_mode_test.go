@@ -725,6 +725,9 @@ func TestMentorKnobRoutingDefaults(t *testing.T) {
 	if v := mentorEmaMaxCross30m(nil); v != 0 {
 		t.Fatalf("ema max cross default = %d, want 0 (OFF)", v)
 	}
+	if v := mentorLossDeparturePts(nil); v != 20 {
+		t.Fatalf("loss departure default = %.2f, want 20", v)
+	}
 
 	f := false
 	rc := &store.RiskControlConfig{
@@ -733,6 +736,7 @@ func TestMentorKnobRoutingDefaults(t *testing.T) {
 		MentorLvlRevisitMinPts:      3,
 		MentorEmaMaxCross30m:        4,
 		MentorLocationTriggerFilter: &f,
+		MentorLossDeparturePts:      25,
 	}
 	if mentorLegBudgetEnabled(rc) || mentorLocationTriggerFilter(rc) {
 		t.Fatal("explicit false must turn the ON-default knobs OFF")
@@ -745,6 +749,12 @@ func TestMentorKnobRoutingDefaults(t *testing.T) {
 	}
 	if v := mentorEmaMaxCross30m(rc); v != 4 {
 		t.Fatalf("ema max cross = %d, want 4", v)
+	}
+	if v := mentorLossDeparturePts(rc); v != 25 {
+		t.Fatalf("loss departure = %.2f, want 25", v)
+	}
+	if v := mentorLossDeparturePts(&store.RiskControlConfig{MentorLossDeparturePts: 0}); v != 20 {
+		t.Fatalf("a zero departure must fail closed to the default 20, got %.2f", v)
 	}
 
 	// a bad leg reset value fails closed to the default and is counted.
