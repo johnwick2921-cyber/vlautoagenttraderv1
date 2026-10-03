@@ -546,10 +546,17 @@ func (at *AutoTrader) mentorAddGate(in mentor.Intent) (bool, string) {
 // FIRST value, not a warmed-up one.
 const mentorMin4hEMA34 = 34
 
+// mentorDefaultEMA34Warmup is the SAFE default warm-up (3×34): a seed that
+// never calls SetMentor4hEMA34Warmup must not trade on a barely-formed EMA.
+const mentorDefaultEMA34Warmup = 102
+
 // mentor4hEMA34Warmup is the 4h EMA 34 floor the seed actually requires —
-// DS-103's stated warm-up (his P0 PR). It defaults to the absolute minimum;
-// the live driver raises it via SetMentor4hEMA34Warmup.
-var mentor4hEMA34Warmup = mentorMin4hEMA34
+// DS-103's stated warm-up (his P0 PR). The default is the safe 3×34; the live
+// driver changes it via SetMentor4hEMA34Warmup.
+var mentor4hEMA34Warmup = mentorDefaultEMA34Warmup
+
+// mentor1mEMA34Warmup is the 1m EMA 34 floor — the same safe default (3×34).
+var mentor1mEMA34Warmup = mentorDefaultEMA34Warmup
 
 // SetMentor4hEMA34Warmup is DS-103's seed hook: the stated 4h EMA 34 warm-up
 // in 4h candles. Values below the absolute minimum are clamped to it.
@@ -624,10 +631,14 @@ func (at *AutoTrader) mentorSourcesMissing() []string {
 	}
 	for _, req := range mentorDepthRequirements {
 		min := req.Min
-		// the 4h EMA 34 floor is the seed's stated warm-up (the constant, not
-		// the absolute minimum) — DS-103 raises it via SetMentor4hEMA34Warmup.
+		// the EMA 34 floors are the warm-up constants (safe default 3×34): the
+		// 4h one is DS-103's stated warm-up via SetMentor4hEMA34Warmup, the 1m
+		// one shares the same default.
 		if req.Name == "4h EMA34" {
 			min = mentor4hEMA34Warmup
+		}
+		if req.Name == "1m EMA34" {
+			min = mentor1mEMA34Warmup
 		}
 		depth, known := mentorSourceDepth(req.Name)
 		if !known {

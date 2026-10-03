@@ -484,6 +484,11 @@ func TestMentorPlacementCarriesExpiry(t *testing.T) {
 // the per-source depth loop makes the recorder fire on a short history.
 func TestMentorHistoryDepthGate(t *testing.T) {
 	ResetMentorCountersForTest()
+	// pin the 4h floor at the absolute minimum for this test's (33/34) row —
+	// the warm-up default is covered by TestMentor4hEMA34WarmupGate.
+	oldWarmup := mentor4hEMA34Warmup
+	t.Cleanup(func() { mentor4hEMA34Warmup = oldWarmup })
+	mentor4hEMA34Warmup = mentorMin4hEMA34
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
 	wireMentorPlacementSeams(t)
 	ct := kernel.CTLocation()
@@ -550,6 +555,33 @@ func TestMentor4hEMA34WarmupGate(t *testing.T) {
 	t.Cleanup(func() { mentor4hEMA34Warmup = old })
 	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
 	wireMentorPlacementSeams(t)
+	// the SAFE default (3×34 = 102): 101 refused, 102 passes.
+	if mentor4hEMA34Warmup != 102 {
+		t.Fatalf("the default 4h warm-up must be 102, got %d", mentor4hEMA34Warmup)
+	}
+	mentorSourceDepthSource = func(name string) (int, bool) {
+		if name == "4h EMA34" {
+			return 101, true
+		}
+		return 9999, true
+	}
+	if missing := strings.Join(at.mentorSourcesMissing(), ", "); !textHas(missing, "4h EMA34 (101/102)") {
+		t.Fatalf("101 candles must be refused against the default 102 warm-up: %q", missing)
+	}
+	// the 1m EMA 34 floor shares the same safe default.
+	mentorSourceDepthSource = func(name string) (int, bool) {
+		if name == "1m EMA34" {
+			return 101, true
+		}
+		return 9999, true
+	}
+	if missing := strings.Join(at.mentorSourcesMissing(), ", "); !textHas(missing, "1m EMA34 (101/102)") {
+		t.Fatalf("101 1m bars must be refused against the default 102 floor: %q", missing)
+	}
+	mentorSourceDepthSource = func(name string) (int, bool) { return 9999, true }
+	if missing := at.mentorSourcesMissing(); len(missing) != 0 {
+		t.Fatalf("102 everywhere must pass the defaults: %q", strings.Join(missing, ", "))
+	}
 	// absolute minimum 34: below it refuses.
 	mentor4hEMA34Warmup = mentorMin4hEMA34
 	mentorSourceDepthSource = func(name string) (int, bool) {
