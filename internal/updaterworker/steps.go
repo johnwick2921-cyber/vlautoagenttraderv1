@@ -57,6 +57,129 @@ var preflightFlatLegs = []string{"addon_census_prehold", "ledger_exposure", "pla
 // AddOn acked THIS job, flat, no working orders, nothing in flight.
 var drainLegs = []string{"hold", "go_drained", "in_flight_sends", "queued_signals", "addon_ack", "addon_census", "ledger_exposure", "planner_in_flight"}
 
+// ── the main-tree lock (WORKER-TAKES-THE-LOCK, owner order 10-02 12:1x) ────
+//
+// The worker ACQUIRES the main-tree lock itself, as session
+// "updater-<job id first 12>", right before preflight — the SAME atomic
+// acquire verb humans use, with an expiry covering the job budget. It never
+// reclaims, never takes a held or stale lock, and never clears-incomplete.
+// A lock held by anyone else refuses preflight naming the holder: an
+// attended install is just a button install — humans never hold the lock
+// across one. The worker releases its own lock at complete / rolled_back /
+// refused; on recovery_needed it KEEPS the lock and names it in the job, so
+// a human looks before anything else touches the tree. A worker restart
+// mid-job finds its own lock by the deterministic session name and continues
+// — it never double-acquires.
+
+// lockSessionPrefix is the session name a worker lock always starts with.
+const lockSessionPrefix = "updater-"
+
+// lockSessionFor is the worker's lock identity for a job. It is DETERMINISTIC
+// from the job id, so a worker restart mid-job recognises its own lock.
+func lockSessionFor(jobID string) string {
+	id := jobID
+	if len(id) > 12 {
+		id = id[:12]
+	}
+	return lockSessionPrefix + id
+}
+
+// lockWindowMinutes is the acquire expiry: every job budget plus the three
+// planner waits plus a rollback, plus margin. The lock's keeper beats until
+// this window and then stops; OUR OWN stale lock does not block us (the
+// holder name is ours), and a park can outlast the keeper — only the holder
+// name matters to us.
+func (w *Worker) lockWindowMinutes() int {
+	b := w.cfg.Budgets
+	total := b.PreflightFlat + b.Drain + b.Gate + 3*b.PlannerWait + 3*b.Reprove +
+		2*b.Watch + 2*b.PostBootAck + 2*b.IdentityRetry + 2*b.HoldClear + 20*time.Minute
+	return int(total.Minutes()) + 1
+}
+
+// ensureMainTreeLock acquires-or-verifies the main-tree lock for THIS job
+// and returns the outcome: "acquired" (we took a free lock) or "ours" (the
+// lock already names our session — a restart mid-job). Any other state
+// refuses, naming the holder.
+func (w *Worker) ensureMainTreeLock(j updaterjob.Job) (string, error) {
+	session := lockSessionFor(j.JobID)
+	holder, err := w.host.LockHolder()
+	if err != nil {
+		return "", fmt.Errorf("the main-tree lock status is unreadable (C19: %v)", err)
+	}
+	switch {
+	case holder == "":
+		acquired, holderNow, err := w.host.LockAcquire(session, "worker job "+j.JobID, w.lockWindowMinutes())
+		if err != nil {
+			return "", fmt.Errorf("the main-tree lock acquire failed (C19: %v)", err)
+		}
+		if acquired {
+			return "acquired", nil
+		}
+		// Lost the race to another acquirer: refuse naming whoever won.
+		return "", fmt.Errorf("the main-tree lock is not held by this job (C19: held by %q) — the worker never takes a held or stale lock", orNA(holderNow))
+	case holder == session:
+		// Ours from before a restart: continue, never double-acquire. This
+		// includes our OWN stale lock — the keeper window is a bound, not
+		// liveness for a holder that is still running.
+		return "ours", nil
+	default:
+		return "", fmt.Errorf("the main-tree lock is not held by this job (C19: held by %q) — the worker never takes a held or stale lock", holder)
+	}
+}
+
+// releaseOurLock releases the main-tree lock ONLY when it is ours: a free
+// lock is a no-op, and a lock held by anyone else is never touched. It is
+// the ONE release path the worker uses.
+func (w *Worker) releaseOurLock(session string) error {
+	holder, err := w.host.LockHolder()
+	if err != nil {
+		return err
+	}
+	if holder == "" || holder == session {
+		return w.host.LockRelease(session)
+	}
+	return nil // not ours — leave it to its holder
+}
+
+// lockReleaseReceipt performs the terminal release and renders its receipt:
+// outcome "released" (ours, now free), "free" (nothing to release), or
+// "not_ours" (an attended/foreign holder keeps it), and "release_failed"
+// with the error.
+func (w *Worker) lockReleaseReceipt(session string, now time.Time) updaterjob.Receipt {
+	ev := map[string]string{"session": session}
+	holder, herr := w.host.LockHolder()
+	var err error
+	switch {
+	case herr != nil:
+		err = herr
+	case holder == "":
+		ev["outcome"] = "free"
+	case holder != session:
+		ev["outcome"] = "not_ours"
+		ev["holder"] = holder
+	default:
+		if err = w.host.LockRelease(session); err == nil {
+			ev["outcome"] = "released"
+		} else {
+			ev["outcome"] = "release_failed"
+		}
+	}
+	rec := updaterjob.Receipt{Step: "main_tree_lock", StartedAt: now, EndedAt: w.host.Now(), OK: err == nil, Evidence: ev}
+	if err != nil {
+		rec.Err = clipText(err.Error())
+	}
+	return rec
+}
+
+// keptLockReceipt names the kept lock on recovery_needed: the lock stays
+// held by our session and a human looks before anything else touches the
+// tree. It performs NO release.
+func keptLockReceipt(session string, now time.Time) updaterjob.Receipt {
+	return updaterjob.Receipt{Step: "main_tree_lock", StartedAt: now, EndedAt: now, OK: false,
+		Evidence: map[string]string{"session": session, "outcome": "kept"},
+		Err:      "recovery_needed: the lock stays held by this job — a human looks first"}
+}
+
 // drainPathNT8Absent is the drain path taken when NT8 is CLOSED
 // (UPDATER-NT8-CLOSED, owner ruling 22:1x CT 09-27): the link has been down
 // ≥ 60s continuously, so no AddOn ack can exist. The drain then passes on the
@@ -142,11 +265,11 @@ func (w *Worker) stepPreflight(ctx context.Context, j updaterjob.Job) stepResult
 		if m := firstMarkerLine(marker); !revisionsAgree(m, rev) {
 			return fmt.Errorf("the install's RELEASE marker names %q, the running binary is %s", m, rev)
 		}
-		held, detail, err := w.host.MainTreeLockHeld()
-		ev["main_tree_lock"] = orNA(detail)
-		if err != nil || !held {
-			return fmt.Errorf("the main-tree lock is not held (C19: %s) — the attended deploy acquires it; the worker never does", orNA(detail))
+		lockState, err := w.ensureMainTreeLock(j)
+		if err != nil {
+			return err
 		}
+		ev["main_tree_lock_state"] = lockState
 		if cal, err := calendarVerdict(rel.Dir, inst.Dir); err != nil {
 			return err
 		} else {
@@ -887,7 +1010,18 @@ func (w *Worker) stepReleaseHold(ctx context.Context, j updaterjob.Job) stepResu
 		s, _ := ReadHoldFor(w.dataDir(), j.JobID)
 		ev["hold_after"] = s.String()
 	}
-	return stepResult{receipts: []Receipt{w.receipt("release_hold", start, ev, err)}, err: err}
+	receipts := []Receipt{w.receipt("release_hold", start, ev, err)}
+	if err == nil {
+		// WORKER-TAKES-THE-LOCK: complete/rolled_back also release OUR
+		// main-tree lock. A failed release keeps the job recoverable (the
+		// lock stays; the failure edge names it).
+		lrec := w.lockReleaseReceipt(lockSessionFor(j.JobID), w.host.Now())
+		receipts = append(receipts, lrec)
+		if !lrec.OK {
+			return stepResult{receipts: receipts, err: errors.New(lrec.Err), reason: clipText("the main-tree lock could not be released: " + lrec.Err)}
+		}
+	}
+	return stepResult{receipts: receipts, err: err}
 }
 
 // plannerExpired is the F2 expiry error: the step waited the full planner

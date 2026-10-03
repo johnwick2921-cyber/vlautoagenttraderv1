@@ -28,9 +28,9 @@ func TestWatchTimeoutRollsBackToTheSnapshotAndReadsRolledBack(t *testing.T) {
 		t.Fatalf("job %s/%s (error %q), want rolled_back/done\n%v", j.State, j.Phase, j.Error, states(j))
 	}
 	steps := receiptSteps(j)
-	tail := strings.Join(steps[len(steps)-6:], ",")
-	if tail != "activate,watch(fail),rollback,watch,boot_verify,release_hold" {
-		t.Fatalf("receipts end %s\nwant activate,watch(fail),rollback,watch,boot_verify,release_hold", tail)
+	tail := strings.Join(steps[len(steps)-7:], ",")
+	if tail != "activate,watch(fail),rollback,watch,boot_verify,release_hold,main_tree_lock" {
+		t.Fatalf("receipts end %s\nwant activate,watch(fail),rollback,watch,boot_verify,release_hold,main_tree_lock", tail)
 	}
 	if len(r.rollbackArg) != 1 {
 		t.Fatalf("rollback ran %d times", len(r.rollbackArg))

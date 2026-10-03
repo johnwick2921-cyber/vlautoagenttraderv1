@@ -83,10 +83,18 @@ type box struct {
 	id      Identity // the unit's MainPID identity
 	running string   // the sha the running process serves
 
+	// the fake lock (WORKER-TAKES-THE-LOCK): lockHolder is the current
+	// holder ("" free); the counters pin the acquire/release edges.
+	lockHolder          string
+	lockAcquireCalls    int
+	lockAcquireSessions []string
+	lockReleaseCalls    int
+	lockAcquireErr      error
+
 	// knobs
-	lockHeld         bool
 	flat             bool
 	addonConnected   bool
+	pollHook         func() // run at every fake-host sleep boundary (planner-wait tests)
 	addonBuild       string // what the running AddOn reports
 	manifestBuild    string // the signed manifest's addon.build_id
 	refuseBoot       map[string]bool
@@ -198,7 +206,7 @@ func newRig(t *testing.T, opts ...rigOpt) *rig {
 		inst: filepath.Join(root, "nofx"), backupRoot: filepath.Join(root, "nofx-backups", "updater"),
 		binName: "nofx-bin",
 		id:      Identity{PID: 4242, StartTicks: 1000}, running: boxOld,
-		lockHeld: true, flat: true, addonConnected: true, addonBuild: boxOldBuild, manifestBuild: boxOldBuild,
+		flat: true, addonConnected: true, addonBuild: boxOldBuild, manifestBuild: boxOldBuild,
 		absentSim:  true,
 		refuseBoot: map[string]bool{}, watchFail: map[string]bool{},
 	}
@@ -649,14 +657,48 @@ func (h *fakeHost) Sleep(ctx context.Context, d time.Duration) error {
 		return err
 	}
 	h.b.clock.Advance(d)
+	if h.b.pollHook != nil {
+		h.b.pollHook()
+	}
 	return nil
 }
 
-func (h *fakeHost) MainTreeLockHeld() (bool, string, error) {
-	if h.b.lockHeld {
-		return true, "check rc=1", nil
+func (h *fakeHost) LockHolder() (string, error) {
+	h.b.mu.Lock()
+	defer h.b.mu.Unlock()
+	return h.b.lockHolder, nil
+}
+
+// LockAcquire simulates `vl-lock.sh acquire`. Free (lockHolder "") takes it
+// as our session; held refuses naming the holder; an error flag fails it.
+func (h *fakeHost) LockAcquire(session, task string, minutes int) (bool, string, error) {
+	h.b.mu.Lock()
+	defer h.b.mu.Unlock()
+	h.b.lockAcquireCalls++
+	h.b.lockAcquireSessions = append(h.b.lockAcquireSessions, session)
+	if h.b.lockAcquireErr != nil {
+		return false, "", h.b.lockAcquireErr
 	}
-	return false, "check rc=0", nil
+	if h.b.lockHolder == "" {
+		h.b.lockHolder = session
+		return true, "", nil
+	}
+	return false, h.b.lockHolder, nil
+}
+
+// LockRelease simulates `vl-lock.sh release` (only the holder may release).
+func (h *fakeHost) LockRelease(session string) error {
+	h.b.mu.Lock()
+	defer h.b.mu.Unlock()
+	h.b.lockReleaseCalls++
+	if h.b.lockHolder == "" {
+		return nil // the script's no-lock no-op
+	}
+	if h.b.lockHolder != session {
+		return fmt.Errorf("release refused: '%s' is not the holder ('%s')", session, h.b.lockHolder)
+	}
+	h.b.lockHolder = ""
+	return nil
 }
 
 func (h *fakeHost) BuildInfo(binary string) (string, string, error) {
@@ -787,14 +829,24 @@ func (b *box) gateView() GateView {
 	}
 	// The prehold census leg (trader/installation_gate.go): a never-held
 	// connection (no ack) PASSES — the other flat legs vouch for it; an ack
-	// that exists must be fresh AND flat.
+	// that exists must be fresh AND flat — except a STALE FLAT census, which
+	// passes exactly like no census (prehold-stale-census, owner order
+	// 2026-10-02 10:15 CT): a stale census is never stronger evidence than no
+	// census, so the second install of one bot process needs no restart.
 	preholdCensusPass, preholdCensusDetail := true, "no census — never held"
 	if a != nil {
-		if a.AgeMs > ackMaxAgeMs {
-			preholdCensusPass, preholdCensusDetail = false, fmt.Sprintf("census ack is %d ms old (max %d)", a.AgeMs, ackMaxAgeMs)
-		} else {
+		switch {
+		case a.AgeMs > ackMaxAgeMs && flat:
+			preholdCensusPass, preholdCensusDetail = true, fmt.Sprintf("census is %d ms old (from an earlier hold) — flat, treated as no census", a.AgeMs)
+		case a.AgeMs > ackMaxAgeMs:
+			preholdCensusPass, preholdCensusDetail = false, fmt.Sprintf("census ack is %d ms old (max %d) and not flat", a.AgeMs, ackMaxAgeMs)
+		default:
 			preholdCensusPass, preholdCensusDetail = flat, fmt.Sprintf("flat=%v", flat)
 		}
+	}
+	censusAge := "n/a"
+	if a != nil {
+		censusAge = fmt.Sprintf("%dms", a.AgeMs)
 	}
 	legs := []GateLeg{
 		{Name: "hold", Pass: st.Held, Detail: "held=" + fmt.Sprint(st.Held)},
@@ -809,7 +861,7 @@ func (b *box) gateView() GateView {
 		}()},
 		{Name: "traders_nt8", Pass: true, Detail: "1 NT8 trader"},
 		{Name: "addon_ack", Pass: st.Held && a != nil && a.Held && a.JobID == job, Detail: "ack"},
-		{Name: "addon_census", Pass: flat, Detail: fmt.Sprintf("flat=%v", flat)},
+		{Name: "addon_census", Pass: flat, Detail: fmt.Sprintf("age=%s — flat=%v", censusAge, flat)},
 		{Name: "addon_census_prehold", Pass: preholdCensusPass, Detail: preholdCensusDetail},
 		{Name: "ledger_exposure", Pass: flat, Detail: "arms"},
 		{Name: "trader_cutover:t1", Pass: flat && !b.cutoverStale, Detail: func() string {

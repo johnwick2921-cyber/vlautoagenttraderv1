@@ -62,6 +62,10 @@ func TestUpdaterBootstrapRefusesAShellDBPathTheBotDoesNotUse(t *testing.T) {
 	diverted := filepath.Join(inst, "data")
 
 	// ── the operator, attended, from elsewhere, with DB_PATH exported ──
+	// P0 (TEST-WROTE-REAL-WORKER-ENV-2): a successful enroll writes the worker
+	// credential to $HOME/.config/vl-updater/env — isolate HOME so the REAL
+	// one is never touched (the root-package testhome guard fails otherwise).
+	t.Setenv("HOME", t.TempDir())
 	t.Chdir(t.TempDir())
 	os.Setenv("DB_PATH", "data/data.db")
 	master, slave := openPTY(t)

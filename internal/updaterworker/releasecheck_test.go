@@ -24,7 +24,12 @@ type stubHost struct {
 
 func (stubHost) Now() time.Time                             { return time.Now().UTC() }
 func (stubHost) Sleep(context.Context, time.Duration) error { return nil }
-func (stubHost) MainTreeLockHeld() (bool, string, error)    { return true, "test", nil }
+
+func (stubHost) LockAcquire(string, string, int) (bool, string, error) {
+	return false, "", nil
+}
+func (stubHost) LockHolder() (string, error)                { return "", nil }
+func (stubHost) LockRelease(string) error                   { return nil }
 func (s stubHost) BuildInfo(string) (string, string, error) { return s.rev, "false", nil }
 func (stubHost) ExeOf(int) (string, error)                  { return "", fmt.Errorf("unused") }
 
@@ -89,6 +94,7 @@ func TestDecideCheckTable(t *testing.T) {
 		{"missing tag", updatersource.Latest{Tag: "", TargetCommitish: rev}, rev, nil, false, "error"},
 		{"missing commitish", updatersource.Latest{Tag: "v1", TargetCommitish: ""}, rev, nil, false, "error"},
 		{"verdict for tag exists", updatersource.Latest{Tag: "v9", TargetCommitish: other}, rev, nil, true, "verified_ready"},
+		{"the RUNNING release keeps its verdict: up_to_date first (live 18:13 fix)", updatersource.Latest{Tag: "v9", TargetCommitish: rev}, rev, nil, true, "up_to_date"},
 		{"same commit as running", updatersource.Latest{Tag: "v9", TargetCommitish: rev}, rev, nil, false, "up_to_date"},
 		{"commit already in a verdict", updatersource.Latest{Tag: "v9", TargetCommitish: other}, rev, map[string]bool{other: true}, false, "up_to_date"},
 		{"newer", updatersource.Latest{Tag: "v9", TargetCommitish: other}, rev, nil, false, "available"},

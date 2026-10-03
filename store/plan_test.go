@@ -25,6 +25,27 @@ func newPlanTestStore(t *testing.T) *Store {
 	return st
 }
 
+// TRADER-TEST-HANG (owner order 2026-10-02): Store.Close must stop the plan
+// writer goroutine by itself — callers that only st.Close() (resetTrader and
+// dozens of other fixtures) leaked one parked writerLoop each. After a plain
+// Store.Close, the writer path is closed and a further plan write is refused
+// with the closed error (never a hang, never a panic).
+func TestStoreCloseStopsThePlanWriter(t *testing.T) {
+	st, err := New(filepath.Join(t.TempDir(), "t.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.Plan().AppendPlan(samplePlan("2026-08-14:NY")); err != nil {
+		t.Fatalf("seed write: %v", err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+	if _, err := st.Plan().AppendPlan(samplePlan("2026-08-15:NY")); err == nil || !strings.Contains(err.Error(), "plan store closed") {
+		t.Fatalf("a plan write after Store.Close must be refused as plan-store-closed, got %v", err)
+	}
+}
+
 // samplePlan builds a plan whose (trade_date, session) is consistent with its
 // plan_id — the MakePlanID invariant ("<trade_date>:<session>") the unique
 // (trade_date, session, version) index enforces.

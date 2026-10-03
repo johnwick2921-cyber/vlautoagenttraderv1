@@ -672,6 +672,14 @@ func (s *Store) WorkerEpoch() *WorkerEpochStore {
 
 // Close closes database connection
 func (s *Store) Close() error {
+	// TRADER-TEST-HANG (owner order 2026-10-02): Close must stop the plan
+	// writer goroutine, not only the DB handle — the writer otherwise parks
+	// on its select forever, and every test store leaked one (the vl/trader
+	// timeout dump showed dozens of 4-13-minute-old writerLoops). PlanStore
+	// stops once (stopOnce) and later writes fail "plan store closed".
+	if s.plan != nil {
+		s.plan.Close()
+	}
 	if s.driver != nil {
 		return s.driver.Close()
 	}

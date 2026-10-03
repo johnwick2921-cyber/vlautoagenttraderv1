@@ -526,6 +526,11 @@ func detectLanguage(text string) Language {
 
 // ShouldSkipDecisionCycle reports whether the AI decision cycle should be
 // skipped because the CME futures market is currently closed. Returns true
+// decisionCycleNow is the clock seam for ShouldSkipDecisionCycle; tests pin it
+// to an in-session instant so CME weekend/break hours cannot flip assertions
+// that expect a non-cme_closed SkipReason.
+var decisionCycleNow = time.Now
+
 // ShouldSkipDecisionCycle reports whether the whole decision cycle should be
 // skipped because the CME futures market is closed (futures-only build, C2).
 //
@@ -533,7 +538,7 @@ func detectLanguage(text string) Language {
 // invoke this at the top of each decision cycle BEFORE any expensive work
 // like fetching klines or building prompts.
 func ShouldSkipDecisionCycle() bool {
-	if IsCMEOpen(time.Now()) {
+	if IsCMEOpen(decisionCycleNow()) {
 		return false
 	}
 	logger.Info("CME closed, skipping decision cycle")

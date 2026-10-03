@@ -27,6 +27,7 @@ const (
 	StateActivated       State = "activated"
 	StateBooted          State = "booted"
 	StateBootVerified    State = "boot_verified"
+	StateWorkerSwapped   State = "worker_swapped"
 	StateComplete        State = "complete"
 	StateRollingBack     State = "rolling_back"
 	StateRolledBack      State = "rolled_back"
@@ -64,6 +65,7 @@ const (
 	EffectActivate    Effect = "activate"     // install the release halves + kill by identity
 	EffectWatch       Effect = "watch"        // the new process proves itself (log + health)
 	EffectBootVerify  Effect = "boot_verify"  // OK boot line, health prefix, AddOn ack build
+	EffectWorkerSwap  Effect = "worker_swap"  // atomic self-update of the worker binary (worker-self-update)
 	EffectRollback    Effect = "rollback"     // restore the snapshot + watch the OLD sha
 	EffectReleaseHold Effect = "release_hold" // the ONLY hold clears
 )
@@ -112,7 +114,13 @@ var table = []Row{
 	// The point of no return: any failure from here restores the snapshot.
 	{State: StateActivated, Effect: EffectActivate, Success: []State{StateBooted}, Failure: StateRollingBack},
 	{State: StateBooted, Effect: EffectWatch, Success: []State{StateBootVerified}, Failure: StateRollingBack},
-	{State: StateBootVerified, Effect: EffectBootVerify, Success: []State{StateComplete}, Failure: StateRollingBack},
+	{State: StateBootVerified, Effect: EffectBootVerify, Success: []State{StateWorkerSwapped}, Failure: StateRollingBack},
+	// The new bot is PROVEN before the worker swaps itself (never before
+	// boot_verified; never on refused/rolled_back/recovery_needed — the table
+	// has no edge from those). A swap refusal is recorded in the step's
+	// receipt and the job still completes (the install itself succeeded);
+	// Failure: StateComplete is the same completion for an unexpected error.
+	{State: StateWorkerSwapped, Effect: EffectWorkerSwap, Success: []State{StateComplete}, Failure: StateComplete},
 	{State: StateComplete, Effect: EffectReleaseHold, Failure: StateRecoveryNeeded},
 	{State: StateRollingBack, Effect: EffectRollback, Success: []State{StateRolledBack}, Failure: StateRecoveryNeeded},
 	{State: StateRolledBack, Effect: EffectReleaseHold, Failure: StateRecoveryNeeded},

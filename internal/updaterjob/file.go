@@ -458,3 +458,72 @@ func List(dataDir string) ([]Job, error) {
 	})
 	return out, nil
 }
+
+// ListTolerant is List for the start sweep (worker-self-update P0
+// 2026-10-02): a TERMINAL job (complete/refused/rolled_back) that no longer
+// validates — a job written by an older released worker whose edges the table
+// has since changed — is skipped and its id returned in skippedTerminal so
+// the caller can WARN and continue. A NON-terminal unreadable job still
+// errors (and names the job). Everything else is exactly List.
+func ListTolerant(dataDir string) (jobs []Job, skippedTerminal []string, err error) {
+	jobsDir, err := privateDirs(dataDir, false)
+	if errors.Is(err, ErrNotFound) {
+		return []Job{}, nil, nil
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	ents, err := os.ReadDir(jobsDir)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, e := range ents {
+		name := e.Name()
+		if name == jobsLockName || (strings.HasPrefix(name, ".job-") && strings.HasSuffix(name, ".tmp")) {
+			continue
+		}
+		id, ok := strings.CutSuffix(name, jobFileExt)
+		if !ok || !updaterwire.ValidJobID(id) {
+			return nil, nil, fmt.Errorf("%w: unexpected entry %q in the jobs dir", ErrUnsafe, clip(name))
+		}
+		j, err := Read(dataDir, id)
+		if err == nil {
+			jobs = append(jobs, j)
+			continue
+		}
+		if peeked, peekErr := peekState(jobsDir, name); peekErr == nil && isTerminalJobState(peeked) {
+			skippedTerminal = append(skippedTerminal, id)
+			continue
+		}
+		return nil, nil, fmt.Errorf("job %s: %w", id, err)
+	}
+	sort.Slice(jobs, func(a, b int) bool {
+		if !jobs[a].CreatedAt.Equal(jobs[b].CreatedAt) {
+			return jobs[a].CreatedAt.Before(jobs[b].CreatedAt)
+		}
+		return jobs[a].JobID < jobs[b].JobID
+	})
+	return jobs, skippedTerminal, nil
+}
+
+// peekState reads only the "state" field of a job file (tolerant of every
+// other field) so the sweep can classify a job it cannot fully validate.
+func peekState(jobsDir, name string) (State, error) {
+	raw, err := os.ReadFile(filepath.Join(jobsDir, name))
+	if err != nil {
+		return "", err
+	}
+	var p struct {
+		State State `json:"state"`
+	}
+	if err := json.Unmarshal(raw, &p); err != nil {
+		return "", err
+	}
+	return p.State, nil
+}
+
+// isTerminalJobState reports the terminal states a sweep may skip: complete,
+// refused, rolled_back (worker-self-update P0: the CTO's named set).
+func isTerminalJobState(s State) bool {
+	return s == StateComplete || s == StateRefused || s == StateRolledBack
+}

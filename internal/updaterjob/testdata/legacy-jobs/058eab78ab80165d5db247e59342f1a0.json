@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "job_id": "058eab78ab80165d5db247e59342f1a0",
+  "release_id": "v2026.10.01.1",
+  "source_sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+  "state": "refused",
+  "phase": "done",
+  "attempts": 0,
+  "created_at": "2026-10-02T04:30:38.170095281Z",
+  "updated_at": "2026-10-02T04:30:38.38925997Z",
+  "error": "GET /api/installation-gate: updaterworker: the app refused the cutover token (401)",
+  "transitions": [
+    {
+      "state": "requested",
+      "phase": "done",
+      "at": "2026-10-02T04:30:38.170095281Z",
+      "receipts": 0
+    },
+    {
+      "state": "downloaded",
+      "phase": "started",
+      "at": "2026-10-02T04:30:38.172662199Z",
+      "receipts": 0
+    },
+    {
+      "state": "downloaded",
+      "phase": "done",
+      "at": "2026-10-02T04:30:38.304769183Z",
+      "receipts": 1
+    },
+    {
+      "state": "verified",
+      "phase": "started",
+      "at": "2026-10-02T04:30:38.307525219Z",
+      "receipts": 1
+    },
+    {
+      "state": "verified",
+      "phase": "done",
+      "at": "2026-10-02T04:30:38.310818602Z",
+      "receipts": 2
+    },
+    {
+      "state": "preflight_ok",
+      "phase": "started",
+      "at": "2026-10-02T04:30:38.31547762Z",
+      "receipts": 2
+    },
+    {
+      "state": "refused",
+      "phase": "done",
+      "at": "2026-10-02T04:30:38.38925997Z",
+      "receipts": 4
+    }
+  ],
+  "receipts": [
+    {
+      "step": "download",
+      "started_at": "2026-10-02T04:30:38.17502413Z",
+      "ended_at": "2026-10-02T04:30:38.304638838Z",
+      "ok": true,
+      "evidence": {
+        "artifacts": "88",
+        "manifest_sha256": "07d9fa7465000857821a5b35a1d7a41996fd33708196b2d112fe412ae4ada038"
+      }
+    },
+    {
+      "step": "verify",
+      "started_at": "2026-10-02T04:30:38.309934529Z",
+      "ended_at": "2026-10-02T04:30:38.310760876Z",
+      "ok": true,
+      "evidence": {
+        "signer_fingerprint": "SHA256:IvzjG35bsg2Ak3pwpka4GP1HM2PUCriy65nRjOjw8/o",
+        "source_sha": "ebb726977ef67c71cf6493a39886e74c005a3077"
+      }
+    },
+    {
+      "step": "stage",
+      "started_at": "2026-10-02T04:30:38.322616629Z",
+      "ended_at": "2026-10-02T04:30:38.381718539Z",
+      "ok": true,
+      "evidence": {
+        "binary_md5": "09472020b39cba32014938076dee29c2",
+        "manifest.binary_md5": "09472020b39cba32014938076dee29c2",
+        "manifest.source_sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+        "vcs.modified": "false",
+        "vcs.revision": "ebb726977ef67c71cf6493a39886e74c005a3077"
+      }
+    },
+    {
+      "step": "preflight",
+      "started_at": "2026-10-02T04:30:38.317878116Z",
+      "ended_at": "2026-10-02T04:30:38.389117071Z",
+      "ok": false,
+      "evidence": {
+        "calendar": "equal",
+        "health_revision": "0b45081d33e3",
+        "install_modified": "false",
+        "install_sha": "0b45081d33e3f372fd2fde83fffda9f4268bb97a",
+        "main_tree_lock": "check rc=1",
+        "pid": "40390"
+      },
+      "err": "GET /api/installation-gate: updaterworker: the app refused the cutover token (401)"
+    }
+  ],
+  "release": {
+    "dir": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077",
+    "sha": "ebb726977ef67c71cf6493a39886e74c005a3077",
+    "binary": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077/vl-bin",
+    "dist": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077/web/dist",
+    "release_file": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077/RELEASE",
+    "manifest_path": "/home/hoang/vl-releases/ebb726977ef67c71cf6493a39886e74c005a3077/manifest.json"
+  },
+  "install": {
+    "dir": "/home/hoang/vl",
+    "sha": "0b45081d33e3f372fd2fde83fffda9f4268bb97a",
+    "binary": "/home/hoang/vl/vl-bin",
+    "dist": "/home/hoang/vl/web/dist",
+    "release_file": "/home/hoang/vl/deploy/RELEASE"
+  }
+}

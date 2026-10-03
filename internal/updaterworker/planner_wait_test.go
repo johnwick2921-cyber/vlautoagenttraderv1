@@ -2,6 +2,7 @@ package updaterworker
 
 import (
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -20,28 +21,31 @@ func shrinkPlanner(r *rig) {
 	r.w.cfg.Budgets.PlannerWait = 100 * time.Millisecond
 }
 
-// watchBlocker samples the REAL job file (the production persistence the poll
-// writes the live blocker to) and reports whether the waiting text ever
-// appeared. Enter() clears Blocker on the terminal transition, so the live
-// blocker is only observable mid-wait.
-func watchBlocker(t *testing.T, r *rig) (saw <-chan bool) {
+// watchBlocker observes the live blocker DETERMINISTICALLY, at the fake
+// host's sleep boundary: every poll iteration persists a new blocker to the
+// REAL job file and then calls host.Sleep — the hook reads the file in the
+// SAME goroutine, immediately after the write, so no scheduling race can
+// miss the waiting text (the injected clock makes the whole wait
+// CPU-speed). The returned func reports whether the text ever appeared.
+func watchBlocker(t *testing.T, r *rig) (saw func() bool) {
 	t.Helper()
-	out := make(chan bool, 1)
-	go func() {
-		sawIt := false
-		for i := 0; i < 5000; i++ {
-			// r.job() Fatals on a mid-write read; read the raw file and skip
-			// the moment of a writer (the watcher must never kill the test).
-			if j, err := updaterjob.Read(r.data, boxJobID); err == nil &&
-				strings.Contains(j.Blocker, "waiting for the AI plan (started") {
-				sawIt = true
-				break
-			}
-			time.Sleep(2 * time.Millisecond)
+	var mu sync.Mutex
+	sawIt := false
+	old := r.pollHook
+	r.pollHook = func() {
+		if j, err := updaterjob.Read(r.data, boxJobID); err == nil &&
+			strings.Contains(j.Blocker, "waiting for the AI plan (started") {
+			mu.Lock()
+			sawIt = true
+			mu.Unlock()
 		}
-		out <- sawIt
-	}()
-	return out
+	}
+	t.Cleanup(func() { r.pollHook = old })
+	return func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return sawIt
+	}
 }
 
 // Preflight: the planner read outlives the wait → refused, NO hold, and the
@@ -63,7 +67,7 @@ func TestPreflightPlannerWaitExpiryRefusesNoHold(t *testing.T) {
 	if !strings.Contains(j.Error, "AI plan still running after") {
 		t.Fatalf("error %q must name the planner wait", j.Error)
 	}
-	if !<-watch {
+	if !watch() {
 		t.Fatal("the live blocker must read the waiting text while the job waits")
 	}
 }
@@ -102,7 +106,7 @@ func TestDrainPlannerWaitExpiryReleasesHoldAndRefuses(t *testing.T) {
 	if rc.Evidence["reason"] != "planner wait expired" {
 		t.Fatalf("release_hold receipt must name the reason: %+v", rc.Evidence)
 	}
-	if !<-watch {
+	if !watch() {
 		t.Fatal("the live blocker must read the waiting text while the drain waits")
 	}
 }
@@ -126,7 +130,7 @@ func TestGatePlannerWaitExpiryReleasesHoldAndRefuses(t *testing.T) {
 	if !strings.Contains(j.Error, "AI plan still running after") {
 		t.Fatalf("error %q must name the planner wait", j.Error)
 	}
-	if !<-watch {
+	if !watch() {
 		t.Fatal("the live blocker must read the waiting text while the gate waits")
 	}
 }

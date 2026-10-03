@@ -23,7 +23,7 @@ func TestPreflightRefusalsNeverHold(t *testing.T) {
 		want  string
 	}{
 		{"C22: not flat before the hold", func(r *rig) { r.flat = false }, "addon_census_prehold"},
-		{"C19: the main-tree lock is not held", func(r *rig) { r.lockHeld = false }, "main-tree lock is not held"},
+		{"C19: the main-tree lock is held by another session", func(r *rig) { r.lockHolder = "other-lane" }, "main-tree lock is not held by this job (C19: held by \"other-lane\")"},
 		{"C20: the calendar differs", func(r *rig) {
 			writeFile(r.t, filepath.Join(r.inst, calendarFile), `[{"time":"2026-10-01T12:30:00Z","title":"owner edit"}]`+"\n")
 		}, "calendar_static_t1.json differs"},
@@ -106,6 +106,36 @@ func TestPreflightPassesOnANeverHeldConnection(t *testing.T) {
 	}
 	if strings.Contains(j.Error, "addon_census") {
 		t.Fatalf("the census must not block preflight on a never-held connection: %q", j.Error)
+	}
+	if r.callCount("hold_write") != 1 {
+		t.Fatalf("preflight must pass and write the hold; hold_write ran %d times (job %s)", r.callCount("hold_write"), j.State)
+	}
+}
+
+// prehold-stale-census (owner order 2026-10-02 10:15 CT): the worker reaches
+// the hold step when the gate's prehold leg passes on a stale flat census —
+// the held:false release ack left by the PREVIOUS install's hold on this
+// process's connection, which the wire never refreshes. The rig's gateView
+// MIRRORS the production rule (the real leg is an unexported closure inside
+// trader.InstallationGateStatus, so the rig cannot call it without dragging
+// the bot's store/TCP fixtures into the worker package); the PRODUCTION rule
+// is pinned by the trader package's own
+// TestInstallationGatePreholdCensusStale* tests — under CTO mutant B (the
+// production fix reverted) THOSE go RED while this test stays green, which is
+// exactly its job: it proves the worker flows, not the rule.
+func TestPreflightStaleFlatCensusReachesTheHold(t *testing.T) {
+	r := newRig(t)
+	r.ackStale = true // 20 s old — past the 15 s freshness max; the census itself is flat
+	r.install()
+	if err := r.drive(); err != nil {
+		t.Fatal(err)
+	}
+	j := r.job()
+	if j.State == updaterjob.StateRefused {
+		t.Fatalf("preflight refused a stale flat census: %q", j.Error)
+	}
+	if strings.Contains(j.Error, "addon_census_prehold") {
+		t.Fatalf("the stale flat census must not block preflight: %q", j.Error)
 	}
 	if r.callCount("hold_write") != 1 {
 		t.Fatalf("preflight must pass and write the hold; hold_write ran %d times (job %s)", r.callCount("hold_write"), j.State)

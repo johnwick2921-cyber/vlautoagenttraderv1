@@ -77,6 +77,8 @@ func TestVlUserUnitTemplates(t *testing.T) {
 			"ExecStart=%h/bin/vl-updater --install-dir %h/vl serve",
 			"EnvironmentFile=%h/.config/vl-updater/env",
 			"UnsetEnvironment=TZ",
+			"Restart=always",
+			"RestartSec=2",
 		},
 	} {
 		body := repoFile(t, path)

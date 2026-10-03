@@ -46,6 +46,12 @@ export const updatesStrings = {
   installing: { en: 'Installing…', zh: '安装中…', id: 'Memasang…' },
   retry: { en: 'Retry', zh: '重试', id: 'Coba lagi' },
   upToDate: { en: 'Up to date', zh: '已是最新', id: 'Sudah terbaru' },
+  checkAgain: { en: 'Check again', zh: '再次检查', id: 'Periksa lagi' },
+  checkRefused: {
+    en: 'Check refused{status} — {reason}',
+    zh: '检查被拒绝{status} — {reason}',
+    id: 'Pemeriksaan ditolak{status} — {reason}',
+  },
   blocked: { en: 'Blocked', zh: '已阻止', id: 'Diblokir' },
   check: { en: 'Check', zh: '检查', id: 'Periksa' },
   installPasswordLabel: {
@@ -72,6 +78,11 @@ export const updatesStrings = {
     en: 'Update available {tag} — verified',
     zh: '发现新版本 {tag} — 已验证',
     id: 'Pembaruan tersedia {tag} — terverifikasi',
+  },
+  updateNotReady: {
+    en: 'Update available {tag} — not yet verified',
+    zh: '发现新版本 {tag} — 尚未验证',
+    id: 'Pembaruan tersedia {tag} — belum terverifikasi',
   },
   rateLimited: {
     en: 'rate limited, try later',

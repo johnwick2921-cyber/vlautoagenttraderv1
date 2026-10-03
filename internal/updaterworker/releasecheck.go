@@ -56,10 +56,17 @@ func decideCheck(latest updatersource.Latest, runningRevision string, verdictSha
 	if latest.Tag == "" || latest.TargetCommitish == "" {
 		return "error", CheckDetail{Reason: "release is missing tag or target commit"}
 	}
+	// running-first (live fix 2026-10-02 18:13 CT): the RUNNING release answers
+	// up_to_date regardless of any verdict — the installed release keeps its
+	// verdict file, and offering "verified, ready" for it ends in the install
+	// refusal "already this release" (job e141a9c2cab2).
+	if latest.TargetCommitish == runningRevision {
+		return "up_to_date", CheckDetail{Available: false, Ready: false, Tag: latest.Tag, TargetCommitish: latest.TargetCommitish}
+	}
 	if verdictForTag {
 		return "verified_ready", CheckDetail{Available: true, Ready: true, Tag: latest.Tag, TargetCommitish: latest.TargetCommitish}
 	}
-	if latest.TargetCommitish == runningRevision || verdictShas[latest.TargetCommitish] {
+	if verdictShas[latest.TargetCommitish] {
 		return "up_to_date", CheckDetail{Available: false, Ready: false, Tag: latest.Tag, TargetCommitish: latest.TargetCommitish}
 	}
 	return "available", CheckDetail{Available: true, Ready: false, Tag: latest.Tag, TargetCommitish: latest.TargetCommitish}

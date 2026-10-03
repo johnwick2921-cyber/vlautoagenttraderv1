@@ -96,6 +96,11 @@ func TestInstallationGateReadyWhenEveryLegPasses(t *testing.T) {
 			t.Errorf("leg %s missing", name)
 		}
 	}
+	// prehold-stale-census: the drain census leg prints its AGE in the detail
+	// so a preflight read shows staleness (detail text only).
+	if l, ok := legOf(g, "addon_census"); !ok || !strings.Contains(l.Detail, "age=") {
+		t.Fatalf("the addon_census leg must print the census age in its detail: %+v", l)
+	}
 }
 
 func TestInstallationGateFailsWithoutAHold(t *testing.T) {
@@ -232,25 +237,98 @@ func TestInstallationGatePreholdCensusOnAFreshConnection(t *testing.T) {
 	mustFail(t, g, "addon_census", "no census")
 }
 
-// The other half of the #206 fold: a census that EXISTS but is old is
-// evidence of nothing — the pre-hold leg must refuse it. (The ack here is a
-// held:false release ack from a prior hold or an operator drill, which the
-// wire never refreshes.)
-func TestInstallationGatePreholdCensusMustBeFresh(t *testing.T) {
+// prehold-stale-census (owner order 2026-10-02 10:15 CT): a census that
+// EXISTS but is STALE — the held:false release ack left by the previous
+// install's hold, which the wire never refreshes — is never STRONGER evidence
+// than no census. A stale census that is FLAT passes exactly like the
+// no-census state (the ledger/planner/trader legs vouch for flat; drain
+// re-checks a fresh census after the hold), so the second install of one bot
+// process no longer demands an NT8 or bot restart.
+func TestInstallationGatePreholdCensusStaleFlatPasses(t *testing.T) {
 	f := newGateFixture(t)
 	f.wire.Rec.Ack.Held = false // a released ack: nothing resends it
-	f.wire.AckAge = ntwire.MaintenanceAckMaxAge() + time.Second
-	mustFail(t, f.run(), "addon_census_prehold", "fresh")
+	f.wire.AckAge = 3 * time.Hour
+	l, ok := legOf(f.run(), "addon_census_prehold")
+	if !ok {
+		t.Fatalf("leg addon_census_prehold missing: %+v", f.run().Legs)
+	}
+	if !l.Pass {
+		t.Fatalf("a stale flat census must pass exactly like no census: %s", l.Detail)
+	}
+	for _, want := range []string{"3h0m0s old", "treated as no census", "drain re-checks a fresh census"} {
+		if !strings.Contains(l.Detail, want) {
+			t.Fatalf("the pass must say WHY (real age + treated-as-no-census), got %q (want %q)", l.Detail, want)
+		}
+	}
+}
+
+// The stale-flat pass only covers FLATNESS: a stale census that shows exposure
+// must still fail the pre-hold leg (fail-closed), positions and working alike,
+// and the refusal names the counts.
+func TestInstallationGatePreholdCensusStaleButExposed(t *testing.T) {
+	cases := map[string]struct {
+		mut  func(a *ntwire.MaintenanceAckPayload)
+		want string
+	}{
+		"3h-old census with an open position": {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Positions = 1 }, "NOT flat (positions=1 working=0)"},
+		"3h-old census with a working order":  {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Working = 1 }, "NOT flat (positions=0 working=1)"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := newGateFixture(t)
+			f.wire.Rec.Ack.Held = false
+			f.wire.AckAge = 3 * time.Hour
+			c.mut(f.wire.Rec.Ack)
+			mustFail(t, f.run(), "addon_census_prehold", c.want)
+		})
+	}
+}
+
+// A stale census that carries NO account census at all has no flat evidence
+// to judge — the refusal must say exactly that (never "not flat", which
+// would fabricate a verdict over evidence that does not exist).
+func TestInstallationGatePreholdCensusStaleWithoutAnAccountCensus(t *testing.T) {
+	cases := map[string]struct {
+		mut  func(a *ntwire.MaintenanceAckPayload)
+		want string
+	}{
+		"3h-old census that failed to take": {func(a *ntwire.MaintenanceAckPayload) {
+			a.CensusError, a.Connections, a.Accounts = "census failed: X", nil, nil
+		}, "carries no account census (census failed: X)"},
+		"3h-old census with accounts not enumerated": {func(a *ntwire.MaintenanceAckPayload) {
+			a.CensusError, a.Accounts = "", nil
+		}, "carries no account census (connections/accounts not enumerated)"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := newGateFixture(t)
+			f.wire.Rec.Ack.Held = false
+			f.wire.AckAge = 3 * time.Hour
+			c.mut(f.wire.Rec.Ack)
+			mustFail(t, f.run(), "addon_census_prehold", c.want)
+		})
+	}
 }
 
 // A FRESH released census that shows exposure fails the pre-hold leg too:
 // content and freshness are both judged (the leg must not pass a stale ack
 // through the content check or a bad census through the age check).
 func TestInstallationGatePreholdCensusFreshButExposed(t *testing.T) {
-	f := newGateFixture(t)
-	f.wire.Rec.Ack.Held = false
-	f.wire.Rec.Ack.Accounts[0].Working = 1
-	mustFail(t, f.run(), "addon_census_prehold", "working")
+	cases := map[string]struct {
+		mut  func(a *ntwire.MaintenanceAckPayload)
+		want string
+	}{
+		"fresh census with a working order":  {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Working = 1 }, "working"},
+		"fresh census with an open position": {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Positions = 1 }, "position"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := newGateFixture(t)
+			f.wire.Rec.Ack.Held = false
+			c.mut(f.wire.Rec.Ack)
+			mustFail(t, f.run(), "addon_census_prehold", c.want)
+		})
+	}
 }
 
 func TestInstallationGateQueuedSignalsFail(t *testing.T) {

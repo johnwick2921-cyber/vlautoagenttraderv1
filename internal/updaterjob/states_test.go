@@ -22,7 +22,7 @@ type wantRow struct {
 var wantOrder = []State{
 	StateRequested, StateDownloaded, StateVerified, StatePreflightOK, StateMaintenanceHeld,
 	StateDrainedAcked, StateGateOK, StateBackupDone, StateNT8Skipped, StateNT8Updated,
-	StateActivated, StateBooted, StateBootVerified, StateComplete, StateRollingBack,
+	StateActivated, StateBooted, StateBootVerified, StateWorkerSwapped, StateComplete, StateRollingBack,
 	StateRolledBack, StateRecoveryNeeded, StateCancelled, StateRefused,
 }
 
@@ -39,7 +39,8 @@ var wantTable = map[State]wantRow{
 	StateNT8Updated:      {eff: EffectNT8, succ: []State{StateActivated}, fail: StateRecoveryNeeded, parks: true},
 	StateActivated:       {eff: EffectActivate, succ: []State{StateBooted}, fail: StateRollingBack},
 	StateBooted:          {eff: EffectWatch, succ: []State{StateBootVerified}, fail: StateRollingBack},
-	StateBootVerified:    {eff: EffectBootVerify, succ: []State{StateComplete}, fail: StateRollingBack},
+	StateBootVerified:    {eff: EffectBootVerify, succ: []State{StateWorkerSwapped}, fail: StateRollingBack},
+	StateWorkerSwapped:   {eff: EffectWorkerSwap, succ: []State{StateComplete}, fail: StateComplete},
 	StateComplete:        {eff: EffectReleaseHold, fail: StateRecoveryNeeded},
 	StateRollingBack:     {eff: EffectRollback, succ: []State{StateRolledBack}, fail: StateRecoveryNeeded},
 	StateRolledBack:      {eff: EffectReleaseHold, fail: StateRecoveryNeeded},

@@ -141,6 +141,12 @@ func (w *Worker) handleCancel(jobID string) updaterwire.Response {
 	}
 	if _, err := w.updateLocked(jobID, j.State, j.Phase, func(k *updaterjob.Job) error {
 		k.Blocker = ""
+		// WORKER-TAKES-THE-LOCK: cancelled releases OUR lock with the same
+		// receipt shape as refused (a cancel during a slow preflight would
+		// otherwise hold the main-tree lock until the keeper's window).
+		if err := k.AddReceipt(w.lockReleaseReceipt(lockSessionFor(k.JobID), w.now(*k)), w.now(*k)); err != nil {
+			return err
+		}
 		return k.Enter(updaterjob.StateCancelled, w.now(*k))
 	}); err != nil {
 		w.logf("updater: cancel %s: %v", jobID, err)
