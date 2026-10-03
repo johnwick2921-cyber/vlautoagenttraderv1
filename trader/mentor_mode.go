@@ -347,24 +347,32 @@ func (at *AutoTrader) mentorAdmitRefusal(in admitIntent) string {
 // evaluator should never have let through, fail-closed, before any sizing.
 // (R8) SWING4H: stop 30–60 allowed, ≥100 refused, exempt from the 25-pt
 // ceiling. (R9) the target is never smaller than the stop; on a spent day
-// (cap 15) a stop over 15 skips. Returns the skip reason, "" when the intent
-// passes.
+// (cap 15) a stop over 15 skips. Defence in depth (CTO 1791058442006): the
+// stop/target points are read from the GEOMETRY (abs(Price−Stop),
+// abs(Target−Price)), never a bare intent field an emit site forgot to set,
+// and an entry with no Setup tag is refused here. Returns the skip reason,
+// "" when the intent passes.
 func mentorRuleGate(in mentor.Intent, extra mentorTierInputs) string {
+	if in.Setup == "" {
+		return "untagged setup: no Setup tag — refuse fail-closed [kernel owner ruling, CTO 1791058442006]"
+	}
+	stop := mentorIntentRisk(in)
+	target := mentorIntentTargetPts(in)
 	swing := strings.EqualFold(in.Setup, "SWING4H")
 	if swing {
-		if in.StopPts > mentorSwingStopMaxPts {
-			return fmt.Sprintf("R8: SWING4H stop %.1f pts — ~100 is refused (allowed 30–60, no 25-pt ceiling for the swing)", in.StopPts)
+		if stop > mentorSwingStopMaxPts {
+			return fmt.Sprintf("R8: SWING4H stop %.1f pts — ~100 is refused (allowed 30–60, no 25-pt ceiling for the swing)", stop)
 		}
 	} else {
-		if in.StopPts > mentorStopTwentiesMaxPts {
-			return fmt.Sprintf("R8: stop %.1f pts over the 25-pt ceiling — skip (the swing is the only exemption)", in.StopPts)
+		if stop > mentorStopTwentiesMaxPts {
+			return fmt.Sprintf("R8: stop %.1f pts over the 25-pt ceiling — skip (the swing is the only exemption)", stop)
 		}
 	}
-	if in.TargetPts > 0 && in.TargetPts < in.StopPts {
-		return fmt.Sprintf("R9: target %.1f pts smaller than the stop %.1f pts — never trade it [D1.2 p1 @ 07:48–09:00]", in.TargetPts, in.StopPts)
+	if target > 0 && target < stop {
+		return fmt.Sprintf("R9: target %.1f pts smaller than the stop %.1f pts — never trade it [D1.2 p1 @ 07:48–09:00]", target, stop)
 	}
-	if extra.SpentDay && in.StopPts > mentorSpentDayStopCapPts {
-		return fmt.Sprintf("R9: spent day cap 15 — stop %.1f pts skips", in.StopPts)
+	if extra.SpentDay && stop > mentorSpentDayStopCapPts {
+		return fmt.Sprintf("R9: spent day cap 15 — stop %.1f pts skips", stop)
 	}
 	return ""
 }
@@ -374,10 +382,14 @@ func mentorRuleGate(in mentor.Intent, extra mentorTierInputs) string {
 // spent day) come from the caller's evaluator context.
 func (at *AutoTrader) mentorSizeFor(in mentor.Intent, extra mentorTierInputs) (mentorSizeChoice, error) {
 	extra.Setup = in.Setup
-	extra.StopPts = in.StopPts
-	extra.TargetPts = in.TargetPts
-	if extra.RoomMultiple == 0 && in.TargetPts > 0 && in.StopPts > 0 {
-		extra.RoomMultiple = in.TargetPts / in.StopPts
+	// Defence in depth (CTO 1791058442006): the tier inputs are the GEOMETRY
+	// (abs(Price−Stop), abs(Target−Price)), never a bare intent field an
+	// emit site forgot to set — a swing sized as a base trade is the bug this
+	// closes.
+	extra.StopPts = mentorIntentRisk(in)
+	extra.TargetPts = mentorIntentTargetPts(in)
+	if extra.RoomMultiple == 0 && extra.TargetPts > 0 && extra.StopPts > 0 {
+		extra.RoomMultiple = extra.TargetPts / extra.StopPts
 	}
 	base, conf, big, reduced, swing4h, spentCap, mx := at.mentorKnobs()
 	choice, err := mentorContractsFor(extra, base, conf, big, reduced, swing4h, spentCap, mx)
@@ -502,6 +514,16 @@ func mentorIntentRisk(in mentor.Intent) float64 {
 		r = math.Abs(in.Price - in.Stop)
 	}
 	return r
+}
+
+// mentorIntentTargetPts is |target − entry| from the intent (TargetPts when
+// the emit site set it, the geometry otherwise) — the rule gate and the size
+// table read this, never a bare in.TargetPts.
+func mentorIntentTargetPts(in mentor.Intent) float64 {
+	if in.TargetPts > 0 {
+		return in.TargetPts
+	}
+	return math.Abs(in.Target - in.Price)
 }
 
 // mentorExitFork chooses the exit branch AT ENTRY from the intent flags (CTO

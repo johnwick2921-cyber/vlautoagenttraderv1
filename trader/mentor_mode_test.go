@@ -3,6 +3,7 @@ package trader
 import (
 	"fmt"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -617,6 +618,42 @@ func TestMentorRuleGateR8R9(t *testing.T) {
 	// ISB intents carry no target (0): the target check never fires on them
 	if why := mentorRuleGate(mentor.Intent{Setup: "ISB", StopPts: 5.75}, mentorTierInputs{}); why != "" {
 		t.Fatalf("a targetless ISB must pass the gate: %q", why)
+	}
+}
+
+// TestMentorRuleGateDefenceInDepth (CTO 1791058442006): the gate reads the
+// GEOMETRY (abs(Price−Stop), abs(Target−Price)), never a bare intent field an
+// emit site forgot to set, and an entry with no Setup tag is refused
+// fail-closed with the reason "untagged setup". The mutants (bare fields, or
+// the refusal dropped) turn RED here.
+func TestMentorRuleGateDefenceInDepth(t *testing.T) {
+	if why := mentorRuleGate(mentor.Intent{Price: 100, Stop: 90, Target: 120}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "untagged setup") {
+		t.Fatalf("an untagged setup must be refused with 'untagged setup', got %q", why)
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Price: 100, Stop: 78, Target: 130}, mentorTierInputs{}); why != "" {
+		t.Fatalf("geometry stop 22 / target 30 must pass: %q", why)
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Price: 100, Stop: 78, Target: 99}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "R9") {
+		t.Fatalf("geometry target 1 < stop 22 must be refused R9, got %q", why)
+	}
+	if why := mentorRuleGate(mentor.Intent{Setup: "PHL", Price: 100, Stop: 70, Target: 140}, mentorTierInputs{}); why == "" || !strings.HasPrefix(why, "R8") {
+		t.Fatalf("geometry stop 30 must hit the R8 ceiling, got %q", why)
+	}
+}
+
+// TestMentorSizeForUsesGeometry (CTO 1791058442006): the tier inputs are the
+// geometry, never bare intent fields — a zero-StopPts/TargetPts intent still
+// sizes from Price/Stop/Target. The mutant (bare in.StopPts/in.TargetPts)
+// sizes this as base 5 instead of the twenties cut → RED.
+func TestMentorSizeForUsesGeometry(t *testing.T) {
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	in := mentor.Intent{Setup: "PHL", Price: 100, Stop: 78, Target: 130} // stop 22, target 30 — the twenties cut
+	choice, err := at.mentorSizeFor(in, mentorTierInputs{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if choice.Contracts != 3 || choice.Tier != "reduced" {
+		t.Fatalf("geometry sizing = %+v, want reduced 3 (a 22-pt stop, no confluence)", choice)
 	}
 }
 
