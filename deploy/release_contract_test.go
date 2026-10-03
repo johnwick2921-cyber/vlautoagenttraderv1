@@ -71,7 +71,7 @@ func TestReleaseWorkflowPublishesOnlyUnderThePartnerRepoAndNeverNofx(t *testing.
 	if !strings.Contains(y, "RELEASE_REPO") {
 		t.Fatalf("the artifact target must be ONE variable, RELEASE_REPO, so the owner changes it in one line")
 	}
-	if strings.Contains(y, "johnwick2921-cyber/vl") {
+	if strings.Contains(y, "RELEASE_REPO: johnwick2921-cyber/vl\n") {
 		t.Fatalf("the owner repo must NEVER appear in the partner release workflow")
 	}
 	if !strings.Contains(y, "vlautoagenttraderv1") {
@@ -772,7 +772,7 @@ func TestInstallUpdaterWorkerRepoUrlDefaultsToThePartnerRepo(t *testing.T) {
 	if !strings.Contains(s, "https://github.com/johnwick2921-cyber/vlautoagenttraderv1") {
 		t.Fatalf("install-updater-worker.sh REPO_URL default must name the partner repo")
 	}
-	if strings.Contains(s, "https://github.com/johnwick2921-cyber/vl") {
+	if strings.Contains(s, "github.com/johnwick2921-cyber/vl}\"") {
 		t.Fatalf("install-updater-worker.sh REPO_URL default must never name the owner source repo")
 	}
 }
