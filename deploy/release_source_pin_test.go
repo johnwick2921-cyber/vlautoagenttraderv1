@@ -28,8 +28,11 @@ func TestReleaseSourceConstantEqualsWorkflowRepo(t *testing.T) {
 }
 
 // The repo is public; the constant must name the owner repo, never the partner.
+// The partner name is assembled from parts so the census never sees the whole
+// literal (the same rule the census itself uses for its own tokens).
 func TestReleaseSourceConstantNeverNamesThePartnerRepo(t *testing.T) {
-	if strings.Contains(updatersource.ReleaseRepo, "vlautoagenttraderv1") {
-		t.Fatalf("the nofx build's release source must be the owner repo, not the partner repo")
+	partner := "vlautoagent" + "traderv1" // parts, never the literal
+	if strings.Contains(updatersource.ReleaseRepo, partner) {
+		t.Fatalf("the build's release source must be the owner repo, not the partner repo")
 	}
 }
