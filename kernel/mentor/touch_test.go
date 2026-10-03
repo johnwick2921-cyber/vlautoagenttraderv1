@@ -140,6 +140,7 @@ func TestTouchNoNearTouch(t *testing.T) {
 func TestTouchOnRecordedTapeClassifiesOncePerLevel(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
+	cfg.KeyLevelTFMinutes = 1 // rich 1m level set — this test is about touch classification, not the 1H source
 	bars := loadFixture(t, "mnq_1m_2026-09-15_rth", "1m")
 	levels := KeyLevels(bars, cfg)
 	if len(levels) == 0 {

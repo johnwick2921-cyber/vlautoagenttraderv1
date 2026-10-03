@@ -88,9 +88,9 @@ type Config struct {
 	Enabled bool
 
 	// Levels (PLAN v1 §1).
-	KeyLevelTFMinutes int     // TF of the colour-change walk; default 1 (the RTH chart the mentor draws on — DS-108 §2.1 measured ~200 colour changes per RTH day on 1m)
-	KeyLevelRTHOnly   bool    // walk RTH bars only; default true
-	KeyLevelPrunePts  float64 // prune pairs closer than this, keep the more recent; default 20 (§4.3 step 5)
+	KeyLevelTFMinutes int     // TF of the colour-change walk; default 60 = the 1H RTH series anchored at 08:30 CT (KEY-LEVEL RULING final, slide 31: "Khung 1H ONLY… Bắt đầu từ lúc market open"). Other TFs walk barsTF+RTH for experimentation only.
+	KeyLevelRTHOnly   bool    // walk RTH candles only; default true
+	KeyLevelPrunePts  float64 // prune pairs closer than this, keep the more recent; default 20 [D5.3 p1 @ 16:08–16:44]
 	EMAPeriod34       int     // default 34
 	EMAPeriod9        int     // default 9
 	EMATFMinutes      int     // TF the EMA lines are computed on; default 1
@@ -127,6 +127,11 @@ type Config struct {
 
 	// §8 SWING4H knobs (DS-106): the method defaults.
 	Swing SwingCfg
+
+	// SwingRespects5mZone gates §8 swing intents on the 5m trigger zone
+	// when true. Default false — NOT gated [C]: not stated in the method
+	// (CTO swing ruling 2026-10-03, mails 1791001124127/1791001760445).
+	SwingRespects5mZone bool
 }
 
 // DefaultConfig returns the mentor defaults per PLAN v1 (knob values start from
@@ -135,7 +140,7 @@ func DefaultConfig() Config {
 	return Config{
 		Enabled: false,
 
-		KeyLevelTFMinutes: 1,
+		KeyLevelTFMinutes: 60,
 		KeyLevelRTHOnly:   true,
 		KeyLevelPrunePts:  20,
 		EMAPeriod34:       34,

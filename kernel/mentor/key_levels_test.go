@@ -11,6 +11,7 @@ import (
 func TestKeyLevelsPruneKeepsTheMoreRecent(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
+	cfg.KeyLevelTFMinutes = 1 // mechanics walk on 1m; the DEFAULT source is 1H RTH
 	cfg.KeyLevelRTHOnly = false
 	cfg.KeyLevelPrunePts = 20
 	// alternate colour every bar; opens walk up 10 pts at a time →
@@ -56,6 +57,7 @@ func TestKeyLevelsPruneKeepsTheMoreRecent(t *testing.T) {
 func TestKeyLevelsLineAtSecondCandleOpen(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
+	cfg.KeyLevelTFMinutes = 1
 	cfg.KeyLevelRTHOnly = false
 	cfg.KeyLevelPrunePts = 0.5 // no pruning — keep every change
 	bars := []market.Kline{
@@ -73,49 +75,86 @@ func TestKeyLevelsLineAtSecondCandleOpen(t *testing.T) {
 	}
 }
 
-// TestKeyLevelsRTHOnly — §4.3 step 1 [D5.3 p1 @ 12:55]: the walk runs on the
-// REGULAR TRADING HOURS session. Bars outside 08:30–15:00 CT never produce a
-// level even where a colour change exists.
-func TestKeyLevelsRTHOnly(t *testing.T) {
+// TestKeyLevels1HAnchoredRTHOnly — KEY-LEVEL RULING item 1: the level source
+// is the 1H series ANCHORED at the market open 08:30 CT; external (ETH) candles
+// never produce a level, and the 15:00 candle is outside RTH. The first RTH
+// candle is 08:30–09:29; a colour change there draws a level at ITS OPEN (the
+// 08:30 1m open).
+func TestKeyLevels1HAnchoredRTHOnly(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	cfg.KeyLevelPrunePts = 0.5
 	ms := int64(60_000)
-	// 2026-09-15 08:28 CT is outside RTH: epoch-minutes since 1970-01-01 CT.
-	// Use ctOf-consistent minutes directly: 08:28 CT and 08:31 CT.
-	mk := func(hh, mm int, open, close float64) market.Kline {
-		return market.Kline{OpenTime: (int64(19645)*24*60 + int64(hh*60+mm)) * ms, Open: open, Close: close}
+	// 2026-09-15 in epoch minutes (CT basis): 19645 days.
+	mk := func(hh, mm int, o, h, l, c float64) market.Kline {
+		return market.Kline{OpenTime: (int64(19645)*24*60 + int64(hh*60+mm)) * ms,
+			CloseTime: (int64(19645)*24*60+int64(hh*60+mm))*ms + 59_999, Open: o, High: h, Low: l, Close: c}
 	}
-	bars := []market.Kline{
-		mk(8, 28, 100, 101), // green, OUTSIDE RTH
-		mk(8, 29, 103, 102), // red — a colour change, but both bars outside RTH
-		mk(8, 31, 104, 105), // green — inside RTH, change vs the 08:29 bar
-		mk(8, 32, 106, 107), // green — no change
+	bars := []market.Kline{}
+	// ETH candle 07:30–08:29: RED overall. Colour changes on ETH candles are
+	// invisible — the walk starts at the market open.
+	for m := 7*60 + 30; m < 8*60+30; m++ {
+		hh, mm := m/60, m%60
+		bars = append(bars, mk(hh, mm, 101, 102, 99, 100)) // red
 	}
+	// RTH candle 08:30–09:29: GREEN overall.
+	for m := 8*60 + 30; m < 9*60+30; m++ {
+		hh, mm := m/60, m%60
+		bars = append(bars, mk(hh, mm, 103, 104, 102.5, 104)) // green
+	}
+	// 09:30 candle RED — the green→red change draws a level at ITS OPEN (the
+	// 09:30 1m open = 107).
+	for m := 9*60 + 30; m < 10*60+30; m++ {
+		hh, mm := m/60, m%60
+		bars = append(bars, mk(hh, mm, 107, 108, 106.5, 106.6)) // red
+	}
+	// 10:30 candle RED again — no change, no level.
+	bars = append(bars, mk(10, 30, 106.6, 107, 106, 106.2))
+	// the 15:00 candle opens outside RTH: green vs the last red would be a
+	// change, but external candles never draw.
+	bars = append(bars, mk(15, 0, 106, 107, 105.5, 106.8)) // green, excluded
 	got := KeyLevels(bars, cfg)
-	if len(got) != 0 {
-		t.Fatalf("RTH-only walk produced levels from outside-RTH bars: %+v", got)
+	if len(got) != 1 || got[0].Price != 107 {
+		t.Fatalf("1H-anchored RTH walk: levels = %+v, want exactly one at 107 (09:30 candle open)", got)
 	}
 }
 
-// TestKeyLevelsOnRecordedRTHDay — §4.3 on the bot's own tape (canon 53):
-// the recorded 2026-09-15 RTH day must yield a sane pruned set (DS-108 §2.1
-// measured ~200 raw colour changes/day, pruned to ~10–20) and every kept
-// pair must respect the 20-pt prune.
-func TestKeyLevelsOnRecordedRTHDay(t *testing.T) {
+// TestKeyLevelsOnRecorded1HWeek — KEY-LEVEL RULING final on the bot's own
+// tape (canon 53): the recorded 1H week 2026-09-28..10-02 walked as the RTH
+// series. Every level must be the OPEN of a colour-changing 1H RTH candle
+// (never a wick, never an ETH candle), every kept pair must respect the 20-pt
+// prune, and the week must draw levels.
+func TestKeyLevelsOnRecorded1HWeek(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
-	bars := loadFixture(t, "mnq_1m_2026-09-15_rth", "1m")
-	raw := countColourChanges(bars)
+	bars := loadFixture(t, "mnq_1h_2026-09-28to10-02", "1h")
+	candles := keyLevel1HBars(bars)
+	if len(candles) < 25 {
+		t.Fatalf("1H RTH candles = %d, want ~35 (5 days x 7)", len(candles))
+	}
 	got := KeyLevels(bars, cfg)
-	if len(got) < 5 || len(got) > 60 {
-		t.Fatalf("pruned levels = %d (raw changes %d), want ~10-20 per DS-108: %+v", len(got), raw, got)
+	if len(got) == 0 {
+		t.Fatal("no key levels drawn on the recorded 1H week")
+	}
+	for _, l := range got {
+		found := false
+		for i := 1; i < len(candles); i++ {
+			if candles[i].Open == l.Price &&
+				candleColour(candles[i-1]) != candleColour(candles[i]) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("level %+v is not the open of a colour-changing 1H RTH candle", l)
+		}
 	}
 	for i := 1; i < len(got); i++ {
 		if abs(got[i].Price-got[i-1].Price) < cfg.KeyLevelPrunePts {
 			t.Fatalf("levels %d/%d are %.2f apart (< %v prune): %+v", i-1, i, abs(got[i].Price-got[i-1].Price), cfg.KeyLevelPrunePts, got)
 		}
 	}
+	t.Logf("%d key levels from %d 1H RTH candles on the recorded week", len(got), len(candles))
 }
 
 // countColourChanges counts raw colour transitions on closed bars (§4.3 step 2).
@@ -131,47 +170,49 @@ func countColourChanges(bars []market.Kline) int {
 
 // TestKeyLevelsDisabledIsNil — L4: with mentor_mode OFF the evaluator emits
 // nothing (byte-identical bot).
-// TestKeyLevelDeletedBy1HBodyCloseOnly — KEY-LEVEL RULING item 5b (verified
-// on slide 31–32): "Xác nhận" is a 1H candle CLOSE judged by the BODY. A 1H
-// BODY closing through the level deletes it; a 1H wick through does NOT. The
-// evaluator persists the deletion in State.DeletedLevels and the level leaves
-// the set at once.
+// TestKeyLevelDeletedBy1HBodyCloseOnly — KEY-LEVEL RULING final, slide 31
+// step 4 + slide 32: "Xác nhận" is a 1H candle CLOSE judged by the BODY. A 1H
+// RTH candle whose BODY closes through the level (open one side, close the
+// other) deletes it; a 1H wick through does NOT. The evaluator persists the
+// deletion in State.DeletedLevels and the level leaves the set at once.
 func TestKeyLevelDeletedBy1HBodyCloseOnly(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
-	cfg.KeyLevelRTHOnly = false // synthetic bars run on plain epoch minutes
-	// a colour change draws a key level at the second candle's open: price 100.
-	// (red -> green: open of the green candle is the line, §4.3 step 3)
-	mk := func(i int, o, h, l, c float64) market.Kline {
-		return market.Kline{OpenTime: int64(i) * 60_000, CloseTime: int64(i)*60_000 + 59_999, Open: o, High: h, Low: l, Close: c}
+	cfg.KeyLevelTFMinutes = 1 // draw the level deterministically on the 1m walk; the DELETION runs on the anchored 1H RTH candles either way
+	ms := int64(60_000)
+	mk := func(hh, mm int, o, h, l, c float64) market.Kline {
+		t0 := (int64(19645)*24*60 + int64(hh*60+mm)) * ms // 2026-09-15 CT
+		return market.Kline{OpenTime: t0, CloseTime: t0 + 59_999, Open: o, High: h, Low: l, Close: c}
 	}
+	// 08:30–08:31 red→green change draws the level at the 08:31 OPEN = 100.
 	head := []market.Kline{
-		mk(0, 101, 101.5, 100.5, 101),  // red (close < open)
-		mk(1, 100, 100.5, 99.5, 100.4), // green — level at 100
+		mk(8, 30, 101, 101.5, 100.5, 101),  // red
+		mk(8, 31, 100, 100.5, 99.5, 100.4), // green — level at 100
 	}
-	// pad the rest of hour 1 (green, no new levels, body does not cross 100)
+	// pad the rest of the 08:30 1H candle (green; the 08:30 candle must NOT
+	// cross the level itself — its open 101 and close 100.8 both sit above 100)
 	pad := func() []market.Kline {
 		out := make([]market.Kline, 58)
 		for j := 0; j < 58; j++ {
-			out[j] = mk(2+j, 99.6, 100.3, 99.4, 100.2)
+			out[j] = mk(8, 32+j, 100.6, 101.2, 100.4, 100.8)
 		}
 		return out
 	}
-	// hour 2 is the confirming 1H candle: BODY case — body crosses 100 (delete);
-	// WICK case — wick pokes above 100, body stays below (level survives).
+	// the 09:30 1H candle is the confirmer: BODY case — open below, close above
+	// (crosses 100 → delete); WICK case — wick pokes above, body stays below.
 	hour := func(bodyThrough bool) []market.Kline {
 		out := make([]market.Kline, 60)
 		for j := 0; j < 60; j++ {
 			if bodyThrough {
-				out[j] = mk(60+j, 99.5, 101.8, 99.2, 101.2) // open below, close above
+				out[j] = mk(9, 30+j, 99.5, 101.8, 99.2, 101.2)
 			} else {
-				out[j] = mk(60+j, 99.6, 101.5, 99.3, 99.8) // body below, wick through
+				out[j] = mk(9, 30+j, 99.6, 101.5, 99.3, 99.8)
 			}
 		}
 		return out
 	}
-	// one bar of hour 3 so hour 2's 1H candle is closed on the final tick
-	next := mk(120, 100.8, 101.4, 100.4, 101)
+	// one bar of the 10:30 candle so the 09:30 candle is closed on the final tick
+	next := mk(10, 30, 100.8, 101.4, 100.4, 101)
 
 	makeBars := func(bodyThrough bool) []market.Kline {
 		bars := append([]market.Kline{}, head...)

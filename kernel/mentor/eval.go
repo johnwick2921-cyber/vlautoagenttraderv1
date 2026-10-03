@@ -357,6 +357,28 @@ func oldExtremeIndexes(levels []Level, bars []market.Kline) []oldExtreme {
 
 // runSwing evaluates the §8 4h-EMA34 swing on FINAL 5m bars (the forming
 // bucket excluded — CTO wiring ruling 2026-10-03) and returns its intents.
+// The swing is NOT gated on the 5m trigger zone by default: §8 is a
+// self-contained 4h → 5m procedure and nothing in D5.2 ties it to the 5m
+// trigger lines. The knob SwingRespects5mZone (default false) turns the zone
+// gate on [C]: not stated in the method (CTO swing ruling, mails
+// 1791001124127 / 1791001760445).
 func runSwing(e *Evaluator, bars []market.Kline, now int64) []Intent {
-	return SwingTick(&e.State.Swing, closedBuckets(bars, now, e.Cfg), e.Cfg.Swing, now)
+	ints := SwingTick(&e.State.Swing, closedBuckets(bars, now, e.Cfg), e.Cfg.Swing, now)
+	return swingZoneGate(ints, e.State.Trigger, e.Cfg.SwingRespects5mZone)
+}
+
+// swingZoneGate drops swing intents whose entry price sits between two
+// opposing trigger lines, but ONLY when the knob is on (respect = true).
+func swingZoneGate(ints []Intent, t TriggerLine, respect bool) []Intent {
+	if !respect {
+		return ints
+	}
+	out := make([]Intent, 0, len(ints))
+	for _, in := range ints {
+		if ok, _, _ := TriggerVerdict(t, in.Price); !ok {
+			continue // in the two-trigger zone — no trade at all there
+		}
+		out = append(out, in)
+	}
+	return out
 }

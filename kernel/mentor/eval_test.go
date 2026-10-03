@@ -146,6 +146,29 @@ func TestEvaluatorInvalidLevelBlocksPHL(t *testing.T) {
 	}
 }
 
+// TestSwingZoneGateKnob — CTO swing ruling (mails 1791001124127 /
+// 1791001760445): §8 swings are NOT gated on the 5m trigger zone by default —
+// nothing in D5.2 ties the 4h→5m swing to the 5m trigger lines. The knob
+// swing_respects_5m_zone (default false) turns the zone gate on at the
+// runSwing call site [C]: not stated in the method.
+func TestSwingZoneGateKnob(t *testing.T) {
+	tl := TriggerLine{Dir: SideShort, Price: 97, OldPrice: 100, OldDir: SideLong}
+	ints := []Intent{
+		{Action: PlaceStopEntry, Reason: "swing §8: reject touch", Price: 98.5}, // inside the two-trigger zone
+		{Action: PlaceStopEntry, Reason: "swing §8: reject touch", Price: 96},   // escaped below — allowed
+	}
+	if DefaultConfig().SwingRespects5mZone {
+		t.Fatal("swing_respects_5m_zone default must be false")
+	}
+	if got := swingZoneGate(ints, tl, false); len(got) != 2 {
+		t.Fatalf("knob off: the zone gate must be OFF, got %d intents", len(got))
+	}
+	got := swingZoneGate(ints, tl, true)
+	if len(got) != 1 || got[0].Price != 96 {
+		t.Fatalf("knob on: the zone-price swing must be dropped, got %+v", got)
+	}
+}
+
 // TestEvaluatorRefusesEverythingInTriggerZone — R4 (RULES FIX v3, verified in
 // the transcript, D3.4 p1 @ 16:56–17:17): between two opposing trigger lines
 // there is NO trade at all, ISB included, and the zone INCLUDES the lines.
