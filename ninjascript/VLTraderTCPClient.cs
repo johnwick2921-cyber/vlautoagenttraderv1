@@ -59,7 +59,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         // + the hello epoch fields. 2026-09-23-m21 (M2.1): census `settled`,
         // no nested census locks, source_hash at activation. The ISO-date
         // prefix is kept (CTO ruling Q3).
-        private const string  VL_BUILD_ID             = "2026-09-30-m22";
+        private const string  VL_BUILD_ID             = "2026-10-03-c1";
         private const int    MAX_FRAME_BYTES         = 1 << 20; // 1 MB, spec L4376
 
         // === State ===
@@ -2166,11 +2166,76 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // no-op when the entry already filled, because the bracket was
                 // placed and the note consumed at that moment.
                 lock (signalMapLock) { pendingBrackets.Remove(signalId); }
+                SendCancelReport(signalId);
                 SendAck("cancel_order");
             }
             catch (Exception ex)
             {
                 LogWarn("VLTraderTCPClient: cancel_order failed: " + ex.Message);
+            }
+        }
+
+        // ── CANCEL-REPORT (2026-10-03-c1) ─────────────────────────────────────
+        //
+        // The Go side's report regime (CANCEL_CONFIRM_REQUIRE_REPORT, off by
+        // default) settles a cancel ONLY on a POSITIVE per-order terminal
+        // report: the order_snapshot deliberately omits terminal orders (D3,
+        // 2026-09-07), so absence from a book cannot distinguish "cancelled"
+        // from "never answered". This echo is emitted on EVERY cancel_order
+        // receipt and bypasses the lastOrderState dedupe — it is the report the
+        // gate waits for, not a state-change event. A subsequent OnOrderUpdate
+        // still emits the real terminal transition (state=cancelled), which the
+        // Go side records as the latest report; both are idempotent there.
+        //
+        // FAIL-CLOSED BY CONSTRUCTION: if the order is not found in the
+        // account's collection (never placed, or purged), NOTHING is emitted —
+        // the Go side settles nothing and the slot stays busy. An absence we
+        // cannot explain is never dressed up as a report.
+        private void SendCancelReport(string signalId)
+        {
+            try
+            {
+                Order target = null;
+                Account acct = account;
+                lock (signalMapLock)
+                {
+                    workingEntries.TryGetValue(signalId, out target);
+                    if (target != null) { try { acct = target.Account ?? account; } catch { } }
+                }
+                if (target == null && acct != null)
+                {
+                    lock (acct.Orders)
+                    {
+                        foreach (Order o in acct.Orders)
+                        {
+                            if (o == null) continue;
+                            string n = o.Name ?? "";
+                            string g = o.Oco ?? "";
+                            if (n == signalId || g == signalId) { target = o; break; }
+                        }
+                    }
+                }
+                if (target == null) return;
+                string state = "";
+                try { state = target.OrderState.ToString().ToLowerInvariant(); } catch { }
+                var payload = new Dictionary<string, object>
+                {
+                    ["signal_id"]     = signalId,
+                    ["order_name"]    = target.Name ?? "",
+                    ["state"]         = state,
+                    ["fill_price"]    = target.AverageFillPrice,
+                    ["quantity"]      = target.Filled,
+                    ["account"]       = (target.Account ?? acct) != null ? (target.Account ?? acct).Name : "",
+                    ["cancel_report"] = true
+                };
+                try { payload["symbol"] = target.Instrument.MasterInstrument.Name ?? ""; } catch { }
+                StampIdentity(payload, signalId);
+                WriteEnvelope("order_update", payload);
+                LogInfo("VLTraderTCPClient: cancel_report echo " + signalId + " state=" + state);
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: cancel_report echo failed: " + ex.Message);
             }
         }
 

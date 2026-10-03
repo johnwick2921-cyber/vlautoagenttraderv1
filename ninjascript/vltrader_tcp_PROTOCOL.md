@@ -468,6 +468,44 @@ The C# producer is explicitly deferred to the next owner-run AddOn wave.
 This additive receive-only extension does not change the protocol version or
 claim that h1 supplies rejection reasons.
 
+### `order_update` cancel-report echo (2026-10-03-c1) — AddOn → Go
+
+The cancel-report regime (`CANCEL_CONFIRM_REQUIRE_REPORT`, default OFF) settles
+a cancel ONLY on a POSITIVE per-order terminal report. The `order_snapshot`
+deliberately omits terminal orders (Filled/Cancelled/Rejected/Expired are
+history — C# D3, 2026-09-07), so absence from a book cannot distinguish
+"cancelled" from "never answered".
+
+From build `2026-10-03-c1` the AddOn emits, on EVERY `cancel_order` receipt, an
+`order_update` frame for the target order whose payload carries the new field:
+
+| field | type | meaning |
+|---|---|---|
+| `cancel_report` | bool | `true` marks this frame as the cancel-request echo, as distinct from a state-change event |
+
+The echo carries the order's CURRENT state (`state` field, unchanged semantics):
+for an order still resting that is `working`/`accepted`; for one already
+terminal it is `filled`/`cancelled`/`rejected`. The real terminal transition
+follows via the normal `OnOrderUpdate` stream, which continues to emit
+`state=cancelled` etc. The echo BYPASSES the per-order-name state dedupe — it
+is the report the gate waits for, not a state-change event.
+
+**Fail-closed by construction.** If the target order is not found in the
+account's order collection (never placed, or purged), the AddOn emits NOTHING.
+The Go side then records no report, the row stays `cancel_pending`, the slot
+stays BUSY, and a timeout prints the owner-visible census WARN. An absence the
+AddOn cannot explain is never dressed up as a report.
+
+Go-side gates, all keyed on the build id (bytewise date-prefix floor, same rule
+as every other capability):
+
+- `MinAddonBuildCancelReport = "2026-10-03-c1"` (`provider/ninjatrader/tcp_framing.go`)
+- an AddOn below the floor, while the regime is ON: no cancel confirms, no
+  re-arm, no stop-entry placement — fail-closed, owner-visible WARN.
+- the regime is OFF by default; with it OFF this frame is received and ignored
+  (the field is additive), and the bot is byte-identical to today.
+
+
 Entry `signal.timestamp` is UTC command creation time (RFC3339 with fractional
 seconds), independent of the market bar close used to compose entry prices.
 Go checks that payload timestamp before enqueue and again immediately before
