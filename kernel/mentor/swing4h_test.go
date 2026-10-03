@@ -8,7 +8,8 @@ import (
 )
 
 // §8 swing tests, built from the source quotes [D5.2 p1–p3, table] with the
-// corrected §3 (reject = close back on the approach side; through = cancel).
+// corrected §3 (reject = close back on the approach side; through = cancel)
+// and R8 (offset toward the approach, no entry buffer).
 // Bars are synthetic 5m candles in fixed CT (−5); the 4h buckets are
 // anchored at 17:00 CT and the line is the EMA 34 of CLOSED buckets.
 
@@ -35,9 +36,9 @@ func swingTape(t *testing.T, cur []market.Kline) []market.Kline {
 const swingLineGolden = 10168.16 // EMA 34 of 10000/11000/12000 ≈ 10168.1633
 
 // TestSwing4hRejectShort — resistance: price came from BELOW, the first
-// touching 5m candle closes BACK below the line → sell stop beyond the
-// reference candle, stop ~30 pts above the line [D5.2 p3 @ 21:30 corrected;
-// table "Stop (clean rejection)"].
+// touching 5m candle closes BACK below the line → sell stop tight on the
+// reference candle's low (R8: no buffer), stop ~30 pts above the line
+// [D5.2 p3 @ 21:30 corrected; table "Stop (clean rejection)"; R8].
 func TestSwing4hRejectShort(t *testing.T) {
 	cfg := DefaultSwingCfg()
 	cur := []market.Kline{
@@ -54,8 +55,8 @@ func TestSwing4hRejectShort(t *testing.T) {
 	if in.Action != PlaceStopEntry || in.Side != SideShort {
 		t.Fatalf("intent = %+v, want a SHORT stop entry", in)
 	}
-	if abs(in.Price-10153.5) > 0.01 { // ref low 10155 − buffer 1.5
-		t.Fatalf("entry = %.2f, want 10153.5 (sell stop under the rejecting candle)", in.Price)
+	if abs(in.Price-10155) > 0.01 { // ref low, tight (R8: no buffer)
+		t.Fatalf("entry = %.2f, want 10155 (sell stop tight on the rejecting candle)", in.Price)
 	}
 	if abs(in.Stop-(swingLineGolden+30)) > 0.01 {
 		t.Fatalf("stop = %.2f, want %.2f (30 pts above the line)", in.Stop, swingLineGolden+30)
@@ -63,7 +64,7 @@ func TestSwing4hRejectShort(t *testing.T) {
 }
 
 // TestSwing4hRejectLong — support: came from above, closes back above →
-// buy stop over the reference candle, stop 30 below the line.
+// buy stop tight on the reference candle's high, stop 30 below the line.
 func TestSwing4hRejectLong(t *testing.T) {
 	cfg := DefaultSwingCfg()
 	cur := []market.Kline{
@@ -77,11 +78,46 @@ func TestSwing4hRejectLong(t *testing.T) {
 		t.Fatalf("intents = %+v, want one LONG stop entry", out)
 	}
 	in := out[0]
-	if abs(in.Price-10176.5) > 0.01 { // ref high 10175 + 1.5
-		t.Fatalf("entry = %.2f, want 10176.5 (buy stop over the rejecting candle)", in.Price)
+	if abs(in.Price-10175) > 0.01 { // ref high, tight (R8: no buffer)
+		t.Fatalf("entry = %.2f, want 10175 (buy stop tight on the rejecting candle)", in.Price)
 	}
 	if abs(in.Stop-(swingLineGolden-30)) > 0.01 {
 		t.Fatalf("stop = %.2f, want %.2f (30 pts below the line)", in.Stop, swingLineGolden-30)
+	}
+}
+
+// TestSwing4hOffsetTowardApproach — R8: the placement offset sits TOWARD
+// the approaching price. A candle that reaches only the far side of the old
+// symmetric band (line−offset < low) has NOT reached the placed line and
+// produces nothing; one that reaches line−offset does.
+func TestSwing4hOffsetTowardApproach(t *testing.T) {
+	cfg := DefaultSwingCfg()
+	loc := time.FixedZone("CT", -5*3600)
+	closed := []market.Kline{
+		mk5m(t, 14, 17, 5, 9999, 10000, 9998, 10000),
+		mk5m(t, 14, 21, 5, 10999, 11000, 10998, 11000),
+		mk5m(t, 15, 1, 5, 11999, 12000, 11998, 12000),
+	}
+	now := closed[len(closed)-1].OpenTime + 60_000
+	line, _, ok := swingLine(closed, now, cfg, loc)
+	if !ok {
+		t.Fatal("line setup failed")
+	}
+	step := int64(5 * 60_000)
+	prev := mk5m(t, 15, 1, 6, line-40, line-39, line-41, line-40) // below the line, at 01:06 (the tick start)
+	short1 := market.Kline{OpenTime: now + step, Open: line - 5, High: line - 4, Low: line - 3, Close: line - 4, CloseTime: now + step + 4*60_000}
+	short2 := market.Kline{OpenTime: now + 2*step, Open: line - 6, High: line - 4, Low: line - 6, Close: line - 5, CloseTime: now + 2*step + 4*60_000}
+	bars := append(closed, prev, short1, short2)
+	s := &SwingState{}
+	out := SwingTick(s, bars, cfg, short2.OpenTime+60_000)
+	if len(out) != 1 {
+		t.Fatalf("intents = %d, want exactly the one reaching touch; got %+v", len(out), out)
+	}
+	if out[0].Side != SideShort {
+		t.Fatalf("intent = %+v, want a short entry from the reaching candle", out[0])
+	}
+	if abs(out[0].Price-(line-6)) > 0.01 {
+		t.Fatalf("entry = %.2f, want %.2f — the reaching candle's low, tight (R8)", out[0].Price, line-6)
 	}
 }
 
@@ -111,17 +147,18 @@ func TestSwing4hThroughCancelsThenISB(t *testing.T) {
 	if abs(in.Stop-swingLineGolden) > 0.01 { // RIGHT AT the level
 		t.Fatalf("ISB stop = %.2f, want %.2f (AT the level)", in.Stop, swingLineGolden)
 	}
-	if abs(in.Price-10148.5) > 0.01 { // ISB candle low 10150 − 1.5
-		t.Fatalf("ISB entry = %.2f, want 10148.5", in.Price)
+	if abs(in.Price-10150) > 0.01 { // ISB candle low, tight (R8)
+		t.Fatalf("ISB entry = %.2f, want 10150", in.Price)
 	}
 }
 
-// TestSwing4hStopCeiling100 — "Stop ~100 points → DO NOT ENTER" [table].
+// TestSwing4hStopCeiling100 — R8: 30–60 is allowed, ~100 → DO NOT ENTER
+// [table].
 func TestSwing4hStopCeiling100(t *testing.T) {
 	cfg := DefaultSwingCfg()
 	cur := []market.Kline{
 		mk5m(t, 15, 5, 0, 9950, 9960, 9945, 9955),
-		mk5m(t, 15, 5, 5, 10055, 10175, 10050, 10060), // touches, reject, entry 10048.5 → spread ~149.7
+		mk5m(t, 15, 5, 5, 10055, 10175, 10050, 10060), // touches, reject, entry 10050 → spread ~148.2
 	}
 	bars := swingTape(t, cur)
 	s := &SwingState{}
@@ -136,8 +173,8 @@ func TestSwing4hStopCeiling100(t *testing.T) {
 func TestSwing4hHardInvariantCounter(t *testing.T) {
 	cfg := DefaultSwingCfg()
 	before := SwingInvalidStops()
-	// line 155, long approach: entry = 120 + 1.5 = 121.5, stop = 155 − 30 =
-	// 125 → the stop sits ABOVE the entry — the invariant breaks.
+	// line 155, long approach: entry = 120 (tight), stop = 155 − 30 = 125 →
+	// the stop sits ABOVE the entry — the invariant breaks.
 	if _, ok := swingRejectIntent(SideLong, market.Kline{High: 120, Low: 119}, 155, cfg); ok {
 		t.Fatal("invariant violation must be refused")
 	}
@@ -216,7 +253,7 @@ func TestSwing4hBEAndHold(t *testing.T) {
 	cfg := DefaultSwingCfg()
 	entryBars := swingTape(t, []market.Kline{
 		mk5m(t, 15, 5, 0, 9950, 9960, 9945, 9955),     // prev below
-		mk5m(t, 15, 5, 5, 10160, 10175, 10155, 10160), // short entry 10153.5, risk ≈ 44.66
+		mk5m(t, 15, 5, 5, 10160, 10175, 10155, 10160), // short entry 10155, risk ≈ 43.16
 	})
 	s := &SwingState{}
 	out := SwingTick(s, entryBars, cfg, entryBars[len(entryBars)-1].OpenTime+60_000)
@@ -229,7 +266,7 @@ func TestSwing4hBEAndHold(t *testing.T) {
 	if entries != 1 {
 		t.Fatalf("setup entries = %d, want 1; got %+v", entries, out)
 	}
-	// next tick: a bar closing at −1R (≤ 10108.84) → BE
+	// next tick: a bar closing at −1R (≤ 10111.84) → BE
 	beBars := append(entryBars, mk5m(t, 15, 5, 10, 10095, 10100, 10090, 10095))
 	out = SwingTick(s, beBars, cfg, beBars[len(beBars)-1].OpenTime+60_000)
 	var be bool

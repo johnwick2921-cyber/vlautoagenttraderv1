@@ -10,7 +10,8 @@ import (
 )
 
 // §8 — THE SWING SETUP, 4-hour EMA 34 → 5-minute [D5.2], with the corrected
-// §3 (reject = close back on the APPROACH side; close through = wrong way).
+// §3 (reject = close back on the APPROACH side; close through = wrong way)
+// and the RULES-FIX v3 corrections (R8):
 //
 //  1. "On the 4-hour, draw the line at EMA 34 BEFORE price gets there"
 //     [D5.2 p1 @ 04:36, 11:04]. The line is the EMA 34 known at the START of
@@ -18,24 +19,28 @@ import (
 //     candle finishes — "do not wait for a retest" [p3 @ 12:30].
 //  2. "Switch STRAIGHT DOWN TO THE 5-MINUTE — not the 1-minute" [p1 @ 05:30].
 //  3. "Wait for a LITERAL touch. 'KHÔNG ĐƯỢC GẦN ĐỤNG'" [p2 @ 09:15] — the
-//     only setup where a near-touch is not accepted. The 4-hour is too
-//     coarse to place exactly, so the line placement offset is 5–10 points
-//     (SwingCfg.LineOffsetPts, default 5) [table, "Line tolerance"].
+//     only setup where a near-touch is not accepted. R8: the line placement
+//     offset (5–10 pts) sits TOWARD the approaching price — the touch band
+//     is on the approach side only.
 //  4. "First touching candle is the reference; 2 candles of leeway allowed
 //     here only" [p1 @ 15:21] — implemented as the ISB window below.
 //  5. Two cases [p3 @ 21:30, corrected §3]:
 //   - Touch, closes BACK on the approach side (a REJECT) → stop order
 //     beyond that candle. "Stop (clean rejection): ~30 points above the
-//     line" [table].
+//     line" [table]. R8: NO buffer — the order sits tight on the 5m
+//     candle's extreme.
 //   - Touch, closes THROUGH → CANCEL (invalid for this approach). "If it
 //     then closes back, wait for a 5-MINUTE INSIDE BAR" — the ISB entry
 //     has the "stop RIGHT AT the level" [table].
-//  6. "Stop ~100 points → DO NOT ENTER" [table] → SwingCfg.MaxStopPts.
+//  6. R8: a stop of 30–60 is allowed; ~100 → DO NOT ENTER [table]. The
+//     swing is EXEMPT from the 25-pt ceiling (the injector must not apply
+//     it to SWING4H).
 //  7. Targets [table]: first = "EMA 34 on the 5-minute" (or the 50-pt
 //     fallback); BE at +1R; hold to the close of the 2nd 4h candle after
 //     entry (the method does not state the hold length — knob [C]).
 //  8. One setup per approach: no new one until price has left the line by
-//     at least the stop distance and comes back.
+//     at least the stop distance and comes back. R8: each new 4h candle
+//     re-bases the line and the "used" approach resets.
 //
 // Hard invariant: the stop must sit on the correct side of the entry, else
 // no intent is emitted — logged and counted (swingInvalidStops).
@@ -51,10 +56,10 @@ const (
 // SwingCfg holds the §8 knobs.
 type SwingCfg struct {
 	EMAPeriod         int     // 34
-	LineOffsetPts     float64 // literal-touch placement tolerance; default 5
-	StopBeyondLinePts float64 // clean-rejection stop distance; default 30
-	MaxStopPts        float64 // ≥ this → skip; default 100
-	EntryBufferPts    float64 // stop order beyond the reference candle; default 1.5
+	LineOffsetPts     float64 // placement offset TOWARD the approach; default 5 (R8: 5–10)
+	StopBeyondLinePts float64 // clean-rejection stop distance; default 30 (R8: 30–60 allowed)
+	MaxStopPts        float64 // ≥ this → skip; default 100 [table]
+	EntryBufferPts    float64 // R8: NO buffer — order sits tight on the candle; default 0
 	TargetFallbackPts float64 // first target when no 5m EMA34; default 50
 	TargetEMA5mPeriod int     // first target EMA period on 5m; default 34
 	LeewayCandles     int     // ISB window after a through-close; default 2
@@ -68,7 +73,7 @@ func DefaultSwingCfg() SwingCfg {
 		LineOffsetPts:     5,
 		StopBeyondLinePts: 30,
 		MaxStopPts:        100,
-		EntryBufferPts:    1.5,
+		EntryBufferPts:    0, // R8: no buffer
 		TargetFallbackPts: 50,
 		TargetEMA5mPeriod: 34,
 		LeewayCandles:     2,
@@ -183,7 +188,7 @@ func SwingTick(s *SwingState, bars5m []market.Kline, cfg SwingCfg, now int64) []
 	}
 	if bucketStart != s.BucketStart {
 		// A 4h candle finished: FLIP to the new line, do not wait for a
-		// retest [D5.2 p3 @ 12:30]. The old line's pending work dies.
+		// retest [D5.2 p3 @ 12:30]; the "used" approach resets (R8).
 		s.Line = line
 		s.BucketStart = bucketStart
 		s.FirstTouch = nil
@@ -224,12 +229,12 @@ func SwingTick(s *SwingState, bars5m []market.Kline, cfg SwingCfg, now int64) []
 			}
 			continue
 		}
-		if !touchesLine(b, line, cfg.LineOffsetPts) {
-			continue
-		}
 		approach, hasApproach := swingApproach(prev.Close, line)
 		if !hasApproach {
 			continue // tie: prev closed exactly on the line — no approach yet
+		}
+		if !touchesLineApproach(b, line, cfg.LineOffsetPts, approach) {
+			continue
 		}
 		if approach == SideLong && s.ClearLongAt != 0 && b.Low > s.ClearLongAt {
 			continue // not yet re-armed
@@ -298,10 +303,16 @@ func targetOnSide(side Side, entry, ema float64) bool {
 	return ema < entry
 }
 
-// touchesLine is the LITERAL touch: the candle's range reaches the line
-// within the placement offset — "KHÔNG ĐƯỢC GẦN ĐỤNG" [D5.2 p2 @ 09:15].
-func touchesLine(b market.Kline, line, offset float64) bool {
-	return b.Low <= line+offset && b.High >= line-offset
+// touchesLineApproach is the LITERAL touch of the placed line (R8): the
+// placement offset (5–10 pts) sits TOWARD the approaching price, so the
+// line is drawn at line−offset for a below-approach (resistance) and at
+// line+offset for an above-approach (support); the candle must reach the
+// placed line — "KHÔNG ĐƯỢC GẦN ĐỤNG" [D5.2 p2 @ 09:15].
+func touchesLineApproach(b market.Kline, line, offset float64, approach Side) bool {
+	if approach == SideShort { // price comes from below → line at line−offset
+		return b.Low <= line-offset && b.High >= line-offset
+	}
+	return b.Low <= line+offset && b.High >= line+offset
 }
 
 // swingApproach is the approach side from the previous bar's close vs the
@@ -328,10 +339,10 @@ func closedBack(approach Side, close, line float64) bool {
 	return close < line
 }
 
-// swingRejectIntent builds the clean-rejection stop order: beyond the
-// reference candle, stop 30 pts beyond the line. Refused when the stop
-// distance reaches MaxStopPts or the hard invariant (stop on the correct
-// side of the entry) breaks.
+// swingRejectIntent builds the clean-rejection stop order: tight on the
+// reference candle's extreme (R8: no buffer), stop 30 pts beyond the line.
+// Refused when the stop distance reaches MaxStopPts or the hard invariant
+// (stop on the correct side of the entry) breaks.
 func swingRejectIntent(approach Side, ref market.Kline, line float64, cfg SwingCfg) (Intent, bool) {
 	var in Intent
 	if approach == SideShort { // resistance: came from below → sell stop
@@ -362,7 +373,7 @@ func swingRejectIntent(approach Side, ref market.Kline, line float64, cfg SwingC
 	if in.Side == SideShort {
 		in.Target = in.Price - cfg.TargetFallbackPts
 	}
-	in.Reason = "swing §8: reject touch, stop order beyond the reference candle, stop 30 pts beyond the 4h EMA 34 [D5.2 p3 @ 21:30 corrected, table]"
+	in.Reason = "swing §8: reject touch, stop order tight on the reference candle, stop 30 pts beyond the 4h EMA 34 [D5.2 p3 @ 21:30 corrected, table, R8]"
 	return in, true
 }
 
