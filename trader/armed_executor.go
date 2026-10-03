@@ -1362,6 +1362,18 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 			}
 		}
 		if armExpired(r, now.UnixMilli()) {
+			// REVIEW-313 F1: the cancel frame goes out on THIS pass (the
+			// gate_changed shape), not on the settlement pass ~90s later. A
+			// gap through the trigger with a resting stop-limit must not wait
+			// for the re-request to cancel — a fill in that window lands at a
+			// stale price, which is the exact N12 hazard the column closes.
+			if strings.TrimSpace(r.SignalID) != "" {
+				if v := at.cancelSafetyFor(r, now); !v.Allow {
+					at.logWarnf("🛟 armed expiry cancel REFUSED: %s %s signal=%s — %s", r.Session, r.Scenario, shortID(r.SignalID), v.Why)
+				} else if cerr := nt.CancelOrder(r.SignalID); cerr != nil {
+					at.logWarnf("✕ armed expiry cancel SEND failed: %s %s: %v", r.Session, r.Scenario, cerr)
+				}
+			}
 			at.armLifecycleWrite("request_cancel(expiry_elapsed)", r,
 				ledger.RequestCancel(r.ID, "stop-limit expiry elapsed", now.UnixMilli()))
 			continue
