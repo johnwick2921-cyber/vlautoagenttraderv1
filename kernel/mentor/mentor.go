@@ -81,6 +81,7 @@ type Intent struct {
 	Limit  float64 // PlaceStopLimitEntry: the limit price (== Price)
 	Stop   float64 // stop-loss
 	Target float64 // take-profit level
+	Flag   string  // sizing/routing flags for the injector (e.g. "isb_at_old_extreme")
 
 	// CancelArm / LevelInvalid fields.
 	ArmID    string

@@ -33,6 +33,9 @@ type State struct {
 	// Swing is the §8 4h-EMA34 swing state (DS-106 slice; rebuildable by
 	// replaying bars through SwingTick).
 	Swing SwingState `json:"swing,omitempty"`
+	// ISBBox is the R5 5m-ISB rest box (nil = none standing). Rebuildable by
+	// replaying the closed 5m buckets + 1m escapes.
+	ISBBox *ISBBox `json:"isb_box,omitempty"`
 	// ArmSeq names the next arm.
 	ArmSeq int `json:"arm_seq"`
 }
@@ -149,6 +152,36 @@ func boxBanFilter(out []Intent, boxes []Box, cur market.Kline) []Intent {
 	return kept
 }
 
+// midRangeBoxed reports whether price sits between an FTGL floor box below
+// and an FTGH ceiling box above — the mid-range ban with NO width threshold
+// (CTO 1791003862333): "between two boxes: NO PHL, NO PLH, only the ISB".
+func midRangeBoxed(boxes []Box, price float64) bool {
+	var floor, ceil bool
+	for _, b := range boxes {
+		if b.Kind == FTGL && b.Top < price {
+			floor = true
+		}
+		if b.Kind == FTGH && b.Bottom > price {
+			ceil = true
+		}
+	}
+	return floor && ceil
+}
+
+// touchesOldExtreme reports whether the candle's range reaches an old high/low
+// within ±2 pts (the "isb_at_old_extreme" size flag, written rule 2 D4.1 p1).
+func touchesOldExtreme(cur market.Kline, levels []Level) bool {
+	for _, l := range levels {
+		if l.Kind != KindOldExtreme {
+			continue
+		}
+		if cur.High >= l.Price-2 && cur.Low <= l.Price+2 {
+			return true
+		}
+	}
+	return false
+}
+
 // isBoxEdge reports whether the level is a box edge (BOX RULING part 2:
 // the invalid-level rule does not apply to box edges).
 func isBoxEdge(l Level) bool {
@@ -261,8 +294,24 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		out = append(out, handleTouchIntents(e, lvl, intents)...)
 	}
 
-	// §2.1: ISB on the last closed pair, direction from the trigger line.
+	// §2.1: ISB on the last closed pair. R1: the direction is the CANDLE-1
+	// colour, not the trigger line (RULES-FIX-v3).
 	prev, cur := bars[len(bars)-2], bars[len(bars)-1]
+
+	// R5 (RULES-FIX-v3): the 5m ISB rest box. While it stands it replaces the
+	// trigger line for gating; nothing trades inside it except a same-direction
+	// 1m ISB, and it is deleted when a 1m BODY closes outside [D3.4 p2 @
+	// 00:14–13:00; D4.1 p1 @ 21:38].
+	if e.State.ISBBox != nil {
+		if escaped, _ := ISBBoxEscape(*e.State.ISBBox, cur); escaped {
+			e.State.ISBBox = nil
+		}
+	} else if cb := closedBuckets(bars, now, e.Cfg); len(cb) >= 2 {
+		if bx, ok := ISBBoxFrom5m(cb[len(cb)-2], cb[len(cb)-1]); ok {
+			e.State.ISBBox = &bx
+		}
+	}
+
 	if IsISB(prev, cur) {
 		if dirOK, _, _ := TriggerVerdict(e.State.Trigger, cur.Close); dirOK {
 			// B4: the 15m/5m conflict reads CLOSED buckets only — the
@@ -270,47 +319,73 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 			// 15-minute candle is only confirmed once CLOSED; trade from
 			// the next one"].
 			if conflict := ISBConflictVerdict(closedBuckets(bars, now, e.Cfg)); !conflict {
-				// LOCATION GATE (fold item 1, owner ruling): the ISB's
-				// reference candle must touch a real location — mid-air
-				// inside bars are not setups.
-				if loc, where := LocationVerdict(cur, levels, e.State.Trigger, bars, e.Cfg); loc {
-					_ = where
-					// fold item 3: entries only with the 4h trigger direction
-					// (1h agreeing or silent); fold item 4: a DayOff shuts the
-					// machine off for the day.
-					if htfOK, htfSide, htfReason := HTFVerdict(e.State.HTF); !htfOK {
-						_ = htfReason
-					} else {
-						// R1 (RULES-FIX-v3): the order is a STOP-LIMIT in the
-						// CANDLE-1 colour direction (the only skip: a stop in
-						// the twenties) [D1.4 p1 @ 09:20–10:20, 24:41–24:55].
-						side, chosen, ok, reason := ISBStopLimitOrder(prev, cur, e.Cfg)
-						if !ok {
-							_ = reason // twenties — no entry
-						} else if side != "" && htfSide != "" && side != htfSide {
-							// ISB direction against the 4h — no entry
-						} else if e.State.Day.Verdict == DayOff {
-							// day off — no mentor entries today
-						} else {
-							// §6 [D3.3 p1 @ 05:07]: "TARGET LÀ VỀ NHỮNG LEVEL KẾ
-							// TIẾP" — a setup gives entry, stop AND target
-							// [D4.1 p1 @ 01:39]; no level beyond → no trade.
-							if target := nextLevelBeyond(levels, chosen.Price, side); target != 0 {
-								chosen.Target = target
-							} else {
-								return out // missing target — not a setup [D4.1 p1 @ 01:45]
-							}
-							e.State.ArmSeq++
-							id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
-							e.State.ISBArms[id] = ISBArm{FirstBar: cur}
-							chosen.ArmID = id
-							out = append(out, chosen)
+				// OWNER RULING 2026-10-03 ("exactly like he said"): the ISB is
+				// NOT location-gated — "inside bar lúc nào cũng có thể take
+				// risk… trong range, trên range, ngoài range, dưới range"
+				// [D4.1 p1 @ 05:15]. His conditions stay: the trigger zone
+				// (above), the R5 box (below), the twenties skip, and a size
+				// flag at an old high/low.
+				//
+				// fold item 3: entries only with the 4h trigger direction
+				// (1h agreeing or silent); fold item 4: a DayOff shuts the
+				// machine off for the day.
+				if htfOK, htfSide, htfReason := HTFVerdict(e.State.HTF); !htfOK {
+					_ = htfReason
+				} else {
+					// R1 (RULES-FIX-v3): the order is a STOP-LIMIT in the
+					// CANDLE-1 colour direction (the only skip: a stop in
+					// the twenties) [D1.4 p1 @ 09:20–10:20, 24:41–24:55].
+					side, chosen, ok, reason := ISBStopLimitOrder(prev, cur, e.Cfg)
+					// R5: while the box stands nothing trades inside it except a
+					// SAME-direction 1m ISB — compute the verdict up front so an
+					// allowed ISB still falls through to the emit below.
+					boxBlocked := false
+					if e.State.ISBBox != nil {
+						if allowed, r := ISBBoxAllows(*e.State.ISBBox, prev, cur); !allowed {
+							boxBlocked, _ = true, r
 						}
+					}
+					if !ok {
+						_ = reason // twenties — no entry
+					} else if boxBlocked {
+						// R5: an opposite-direction ISB inside the box — no entry
+					} else if side != "" && htfSide != "" && side != htfSide {
+						// ISB direction against the 4h — no entry
+					} else if e.State.Day.Verdict == DayOff {
+						// day off — no mentor entries today
+					} else {
+						// §6 [D3.3 p1 @ 05:07]: "TARGET LÀ VỀ NHỮNG LEVEL KẾ
+						// TIẾP" — a setup gives entry, stop AND target
+						// [D4.1 p1 @ 01:39]; no level beyond → no trade.
+						if target := nextLevelBeyond(levels, chosen.Price, side); target != 0 {
+							chosen.Target = target
+						} else {
+							return out // missing target — not a setup [D4.1 p1 @ 01:45]
+						}
+						// an ISB AT an old high/low → REDUCE SIZE (written rule 2,
+						// D4.1 p1): flagged for the injector's size tier.
+						if touchesOldExtreme(cur, levels) {
+							chosen.Flag = "isb_at_old_extreme"
+						}
+						e.State.ArmSeq++
+						id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
+						e.State.ISBArms[id] = ISBArm{FirstBar: cur}
+						chosen.ArmID = id
+						out = append(out, chosen)
 					}
 				}
 			} else {
 				out = append(out, Intent{Action: CancelArm, Reason: "15m/5m ISB conflict — no trade [D4.2 p1 @ 14:35]"})
 			}
+		}
+	}
+
+	// R7 (RULES-FIX-v3, behind its own knob, default OFF): the reverse ISB
+	// at EMA 9 — an ISB that points AGAINST the trend with price at the EMA 9
+	// trades WITH the trend [D5.4].
+	if e.Cfg.ISBReverseEMA9Enabled && IsISB(prev, cur) {
+		if in, ok, _ := ReverseISBAtEMA9(prev, cur, emaValue(bars, e.Cfg.EMAPeriod9), e.State.Trigger.Dir, e.Cfg); ok {
+			out = append(out, in)
 		}
 	}
 
@@ -352,6 +427,17 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 			continue
 		}
 		if allowed, _ := SetupPermittedVerdict("PHL", levels, price, e.Cfg); !allowed {
+			continue
+		}
+		// MID-RANGE ban via boxes (CTO 1791003862333): between an FTGL
+		// below and an FTGH above there is NO PHL, NO PLH, regardless of
+		// width — only the ISB.
+		if midRangeBoxed(boxes, price) {
+			continue
+		}
+		// R5: nothing trades inside the standing 5m-ISB box except a
+		// same-direction 1m ISB — PHL/PLH never.
+		if e.State.ISBBox != nil && cur.Close > e.State.ISBBox.Low && cur.Close < e.State.ISBBox.High {
 			continue
 		}
 		for _, ex := range oldExtremes {
