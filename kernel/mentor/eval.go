@@ -36,6 +36,9 @@ type State struct {
 	// ISBBox is the R5 5m-ISB rest box (nil = none standing). Rebuildable by
 	// replaying the closed 5m buckets + 1m escapes.
 	ISBBox *ISBBox `json:"isb_box,omitempty"`
+	// ORB is the §7 step 0 opening-range gate state (drawn at 08:32 CT, escape
+	// latches on the first 1m body close outside). Per-session-day.
+	ORB ORB `json:"orb,omitempty"`
 	// ArmSeq names the next arm.
 	ArmSeq int `json:"arm_seq"`
 }
@@ -274,6 +277,10 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		levels = append(levels, el)
 	}
 
+	// §7 step 0: the ORB gate advances every tick (drawn at 08:32 CT,
+	// escape latched on the first 1m body close outside).
+	e.State.ORB = ORBAdvance(e.State.ORB, bars, now)
+
 	// §4.1 FTGH/FTGL boxes (BOX RULING part 2): built per tick; the edges
 	// join the level set as locations (used again and again) and the box
 	// interior bans entries.
@@ -456,6 +463,10 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	// BOX RULING part 2: InsideAnyBox — "NEVER trade inside the box" — neither
 	// the candle nor the entry point [D3.2 p1 @ 06:59].
 	out = boxBanFilter(out, boxes, bars[len(bars)-1])
+
+	// ORB gate ("ĐIỀU BẮT BUỘC" [X11 @16:43]): every intraday entry is gated
+	// on the opening range; the §8 swing is exempt (orbGateFilter).
+	out = orbGateFilter(out, e.State.ORB, e.Cfg)
 
 	return out
 }

@@ -24,6 +24,9 @@ func TestISBNotLocationGated(t *testing.T) {
 	e := New(cfg)
 	e.State.Trigger = TriggerLine{Dir: SideLong, Price: 90}
 	e.State.HTF = HTF{FourH: TriggerLine{Dir: SideLong, Price: 90}}
+	// the ORB gate is default-ON: preset a drawn + escaped-long opening range
+	// (these tests are about the location rule, not the ORB).
+	e.State.ORB = ORB{Day: dayStartCT(cur.CloseTime + 1), High: 90, Low: 85, Drawn: true, Escaped: SideLong}
 	now := cur.CloseTime + 1
 	intents := e.Tick(bars, now)
 	// sanity: this ISB has NO location — the old gate would refuse it here.
@@ -48,11 +51,12 @@ func TestISBBoxGatesTheEvaluator(t *testing.T) {
 	// a box standing with Dir long
 	box := ISBBox{High: 103, Low: 97, Dir: SideLong, AtTime: 60_000}
 
-	newE := func() *Evaluator {
+	newE := func(esc Side) *Evaluator {
 		e := New(cfg)
 		e.State.Trigger = TriggerLine{Dir: SideLong, Price: 90}
 		e.State.HTF = HTF{FourH: TriggerLine{Dir: SideLong, Price: 90}}
 		e.State.ISBBox = &box
+		e.State.ORB = ORB{Day: 0, High: 90, Low: 85, Drawn: true, Escaped: esc}
 		return e
 	}
 	tick := func(e *Evaluator, bars []market.Kline) []Intent {
@@ -70,7 +74,7 @@ func TestISBBoxGatesTheEvaluator(t *testing.T) {
 		if !IsISB(prev, cur) || ISBDirection(prev) != SideLong {
 			t.Fatal("fixture: green candle-1 ISB")
 		}
-		ints := tick(newE(), []market.Kline{head, prev, cur})
+		ints := tick(newE(SideLong), []market.Kline{head, prev, cur})
 		for _, in := range ints {
 			if in.Action == PlaceStopLimitEntry {
 				return
@@ -87,7 +91,7 @@ func TestISBBoxGatesTheEvaluator(t *testing.T) {
 		if ISBDirection(prev) != SideShort {
 			t.Fatal("fixture: red candle-1")
 		}
-		e := newE()
+		e := newE(SideShort)
 		e.State.HTF = HTF{FourH: TriggerLine{Dir: SideShort, Price: 90}}
 		ints := tick(e, []market.Kline{head, prev, cur})
 		for _, in := range ints {
@@ -100,7 +104,7 @@ func TestISBBoxGatesTheEvaluator(t *testing.T) {
 		// cur closes with its BODY above the box top (103) → escape → delete
 		prev := market.Kline{Open: 98, High: 102.9, Low: 97.5, Close: 99, CloseTime: 60_000 - 1}
 		cur := market.Kline{Open: 104.5, High: 105, Low: 104, Close: 105, CloseTime: 119_999}
-		e := newE()
+		e := newE(SideLong)
 		tick(e, []market.Kline{head, prev, cur})
 		if e.State.ISBBox != nil {
 			t.Fatalf("a 1m BODY close outside must delete the box; box=%+v", e.State.ISBBox)

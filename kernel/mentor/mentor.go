@@ -144,6 +144,12 @@ type Config struct {
 	// default. The evaluator builds the boxes per tick and wires their
 	// edges into the location gate and InsideAnyBox into the bans.
 	Box BoxCfg
+
+	// OrbGateEnabled turns on the §7 step 0 ORB gate (default ON): the high and
+	// low of the FIRST 2-minute candle of the regular session gate every
+	// intraday entry — nothing inside, no reversal at the edges, only the
+	// escape side after a 1m body close outside. The §8 swing is exempt.
+	OrbGateEnabled bool
 }
 
 // DefaultConfig returns the mentor defaults per PLAN v1 (knob values start from
@@ -182,6 +188,8 @@ func DefaultConfig() Config {
 		Swing: DefaultSwingCfg(),
 
 		Box: DefaultBoxCfg(),
+
+		OrbGateEnabled: true,
 	}
 }
 
