@@ -71,6 +71,8 @@ func emaLossTick(e *Evaluator, emaPrice float64, cur market.Kline, now int64) {
 			s.EmaPendingSide = "" // (b) expired unfilled — no loss, no block
 		case s.EmaPendingFilled && touchStop:
 			s.EmaBlocked = true // (a) one loss at the line
+			s.EmaLossPrice = s.EmaPendingStop
+			s.EmaLossBarTime = cur.CloseTime
 			s.EmaPendingSide = ""
 			s.EmaPendingFilled = false
 		case s.EmaPendingFilled && touchTarget:
@@ -78,8 +80,14 @@ func emaLossTick(e *Evaluator, emaPrice float64, cur market.Kline, now int64) {
 			s.EmaPendingFilled = false
 		}
 	}
-	if e.State.EmaBlocked && (cur.High < emaPrice || cur.Low > emaPrice) {
-		e.State.EmaBlocked = false // departure: the line is left alone
+	// Departure (CTO 13:24:53Z, ONE rule with G2): a CLOSED candle AFTER the
+	// loss candle whose |close - loss price| reaches LossDeparturePts lifts
+	// the block. The loss candle itself is never its own departure (R-a).
+	if e.State.EmaBlocked &&
+		cur.CloseTime > e.State.EmaLossBarTime &&
+		e.Cfg.LossDeparturePts > 0 &&
+		abs(cur.Close-e.State.EmaLossPrice) >= e.Cfg.LossDeparturePts {
+		e.State.EmaBlocked = false
 	}
 }
 

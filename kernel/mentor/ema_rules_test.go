@@ -81,18 +81,29 @@ func TestEmaLossTick(t *testing.T) {
 
 	// (a) fill then stop: candle 1 reaches the entry; candle 2 hits the stop.
 	armLong(102, 98, 108, 200_000)
-	emaLossTick(e, 100, market.Kline{High: 102.5, Low: 101}, 100_000)
+	emaLossTick(e, 100, market.Kline{High: 102.5, Low: 101, CloseTime: 100_000}, 100_000)
 	if e.State.EmaPendingSide == "" || !e.State.EmaPendingFilled {
 		t.Fatal("touching the entry must fill the pending setup")
 	}
-	emaLossTick(e, 100, market.Kline{High: 101.5, Low: 97.5}, 101_000)
+	emaLossTick(e, 100, market.Kline{High: 101.5, Low: 97.5, CloseTime: 101_000}, 101_000)
 	if !e.State.EmaBlocked {
 		t.Fatal("(a) filled then stopped must block the EMA line")
 	}
-	// departure lifts the block.
-	emaLossTick(e, 100, market.Kline{High: 102, Low: 100.5}, 102_000)
+	// R-a: the loss candle is never its own departure, however far its close.
+	emaLossTick(e, 100, market.Kline{High: 120, Low: 119, Close: 120, CloseTime: 101_000}, 101_000)
+	if !e.State.EmaBlocked {
+		t.Fatal("R-a: the loss candle must not lift the block")
+	}
+	// Departure (loss_departure_pts 20): a LATER candle close 110 (12 pts) is
+	// not far enough.
+	emaLossTick(e, 100, market.Kline{High: 111, Low: 109, Close: 110, CloseTime: 102_000}, 102_000)
+	if !e.State.EmaBlocked {
+		t.Fatal("12 pts from the loss price must not lift the block")
+	}
+	// 22 pts: the departure lifts the block.
+	emaLossTick(e, 100, market.Kline{High: 121, Low: 119, Close: 120, CloseTime: 103_000}, 103_000)
 	if e.State.EmaBlocked {
-		t.Fatal("departure must lift the EMA block")
+		t.Fatal("departure (>=20 pts after the loss candle) must lift the EMA block")
 	}
 
 	// (b) never filled: the stop trades but the entry never did, then the
