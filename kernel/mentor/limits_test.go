@@ -77,6 +77,10 @@ func applyAtG2(l *Limits, in []Intent, prev, cur market.Kline, minute int, cfg C
 	return l.Apply(in, prev, cur, limitsNow(minute), limitsLvlsG2, cfg)
 }
 
+func applyLevels(l *Limits, in []Intent, prev, cur market.Kline, minute int, cfg Config, levels []Level) []Intent {
+	return l.Apply(in, prev, cur, limitsNow(minute), levels, cfg)
+}
+
 // G1 (a): the third entry in one leg is refused — the PHL fills, one
 // same-direction ISB fills, and the next ISB hits the budget.
 // MUTANT: change the ISB budget check to `leg.Entries >= 3` → this test
@@ -185,6 +189,68 @@ func TestLimitsLossBlocksUntilDeparture(t *testing.T) {
 	out4 := applyAtG2(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:97", 97)}, limitsK(99, 100.2, 90, 99, 3), limitsK(94, 95, 93, 94, 4), 4, cfg)
 	if len(out4) != 1 {
 		t.Fatalf("re-entry after departure: want 1 entry, got %d", len(out4))
+	}
+}
+
+// K1 (CTO 13:15:27Z): the EMA's place key is the CONSTANT line key — a loss
+// at the EMA still blocks the EMA after the line MOVED. The departure tests
+// against the loss-time price.
+// MUTANT: in normalizePlace, key the EMA case by price instead of the
+// constant line key → this test goes RED (the moved EMA is not blocked).
+func TestLimitsEMALossBlocksAfterMove(t *testing.T) {
+	var l Limits
+	cfg := limitsCfgNoLeg()
+	levels := []Level{{Key: "ema34", Kind: KindEMA34, Price: 100}}
+	prev := limitsK(94, 96, 94, 95, 0)
+	exp := limitsNow(60) + 86400_000
+
+	applyLevels(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "ema34", 100)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg, levels)
+	applyLevels(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(89, 91, 87, 88, 2), 2, cfg, levels) // fill + stop → loss at the EMA
+
+	// The line moved to 105; the just-closed candle still touches the
+	// LOSS-time price 100 → blocked even though the raw key would differ.
+	out3 := applyLevels(&l, []Intent{limitsPHLAt(94, 92, 99, exp, "ema34", 105)}, limitsK(89, 91, 87, 88, 2), limitsK(99, 100.5, 90, 99, 3), 3, cfg, levels)
+	if len(out3) != 0 {
+		t.Fatalf("moved-EMA re-entry while touching the loss price: want 0 entries, got %d", len(out3))
+	}
+	// Departure (range below the loss-time price) clears the block.
+	out4 := applyLevels(&l, []Intent{limitsPHLAt(94, 92, 99, exp, "ema34", 105)}, limitsK(99, 100.5, 90, 99, 3), limitsK(94, 95, 93, 94, 4), 4, cfg, levels)
+	if len(out4) != 1 {
+		t.Fatalf("moved-EMA re-entry after departure: want 1 entry, got %d", len(out4))
+	}
+}
+
+// K2 (CTO 13:15:27Z): an old-extreme entry keys on the COINCIDENT KEY LEVEL
+// within ±2 pts — a loss at the old extreme blocks the key level that makes
+// it a location.
+// MUTANT: in normalizePlace, return the raw old-extreme key → this test goes
+// RED (the key-level re-entry is not blocked).
+func TestLimitsOldExtremeLossBlocksCoincidentKeyLevel(t *testing.T) {
+	var l Limits
+	cfg := limitsCfgNoLeg()
+	levels := []Level{
+		{Key: "old_extreme:100.00", Kind: KindOldExtreme, Price: 100},
+		{Key: "key_level:99.5:1", Kind: KindKeyLevel, Price: 99.5},
+	}
+	prev := limitsK(94, 96, 94, 95, 0)
+	exp := limitsNow(60) + 86400_000
+
+	applyLevels(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "old_extreme:100.00", 100)}, prev, limitsK(93, 94, 92, 93, 1), 1, cfg, levels)
+	applyLevels(&l, nil, limitsK(93, 94, 92, 93, 1), limitsK(89, 91, 87, 88, 2), 2, cfg, levels) // fill + stop → loss at the coincident key level
+	if l.Places == nil || l.Places["key_level:99.5:1"] == nil {
+		t.Fatalf("loss: want it under the coincident key level, got %+v", l.Places)
+	}
+
+	// Re-entry AT the key level while the just-closed candle still touches
+	// it → blocked.
+	out3 := applyLevels(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:99.5:1", 99.5)}, limitsK(89, 91, 87, 88, 2), limitsK(99, 100.2, 90, 99, 3), 3, cfg, levels)
+	if len(out3) != 0 {
+		t.Fatalf("key-level re-entry at the blocked place: want 0 entries, got %d", len(out3))
+	}
+	// Departure clears the block.
+	out4 := applyLevels(&l, []Intent{limitsPHLAt(90, 88, 99, exp, "key_level:99.5:1", 99.5)}, limitsK(99, 100.2, 90, 99, 3), limitsK(94, 95, 93, 94, 4), 4, cfg, levels)
+	if len(out4) != 1 {
+		t.Fatalf("key-level re-entry after departure: want 1 entry, got %d", len(out4))
 	}
 }
 

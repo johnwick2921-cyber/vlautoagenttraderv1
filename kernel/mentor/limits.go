@@ -3,6 +3,7 @@ package mentor
 import (
 	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"vl/market"
@@ -141,7 +142,11 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 					continue // G1: second PHL in the leg / leg closed by a stop-out
 				}
 			}
-			if pid := placeID(in.AnchorKey, in.Anchor); pid != "" {
+			pkey, pprice, orphan := normalizePlace(in, levels)
+			if orphan {
+				continue // K2: an old extreme with no coincident key level is not a location
+			}
+			if pid := placeID(pkey, pprice); pid != "" {
 				if p := l.Places[pid]; p != nil && (p.Blocked || p.OffDay) {
 					continue // G2: the place is boxed after a loss
 				}
@@ -154,8 +159,8 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 				target: in.Target,
 				expiry: in.ExpiryMs,
 				legExt: ext,
-				anchor: in.Anchor,
-				place:  in.AnchorKey,
+				anchor: pprice,
+				place:  pkey,
 			})
 		case PlaceStopLimitEntry:
 			if cfg.LegBudgetEnabled {
@@ -366,4 +371,50 @@ func placeID(anchorKey string, anchor float64) string {
 		return placeKey(anchor)
 	}
 	return ""
+}
+
+// normalizePlace maps the raw emit-site place to the G2 key (CTO K1/K2,
+// 13:15:27Z):
+//
+//	K1 — every EMA keys on its CONSTANT line key ("ema34"/"ema9"/
+//	"ema34_htf", which is what the EMA levels already carry); a moving line
+//	cannot be keyed by price. The loss price is kept on the Place for the
+//	departure test.
+//	K2 — an old-extreme entry keys on the COINCIDENT KEY LEVEL within
+//	±LocationCoincidePts (the level that makes it a location). An old
+//	extreme with no coincident key level is NOT a location: orphan=true —
+//	the trade should not exist and the caller drops it.
+//	Everything else (key levels, box edges, trigger retest, plain prices)
+//	passes through unchanged.
+func normalizePlace(in Intent, levels []Level) (key string, price float64, orphan bool) {
+	key, price = in.AnchorKey, in.Anchor
+	if key == "" {
+		return "", 0, false // a plain ISB — no place at all
+	}
+	switch {
+	case key == string(KindEMA34) || key == string(KindEMA9) || key == string(KindEMA34HTF):
+		return key, price, false // constant line key, loss price for departure
+	case strings.HasPrefix(key, string(KindOldExtreme)):
+		if kl := nearestKeyLevelWithin(levels, price, LocationCoincidePts); kl != nil {
+			return kl.Key, kl.Price, false
+		}
+		return "", 0, true // K2: not a location — the trade should not exist
+	}
+	return key, price, false
+}
+
+// nearestKeyLevelWithin is the coincident key level within tol of price
+// (K2): the level that makes an old extreme a location.
+func nearestKeyLevelWithin(levels []Level, price, tol float64) *Level {
+	var best *Level
+	for i := range levels {
+		l := &levels[i]
+		if l.Kind != KindKeyLevel || abs(l.Price-price) > tol {
+			continue
+		}
+		if best == nil || abs(l.Price-price) < abs(best.Price-price) {
+			best = l
+		}
+	}
+	return best
 }
