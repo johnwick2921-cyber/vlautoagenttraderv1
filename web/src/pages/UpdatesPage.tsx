@@ -71,6 +71,10 @@ export default function UpdatesPage() {
   const [status, setStatus] = useState<UpdatesStatus | null>(null)
   const [check, setCheck] = useState<UpdatesCheck | null>(null)
   const [checking, setChecking] = useState(false)
+  const [checkError, setCheckError] = useState<{
+    status?: number
+    reason: string
+  } | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
   const [notEnrolled, setNotEnrolled] = useState(false)
   const [job, setJob] = useState<UpdateJobView | null>(null)
@@ -79,6 +83,9 @@ export default function UpdatesPage() {
   const [authzText, setAuthzText] = useState('')
   const [installing, setInstalling] = useState(false)
   const [installJobId, setInstallJobId] = useState<string | null>(null)
+  // install-with-password (owner order 10-02 07:3x CT): the PRIMARY flow.
+  const [password, setPassword] = useState('')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   // Panel E — the resolved PivotWindow (W1 effective settings), or null.
   const [pivotWindow, setPivotWindow] = useState<number | null>(null)
@@ -255,17 +262,46 @@ export default function UpdatesPage() {
   )
 
   // Check asks the bot whether an update exists (it never installs).
+  // The label reflects the actual answer (owner-facing bug 15:1x CT): a
+  // verified_ready answer is NOT "Up to date". available (ready or not) ->
+  // "Check again" (the green banner names the version); checked without an
+  // available release -> "Up to date"; never checked -> "Check".
   const checkLabel = checking
     ? up('checking', language)
-    : check?.checked
-      ? up('upToDate', language)
-      : up('check', language)
+    : check?.available === true
+      ? up('checkAgain', language)
+      : check?.checked
+        ? up('upToDate', language)
+        : up('check', language)
 
   const doCheck = useCallback(async () => {
     setChecking(true)
-    const c = await updatesApi.check()
-    setCheck(c)
-    setChecking(false)
+    setCheckError(null)
+    try {
+      const c = await updatesApi.check()
+      setCheck(c)
+    } catch (e) {
+      // A refusal (e.g. the 403 cross-origin answer on a non-8080 origin)
+      // must not leave the button on "Checking…" forever: render the
+      // status + the server's own reason under the button.
+      const err = e as
+        | {
+            statusCode?: number
+            response?: { status?: number; data?: { error?: string; message?: string } }
+            message?: string
+          }
+        | undefined
+      setCheckError({
+        status: err?.statusCode ?? err?.response?.status,
+        reason:
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'check refused',
+      })
+    } finally {
+      setChecking(false)
+    }
   }, [])
 
   // The install control's enabled state comes from the SERVER
@@ -309,6 +345,33 @@ export default function UpdatesPage() {
     }
     setInstalling(false)
   }, [authz, installing])
+
+  // install-with-password (owner order 10-02 07:3x CT): the PRIMARY
+  // flow — the release id comes from the last Check the SERVER affirmed; the
+  // password is sent only in the request body and never rendered anywhere.
+  const releaseId = check?.tag || null
+  const availableReady = check?.available === true && check?.ready === true
+  const passwordInstallDisabled =
+    installDisabled || installing || !password.trim() || !releaseId ||
+    !availableReady
+
+  const doInstallWithPassword = useCallback(async () => {
+    if (INSTALL_AUTHZ_UNDER_REVIEW || installing) return
+    if (!releaseId || !password.trim()) return
+    setInstalling(true)
+    setInstallError(null)
+    const res = await updatesApi.installWithPassword(releaseId, password)
+    if (res.ok && res.job_id) {
+      setLastJobID(res.job_id)
+      setInstallJobId(res.job_id)
+      setPassword('')
+    } else {
+      // the SERVER's own text verbatim (wrong password 403 counted, lockout
+      // 429 with the unlock time, not enrolled 403, release not verified 422)
+      setInstallError(res.error || 'install refused')
+    }
+    setInstalling(false)
+  }, [releaseId, password, installing])
 
   const askReloadHistory = useCallback(() => {
     setHistoryReply(null)
@@ -415,34 +478,93 @@ export default function UpdatesPage() {
             {checking && <Loader2 size={15} className="animate-spin" />}
             {checkLabel}
           </button>
-          <button
-            type="button"
-            disabled={installDisabled || !authz?.ok || installing}
-            onClick={doInstall}
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-vl-neo-gold text-black disabled:opacity-50"
-            data-testid="update-button"
-          >
-            {installing && <Loader2 size={15} className="animate-spin" />}
-            {installLabel}
-          </button>
         </div>
+        {checkError && (
+          <p
+            className="mt-2 text-xs text-red-400"
+            data-testid="check-error"
+          >
+            {up('checkRefused', language, {
+              status: checkError.status ? ` (${checkError.status})` : '',
+              reason: checkError.reason,
+            })}
+          </p>
+        )}
         <label
-          htmlFor="updates-authz"
+          htmlFor="updates-password"
           className="mt-3 block text-xs text-zinc-400"
         >
-          {up('authzLabel', language)}
+          {up('installPasswordLabel', language)}
         </label>
-        <textarea
-          id="updates-authz"
-          data-testid="authz-paste"
-          value={authzText}
-          onChange={(e) => setAuthzText(e.target.value)}
-          rows={2}
+        <input
+          id="updates-password"
+          data-testid="install-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
           spellCheck={false}
-          className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-mono text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
-          placeholder='{"release_id":"…","job_id":"…","expires_at":…,"hmac":"…"}'
+          className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+          placeholder={up('installPasswordPlaceholder', language)}
         />
-        {authz?.ok === false && (
+        <button
+          type="button"
+          disabled={passwordInstallDisabled}
+          onClick={doInstallWithPassword}
+          className="mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-vl-neo-gold text-black disabled:opacity-50"
+          data-testid="update-button"
+        >
+          {installing && <Loader2 size={15} className="animate-spin" />}
+          {installLabel}
+        </button>
+        {!releaseId && (
+          <p
+            className="mt-2 text-xs text-zinc-500"
+            data-testid="check-first-hint"
+          >
+            {up('checkFirstForUpdate', language)}
+          </p>
+        )}
+        <div className="mt-4 border-t border-zinc-800 pt-3">
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            className="text-xs text-zinc-500 hover:text-zinc-300"
+            data-testid="advanced-toggle"
+          >
+            {up('advancedInstallCode', language)}
+          </button>
+          {advancedOpen && (
+            <>
+              <label
+                htmlFor="updates-authz"
+                className="mt-3 block text-xs text-zinc-400"
+              >
+                {up('authzLabel', language)}
+              </label>
+              <textarea
+                id="updates-authz"
+                data-testid="authz-paste"
+                value={authzText}
+                onChange={(e) => setAuthzText(e.target.value)}
+                rows={2}
+                spellCheck={false}
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-mono text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                placeholder='{"release_id":"…","job_id":"…","expires_at":…,"hmac":"…"}'
+              />
+              <button
+                type="button"
+                disabled={installDisabled || !authz?.ok || installing}
+                onClick={doInstall}
+                className="mt-2 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-zinc-700 text-zinc-100 disabled:opacity-50"
+                data-testid="update-button-advanced"
+              >
+                {up('updateNow', language)}
+              </button>
+            </>
+          )}
+        </div>
+        {authz?.ok === false && advancedOpen && (
           <p
             className="mt-1 text-xs text-amber-400"
             data-testid="authz-parse-error"
@@ -481,6 +603,46 @@ export default function UpdatesPage() {
         {check && (
           <p className="mt-2 text-xs text-zinc-400">
             {up('checkReason', language)}: {check.reason || na(language)}
+          </p>
+        )}
+        {check?.available === true && check?.ready === true && (
+          <p
+            className="mt-2 text-xs text-emerald-400 font-semibold"
+            data-testid="update-available"
+          >
+            {up('updateAvailableVerified', language).replace(
+              '{tag}',
+              check.tag || ''
+            )}
+          </p>
+        )}
+        {check?.available === true && check?.ready !== true && (
+          <p
+            className="mt-2 text-xs text-amber-400"
+            data-testid="update-not-ready"
+          >
+            {up('updateNotReady', language).replace('{tag}', check.tag || '')}
+          </p>
+        )}
+        {check?.checked === false &&
+          /rate limited/i.test(check?.reason || '') && (
+            <p
+              className="mt-2 text-xs text-amber-400"
+              data-testid="check-rate-limited"
+            >
+              {up('rateLimited', language)}
+            </p>
+          )}
+        {(status?.install_state === 'downloading' ||
+          status?.install_state === 'verifying') && (
+          <p
+            className="mt-2 text-xs text-sky-400 flex items-center gap-1.5"
+            data-testid="install-state"
+          >
+            <Loader2 size={13} className="animate-spin" />
+            {status.install_state === 'downloading'
+              ? up('downloading', language)
+              : up('verifying', language)}
           </p>
         )}
       </Panel>
@@ -565,7 +727,9 @@ export default function UpdatesPage() {
               <Row label={up('jobStep', language)} value={job.step} />
             )}
             {job?.blocker && (
-              <Row label={up('jobBlocker', language)} value={job.blocker} />
+              <div data-testid="job-blocker">
+                <Row label={up('jobBlocker', language)} value={job.blocker} />
+              </div>
             )}
             {job?.timestamps && Object.keys(job.timestamps).length > 0 && (
               <div
