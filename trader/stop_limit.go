@@ -30,16 +30,19 @@ func stopLimitEntriesEnabled() bool {
 // to cancel). A working order with a partial fill is a trade in progress and
 // is never due (the position logic owns it); cancel_pending, terminal and
 // expiry-less rows are never due — 0 means no expiry was ever authored, and
-// this code never sweeps what no intent expired.
+// this code never sweeps what no intent expired. The state reads use the
+// store's canonical predicates + single-name comparisons (the arm-state lint
+// forbids re-typed state sets outside store/).
 func armExpired(r store.ArmedOrderDB, nowMs int64) bool {
-	if r.ExpiryMs <= 0 {
+	if r.ExpiryMs <= 0 || nowMs < r.ExpiryMs {
 		return false
 	}
-	switch r.State {
-	case store.StateArmed, store.StatePlacePending:
-		return nowMs >= r.ExpiryMs
-	case store.StateWorking:
-		return r.FillQuantity == 0 && nowMs >= r.ExpiryMs
+	if store.IsTerminalArmState(r.State) || r.State == store.StateCancelPending {
+		return false
 	}
-	return false
+	if r.State == store.StateWorking {
+		return r.FillQuantity == 0
+	}
+	// armed / place_pending / unknown-but-non-terminal: an unfilled live order.
+	return true
 }

@@ -702,7 +702,7 @@ func (s *ArmedOrderStore) SetArmExpiry(id int64, expiryMs int64) error {
 	if expiryMs <= 0 {
 		return fmt.Errorf("armed_orders: expiry must be a positive ms timestamp")
 	}
-	r := s.db.Model(&ArmedOrderDB{}).Where("id = ? AND state IN (?, ?)", id, StateArmed, StatePlacePending).
+	r := s.db.Model(&ArmedOrderDB{}).Where("id = ? AND (state = ? OR state = ?)", id, StateArmed, StatePlacePending).
 		Update("expiry_ms", expiryMs)
 	if r.Error != nil {
 		return r.Error
