@@ -141,3 +141,24 @@ func TestTouchesOldExtremeFlag(t *testing.T) {
 		t.Fatal("only OLD EXTREMES flag, not key levels")
 	}
 }
+
+// TestISBFlags — the ISB size flags: rule 2 (at an old high/low) and rule 3
+// (in a range — the same mid-range test as the PHL/PLH ban) [D4.1 p1
+// @ 08:05/09:40].
+func TestISBFlags(t *testing.T) {
+	cur := market.Kline{High: 101, Low: 99, Close: 100}
+	extreme := []Level{{Kind: KindOldExtreme, Price: 100.5}}
+	rangeBoxes := []Box{{Kind: FTGL, Top: 90, Bottom: 80}, {Kind: FTGH, Top: 120, Bottom: 110}}
+	if f := isbFlags(cur, nil, nil); f != "" {
+		t.Fatalf("no flags expected, got %q", f)
+	}
+	if f := isbFlags(cur, extreme, nil); f != "isb_at_old_extreme" {
+		t.Fatalf("flags = %q, want isb_at_old_extreme", f)
+	}
+	if f := isbFlags(cur, nil, rangeBoxes); f != "isb_in_range" {
+		t.Fatalf("flags = %q, want isb_in_range", f)
+	}
+	if f := isbFlags(cur, extreme, rangeBoxes); f != "isb_at_old_extreme|isb_in_range" {
+		t.Fatalf("flags = %q, want both joined", f)
+	}
+}

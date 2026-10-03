@@ -105,60 +105,72 @@ func TestISBStopVerdict(t *testing.T) {
 	}
 }
 
-// TestISBStackingArithmetic — stacking [D4.2 p2 @ 08:49–16:08] per the CTO
-// parity ruling (mail 1791008332386 #1): ONE arm, held through the 1st, 2nd and
-// 3rd inside candle, cancelled at the 4th.
+// TestISBStackingArithmetic — the verified stacking rule (CTO 2026-10-03 [A],
+// D4.2 p2 @ 08:21–09:01, @ 16:02–16:06; D5.1 p2 @ 04:00–04:08): the reference is
+// the FIRST inside-bar candle (I1 = stack candle 1). Candles 2 and 3 inside I1
+// → KEEP; candle 4 not filling → CANCEL. `inside` counts the FOLLOWING candles
+// that stayed inside (1 = stack candle 2). The §14 tiny-stop exception is NOT
+// built.
 func TestISBStackingArithmetic(t *testing.T) {
 	if got := ISBStackAdvice(1); got != "hold" {
-		t.Fatalf("1 inside = %q, want hold (the arm is kept — ruling 1791008332386)", got)
+		t.Fatalf("stack candle 2 = %q, want hold", got)
 	}
 	if got := ISBStackAdvice(2); got != "hold" {
-		t.Fatalf("2 inside = %q, want hold", got)
+		t.Fatalf("stack candle 3 = %q, want hold", got)
 	}
-	if got := ISBStackAdvice(3); got != "hold" {
-		t.Fatalf("3 inside = %q, want hold", got)
-	}
-	if got := ISBStackAdvice(4); got != "cancel" {
-		t.Fatalf("4 inside = %q, want cancel", got)
+	if got := ISBStackAdvice(3); got != "cancel" {
+		t.Fatalf("stack candle 4 = %q, want cancel", got)
 	}
 }
 
-// TestISBStackTickEmitsCancelAtFour — the stacking counter: 1 inside candle
-// → CANCEL (rule 1 [D4.1 p1 @ 08:05]); 2–3 → hold; 4 → CANCEL [D4.2 p2
-// @ 08:49–16:08]; a body escaping the first ISB ends the arm.
-func TestISBStackTickEmitsCancelAtFour(t *testing.T) {
+// TestISBStackTickHoldsTwoCancelsAtFour — the arm counter from the quotes:
+// keep through candles 2 and 3, cancel at candle 4 [D5.1 p2 @ 04:00–04:08].
+func TestISBStackTickHoldsTwoCancelsAtFour(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	first := market.Kline{Open: 100, Close: 105, High: 106, Low: 99}
-	inside := market.Kline{Open: 101, Close: 104, High: 105, Low: 100}
-
-	// 1–3 → hold (the arm is kept and the expiry extended), 4 → cancel
+	inside := market.Kline{Open: 101, Close: 104, High: 105.5, Low: 99.5}
 	arm := &ISBArm{FirstBar: first}
-	got := ISBStackTick(arm, inside, cfg)
-	if len(got) != 0 {
-		t.Fatalf("1st inside = %+v, want no intents (hold)", got)
-	}
-	// restart the counter the way the evaluator does: a re-placed arm counts again
-	arm.Inside = 0
 	for n := 1; n <= 4; n++ {
 		got := ISBStackTick(arm, inside, cfg)
 		switch n {
-		case 1, 2, 3:
+		case 1, 2:
 			if len(got) != 0 {
-				t.Fatalf("count %d = %+v, want hold (no intents) — ruling 1791008332386", n, got)
+				t.Fatalf("stack candle %d = %+v, want hold (no intents)", n+1, got)
 			}
-		case 4:
+		case 3:
 			if len(got) != 1 || got[0].Action != CancelArm {
-				t.Fatalf("count 4 = %+v, want cancel", got)
+				t.Fatalf("stack candle 4 = %+v, want cancel [D5.1 p2 @ 04:00–04:08]", got)
 			}
 		}
 	}
-	// a candle whose body escapes the first ISB ends the arm
-	arm2 := &ISBArm{FirstBar: first}
-	ISBStackTick(arm2, inside, cfg)
-	escape := market.Kline{Open: 101, Close: 107, High: 107, Low: 100}
-	if got := ISBStackTick(arm2, escape, cfg); len(got) != 0 || arm2.Inside != -1 {
-		t.Fatalf("escape = %+v inside=%d, want no intents and arm over", got, arm2.Inside)
+}
+
+// TestISBStackTickContainmentIsAgainstI1NotTheMother — the verified wording:
+// "cái BODY của cây nến đó nó vẫn nằm bên trong CÂY NẾN INSABA ĐẦU TIÊN"
+// [D4.2 p2 @ 08:21–09:01]. A candle whose body is inside the MOTHER's full
+// range but OUTSIDE I1 cancels AT ONCE.
+func TestISBStackTickContainmentIsAgainstI1NotTheMother(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	// mother is WIDE (high 120 / low 80); I1 is much narrower.
+	first := market.Kline{Open: 100, Close: 105, High: 106, Low: 99}
+	// body 107..109: inside the mother's full range (80..120) but above I1.
+	leavesI1 := market.Kline{Open: 107, Close: 109, High: 109.5, Low: 106.5}
+	arm := &ISBArm{FirstBar: first}
+	got := ISBStackTick(arm, leavesI1, cfg)
+	if len(got) != 1 || got[0].Action != CancelArm {
+		t.Fatalf("body outside I1 = %+v, want an immediate cancel [D4.2 p2 @ 08:21–09:01]", got)
+	}
+	if arm.Inside != -1 {
+		t.Fatalf("inside = %d, want the arm over", arm.Inside)
+	}
+	// the same candle against a WIDER I1 is a hold, not a cancel: the
+	// containment is I1's own range, nothing else.
+	wideFirst := market.Kline{Open: 100, Close: 105, High: 120, Low: 80}
+	arm2 := &ISBArm{FirstBar: wideFirst}
+	if got := ISBStackTick(arm2, leavesI1, cfg); len(got) != 0 {
+		t.Fatalf("inside a wide I1 = %+v, want hold", got)
 	}
 }
 

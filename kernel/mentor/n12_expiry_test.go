@@ -1,6 +1,7 @@
 package mentor
 
 import (
+	"strings"
 	"testing"
 
 	"vl/market"
@@ -43,7 +44,7 @@ func TestStackingExtendsAndCancelsAtFourth(t *testing.T) {
 	e := New(cfg)
 	e.State.ORB = ORB{Day: 0, High: 200, Low: 50, Drawn: true, Escaped: SideLong}
 	mother := market.Kline{Open: 95, Close: 105, High: 110, Low: 90} // body [95,105]
-	e.State.ISBArms["a"] = ISBArm{FirstBar: mother, Inside: 1}       // past the 1st inside candle
+	e.State.ISBArms["a"] = ISBArm{FirstBar: mother, Inside: 0}       // fresh arm
 	// prev/cur are NOT an ISB pair (cur's body outside prev's range) so no new
 	// arm is placed; cur stays inside the MOTHER candle.
 	prev := market.Kline{Open: 95, High: 96, Low: 94, Close: 95, CloseTime: 120_000}
@@ -52,7 +53,7 @@ func TestStackingExtendsAndCancelsAtFourth(t *testing.T) {
 	now := cur.CloseTime + 1
 
 	extends, cancels := 0, 0
-	for i := 0; i < 3; i++ { // Inside 2, 3 (holds), 4 (cancel)
+	for i := 0; i < 4; i++ { // Inside 1, 2 (holds -> extends), 3 (cancel), then gone
 		for _, in := range e.Tick(bars, now) {
 			switch in.Action {
 			case ExtendArm:
@@ -61,7 +62,7 @@ func TestStackingExtendsAndCancelsAtFourth(t *testing.T) {
 					t.Fatalf("extend expiry = %d, want the next 1m close", in.ExpiryMs)
 				}
 			case CancelArm:
-				if in.Reason == "ISB stacking: 4 candle(s) inside without a fill — cancel [D4.2 p2 @ 08:49–16:08]" {
+				if strings.HasPrefix(in.Reason, "ISB stacking") {
 					cancels++
 				}
 			}

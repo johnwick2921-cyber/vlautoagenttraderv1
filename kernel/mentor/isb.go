@@ -109,7 +109,7 @@ func ISBStopVerdict(candle market.Kline, cfg Config) (stopPts float64, ok bool, 
 // ISBArm tracks one resting inside-bar order through the stacking arithmetic.
 // The reference is ALWAYS the FIRST inside-bar candle [D4.2 p2 @ 08:49–16:08].
 type ISBArm struct {
-	FirstBar market.Kline // the first ISB candle (the reference)
+	FirstBar market.Kline // the first ISB candle (the reference, I1)
 	Inside   int          // candles whose BODIES stayed inside the first ISB since placement
 	Side     Side         // the arm's R1 direction (candle-1 colour) — stored, not derived:
 	// FirstBar is the ISB candle, whose own colour is the OPPOSITE side
@@ -117,44 +117,46 @@ type ISBArm struct {
 
 // ISBStackAdvice is the stacking arithmetic [D4.2 p2 @ 08:49–16:08]:
 //
-//	1 candle inside → CANCEL (the optional rule [D4.1 p1 @ 08:05]);
-//	2–3 → HOLD (a 2–3-minute inside bar);
-//	4 → CANCEL (a 4-minute ISB does not exist — it becomes a 5-minute ISB,
-//	"INSIDE BAR KHUNG 5 PHÚT LÀ MÌNH HOÀN TOÀN KHÔNG ĐƯỢC TRADE" [@ 15:43]).
-//
-// It returns "" (no action) for hold.
+// ISBStackAdvice is the stacking arithmetic, CTO-verified in the transcript
+// 2026-10-03 [A]: the reference is the FIRST inside-bar candle (I1, = stack
+// candle 1). Candles 2 and 3 whose bodies stay inside I1 → KEEP the order;
+// candle 4 not filling → CANCEL ("sau 3 cây nến… cây thứ 4 mà nó không fill →
+// mình cancel" [D5.1 p2 @ 04:00–04:08]). The §14 tiny-stop exception is NOT
+// built (personal discretion, not a class rule). inside counts the FOLLOWING
+// candles that stayed inside (1 = stack candle 2).
 func ISBStackAdvice(inside int) string {
 	switch inside {
-	case 1, 2, 3:
-		// CTO parity ruling 2026-10-03 (mail 1791008332386 #1, replay audit g):
-		// ONE arm, held through the 2nd and 3rd inside candle, cancelled at the
-		// 4th. The 1st inside candle KEEPS the arm (the old cancel-at-1 was dead
-		// code that dominated the stacking holds).
+	case 1, 2:
 		return "hold"
-	case 4:
+	case 3:
 		return "cancel"
 	default:
-		return "hold" // 0: just placed; >4: already cancelled by the evaluator
+		return "hold" // 0: just placed; >3: already cancelled by the evaluator
 	}
 }
 
-// ISBStackTick advances the arm by one closed candle. If the candle's BODY
-// stays inside the first ISB's body range, the counter advances and the
-// arithmetic runs; otherwise the setup is over (price escaped) and the arm
-// ends with an empty advice. A cancel advice emits a CancelArm intent.
+// ISBStackTick advances the arm by one closed candle. The containment test is
+// against I1 (the first inside-bar candle) and NOT the mother candle
+// [D4.2 p2 @ 08:21–09:01]: if the following candle's BODY is NOT inside I1's
+// FULL range → cancel AT ONCE (a CancelArm intent); if it stays inside, the
+// counter advances and the arithmetic runs (keep through candles 2 and 3,
+// cancel at the 4th).
 func ISBStackTick(arm *ISBArm, bar market.Kline, cfg Config) []Intent {
 	if !cfg.Enabled {
 		return nil
 	}
-	if !(curHigh(bar) <= curHigh(arm.FirstBar) && curLow(bar) >= curLow(arm.FirstBar)) {
-		arm.Inside = -1 // escaped — the arm is over (P3 cancels the order)
-		return nil
+	if !(curHigh(bar) <= arm.FirstBar.High && curLow(bar) >= arm.FirstBar.Low) {
+		arm.Inside = -1 // escaped — the arm is over
+		return []Intent{{
+			Action: CancelArm,
+			Reason: "ISB stacking: the next candle's body left I1 — cancel at once [D4.2 p2 @ 08:21–09:01]",
+		}}
 	}
 	arm.Inside++
 	if ISBStackAdvice(arm.Inside) == "cancel" {
 		return []Intent{{
 			Action: CancelArm,
-			Reason: "ISB stacking: " + itoa(arm.Inside) + " candle(s) inside without a fill — cancel [D4.2 p2 @ 08:49–16:08]",
+			Reason: "ISB stacking: candle 4 did not fill — cancel, it becomes a 5m inside bar [D5.1 p2 @ 04:00–04:08; D4.2 p2 @ 16:02–16:06]",
 		}}
 	}
 	return nil

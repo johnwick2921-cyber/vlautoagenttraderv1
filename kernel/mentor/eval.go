@@ -3,6 +3,7 @@ package mentor
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"vl/kernel"
@@ -182,6 +183,19 @@ func isbArmActive(arms map[string]ISBArm, side Side) bool {
 		}
 	}
 	return false
+}
+
+// isbFlags returns the ISB size flags for the injector (rule 2: at an old
+// high/low; rule 3: in a range), joined with "|" when both apply.
+func isbFlags(cur market.Kline, levels []Level, boxes []Box) string {
+	var flags []string
+	if touchesOldExtreme(cur, levels) {
+		flags = append(flags, "isb_at_old_extreme")
+	}
+	if midRangeBoxed(boxes, cur.Close) {
+		flags = append(flags, "isb_in_range")
+	}
+	return strings.Join(flags, "|")
 }
 
 // touchesOldExtreme reports whether the candle's range reaches an old high/low
@@ -388,11 +402,12 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 						} else {
 							return out // missing target — not a setup [D4.1 p1 @ 01:45]
 						}
-						// an ISB AT an old high/low → REDUCE SIZE (written rule 2,
-						// D4.1 p1): flagged for the injector's size tier.
-						if touchesOldExtreme(cur, levels) {
-							chosen.Flag = "isb_at_old_extreme"
-						}
+						// ISB size flags for the injector: rule 2 (at an old
+						// high/low → REDUCE SIZE) and rule 3 (in a range → REDUCE
+						// SIZE, "Khi trade isb in-range bắt buộc giảm size" [D4.1 p1
+						// @ 08:05/09:40]) — the range is the same mid-range test as
+						// the PHL/PLH ban.
+						chosen.Flag = isbFlags(cur, levels, boxes)
 						// N12: a single ISB fills by the close of the NEXT 1m candle
 						// or it is cancelled ("cancel if the next candle does not
 						// fill" [D1.4 p1 @ 18:32–18:45]); stacking extends it below.
@@ -401,7 +416,7 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 						id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
 						// the ISB candle is the 1st inside candle (Inside=1), so the
 						// stacking loop must skip this arm on the placement bar.
-						e.State.ISBArms[id] = ISBArm{FirstBar: cur, Inside: 1, Side: side}
+						e.State.ISBArms[id] = ISBArm{FirstBar: cur, Inside: 0, Side: side}
 						justPlaced[id] = true
 						chosen.ArmID = id
 						out = append(out, chosen)
@@ -442,15 +457,13 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 			}
 			out = append(out, in)
 		}
-		if arm.Inside < 0 {
-			delete(e.State.ISBArms, id)
+		if arm.Inside < 0 || cancelled {
+			delete(e.State.ISBArms, id) // escaped, or the 4th candle cancelled it
 		} else {
-			// N12: while the candles stay inside the mother candle the expiry
-			// is pushed to the close of the NEXT 1m candle; the cancel at the
-			// 4th inside candle comes from ISBStackTick.
-			if !cancelled {
-				out = append(out, Intent{Action: ExtendArm, ArmID: id, ExpiryMs: cur.CloseTime + 60_000, Reason: "ISB stacking: inside — extend the expiry [N12, D4.2 p2 @ 08:21–16:05]"})
-			}
+			// N12: while the body stays inside I1 the expiry is pushed to the
+			// close of the NEXT 1m candle (the cancels — body outside I1 at
+			// once, candle 4 — come from ISBStackTick).
+			out = append(out, Intent{Action: ExtendArm, ArmID: id, ExpiryMs: cur.CloseTime + 60_000, Reason: "ISB stacking: inside I1 — extend the expiry [N12, D4.2 p2 @ 08:21–09:01]"})
 			e.State.ISBArms[id] = arm
 		}
 	}
@@ -579,15 +592,21 @@ func priorSameRole(ex oldExtreme, extremes []oldExtreme) float64 {
 func runSwing(e *Evaluator, bars []market.Kline, now int64) []Intent {
 	closed := closedBuckets(bars, now, e.Cfg)
 	ints := SwingTick(&e.State.Swing, closed, e.Cfg.Swing, now)
-	// N12: the swing's expiry is its OWN 5m rule — the touch candle plus the
-	// 2-candle leeway on the 5m (SwingTick also emits its own CancelArm when
-	// the leeway runs out).
+	// SWING EXPIRY (CTO 1791008594562): an unfilled swing order lives until the
+	// close of the CURRENT 4h candle (ruling 1791008277195) — NOT the 2nd
+	// leeway 5m candle. SwingTick still emits its own CancelArm for the leeway.
 	for i := range ints {
-		if ints[i].Action == PlaceStopEntry && len(closed) > 0 {
-			ints[i].ExpiryMs = closed[len(closed)-1].OpenTime + 3*300_000 - 1
+		if ints[i].Action == PlaceStopEntry {
+			ints[i].ExpiryMs = swingExpiry(now)
 		}
 	}
 	return swingZoneGate(ints, e.State.Trigger, e.Cfg.Swing.Respects5mZone)
+}
+
+// swingExpiry is the close of the CURRENT 4h candle (session-anchored at
+// 17:00 CT): an unfilled swing order lives until then (CTO 1791008594562).
+func swingExpiry(now int64) int64 {
+	return bucketOpen(now, 240) + 240*60_000 - 1
 }
 
 // swingZoneGate drops swing intents whose entry price sits between two

@@ -25,9 +25,10 @@ func TestEvaluatorOnRecordedDaysEmitsOnlyCompleteIntents(t *testing.T) {
 				total++
 				if strings.HasPrefix(in.Reason, "swing") {
 					swingIntents++
-					// N12: every swing entry carries its 5m-rule expiry.
-					if in.Action == PlaceStopEntry && in.ExpiryMs == 0 {
-						t.Fatalf("%s bar %d: swing entry without an expiry: %+v", day, i, in)
+					// SWING EXPIRY (CTO 1791008594562): an unfilled swing order
+					// lives until the close of the CURRENT 4h candle.
+					if in.Action == PlaceStopEntry && in.ExpiryMs != swingExpiry(now) {
+						t.Fatalf("%s bar %d: swing expiry = %d, want the current 4h close %d: %+v", day, i, in.ExpiryMs, swingExpiry(now), in)
 					}
 				}
 				if in.Reason == "" {
