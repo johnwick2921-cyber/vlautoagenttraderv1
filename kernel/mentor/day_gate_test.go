@@ -11,16 +11,21 @@ import (
 //   normal run      + agree    → TRADE
 //   300–400+ pts    + conflict → "TẮT MÁY NGHỈ LUÔN CHO EM" (off)
 //   300–400+ pts    + agree    → trade, small targets only (15/10 pt sales)
+//
+// CTO review E1: a NORMAL day with a conflict is NOT off — §5.4 case 3 is a
+// per-tick sit-out until the 1h flips. DayOff = spent AND conflict only.
 
-// TestDayGateVerdictTable — the three table rows, one per case.
+// TestDayGateVerdictTable — the table rows plus the E1 correction.
 func TestDayGateVerdictTable(t *testing.T) {
 	g := DefaultDayGate()
 
 	if v, reason := DayGateVerdict(120, true, false, g); v != DayTrade || reason != "" {
 		t.Fatalf("normal run + agree: v=%v reason=%q, want DayTrade", v, reason)
 	}
-	if v, _ := DayGateVerdict(120, true, true, g); v != DayOff {
-		t.Fatalf("normal run + conflict: v=%v, want DayOff (conflict shuts the day [D4.4 p1 @ 13:18])", v)
+	// E1: normal + conflict → DayTrade; the per-tick sit-out is HTFVerdict's
+	// job (case 3), not the day gate's.
+	if v, _ := DayGateVerdict(120, true, true, g); v != DayTrade {
+		t.Fatalf("normal run + conflict: v=%v, want DayTrade (§5.4 case 3 sits out per tick)", v)
 	}
 	if v, reason := DayGateVerdict(350, true, true, g); v != DayOff || reason == "" {
 		t.Fatalf("spent + conflict: v=%v, want DayOff 'TẮT MÁY NGHỈ LUÔN CHO EM'", v)
@@ -35,15 +40,63 @@ func TestDayGateVerdictTable(t *testing.T) {
 	}
 }
 
-// TestDayGateVerdictUnmeasuredRunIsNotSpent — an unmeasured run (fewer than 2
-// bars in the window) reads as "not measured yet", never as a spent day.
-func TestDayGateVerdictUnmeasuredRunIsNotSpent(t *testing.T) {
+// TestDayGateVerdictUnmeasuredFailClosed — E3: fewer than 2 bars in the
+// window fail CLOSED, with a reason ("any trade you are vague about — don't"
+// [§12]).
+func TestDayGateVerdictUnmeasuredFailClosed(t *testing.T) {
 	g := DefaultDayGate()
-	if v, _ := DayGateVerdict(0, false, false, g); v != DayTrade {
-		t.Fatalf("unmeasured run: v=%v, want DayTrade", v)
+	if v, reason := DayGateVerdict(0, false, false, g); v != DayNotMeasured || reason == "" {
+		t.Fatalf("unmeasured run: v=%v reason=%q, want DayNotMeasured with a reason", v, reason)
 	}
-	if v, _ := DayGateVerdict(0, false, true, g); v != DayOff {
-		t.Fatalf("unmeasured run + conflict: v=%v, want DayOff", v)
+	if v, _ := DayGateVerdict(0, false, true, g); v != DayNotMeasured {
+		t.Fatalf("unmeasured run + conflict: v=%v, want DayNotMeasured", v)
+	}
+}
+
+// TestDayLatchSpentConflictLatchesAllDay — E1: a spent+conflict read at the
+// 08:30 boundary latches DayOff for the rest of the RTH day; the 1h flipping
+// at 10:00 does not reopen the machine.
+func TestDayLatchSpentConflictLatchesAllDay(t *testing.T) {
+	g := DefaultDayGate()
+	loc := time.FixedZone("CT", -5*3600)
+	open := time.Date(2026, 9, 15, 8, 30, 0, 0, loc)
+
+	l := LatchDay(DayLatch{}, open.UnixMilli(), loc, 350, true, true, g)
+	if l.Verdict != DayOff {
+		t.Fatalf("spent+conflict at 08:30: v=%v, want DayOff", l.Verdict)
+	}
+	// 10:00 same day, the 1h flips → conflict gone; the latch must hold.
+	l = LatchDay(l, time.Date(2026, 9, 15, 10, 0, 0, 0, loc).UnixMilli(), loc, 350, true, false, g)
+	if l.Verdict != DayOff {
+		t.Fatalf("after the 1h flip at 10:00: v=%v, want the latched DayOff (the machine stays off)", l.Verdict)
+	}
+}
+
+// TestDayLatchFreezesAtOpen — E1: at/after 08:30 the verdict freezes as
+// read; a conflict appearing mid-day does not downgrade a DaySpent day.
+func TestDayLatchFreezesAtOpen(t *testing.T) {
+	g := DefaultDayGate()
+	loc := time.FixedZone("CT", -5*3600)
+	open := time.Date(2026, 9, 15, 8, 30, 0, 0, loc)
+
+	l := LatchDay(DayLatch{}, open.UnixMilli(), loc, 350, true, false, g)
+	if l.Verdict != DaySpent {
+		t.Fatalf("spent+agree at 08:30: v=%v, want DaySpent", l.Verdict)
+	}
+	l = LatchDay(l, time.Date(2026, 9, 15, 10, 0, 0, 0, loc).UnixMilli(), loc, 350, true, true, g)
+	if l.Verdict != DaySpent {
+		t.Fatalf("mid-day conflict after the frozen read: v=%v, want the frozen DaySpent", l.Verdict)
+	}
+}
+
+// TestDayLatchNormalConflictIsNotOff — E1: a NORMAL day with a conflict reads
+// DayTrade (live, pre-open); the sit-out until the flip is §5.4 case 3.
+func TestDayLatchNormalConflictIsNotOff(t *testing.T) {
+	g := DefaultDayGate()
+	loc := time.FixedZone("CT", -5*3600)
+	l := LatchDay(DayLatch{}, time.Date(2026, 9, 15, 7, 0, 0, 0, loc).UnixMilli(), loc, 120, true, true, g)
+	if l.Verdict != DayTrade {
+		t.Fatalf("normal run + conflict pre-open: v=%v, want DayTrade", l.Verdict)
 	}
 }
 
@@ -66,19 +119,18 @@ func TestGlobexRunOnRecorded5mGlobex(t *testing.T) {
 	}
 }
 
-// TestGlobexRunWindowEdges — the window is [17:00 CT the previous day,
-// 08:30 CT of the session's day]: before 08:30 the measurement reads the
-// PREVIOUS session, after 08:30 it reads the one that just ended. Synthetic
-// time arithmetic (the window logic itself); the recorded fixture covers the
-// value path.
-func TestGlobexRunWindowEdges(t *testing.T) {
+// TestGlobexRunLivePreOpen — E2: before 08:30 the window is the CURRENT
+// session from 17:00 CT to NOW, so the run grows as overnight bars arrive;
+// after 08:30 the 17:00→08:30 value freezes. Synthetic time arithmetic for
+// the window logic (the recorded fixture covers the value path).
+func TestGlobexRunLivePreOpen(t *testing.T) {
 	loc := time.FixedZone("CT", -5*3600)
 	mk := func(day int, hour, minute int, h, l float64) market.Kline {
 		ot := time.Date(2026, 9, day, hour, minute, 0, 0, loc)
 		return market.Kline{OpenTime: ot.UnixMilli(), High: h, Low: l}
 	}
-	// Session A: 09-13 17:00 → 09-14 08:30 (run 10). Session B: 09-14 17:00
-	// → 09-15 08:30 (run 40).
+	// Session A (09-13 17:00 → 09-14 08:30, run 10) and session B
+	// (09-14 17:00 → 09-15 08:30, run 40).
 	bars := []market.Kline{
 		mk(13, 17, 30, 100, 98),
 		mk(13, 20, 0, 101, 99),  // A hi
@@ -87,13 +139,39 @@ func TestGlobexRunWindowEdges(t *testing.T) {
 		mk(14, 20, 0, 135, 105), // B hi
 		mk(15, 7, 0, 115, 95),   // B lo → run 40
 	}
-	// before 08:30 CT on 09-15 the latest boundary is 09-14 08:30 → session A
-	if run, ok := GlobexRun(bars, time.Date(2026, 9, 15, 8, 0, 0, 0, loc).UnixMilli(), loc); !ok || abs(run-10) > 1e-9 {
-		t.Fatalf("pre-open read: run=%.2f ok=%v, want 10 (session A)", run, ok)
+	// 03:30 CT on 09-15: session B has only the first two bars → run 30.
+	if run, ok := GlobexRun(bars, time.Date(2026, 9, 15, 3, 30, 0, 0, loc).UnixMilli(), loc); !ok || abs(run-30) > 1e-9 {
+		t.Fatalf("pre-open 03:30: run=%.2f ok=%v, want 30 (session B, live to now)", run, ok)
 	}
-	// after 08:30 CT on 09-15 → session B
+	// 07:30 CT: the 07:00 bar joined → run 40.
+	if run, ok := GlobexRun(bars, time.Date(2026, 9, 15, 7, 30, 0, 0, loc).UnixMilli(), loc); !ok || abs(run-40) > 1e-9 {
+		t.Fatalf("pre-open 07:30: run=%.2f ok=%v, want 40", run, ok)
+	}
+	// 09:00 CT: frozen 17:00→08:30 → 40, and the pre-open value does not grow.
 	if run, ok := GlobexRun(bars, time.Date(2026, 9, 15, 9, 0, 0, 0, loc).UnixMilli(), loc); !ok || abs(run-40) > 1e-9 {
-		t.Fatalf("post-open read: run=%.2f ok=%v, want 40 (session B)", run, ok)
+		t.Fatalf("post-open 09:00: run=%.2f ok=%v, want the frozen 40", run, ok)
+	}
+}
+
+// TestGlobexRunSundayOpen — E2: at Sunday 17:05 CT the current session
+// opened at 17:00 the same day; Saturday bars are excluded (the Globex
+// week does not have a Saturday session).
+func TestGlobexRunSundayOpen(t *testing.T) {
+	loc := time.FixedZone("CT", -5*3600)
+	mk := func(day int, hour, minute int, h, l float64) market.Kline {
+		ot := time.Date(2026, 9, day, hour, minute, 0, 0, loc)
+		return market.Kline{OpenTime: ot.UnixMilli(), High: h, Low: l}
+	}
+	// 2026-09-20 is a Sunday. now = 17:06 CT: both bars closed and inside
+	// the current session's window [17:00, now).
+	bars := []market.Kline{
+		mk(19, 12, 0, 200, 180), // Saturday — must be excluded
+		mk(20, 17, 0, 130, 120),
+		mk(20, 17, 5, 132, 122),
+	}
+	run, ok := GlobexRun(bars, time.Date(2026, 9, 20, 17, 6, 0, 0, loc).UnixMilli(), loc)
+	if !ok || abs(run-12) > 1e-9 {
+		t.Fatalf("Sunday 17:06: run=%.2f ok=%v, want 12 (132−120, Saturday excluded)", run, ok)
 	}
 }
 

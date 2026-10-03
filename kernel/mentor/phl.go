@@ -70,13 +70,17 @@ func PHLPLH(t Touch, oldExtreme Level, extremeIdx, barIdx int, cfg Config) (Inte
 // PHLPLHGated is the call site the evaluator uses for every PHL/PLH: the
 // §2.2 rules in PHLPLH, then the two direction gates on top —
 //
-//	§5.4 (fold item 3): entries only WITH the 4h trigger direction; the 1h
-//	agreeing or silent. A 1h opposite the 4h refuses the setup until it
-//	flips [D4.4 p1 @ 16:00].
+//		§5.4 (fold item 3): entries only WITH the 4h trigger direction; the 1h
+//		agreeing or silent. A 1h opposite the 4h refuses the setup until it
+//		flips [D4.4 p1 @ 16:00].
 //
-//	§7 (fold item 4): a 4h/1h conflict shuts the day off; a spent day
-//	(run ≥ SpentPts, agreeing) caps the target at TargetCapPts
-//	("15 điểm bán, 10 điểm bán") [D5.1 p1 @ 15:57].
+//	  §7 (fold item 4): a SPENT day with a 4h/1h conflict shuts the day off
+//	  (latched at the 08:30 read — a later 1h flip does not reopen it); a
+//	  spent day that agrees caps the target at TargetCapPts
+//	  ("15 điểm bán, 10 điểm bán") [D5.1 p1 @ 15:57]; an unmeasured run
+//	  fails closed ("any trade you are vague about — don't" [§12]). On a
+//	  NORMAL day a conflict is §5.4 case 3 — the HTF gate above sits out
+//	  per tick until the 1h flips, not a day off.
 //
 // A touch-and-reject at a level IS a PHL/PLH and carries these rules
 // unchanged (fold item 2) — the location itself is gated upstream by the
@@ -92,7 +96,10 @@ func PHLPLHGated(t Touch, oldExtreme Level, extremeIdx, barIdx int, cfg Config, 
 		return in, false, "HTF direction gate: entry side " + string(in.Side) + " against the " + string(side) + " trigger — entries only with the 4h direction [D4.4 p1 @ 16:00]"
 	}
 	if day == DayOff {
-		return in, false, "day gate: 4h/1h conflict — 'TẮT MÁY NGHỈ LUÔN CHO EM', no trades today [D5.1 p1 @ 19:22]"
+		return in, false, "day gate: spent + 4h/1h conflict at the pre-open read — 'TẮT MÁY NGHỈ LUÔN CHO EM', no trades today [D5.1 p1 @ 19:22]"
+	}
+	if day == DayNotMeasured {
+		return in, false, "day gate: day run not measured — no mentor entries ('any trade you are vague about — don't' [§12])"
 	}
 	return CapTargetForDay(in, day, dg), true, ""
 }

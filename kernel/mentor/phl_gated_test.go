@@ -68,12 +68,22 @@ func TestPHLPLHGatedSideMismatchRefuses(t *testing.T) {
 	}
 }
 
-// TestPHLPLHGatedDayOffRefuses — a valid setup on a conflict day is refused:
-// "TẮT MÁY NGHỈ LUÔN CHO EM" [D5.1 p1 @ 19:22].
+// TestPHLPLHGatedDayOffRefuses — a valid setup on a spent+conflict day is
+// refused: "TẮT MÁY NGHỈ LUÔN CHO EM" [D5.1 p1 @ 19:22]. (The latch itself
+// is DayLatch's job; the wrapper refuses whatever DayOff reaches it.)
 func TestPHLPLHGatedDayOffRefuses(t *testing.T) {
 	htf := HTF{FourH: TriggerLine{Dir: SideLong, Price: 29400}, OneH: TriggerLine{Dir: SideLong, Price: 29350}}
 	if _, ok, reason := PHLPLHGated(workedTouch(), Level{Kind: KindOldExtreme, Price: 29_431.75}, 0, 3, workedCfg(), htf, DayOff, DefaultDayGate()); ok || reason == "" {
 		t.Fatalf("DayOff setup shipped: ok=%v reason=%q", ok, reason)
+	}
+}
+
+// TestPHLPLHGatedNotMeasuredRefuses — E3: an unmeasured day run fails
+// closed, with a reason ("any trade you are vague about — don't" [§12]).
+func TestPHLPLHGatedNotMeasuredRefuses(t *testing.T) {
+	htf := HTF{FourH: TriggerLine{Dir: SideLong, Price: 29400}}
+	if _, ok, reason := PHLPLHGated(workedTouch(), Level{Kind: KindOldExtreme, Price: 29_431.75}, 0, 3, workedCfg(), htf, DayNotMeasured, DefaultDayGate()); ok || reason == "" {
+		t.Fatalf("DayNotMeasured setup shipped: ok=%v reason=%q", ok, reason)
 	}
 }
 
