@@ -8,6 +8,7 @@ import (
 	"vl/kernel"
 	"vl/kernel/mentor"
 	"vl/telemetry"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // ── MENTOR MODE P3 (owner order 2026-10-02 22:2x, option 2) ────────────────
@@ -338,6 +339,14 @@ func mentorSpentDayClamp(contracts, spentCap int) int {
 		return spentCap
 	}
 	return contracts
+}
+
+// mentorMoveStop sends a mentor stop move through the SAME last hop the AI
+// mechanisms use, but WITHOUT the 0B suspension gate: EXIT_MECHS_SUSPENDED does
+// NOT apply to mentor mode (the AI mechanisms keep it — both sides are pinned
+// by TestMentorExitMechSuspensionAppliesToAIOnly).
+func (at *AutoTrader) mentorMoveStop(nt *ntTrader.TCPTrader, side string, newStop float64) error {
+	return moveStopWire(nt, side, newStop)
 }
 
 // mentorLogPositionState dumps the driver state for the daily log.

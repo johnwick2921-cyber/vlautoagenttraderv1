@@ -7,6 +7,7 @@ import (
 	"vl/kernel"
 	"vl/kernel/mentor"
 	"vl/store"
+	ntTrader "vl/trader/ninjatrader"
 )
 
 // mentoredTrader builds a minimal AutoTrader with the given risk-control
@@ -215,6 +216,32 @@ func TestMentorExitRules(t *testing.T) {
 	}
 	if px, why, exited := mentorExitC(c, 111, 113); !exited || px != 112 || why != "stop" {
 		t.Fatalf("C stop: exited=%v px=%.2f why=%q", exited, px, why)
+	}
+}
+
+// TestMentorExitMechSuspensionAppliesToAIOnly: EXIT_MECHS_SUSPENDED (0B)
+// suspends the AI mechanisms but never the mentor stop moves — the same last
+// hop, two different gates.
+func TestMentorExitMechSuspensionAppliesToAIOnly(t *testing.T) {
+	at := mentoredTrader(t, store.RiskControlConfig{MentorMode: true})
+	ResetExitMechSuspendNoticeForTest()
+
+	var sent string
+	var sentPx float64
+	moveStopWire = func(nt *ntTrader.TCPTrader, side string, newStop float64) error {
+		sent, sentPx = side, newStop
+		return nil
+	}
+	t.Cleanup(func() { moveStopWire = nil })
+
+	if err := at.mentorMoveStop(&ntTrader.TCPTrader{}, "long", 100.25); err != nil {
+		t.Fatal(err)
+	}
+	if sent != "long" || sentPx != 100.25 {
+		t.Fatalf("mentor stop move did not reach the wire (suspended leak): sent=%q px=%.2f", sent, sentPx)
+	}
+	if !at.exitMechSuspendedRefuse("be40", "test trigger") {
+		t.Fatal("the AI suspension must STILL apply to the AI mechanisms")
 	}
 }
 
