@@ -12,14 +12,17 @@ type TouchOutcome string
 const (
 	// TouchNone: not touched yet.
 	TouchNone TouchOutcome = ""
-	// TouchReject: the reference candle closed on the FAR side of the level —
-	// "REJECT là cái việc mà NÓ ĐÓNG DƯỚI" [D5.2 p3 @ 23:32] — the setup
-	// layer places the stop order beyond that candle [D5.2 p3 @ 17:32].
+	// TouchReject: the reference candle closed BACK on the side price came
+	// FROM — the CTO-corrected reading (2026-10-02): at a resistance the
+	// candle closes BELOW the line ("ĐỤNG, ĐÓNG DƯỚI — ĐẶT LỆNH SELL STOP…
+	// đang đụng RESISTANCE" [D5.2 p3 @ 21:30]; "REJECT là cái việc mà NÓ
+	// ĐÓNG DƯỚI" [@ 23:32]) — the setup layer places the stop order beyond
+	// that candle [D5.2 p3 @ 17:32].
 	TouchReject TouchOutcome = "reject"
-	// TouchWrongWay: the reference candle closed back on the approach side —
-	// "Closes on the wrong side → CANCEL. Không thắc mắc gì hết" [D4.1 p1
-	// @ 14:14] — and the LEVEL IS INVALID: only ISBs may ever trade there
-	// after [D5.2 p1 @ 19:51; D5.2 p2 @ 20:48].
+	// TouchWrongWay: the reference candle closed THROUGH the line —
+	// "ĐỤNG, ĐÓNG LÊN TRÊN — CANCEL LỆNH…" [D5.2 p3 @ 21:30] — and the
+	// LEVEL IS INVALID: only ISBs may ever trade there after
+	// [D5.2 p1 @ 19:51; D5.2 p2 @ 20:48].
 	TouchWrongWay TouchOutcome = "wrong_way"
 )
 
@@ -39,14 +42,16 @@ type Touch struct {
 	PriceAtTouch float64
 }
 
-// TouchTick evaluates one closed 1m candle against one level (§3 steps 1–3):
+// TouchTick evaluates one closed 1m candle against one level (§3 steps 1–3,
+// CTO-corrected reading 2026-10-02):
 //
 //  1. WAIT for a literal touch (the candle's range reaches the level)
 //     [D3.3 p1 @ 00:13];
 //  2. only the FIRST touching candle matters — later candles never reclassify
 //     [D3.3 p1 @ 00:31; D5.3 p1 @ 20:40];
-//  3. close on the far side → TouchReject; close back on the approach side →
-//     TouchWrongWay, which also emits CancelArm + LevelInvalid intents.
+//  3. REJECT = the candle closes BACK on the approach side → the setup layer
+//     places the stop order beyond the candle. Close THROUGH the line =
+//     the wrong side → CancelArm + LevelInvalid intents.
 //
 // A candle whose BODY closes through a level is NOT an entry: "A BREAK IS NOT
 // A SETUP" [D4.1 p1 @ 18:27] — no PlaceStopEntry is ever emitted here.
@@ -61,17 +66,17 @@ func TouchTick(t *Touch, level Level, prevClose float64, bar market.Kline, cfg C
 	t.RefBar = bar
 	t.PriceAtTouch = level.Price
 	switch t.ApproachedFrom {
-	case SideShort: // price came from below: level acts as resistance
-		if bar.Close > level.Price {
-			t.Outcome = TouchReject // closed on the far side (above)
-		} else {
-			t.Outcome = TouchWrongWay
-		}
-	default: // price came from above: level acts as support
+	case SideShort: // came from below: resistance — reject = closes BACK below
 		if bar.Close < level.Price {
-			t.Outcome = TouchReject // "đóng dưới"
+			t.Outcome = TouchReject // "ĐỤNG, ĐÓNG DƯỚI — ĐẶT LỆNH SELL STOP" [D5.2 p3 @ 21:30]
 		} else {
-			t.Outcome = TouchWrongWay
+			t.Outcome = TouchWrongWay // closed through (above) — "ĐÓNG LÊN TRÊN — CANCEL" [@ 21:30]
+		}
+	default: // came from above: support — reject = closes back above
+		if bar.Close > level.Price {
+			t.Outcome = TouchReject
+		} else {
+			t.Outcome = TouchWrongWay // closed through (below)
 		}
 	}
 	if t.Outcome != TouchWrongWay {
@@ -92,18 +97,19 @@ func TouchTick(t *Touch, level Level, prevClose float64, bar market.Kline, cfg C
 }
 
 // RejectEntry is the §3 order for a reject-close: the stop order beyond the
-// reference candle [D5.2 p3 @ 17:32] — buy stop above it when it closed below,
-// sell stop below it when it closed above, buffered by ISBBufferPts
-// [D2.1 p1 @ 05:36]. Stop and target are completed by the setup layer
-// (PHL/PLH commit); here only the order side and trigger price are known.
+// reference candle [D5.2 p3 @ 17:32] — at a RESISTANCE (came from below) the
+// candle closed back below → SELL stop under RefBar.Low; at a SUPPORT (came
+// from above) it closed back above → BUY stop over RefBar.High, buffered by
+// ISBBufferPts [D2.1 p1 @ 05:36]. Stop and target are completed by the setup
+// layer (PHL/PLH commit); here only the order side and trigger price are known.
 func RejectEntry(t Touch, cfg Config) (side Side, price float64, ok bool) {
 	if t.Outcome != TouchReject {
 		return "", 0, false
 	}
 	switch t.ApproachedFrom {
-	case SideShort: // closed above the level (far side) → sell stop below it
+	case SideShort: // resistance: rejected back below → sell stop under the candle
 		return SideShort, t.RefBar.Low - cfg.ISBBufferPts, true
-	default: // closed below → buy stop above it
+	default: // support: rejected back above → buy stop over the candle
 		return SideLong, t.RefBar.High + cfg.ISBBufferPts, true
 	}
 }

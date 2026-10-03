@@ -6,57 +6,43 @@ import (
 	"vl/market"
 )
 
-// TestTouchRejectCloseBelow — §3 step 3 [D3.3 p1 @ 00:13; D5.2 p3 @ 23:32
-// "REJECT là cái việc mà NÓ ĐÓNG DƯỚI"]: price above the level, the first
-// touching candle closes BELOW it → TouchReject; the order is a buy stop
-// beyond the candle's high + 1.5 buffer (the return entry).
-func TestTouchRejectCloseBelow(t *testing.T) {
+// The touch rules follow the CTO-corrected reading (2026-10-02):
+// REJECT = the first touching candle closes BACK on the side price came FROM.
+// Resistance (came from below): close BELOW → sell stop under the candle.
+// Support (came from above): close ABOVE → buy stop over the candle.
+// A close THROUGH the line = wrong side → CANCEL + level INVALID.
+
+// TestTouchRejectAtResistanceCloseBelow — source [D5.2 p3 @ 21:30]:
+// "ĐỤNG, ĐÓNG DƯỚI — ĐẶT LỆNH SELL STOP… đang đụng RESISTANCE".
+func TestTouchRejectAtResistanceCloseBelow(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
-	lvl := Level{Key: "k1", Kind: KindOldExtreme, Price: 100}
+	lvl := Level{Key: "k1", Kind: KindKeyLevel, Price: 100}
 	tr := &Touch{LevelKey: "k1"}
-	// previous close above the level (approach from above)
-	intents := TouchTick(tr, lvl, 101, market.Kline{High: 100.5, Low: 98.0, Close: 98.5}, cfg)
+	// previous close BELOW the level: resistance, approached from below
+	intents := TouchTick(tr, lvl, 99, market.Kline{High: 100.5, Low: 98.0, Close: 98.5}, cfg)
 	if tr.Outcome != TouchReject {
-		t.Fatalf("outcome = %q, want reject", tr.Outcome)
+		t.Fatalf("outcome = %q, want reject (closed back below resistance)", tr.Outcome)
 	}
 	if len(intents) != 0 {
 		t.Fatalf("reject emits no intents here (order is the setup layer's): %+v", intents)
 	}
 	side, price, ok := RejectEntry(*tr, cfg)
-	if !ok || side != SideLong || price != 100.5+1.5 {
-		t.Fatalf("RejectEntry = %q/%v/%v, want long/102/true", side, price, ok)
+	if !ok || side != SideShort || price != 98.0-1.5 {
+		t.Fatalf("RejectEntry = %q/%v/%v, want short/96.5/true", side, price, ok)
 	}
 }
 
-// TestTouchRejectCloseAbove — mirror: resistance approached from below, closes
-// above → sell stop below the candle low − buffer.
-func TestTouchRejectCloseAbove(t *testing.T) {
-	cfg := DefaultConfig()
-	cfg.Enabled = true
-	lvl := Level{Key: "k1", Kind: KindOldExtreme, Price: 100}
-	tr := &Touch{LevelKey: "k1"}
-	TouchTick(tr, lvl, 99, market.Kline{High: 102.0, Low: 99.5, Close: 101.0}, cfg)
-	if tr.Outcome != TouchReject {
-		t.Fatalf("outcome = %q, want reject", tr.Outcome)
-	}
-	side, price, ok := RejectEntry(*tr, cfg)
-	if !ok || side != SideShort || price != 99.5-1.5 {
-		t.Fatalf("RejectEntry = %q/%v/%v, want short/98/true", side, price, ok)
-	}
-}
-
-// TestTouchWrongWayCloseInvalidatesLevel — §3 [D4.1 p1 @ 14:14; D5.2 p1
-// @ 19:51]: closes back on the approach side → CancelArm + LevelInvalid;
-// the level is then ISB-only.
-func TestTouchWrongWayCloseInvalidatesLevel(t *testing.T) {
+// TestTouchWrongWayAtResistanceCloseAbove — source [D5.2 p3 @ 21:30]:
+// "ĐỤNG, ĐÓNG LÊN TRÊN — CANCEL LỆNH…" — a close THROUGH the resistance.
+func TestTouchWrongWayAtResistanceCloseAbove(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	lvl := Level{Key: "k1", Kind: KindKeyLevel, Price: 100}
 	tr := &Touch{LevelKey: "k1"}
-	intents := TouchTick(tr, lvl, 101, market.Kline{High: 100.5, Low: 99.0, Close: 100.2}, cfg)
+	intents := TouchTick(tr, lvl, 99, market.Kline{High: 102.0, Low: 99.5, Close: 101.0}, cfg)
 	if tr.Outcome != TouchWrongWay {
-		t.Fatalf("outcome = %q, want wrong_way", tr.Outcome)
+		t.Fatalf("outcome = %q, want wrong_way (closed through the resistance)", tr.Outcome)
 	}
 	if len(intents) != 2 || intents[0].Action != CancelArm || intents[1].Action != LevelInvalid {
 		t.Fatalf("intents = %+v, want cancel + level_invalid", intents)
@@ -66,21 +52,58 @@ func TestTouchWrongWayCloseInvalidatesLevel(t *testing.T) {
 	}
 }
 
+// TestTouchRejectAtSupportCloseAbove — the mirror of the source quote at a
+// support: close ABOVE → buy stop over the candle.
+func TestTouchRejectAtSupportCloseAbove(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	lvl := Level{Key: "k1", Kind: KindKeyLevel, Price: 100}
+	tr := &Touch{LevelKey: "k1"}
+	// previous close ABOVE the level: support, approached from above
+	intents := TouchTick(tr, lvl, 101, market.Kline{High: 100.5, Low: 98.0, Close: 100.2}, cfg)
+	if tr.Outcome != TouchReject {
+		t.Fatalf("outcome = %q, want reject (closed back above support)", tr.Outcome)
+	}
+	if len(intents) != 0 {
+		t.Fatalf("reject emits no intents here: %+v", intents)
+	}
+	side, price, ok := RejectEntry(*tr, cfg)
+	if !ok || side != SideLong || price != 100.5+1.5 {
+		t.Fatalf("RejectEntry = %q/%v/%v, want long/102/true", side, price, ok)
+	}
+}
+
+// TestTouchWrongWayAtSupportCloseBelow — a close THROUGH the support → the
+// level is INVALID, only ISBs may trade there after [D5.2 p1 @ 19:51].
+func TestTouchWrongWayAtSupportCloseBelow(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	lvl := Level{Key: "k1", Kind: KindKeyLevel, Price: 100}
+	tr := &Touch{LevelKey: "k1"}
+	intents := TouchTick(tr, lvl, 101, market.Kline{High: 100.5, Low: 98.0, Close: 98.5}, cfg)
+	if tr.Outcome != TouchWrongWay {
+		t.Fatalf("outcome = %q, want wrong_way (closed through the support)", tr.Outcome)
+	}
+	if len(intents) != 2 || intents[1].Action != LevelInvalid {
+		t.Fatalf("intents = %+v, want cancel + level_invalid", intents)
+	}
+}
+
 // TestTouchOnlyFirstCandleCounts — §3 step 2 [D3.3 p1 @ 00:31; D5.3 p1
 // @ 20:40]: the FIRST touching candle is the reference, "never the second".
 // A later candle never reclassifies.
 func TestTouchOnlyFirstCandleCounts(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
-	lvl := Level{Key: "k1", Kind: KindOldExtreme, Price: 100}
+	lvl := Level{Key: "k1", Kind: KindKeyLevel, Price: 100}
 	tr := &Touch{LevelKey: "k1"}
-	first := market.Kline{High: 100.5, Low: 98.0, Close: 98.5}
+	first := market.Kline{High: 100.5, Low: 98.0, Close: 100.2}
 	TouchTick(tr, lvl, 101, first, cfg)
 	if tr.Outcome != TouchReject {
 		t.Fatalf("first touch = %q, want reject", tr.Outcome)
 	}
-	// a second candle crosses and closes wrong-way — ignored.
-	if got := TouchTick(tr, lvl, 98, market.Kline{High: 101, Low: 99, Close: 100.2}, cfg); len(got) != 0 {
+	// a second candle crosses and closes through — ignored.
+	if got := TouchTick(tr, lvl, 99, market.Kline{High: 101, Low: 99, Close: 100.2}, cfg); len(got) != 0 {
 		t.Fatalf("second candle reclassified the first touch: %+v", got)
 	}
 	if tr.Outcome != TouchReject || tr.RefBar != first {
@@ -102,10 +125,11 @@ func TestTouchNoNearTouch(t *testing.T) {
 	if tr.Outcome != TouchNone {
 		t.Fatalf("near-touch classified as %q", tr.Outcome)
 	}
-	// a genuine touch (range reaches the level) classifies.
+	// a genuine touch (range reaches the level) classifies: support, close
+	// back above → reject.
 	TouchTick(tr, lvl, 101, market.Kline{High: 100.5, Low: 99.0, Close: 100.2}, cfg)
-	if tr.Outcome != TouchWrongWay {
-		t.Fatalf("literal touch = %q, want wrong_way", tr.Outcome)
+	if tr.Outcome != TouchReject {
+		t.Fatalf("literal touch = %q, want reject", tr.Outcome)
 	}
 }
 
