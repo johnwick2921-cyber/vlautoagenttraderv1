@@ -14,23 +14,31 @@ import (
 )
 
 // Routing pin (PR B, 2026-10-03; REVIEW-313 F3) at the production call site:
-// placeOneStopEntry routes the stop entry through PlaceStopEntryWithLimit only
-// when MENTOR_STOP_LIMIT is ON AND the arm carries a stored expiry (the mentor
-// evaluator's intent is the sole author of expiry_ms). An arm without an
-// expiry — every planner arm — stays on PlaceStopEntry even with the knob ON.
-// Removing either half of the condition would either never send the limit
-// variant (built ≠ wired, A29/N5) or silently convert planner stop-markets.
+// the discriminator is the arm's EXPLICIT origin, never the expiry as a proxy.
+//   mentor + knob ON + expiry > 0  -> the limit variant.
+//   mentor + knob ON + no expiry -> REFUSED: NOT_SENT, zero wire calls, the
+//     arm untouched (no stop-market fallback for an expiry-less mentor arm).
+//   non-mentor -> today's path whatever the expiry.
+//   knob OFF -> today's path for everyone.
+// Mutants: dropping the origin gate (M-a), dropping the no-expiry refusal
+// (M-b), or gating on expiry instead of origin (M-c) each turn a case RED.
 func TestStopLimitKnobRoutesStopEntriesThroughTheLimitVariant(t *testing.T) {
 	for _, tc := range []struct {
-		name      string
-		env       string
-		expiryMs  int64
-		wantLimit bool
+		name        string
+		env         string
+		origin      string
+		expiryMs    int64
+		wantOutcome stopPlaceOutcome
+		wantLimit   int
+		wantMarket  int
 	}{
-		{"knob-off-no-expiry", "", 0, false},
-		{"knob-off-with-expiry", "", 90_000, false},
-		{"knob-on-planner-no-expiry", "1", 0, false}, // planner arms stay as today even with the knob ON
-		{"knob-on-mentor-with-expiry", "1", 90_000, true},
+		{"knob-off-planner", "", "", 0, stopPlaceCommitted, 0, 1},
+		{"knob-off-mentor-with-expiry", "", store.ArmOriginMentor, 90_000, stopPlaceCommitted, 0, 1},
+		{"knob-on-planner-no-expiry", "1", "", 0, stopPlaceCommitted, 0, 1},
+		{"knob-on-planner-with-expiry", "1", "", 90_000, stopPlaceCommitted, 0, 1}, // non-mentor: today's path, whatever the expiry
+		{"knob-on-mentor-with-expiry", "1", store.ArmOriginMentor, 90_000, stopPlaceCommitted, 1, 0},
+		{"knob-on-mentor-no-expiry-refused", "1", store.ArmOriginMentor, 0, stopPlaceNotSent, 0, 0},
+		{"odd-cased-mentor-with-expiry", "1", " Mentor ", 90_000, stopPlaceCommitted, 1, 0}, // the predicate case-folds
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("MENTOR_STOP_LIMIT", tc.env)
@@ -40,19 +48,19 @@ func TestStopLimitKnobRoutesStopEntriesThroughTheLimitVariant(t *testing.T) {
 				ID: 8, TraderID: at.id, PlanID: "2026-09-23:NY", Version: 1,
 				Session: "TEST-R", Scenario: "TEST-R", Side: "long",
 				EntryPx: 29650, StopPx: 29640, TargetPx: 29670,
-				ExpiryMs: tc.expiryMs,
+				Origin: tc.origin, ExpiryMs: tc.expiryMs,
 			}
 			d := decideStopEntry("LONG", r.EntryPx, testOffset(), testTick, 99)
 			if d.Action != stopEntryPlace {
 				t.Fatalf("fixture must be an otherwise-placeable arm, got %q", d.Action)
 			}
 			pl := &fakePlacer{}
-			if got := at.placeOneStopEntry(pl, &fakeLedger{}, r, d, 99, rthInstant(), freeSlot()); got != stopPlaceCommitted {
-				t.Fatalf("a real send must be COMMITTED, got %d", got)
+			if got := at.placeOneStopEntry(pl, &fakeLedger{}, r, d, 99, rthInstant(), freeSlot()); got != tc.wantOutcome {
+				t.Fatalf("outcome = %d, want %d", got, tc.wantOutcome)
 			}
-			if pl.stopLimitCalls != map[bool]int{true: 1, false: 0}[tc.wantLimit] {
-				t.Fatalf("knob %q routed %d stop entries through the limit variant, want %d",
-					tc.env, pl.stopLimitCalls, map[bool]int{true: 1, false: 0}[tc.wantLimit])
+			if pl.stopLimitCalls != tc.wantLimit || len(pl.calls)-pl.stopLimitCalls != tc.wantMarket {
+				t.Fatalf("routed %d limit + %d market calls, want %d + %d",
+					pl.stopLimitCalls, len(pl.calls)-pl.stopLimitCalls, tc.wantLimit, tc.wantMarket)
 			}
 		})
 	}

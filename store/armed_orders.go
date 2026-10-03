@@ -18,6 +18,11 @@ import (
 
 // ArmedOrderDB is one armed scenario (one row per scenario-arm; upserted on
 // plan version change, re-armed only by a NEW authorization).
+// ArmOriginMentor (REVIEW-313 F3) is the ONLY origin value the stop-limit
+// routing reads as "mentor-authored". The mentor injector stamps it; every
+// other author leaves the origin ''.
+const ArmOriginMentor = "mentor"
+
 type ArmedOrderDB struct {
 	ID int64 `gorm:"primaryKey;autoIncrement"`
 
@@ -50,6 +55,13 @@ type ArmedOrderDB struct {
 	// cancels an unfilled order at now >= expiry_ms. 0 = no expiry authored =
 	// this code never auto-cancels the row.
 	ExpiryMs     int64 `gorm:"default:0"`
+	// Origin (REVIEW-313 F3, 2026-10-03): who authored this arm. The mentor
+	// injector (DS-102, #316) sets ArmOriginMentor; every other author leaves
+	// it ''. The stop-limit routing reads THIS field, never the expiry as a
+	// proxy: mentor + knob ON + expiry > 0 routes to the limit variant; a
+	// mentor arm with the knob ON and no expiry is REFUSED fail-closed; a
+	// non-mentor arm takes today's path whatever its expiry.
+	Origin       string `gorm:"default:''"`
 	FillPrice    float64
 	FillQuantity int
 
@@ -284,6 +296,10 @@ func (s *ArmedOrderStore) Migrate() error {
 			// truth for them: no expiry was ever authored, so nothing is
 			// auto-cancelled (absent ≠ 0 fabricated as data).
 			{"expiry_ms", "INTEGER NOT NULL DEFAULT 0"},
+			// ARM ORIGIN (REVIEW-313 F3, 2026-10-03). The mentor
+			// injector stamps ArmOriginMentor; '' on every historical
+			// row = not a mentor arm, which is the truth for them.
+			{"origin", "TEXT NOT NULL DEFAULT ''"},
 			// W3 market_in_zone (2026-09-23): NULLable where 0 would be a
 			// fabricated value (absent ≠ 0); '' where the text is a label.
 			{"policy", "TEXT NOT NULL DEFAULT ''"},

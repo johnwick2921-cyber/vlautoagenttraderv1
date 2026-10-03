@@ -23,6 +23,14 @@ func stopLimitEntriesEnabled() bool {
 	return false
 }
 
+// isMentorArmOrigin (REVIEW-313 F3) reports whether the arm carries the
+// mentor origin. The routing reads THIS, never the expiry as a proxy for
+// "mentor arm": a mentor arm that lost its expiry must be refused, and a
+// non-mentor arm with a stray expiry must keep today's path.
+func isMentorArmOrigin(r store.ArmedOrderDB) bool {
+	return strings.EqualFold(strings.TrimSpace(r.Origin), store.ArmOriginMentor)
+}
+
 // armExpired is PURE (N12, PR B 2026-10-03): an order with a stored expiry is
 // due when now >= expiry_ms and the order is UNFILLED AND LIVE — armed,
 // place_pending, or working with zero filled quantity (a stop-limit resting at
