@@ -57,12 +57,22 @@ func TestInstallUpdaterWorkerScript(t *testing.T) {
 		"$BUILD_DIR/vl-updater",
 		"$HOME/bin/vl-updater",
 		"systemd-user/vl-updater.service",
-		// the token has a 24-hour lifetime and there is no longer-lived type
-		"24-hour",
+		// P-E E4: the token is the cutover-worker credential enroll writes —
+		// never a hand-minted 24-hour gate-jwt.
+		"auth.ScopeCutoverWorker",
+		"vl-updater-bootstrap --install-dir <bot> enroll <owner-email>",
+		"never a hand-minted gate-jwt",
 	} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("install script must carry %q", want)
 		}
+	}
+	// P-E E4 (2026-10-02 follow-up): the old 24-hour gate-jwt tail is DEAD —
+	// the enroll token is the long-lived type, and the script's note must
+	// never resurrect the false claim.
+	if strings.Contains(content, "no longer-lived token type") {
+		t.Fatalf("install script note must not carry the dead " +
+			"\"no longer-lived token type\" tail")
 	}
 	// No privilege escalation anywhere: no line RUNS sudo.
 	for _, l := range strings.Split(content, "\n") {

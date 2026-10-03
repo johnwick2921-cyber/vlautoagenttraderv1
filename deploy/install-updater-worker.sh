@@ -17,11 +17,12 @@
 #      serve refuses root, the bot's cgroup, and a set TZ — this unit avoids
 #      all three by construction.
 #
-# The token: VL_CUTOVER_TOKEN is a gate-jwt whose lifetime is 24 HOURS
-# (auth/auth.go:227). There is NO longer-lived token type — refresh it before
-# each attended install window by re-minting and replacing the line in the env
-# file. This script never prints it (pinned: the deploy test refuses a run
-# whose output carries the token value).
+# The token: VL_CUTOVER_TOKEN is the cutover-worker credential that
+# `vl-updater-bootstrap --install-dir <bot> enroll <owner-email>` writes into
+# this file (P-E): a long-lived machine token the API admits ONLY on
+# GET /api/maintenance and GET /api/installation-gate (auth.ScopeCutoverWorker).
+# Never hand-mint a gate-jwt here; never print the token (pinned: the deploy
+# test refuses a run whose output carries the token value).
 #
 # No privilege escalation anywhere in this script. Never run while the bot
 # serves a hold — this script only writes ~/bin and ~/.config/systemd/user,
@@ -53,7 +54,7 @@ ENV_FILE="$HOME/.config/vl-updater/env"
   echo "install-updater-worker: REFUSED — $ENV_FILE does not exist." >&2
   echo "  create it (mode 0600, owner you) with exactly two lines (VL_ names win):" >&2
   echo "    VL_RELEASE_DIR=/absolute/path/outside/vl   (or the pre-rename key — R5 removes)" >&2
-  echo "    VL_CUTOVER_TOKEN=<a fresh gate-jwt — 24h lifetime, refresh before each install window>" >&2
+  echo "    VL_CUTOVER_TOKEN=<written by: vl-updater-bootstrap --install-dir <bot> enroll <owner-email>>" >&2
   exit 2
 }
 [ "$(stat -c '%a' "$ENV_FILE" 2>/dev/null)" = "600" ] || {
@@ -86,7 +87,7 @@ case "$real_root" in
     exit 2 ;;
 esac
 echo "install-updater-worker: env ok (release dir outside the install; token present, not shown)"
-echo "install-updater-worker: note — VL_/NOFX_CUTOVER_TOKEN is a 24-hour gate-jwt (auth/auth.go:227); refresh it before each attended install window — no longer-lived token type exists"
+echo "install-updater-worker: note — VL_/NOFX_CUTOVER_TOKEN is the cutover-worker credential enroll writes (auth.ScopeCutoverWorker); never a hand-minted gate-jwt — the enroll token is the long-lived type (auth.WorkerTokenTTL)"
 
 BUILD_DIR="$(mktemp -d /tmp/vl-updater-build.XXXXXX)" || { echo "install-updater-worker: REFUSED — cannot make a build dir" >&2; exit 2; }
 trap 'rm -rf "$BUILD_DIR"' EXIT

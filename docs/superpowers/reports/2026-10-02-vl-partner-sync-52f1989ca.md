@@ -20,10 +20,10 @@
 |---|---|---|---|
 | .github/workflows/release.yml | carve-out (no `push: tags` trigger) | f8d975e2ad5f | 8b593a6bb9aa |
 | deploy/RELEASE | carve-out (partner stamp; re-stamped this sync) | 437f7cf55420 | eef64c1550fe |
-| deploy/install-updater-worker.sh | carve-out (partner REPO_URL) | 10c0546434c1 | 3c70a3e6939f |
+| deploy/install-updater-worker.sh | carve-out: REPO_URL line ONLY — the rest byte-identical to vl's corrected install-note text (vl PR #311) | 10c0546434c1 | 5cabc54c606a |
 | deploy/release_allowed_signers | carve-out (partner signing key placeholder) | 13abac5bf01b | ac459624c12d |
 | deploy/release_contract_test.go | carve-out (partner asserts) | 0dc3bf6dfbae | 9ffab2eb135a |
-| deploy/updater_worker_install_test.go | carve-out (partner REPO_URL assert) | 0a9d41d61e81 | 6d1c27bc2c92 |
+| deploy/updater_worker_install_test.go | carve-out: byte-identical to vl's corrected install-note test (vl PR #311) — carries the P-E pin set + the dead-tail negative check ahead of the vl bundle | 0a9d41d61e81 | 4750d9ba33ab |
 | internal/updatersource/source.go | carve-out (ONE-line `ReleaseRepo = "johnwick2921-cyber/vlautoagenttraderv1"`) | 447b9b640c90 | 5053fb7b13eb |
 | branding/census_test.go | carve-out (partner census pin, re-derived on the nofx@52f1989ca0a5 base) | 019b65e68d08 | c6fda32fed64 |
 | docs/superpowers/reports/2026-09-22-vl-partner-verification.md | partner-only doc | — | 6942ad5673c4 |
