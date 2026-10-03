@@ -135,6 +135,15 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	// 5m trigger line advances every 1m close (aggregated 5m bars).
 	e.State.Trigger = TriggerTick(e.State.Trigger, barsTF(bars, 5), e.Cfg)
 
+	// the location set grows by the trigger-line retest and the EMA34-HTF
+	// line (fold item 1).
+	if e.State.Trigger.Dir != "" && e.State.Trigger.Price != 0 {
+		levels = append(levels, Level{Key: string(KindTriggerRetest), Kind: KindTriggerRetest, Price: e.State.Trigger.Price})
+	}
+	if el, ok := EMALocationLevel(bars, e.Cfg); ok {
+		levels = append(levels, el)
+	}
+
 	// §3: first-touch classification per level.
 	for _, lvl := range levels {
 		tr := e.State.Touches[lvl.Key]
@@ -154,8 +163,7 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		}
 	}
 
-	// §2.1: ISB on the last closed pair, direction from the trigger line
-	// (fail-closed: with no line the evaluator does not arm an ISB).
+	// §2.1: ISB on the last closed pair, direction from the trigger line.
 	prev, cur := bars[len(bars)-2], bars[len(bars)-1]
 	if IsISB(prev, cur) {
 		if dirOK, side, _ := TriggerVerdict(e.State.Trigger, cur.Close); dirOK {
@@ -165,24 +173,30 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 				// 15-minute candle is only confirmed once CLOSED; trade from
 				// the next one"].
 				if conflict := ISBConflictVerdict(closedBuckets(bars, now, e.Cfg)); !conflict {
-					long, short := ISBOrders(cur, e.Cfg)
-					chosen := long
-					if side == SideShort {
-						chosen = short
+					// LOCATION GATE (fold item 1, owner ruling): the ISB's
+					// reference candle must touch a real location — mid-air
+					// inside bars are not setups.
+					if loc, where := LocationVerdict(cur, levels, e.State.Trigger, bars, e.Cfg); loc {
+						_ = where
+						long, short := ISBOrders(cur, e.Cfg)
+						chosen := long
+						if side == SideShort {
+							chosen = short
+						}
+						// §6 [D3.3 p1 @ 05:07]: "TARGET LÀ VỀ NHỮNG LEVEL KẾ
+						// TIẾP" — a setup gives entry, stop AND target
+						// [D4.1 p1 @ 01:39]; no level beyond → no trade.
+						if target := nextLevelBeyond(levels, chosen.Price, side); target != 0 {
+							chosen.Target = target
+						} else {
+							return out // missing target — not a setup [D4.1 p1 @ 01:45]
+						}
+						e.State.ArmSeq++
+						id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
+						e.State.ISBArms[id] = ISBArm{FirstBar: cur}
+						chosen.ArmID = id
+						out = append(out, chosen)
 					}
-					// §6 [D3.3 p1 @ 05:07]: "TARGET LÀ VỀ NHỮNG LEVEL KẾ
-					// TIẾP" — a setup gives entry, stop AND target
-					// [D4.1 p1 @ 01:39]; no level beyond → no trade.
-					if target := nextLevelBeyond(levels, chosen.Price, side); target != 0 {
-						chosen.Target = target
-					} else {
-						return out // missing target — not a setup [D4.1 p1 @ 01:45]
-					}
-					e.State.ArmSeq++
-					id := fmt.Sprintf("isb-%d", e.State.ArmSeq)
-					e.State.ISBArms[id] = ISBArm{FirstBar: cur}
-					chosen.ArmID = id
-					out = append(out, chosen)
 				} else {
 					out = append(out, Intent{Action: CancelArm, Reason: "15m/5m ISB conflict — no trade [D4.2 p1 @ 14:35]"})
 				}
@@ -213,6 +227,11 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	for _, lvl := range levels {
 		tr := e.State.Touches[lvl.Key]
 		if tr.Outcome != TouchReject || e.State.ISBOnly[lvl.Key] {
+			continue
+		}
+		// LOCATION GATE (fold item 1): a PHL/PLH entry level must be a real
+		// location — a bare old high/low is not one.
+		if !levelIsLocation(lvl, levels) {
 			continue
 		}
 		side, price, ok := RejectEntry(tr, e.Cfg)

@@ -48,6 +48,12 @@ const (
 	// KindEMA34 / KindEMA9 — EMA values promoted to levels (§8, §10, §11).
 	KindEMA34 LevelKind = "ema34"
 	KindEMA9  LevelKind = "ema9"
+	// KindEMA34HTF is the location-gate EMA 34 on a HIGHER timeframe
+	// (knob ema34_tf, default 4h; never 1m — location fold item 1).
+	KindEMA34HTF LevelKind = "ema34_htf"
+	// KindTriggerRetest is the 5m trigger-line retest location (§5.1
+	// [D3.4 p2 @ 20:51]: the retest is a level confirm).
+	KindTriggerRetest LevelKind = "trigger_retest"
 )
 
 // Level is one mentor level line. Lo/Hi are equal (a line); AtTime is the bar
@@ -89,6 +95,11 @@ type Config struct {
 	EMAPeriod9        int     // default 9
 	EMATFMinutes      int     // TF the EMA lines are computed on; default 1
 
+	// EMALocationTFMinutes is the LOCATION-GATE EMA 34 timeframe (fold item
+	// 1): default 240 (4h), allowed 60/15/5 — NEVER 1 (the owner's ruling:
+	// setups happen only at important levels).
+	EMALocationTFMinutes int
+
 	// Touch / close-side (PLAN v1 §2).
 	TouchBandPts float64 // literal-touch band around a level; default 4.0 (the bot's 16-tick touch band)
 
@@ -119,6 +130,8 @@ func DefaultConfig() Config {
 		EMAPeriod34:       34,
 		EMAPeriod9:        9,
 		EMATFMinutes:      1,
+
+		EMALocationTFMinutes: 240,
 
 		TouchBandPts: 0, // §3: wait for the LITERAL touch [D3.3 p1 @ 00:13]; §8's "KHÔNG ĐƯỢC GẦN ĐỤNG" is the same strictness
 

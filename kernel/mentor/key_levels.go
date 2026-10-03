@@ -17,11 +17,14 @@ import (
 //
 // The walk runs on the TF given by KeyLevelTFMinutes (default 1m — the RTH
 // chart the mentor draws on; DS-108 §2.1 measured ~200 colour changes per RTH
-// day on 1m). The prune applies to the FINAL set (the method's intent: no two
-// surviving lines closer than the prune distance — a smaller gap is unreadable):
-// levels are kept newest-first, dropping any candidate within the prune distance
-// of an already-kept (newer) level, so of every close pair the more recent
-// survives.
+// day on 1m). F7 (LEVELS-KEEP fold): NO lookback cap — every bar passed in is
+// walked ("key level nó là QUÁ KHỨ — muốn vẽ bao nhiêu tùy thích"
+// [D5.3 p1 @ 14:09–14:16]); a cap would be a knob defaulting to ALL and
+// logging the held count, and none exists. The prune applies to the FINAL set
+// (the method's intent: no two surviving lines closer than the prune distance
+// — a smaller gap is unreadable): levels are kept newest-first, dropping any
+// candidate within the prune distance of an already-kept (newer) level, so of
+// every close pair the more recent survives.
 func KeyLevels(bars []market.Kline, cfg Config) []Level {
 	if !cfg.Enabled || cfg.KeyLevelTFMinutes <= 0 {
 		return nil
