@@ -207,6 +207,21 @@ func TestTimeAuditBucketOpen4h(t *testing.T) {
 	}
 }
 
+func TestTimeAuditSeedTodayWindow(t *testing.T) {
+	for _, c := range auditDates {
+		if got := sessionKeyCT(auditMs(c.y, c.mo, c.d, 9, 0, 0)); got != auditDateFmt(c.y, c.mo, c.d) {
+			t.Fatalf("%s 09:00: session key = %s, want %s", c.label, got, auditDateFmt(c.y, c.mo, c.d))
+		}
+		if got := sessionKeyCT(auditMs(c.y, c.mo, c.d, 18, 0, 0)); got != auditDateFmt(c.y, c.mo, c.d+1) {
+			t.Fatalf("%s 18:00: session key = %s, want %s (the 17:00 CT flip moves it to the next day)", c.label, got, auditDateFmt(c.y, c.mo, c.d+1))
+		}
+		// a bar in the overnight half of the session belongs to the same key.
+		if got := sessionKeyCT(auditMs(c.y, c.mo, c.d-1, 20, 0, 0)); got != auditDateFmt(c.y, c.mo, c.d) {
+			t.Fatalf("%s prev 20:00: session key = %s, want %s (17:00 CT opens the NEXT key)", c.label, got, auditDateFmt(c.y, c.mo, c.d))
+		}
+	}
+}
+
 func TestTimeAuditCTOf(t *testing.T) {
 	for _, c := range auditDates {
 		_, hh, mm := ctOf(auditMs(c.y, c.mo, c.d, 8, 30, 0))
@@ -216,6 +231,84 @@ func TestTimeAuditCTOf(t *testing.T) {
 		_, hh, mm = ctOf(auditMs(c.y, c.mo, c.d, 16, 59, 59))
 		if hh != 16 || mm != 59 {
 			t.Fatalf("%s: ctOf(16:59:59 CT) = %02d:%02d", c.label, hh, mm)
+		}
+	}
+}
+
+// T1 site 4: the 1h RTH anchor — candles open at :30; a bar at hh:29
+// belongs to the previous hour's candle. Wall-epoch division on real-UTC
+// bars mis-anchors by the zone offset (5h CDT / 6h CST), so rthHourAnchor
+// reads America/Chicago.
+func TestTimeAuditRTHHourAnchor(t *testing.T) {
+	anchorCases := []struct {
+		hh, mm int
+		wantHh int
+		inD    int // input day offset from c.d
+		wantD  int // want day offset from c.d
+	}{
+		{8, 29, 7, 0, 0},    // 08:29 → 07:30 candle
+		{8, 30, 8, 0, 0},    // 08:30 → 08:30 candle
+		{9, 29, 8, 0, 0},    // 09:29 → 08:30 candle
+		{9, 30, 9, 0, 0},    // 09:30 → 09:30 candle
+		{15, 0, 14, 0, 0},   // 15:00 → 14:30 candle (:00 < :30)
+		{15, 30, 15, 0, 0},  // 15:30 → 15:30 candle
+		{0, 10, 23, -1, -2}, // 00:10 → previous day's 23:30 candle
+	}
+	for _, c := range auditDates {
+		for _, tc := range anchorCases {
+			got := rthHourAnchor(auditMs(c.y, c.mo, c.d+tc.inD, tc.hh, tc.mm, 0))
+			want := auditMs(c.y, c.mo, c.d+tc.wantD, tc.wantHh, 30, 0)
+			if got != want {
+				t.Fatalf("%s %02d:%02d: anchor = %s, want %s",
+					c.label, tc.hh, tc.mm,
+					time.UnixMilli(got).In(ctime()).Format("2006-01-02 15:04"),
+					time.UnixMilli(want).In(ctime()).Format("2006-01-02 15:04"))
+			}
+		}
+	}
+	// rthMinuteOf: the CT wall minute-of-day, not the UTC one.
+	for _, c := range auditDates {
+		if got := rthMinuteOf(auditMs(c.y, c.mo, c.d, 8, 30, 0)); got != 8*60+30 {
+			t.Fatalf("%s rthMinuteOf(08:30 CT) = %d, want 510", c.label, got)
+		}
+		if got := rthMinuteOf(auditMs(c.y, c.mo, c.d, 15, 0, 0)); got != 15*60 {
+			t.Fatalf("%s rthMinuteOf(15:00 CT) = %d, want 900 (the rthEnd cutoff must read CT)", c.label, got)
+		}
+	}
+	// production call site A (aggregation path): keyLevel1HBars on 1-min
+	// bars must anchor 09:00–09:29 CT at 08:30 CT and open the next candle
+	// at 09:30 CT, in both zones.
+	for _, c := range auditDates {
+		var bars []market.Kline
+		for i := 0; i < 60; i++ { // 09:00 → 09:59 CT
+			ot := auditMs(c.y, c.mo, c.d, 9, 0, 0) + int64(i)*60_000
+			bars = append(bars, market.Kline{OpenTime: ot, CloseTime: ot + 59_999, Open: 1, High: 2, Low: 0.5, Close: 1.5})
+		}
+		got := keyLevel1HBars(bars)
+		if len(got) != 2 {
+			t.Fatalf("%s: keyLevel1HBars(09:00–09:59) = %d candles, want 2", c.label, len(got))
+		}
+		if got[0].OpenTime != auditMs(c.y, c.mo, c.d, 8, 30, 0) || got[1].OpenTime != auditMs(c.y, c.mo, c.d, 9, 30, 0) {
+			t.Fatalf("%s: anchors = [%s, %s], want [08:30, 09:30] CT",
+				c.label,
+				time.UnixMilli(got[0].OpenTime).In(ctime()).Format("15:04"),
+				time.UnixMilli(got[1].OpenTime).In(ctime()).Format("15:04"))
+		}
+	}
+	// production call site B (pre-bucketed path): bars ≥1h apart pass
+	// through the rthMinuteOf RTH filter unchanged — a UTC read would drop
+	// 10:00 CT (15:00/16:00 UTC at the rthEnd edge) in both zones.
+	for _, c := range auditDates {
+		bars := []market.Kline{
+			{OpenTime: auditMs(c.y, c.mo, c.d, 8, 30, 0), CloseTime: auditMs(c.y, c.mo, c.d, 8, 30, 0) + 59_999, Open: 1, High: 2, Low: 0.5, Close: 1.5},
+			{OpenTime: auditMs(c.y, c.mo, c.d, 10, 0, 0), CloseTime: auditMs(c.y, c.mo, c.d, 10, 0, 0) + 59_999, Open: 1, High: 2, Low: 0.5, Close: 1.5},
+		}
+		got := keyLevel1HBars(bars)
+		if len(got) != 2 {
+			t.Fatalf("%s: pre-bucketed filter dropped an RTH bar (%d left, want 2)", c.label, len(got))
+		}
+		if got[0].OpenTime != bars[0].OpenTime || got[1].OpenTime != bars[1].OpenTime {
+			t.Fatalf("%s: pre-bucketed passthrough re-anchored bars", c.label)
 		}
 	}
 }

@@ -3,6 +3,7 @@ package mentor
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"vl/market"
 )
@@ -52,11 +53,13 @@ func SeedMissing(bars1m []market.Kline, now int64) []string {
 	if n := len(bars1hRTH); n < OneHRTHLevelsMin {
 		missing = append(missing, fmt.Sprintf("bar history depth: 1H RTH level history (%d candles)", n))
 	}
-	// Today's session: at least one 1m bar of the current CT day.
-	today := dayStartCT(now)
+	// Today's session: at least one 1m bar whose trading-day key (17:00 CT
+	// flip, EPOCH RULING: real UTC ms through America/Chicago) matches the
+	// current session's key — covers both the overnight and the RTH half.
+	key := sessionKeyCT(now)
 	haveToday := false
 	for _, b := range bars1m {
-		if b.OpenTime >= today && b.OpenTime < today+24*60*60_000 {
+		if sessionKeyCT(b.OpenTime) == key {
 			haveToday = true
 			break
 		}
@@ -69,6 +72,14 @@ func SeedMissing(bars1m []market.Kline, now int64) []string {
 		missing = append(missing, fmt.Sprintf("bar history depth: closed 15m candle (%d)", n))
 	}
 	return missing
+}
+
+// sessionKeyCT returns the trading-day key (17:00 CT flip, EPOCH RULING:
+// real UTC ms through America/Chicago) a bar belongs to — "today's
+// session" in SeedMissing is membership in THIS key, not a calendar-day
+// window.
+func sessionKeyCT(ms int64) string {
+	return tradingDayKey(time.UnixMilli(ms).In(ctime()))
 }
 
 // SeedDepths reports each source's seeded depth, keyed by the names the
@@ -85,11 +96,11 @@ func SeedDepths(bars1m, bars1h []market.Kline, now int64) map[string]int {
 		}
 	}
 	return map[string]int{
-		"4h EMA34":     len(fourHClosedBuckets(bars1h, now)),
-		"1m EMA34":     closedCount(bars1m, now),
-		"1h level set": len(keyLevel1HBars(bars1h)),
+		"4h EMA34":      len(fourHClosedBuckets(bars1h, now)),
+		"1m EMA34":      closedCount(bars1m, now),
+		"1h level set":  len(keyLevel1HBars(bars1h)),
 		"today session": todayN,
-		"closed 15m":   len(closedBucketsTF(bars1m, 15, now)),
+		"closed 15m":    len(closedBucketsTF(bars1m, 15, now)),
 	}
 }
 
@@ -111,6 +122,7 @@ func Seed(e *Evaluator, bars1m []market.Kline, now int64) []string {
 
 	// 1H RTH key levels from the FULL stored history (F7, no cap).
 	candles1h := bars1h
+	e.State.Seed1HBars = candles1h // the deletion check needs the FULL series
 	e.State.SeedLevels = keyLevelsFromCandles(candles1h, e.Cfg.KeyLevelPrunePts)
 	if n := len(candles1h); n > 0 {
 		e.State.Seed1HWatermark = candles1h[n-1].OpenTime

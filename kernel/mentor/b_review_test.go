@@ -2,6 +2,7 @@ package mentor
 
 import (
 	"testing"
+	"time"
 
 	"vl/market"
 )
@@ -49,27 +50,35 @@ func TestBarsTFClockAlignedOverlap(t *testing.T) {
 }
 
 // TestBarsTF4HAnchoredTo1700CT — B1: the 4h buckets anchor to the CME session
-// open 17:00 CT: 17–21, 21–01, 01–05, 05–09, 09–13, 13–16. Inputs are REAL
-// UTC epoch ms (EPOCH RULING 2026-10-03 — wall-as-epoch inputs were migrated).
+
+// open 17:00 CT: 17–21, 21–01, 01–05, 05–09, 09–13, 13–16. Real-UTC epochs
+// through America/Chicago (EPOCH RULING 2026-10-03), on a CDT day and a CST
+// day.
 func TestBarsTF4HAnchoredTo1700CT(t *testing.T) {
-	for _, c := range []struct {
-		hh, mm  int
-		wantHH  int
-		wantOff int
-	}{
-		{17, 0, 17, 0}, // 17:00 → bucket 17:00
-		{20, 59, 17, 0}, // inside [17,21)
-		{21, 0, 21, 0},  // 21:00 → new bucket
-		{0, 59, 21, -1}, // after midnight belongs to the previous day's 21:00 bucket
-		{1, 0, 1, 0},
-		{9, 0, 9, 0},
-		{13, 0, 13, 0},
-		{16, 59, 13, 0}, // last bucket [13,17)
-	} {
-		got := bucketOpen(auditMs(2026, 9, 15, c.hh, c.mm, 0), 240)
-		want := auditMs(2026, 9, 15+c.wantOff, c.wantHH, 0, 0)
-		if got != want {
-			t.Fatalf("bucketOpen(%02d:%02d CT, 4h) = %d, want %d", c.hh, c.mm, got, want)
+	for _, c := range auditDates {
+		for _, tc := range []struct {
+			hh, mm int
+			wantHh int
+			wantD  int // day offset from c.d
+		}{
+			{17, 0, 17, 0}, // 17:00 → bucket 17:00
+			{20, 0, 17, 0}, // 20:00 → 17:00 bucket
+			{21, 0, 21, 0}, // 21:00 → new bucket
+			{0, 0, 21, -1}, // 00:00 → previous day's 21:00 bucket
+			{1, 0, 1, 0},   // 01:00 → 01:00 bucket
+			{9, 0, 9, 0},   // 09:00 → 09:00
+			{13, 0, 13, 0}, // 13:00 → 13:00
+			{16, 0, 13, 0}, // 16:00 → 13:00 bucket (last, 13–16)
+		} {
+			got := bucketOpen(auditMs(c.y, c.mo, c.d, tc.hh, tc.mm, 0), 240)
+			want := auditMs(c.y, c.mo, c.d+tc.wantD, tc.wantHh, 0, 0)
+			if got != want {
+				t.Fatalf("%s %02d:%02d: bucketOpen(4h) = %s, want %s",
+					c.label, tc.hh, tc.mm,
+					time.UnixMilli(got).In(ctime()).Format("01-02 15:04"),
+					time.UnixMilli(want).In(ctime()).Format("01-02 15:04"))
+			}
+
 		}
 	}
 }

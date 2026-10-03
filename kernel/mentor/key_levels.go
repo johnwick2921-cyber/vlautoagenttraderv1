@@ -101,24 +101,13 @@ func keyLevel1HBars(bars []market.Kline) []market.Kline {
 		// 81 buckets from the same 216 bars a clean call buckets into 53).
 		res := make([]market.Kline, 0, len(bars))
 		for _, b := range bars {
-			m := (b.OpenTime / 60_000) % (24 * 60)
-			if m >= 8*60 && m < rthEnd {
+			if m := rthMinuteOf(b.OpenTime); m >= 8*60 && m < rthEnd {
 				res = append(res, b)
 			}
 		}
 		return res
 	}
-	openMin := func(t int64) int64 {
-		t /= 60_000 // minutes, CT basis (DS-108 §1.2)
-		d := t - anchorMin
-		day := d / (24 * 60)
-		rem := d % (24 * 60)
-		if rem < 0 {
-			day--
-			rem += 24 * 60
-		}
-		return (day*(24*60) + anchorMin + (rem/60)*60) * 60_000
-	}
+	openMin := rthHourAnchor
 	var out []market.Kline
 	var cur *market.Kline
 	flush := func() {
@@ -129,7 +118,7 @@ func keyLevel1HBars(bars []market.Kline) []market.Kline {
 	}
 	key := int64(-1)
 	for _, b := range bars {
-		if (b.OpenTime/60_000)%(24*60) >= rthEnd {
+		if rthMinuteOf(b.OpenTime) >= rthEnd {
 			continue // post-close external minutes never enter the last candle
 		}
 		k := openMin(b.OpenTime)
@@ -153,8 +142,7 @@ func keyLevel1HBars(bars []market.Kline) []market.Kline {
 	flush()
 	res := out[:0]
 	for _, c := range out {
-		m := (c.OpenTime / 60_000) % (24 * 60)
-		if m >= anchorMin && m < rthEnd {
+		if m := rthMinuteOf(c.OpenTime); m >= anchorMin && m < rthEnd {
 			res = append(res, c)
 		}
 	}
@@ -176,6 +164,27 @@ func rthOnly(bars []market.Kline) []market.Kline {
 		}
 	}
 	return out
+}
+
+// rthMinuteOf returns the CT wall minute-of-day of a bar open (EPOCH
+// RULING 2026-10-03: real UTC ms through America/Chicago — never raw
+// division on the epoch).
+func rthMinuteOf(ms int64) int {
+	t := time.UnixMilli(ms).In(ctime())
+	return t.Hour()*60 + t.Minute()
+}
+
+// rthHourAnchor returns the open epoch of the RTH 1h candle a bar belongs
+// to: candles open at :30 (08:30, 09:30, …) — a bar at hh:29 belongs to
+// the previous hour's candle, hh:30 starts the current one. DST-safe via
+// America/Chicago.
+func rthHourAnchor(ms int64) int64 {
+	t := time.UnixMilli(ms).In(ctime())
+	h := t.Hour()
+	if t.Minute() < 30 {
+		h--
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), h, 30, 0, 0, ctime()).UnixMilli()
 }
 
 // candleColour: green iff close > open, red otherwise (§4.3 step 2).

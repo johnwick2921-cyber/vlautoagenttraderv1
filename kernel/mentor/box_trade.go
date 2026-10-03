@@ -46,6 +46,47 @@ func BoxReturnBars(bars []market.Kline, b Box, formedAt int, cfg BoxCfg) []BoxRe
 	return out
 }
 
+// BoxReturnBarsFrom is the INCREMENTAL call used by Tick: the same walk as
+// BoxReturnBars, starting at bar start with the outside-spell state already
+// known from bars[start-1] (the approach side). Running the full walk from
+// FormedAt every tick is O(n^2) on a long tape (the 30-day replay timed out
+// at 437s); the incremental form is O(new bars). The full walk starts with
+// outside=false at FormedAt+1 — the formation candle itself never opens a
+// spell — so only when start is past the first return does the previous
+// candle's close carry the spell state.
+func BoxReturnBarsFrom(bars []market.Kline, b Box, start int, cfg BoxCfg) []BoxReturn {
+	var out []BoxReturn
+	if start >= len(bars) {
+		return out
+	}
+	outside := false
+	if start-1 > b.FormedAt && start-1 < len(bars) {
+		c := bars[start-1]
+		switch b.Kind {
+		case FTGH:
+			outside = c.Close < b.Bottom
+		case FTGL:
+			outside = c.Close > b.Top
+		}
+	}
+	for i := start; i < len(bars); i++ {
+		c := bars[i]
+		if c.CloseTime == 0 {
+			continue
+		}
+		if touchesEdge(b, c, cfg) && outside {
+			out = append(out, BoxReturn{N: len(out) + 1, RefBar: i})
+		}
+		switch b.Kind {
+		case FTGH:
+			outside = c.Close < b.Bottom
+		case FTGL:
+			outside = c.Close > b.Top
+		}
+	}
+	return out
+}
+
 // BoxReturnReject classifies a return's reference candle [D3.2 p1
 // @ 21:04–21:33]: close OUTSIDE the box on the approach side → the reject
 // (the trade reference; place the stop order); close INSIDE → cancel.
