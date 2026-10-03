@@ -19,10 +19,12 @@ type BoxReturn struct {
 }
 
 // BoxReturnBars lists every post-formation return visit, one entry per
-// visit (not per candle). A candle that closes outside the box on the
-// approach side opens a visit; the next candle whose wick touches an edge
-// is the visit's reference candle. Consecutive touching candles are the
-// same visit.
+// visit (not per candle). The TOUCH is checked FIRST: a candle whose wick
+// touches an edge while price was outside on the approach side is the
+// visit's reference candle — even when that same candle closes back outside
+// on the approach side (the REJECT candle, fact 4: that is exactly the
+// trade reference). Consecutive touching candles are the same visit; a
+// candle closing outside the box (approach side) opens the next visit.
 func BoxReturnBars(bars []market.Kline, b Box, formedAt int, cfg BoxCfg) []BoxReturn {
 	var out []BoxReturn
 	outside := false
@@ -31,28 +33,80 @@ func BoxReturnBars(bars []market.Kline, b Box, formedAt int, cfg BoxCfg) []BoxRe
 		if c.CloseTime == 0 {
 			continue
 		}
+		if touchesEdge(b, c, cfg) && outside {
+			out = append(out, BoxReturn{N: len(out) + 1, RefBar: i})
+		}
 		switch b.Kind {
 		case FTGH:
-			if c.Close < b.Bottom {
-				outside = true
-				continue
-			}
+			outside = c.Close < b.Bottom
 		case FTGL:
-			if c.Close > b.Top {
-				outside = true
-				continue
-			}
-		}
-		if outside && touchesEdge(b, c, cfg) {
-			out = append(out, BoxReturn{N: len(out) + 1, RefBar: i})
-			outside = false
-			continue
-		}
-		if !touchesEdge(b, c, cfg) {
-			outside = false
+			outside = c.Close > b.Top
 		}
 	}
 	return out
+}
+
+// BoxReturnReject classifies a return's reference candle [D3.2 p1
+// @ 21:04–21:33]: close OUTSIDE the box on the approach side → the reject
+// (the trade reference; place the stop order); close INSIDE → cancel.
+func BoxReturnReject(b Box, ref market.Kline) bool {
+	switch b.Kind {
+	case FTGH:
+		return ref.Close < b.Bottom
+	case FTGL:
+		return ref.Close > b.Top
+	}
+	return false
+}
+
+// boxEntryIntent is the CALL SITE of the box trade: one return visit's
+// reference candle becomes a stop order [D3.4 p3 @ 07:02 — "stop order away
+// from the box, with the REJECTING candle as the reference"] when the
+// reject test passes; a close inside cancels. Gates, in order: 5m trigger
+// verdict (between two lines / wrong side), the mid-range ban, never-inside
+// the box, the stop ceiling, the §6 target ladder and the room rule. The R2
+// confluence flag [00-METHOD Risk-reward, D3.4 p3 @ 07:38] rides the intent.
+func boxEntryIntent(ref market.Kline, b Box, boxes []Box, levels []Level, trig TriggerLine, cfg Config) []Intent {
+	if !BoxReturnReject(b, ref) {
+		return nil // close inside the box = cancel
+	}
+	var side Side
+	var price, stop float64
+	if b.Kind == FTGL {
+		side, price, stop = SideLong, ref.High, ref.Low
+	} else {
+		side, price, stop = SideShort, ref.Low, ref.High
+	}
+	if ok, ts, _ := TriggerVerdict(trig, price); !ok || ts != "" && ts != side {
+		return nil
+	}
+	if allowed, _ := SetupPermittedVerdict("PHL", levels, price, cfg); !allowed {
+		return nil
+	}
+	if InsideAnyBox(boxes, price) {
+		return nil
+	}
+	risk := abs(price - stop)
+	if risk > cfg.StopCeilingPts {
+		return nil
+	}
+	target := nextLevelBeyond(levels, price, side)
+	if target == 0 {
+		return nil // no level beyond → no setup [D4.1 p1 @ 01:45]
+	}
+	if abs(target-price) < cfg.RoomMultiple*risk {
+		return nil
+	}
+	fl := ConfluenceVerdict(b, side, levels, trig)
+	return []Intent{{
+		Action:     PlaceStopEntry,
+		Side:       side,
+		Price:      price,
+		Stop:       stop,
+		Target:     target,
+		Confluence: fl.On,
+		Reason:     "box edge return: reject close outside → stop order with the rejecting candle as the reference [D3.2 p1 @ 21:04–21:33; D3.4 p3 @ 07:02]",
+	}}
 }
 
 // ConfluenceWithinPts is the R2 "at" tolerance: the key level must lie

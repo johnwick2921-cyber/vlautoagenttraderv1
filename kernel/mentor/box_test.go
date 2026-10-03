@@ -78,20 +78,20 @@ func TestEscapeDetection(t *testing.T) {
 // A return = price was outside the box on the approach side, then a candle
 // touches an edge — counted per visit, not per candle.
 func TestBoxFirstReturnAfterFormation(t *testing.T) {
-        cfg := DefaultBoxCfg()
-        b := Box{Kind: FTGH, Top: 105, Bottom: 102}
-        bars := []market.Kline{
-                {}, // formedAt = 0
-                {High: 105.1, Low: 102.5, Close: 104, CloseTime: 1}, // touch, no outside first → not a return
-                {High: 101, Low: 99, Close: 100.5, CloseTime: 2},     // close below 102 → outside (approach side)
-                {High: 105.0, Low: 100, Close: 104, CloseTime: 3},    // touch after outside → return 1
-                {High: 105.2, Low: 103, Close: 104, CloseTime: 4},    // touches again, same visit → no new count
-                {High: 100, Low: 98.5, Close: 99.5, CloseTime: 5},    // outside again
-                {High: 105.1, Low: 99, Close: 104.5, CloseTime: 6},   // return 2
-        }
-        if n := countBoxReturns(bars, b, 0, cfg); n != 2 {
-                t.Fatalf("returns = %d, want 2 (per visit, not per candle)", n)
-        }
+	cfg := DefaultBoxCfg()
+	b := Box{Kind: FTGH, Top: 105, Bottom: 102}
+	bars := []market.Kline{
+		{}, // formedAt = 0
+		{High: 105.1, Low: 102.5, Close: 104, CloseTime: 1}, // touch, no outside first → not a return
+		{High: 101, Low: 99, Close: 100.5, CloseTime: 2},    // close below 102 → outside (approach side)
+		{High: 105.0, Low: 100, Close: 104, CloseTime: 3},   // touch after outside → return 1
+		{High: 105.2, Low: 103, Close: 104, CloseTime: 4},   // touches again, same visit → no new count
+		{High: 100, Low: 98.5, Close: 99.5, CloseTime: 5},   // outside again
+		{High: 105.1, Low: 99, Close: 104.5, CloseTime: 6},  // return 2
+	}
+	if n := countBoxReturns(bars, b, 0, cfg); n != 2 {
+		t.Fatalf("returns = %d, want 2 (per visit, not per candle)", n)
+	}
 }
 
 // TestBoxSurvivesEscape — B1: an escape does NOT delete the box
@@ -100,35 +100,35 @@ func TestBoxFirstReturnAfterFormation(t *testing.T) {
 // FTGH [104, 106] (open 106.2, close 106.4) — the old code dropped the box
 // right there; the box must survive to the end of the day.
 func TestBoxSurvivesEscape(t *testing.T) {
-        cfg := DefaultBoxCfg()
-        t0 := time.Date(2026, time.September, 15, 9, 0, 0, 0, ctime()).UnixMilli()
-        mk := func(i int, o, h, l, c float64) market.Kline {
-                return market.Kline{OpenTime: t0 + int64(i)*60_000, CloseTime: t0 + int64(i)*60_000 + 59_000, Open: o, High: h, Low: l, Close: c}
-        }
-        bars := []market.Kline{
-                mk(0, 100, 101, 99, 100),
-                mk(1, 100, 102, 99, 101),
-                mk(2, 101, 105, 100, 104),  // swing high @2 — pairs with @4
-                mk(3, 103, 104, 102, 103),
-                mk(4, 102, 106, 101, 105),  // swing high @4 — the extreme
-                mk(5, 105, 107, 99, 100),   // down-wick → SWGL, not a higher high
-                mk(6, 106.2, 106.5, 105, 106.4), // ESCAPE: body fully above 106
-                mk(7, 106, 106.3, 105.5, 106.1),
-        }
-        now := time.UnixMilli(bars[len(bars)-1].OpenTime + 60_000).In(ctime())
-        boxes := BoxesBuild(bars, cfg, now)
-        var ftgh *Box
-        for i := range boxes {
-                if boxes[i].Kind == FTGH {
-                        b := boxes[i]
-                        ftgh = &b
-                }
-        }
-        if ftgh == nil {
-                t.Fatal("FTGH deleted on escape — a box is never deleted intraday [D3.2 p1 @ 18:30–19:30; D4.1 p2 @ 02:39–03:09]")
-        }
-        if ftgh.Top != 106 || ftgh.Bottom != 104 {
-                t.Fatalf("FTGH = [%.2f, %.2f], want [104, 106]", ftgh.Bottom, ftgh.Top)
+	cfg := DefaultBoxCfg()
+	t0 := time.Date(2026, time.September, 15, 9, 0, 0, 0, ctime()).UnixMilli()
+	mk := func(i int, o, h, l, c float64) market.Kline {
+		return market.Kline{OpenTime: t0 + int64(i)*60_000, CloseTime: t0 + int64(i)*60_000 + 59_000, Open: o, High: h, Low: l, Close: c}
+	}
+	bars := []market.Kline{
+		mk(0, 100, 101, 99, 100),
+		mk(1, 100, 102, 99, 101),
+		mk(2, 101, 105, 100, 104), // swing high @2 — pairs with @4
+		mk(3, 103, 104, 102, 103),
+		mk(4, 102, 106, 101, 105),       // swing high @4 — the extreme
+		mk(5, 105, 107, 99, 100),        // down-wick → SWGL, not a higher high
+		mk(6, 106.2, 106.5, 105, 106.4), // ESCAPE: body fully above 106
+		mk(7, 106, 106.3, 105.5, 106.1),
+	}
+	now := time.UnixMilli(bars[len(bars)-1].OpenTime + 60_000).In(ctime())
+	boxes := BoxesBuild(bars, cfg, now)
+	var ftgh *Box
+	for i := range boxes {
+		if boxes[i].Kind == FTGH {
+			b := boxes[i]
+			ftgh = &b
+		}
+	}
+	if ftgh == nil {
+		t.Fatal("FTGH deleted on escape — a box is never deleted intraday [D3.2 p1 @ 18:30–19:30; D4.1 p2 @ 02:39–03:09]")
+	}
+	if ftgh.Top != 106 || ftgh.Bottom != 104 {
+		t.Fatalf("FTGH = [%.2f, %.2f], want [104, 106]", ftgh.Bottom, ftgh.Top)
 	}
 }
 
