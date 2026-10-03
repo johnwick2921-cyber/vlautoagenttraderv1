@@ -102,6 +102,34 @@ func TestArmExpired(t *testing.T) {
 	if armExpired(row, nowMs) {
 		t.Fatalf("a terminal row is never swept by its expiry")
 	}
+	// REVIEW-313 F5 probe rows: an unknown or odd-cased state is NEVER due —
+	// the fall-through at 6beb984a7 made "WORKING" partial fills, odd-cased
+	// cancel_pending, empty and bogus states all due.
+	row.State = "WORKING"
+	row.FillQuantity = 1
+	if armExpired(row, nowMs) {
+		t.Fatalf("an odd-cased WORKING partial fill must not be cancelled by expiry")
+	}
+	row.State = " working "
+	if armExpired(row, nowMs) {
+		t.Fatalf("a padded working partial fill must not be cancelled by expiry")
+	}
+	row.FillQuantity = 0
+	if !armExpired(row, nowMs) {
+		t.Fatalf("an odd-cased, UNFILLED working order is due — the canonical predicate case-folds")
+	}
+	row.State = "CANCEL_PENDING"
+	if armExpired(row, nowMs) {
+		t.Fatalf("an odd-cased cancel_pending row is never due")
+	}
+	row.State = "bogus_state"
+	if armExpired(row, nowMs) {
+		t.Fatalf("an UNKNOWN state is never due — lifecycle actions retain their refusal of unknown states")
+	}
+	row.State = ""
+	if armExpired(row, nowMs) {
+		t.Fatalf("an empty state is never due")
+	}
 }
 
 // expiryFixture stands up the real TCPServer + TCPTrader + store fixture the
