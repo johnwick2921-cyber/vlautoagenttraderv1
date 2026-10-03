@@ -2,6 +2,7 @@ package mentor
 
 import (
 	"strings"
+	"time"
 
 	"vl/market"
 )
@@ -19,9 +20,12 @@ type ORB struct {
 	Escaped Side    `json:"escaped"` // "" = not escaped yet; else the escape direction
 }
 
-// dayStartCT floors a CT-based epoch-millis time to its CT day start.
+// dayStartCT floors a REAL-UTC epoch-millis time to its CT-midnight epoch
+// (EPOCH RULING 2026-10-03: one convention = real UTC everywhere; wall
+// arithmetic shifts by 5h/6h with DST).
 func dayStartCT(t int64) int64 {
-	return (t / (24 * 60 * 60_000)) * (24 * 60 * 60_000)
+	tt := time.UnixMilli(t).In(ctime())
+	return time.Date(tt.Year(), tt.Month(), tt.Day(), 0, 0, 0, 0, ctime()).UnixMilli()
 }
 
 // ORBAdvance draws the ORB once the 08:30 2-minute candle has completed and
@@ -50,8 +54,12 @@ func ORBAdvance(orb ORB, bars []market.Kline, now int64) ORB {
 			orb.High = maxf(b1.High, b2.High)
 			orb.Low = minf(b1.Low, b2.Low)
 			orb.Drawn = true
+		} else {
+			return orb
 		}
-		return orb
+		// P5 (493c7ead8): fall through — the escape test runs on the SAME closed
+		// candle that completed the 2m ORB. Returning here skipped the 08:32
+		// escape candle and latched one tick late (08:33).
 	}
 	if orb.Escaped != "" {
 		return orb

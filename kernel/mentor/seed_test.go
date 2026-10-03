@@ -304,12 +304,12 @@ func hourTape(t *testing.T, days int) []market.Kline {
 func TestSeedFailClosedTick(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
-	head := market.Kline{Open: 121, High: 121.5, Low: 120.5, Close: 120, CloseTime: 1}
-	mother := market.Kline{Open: 98, High: 106, Low: 97, Close: 105, CloseTime: 60_000 - 1}
-	c1 := market.Kline{Open: 103, High: 104, Low: 99, Close: 100, CloseTime: 119_999}
-	c2 := market.Kline{Open: 100, High: 101.5, Low: 99.5, Close: 101, CloseTime: 179_999}
-	c3 := market.Kline{Open: 100, High: 101.5, Low: 99.5, Close: 101, CloseTime: 239_999}
-	c4 := market.Kline{Open: 100, High: 101.5, Low: 99.5, Close: 101, CloseTime: 299_999}
+	head := rthBars(0, 121, 121.5, 120.5, 120)
+	mother := rthBars(1, 98, 106, 97, 105)
+	c1 := rthBars(2, 103, 104, 99, 100)
+	c2 := rthBars(3, 100, 101.5, 99.5, 101)
+	c3 := rthBars(4, 100, 101.5, 99.5, 101)
+	c4 := rthBars(5, 100, 101.5, 99.5, 101)
 	bars := []market.Kline{head, mother, c1, c2, c3, c4}
 
 	count := func(e *Evaluator) (placements, cancels int) {
@@ -331,7 +331,7 @@ func TestSeedFailClosedTick(t *testing.T) {
 		e := New(cfg)
 		e.State.Trigger = TriggerLine{Dir: SideLong, Price: 90}
 		e.State.HTF = HTF{FourH: TriggerLine{Dir: SideLong, Price: 90}}
-		e.State.ORB = ORB{Day: 0, High: 90, Low: 85, Drawn: true, Escaped: SideLong}
+		e.State.ORB = ORB{Day: dayStartCT(rthBars(0, 0, 0, 0, 0).OpenTime), High: 90, Low: 85, Drawn: true, Escaped: SideLong}
 		return e
 	}
 

@@ -2,6 +2,7 @@ package mentor
 
 import (
 	"fmt"
+	"time"
 
 	"vl/market"
 )
@@ -227,8 +228,10 @@ func fnum(v float64) string {
 // epoch_floor convention per the bars table (DS-108 §1.2: maintenance gap
 // lands at 17:00–18:00 CT, which confirms the CT basis).
 func ctOf(ms int64) (day int, hh, mm int) {
-	t := ms / 1000 / 60 // minutes since epoch in CT
-	day = int(t / (24 * 60))
-	mod := int(t % (24 * 60))
-	return day, mod / 60, mod % 60
+	// EPOCH RULING 2026-10-03: bars carry REAL UTC epoch ms; the CT wall
+	// read goes through America/Chicago (DST-aware), never raw division.
+	t := time.UnixMilli(ms).In(ctime())
+	mid := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, ctime()).UnixMilli()
+	day = int(mid / (24 * 60 * 60_000))
+	return day, t.Hour(), t.Minute()
 }
