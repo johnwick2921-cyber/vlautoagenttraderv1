@@ -245,6 +245,35 @@ func TestKeyLevelDeletedBy1HBodyCloseOnly(t *testing.T) {
 			t.Fatalf("a 1H wick through must NOT delete the level; state=%v", e.State.DeletedLevels)
 		}
 	})
+	t.Run("forming 1H candle does not delete", func(t *testing.T) {
+		// confirmation rule (b): deletion needs a CLOSED 1H candle. Mid-candle
+		// (the 09:30 candle is still forming, its close time not reached) the
+		// level survives even though the candle would cross; once it closes the
+		// same history deletes it. Stage 1 feeds the history only UP TO midNow
+		// (production shape: bars never extend past now).
+		e := New(cfg)
+		midNow := mk(9, 45, 0, 0, 0, 0).OpenTime + 59_999 // inside the 09:30 candle
+		var upto []market.Kline
+		for _, b := range body {
+			if b.CloseTime <= midNow {
+				upto = append(upto, b)
+			}
+		}
+		e.Tick(upto, midNow)
+		if len(e.State.DeletedLevels) != 0 {
+			t.Fatalf("a still-FORMING 1H candle must not delete the level; state=%v", e.State.DeletedLevels)
+		}
+		e.Tick(body, now) // the 09:30 candle has now closed
+		deleted := false
+		for k := range e.State.DeletedLevels {
+			if k == keyLevelKey(head[1]) {
+				deleted = true
+			}
+		}
+		if !deleted {
+			t.Fatalf("after the candle CLOSED the deletion must fire; state=%v", e.State.DeletedLevels)
+		}
+	})
 }
 
 func TestKeyLevelsDisabledIsNil(t *testing.T) {

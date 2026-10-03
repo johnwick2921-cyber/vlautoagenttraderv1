@@ -19,10 +19,13 @@ func TestTouchRejectAtResistanceCloseBelow(t *testing.T) {
 	cfg.Enabled = true
 	lvl := Level{Key: "k1", Kind: KindKeyLevel, Price: 100}
 	tr := &Touch{LevelKey: "k1"}
+	// confirmation rule (c): the outcome is judged on the CLOSE of the 1m
+	// reference candle (§3) — the intrabar High pokes THROUGH the resistance
+	// (102 > 100) but the close comes back below: reject, not a through.
 	// previous close BELOW the level: resistance, approached from below
-	intents := TouchTick(tr, lvl, 99, market.Kline{High: 100.5, Low: 98.0, Close: 98.5}, cfg)
+	intents := TouchTick(tr, lvl, 99, market.Kline{High: 102.0, Low: 98.0, Close: 98.5}, cfg)
 	if tr.Outcome != TouchReject {
-		t.Fatalf("outcome = %q, want reject (closed back below resistance)", tr.Outcome)
+		t.Fatalf("outcome = %q, want reject (intrabar through, closed back below resistance)", tr.Outcome)
 	}
 	if len(intents) != 0 {
 		t.Fatalf("reject emits no intents here (order is the setup layer's): %+v", intents)

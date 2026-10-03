@@ -32,6 +32,24 @@ func TestTriggerLineFirstBreakDrawsLine(t *testing.T) {
 	}
 }
 
+// TestTriggerFiresOnForming5mBucket — confirmation rule (a) [Buy-Sell Setup
+// Trigger @11:54–12:34; deck slide 23 "Không cần đợi nến đóng"]: "PHÁ" (a
+// break of a candle's extreme) fires the trigger line INTRABAR — no close
+// needed. The evaluator feeds the still-forming 5m bucket and a break on it
+// draws the line at once.
+func TestTriggerFiresOnForming5mBucket(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	bars := []market.Kline{
+		b5(0, 100, 96, 97),  // closed bucket (no previous to break)
+		b5(5, 103, 99, 101), // the FORMING bucket breaks the previous high
+	}
+	got := TriggerTick(TriggerLine{}, bars, 5, cfg)
+	if got.Dir != SideLong || got.Price != 100 {
+		t.Fatalf("the forming bucket's break must fire the line intrabar: %+v, want long @ 100", got)
+	}
+}
+
 // TestTriggerLineSellBreak — mirror: a candle breaking the previous LOW draws
 // the sell line at that low.
 func TestTriggerLineSellBreak(t *testing.T) {
