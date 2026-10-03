@@ -145,3 +145,38 @@ func TestEvaluatorInvalidLevelBlocksPHL(t *testing.T) {
 		}
 	}
 }
+
+// TestEvaluatorRefusesEverythingInTriggerZone — R4 (RULES FIX v3, verified in
+// the transcript, D3.4 p1 @ 16:56–17:17): between two opposing trigger lines
+// there is NO trade at all, ISB included, and the zone INCLUDES the lines.
+// The evaluator's ISB branch gates on TriggerVerdict(cur.Close) BEFORE any
+// other check, so an ISB whose close is in the zone emits nothing.
+func TestEvaluatorRefusesEverythingInTriggerZone(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	mk := func(i int, o, h, l, c float64) market.Kline {
+		return market.Kline{OpenTime: int64(i) * 60_000, Open: o, High: h, Low: l, Close: c}
+	}
+	// an ISB pair: cur's body inside prev's full range (wicks included).
+	prev := mk(0, 99, 101, 96, 99)
+	for _, tc := range []struct {
+		name  string
+		close float64
+	}{
+		{"strictly between", 98.5},
+		{"exactly on the new sell line", 97},
+		{"exactly on the old buy line", 100},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e := New(cfg)
+			e.State.Trigger = TriggerLine{Dir: SideShort, Price: 97, OldPrice: 100, OldDir: SideLong}
+			bars := []market.Kline{prev, mk(1, 97.5, 98.5, 96.5, tc.close)}
+			intents := e.Tick(bars, bars[1].OpenTime+59_999)
+			for _, in := range intents {
+				if in.Action == PlaceStopEntry {
+					t.Fatalf("entry emitted inside the two-trigger zone: %+v", in)
+				}
+			}
+		})
+	}
+}

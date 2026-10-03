@@ -11,8 +11,10 @@ import (
 // A setup's reference candle must touch one of:
 //
 //   - a key level (§4.3);
-//   - EMA 34 on a HIGHER timeframe (knob EMALocationTFMinutes, default 4h =
-//     240; allowed 60/15/5 — NEVER 1m);
+//   - the EMA 34 of the trading chart — R3: the 1m EMA 34 for intraday setups
+//     [D5.4 @ 01:00–01:27, 05:21–05:37] (knob EMALocationTFMinutes, default 1;
+//     other TFs 5/15/60/240 allowed for experimentation; the 4h EMA 34 is ONLY
+//     the §8 swing's, never this gate [D5.2 p1 @ 05:30–05:43]);
 //   - the 5m trigger-line retest [D3.4 p2 @ 20:51];
 //   - (FTGH/FTGL box edges are out of v1 — boxes are not built).
 //
@@ -20,17 +22,13 @@ import (
 // within LocationCoincidePts (±2) of a key level. EMA 9 is a reverse-ISB
 // location only (§10) — never a location for ISB/PHL/PLH in v1.
 //
-// levels may be the plain level set; the verdict recomputes the EMA34-HTF line
+// levels may be the plain level set; the verdict recomputes the EMA34 line
 // from the bar history so a moving line is judged at its CURRENT value.
 func LocationVerdict(ref market.Kline, levels []Level, trigger TriggerLine, bars []market.Kline, cfg Config) (ok bool, where string) {
 	if !cfg.Enabled {
 		return false, ""
 	}
-	if cfg.EMALocationTFMinutes == 1 {
-		// NEVER 1m by default (owner ruling) — a 1-minute EMA is not a
-		// location. Treated as absent, not an error.
-	} else if len(bars) > 0 && (cfg.EMALocationTFMinutes == 240 || cfg.EMALocationTFMinutes == 60 ||
-		cfg.EMALocationTFMinutes == 15 || cfg.EMALocationTFMinutes == 5) {
+	if len(bars) > 0 && cfg.EMALocationTFMinutes > 0 {
 		v := emaValue(barsTF(bars, cfg.EMALocationTFMinutes), cfg.EMAPeriod34)
 		if touchesPrice(ref, v, cfg.TouchBandPts) {
 			return true, fmt.Sprintf("ema34_%dm", cfg.EMALocationTFMinutes)
@@ -95,11 +93,9 @@ func levelIsLocation(lvl Level, levels []Level) bool {
 
 // EMALocationLevel returns the location-gate EMA 34 line as a Level (for the
 // evaluator's PHL/PLH entry-level check, where the touched level itself must
-// be a location).
+// be a location). R3: default tf = 1m (intraday chart).
 func EMALocationLevel(bars []market.Kline, cfg Config) (Level, bool) {
-	if !cfg.Enabled || cfg.EMALocationTFMinutes == 1 ||
-		!(cfg.EMALocationTFMinutes == 240 || cfg.EMALocationTFMinutes == 60 ||
-			cfg.EMALocationTFMinutes == 15 || cfg.EMALocationTFMinutes == 5) {
+	if !cfg.Enabled || len(bars) == 0 || cfg.EMALocationTFMinutes <= 0 {
 		return Level{}, false
 	}
 	v := emaValue(barsTF(bars, cfg.EMALocationTFMinutes), cfg.EMAPeriod34)

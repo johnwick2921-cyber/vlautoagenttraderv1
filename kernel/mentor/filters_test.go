@@ -108,8 +108,20 @@ func TestTriggerVerdictSideAndNoTradeZone(t *testing.T) {
 	if ok, _, reason := TriggerVerdict(tl, 98.5); ok || reason == "" {
 		t.Fatalf("between two lines must be no-trade")
 	}
+	// R4: the zone INCLUDES the lines themselves — price sitting exactly ON
+	// either line is still no-trade [D3.4 p1 @ 16:56–17:17].
+	for _, p := range []float64{100, 97} {
+		if ok, _, reason := TriggerVerdict(tl, p); ok || reason == "" {
+			t.Fatalf("price exactly on a zone line (%v) must be no-trade", p)
+		}
+	}
 	if ok, side, _ := TriggerVerdict(tl, 96); !ok || side != SideShort {
 		t.Fatalf("below the new sell line: ok=%v side=%q", ok, side)
+	}
+	// above the old buy line is the WRONG side of the current (sell) line —
+	// still refused, but for the wrong-side reason, not the zone.
+	if ok, _, reason := TriggerVerdict(tl, 101); ok || reason == "" {
+		t.Fatalf("above the current sell line must be refused")
 	}
 }
 

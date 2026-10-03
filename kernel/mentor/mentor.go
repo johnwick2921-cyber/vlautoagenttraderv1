@@ -48,8 +48,8 @@ const (
 	// KindEMA34 / KindEMA9 — EMA values promoted to levels (§8, §10, §11).
 	KindEMA34 LevelKind = "ema34"
 	KindEMA9  LevelKind = "ema9"
-	// KindEMA34HTF is the location-gate EMA 34 on a HIGHER timeframe
-	// (knob ema34_tf, default 4h; never 1m — location fold item 1).
+	// KindEMA34HTF is the location-gate EMA 34 line (knob ema34_tf — R3:
+	// default 1m, the trading chart; the 4h EMA 34 is the swing's only).
 	KindEMA34HTF LevelKind = "ema34_htf"
 	// KindTriggerRetest is the 5m trigger-line retest location (§5.1
 	// [D3.4 p2 @ 20:51]: the retest is a level confirm).
@@ -95,9 +95,12 @@ type Config struct {
 	EMAPeriod9        int     // default 9
 	EMATFMinutes      int     // TF the EMA lines are computed on; default 1
 
-	// EMALocationTFMinutes is the LOCATION-GATE EMA 34 timeframe (fold item
-	// 1): default 240 (4h), allowed 60/15/5 — NEVER 1 (the owner's ruling:
-	// setups happen only at important levels).
+	// EMALocationTFMinutes is the LOCATION-GATE EMA 34 timeframe. R3 (RULES
+	// FIX v3, verified): intraday setups use the EMA 34 of the TRADING chart
+	// — the 1m [D5.4 @ 01:00–01:27, 05:21–05:37] — so the default is 1. The
+	// 4h EMA 34 is ONLY for the §8 swing, which carries its own knobs
+	// (SwingCfg) and never reads this [D5.2 p1 @ 05:30–05:43]. Other TFs
+	// (5/15/60/240) remain allowed for experimentation.
 	EMALocationTFMinutes int
 
 	// Touch / close-side (PLAN v1 §2).
@@ -139,7 +142,7 @@ func DefaultConfig() Config {
 		EMAPeriod9:        9,
 		EMATFMinutes:      1,
 
-		EMALocationTFMinutes: 240,
+		EMALocationTFMinutes: 1, // R3: intraday EMA 34 lives on the 1m chart
 
 		TouchBandPts: 0, // §3: wait for the LITERAL touch [D3.3 p1 @ 00:13]; §8's "KHÔNG ĐƯỢC GẦN ĐỤNG" is the same strictness
 

@@ -151,8 +151,8 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	run, haveRun := GlobexRun(bars, now, ctime())
 	e.State.Day = LatchDay(e.State.Day, now, ctime(), run, haveRun, HTFConflict(e.State.HTF), dg)
 
-	// the location set grows by the trigger-line retest and the EMA34-HTF
-	// line (fold item 1).
+	// the location set grows by the trigger-line retest and the EMA 34
+	// location line (fold item 1; R3: 1m default).
 	if e.State.Trigger.Dir != "" && e.State.Trigger.Price != 0 {
 		levels = append(levels, Level{Key: string(KindTriggerRetest), Kind: KindTriggerRetest, Price: e.State.Trigger.Price})
 	}

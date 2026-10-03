@@ -3,6 +3,7 @@ package mentor
 import (
 	"log"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -64,6 +65,11 @@ type SwingCfg struct {
 	TargetEMA5mPeriod int     // first target EMA period on 5m; default 34
 	LeewayCandles     int     // ISB window after a through-close; default 2
 	Hold4hBars        int     // hold to the close of the N-th 4h candle after entry; default 2 [C]
+	// Respects5mZone — gate swing entries on the 5m trigger-line zone.
+	// Default false: §8 is a self-contained 4h → 5m procedure; nothing in
+	// D5.2 ties it to the 5m trigger lines. [C] not stated in the method —
+	// DS-103 wires the gate at the call site.
+	Respects5mZone bool
 }
 
 // DefaultSwingCfg returns the §8 defaults.
@@ -95,6 +101,7 @@ type SwingState struct {
 	LastBarTime  int64   // ms, last closed 5m bar processed
 	FirstTouch   *swingTouch
 	LeewayLeft   int     // candles left in the ISB window after a through-close
+	EmaCount     int     // 4h closes consumed by Line — ≥ FourHEMA34Min means warm (seed path)
 	ClearLongAt  float64 // price ≤ this re-arms longs (line − stop)
 	ClearShortAt float64 // price ≥ this re-arms shorts (line + stop)
 	Pos          *swingPosition
@@ -118,11 +125,21 @@ type swingPosition struct {
 }
 
 // fourHBucketStart returns the start (ms) of the 4h bucket a bar belongs to.
-// Buckets are anchored at 17:00 CT (the Globex session open) — a local
-// helper; TODO: switch to DS-103's B1 clock-aligned buckets once they land.
+// Buckets are anchored at 17:00 CT (the Globex session open), DST-aware via
+// America/Chicago. The minute-keyed cache keeps the per-bar cost to a map
+// lookup (barsTF(240) buckets every bar on every tick — without it the
+// time.Date path made the 30-day replay 16x slower: 27s -> 437s). The key is
+// the bar's UTC minute, so distinct buckets can never collide (a 17:00 CT
+// bucket may straddle two UTC 4h spans).
+var fourHBucketCache sync.Map // utcMinute -> bucket start ms
+
 func fourHBucketStart(ot int64, loc *time.Location) int64 {
 	if loc == nil {
 		loc = ctime()
+	}
+	key := ot / 60_000
+	if v, ok := fourHBucketCache.Load(key); ok {
+		return v.(int64)
 	}
 	t := time.UnixMilli(ot).In(loc)
 	anchor := time.Date(t.Year(), t.Month(), t.Day(), globexOpenMin/60, globexOpenMin%60, 0, 0, loc)
@@ -131,7 +148,9 @@ func fourHBucketStart(ot int64, loc *time.Location) int64 {
 	}
 	delta := t.Sub(anchor)
 	step := 4 * time.Hour
-	return anchor.Add(delta - delta%step).UnixMilli()
+	res := anchor.Add(delta - delta%step).UnixMilli()
+	fourHBucketCache.Store(key, res)
+	return res
 }
 
 // swingLine computes the 4h EMA 34 known at the START of the current 4h bar:
@@ -166,6 +185,18 @@ func swingLine(bars5m []market.Kline, now int64, cfg SwingCfg, loc *time.Locatio
 	return emaValue(kbars, cfg.EMAPeriod), cur, true
 }
 
+// bucketClose returns the close of the closed 4h bucket starting at start
+// (the last 5m bar inside it), 0 when absent.
+func bucketClose(bars5m []market.Kline, start int64) float64 {
+	var out float64
+	for _, b := range bars5m {
+		if fourHBucketStart(b.OpenTime, ctime()) == start {
+			out = b.Close
+		}
+	}
+	return out
+}
+
 // SwingTick advances the swing machine over the closed 5m bars since the
 // last tick and returns the intents. Pure in (state, bars): the same tape
 // rebuilds the same state.
@@ -183,13 +214,31 @@ func SwingTick(s *SwingState, bars5m []market.Kline, cfg SwingCfg, now int64) []
 	}
 	line, bucketStart, ok := swingLine(bars5m, now, cfg, loc)
 	if !ok {
+		// Seeded warm line: the local slice is too short to recompute the 4h
+		// EMA — KEEP the seeded line, never wipe a warm line to 0 (P0 seed).
+		if s.EmaCount >= FourHEMA34Min {
+			return out
+		}
 		s.Line, s.BucketStart = 0, bucketStart
 		return out
 	}
 	if bucketStart != s.BucketStart {
 		// A 4h candle finished: FLIP to the new line, do not wait for a
 		// retest [D5.2 p3 @ 12:30]; the "used" approach resets (R8).
-		s.Line = line
+		// P0: a warm line continues the SAME EMA recurrence incrementally
+		// (exact parity with a full-history rebuild) instead of a cold
+		// recompute from the ~2-day slice.
+		if s.EmaCount >= FourHEMA34Min {
+			if nc := bucketClose(bars5m, s.BucketStart); nc != 0 {
+				k := 2.0 / float64(cfg.EMAPeriod+1)
+				s.Line = s.Line + k*(nc-s.Line)
+				s.EmaCount++
+			} else {
+				s.Line = line
+			}
+		} else {
+			s.Line = line
+		}
 		s.BucketStart = bucketStart
 		s.FirstTouch = nil
 		s.LeewayLeft = 0
@@ -348,6 +397,7 @@ func swingRejectIntent(approach Side, ref market.Kline, line float64, cfg SwingC
 	if approach == SideShort { // resistance: came from below → sell stop
 		in = Intent{
 			Action: PlaceStopEntry,
+			Setup:  "SWING4H",
 			Side:   SideShort,
 			Price:  ref.Low - cfg.EntryBufferPts,
 			Stop:   line + cfg.StopBeyondLinePts,
@@ -355,6 +405,7 @@ func swingRejectIntent(approach Side, ref market.Kline, line float64, cfg SwingC
 	} else {
 		in = Intent{
 			Action: PlaceStopEntry,
+			Setup:  "SWING4H",
 			Side:   SideLong,
 			Price:  ref.High + cfg.EntryBufferPts,
 			Stop:   line - cfg.StopBeyondLinePts,
@@ -382,9 +433,9 @@ func swingRejectIntent(approach Side, ref market.Kline, line float64, cfg SwingC
 func swingISBIntent(t *swingTouch, ref market.Kline, line float64, cfg SwingCfg) (Intent, bool) {
 	var in Intent
 	if t.Approach == SideShort {
-		in = Intent{Action: PlaceStopEntry, Side: SideShort, Price: ref.Low - cfg.EntryBufferPts, Stop: line}
+		in = Intent{Action: PlaceStopEntry, Setup: "SWING4H", Side: SideShort, Price: ref.Low - cfg.EntryBufferPts, Stop: line}
 	} else {
-		in = Intent{Action: PlaceStopEntry, Side: SideLong, Price: ref.High + cfg.EntryBufferPts, Stop: line}
+		in = Intent{Action: PlaceStopEntry, Setup: "SWING4H", Side: SideLong, Price: ref.High + cfg.EntryBufferPts, Stop: line}
 	}
 	if abs(in.Stop-in.Price) >= cfg.MaxStopPts {
 		return Intent{}, false

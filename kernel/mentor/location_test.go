@@ -9,7 +9,7 @@ import (
 // The LOCATION GATE (fold item 1, owner ruling): setups happen ONLY at
 // important levels — all three setups, ISB included. A setup's reference
 // candle must touch a key level, the EMA 34 on a higher timeframe
-// (ema34_tf knob, default 4h, never 1m), or the 5m trigger-line retest. An
+// (ema34_tf knob, default 1m per R3), or the 5m trigger-line retest. An
 // old high/low alone is NOT a location (only ±2 pts of a key level).
 
 // TestLocationKeyLevelTouch — the reference candle touching a key level is a
@@ -47,9 +47,11 @@ func TestLocationBareSwingIsNotALocation(t *testing.T) {
 	}
 }
 
-// TestLocationEMA34HTFNever1m — the ema34_tf knob: 1m is never a location;
-// the higher-TF line (here 5m, an allowed value) is.
-func TestLocationEMA34HTFNever1m(t *testing.T) {
+// TestLocationEMA34Default1m — R3 (RULES FIX v3, verified): intraday setups
+// use the EMA 34 of the TRADING chart, i.e. the 1m — the DEFAULT knob is 1
+// [D5.4 @ 01:00–01:27, 05:21–05:37]. The 4h EMA 34 belongs ONLY to the swing.
+// Other TFs (here 5m) stay allowed for experimentation.
+func TestLocationEMA34Default1m(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	// deterministic 1m series: closes 100, 102, 104, …
@@ -58,10 +60,12 @@ func TestLocationEMA34HTFNever1m(t *testing.T) {
 		c := 100 + float64(i)*2
 		bars = append(bars, market.Kline{OpenTime: int64(i) * 60_000, CloseTime: int64(i)*60_000 + 59_999, Open: c - 1, High: c + 1, Low: c - 2, Close: c})
 	}
-	cfg.EMALocationTFMinutes = 1
 	ref := market.Kline{High: 500, Low: -500} // touches everything
-	if ok, _ := LocationVerdict(ref, nil, TriggerLine{}, bars, cfg); ok {
-		t.Fatal("a 1-minute EMA must never be a location (owner ruling)")
+	if cfg.EMALocationTFMinutes != 1 {
+		t.Fatalf("ema34_tf default = %d, want 1 (R3)", cfg.EMALocationTFMinutes)
+	}
+	if ok, where := LocationVerdict(ref, nil, TriggerLine{}, bars, cfg); !ok || where != "ema34_1m" {
+		t.Fatal("the DEFAULT 1m EMA 34 must be a location (R3)")
 	}
 	cfg.EMALocationTFMinutes = 5
 	v := emaValue(barsTF(bars, 5), cfg.EMAPeriod34)
@@ -101,7 +105,7 @@ func TestPHLPLHGatedByLocationAtEvalLevel(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	cfg.RangeGapPts = 0
-	cfg.EMALocationTFMinutes = 1 // no EMA location — isolate the key-level path
+	cfg.EMALocationTFMinutes = 1 // R3 default — isolate via bare levels, no bars
 	// 40 bars marching down toward 100; a key level at 100 drawn by the walk
 	// is unlikely — seed the levels directly through a wrapped tick is not
 	// possible, so test the gate helper's production shape instead: the
