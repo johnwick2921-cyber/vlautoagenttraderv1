@@ -1,6 +1,7 @@
 package mentor
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -48,11 +49,16 @@ func TestHTFVerdictCase3SitOut(t *testing.T) {
 }
 
 // TestHTFVerdictNo4hFailClosed — with no 4h trigger there is nothing to
-// follow: the read always starts from the 4-hour [D4.4 p1 @ 02:53].
+// follow: the read always starts from the 4-hour [D4.4 p1 @ 02:53]. The
+// DISTINCT reason is asserted (audit row 5): dropping the no-4h branch
+// would land in case 3 with a different reason.
 func TestHTFVerdictNo4hFailClosed(t *testing.T) {
 	h := HTF{OneH: TriggerLine{Dir: SideLong, Price: 29950}}
 	if ok, _, reason := HTFVerdict(h); ok || reason == "" {
 		t.Fatalf("1h-only trigger: ok=%v, want refused (no 4h direction)", ok)
+	}
+	if _, _, reason := HTFVerdict(h); !strings.Contains(reason, "4-hour is read first") {
+		t.Fatalf("no-4h reason = %q, want the distinct '4-hour is read first' refusal", reason)
 	}
 }
 
