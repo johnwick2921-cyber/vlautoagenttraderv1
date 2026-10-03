@@ -295,3 +295,96 @@ func TestBetweenTriggerLinesBox(t *testing.T) {
 		t.Fatalf("entry between two opposing trigger lines must refuse, got %+v", out)
 	}
 }
+
+// TestBoxPathRecordedTape13Sep — the recorded golden frame (Sun 13 Sep 2026,
+// mnq_1m_2026-09-13_boxframe) replayed through Evaluator.Tick: the dedicated
+// box path must FIRE on the real tape (the 1,777-killed-by-midRangeBoxed
+// census is gone). The ORB gate is OFF: the tape is Sunday Globex and has no
+// RTH ORB to draw. If zero entries fire, the test reports the per-gate
+// census of where the first box return died.
+func TestBoxPathRecordedTape13Sep(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Enabled = true
+	cfg.OrbGateEnabled = false // Globex tape: no RTH ORB exists
+	bars := loadFixture(t, "mnq_1m_2026-09-13_boxframe", "1m")
+
+	e := New(cfg)
+	boxEntries := 0
+	for i := 2; i <= len(bars); i++ {
+		now := bars[i-1].CloseTime + 1
+		ins := e.Tick(bars[:i], now)
+		for _, in := range ins {
+			if in.Action == PlaceStopEntry && strings.HasPrefix(in.Reason, "box edge return") {
+				boxEntries++
+			}
+		}
+	}
+	// Death census over the FULL tape when nothing fired.
+	census := map[string]int{}
+	returns := 0
+	now := bars[len(bars)-1].CloseTime + 1
+	boxes := BoxesBuild(bars, cfg.Box, time.UnixMilli(now))
+	levels := Levels(bars, cfg, now)
+	for _, b := range boxes {
+		for _, r := range BoxReturnBars(bars, b, b.FormedAt, cfg.Box) {
+			returns++
+			ref := bars[r.RefBar]
+			census[censusBoxReturn(ref, b, boxes, levels, e.State.Trigger, cfg)]++
+		}
+	}
+	// Census verdict: every death must be one of the two ruling-sanctioned
+	// refusals — fact 4 (a close inside the box cancels, not a trade) or the
+	// 5m trigger filter (F1/L3: the trigger stays ON in the base). The CTO's
+	// fallback for a non-firing tape is exactly this census.
+	if returns == 0 {
+		t.Fatal("recorded tape: no box returns at all — the box path is dead")
+	}
+	for gate, n := range census {
+		switch gate {
+		case "reject (close inside the box)", "trigger verdict":
+		default:
+			t.Fatalf("recorded tape: %d returns died at an UNEXPECTED gate %q (full census %v)",
+				n, gate, census)
+		}
+	}
+	t.Logf("recorded tape 13 Sep: %d box-return entries fired; %d returns, deaths: %v",
+		boxEntries, returns, census)
+}
+
+// censusBoxReturn names the first gate that kills a box return (for the death
+// census when a recorded tape fires nothing).
+func censusBoxReturn(ref market.Kline, b Box, boxes []Box, levels []Level, trig TriggerLine, cfg Config) string {
+	if !BoxReturnReject(b, ref) {
+		return "reject (close inside the box)"
+	}
+	price := ref.High
+	side := SideLong
+	if b.Kind != FTGL {
+		price, side = ref.Low, SideShort
+	}
+	if cfg.LocTriggerFilter {
+		if ok, ts, _ := TriggerVerdict(trig, price); !ok || ts != "" && ts != side {
+			return "trigger verdict"
+		}
+	}
+	if ok, reason := pingPongVerdict(boxes, price); !ok {
+		return reason
+	}
+	if InsideAnyBox(boxes, price) {
+		return "inside a box"
+	}
+	if abs(price-chooseStop(ref, side)) > cfg.StopCeilingPts {
+		return "stop ceiling"
+	}
+	if nextLevelBeyond(levels, price, side) == 0 {
+		return "no level beyond"
+	}
+	return "room"
+}
+
+func chooseStop(ref market.Kline, side Side) float64 {
+	if side == SideLong {
+		return ref.Low
+	}
+	return ref.High
+}
