@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"vl/market"
 )
@@ -15,6 +18,90 @@ type fixture struct {
 	Symbol   string                  `json:"symbol"`
 	Contract string                  `json:"contract"`
 	Bars     map[string][][5]float64 `json:"bars"` // tf -> [ot,o,h,l,c]
+}
+
+// LoadCSVBars loads a recorded-bar CSV fixture (CTO fixtures format,
+// 2026-10-03): kernel/mentor/testdata/<rule>/<name>.csv, one bar per line —
+// ts_utc,open,high,low,close,volume,tf — with '#' header comments naming the
+// source query + date. ts_utc is converted to the CT-based epoch millis the
+// mentor package uses (the bot's bar timestamps are CT-based, DS-108 §1.2).
+// This is THE pattern DS-105/DS-106 copy for their fixtures.
+func LoadCSVBars(t *testing.T, path string, wantTF int) []market.Kline {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("fixture %s: %v", path, err)
+	}
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		t.Fatalf("tzdata: %v", err)
+	}
+	var out []market.Kline
+	for ln, line := range strings.Split(string(raw), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		f := strings.Split(line, ",")
+		if len(f) != 7 {
+			t.Fatalf("%s:%d: want 7 fields, got %d", path, ln+1, len(f))
+		}
+		ts, err := time.Parse(time.RFC3339, f[0])
+		if err != nil {
+			t.Fatalf("%s:%d: bad ts %q: %v", path, ln+1, f[0], err)
+		}
+		open := mustFloat(t, f[1])
+		high := mustFloat(t, f[2])
+		low := mustFloat(t, f[3])
+		closeP := mustFloat(t, f[4])
+		vol := mustFloat(t, f[5])
+		tf, err := strconv.Atoi(f[6])
+		if err != nil || tf != wantTF {
+			t.Fatalf("%s:%d: tf %q, want %d", path, ln+1, f[6], wantTF)
+		}
+		// ts_utc → CT-based epoch millis (the package convention: bar times
+		// are the CT wall clock expressed as epoch).
+		ct := ts.In(loc)
+		_, offset := ct.Zone()
+		ctMs := ts.UnixMilli() + int64(offset)*1000
+		out = append(out, market.Kline{
+			OpenTime:  ctMs,
+			CloseTime: ctMs + 59_999,
+			Open:      open,
+			High:      high,
+			Low:       low,
+			Close:     closeP,
+			Volume:    vol,
+		})
+	}
+	return out
+}
+
+func mustFloat(t *testing.T, s string) float64 {
+	t.Helper()
+	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil {
+		t.Fatalf("bad number %q: %v", s, err)
+	}
+	return v
+}
+
+// TestLoadCSVBarsExampleFixture — the loader round-trips the ONE example CSV
+// fixture (the pattern for DS-105/DS-106): 20 recorded MNQ 1m bars,
+// 08:40–09:00 CT on 2026-09-15, first bar open 29430.00 (the DB copy's value).
+func TestLoadCSVBarsExampleFixture(t *testing.T) {
+	bars := LoadCSVBars(t, "testdata/touch/example_touch.csv", 1)
+	if len(bars) != 20 {
+		t.Fatalf("bars = %d, want 20", len(bars))
+	}
+	if bars[0].Open != 29430.00 || bars[0].High != 29434.75 || bars[0].Low != 29409.50 || bars[0].Close != 29431.50 {
+		t.Fatalf("first bar = %+v, want the DB copy's 08:40 bar", bars[0])
+	}
+	// the CT conversion must land at 08:40 CT
+	_, hh, mm := ctOf(bars[0].OpenTime)
+	if hh != 8 || mm != 40 {
+		t.Fatalf("first bar CT time = %02d:%02d, want 08:40", hh, mm)
+	}
 }
 
 // loadFixture reads a recorded fixture and returns the given timeframe's bars
