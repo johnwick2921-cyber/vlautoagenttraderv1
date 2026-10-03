@@ -364,42 +364,47 @@ func TestMentorExitRules(t *testing.T) {
 	}
 }
 
-// TestMentorBEHalfDistanceTarget (REPLAY AUDIT v5 (h), D1.2 p1 @10:31–15:20):
-// the B BE trigger is half the distance to LEG 1'S TARGET — +0.5R only when
-// the target is 1:1; a deeper target arms BE deeper. The mutant that fixes it
-// back to +0.5R fails the deep-target rows.
+// TestMentorBEHalfDistanceTarget (X1, CTO 1791031960407, PLAN Exits B
+// D1.2 p1 @10:31–15:20): the B BE trigger is half the distance to the TRADE'S
+// target (the intent's target) — +0.5R only when the trade target is 1:1; a
+// 2R target arms BE at +1R. Mutant: half of leg 1's +1R TP instead → the
+// 2R rows go RED.
 func TestMentorBEHalfDistanceTarget(t *testing.T) {
-	// default leg 1 TP (+1R) → BE at +0.5R.
-	base := mentorPosition{Side: "long", Entry: 100, Stop: 90, R: 10, Mode: "B"}
+	// trade target 1R (110) → BE at +0.5R.
+	base := mentorPosition{Side: "long", Entry: 100, Stop: 90, R: 10, Target: 110, Mode: "B"}
 	if got := mentorBEHalfDistance(base); got != 5 {
-		t.Fatalf("half of a 1:1 target = 5, got %.2f", got)
+		t.Fatalf("half of a 1R trade target = 5, got %.2f", got)
 	}
 	if res := mentorExitB(base, 104, 105, 95, true); res.NewStop != 100 {
 		t.Fatalf("1:1 target: BE must arm at +0.5R (105), got stop %.2f", res.NewStop)
 	}
-	// a deeper leg 1 TP (1.5R away) → BE only once price covers half of THAT
-	// distance (+0.75R). A +0.55R candle (high 105.5) must NOT arm.
-	deep := mentorPosition{Side: "long", Entry: 100, Stop: 90, R: 10, Leg1TP: 115, Mode: "B"}
-	if got := mentorBEHalfDistance(deep); got != 7.5 {
-		t.Fatalf("half of a 1.5R target = 7.5, got %.2f", got)
+	// trade target 2R (120), leg 1 TP still 1R (110): BE arms at +1R (110),
+	// NOT at half of leg 1's TP (+0.5R). A +0.9R candle (high 109) must NOT
+	// arm — the leg-1-TP mutant arms at 105 and goes RED here.
+	deep := mentorPosition{Side: "long", Entry: 100, Stop: 90, R: 10, Target: 120, Leg1TP: 110, Mode: "B"}
+	if got := mentorBEHalfDistance(deep); got != 10 {
+		t.Fatalf("half of a 2R trade target = 10, got %.2f", got)
 	}
-	if res := mentorExitB(deep, 104, 105.5, 95, true); res.NewStop != 90 {
-		t.Fatalf("a +0.55R candle must NOT arm BE for a 1.5R target, stop %.2f", res.NewStop)
+	if res := mentorExitB(deep, 104, 107, 95, true); res.NewStop != 90 {
+		t.Fatalf("a +0.7R candle must NOT arm BE for a 2R trade target, stop %.2f", res.NewStop)
 	}
-	// +0.75R (high 107.5) arms both legs.
-	if res := mentorExitB(deep, 106, 107.5, 95, true); res.NewStop != 100 || len(res.MoveStops) != 2 {
-		t.Fatalf("half the distance to the 1.5R target must arm both legs, %+v", res)
+	if res := mentorExitB(deep, 104, 109, 95, true); res.NewStop != 90 {
+		t.Fatalf("a +0.9R candle must NOT arm BE for a 2R trade target (leg 1 TP is NOT the basis), stop %.2f", res.NewStop)
 	}
-	// short mirrored.
-	short := mentorPosition{Side: "short", Entry: 100, Stop: 110, R: 10, Leg1TP: 85, Mode: "B"}
-	if got := mentorBEHalfDistance(short); got != -7.5 {
-		t.Fatalf("short half-distance = -7.5, got %.2f", got)
+	// +1R (high 110) arms both legs.
+	if res := mentorExitB(deep, 106, 110, 95, true); res.NewStop != 100 || len(res.MoveStops) != 2 {
+		t.Fatalf("half the distance to the 2R trade target must arm both legs, %+v", res)
+	}
+	// short mirrored: trade target 80 (2R) → BE at −1R.
+	short := mentorPosition{Side: "short", Entry: 100, Stop: 110, R: 10, Target: 80, Leg1TP: 90, Mode: "B"}
+	if got := mentorBEHalfDistance(short); got != -10 {
+		t.Fatalf("short half-distance to a 2R trade target = -10, got %.2f", got)
 	}
 	if res := mentorExitB(short, 93, 95, 93.5, true); res.NewStop != 110 {
-		t.Fatalf("a -0.45R candle must NOT arm BE for a 1.5R short target, stop %.2f", res.NewStop)
+		t.Fatalf("a -0.45R candle must NOT arm BE for a 2R short trade target, stop %.2f", res.NewStop)
 	}
-	if res := mentorExitB(short, 92, 95, 92.4, true); res.NewStop != 100 {
-		t.Fatalf("half the distance to the 1.5R short target must arm BE, %+v", res)
+	if res := mentorExitB(short, 92, 95, 89.5, true); res.NewStop != 100 {
+		t.Fatalf("half the distance to the 2R short trade target must arm BE, %+v", res)
 	}
 }
 
@@ -445,13 +450,18 @@ func TestMentorISBFillCandleExit(t *testing.T) {
 // trail in B are ignored); it exits only on a BE touch.
 func TestMentorResonanceFork(t *testing.T) {
 	ResetMentorCountersForTest()
-	pos := &mentorPosition{Symbol: "MNQ", Side: "long", Origin: "PHL", Entry: 100, Stop: 90, Target: 130, R: 10, Mode: "B"}
+	pos := &mentorPosition{Symbol: "MNQ", Side: "long", Origin: "PHL", Entry: 100, Stop: 90, Target: 130, R: 10, Leg1TP: 110, Mode: "B"}
 	armed, modifyTP := mentorMaybeArmResonance(pos, "long", 2)
 	if !armed {
 		t.Fatal("ISB same side within 3 candles of a PHL fill must arm resonance")
 	}
 	if modifyTP != 130 {
 		t.Fatalf("the resonance modify must push leg 1's TP to the runner's target 130, got %.2f", modifyTP)
+	}
+	// X2: after the flip NO +1R TP order remains — leg 1's TP is the runner's
+	// target (130), never the resting 110. Mutant: skip the TP change → RED.
+	if pos.Leg1TP != 130 {
+		t.Fatalf("after the flip leg 1's TP must be the runner's target 130 (no +1R order remains), got %.2f", pos.Leg1TP)
 	}
 	if pos.Mode != "A-resonance" || !pos.ArmedBE || pos.Stop != pos.Entry {
 		t.Fatalf("resonance arm: mode=%s armed=%v stop=%.2f — want A-resonance, BE stop 100", pos.Mode, pos.ArmedBE, pos.Stop)

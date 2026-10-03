@@ -475,18 +475,23 @@ func (at *AutoTrader) mentorConfirmLegProtection(legs []string) {
 	}
 }
 
-// mentorBEHalfDistance is the B BE trigger (REPLAY AUDIT v5 (h), D1.2 p1
-// @10:31–15:20): the stop goes to BE once price has covered HALF THE DISTANCE
-// TO LEG 1'S TARGET — that is +0.5R only when the target is 1:1 (the B
-// default), and deeper when the target is deeper. Returns the signed
-// entry-relative distance (negative for shorts).
+// mentorBEHalfDistance is the B BE trigger (X1, CTO 1791031960407, PLAN Exits B
+// D1.2 p1 @10:31–15:20): HALF THE DISTANCE TO THE TRADE'S TARGET (the intent's
+// target — e.g. near the old high), NOT half of leg 1's +1R take-profit.
+// That is +0.5R only when the trade target is 1:1; a 2R target arms BE at
+// +1R. Returns the signed entry-relative distance (negative for shorts).
+// A position built without its trade target falls back to leg 1's TP, then
+// the +1R default — never fabricates a deeper BE.
 func mentorBEHalfDistance(pos mentorPosition) float64 {
-	tp := pos.Leg1TP
+	tp := pos.Target
 	if tp == 0 {
-		if pos.Side == "short" {
-			tp = pos.Entry - pos.R
-		} else {
-			tp = pos.Entry + pos.R
+		tp = pos.Leg1TP
+		if tp == 0 {
+			if pos.Side == "short" {
+				tp = pos.Entry - pos.R
+			} else {
+				tp = pos.Entry + pos.R
+			}
 		}
 	}
 	return (tp - pos.Entry) / 2
@@ -594,7 +599,8 @@ const mentorResonanceMaxCandles = 3
 // BOTH legs' stops go to BREAK-EVEN immediately and leg 1's TP is modified OUT
 // to the runner's target — NO 1:1 scale-out, NO candle trail. It runs to the
 // next level / the old high and beyond (EOD flat still applies). Returns
-// whether it armed and the modify-bracket TP for leg 1.
+// whether it armed and the modify-bracket TP for leg 1 (X2: after the flip no
+// +1R TP order remains — leg 1's resting TP is the runner's target).
 func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill int) (armed bool, modifyTP float64) {
 	if pos == nil || pos.Mode == "A-resonance" {
 		return false, 0
@@ -611,6 +617,7 @@ func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill 
 	pos.Mode = "A-resonance"
 	pos.ArmedBE = true
 	pos.Stop = pos.Entry
+	pos.Leg1TP = pos.Target // X2: the resting +1R bracket is gone — both legs run
 	mentorCount("resonance_armed")
 	return true, pos.Target
 }
