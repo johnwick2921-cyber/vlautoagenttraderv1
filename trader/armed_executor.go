@@ -1362,6 +1362,17 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 			}
 		}
 		if armExpired(r, now.UnixMilli()) {
+			// REVIEW-313 F2: an expired row that was NEVER SENT (armed, no
+			// signal id) ends terminal here. No regime can settle a
+			// cancel_pending row with signal_id="" — the snapshot regime
+			// answers "no signal id", no report can arrive, and the
+			// re-request refuses the empty id — so it would otherwise WARN
+			// and bump the unconfirmed counter every pass, forever. Kill the
+			// authorization in the ledger, like cancelOtherArmsInPlan does.
+			if store.IsUnplacedArm(r.State, r.SignalID) {
+				at.armLifecycleWrite("set_state(expired)", r, ledger.SetState(r.ID, "expired", "stop-limit expiry elapsed — never placed"))
+				continue
+			}
 			// REVIEW-313 F1: the cancel frame goes out on THIS pass (the
 			// gate_changed shape), not on the settlement pass ~90s later. A
 			// gap through the trigger with a resting stop-limit must not wait
