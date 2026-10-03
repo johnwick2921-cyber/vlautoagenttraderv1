@@ -4,14 +4,28 @@ import (
 	"vl/market"
 )
 
-// ISB — inside bar [§2.1]. Identification is BY THE BODY: "cây nến ISB em
-// không tính râu, em chỉ tính phần thân" [D2.1 p1 @ 04:18]. Orders are placed
-// at the WICK-INCLUSIVE extremes [D2.1 p1 @ 04:39] with the 1.5-pt buffer
-// [D2.1 p1 @ 05:36].
+// ISB — inside bar (RULES-FIX-v3 R1, CTO-verified 2026-10-03; this file was
+// reworked from the P2 draft, whose 5–6-pt stop cap killed 17,001 ISBs in the
+// replay and whose body-vs-body test was wrong).
+//
+// R1 [D1.4 p1 @ 06:13–11:25, confirmed "Go over lớp học" @ 08:44–09:55 + deck
+// slide 21]: ISB = cur's BODY inside prev's FULL range, WICKS INCLUDED ("Inside
+// có nghĩa là cái BODY của cây nến đó phải nằm BÊN TRONG cây nến trend"); cur's
+// wicks and colour are free.
 
-// IsISB reports whether cur's BODY sits inside prev's BODY.
+// IsISB reports whether cur's BODY sits inside prev's FULL range (wicks
+// included) [D1.4 p1 @ 06:13–08:47].
 func IsISB(prev, cur market.Kline) bool {
-	return curHigh(cur) <= curHigh(prev) && curLow(cur) >= curLow(prev)
+	return curHigh(cur) <= prev.High && curLow(cur) >= prev.Low
+}
+
+// ISBDirection is the ISB direction: the COLOUR OF CANDLE 1 — green → long,
+// red → short; candle 2's colour is irrelevant [D1.4 p1 @ 09:20–10:20].
+func ISBDirection(prev market.Kline) Side {
+	if prev.Close >= prev.Open {
+		return SideLong
+	}
+	return SideShort
 }
 
 func curHigh(b market.Kline) float64 {
@@ -28,48 +42,68 @@ func curLow(b market.Kline) float64 {
 	return b.Open
 }
 
-// ISBOrders computes both stop-entry orders for an inside-bar candle
-// [D3.4 p1 @ 23:04 "for a short, sell stop BELOW the inside bar, stop loss
-// ABOVE it. Mirror for longs"], buffered by ISBBufferPts:
+// ISBOrders computes both candidate stop-limit orders for an inside-bar
+// candle: ENTRY at the ISB candle's OWN extreme, never candle 1's
+// [D1.4 p1 @ 10:33–11:25]; STOP at the opposite extreme [D1.4 p1 @ 14:42–14:44];
+// the 1–1.5-pt buffer applies to BOTH entry and stop, outward
+// [D1.4 p1 @ 22:22–22:30]. ORDER TYPE is STOP-LIMIT with limit = the stop
+// (trigger) price: "đặt buy stop limit… nếu nó không fill thì thôi"
+// [D1.4 p1 @ 24:41–24:55]. The caller picks the side from ISBDirection.
 //
-//	long:  buy stop  = High + buffer, stop loss = Low − buffer
-//	short: sell stop = Low − buffer,  stop loss = High + buffer
+//	long:  buy stop-limit  at High + buffer, stop loss = Low − buffer
+//	short: sell stop-limit at Low − buffer,  stop loss = High + buffer
 //
 // Risk = (High − Low) + 2×buffer.
 func ISBOrders(candle market.Kline, cfg Config) (long, short Intent) {
 	long = Intent{
-		Action: PlaceStopEntry,
+		Action: PlaceStopLimitEntry,
 		Side:   SideLong,
 		Price:  candle.High + cfg.ISBBufferPts,
+		Limit:  candle.High + cfg.ISBBufferPts,
 		Stop:   candle.Low - cfg.ISBBufferPts,
-		Reason: "ISB: buy stop above the wick high + buffer, stop below the wick low [D2.1 p1 @ 04:39, 05:36; D3.4 p1 @ 23:04]",
+		Reason: "ISB: buy stop-limit above the ISB high + buffer, stop below the ISB low − buffer [D1.4 p1 @ 10:33–11:25, 14:42–14:44, 22:22–22:30, 24:41–24:55]",
 	}
 	short = Intent{
-		Action: PlaceStopEntry,
+		Action: PlaceStopLimitEntry,
 		Side:   SideShort,
 		Price:  candle.Low - cfg.ISBBufferPts,
+		Limit:  candle.Low - cfg.ISBBufferPts,
 		Stop:   candle.High + cfg.ISBBufferPts,
-		Reason: "ISB: sell stop below the wick low − buffer, stop above the wick high [D2.1 p1 @ 04:39, 05:36; D3.4 p1 @ 23:04]",
+		Reason: "ISB: sell stop-limit below the ISB low − buffer, stop above the ISB high + buffer [D1.4 p1 @ 10:33–11:25, 14:42–14:44, 22:22–22:30, 24:41–24:55]",
 	}
 	return long, short
 }
 
-// ISBStopVerdict applies the stop-size rules to an inside-bar order:
-// an ISB stop is normally 5–6 points [D3.2 p1 @ 14:18]; one whose stop is in
-// the twenties must NOT be taken [D4.1 p1 @ 05:41]; and the 25-pt ceiling is
-// the global hard stop [D3.3 p1 @ 02:04] (twenties already covers it).
+// ISBStopLimitOrder is the R1 order the evaluator emits: the single stop-limit
+// entry in the CANDLE-1 direction. ok is false (with a cited reason) when the
+// stop is in the twenties — the ONLY stop-size skip R1 has [D4.1 p1 @ 05:41].
+func ISBStopLimitOrder(prev, cur market.Kline, cfg Config) (Side, Intent, bool, string) {
+	dir := ISBDirection(prev)
+	long, short := ISBOrders(cur, cfg)
+	if dir == SideLong {
+		if _, ok, reason := ISBStopVerdict(cur, cfg); !ok {
+			return dir, Intent{}, false, reason
+		}
+		return dir, long, true, ""
+	}
+	if _, ok, reason := ISBStopVerdict(cur, cfg); !ok {
+		return dir, Intent{}, false, reason
+	}
+	return dir, short, true, ""
+}
+
+// ISBStopVerdict applies the ONLY stop-size rule R1 has (RULES-FIX-v3): an ISB
+// whose stop is IN THE TWENTIES must NOT be taken [D4.1 p1 @ 05:41]. There is
+// NO fixed 5–6-pt stop and NO ceiling here — the replay's 5–6-pt cap was wrong
+// and killed 17,001 ISBs (CTO, 2026-10-03). "In the twenties" is the window
+// [ISBTwentiesPts, ISBTwentiesPts+10); a stop of thirty-plus is not skipped by
+// R1 (R9's cap is DS-103's wiring, not this verdict).
 func ISBStopVerdict(candle market.Kline, cfg Config) (stopPts float64, ok bool, reason string) {
 	stopPts = (candle.High - candle.Low) + 2*cfg.ISBBufferPts
-	switch {
-	case stopPts < cfg.ISBStopMinPts:
-		return stopPts, false, "ISB stop too small (< min) — skip [D3.2 p1 @ 14:18]"
-	case stopPts >= cfg.ISBTwentiesPts:
+	if stopPts >= cfg.ISBTwentiesPts && stopPts < cfg.ISBTwentiesPts+10 {
 		return stopPts, false, "ISB stop in the twenties — must not be taken [D4.1 p1 @ 05:41]"
-	case stopPts > cfg.StopCeilingPts:
-		return stopPts, false, "stop over the ceiling — not worth trading [D3.3 p1 @ 02:06]"
-	default:
-		return stopPts, true, ""
 	}
+	return stopPts, true, ""
 }
 
 // ISBArm tracks one resting inside-bar order through the stacking arithmetic.

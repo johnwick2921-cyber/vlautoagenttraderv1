@@ -19,6 +19,10 @@ const (
 	// PlaceStopEntry asks the injector to rest a stop-entry order at Price
 	// (side, stop and target as computed by the rules).
 	PlaceStopEntry Action = "place_stop_entry"
+	// PlaceStopLimitEntry is the R1 ISB order type (RULES-FIX-v3): a
+	// stop-limit whose limit equals the stop (trigger) price — the order
+	// simply does not fill past the limit [D1.4 p1 @ 24:41–24:55].
+	PlaceStopLimitEntry Action = "place_stop_limit_entry"
 	// CancelArm asks the injector to cancel a previously emitted arm
 	// (ArmID names it). Reason says which rule demands the cancel.
 	CancelArm Action = "cancel_arm"
@@ -72,8 +76,9 @@ type Intent struct {
 	Side   Side   // for PlaceStopEntry
 	Symbol string // "MNQ" — the mentor instrument (00-METHOD header)
 
-	// PlaceStopEntry fields.
+	// PlaceStopEntry / PlaceStopLimitEntry fields.
 	Price  float64 // stop-entry trigger price
+	Limit  float64 // PlaceStopLimitEntry: the limit price (== Price)
 	Stop   float64 // stop-loss
 	Target float64 // take-profit level
 
@@ -107,9 +112,13 @@ type Config struct {
 	TouchBandPts float64 // literal-touch band around a level; default 4.0 (the bot's 16-tick touch band)
 
 	// ISB (PLAN v1 §3).
-	ISBBufferPts   float64 // order buffer beyond the wick extremes; default 1.5 [D2.1 p1 @ 05:36]
-	ISBStopMinPts  float64 // stop below this is too small — skip; default 5 [D3.2 p1 @ 14:18]
+	ISBBufferPts   float64 // order buffer beyond the wick extremes, BOTH sides; default 1.5 [D1.4 p1 @ 22:22–22:30]
+	ISBStopMinPts  float64 // RETIRED for ISB by RULES-FIX-v3 (no fixed stop size); kept for the other setups
 	ISBTwentiesPts float64 // a stop at/above this ("in the twenties") must not be taken; default 20 [D4.1 p1 @ 05:41]
+
+	// ISBReverseEMA9Enabled turns on R7, the reverse-ISB-at-EMA9 setup
+	// (RULES-FIX-v3, its own knob per the dispatch). Default OFF (L4).
+	ISBReverseEMA9Enabled bool
 
 	// PHL/PLH (PLAN v1 §3).
 	PHLMinCandlesFromExtreme int     // entry at least N candles from the old extreme; default 3 [D4.1 p1 @ 09:40 written]
@@ -125,13 +134,15 @@ type Config struct {
 	DayGateSpentPts     float64 // run >= this before the open = spent; default 300 [D5.1 p1 @ 15:57]
 	DayGateTargetCapPts float64 // spent-day target cap; default 15 ("15 điểm bán, 10 điểm bán")
 
-	// §8 SWING4H knobs (DS-106): the method defaults.
+	// §8 SWING4H knobs (DS-106): the method defaults. The 5m-zone gate
+	// lives in SwingCfg.Respects5mZone (default false, [C]) and is wired
+	// at the runSwing call site (CTO swing ruling 2026-10-03).
 	Swing SwingCfg
 
-	// SwingRespects5mZone gates §8 swing intents on the 5m trigger zone
-	// when true. Default false — NOT gated [C]: not stated in the method
-	// (CTO swing ruling 2026-10-03, mails 1791001124127/1791001760445).
-	SwingRespects5mZone bool
+	// §4.1 FTGH/FTGL boxes (DS-106, BOX RULING part 2): 1m regular by
+	// default. The evaluator builds the boxes per tick and wires their
+	// edges into the location gate and InsideAnyBox into the bans.
+	Box BoxCfg
 }
 
 // DefaultConfig returns the mentor defaults per PLAN v1 (knob values start from
@@ -155,6 +166,8 @@ func DefaultConfig() Config {
 		ISBStopMinPts:  5,
 		ISBTwentiesPts: 20,
 
+		ISBReverseEMA9Enabled: false,
+
 		PHLMinCandlesFromExtreme: 3,
 		PHLTargetShyPts:          5,
 
@@ -166,6 +179,8 @@ func DefaultConfig() Config {
 		DayGateTargetCapPts: 15,
 
 		Swing: DefaultSwingCfg(),
+
+		Box: DefaultBoxCfg(),
 	}
 }
 

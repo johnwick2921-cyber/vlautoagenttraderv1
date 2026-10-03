@@ -113,7 +113,15 @@ func PHLPLHR2(t Touch, oldExtreme Level, extremeIdx, barIdx int, priorSwing floa
 // unchanged (fold item 2) — the location itself is gated upstream by the
 // evaluator's key-level gate (DS-103's item 1).
 func PHLPLHGated(t Touch, oldExtreme Level, extremeIdx, barIdx int, cfg Config, htf HTF, day DayVerdict, dg DayGate) (Intent, bool, string) {
-	in, ok, reason := PHLPLH(t, oldExtreme, extremeIdx, barIdx, cfg)
+	return PHLPLHGatedR2(t, oldExtreme, extremeIdx, barIdx, 0, cfg, htf, day, dg)
+}
+
+// PHLPLHGatedR2 is PHLPLHGated with R2's prior same-role swing: priorSwing is
+// the previous same-role swing price (0 = skip the higher-low / lower-high
+// check). Wired by DS-103 at the evaluator's PHL/PLH call site (CTO box mail
+// 1791003269412: "the PHLPLHR2 call with the prior same-role swing").
+func PHLPLHGatedR2(t Touch, oldExtreme Level, extremeIdx, barIdx int, priorSwing float64, cfg Config, htf HTF, day DayVerdict, dg DayGate) (Intent, bool, string) {
+	in, ok, reason := PHLPLHR2(t, oldExtreme, extremeIdx, barIdx, priorSwing, cfg)
 	if !ok {
 		return in, false, reason
 	}

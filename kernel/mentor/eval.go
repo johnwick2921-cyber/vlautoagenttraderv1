@@ -112,6 +112,49 @@ func withoutDeleted(levels []Level, deleted map[string]bool) []Level {
 	return out
 }
 
+// handleTouchIntents applies a level's touch intents to the evaluator
+// state. BOX RULING part 2: the invalid-level rule does NOT apply to box
+// edges — a box dies only on escape (1m body closes outside) or at the end
+// of the day — so a wrong-way close at a box edge emits nothing and never
+// marks the edge ISB-only.
+func handleTouchIntents(e *Evaluator, lvl Level, intents []Intent) []Intent {
+	var out []Intent
+	for _, in := range intents {
+		if in.Action == LevelInvalid {
+			if isBoxEdge(lvl) {
+				continue
+			}
+			e.State.ISBOnly[lvl.Key] = true
+		}
+		out = append(out, in)
+	}
+	return out
+}
+
+// boxBanFilter drops entry intents whose entry price — or whose reference
+// candle close — sits INSIDE a box: "NEVER trade inside the box, neither the
+// candle nor your entry point" [D3.2 p1 @ 06:59].
+func boxBanFilter(out []Intent, boxes []Box, cur market.Kline) []Intent {
+	if len(boxes) == 0 {
+		return out
+	}
+	kept := out[:0:0]
+	for _, in := range out {
+		if (in.Action == PlaceStopEntry || in.Action == PlaceStopLimitEntry) &&
+			(InsideAnyBox(boxes, cur.Close) || InsideAnyBox(boxes, in.Price)) {
+			continue
+		}
+		kept = append(kept, in)
+	}
+	return kept
+}
+
+// isBoxEdge reports whether the level is a box edge (BOX RULING part 2:
+// the invalid-level rule does not apply to box edges).
+func isBoxEdge(l Level) bool {
+	return l.Kind == KindFTGHEdge || l.Kind == KindFTGLEdge
+}
+
 // closedBuckets returns the 5m buckets with the still-forming one dropped
 // (B4): a bucket whose close time has not been reached by `now` is forming.
 func closedBuckets(bars []market.Kline, now int64, cfg Config) []market.Kline {
@@ -198,6 +241,12 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		levels = append(levels, el)
 	}
 
+	// §4.1 FTGH/FTGL boxes (BOX RULING part 2): built per tick; the edges
+	// join the level set as locations (used again and again) and the box
+	// interior bans entries.
+	boxes := BoxesBuild(bars, e.Cfg.Box, time.UnixMilli(now))
+	levels = append(levels, BoxEdgeLocations(boxes)...)
+
 	// §3: first-touch classification per level.
 	for _, lvl := range levels {
 		tr := e.State.Touches[lvl.Key]
@@ -209,44 +258,40 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 		tr = freshTouch(tr, lvl)
 		intents := TouchTick(&tr, lvl, bars[len(bars)-2].Close, bars[len(bars)-1], e.Cfg)
 		e.State.Touches[lvl.Key] = tr
-		for _, in := range intents {
-			if in.Action == LevelInvalid {
-				e.State.ISBOnly[lvl.Key] = true
-			}
-			out = append(out, in)
-		}
+		out = append(out, handleTouchIntents(e, lvl, intents)...)
 	}
 
 	// §2.1: ISB on the last closed pair, direction from the trigger line.
 	prev, cur := bars[len(bars)-2], bars[len(bars)-1]
 	if IsISB(prev, cur) {
-		if dirOK, side, _ := TriggerVerdict(e.State.Trigger, cur.Close); dirOK {
-			if _, stopOK, _ := ISBStopVerdict(cur, e.Cfg); stopOK {
-				// B4: the 15m/5m conflict reads CLOSED buckets only — the
-				// still-forming 5m bucket is dropped [D4.2 p1 @ 05:10: "a
-				// 15-minute candle is only confirmed once CLOSED; trade from
-				// the next one"].
-				if conflict := ISBConflictVerdict(closedBuckets(bars, now, e.Cfg)); !conflict {
-					// LOCATION GATE (fold item 1, owner ruling): the ISB's
-					// reference candle must touch a real location — mid-air
-					// inside bars are not setups.
-					if loc, where := LocationVerdict(cur, levels, e.State.Trigger, bars, e.Cfg); loc {
-						_ = where
-						// fold item 3: entries only with the 4h trigger direction
-						// (1h agreeing or silent); fold item 4: a DayOff shuts the
-						// machine off for the day.
-						if htfOK, htfSide, htfReason := HTFVerdict(e.State.HTF); !htfOK {
-							_ = htfReason
-						} else if side != "" && side != htfSide {
-							// 5m trigger side against the 4h — no entry
+		if dirOK, _, _ := TriggerVerdict(e.State.Trigger, cur.Close); dirOK {
+			// B4: the 15m/5m conflict reads CLOSED buckets only — the
+			// still-forming 5m bucket is dropped [D4.2 p1 @ 05:10: "a
+			// 15-minute candle is only confirmed once CLOSED; trade from
+			// the next one"].
+			if conflict := ISBConflictVerdict(closedBuckets(bars, now, e.Cfg)); !conflict {
+				// LOCATION GATE (fold item 1, owner ruling): the ISB's
+				// reference candle must touch a real location — mid-air
+				// inside bars are not setups.
+				if loc, where := LocationVerdict(cur, levels, e.State.Trigger, bars, e.Cfg); loc {
+					_ = where
+					// fold item 3: entries only with the 4h trigger direction
+					// (1h agreeing or silent); fold item 4: a DayOff shuts the
+					// machine off for the day.
+					if htfOK, htfSide, htfReason := HTFVerdict(e.State.HTF); !htfOK {
+						_ = htfReason
+					} else {
+						// R1 (RULES-FIX-v3): the order is a STOP-LIMIT in the
+						// CANDLE-1 colour direction (the only skip: a stop in
+						// the twenties) [D1.4 p1 @ 09:20–10:20, 24:41–24:55].
+						side, chosen, ok, reason := ISBStopLimitOrder(prev, cur, e.Cfg)
+						if !ok {
+							_ = reason // twenties — no entry
+						} else if side != "" && htfSide != "" && side != htfSide {
+							// ISB direction against the 4h — no entry
 						} else if e.State.Day.Verdict == DayOff {
 							// day off — no mentor entries today
 						} else {
-							long, short := ISBOrders(cur, e.Cfg)
-							chosen := long
-							if side == SideShort {
-								chosen = short
-							}
 							// §6 [D3.3 p1 @ 05:07]: "TARGET LÀ VỀ NHỮNG LEVEL KẾ
 							// TIẾP" — a setup gives entry, stop AND target
 							// [D4.1 p1 @ 01:39]; no level beyond → no trade.
@@ -262,9 +307,9 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 							out = append(out, chosen)
 						}
 					}
-				} else {
-					out = append(out, Intent{Action: CancelArm, Reason: "15m/5m ISB conflict — no trade [D4.2 p1 @ 14:35]"})
 				}
+			} else {
+				out = append(out, Intent{Action: CancelArm, Reason: "15m/5m ISB conflict — no trade [D4.2 p1 @ 14:35]"})
 			}
 		}
 	}
@@ -310,7 +355,7 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 			continue
 		}
 		for _, ex := range oldExtremes {
-			in, ok, _ := PHLPLHGated(tr, ex.level, ex.idx, len(bars)-1, e.Cfg, e.State.HTF, e.State.Day.Verdict, dg)
+			in, ok, _ := PHLPLHGatedR2(tr, ex.level, ex.idx, len(bars)-1, priorSameRole(ex, oldExtremes), e.Cfg, e.State.HTF, e.State.Day.Verdict, dg)
 			if ok {
 				out = append(out, in)
 				break
@@ -322,13 +367,18 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) []Intent {
 	// bucket is excluded (CTO wiring ruling 2026-10-03).
 	out = append(out, runSwing(e, bars, now)...)
 
+	// BOX RULING part 2: InsideAnyBox — "NEVER trade inside the box" — neither
+	// the candle nor the entry point [D3.2 p1 @ 06:59].
+	out = boxBanFilter(out, boxes, bars[len(bars)-1])
+
 	return out
 }
 
 // oldExtreme holds an old high/low and its index in the 1m history.
 type oldExtreme struct {
-	level Level
-	idx   int
+	level  Level
+	idx    int
+	isHigh bool // the extreme matches the bar HIGH (swing high) vs the LOW
 }
 
 // oldExtremeIndexes maps old-extreme levels to the index of their defining bar.
@@ -342,17 +392,40 @@ func oldExtremeIndexes(levels []Level, bars []market.Kline) []oldExtreme {
 			continue
 		}
 		idx := -1
+		isHigh := false
 		for i := len(bars) - 1; i >= 0; i-- {
-			if abs(bars[i].High-l.Price) < 0.26 || abs(bars[i].Low-l.Price) < 0.26 {
-				idx = i
+			if abs(bars[i].High-l.Price) < 0.26 {
+				idx, isHigh = i, true
+				break
+			}
+			if abs(bars[i].Low-l.Price) < 0.26 {
+				idx, isHigh = i, false
 				break
 			}
 		}
 		if idx >= 0 {
-			out = append(out, oldExtreme{level: l, idx: idx})
+			out = append(out, oldExtreme{level: l, idx: idx, isHigh: isHigh})
 		}
 	}
 	return out
+}
+
+// priorSameRole returns the most recent old extreme BEFORE ex.idx with the
+// same role (high vs low) — the prior same-role swing for R2's higher-low /
+// lower-high check. 0 = none.
+func priorSameRole(ex oldExtreme, extremes []oldExtreme) float64 {
+	best := -1
+	for _, o := range extremes {
+		if o.idx < ex.idx && o.isHigh == ex.isHigh && o.idx > best {
+			best = o.idx
+		}
+	}
+	for _, o := range extremes {
+		if o.idx == best {
+			return o.level.Price
+		}
+	}
+	return 0
 }
 
 // runSwing evaluates the §8 4h-EMA34 swing on FINAL 5m bars (the forming
@@ -364,7 +437,7 @@ func oldExtremeIndexes(levels []Level, bars []market.Kline) []oldExtreme {
 // 1791001124127 / 1791001760445).
 func runSwing(e *Evaluator, bars []market.Kline, now int64) []Intent {
 	ints := SwingTick(&e.State.Swing, closedBuckets(bars, now, e.Cfg), e.Cfg.Swing, now)
-	return swingZoneGate(ints, e.State.Trigger, e.Cfg.SwingRespects5mZone)
+	return swingZoneGate(ints, e.State.Trigger, e.Cfg.Swing.Respects5mZone)
 }
 
 // swingZoneGate drops swing intents whose entry price sits between two

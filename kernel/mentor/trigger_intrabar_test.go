@@ -19,10 +19,10 @@ func TestTriggerFiresIntrabarOnForming5m(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
 	bars := []market.Kline{
-		{High: 100, Low: 96, Close: 98, CloseTime: 1},  // closed previous
-		{High: 103, Low: 97, Close: 101, CloseTime: 0}, // still forming
+		{OpenTime: 60_000, CloseTime: 60_000 + 5*60_000 - 1, High: 100, Low: 96, Close: 98}, // closed previous
+		{OpenTime: 360_000, CloseTime: 0, High: 103, Low: 97, Close: 101},                   // still forming
 	}
-	got := TriggerTick(TriggerLine{}, bars, cfg)
+	got := TriggerTick(TriggerLine{}, bars, 5, cfg)
 	if got.Dir != SideLong || got.Price != 100 {
 		t.Fatalf("forming-bar break must fire intrabar: %+v, want long @ 100", got)
 	}
@@ -42,20 +42,15 @@ func TestTriggerOnRecordedTapeNeverOn1m(t *testing.T) {
 	if len(five) == 0 {
 		t.Fatal("5m aggregation empty")
 	}
-	got := TriggerLine{}
-	moved := 0
-	prev := false
-	for i := 1; i < len(five); i++ {
-		got = TriggerTick(got, five[i-1:i+1], cfg)
-		if got.Moved && !prev {
-			moved++
-		}
-		prev = got.Moved
-	}
+	// one pass over the whole 5m aggregation: B2 processes each bucket once,
+	// B3 lets every reversal move the line once. The DIRECTION flips at most
+	// once per two flips of the tape; here we pin that the line gets drawn and
+	// every bucket is processed exactly once (LastBucket = the last bucket).
+	got := TriggerTick(TriggerLine{}, five, 5, cfg)
 	if got.Dir == "" {
 		t.Fatal("no trigger line on the 5m aggregation of the recorded tape")
 	}
-	if moved > 1 {
-		t.Fatalf("line moved %d times — 'MỘT LẦN MỘT THÔI'", moved)
+	if got.LastBucket != five[len(five)-2].OpenTime {
+		t.Fatalf("LastBucket = %d, want %d (the forming tail never commits)", got.LastBucket, five[len(five)-2].OpenTime)
 	}
 }

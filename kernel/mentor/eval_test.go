@@ -157,7 +157,7 @@ func TestSwingZoneGateKnob(t *testing.T) {
 		{Action: PlaceStopEntry, Reason: "swing §8: reject touch", Price: 98.5}, // inside the two-trigger zone
 		{Action: PlaceStopEntry, Reason: "swing §8: reject touch", Price: 96},   // escaped below — allowed
 	}
-	if DefaultConfig().SwingRespects5mZone {
+	if DefaultSwingCfg().Respects5mZone {
 		t.Fatal("swing_respects_5m_zone default must be false")
 	}
 	if got := swingZoneGate(ints, tl, false); len(got) != 2 {

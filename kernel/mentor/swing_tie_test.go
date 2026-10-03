@@ -45,7 +45,7 @@ func TestSwing4hTieTouchProducesNothing(t *testing.T) {
 		return market.Kline{OpenTime: ot, Open: o, High: h, Low: l, Close: c, CloseTime: ot + 4*60_000}
 	}
 	a := mk(now, line-20, line+10, line-20, line)            // closes ON the line → through → cancel, leeway 2
-	c1 := mk(now+step, line+5, line+5, line+4, line+4)       // leeway 1 (not an ISB of A)
+	c1 := mk(now+step, line+12, line+14, line+11, line+13)   // leeway 1; body ABOVE a's full range → not an ISB of A (RULES-FIX-v3: ISB = body inside the FULL range)
 	c2 := mk(now+2*step, line+2, line+2, line, line)         // leeway 0; closes ON the line again
 	touch := mk(now+3*step, line-1, line+5, line-20, line-1) // touch whose prev closed exactly on the line
 	bars := append(closed, a, c1, c2, touch)
