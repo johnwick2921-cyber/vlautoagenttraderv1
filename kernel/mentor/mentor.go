@@ -106,15 +106,6 @@ type Intent struct {
 	Setup     string  // "ISB", "PHL", "PLH" (SWING4H when it lands)
 	StopPts   float64 // |entry - stop|
 	TargetPts float64 // |target - entry|
-
-	// N12 per-order expiry (PR #313): the stop-limit is cancelled when
-	// unfilled at this unix-ms — the expiry belongs to the RULES, not a
-	// blanket timer. 0 = the injector computes the setup's default (a level
-	// touch or a single ISB: the close of the NEXT 1m candle; the swing: the
-	// close of the current 4h candle, 17:00 CT anchor [D5.2 p3 @12:30]). ISB
-	// stacking extends it while the candles stay inside and sends a CancelArm
-	// at the 4th.
-	ExpiryMs int64
 }
 
 // Config is every knob. Enabled is mentor_mode and defaults to false (L4):
