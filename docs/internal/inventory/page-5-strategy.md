@@ -88,9 +88,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 ### Sub-component: `CoinSourceEditor`
 - **File:** [web/src/components/strategy/CoinSourceEditor.tsx:14-433](web/src/components/strategy/CoinSourceEditor.tsx#L14-L433)
 - **Props:** `{ config: CoinSourceConfig, onChange, disabled?, language }`
-- **`sourceTypes` constant** ([line 23-28](web/src/components/strategy/CoinSourceEditor.tsx#L23-L28)): 4 options — `static` (manual list), `ai500` (top by AI ranking), `oi_top` (open-interest growth), `oi_low` (OI decay)
-- **`xyzDexAssets` set** ([line 31-42](web/src/components/strategy/CoinSourceEditor.tsx#L31-L42)) — 23 entries covering stocks (TSLA / NVDA / AAPL …), forex (EUR / JPY), commodities (GOLD / SILVER), index (XYZ100). Used to skip the USDT suffix on the `xyz:` DEX assets.
-- **`handleAddCoin`** ([line 60-88](web/src/components/strategy/CoinSourceEditor.tsx#L60-L88)) — 10-coin cap, applies `xyz:` prefix for stock/forex/commodity assets, otherwise auto-appends `USDT` if not already present. **No NinjaTrader / CME futures branch.** A user typing `NQ` will get stored as `NQUSDT`, which Databento rejects.
 - **`MAX_STATIC_COINS = 10`** ([line 49](web/src/components/strategy/CoinSourceEditor.tsx#L49))
 
 ### Sub-component: `IndicatorEditor`
@@ -112,7 +109,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
   - Trading Leverage — `btc_eth_max_leverage` slider (1-20x) + `altcoin_max_leverage` slider (1-20x). **Labels hardcoded "BTC/ETH Leverage" / "Altcoin Leverage"** — not parameterized on futures.
   - Position Value Ratio — `btc_eth_max_position_value_ratio` / `altcoin_max_position_value_ratio` sliders
   - Margin Usage — `max_margin_usage` (0.5-0.95)
-  - Min Position Size — `min_position_size` (USDT label hardcoded)
   - Min Risk/Reward — `min_risk_reward_ratio`
   - Min Confidence — `min_confidence` (60-90)
 - **NinjaTrader awareness:** None.
@@ -220,7 +216,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 | Gap | Plan | File:line | Symptom | Scope |
 |---|---|---|---|---|
 | Strategy Studio is fully crypto-coupled — no NT-aware branches | Plan 4.6 | `CoinSourceEditor.tsx:60-88`, `IndicatorEditor.tsx` (all sections), `RiskControlEditor.tsx:60-128`, `TokenEstimateBar.tsx:122` | A NT trader's strategy editor still shows "BTC/ETH Leverage", "Altcoin Leverage", funding rate toggle, OI ranking — all meaningless for CME futures | ~400 LOC, 3 hr |
-| `CoinSourceEditor.handleAddCoin` auto-appends `USDT` for everything except the hardcoded `xyzDexAssets` set | bundled in Plan 4.6 | `CoinSourceEditor.tsx:78` | User typing `NQ` gets `NQUSDT` (which Databento rejects). Need a CME-futures pattern check (`NQ.c.0`, `MNQ.c.0`, `ES.c.0`, etc.) | bundled |
 | `IndicatorEditor.DEFAULT_VLOS_API_KEY` literal | open | `IndicatorEditor.tsx:7` | upstream website link (removed in the VL rename) is deprecated (HTTP 402). The default key is dead code; the field should default empty | 5-min |
 
 ### NEW observations

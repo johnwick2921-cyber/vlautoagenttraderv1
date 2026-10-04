@@ -1,0 +1,19 @@
+{
+  "up_to_date": {
+    "available": false,
+    "checked": true,
+    "ready": false,
+    "reason": "up to date",
+    "tag": "v2026.10.02.3",
+    "target_commitish": "dev"
+  },
+  "verified_ready": {
+    "available": true,
+    "checked": true,
+    "ready": true,
+    "reason": "verified, ready",
+    "source_sha": "0123456789abcdef",
+    "tag": "v2026.10.02.3",
+    "target_commitish": "dev"
+  }
+}

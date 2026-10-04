@@ -15,7 +15,7 @@
 
 **计算公式：**
 ```
-Initial Balance = Total Wallet Balance + Total Unrealized Profit
+Initial Balance = Total Account Balance + Total Unrealized Profit
                 = 当前账户净值（创建时快照）
 ```
 
@@ -27,13 +27,13 @@ Initial Balance = Total Wallet Balance + Total Unrealized Profit
 
 **计算公式：**
 ```
-Total Equity = Total Wallet Balance + Total Unrealized Profit
+Total Equity = Total Account Balance + Total Unrealized Profit
 ```
 
 **数据来源：** 实时从交易所API获取
 
 **说明：**
-- `Total Wallet Balance`: 账户中的实际USDT余额（包括已实现盈亏）
+- `Total Account Balance`: 账户中的实际USD余额（包括已实现盈亏）
 - `Total Unrealized Profit`: 所有持仓的未实现盈亏总和
 - Equity会随着市场价格波动和持仓变化实时变化
 
@@ -51,10 +51,10 @@ Total PNL % = (Total PNL / Initial Balance) × 100%
 
 **示例：**
 ```
-Initial Balance: 10,000 USDT  （创建时）
-Current Equity:  11,500 USDT  （实时）
+Initial Balance: 10,000 USD  （创建时）
+Current Equity:  11,500 USD  （实时）
 -----------------------------------
-Total PNL:       +1,500 USDT
+Total PNL:       +1,500 USD
 Total PNL %:     +15%
 ```
 
@@ -95,23 +95,7 @@ Position PNL % = (Unrealized PnL / Margin Used) × 100%
 **文件：** `api/server.go:handleCreateTrader()`
 
 **逻辑：**
-```go
-// 查询交易所余额
-balanceInfo, _ := tempTrader.GetBalance()
-
-// 提取钱包余额和未实现盈亏
-totalWalletBalance := balanceInfo["totalWalletBalance"].(float64)
-totalUnrealizedProfit := balanceInfo["totalUnrealizedProfit"].(float64)
-
-// 计算Total Equity作为Initial Balance
-initialEquity := totalWalletBalance + totalUnrealizedProfit
-
-// 存入数据库
-trader := &config.TraderRecord{
-    InitialBalance: initialEquity,  // 自动设置
-    // ... 其他字段
-}
-```
+查询账户余额 → 提取账户余额和未实现盈亏 → 计算 Total Equity 作为 Initial Balance → 存入数据库。
 
 ---
 
@@ -202,7 +186,7 @@ trader := &config.TraderRecord{
 | 字段 | 定义 | 计算方式 | 存储位置 | 更新频率 |
 |-----|------|---------|---------|---------|
 | **Initial Balance** | 基准余额 | 创建/手动同步时获取equity | DB: traders.initial_balance | 创建时+手动 |
-| **Current Equity** | 当前净值 | wallet + unrealized | 不存储（实时计算） | 实时 |
+| **Current Equity** | 当前净值 | account + unrealized | 不存储（实时计算） | 实时 |
 | **Total PNL** | 总盈亏 | current_equity - initial_balance | 不存储（实时计算） | 实时 |
 | **Total PNL %** | 盈亏百分比 | (total_pnl / initial_balance) × 100 | 不存储（实时计算） | 实时 |
 
@@ -267,7 +251,7 @@ trader := &config.TraderRecord{
 - ✅ 弹窗/输入框：让用户输入新的Initial Balance值
 - ✅ 提示文案：
   ```
-  当前初始余额: 10,000 USDT
+  当前初始余额: 10,000 USD
   请输入新的初始余额（用于重新校准PNL统计）
   ```
 

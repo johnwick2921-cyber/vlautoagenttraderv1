@@ -7,14 +7,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"vl/config"
 	"vl/kernel"
 	"vl/logger"
 	"vl/market"
 	"vl/mcp"
 	"vl/store"
 	"vl/telemetry"
-	"vl/wallet"
 )
 
 // reasoningWire maps a reasoning knob (off|fast|low|high|max) to DeepSeek wire
@@ -216,7 +214,6 @@ func (at *AutoTrader) runCycle() error {
 	// ENTIRE cycle — no context build, no NT8 round-trips, no AI — and idle with
 	// a longer cadence, logging only on the open⇄closed edge. This is the
 	// approved fix for the "bot scans while the market is closed" symptom.
-	// Crypto (TradingMode != "futures") returns false here → byte-identical.
 	if at.cmeSessionClosedSkip() {
 		return nil
 	}
@@ -347,11 +344,6 @@ func (at *AutoTrader) runCycle() error {
 	// "updates stop while position open"). Only the AI call may be skipped, and
 	// only AFTER snapshot+broadcast.
 
-	// Check USDC balance periodically for claw402 users (every 10 cycles)
-	if at.callCount%10 == 0 && store.IsClaw402Config(at.config.AIModel) {
-		at.checkClaw402Balance()
-	}
-
 	// Create decision record
 	record := &store.DecisionRecord{
 		ExecutionLog: []string{},
@@ -394,6 +386,11 @@ func (at *AutoTrader) runCycle() error {
 		at.saveDecision(record)
 		return fmt.Errorf("failed to build trading context: %w", err)
 	}
+
+	// MENTOR P3 — one evaluator tick per new 1m close. Inert unless the
+	// per-strategy mentor_mode is ON; placements stay behind the MENTOR_PLACE
+	// env gate until P1 (#309) lands (L4: default OFF, byte-identical bot).
+	at.mentorTick(ctx)
 
 	// G2 (regime wave 2026-08-21) — per-cycle STRUCTURE snapshot: computed from
 	// the same 1m cache every other futures consumer reads, threaded into the
@@ -519,8 +516,30 @@ func (at *AutoTrader) runCycle() error {
 		record.CandidateCoins = append(record.CandidateCoins, coin.Symbol)
 	}
 
-	at.logInfof("📊 Account equity: %.2f USDT | Available: %.2f USDT | Positions: %d",
+	at.logInfof("📊 Account equity: %.2f | Available: %.2f | Positions: %d",
 		ctx.Account.TotalEquity, ctx.Account.AvailableBalance, ctx.Account.PositionCount)
+
+	// MENTOR P3 (P0 fix/mentor-ai-off, DS-106): a mentor-mode trader's entries
+	// come ONLY from the mentor evaluator; the AI decision call is skipped so
+	// no tokens are spent on a decision that cannot place (the admission chain
+	// refuses every non-mentor open anyway). Closes, flattens and the safety
+	// paths never needed this call — they live outside it. Logged once per
+	// cycle; the snapshot + row still land so the dashboard keeps moving.
+	if at.mentorSkipsAIDecision() {
+		at.logInfof("🧑‍🏫 mentor_mode: AI decision skipped for cycle #%d — entries come from the mentor evaluator (no LLM call, no tokens)", at.callCount)
+		record.Success = true
+		record.ExecutionLog = append(record.ExecutionLog,
+			"mentor_mode: AI decision skipped — entries come from the mentor evaluator (no LLM call)")
+		record.AccountState = store.AccountSnapshot{
+			TotalBalance:          ctx.Account.TotalEquity,
+			AvailableBalance:      ctx.Account.AvailableBalance,
+			TotalUnrealizedProfit: ctx.Account.UnrealizedPnL,
+			PositionCount:         ctx.Account.PositionCount,
+			InitialBalance:        at.initialBalance,
+		}
+		at.saveDecision(record)
+		return nil
+	}
 
 	// 5. Use strategy engine to call AI for decision
 	at.logInfof("🤖 Requesting AI analysis and decision... [Strategy Engine]")
@@ -706,7 +725,7 @@ func (at *AutoTrader) runCycle() error {
 	// for i, d := range kernel.Decisions {
 	//     logger.Infof("  [%d] %s: %s - %s", i+1, d.Symbol, d.Action, d.Reasoning)
 	//     if d.Action == "open_long" || d.Action == "open_short" {
-	//        logger.Infof("      Leverage: %dx | Position: %.2f USDT | Stop loss: %.4f | Take profit: %.4f",
+	//        logger.Infof("      Leverage: %dx | Position: %.2f | Stop loss: %.4f | Take profit: %.4f",
 	//           d.Leverage, d.PositionSizeUSD, d.StopLoss, d.TakeProfit)
 	//     }
 	// }
@@ -932,12 +951,8 @@ func (at *AutoTrader) runCycle() error {
 
 // cmeSessionClosedSkip is the hoisted CME session gate (PART A). It returns true
 // when the whole cycle should be skipped because the futures market is closed —
-// after logging the open⇄closed edge and idling with a backoff. In non-futures
-// (crypto) mode it always returns false, so those traders are byte-identical.
+// after logging the open⇄closed edge and idling with a backoff.
 func (at *AutoTrader) cmeSessionClosedSkip() bool {
-	if config.Get().TradingMode != "futures" {
-		return false
-	}
 	open := kernel.IsCMEOpen(time.Now())
 	at.noteCMESessionEdge(open)
 	if open {
@@ -1038,7 +1053,7 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 	currentPositionKeys := make(map[string]bool)
 
 	for _, pos := range positions {
-		// Comma-ok every assert: NT futures positions omit Binance-only fields
+		// Comma-ok every assert: NT futures positions omit crypto-only fields
 		// (e.g. liquidationPrice — futures have no liquidation), so an unchecked
 		// .(float64) on a missing key panics and takes down the whole bot.
 		symbol, _ := pos["symbol"].(string)
@@ -1085,7 +1100,7 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 				}
 			}
 		}
-		// Priority 2: Get from exchange API (Bybit: createdTime, OKX: createdTime)
+		// Priority 2: Get from the exchange API
 		if updateTime == 0 {
 			if createdTime, ok := pos["createdTime"].(int64); ok && createdTime > 0 {
 				updateTime = createdTime
@@ -1124,6 +1139,7 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 	for key := range at.positionFirstSeenTime {
 		if !currentPositionKeys[key] {
 			delete(at.positionFirstSeenTime, key)
+			delete(at.positionMentorOwned, key)
 		}
 	}
 
@@ -1158,7 +1174,6 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 	strategyConfig := at.strategyEngine.GetConfig()
 	btcEthLeverage := strategyConfig.RiskControl.BTCETHMaxLeverage
 	altcoinLeverage := strategyConfig.RiskControl.AltcoinMaxLeverage
-	logger.Infof("📋 [%s] Strategy leverage config: BTC/ETH=%dx, Altcoin=%dx", at.name, btcEthLeverage, altcoinLeverage)
 
 	// 6. Build context
 	ctx := &kernel.Context{
@@ -1237,39 +1252,6 @@ func sortDecisionsByPriority(decisions []kernel.Decision) []kernel.Decision {
 	}
 
 	return sorted
-}
-
-// checkClaw402Balance checks USDC balance and logs warnings if low
-func (at *AutoTrader) checkClaw402Balance() {
-	scanMinutes := int(at.config.ScanInterval.Minutes())
-	if scanMinutes <= 0 {
-		scanMinutes = 3
-	}
-	dailyCost, _ := store.EstimateRunway(1.0, at.config.CustomModelName, scanMinutes)
-	logger.Infof("💰 [%s] Estimated daily AI cost: ~$%.2f (model: %s, interval: %dm)",
-		at.name, dailyCost, at.config.CustomModelName, scanMinutes)
-
-	if at.claw402WalletAddr != "" {
-		balance, err := wallet.QueryUSDCBalance(at.claw402WalletAddr)
-		if err != nil {
-			at.logWarnf("⚠️ Failed to query USDC balance: %v", err)
-			return
-		}
-
-		if balance < 1.0 {
-			at.logWarnf("⚠️ Low USDC balance: $%.2f — AI may stop soon!", balance)
-		}
-		if balance <= 0 {
-			at.logErrorf("🚨 USDC balance is ZERO — AI calls will fail!")
-		}
-
-		runway := float64(0)
-		if dailyCost > 0 {
-			runway = balance / dailyCost
-		}
-		logger.Infof("💰 [%s] USDC Balance: $%.2f | Daily AI cost: ~$%.2f | Runway: ~%.1f days",
-			at.name, balance, dailyCost, runway)
-	}
 }
 
 // attachTradeContext (P&L-TRUTH WAVE, 2026-09-01) fills the prompt-facing

@@ -103,10 +103,4 @@ func TestGetEffectiveCoinCount(t *testing.T) {
 	if got := config.getEffectiveCoinCount(); got != 2 {
 		t.Errorf("static coin count = %d, want 2", got)
 	}
-
-	config.CoinSource.SourceType = "hyper_main"
-	config.CoinSource.HyperMainLimit = 5
-	if got := config.getEffectiveCoinCount(); got != 5 {
-		t.Errorf("hyper_main coin count = %d, want 5", got)
-	}
 }

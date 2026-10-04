@@ -200,11 +200,9 @@ export interface PublishStrategyConfig {
 
 // Grid trading specific configuration
 export interface GridStrategyConfig {
-  // Trading pair (e.g., "BTCUSDT")
   symbol: string
   // Number of grid levels (5-50)
   grid_count: number
-  // Total investment in USDT
   total_investment: number
   // Leverage (1-20)
   leverage: number
@@ -233,12 +231,9 @@ export interface GridStrategyConfig {
 }
 
 export interface CoinSourceConfig {
-  source_type: 'static' | 'hyper_all' | 'hyper_main' | 'mixed'
+  source_type: 'static'
   static_coins?: string[]
   excluded_coins?: string[] // 排除的币种列表
-  use_hyper_all: boolean
-  use_hyper_main: boolean
-  hyper_main_limit?: number
 }
 
 export interface IndicatorConfig {
@@ -304,6 +299,13 @@ export interface RiskControlConfig {
   // === Strategy Studio Phase 1 — prop-firm guardrails (Chunks 2-5; surfaced in Chunk 6).
   // The kernel gate reads these exact fields; the toggle (…_enabled) governs enforcement. ===
   guardrails_enabled?: boolean // master switch (default ON)
+  // Mentor mode (🧑‍🏫) — per strategy, default OFF. Placements also need the
+  // server env MENTOR_PLACE=1; without it every intent is a dry run.
+  mentor_mode?: boolean
+  // Mentor trading window (CT): start HH:MM (default "08:30") and length in
+  // minutes (unset/0 → 60; -1 = no window, entries at any hour). SWING is exempt.
+  mentor_window_start?: string
+  mentor_window_minutes?: number
   // Hold-lock: once in a position, suppress AI-initiated closes so the trade
   // rides to the AI's stop/target (a real OCO bracket at the exchange). Default OFF.
   hold_discipline?: boolean

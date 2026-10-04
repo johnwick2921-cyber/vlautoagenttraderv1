@@ -14,7 +14,6 @@ interface ChartTabsProps {
   selectedSymbol?: string // Externally selected symbol
   updateKey?: number // Force update key
   exchangeId?: string // Exchange ID
-  isFutures?: boolean // NT futures: USD instead of USDT (Plan 4.3.1)
   selectedAccount?: string // F31 — dashboard account scope for the order snapshot
 }
 
@@ -34,13 +33,7 @@ type Interval =
   | '1d'
   | '3d'
   | '1w'
-type MarketType =
-  | 'hyperliquid'
-  | 'crypto'
-  | 'stocks'
-  | 'forex'
-  | 'metals'
-  | 'ninjatrader'
+type MarketType = 'stocks' | 'forex' | 'metals' | 'ninjatrader'
 
 interface SymbolInfo {
   symbol: string
@@ -50,22 +43,6 @@ interface SymbolInfo {
 
 // Market type configuration
 const MARKET_CONFIG = {
-  hyperliquid: {
-    exchange: 'hyperliquid',
-    defaultSymbol: 'BTC',
-    icon: '🔷',
-    labelKey: 'hyperliquid' as const,
-    color: 'cyan',
-    hasDropdown: true,
-  },
-  crypto: {
-    exchange: 'binance',
-    defaultSymbol: 'BTCUSDT',
-    icon: '₿',
-    labelKey: 'crypto' as const,
-    color: 'yellow',
-    hasDropdown: false,
-  },
   stocks: {
     exchange: 'alpaca',
     defaultSymbol: 'AAPL',
@@ -132,12 +109,13 @@ const NINJATRADER_INTERVALS: { value: Interval; label: string }[] = [
 
 // Infer market type from exchange ID
 function getMarketTypeFromExchange(exchangeId: string | undefined): MarketType {
-  if (!exchangeId) return 'hyperliquid'
+  if (!exchangeId) return 'ninjatrader'
   const lower = exchangeId.toLowerCase()
-  if (lower.includes('hyperliquid')) return 'hyperliquid'
   if (lower.includes('ninjatrader')) return 'ninjatrader'
-  // Other exchanges default to crypto type
-  return 'crypto'
+  // crypto venues are gone from the product; anything else keeps its own
+  // market type (stocks/forex/metals remain out of scope, GO item 2 declined).
+  if (lower.includes('alpaca')) return 'stocks'
+  return 'ninjatrader'
 }
 
 export function ChartTabs({
@@ -146,7 +124,6 @@ export function ChartTabs({
   selectedSymbol,
   updateKey,
   exchangeId,
-  isFutures = false,
   selectedAccount,
 }: ChartTabsProps) {
   const { language } = useLanguage()
@@ -171,7 +148,7 @@ export function ChartTabs({
     setMarketType(newMarketType)
     // Reset the chart symbol to the new market's default (e.g. MNQ for
     // ninjatrader) so the chart doesn't keep requesting the previous market's
-    // symbol (default 'BTC') on the wrong exchange, which returns empty klines.
+    // symbol on the wrong exchange, which returns empty klines.
     // An externally-selected symbol still wins via the selectedSymbol effect.
     if (!selectedSymbol) {
       setChartSymbol(MARKET_CONFIG[newMarketType].defaultSymbol)
@@ -180,11 +157,7 @@ export function ChartTabs({
 
   // Determine exchange from market type
   const marketConfig = MARKET_CONFIG[marketType]
-  // Prefer passed-in exchangeId (when not hyperliquid)
-  const currentExchange =
-    marketType === 'hyperliquid'
-      ? 'hyperliquid'
-      : exchangeId || marketConfig.exchange
+  const currentExchange = exchangeId || marketConfig.exchange
 
   // Fetch available symbol list
   useEffect(() => {
@@ -254,11 +227,7 @@ export function ChartTabs({
   const handleSymbolSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (symbolInput.trim()) {
-      let symbol = symbolInput.trim().toUpperCase()
-      // Auto-append USDT suffix for crypto
-      if (marketType === 'crypto' && !symbol.endsWith('USDT')) {
-        symbol = symbol + 'USDT'
-      }
+      const symbol = symbolInput.trim().toUpperCase()
       setChartSymbol(symbol)
       setSymbolInput('')
     }
@@ -502,7 +471,7 @@ export function ChartTabs({
               transition={{ duration: 0.2 }}
               className="h-full w-full absolute inset-0"
             >
-              <EquityChart traderId={traderId} embedded isFutures={isFutures} />
+              <EquityChart traderId={traderId} embedded />
             </motion.div>
           ) : (
             <motion.div

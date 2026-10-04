@@ -13,29 +13,18 @@ import { planStrings } from './plan-translations'
 import { translations } from './translations'
 
 // The source-type value set the code accepts (store/strategy.go source_type
-// comment: "static" | "hyper_all" | "hyper_main" | "mixed"). A label that
-// drops or adds a value would misdescribe what the engine will use.
-const sourceTypeValues = ['static', 'hyper_all', 'hyper_main', 'mixed']
+// comment: "static" only). A label that drops or adds a value would
+// misdescribe what the engine will use.
+const sourceTypeValues = ['static']
 
 describe('coinSource label truth (pinned to store/strategy.go:1905-1930)', () => {
-  it('sourceType label names exactly the four code values', () => {
+  it('sourceType label names exactly the one code value', () => {
     for (const lang of ['en', 'zh', 'es'] as const) {
       const text = coinSource.sourceType[lang]
       for (const v of sourceTypeValues) {
         expect(text.toLowerCase()).toContain(v)
       }
     }
-  })
-
-  it('hyper labels name the Hyperliquid halves and the mixed mode', () => {
-    expect(coinSource.useHyperAll.en).toContain('Hyperliquid All')
-    expect(coinSource.useHyperMain.en).toContain('Hyperliquid Main')
-    expect(coinSource.mixed.en).toContain('Mixed')
-  })
-
-  it('the hyper main limit label names the default', () => {
-    expect(coinSource.hyperMainLimit.en).toContain('Hyperliquid Main')
-    expect(coinSource.hyperMainLimit.en).toContain('20')
   })
 
   it('staticDesc ties the list to source_type = static', () => {

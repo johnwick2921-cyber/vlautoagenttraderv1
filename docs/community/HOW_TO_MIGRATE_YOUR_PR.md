@@ -143,7 +143,7 @@ Ensure your PR title follows [Conventional Commits](https://www.conventionalcomm
 <type>(<scope>): <description>
 
 Examples:
-feat(exchange): add OKX integration
+feat(exchange): add NinjaTrader bridge integration
 fix(trader): resolve position tracking bug
 docs(readme): update installation guide
 ```

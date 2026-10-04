@@ -65,7 +65,7 @@ Before starting, ensure you have:
 After deployment:
 
 1. **Configure AI Models** → Web interface at http://localhost:3000
-2. **Set Up Exchange** → Add Binance/Hyperliquid credentials
+2. **Set Up Exchange** → Add NinjaTrader credentials
 3. **Create Traders** → Combine AI models with exchanges
 4. **Start Trading** → Monitor performance in dashboard
 

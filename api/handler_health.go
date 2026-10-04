@@ -39,8 +39,19 @@ func (s *Server) handleHealth(c *gin.Context) {
 			}
 			running++
 			info := nt8Info{Link: "unknown", FeedStatus: "UNKNOWN (no feed_status received)"}
+			// P-D stale link latch: the link field follows the REAL TCP socket
+			// (HealthLinkConnected), never the latched edge-triggered
+			// feed_status — the last feed_status frame can outlive the socket
+			// by hours and must not read as "up". The latched string is still
+			// surfaced as the last-known feed status.
+			if connected, ok := at.HealthLinkConnected(); ok {
+				if connected {
+					info.Link = "up"
+				} else {
+					info.Link = "down"
+				}
+			}
 			if st := at.HealthFeedStatus(); st != "" {
-				info.Link = "up"
 				info.FeedStatus = st
 			}
 			if ageMs, ok := at.HealthLastBarAgeMs(now); ok {

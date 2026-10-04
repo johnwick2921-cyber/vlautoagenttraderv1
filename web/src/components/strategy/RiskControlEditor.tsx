@@ -13,6 +13,7 @@ import {
   EffectiveSavedNote,
   effectiveValueText,
 } from './EffectiveChip'
+import { MentorModeToggle } from './MentorModeToggle'
 
 // ClampedNumberInput edits a single clamped number (e.g. min R/R). It holds the
 // RAW typed text in local state WHILE editing — so clearing + retyping work — and
@@ -83,12 +84,14 @@ interface RiskControlEditorProps {
   disabled?: boolean
   language: string
   // CME futures (e.g. MNQ) size by contract count, not exchange leverage, and
-  // settle in USD — so the crypto leverage tiers are hidden and "USDT" → "USD".
+  // settle in USD — so the leverage tiers are hidden and the value currency shows "USD".
   isFutures?: boolean
   // W1 (g) — the server's effective rows for the SAVED strategy (GET
   // /api/strategies/:id/effective). Optional: absent → no chips, and a row the
   // map does not carry renders nothing extra.
   effective?: StudioEffective
+  // Shown in the Mentor mode confirmation.
+  strategyName?: string
 }
 
 const RC_PATH = 'ai_config.risk_control.'
@@ -216,6 +219,7 @@ export function RiskControlEditor({
   language,
   isFutures = false,
   effective,
+  strategyName,
 }: RiskControlEditorProps) {
   // W1 (g) — one server row per schema path; undefined → no chip.
   const eff = (leaf: string) => effective?.byPath[RC_PATH + leaf]
@@ -236,6 +240,18 @@ export function RiskControlEditor({
   return (
     <div className="space-y-6">
       {effective && <EffectiveSavedNote language={language} />}
+      <MentorModeToggle
+        on={config.mentor_mode === true}
+        onChange={(v) => updateField('mentor_mode', v)}
+        disabled={disabled}
+        language={language}
+        strategyName={strategyName}
+        orderGate={effective?.mentorPlace}
+        windowStart={config.mentor_window_start}
+        windowMinutes={config.mentor_window_minutes}
+        onWindowStartChange={(v) => updateField('mentor_window_start', v)}
+        onWindowMinutesChange={(v) => updateField('mentor_window_minutes', v)}
+      />
       {/* Hold discipline (hold-lock) — applies to futures + crypto; default OFF */}
       <div
         className="p-4 rounded-lg"
@@ -739,7 +755,7 @@ export function RiskControlEditor({
                 {/* User-set + code-enforced. ClampLimits bounds this to [10,1000]
                     on save AND at decision time; the trader gate
                     (enforceMinPositionSize) plus the kernel reject-floor (12 gen /
-                    60 BTC-ETH, engine_position.go) remain as defense-in-depth, so
+                    the kernel reject-floor (engine_position.go) remains as defense-in-depth, so
                     a user value only ever RAISES the effective minimum — never
                     below the floor. The onChange clamp keeps shown == saved. */}
                 <input
@@ -766,7 +782,7 @@ export function RiskControlEditor({
                   }}
                 />
                 <span className="ml-1" style={{ color: '#848E9C' }}>
-                  USDT
+                  USD
                 </span>
                 <span className="text-xs" style={{ color: '#848E9C' }}>
                   user-set · enforced

@@ -45,13 +45,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
   const [allModels, setAllModels] = useState<AIModel[]>([])
   const [allExchanges, setAllExchanges] = useState<Exchange[]>([])
   const [supportedModels, setSupportedModels] = useState<AIModel[]>([])
-  const [visibleTraderAddresses, setVisibleTraderAddresses] = useState<
-    Set<string>
-  >(new Set())
-  const [visibleExchangeAddresses, setVisibleExchangeAddresses] = useState<
-    Set<string>
-  >(new Set())
-  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const loadConfigs = async () => {
     if (!user || !token) {
@@ -68,43 +61,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     setAllModels(modelConfigs)
     setAllExchanges(exchangeConfigs)
     setSupportedModels(models)
-  }
-
-  // Toggle wallet address visibility for a trader
-  const toggleTraderAddressVisibility = (traderId: string) => {
-    setVisibleTraderAddresses((prev) => {
-      const next = new Set(prev)
-      if (next.has(traderId)) {
-        next.delete(traderId)
-      } else {
-        next.add(traderId)
-      }
-      return next
-    })
-  }
-
-  // Toggle wallet address visibility for an exchange
-  const toggleExchangeAddressVisibility = (exchangeId: string) => {
-    setVisibleExchangeAddresses((prev) => {
-      const next = new Set(prev)
-      if (next.has(exchangeId)) {
-        next.delete(exchangeId)
-      } else {
-        next.add(exchangeId)
-      }
-      return next
-    })
-  }
-
-  // Copy wallet address to clipboard
-  const handleCopyAddress = async (id: string, address: string) => {
-    try {
-      await navigator.clipboard.writeText(address)
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(null), 2000)
-    } catch (err) {
-      console.error('Failed to copy address:', err)
-    }
   }
 
   const {
@@ -137,34 +93,10 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
       return m.enabled || (m.customApiUrl && m.customApiUrl.trim() !== '')
     }) || []
 
-  const configuredExchanges =
-    allExchanges?.filter((e) => {
-      if (e.id === 'aster') {
-        return e.asterUser && e.asterUser.trim() !== ''
-      }
-      if (e.id === 'hyperliquid') {
-        return e.hyperliquidWalletAddr && e.hyperliquidWalletAddr.trim() !== ''
-      }
-      return e.enabled
-    }) || []
+  const configuredExchanges = allExchanges?.filter((e) => e.enabled) || []
 
   const enabledModels = allModels?.filter((m) => m.enabled) || []
-  const enabledExchanges =
-    allExchanges?.filter((e) => {
-      if (!e.enabled) return false
-      if (e.id === 'aster') {
-        return (
-          e.asterUser &&
-          e.asterUser.trim() !== '' &&
-          e.asterSigner &&
-          e.asterSigner.trim() !== ''
-        )
-      }
-      if (e.id === 'hyperliquid') {
-        return e.hyperliquidWalletAddr && e.hyperliquidWalletAddr.trim() !== ''
-      }
-      return true
-    }) || []
+  const enabledExchanges = allExchanges?.filter((e) => e.enabled) || []
 
   const isModelInUse = (modelId: string) => {
     return traders?.some((tr) => tr.ai_model === modelId && tr.is_running)
@@ -399,13 +331,11 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
       // NEW-ENTRY GUARD (mirror SettingsPage 0285fb0c): adding via the catalog for a
       // provider that ALREADY has a configured entry must CREATE a new row, not send a
       // bare-provider key that the backend legacy-match uses to OVERWRITE the existing
-      // one. Wallet providers (claw402/blockrun) keep their reconfigure flow.
+      // one.
       const provider = modelToUpdate.provider || ''
-      const isWalletProvider =
-        provider === 'claw402' || provider.startsWith('blockrun')
       const providerAlreadyConfigured =
         !existingModel && (allModels || []).some((m) => m.provider === provider)
-      if (providerAlreadyConfigured && !isWalletProvider) {
+      if (providerAlreadyConfigured) {
         const sameProviderCount = (allModels || []).filter(
           (m) => m.provider === provider
         ).length
@@ -518,14 +448,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     secretKey?: string,
     passphrase?: string,
     testnet?: boolean,
-    hyperliquidWalletAddr?: string,
-    asterUser?: string,
-    asterSigner?: string,
-    asterPrivateKey?: string,
-    lighterWalletAddr?: string,
-    lighterPrivateKey?: string,
-    lighterApiKeyPrivateKey?: string,
-    lighterApiKeyIndex?: number,
     ntDataDir?: string,
     ntInstrumentName?: string,
     ntDefaultContractQty?: number
@@ -546,14 +468,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
               secret_key: secretKey || '',
               passphrase: passphrase || '',
               testnet: testnet || false,
-              hyperliquid_wallet_addr: hyperliquidWalletAddr || '',
-              aster_user: asterUser || '',
-              aster_signer: asterSigner || '',
-              aster_private_key: asterPrivateKey || '',
-              lighter_wallet_addr: lighterWalletAddr || '',
-              lighter_private_key: lighterPrivateKey || '',
-              lighter_api_key_private_key: lighterApiKeyPrivateKey || '',
-              lighter_api_key_index: lighterApiKeyIndex || 0,
             },
           },
         }
@@ -569,14 +483,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           secret_key: secretKey || '',
           passphrase: passphrase || '',
           testnet: testnet || false,
-          hyperliquid_wallet_addr: hyperliquidWalletAddr || '',
-          aster_user: asterUser || '',
-          aster_signer: asterSigner || '',
-          aster_private_key: asterPrivateKey || '',
-          lighter_wallet_addr: lighterWalletAddr || '',
-          lighter_private_key: lighterPrivateKey || '',
-          lighter_api_key_private_key: lighterApiKeyPrivateKey || '',
-          lighter_api_key_index: lighterApiKeyIndex || 0,
           nt_data_dir: ntDataDir || '',
           nt_instrument_name: ntInstrumentName || '',
           nt_default_contract_qty: ntDefaultContractQty || 0,
@@ -685,8 +591,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
         <ConfigStatusGrid
           configuredModels={configuredModels}
           configuredExchanges={configuredExchanges}
-          visibleExchangeAddresses={visibleExchangeAddresses}
-          copiedId={copiedId}
           language={language}
           isModelInUse={isModelInUse}
           getModelUsageInfo={getModelUsageInfo}
@@ -694,8 +598,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           getExchangeUsageInfo={getExchangeUsageInfo}
           onModelClick={handleModelClick}
           onExchangeClick={handleExchangeClick}
-          onToggleExchangeAddress={toggleExchangeAddressVisibility}
-          onCopyAddress={handleCopyAddress}
         />
 
         {/* Traders List */}
@@ -706,8 +608,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           models={allModels}
           configuredModelsCount={configuredModels.length}
           configuredExchangesCount={configuredExchanges.length}
-          visibleTraderAddresses={visibleTraderAddresses}
-          copiedId={copiedId}
           language={language}
           activeTraderId={activeTraderId}
           onTraderSelect={onTraderSelect}
@@ -716,8 +616,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           onToggleTrader={handleToggleTrader}
           onToggleCompetition={handleToggleCompetition}
           onDeleteTrader={handleDeleteTrader}
-          onToggleTraderAddress={toggleTraderAddressVisibility}
-          onCopyAddress={handleCopyAddress}
         />
 
         {/* Create Trader Modal */}

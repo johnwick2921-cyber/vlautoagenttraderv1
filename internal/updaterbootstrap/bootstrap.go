@@ -1,19 +1,30 @@
 // Package updaterbootstrap is the attended, local CLI for W-ONE-BUTTON M3
 // update authorization. cmd/vl-updater-bootstrap is a thin main over Run.
 //
-//	vl-updater-bootstrap [--install-dir <dir>] enroll [--replace] <email>
-//	vl-updater-bootstrap [--install-dir <dir>] authorize <release_id>
+//		vl-updater-bootstrap [--install-dir <dir>] enroll [--replace] <email>
+//		vl-updater-bootstrap [--install-dir <dir>] authorize <release_id>
+//	     vl-updater-bootstrap [--install-dir <dir>] revoke-worker --all
 //
 // enroll binds the installation's update administrator to the app user whose
 // email is EXACTLY <email> (the predicate login uses) and writes
 // <data>/updater/admin.json + device.key (32 random bytes), both 0600 in a
 // 0700 dir. No API creates or resets these files; the /updates gate READS
 // them (read-only) on every /api/updates* request (PR #200 review #19).
+// enroll also mints the updater WORKER's credential (P-E): a cutover-worker
+// JWT, long-lived, written into ~/.config/vl-updater/env — the API admits it
+// ONLY on GET /api/maintenance and GET /api/installation-gate. --replace
+// revokes the previous worker token through the bot DB before writing the
+// new one.
+//
+// revoke-worker --all bumps worker_token_epoch: every cutover-worker token
+// minted before the bump is refused by the API (P-E E3).
 //
 // authorize (CTO ruling Q1(a)) prints ONE install authorization for
 // <release_id> — {release_id, job_id, expires_at, hmac}, valid 5 minutes,
 // single use — computed from device.key on this box. The key never leaves the
-// box and is never printed; nothing on the API side mints a MAC.
+// box and is never printed; nothing on the API side mints a MAC. The same
+// line is ALSO written to ~/.config/vl-updater/last-authz-<release_id>.json
+// (0600, never overwritten) so a wrapped terminal paste never loses it (G2).
 //
 // Both are ATTENDED: stdin must be a terminal and the operator types an exact
 // confirmation line. Both refuse to run as root (a root-owned data/updater
@@ -63,11 +74,16 @@ import (
 	_ "vl/store/sqlitedriver"
 )
 
-// Seams (tests only): root refusal, the attended check and the clock.
+// Seams (tests only): root refusal, the attended check, the clock and the
+// home directory. userHomeDir is the ONE resolver for ~/.config/vl-updater
+// (P0 test-isolation fix): tests override it AND set HOME so nothing ever
+// reaches the real config dir; the package guard fails the run if the real
+// dir changes.
 var (
-	geteuid    = os.Geteuid
-	isTerminal = stdinIsTerminal
-	now        = time.Now
+	geteuid     = os.Geteuid
+	isTerminal  = stdinIsTerminal
+	now         = time.Now
+	userHomeDir = os.UserHomeDir
 )
 
 // DataDirFor is the ONE resolver's answer for THIS process (identical to
@@ -84,7 +100,7 @@ func DBFileFor(installDir string) string {
 	return installpath.DBFile(installDir, installpath.DBPath(installpath.DotEnvGetenv(installDir)))
 }
 
-const usage = "usage: vl-updater-bootstrap [--install-dir d] enroll [--replace] <email> | authorize <release_id>"
+const usage = "usage: vl-updater-bootstrap [--install-dir d] enroll [--replace] <email> | authorize <release_id> | revoke-worker --all"
 
 // Run executes the CLI and returns the exit code: 0 ok, 1 refused/failed,
 // 2 usage or a precondition (root, DB_PATH diverges or .env unreadable, no
@@ -114,17 +130,18 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	sub := flag.NewFlagSet(rest[0], flag.ContinueOnError)
 	sub.SetOutput(stderr)
 	replace := sub.Bool("replace", false, "enroll: replace an existing enrollment (rotates the device key)")
+	allWorkers := sub.Bool("all", false, "revoke-worker: invalidate every worker token (bump worker_token_epoch)")
 	pos, err := parseInterspersed(sub, rest[1:])
 	if err != nil {
 		return 2
 	}
 	switch rest[0] {
-	case "enroll", "authorize":
+	case "enroll", "authorize", "revoke-worker":
 	default:
 		fmt.Fprintf(stderr, "unknown subcommand %q\n%s\n", rest[0], usage)
 		return 2
 	}
-	if len(pos) != 1 {
+	if rest[0] != "revoke-worker" && len(pos) != 1 {
 		fmt.Fprintln(stderr, usage)
 		return 2
 	}
@@ -138,6 +155,9 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	if rest[0] == "enroll" {
 		return enroll(tgt, pos[0], *replace, stdin, stdout, stderr)
+	}
+	if rest[0] == "revoke-worker" {
+		return revokeWorker(tgt, *allWorkers, stdin, stdout, stderr)
 	}
 	return authorize(tgt, pos[0], stdin, stdout, stderr)
 }
@@ -304,8 +324,60 @@ func enroll(tgt target, email string, replace bool, stdin io.Reader, stdout, std
 		}
 		return 1
 	}
+
+	// P-E E2/E3 — the worker credential (minted ONLY here, attended).
+	// --replace revokes the previous worker token first: the API refuses it
+	// from the moment this process returns.
+	home, err := userHomeDir()
+	if err != nil {
+		fmt.Fprintf(stderr, "worker token: cannot resolve HOME: %v (the enrollment stands; re-run --replace once HOME is resolvable)\n", err)
+		return 1
+	}
+	if replace {
+		if old, ok, rerr := readWorkerTokenLine(home); rerr != nil {
+			fmt.Fprintf(stderr, "worker token: cannot read the previous token: %v (the enrollment stands; the old token may still work until the epoch is bumped)\n", rerr)
+			return 1
+		} else if ok {
+			if rerr := revokeWorkerToken(home, tgt.dbFile, old); rerr != nil {
+				fmt.Fprintf(stderr, "worker token: revoke of the previous token failed: %v (the enrollment stands; bump the epoch with revoke-worker --all if needed)\n", rerr)
+				return 1
+			}
+		}
+	}
+	tok, err := mintWorkerToken(tgt, userID, email)
+	if err != nil {
+		fmt.Fprintf(stderr, "worker token: mint failed: %v (the enrollment stands; re-run --replace to retry the token)\n", err)
+		return 1
+	}
+	if err := writeWorkerTokenLine(home, tok); err != nil {
+		fmt.Fprintf(stderr, "worker token: write to %s failed: %v (the enrollment stands)\n", workerEnvPath(home), err)
+		return 1
+	}
 	fmt.Fprintf(stdout, "enrolled: user_id=%s… dir=%s (both enrollment files 0600; the key is never printed)\n",
 		shortID(userID), updateauth.Dir(dataDir))
+	fmt.Fprintf(stdout, "worker token: written to %s (mode 0600, never printed; install-updater-worker.sh reads it)\n", workerEnvPath(home))
+	return 0
+}
+
+// revokeWorker is `vl-updater-bootstrap revoke-worker --all`: bumps
+// worker_token_epoch, which invalidates EVERY cutover-worker token minted
+// before the bump (P-E E3). Attended: it names what it kills and takes its
+// own typed line.
+func revokeWorker(tgt target, all bool, stdin io.Reader, stdout, stderr io.Writer) int {
+	if !all {
+		fmt.Fprintln(stderr, "refusing: revoke-worker takes --all (it invalidates every worker token at once)")
+		return 2
+	}
+	fmt.Fprintf(stderr, "REVOKE EVERY updater-worker credential: the worker_token_epoch is bumped, and the API refuses every cutover-worker token minted before the bump.\n")
+	if !confirm(stdin, stderr, tgt, "REVOKE ALL WORKERS") {
+		return 1
+	}
+	epoch, err := bumpWorkerEpochDB(tgt.dbFile)
+	if err != nil {
+		fmt.Fprintf(stderr, "refusing: %v\n", err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "worker epoch: %d — every cutover-worker token minted before this value is refused; re-run enroll --replace to mint a current one\n", epoch)
 	return 0
 }
 
@@ -328,6 +400,19 @@ func authorize(tgt target, releaseID string, stdin io.Reader, stdout, stderr io.
 	if err != nil {
 		fmt.Fprintf(stderr, "authorize failed: %v\n", err)
 		return 1
+	}
+	// G2 — the same line, also written to a file the owner can cat (0600; a
+	// wrapped terminal paste never loses it). The write is guarded but NOT
+	// fatal to the grant: an existing file is never overwritten, and a
+	// missing/mis-owned config dir only means the line prints below alone.
+	if home, herr := userHomeDir(); herr == nil {
+		if lerr := writeLastAuthz(home, releaseID, b); lerr != nil {
+			fmt.Fprintf(stderr, "authorize: note — %v (the line prints below; paste it from there)\n", lerr)
+		} else {
+			fmt.Fprintf(stderr, "also written to %s (0600; cat it and paste from there)\n", lastAuthzPath(home, releaseID))
+		}
+	} else {
+		fmt.Fprintf(stderr, "authorize: cannot resolve HOME (%v) — the line prints below only\n", herr)
 	}
 	fmt.Fprintln(stdout, string(b))
 	fmt.Fprintf(stderr, "valid until %s — paste it into the Updates page; it works once.\n",

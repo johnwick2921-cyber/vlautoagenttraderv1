@@ -1,10 +1,12 @@
 // Package updaterwire is the W-ONE-BUTTON M3 channel between the Go app and
 // the updater worker: a unix socket at <data>/updater/worker.sock carrying
 // newline-delimited, typed JSON frames with a FIXED verb set
-// {status, install, cancel-before-boundary, resume}. Anything else is
+// {status, install, cancel-before-boundary, resume, check}. Anything else is
 // rejected. resume (M4 3b-B) is the attended `vl-updater resume <job>`:
 // only the updater CLI builds one (TestOnlyTheUpdaterCLIBuildsAResume), never
-// the app.
+// the app. check (ONE-BUTTON P-A, A1) is the app's relay of POST
+// /api/updates/check to the worker: the worker owns ALL release-source
+// network code; the app never dials a network host for it.
 //
 // This package is the codec, the id allow-lists, the socket path, and the
 // app-side Dial. The worker side (Listen/Serve) lives in
@@ -58,17 +60,22 @@ const (
 	// VerbResume continues a job the worker parked for an attended step
 	// (nt8_updated: the owner's F5). Built only by cmd/vl-updater.
 	VerbResume Verb = "resume"
+	// VerbCheck (ONE-BUTTON P-A, A1) asks the worker for its release
+	// check: knob, latest GitHub release, download, verification.
+	// Built by the app's /api/updates/check relay only. The frame carries
+	// no fields — the worker reads its own target, knob and inbox.
+	VerbCheck Verb = "check"
 )
 
 // Verbs is the complete verb set, in a fixed order.
 func Verbs() []Verb {
-	return []Verb{VerbStatus, VerbInstall, VerbCancelBeforeBoundary, VerbResume}
+	return []Verb{VerbStatus, VerbInstall, VerbCancelBeforeBoundary, VerbResume, VerbCheck}
 }
 
-// Known reports whether v is one of the four verbs (exact bytes).
+// Known reports whether v is one of the verbs (exact bytes).
 func (v Verb) Known() bool {
 	switch v {
-	case VerbStatus, VerbInstall, VerbCancelBeforeBoundary, VerbResume:
+	case VerbStatus, VerbInstall, VerbCancelBeforeBoundary, VerbResume, VerbCheck:
 		return true
 	}
 	return false
@@ -98,6 +105,11 @@ type ResumePayload struct {
 	JobID string `json:"job_id"`
 }
 
+// CheckPayload is empty by design (ONE-BUTTON P-A, A1): the check verb carries
+// no fields — the worker reads its own target, knob and inbox. Anything else
+// in the payload object is refused by the strict decoder.
+type CheckPayload struct{}
+
 // Request is one decoded frame: Verb plus exactly the one payload that verb
 // takes (the others nil).
 type Request struct {
@@ -106,11 +118,18 @@ type Request struct {
 	Install *InstallPayload
 	Cancel  *CancelPayload
 	Resume  *ResumePayload
+	Check   *CheckPayload
 }
 
 // NewStatus builds a status request (jobID "" = the worker as a whole).
 func NewStatus(jobID string) Request {
 	return Request{Verb: VerbStatus, Status: &StatusPayload{JobID: jobID}}
+}
+
+// NewCheck builds a check request (ONE-BUTTON P-A, A1). Only the app's
+// /api/updates/check relay may build one (the worker answers; it never asks).
+func NewCheck() Request {
+	return Request{Verb: VerbCheck, Check: &CheckPayload{}}
 }
 
 // NewInstall builds an install request.
@@ -132,9 +151,10 @@ func NewResume(jobID string) Request {
 // Response is the worker's answer. OK ⇒ State set, Error empty; !OK ⇒ Error
 // set, State empty.
 type Response struct {
-	OK    bool
-	State string
-	Error string
+	OK     bool
+	State  string
+	Error  string
+	Detail string
 }
 
 // RejectedResponse is the one answer every refused frame gets — no detail
@@ -364,6 +384,10 @@ func DecodeRequest(frame []byte) (Request, error) {
 			return Request{}, err
 		}
 		req = NewResume(job)
+	case VerbCheck:
+		// the strict object parse above already refused any key in
+		// the payload (payloadKeys[check] is empty)
+		req = NewCheck()
 	}
 	if err := req.Validate(); err != nil {
 		return Request{}, err
@@ -377,7 +401,7 @@ func (r Request) Validate() error {
 		return ErrUnknownVerb
 	}
 	n := 0
-	for _, set := range []bool{r.Status != nil, r.Install != nil, r.Cancel != nil, r.Resume != nil} {
+	for _, set := range []bool{r.Status != nil, r.Install != nil, r.Cancel != nil, r.Resume != nil, r.Check != nil} {
 		if set {
 			n++
 		}
@@ -401,6 +425,10 @@ func (r Request) Validate() error {
 	case VerbResume:
 		if r.Resume == nil || !ValidJobID(r.Resume.JobID) {
 			return fmt.Errorf("%w: resume", ErrBadPayload)
+		}
+	case VerbCheck:
+		if r.Check == nil {
+			return fmt.Errorf("%w: check", ErrBadPayload)
 		}
 	}
 	return nil
@@ -428,6 +456,8 @@ func EncodeRequest(r Request) ([]byte, error) {
 		w.Payload = r.Cancel
 	case VerbResume:
 		w.Payload = r.Resume
+	case VerbCheck:
+		w.Payload = r.Check
 	}
 	b, err := json.Marshal(w)
 	if err != nil {
@@ -444,24 +474,32 @@ var (
 	errorRe = regexp.MustCompile(`^[a-z][a-z0-9_ .-]{0,127}$`)
 )
 
+// maxDetailBytes bounds Response.Detail (the check result JSON). The frame
+// cap (16 KiB) already bounds it harder; this keeps the field's own contract.
+const maxDetailBytes = 4096
+
 func (r Response) validate() error {
 	if r.OK {
 		if !stateRe.MatchString(r.State) || r.Error != "" {
 			return fmt.Errorf("%w: ok response needs a state and no error", ErrBadPayload)
 		}
+		if len(r.Detail) > maxDetailBytes {
+			return fmt.Errorf("%w: detail too long", ErrBadPayload)
+		}
 		return nil
 	}
-	if !errorRe.MatchString(r.Error) || r.State != "" {
+	if !errorRe.MatchString(r.Error) || r.State != "" || r.Detail != "" {
 		return fmt.Errorf("%w: failed response needs an error and no state", ErrBadPayload)
 	}
 	return nil
 }
 
 type wireResponse struct {
-	V     int    `json:"v"`
-	OK    bool   `json:"ok"`
-	State string `json:"state,omitempty"`
-	Error string `json:"error,omitempty"`
+	V      int    `json:"v"`
+	OK     bool   `json:"ok"`
+	State  string `json:"state,omitempty"`
+	Error  string `json:"error,omitempty"`
+	Detail string `json:"detail,omitempty"`
 }
 
 // EncodeResponse validates r and returns its frame including the newline.
@@ -469,14 +507,14 @@ func EncodeResponse(r Response) ([]byte, error) {
 	if err := r.validate(); err != nil {
 		return nil, err
 	}
-	b, err := json.Marshal(wireResponse{V: ProtocolVersion, OK: r.OK, State: r.State, Error: r.Error})
+	b, err := json.Marshal(wireResponse{V: ProtocolVersion, OK: r.OK, State: r.State, Error: r.Error, Detail: r.Detail})
 	if err != nil {
 		return nil, err
 	}
 	return append(b, '\n'), nil
 }
 
-var responseKeys = map[string]bool{"v": true, "ok": true, "state": true, "error": true}
+var responseKeys = map[string]bool{"v": true, "ok": true, "state": true, "error": true, "detail": true}
 
 // DecodeResponse parses one response frame with the same strictness as
 // DecodeRequest.
@@ -515,6 +553,13 @@ func DecodeResponse(frame []byte) (Response, error) {
 			return Response{}, fmt.Errorf("%w: error", ErrBadPayload)
 		}
 		r.Error = s
+	}
+	if raw, ok := f["detail"]; ok {
+		s, ok := decodeString(raw)
+		if !ok {
+			return Response{}, fmt.Errorf("%w: detail", ErrBadPayload)
+		}
+		r.Detail = s
 	}
 	if err := r.validate(); err != nil {
 		return Response{}, err

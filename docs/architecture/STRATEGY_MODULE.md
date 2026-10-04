@@ -17,10 +17,7 @@ This document describes the complete data flow of the VL strategy module, includ
 └─────────────────────────────────────────────────────────────────┘
 
 1. Coin Selection (GetCandidateCoins)
-   ├─ Static (Static list)
-   ├─ AI500 Pool (AI rating pool)
-   ├─ OI Top (Position growth ranking)
-   └─ Mixed (Mixed mode)
+   └─ Static (Static list)
         ↓
 2. Data Assembly (buildTradingContext)
    ├─ Account balance → equity, available, unrealizedPnL
@@ -28,7 +25,7 @@ This document describes the complete data flow of the VL strategy module, includ
    ├─ K-line data → OHLCV (5m, 15m, 1h, 4h)
    ├─ Technical indicators → EMA, MACD, RSI, ATR, Volume
    ├─ On-chain data → OI, Funding Rate
-   ├─ Quant data → Capital flow, OI changes (optional)
+
    └─ Recent trades → Last 10 closed trades
         ↓
 3. System Prompt (BuildSystemPrompt)
@@ -43,7 +40,7 @@ This document describes the complete data flow of the VL strategy module, includ
         ↓
 4. User Prompt (BuildUserPrompt)
    ├─ System status (time, cycle number)
-   ├─ BTC market overview
+
    ├─ Account information
    ├─ Current positions (with indicators)
    ├─ Candidate coins (full market data)
@@ -96,67 +93,6 @@ if config.CoinSource.SourceType == "static" {
 - **Config:** `StrategyConfig.CoinSource.StaticCoins`
 - **Usage:** Manually specify trading coins
 - **Tag:** `["static"]`
-
-### 1.2 AI500 Coin Pool
-
-```go
-// decision/engine.go:405-406, 456-474
-func (e *StrategyEngine) getCoinPoolCoins(limit int) []CandidateCoin {
-    coins, err := e.provider.GetTopRatedCoins(limit)
-    // ...
-    for _, coin := range coins {
-        result = append(result, CandidateCoin{
-            Symbol:  coin.Symbol,
-            Sources: []string{"ai500"},
-        })
-    }
-}
-```
-
-- **API:** `config.CoinSource.CoinPoolAPIURL`
-- **Usage:** Get top N coins by AI rating
-- **Tag:** `["ai500"]`
-
-### 1.3 OI Top Coins (Position Growth Ranking)
-
-```go
-// decision/engine.go:408-409, 476-498
-func (e *StrategyEngine) getOITopCoins() []CandidateCoin {
-    positions, err := e.provider.GetOITopPositions()
-    // ...
-    for _, pos := range positions {
-        result = append(result, CandidateCoin{
-            Symbol:  pos.Symbol,
-            Sources: []string{"oi_top"},
-        })
-    }
-}
-```
-
-- **API:** `config.CoinSource.OITopAPIURL`
-- **Usage:** Get coins with fastest OI growth
-- **Tag:** `["oi_top"]`
-
-### 1.4 Mixed Mode
-
-```go
-// decision/engine.go:411-449
-if config.CoinSource.SourceType == "mixed" {
-    if config.CoinSource.UseCoinPool {
-        // Add AI500 coins
-    }
-    if config.CoinSource.UseOITop {
-        // Add OI Top coins
-    }
-    if len(config.CoinSource.StaticCoins) > 0 {
-        // Add static coins
-    }
-    // Deduplicate and merge, keep multi-source tags
-}
-```
-
-- **Feature:** Use multiple data sources simultaneously
-- **Tag Example:** `["ai500", "oi_top"]` (dual signal coin)
 
 ---
 
@@ -230,7 +166,7 @@ func (e *StrategyEngine) fetchMarketDataWithStrategy(symbols []string) map[strin
 | **OI** | `EnableOI` | Open interest data |
 | **Funding Rate** | `EnableFundingRate` | Funding rate |
 
-### 2.5 Quant Data (Optional)
+
 
 ```go
 // trader/auto_trader.go:759-778
@@ -243,7 +179,7 @@ if config.Indicators.EnableQuantData {
 **Data Structure:**
 ```go
 QuantData {
-    Netflow {
+
         Institution: {Future, Spot},  // Institutional flow
         Personal: {Future, Spot}      // Retail flow
     },
@@ -306,7 +242,7 @@ maxPositions := config.RiskControl.MaxPositions           // Default: 3
 altcoinMaxRatio := config.RiskControl.AltcoinMaxPositionValueRatio  // Default: 1.0
 btcethMaxRatio := config.RiskControl.BTCETHMaxPositionValueRatio    // Default: 5.0
 maxMarginUsage := config.RiskControl.MaxMarginUsage       // Default: 90%
-minPositionSize := config.RiskControl.MinPositionSize     // Default: 12 USDT
+minPositionSize := config.RiskControl.MinPositionSize     // Default: 12 USD
 ```
 
 **AI Guided (Suggested Values):**
@@ -329,7 +265,7 @@ minConfidence := config.RiskControl.MinConfidence            // Default: 75
 ```json
 [
   {
-    "symbol": "BTCUSDT",
+    "symbol": "MNQ",
     "action": "open_long",
     "leverage": 5,
     "position_size_usd": 100.00,
@@ -356,12 +292,12 @@ minConfidence := config.RiskControl.MinConfidence            // Default: 75
 
 ```
 1. System Status           [Time, cycle number, runtime]
-2. BTC Market Overview     [Price, change%, MACD, RSI]
+
 3. Account Info            [Equity, balance%, PnL%, margin%, positions]
 4. Recent Trades           [Last 10 closed trades]
 5. Current Positions       [Detailed position data + indicators]
 6. Candidate Coins         [Full market data]
-7. Quant Data              [Capital flow, OI data] (optional)
+
 8. OI Ranking Data         [Market OI change ranking] (optional)
 ```
 
@@ -374,30 +310,30 @@ Account: Equity 1000.00 | Balance 800.00 (80.0%) | PnL +5.5% | Margin 20.0% | Po
 ### 4.3 Position Info Format
 
 ```
-1. BTCUSDT LONG | Entry 68000.0000 Current 69500.0000
-   Qty 0.0100 | Position Value $695.00
-   PnL +2.21% | Amount +$15.00
-   Peak PnL +3.50% | Leverage 5x
-   Margin $139.00 | Liquidation Price 55000.0000
+1. MNQ LONG | Entry 20500.0000 Current 20600.0000
+   Qty 1 | Position Value $20600.00
+   PnL +0.98% | Amount +$200.00
+   Peak PnL +1.50% | Leverage 1x
+   Margin $850.00 | Liquidation Price 19380.0000
    Holding Duration 2 hours 30 minutes
 
-   Market: price=69500, ema20=68800, macd=150.5, rsi7=62.3
-   OI: Latest=15000000, Avg=14500000
-   Funding Rate: 0.0100%
+   Market: price=20600, ema20=20480, macd=38.5, rsi7=62.3
+   OI: n/a (no external market data on the futures path)
+   Funding Rate: n/a
 ```
 
 ### 4.4 Candidate Coin Format
 
 ```
-### 1. ETHUSDT (AI500+OI_Top dual signal)
+### 1. MNQ (static source)
 
-current_price = 3500.00, current_ema20 = 3450.00, current_macd = 25.5, current_rsi7 = 58.0
+current_price = 20600.00, current_ema20 = 20480.00, current_macd = 38.5, current_rsi7 = 58.0
 
-Open Interest: Latest: 8500000.00 Average: 8200000.00
-Funding Rate: 0.0050
+Open Interest: n/a
+Funding Rate: n/a
 
 === 5M TIMEFRAME (oldest → latest) ===
-Prices: [3480, 3485, 3490, 3495, 3500]
+Prices: [20580, 20585, 20590, 20595, 20600]
 Volumes: [1000, 1200, 1100, 1300, 1150]
 EMA20: [3470, 3475, 3478, 3482, 3485]
 MACD: [20.1, 21.5, 22.8, 24.0, 25.5]
@@ -554,14 +490,14 @@ func validateDecisions(decisions []Decision, equity, leverage, ratio float64) er
 ```go
 // decision/engine.go:128-143
 type Decision struct {
-    Symbol          string   // Trading pair: "BTCUSDT"
+    Symbol          string   // Trading pair: "MNQ"
     Action          string   // "open_long", "open_short", "close_long", "close_short", "hold", "wait"
     Leverage        int      // Leverage multiplier
-    PositionSizeUSD float64  // Position value (USDT)
+    PositionSizeUSD float64  // Position value (USD)
     StopLoss        float64  // Stop loss price
     TakeProfit      float64  // Take profit price
     Confidence      int      // Confidence 0-100
-    RiskUSD         float64  // Max risk (USDT)
+    RiskUSD         float64  // Max risk (USD)
     Reasoning       string   // Decision reasoning
 }
 ```
@@ -662,7 +598,7 @@ at.store.Decision().LogDecision(record)
 | **Decision Valid** | `decision/engine.go:1480-1602` | `validateDecisions()` |
 | **Risk Enforce** | `trader/auto_trader.go:1769-1851` | `enforceMaxPositions()`, `enforcePositionValueRatio()` |
 | **Strategy Config** | `store/strategy.go` | `StrategyConfig`, `RiskControlConfig` |
-| **Data Provider** | `provider/data_provider.go` | `GetAI500Data()`, `GetOITopPositions()` |
+| **Data Provider** | `provider/ninjatrader/` | NT8 TCP bar feed (no external coin data) |
 
 ---
 
@@ -675,13 +611,8 @@ at.store.Decision().LogDecision(record)
 type StrategyConfig struct {
     // Coin Source
     CoinSource struct {
-        SourceType     string   // "static", "coinpool", "oi_top", "mixed"
+        SourceType     string   // "static" (crypto sources removed)
         StaticCoins    []string // Static coin list
-        UseCoinPool    bool     // Use AI500
-        UseOITop       bool     // Use OI ranking
-        CoinPoolLimit  int      // AI500 fetch limit
-        CoinPoolAPIURL string   // AI500 API URL
-        OITopAPIURL    string   // OI ranking API URL
     }
 
     // Technical Indicators

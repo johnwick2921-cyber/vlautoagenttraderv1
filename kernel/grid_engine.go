@@ -3,12 +3,12 @@ package kernel
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
 	"vl/logger"
 	"vl/market"
 	"vl/mcp"
 	"vl/store"
-	"strings"
-	"time"
 )
 
 // ============================================================================
@@ -113,7 +113,7 @@ func buildGridSystemPromptZh(config *store.GridStrategyConfig) string {
 ## 网格配置
 - 交易对: %s
 - 网格层数: %d
-- 总投资: %.2f USDT
+- 总投资: %.2f USD
 - 杠杆: %dx
 - 价格分布: %s
 
@@ -147,8 +147,8 @@ func buildGridSystemPromptZh(config *store.GridStrategyConfig) string {
 
 示例:
 [
-  {"symbol": "BTCUSDT", "action": "place_buy_limit", "price": 94000, "quantity": 0.01, "level_index": 2, "confidence": 85, "reasoning": "第2层价格接近，下买单"},
-  {"symbol": "BTCUSDT", "action": "hold", "confidence": 90, "reasoning": "市场震荡，保持当前网格"}
+  {"symbol": "MNQ", "action": "place_buy_limit", "price": 94000, "quantity": 0.01, "level_index": 2, "confidence": 85, "reasoning": "第2层价格接近，下买单"},
+  {"symbol": "MNQ", "action": "hold", "confidence": 90, "reasoning": "市场震荡，保持当前网格"}
 ]
 `, config.Symbol, config.Symbol, config.GridCount, config.TotalInvestment, config.Leverage, config.Distribution)
 }
@@ -165,7 +165,7 @@ You are an experienced grid trading expert managing a grid strategy for %s. Your
 ## Grid Configuration
 - Symbol: %s
 - Grid Levels: %d
-- Total Investment: %.2f USDT
+- Total Investment: %.2f USD
 - Leverage: %dx
 - Distribution: %s
 
@@ -202,8 +202,8 @@ running out of room, drop everything else; never drop the JSON.
 
 Example:
 [
-  {"symbol": "BTCUSDT", "action": "place_buy_limit", "price": 94000, "quantity": 0.01, "level_index": 2, "confidence": 85, "reasoning": "Level 2 price approaching, place buy order"},
-  {"symbol": "BTCUSDT", "action": "hold", "confidence": 90, "reasoning": "Market ranging, maintain current grid"}
+  {"symbol": "MNQ", "action": "place_buy_limit", "price": 94000, "quantity": 0.01, "level_index": 2, "confidence": 85, "reasoning": "Level 2 price approaching, place buy order"},
+  {"symbol": "MNQ", "action": "hold", "confidence": 90, "reasoning": "Market ranging, maintain current grid"}
 ]
 `, config.Symbol, config.Symbol, config.GridCount, config.TotalInvestment, config.Leverage, config.Distribution)
 }

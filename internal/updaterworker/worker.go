@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"vl/internal/updaterjob"
@@ -26,6 +27,10 @@ type Budgets struct {
 	Poll          time.Duration // every re-read of the app
 	IdentityRetry time.Duration // CurrentIdentity before a rollback
 	HoldClear     time.Duration // complete/rolled_back: retry the clear this long
+	PlannerWait   time.Duration // F2: a live AI-plan read is a benign blocker; wait
+	// up to this long for it (preflight, drain, gate) instead of
+	// failing on the step budget. Expiry: preflight refused (no
+	// hold); drain/gate RELEASE the hold and refuse.
 }
 
 // DefaultBudgets are the ruled values.
@@ -40,6 +45,7 @@ func DefaultBudgets() Budgets {
 		Poll:          2 * time.Second,
 		IdentityRetry: 15 * time.Second,
 		HoldClear:     30 * time.Second,
+		PlannerWait:   15 * time.Minute,
 	}
 }
 
@@ -73,6 +79,19 @@ type Worker struct {
 	stopped string          // why the worker stopped (recovery_needed, a persist failure); install refused until restart (OQ-3)
 	resume  map[string]bool // attended resume signals, consumed by the runner
 	wake    chan struct{}
+
+	// swapPending is set by the swap step once the worker binary was replaced
+	// on disk. It does NOT exit the worker: the job must first persist the
+	// swap receipt and run its terminal effects (hold + lock release).
+	swapPending atomic.Bool
+	// swapDone closes exactly once, when a job that swapped the worker binary
+	// has FINISHED (finished()). cmd/vl-updater serve exits on it so systemd
+	// restarts the worker on the new binary (the unit's Restart= policy
+	// decides — see the PR body). Closing it any earlier lets the process
+	// exit before the swap receipt and the complete transition are written,
+	// and the restarted worker then re-runs worker_swapped until the attempts
+	// cap sends the job to recovery_needed (job de4cf900, 2026-10-04).
+	swapDone chan struct{}
 
 	// crash is a TEST SEAM: called at every boundary with a point name
 	// ("<state>/started", "<state>/effect", "<state>/done"); a test panics in
@@ -112,7 +131,7 @@ func New(cfg Config, d Deps) (*Worker, error) {
 	if cfg.Logf == nil {
 		cfg.Logf = func(string, ...any) {}
 	}
-	return &Worker{cfg: cfg, lib: d.Lib, app: d.App, rel: d.Rel, host: d.Host, resume: map[string]bool{}, wake: make(chan struct{}, 1)}, nil
+	return &Worker{cfg: cfg, lib: d.Lib, app: d.App, rel: d.Rel, host: d.Host, resume: map[string]bool{}, wake: make(chan struct{}, 1), swapDone: make(chan struct{})}, nil
 }
 
 func (w *Worker) dataDir() string { return w.cfg.Target.DataDir }
@@ -196,9 +215,14 @@ type StartReport struct {
 
 func (w *Worker) sweep() (StartReport, error) {
 	var rep StartReport
-	jobs, err := updaterjob.List(w.dataDir())
+	jobs, skipped, err := updaterjob.ListTolerant(w.dataDir())
 	if err != nil {
 		return rep, fmt.Errorf("updaterworker: start sweep: %w", err)
+	}
+	for _, id := range skipped {
+		// a TERMINAL job written by an older released worker may no longer
+		// validate; it is skipped, never fatal (worker-self-update P0).
+		w.logf("updater: start sweep: WARN terminal job %s is no longer validatable and was skipped", id)
 	}
 	var unfinished []updaterjob.Job
 	for _, j := range jobs {

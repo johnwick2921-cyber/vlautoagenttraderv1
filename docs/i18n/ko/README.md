@@ -3,7 +3,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 <p align="center">
   <strong>당신만의 AI 트레이딩 어시스턴트.</strong><br/>
-  <strong>모든 시장. 모든 모델. API 키 없이 USDC로 결제.</strong>
+
 </p>
 
 <p align="center">
@@ -12,8 +12,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 <p align="center">
   <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go" alt="Go"></a>
   <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react" alt="React"></a>
-  <a href="https://x402.org"><img src="https://img.shields.io/badge/x402-USDC%20Payments-2775CA?style=flat" alt="x402"></a>
-  <a href="https://claw402.ai"><img src="https://img.shields.io/badge/Claw402-AI%20Gateway-FF6B35?style=flat" alt="Claw402"></a>
 </p>
 
 <p align="center">
@@ -30,9 +28,9 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 VL Intelligent는 오픈소스 **자율형** AI 트레이딩 어시스턴트입니다. 수동으로 모델을 설정하고, API 키를 관리하고, 데이터 소스를 연결해야 하는 기존 AI 도구와 달리 — VL Intelligent의 AI는 **시장을 스스로 인식하고, 모델을 스스로 선택하고, 데이터를 스스로 가져옵니다**. 인간 개입 제로. 전략만 설정하면 나머지는 AI가 처리합니다.
 
-**완전 자율**: AI가 어떤 모델을 사용할지, 어떤 시장 데이터를 가져올지, 언제 거래할지를 스스로 결정합니다. 수동 모델 설정 불필요. 여러 서비스의 API 키 관리 불필요. USDC 지갑에 충전하고 실행하기만 하면 됩니다.
 
-차별점: **[x402](https://x402.org) 마이크로 결제 내장**. API 키 불필요. USDC 지갑에 충전하고 요청마다 결제. 지갑이 곧 신원.
+
+
 
 **http://127.0.0.1:3000** 을 열면 완료.
 
@@ -52,30 +50,11 @@ VL Intelligent는 오픈소스 **자율형** AI 트레이딩 어시스턴트입�
 
 ---
 
-## x402 작동 방식
-
-기존 플로우: 계정 등록 → 크레딧 구매 → API 키 받기 → 쿼터 관리 → 키 교체.
-
-x402 플로우:
-
-```
-요청 → 402 (가격 제시) → 지갑이 USDC 서명 → 재시도 → 완료
-```
-
-계정 불필요. API 키 불필요. 선불 크레딧 불필요. 지갑 하나로 모든 모델.
-
-### 내장 x402 프로바이더
-
-| 프로바이더 | 체인 | 모델 |
-| <img src="../../../web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base | GPT-5.4, Claude Opus, DeepSeek, Qwen, Grok, Gemini, Kimi — 15+ 모델 |
-
----
-
 ## 기능
 
 | 기능 | 설명 |
 | **멀티 AI** | DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi, MiniMax — 언제든 전환 |
-| **멀티 거래소** | Binance, Bybit, OKX, Bitget, KuCoin, Gate, Hyperliquid, Aster, Lighter |
+
 | **전략 스튜디오** | 비주얼 빌더 — 코인 소스, 지표, 리스크 관리 |
 | **AI 토론 아레나** | 여러 AI가 거래 토론 (강세 vs 약세 vs 분석가), 투표, 실행 |
 | **AI 경쟁** | AI가 실시간 경쟁, 리더보드 순위 |
@@ -86,23 +65,6 @@ x402 플로우:
 ### 시장
 
 암호화폐 · 미국 주식 · 외환 · 귀금속
-
-### 거래소 (CEX)
-
-| 거래소 | 상태 | 등록 (수수료 할인) |
-| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [등록](https://www.binance.com/join?) |
-| <img src="../../../web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [등록](https://partner.bybit.com/b/83856) |
-| <img src="../../../web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [등록](https://www.okx.com/join/1865360) |
-| <img src="../../../web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [등록](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
-| <img src="../../../web/public/exchange-icons/kucoin.svg" width="20" height="20" style="vertical-align: middle;"/> **KuCoin** | ✅ | [등록](https://www.kucoin.com/r/broker/CXEV7XKK) |
-| <img src="../../../web/public/exchange-icons/gate.svg" width="20" height="20" style="vertical-align: middle;"/> **Gate** | ✅ | [등록](https://www.gatenode.xyz/share/VQBGUAxY) |
-
-### 거래소 (Perp-DEX)
-
-| 거래소 | 상태 | 등록 (수수료 할인) |
-| <img src="../../../web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [등록](https://app.hyperliquid.xyz/join/AITRADING) |
-| <img src="../../../web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [등록](https://www.asterdex.com/en/referral/fdfc0e) |
-| <img src="../../../web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [등록](https://app.lighter.xyz/?referral=68151432) |
 
 ### AI 모델 (API 키 모드)
 
@@ -115,10 +77,6 @@ x402 플로우:
 | <img src="../../../web/public/icons/grok.svg" width="20" height="20" style="vertical-align: middle;"/> **Grok** | ✅ | [API 키 받기](https://console.x.ai) |
 | <img src="../../../web/public/icons/kimi.svg" width="20" height="20" style="vertical-align: middle;"/> **Kimi** | ✅ | [API 키 받기](https://platform.moonshot.cn) |
 | <img src="../../../web/public/icons/minimax.svg" width="20" height="20" style="vertical-align: middle;"/> **MiniMax** | ✅ | [API 키 받기](https://platform.minimaxi.com) |
-
-### AI 모델 (x402 모드 — API 키 불필요)
-
-15+ 모델을 [Claw402](https://claw402.ai)로 이용 — USDC 지갑만 있으면 됩니다
 
 ---
 

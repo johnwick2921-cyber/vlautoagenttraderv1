@@ -774,6 +774,21 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 // tick offset is applied by the caller). Back-compat law: the frame is
 // additive JSON — only send it when the far-side AddOn has proven it.
 func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error) {
+	return t.placeStopEntry(symbol, side, quantity, stopPx, sl, tp, false, beforeSend...)
+}
+
+// PlaceStopEntryWithLimit (MENTOR STOP-LIMIT, PR B 2026-10-03) is PlaceStopEntry
+// with stop_limit=true: the AddOn builds OrderType.StopLimit with
+// LimitPrice == StopPrice — fills at its price or misses, never a stop-MARKET
+// (D1.4 p1 @24:41, p2 @00:00). The N12 resting-limit window is closed Go-side:
+// the order's expiry (expiry_ms, authored by the evaluator's intent) cancels it
+// unfilled when it lapses. Fail-closed: refused when the far side does not
+// prove MinAddonBuildStopLimit (an older AddOn would build StopMarket).
+func (t *TCPTrader) PlaceStopEntryWithLimit(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error) {
+	return t.placeStopEntry(symbol, side, quantity, stopPx, sl, tp, true, beforeSend...)
+}
+
+func (t *TCPTrader) placeStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, stopLimit bool, beforeSend ...func(string) error) (string, error) {
 	// CAPABILITY HANDSHAKE — the far-side AddOn must PROVE, by a build_id that
 	// arrived on the wire, that it will BUILD this order correctly. Two distinct
 	// failures live behind this one gate:
@@ -797,6 +812,15 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 		}
 		return "", fmt.Errorf("ninjatrader/tcp: refusing stop-entry %s %s trigger=%.2f qty=%.0f [guard=far_side_build] — addon build predates the stop-slot fix (build_id=%s, need ≥ %s): does not prove stop_entry support; F5-compile + restart the new AddOn: %w",
 			side, symbol, stopPx, quantity, ntwire.BuildIDForLog(bid), ntwire.MinAddonBuildStopSlot, ntwire.ErrAddonBuildTooOld)
+	}
+	if stopLimit {
+		// MENTOR STOP-LIMIT floor (PR B, 2026-10-03): an AddOn below it builds
+		// StopMarket even when the flag is set — fail closed, never a sloppy
+		// stop-MARKET fill (D1.4 p1 @24:41).
+		if bid := t.server.FarSideBuildID(); !ntwire.FarSideProven(bid, ntwire.MinAddonBuildStopLimit) {
+			return "", fmt.Errorf("ninjatrader/tcp: refusing stop-limit entry %s %s [guard=far_side_build] — addon build predates the stop-limit fix (build_id=%s, need ≥ %s): would build StopMarket; F5-compile + restart the new AddOn: %w",
+				side, symbol, ntwire.BuildIDForLog(bid), ntwire.MinAddonBuildStopLimit, ntwire.ErrAddonBuildTooOld)
+		}
 	}
 	tradeAcct := t.boundAccount
 	if tradeAcct == "" {
@@ -847,6 +871,7 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 		Timestamp:  time.Now().UTC().Truncate(time.Millisecond).Format(time.RFC3339Nano),
 		OrderType:  "stop_entry",
 		StopPrice:  entry,
+		StopLimit:  stopLimit,
 	}
 	if err := assertBoundAccount("stop-entry", symbol, payload.Account, t.boundAccount); err != nil {
 		logger.Errorf("🚨 %v — REFUSING to submit stop-entry", err)
@@ -1356,7 +1381,7 @@ func (t *TCPTrader) positionMap(symbol, side string, qty, entry float64, uPnLOve
 	sd := upperSideStr(side)
 
 	// Futures: contract point value (MNQ=$2/pt). positionAmt is signed (short < 0)
-	// per the Binance convention GetAccountInfo expects.
+	// per the account-snapshot convention GetAccountInfo expects.
 	pv := market.FuturesPointValue(symbol)
 	if pv <= 0 {
 		pv = 1
@@ -1407,7 +1432,7 @@ func (t *TCPTrader) positionMap(symbol, side string, qty, entry float64, uPnLOve
 		"unrealized_pnl_pct": uPnLPct,
 		"liquidation_price":  0.0,
 		"margin_used":        0.0,
-		// camelCase — read by AutoTrader.GetAccountInfo (Binance-style margin calc)
+		// camelCase — read by AutoTrader.GetAccountInfo (the account-snapshot margin calc)
 		"positionAmt":      signedQty,
 		"entryPrice":       entry,
 		"markPrice":        mark,

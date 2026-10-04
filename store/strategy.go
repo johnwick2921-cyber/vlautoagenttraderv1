@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"vl/config"
 	"vl/logger"
 
 	"gorm.io/gorm"
@@ -21,8 +20,8 @@ import (
 // streams into the BarCache (provider/ninjatrader defaultAutoBarsTimeframes —
 // kept in lockstep by TestDefaultAutoBarsTimeframes_MatchesSupported); the live
 // BarCache serves all of them per-series (there is NO Go-side aggregation, so an
-// interval outside this set — e.g. 2m — would yield empty futures klines). For
-// crypto, CoinAnk serves the same standard intervals. The frontend fetches this
+// interval outside this set — e.g. 2m — would yield empty futures klines). The
+// standard intervals are the same across venues. The frontend fetches this
 // list via GET /api/strategies/timeframes instead of hardcoding its own copy.
 var SupportedTimeframes = []string{
 	"1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w",
@@ -222,7 +221,7 @@ func (c *StrategyConfig) NormalizeProductSchema() {
 	c.StrategyType = normalizeStrategyType(c.StrategyType)
 	c.CoinSource.SourceType = normalizeCoinSourceType(c.CoinSource.SourceType)
 	switch c.CoinSource.SourceType {
-	case "ai500", "oi_top", "oi_low":
+	case "ai500", "oi_top", "oi_low", "hyper_all", "hyper_main", "mixed":
 		// D2-DEAD (item 12): these sources were backed by the deleted legacy
 		// provider; stored rows degrade to the static coin list.
 		c.CoinSource.SourceType = "static"
@@ -511,7 +510,7 @@ func PreserveAIConfigOnTypeSwitch(base, merged StrategyConfig, confirmed bool) S
 
 func DefaultGridStrategyConfig() GridStrategyConfig {
 	return GridStrategyConfig{
-		Symbol:                "BTCUSDT",
+		Symbol:                "MNQ",
 		GridCount:             10,
 		TotalInvestment:       1000,
 		Leverage:              5,
@@ -1825,11 +1824,11 @@ func (c *DayPlanConfig) MinScenarioQualityFor(session string) string {
 
 // GridStrategyConfig grid trading specific configuration
 type GridStrategyConfig struct {
-	// Trading pair (e.g., "BTCUSDT")
+	// Trading pair (e.g., "MNQ")
 	Symbol string `json:"symbol"`
 	// Number of grid levels (5-50)
 	GridCount int `json:"grid_count"`
-	// Total investment in USDT
+	// Total investment in the value currency
 	TotalInvestment float64 `json:"total_investment"`
 	// Leverage (1-20)
 	Leverage int `json:"leverage"`
@@ -1871,18 +1870,12 @@ type PromptSectionsConfig struct {
 
 // CoinSourceConfig coin source configuration
 type CoinSourceConfig struct {
-	// source type shown in the product editor: "static" | "hyper_all" | "hyper_main" | "mixed"
+	// source type shown in the product editor: "static" (the legacy multi-pool types collapse to static on load)"
 	SourceType string `json:"source_type"`
 	// static coin list (used when source_type = "static")
 	StaticCoins []string `json:"static_coins,omitempty"`
 	// excluded coins list (filtered out from all sources)
 	ExcludedCoins []string `json:"excluded_coins,omitempty"`
-	// whether to use Hyperliquid All coins (all available perp pairs)
-	UseHyperAll bool `json:"use_hyper_all"`
-	// whether to use Hyperliquid Main coins (top N by 24h volume)
-	UseHyperMain bool `json:"use_hyper_main"`
-	// Hyperliquid Main maximum count (default 20)
-	HyperMainLimit int `json:"hyper_main_limit,omitempty"`
 }
 
 // IndicatorConfig indicator configuration
@@ -1957,7 +1950,7 @@ type RiskControlConfig struct {
 
 	// Max margin utilization (e.g. 0.9 = 90%) (CODE ENFORCED)
 	MaxMarginUsage float64 `json:"max_margin_usage"`
-	// Min position size in USDT (CODE ENFORCED)
+	// Min position size in the value currency (CODE ENFORCED)
 	MinPositionSize float64 `json:"min_position_size"`
 
 	// Min take_profit / stop_loss ratio (AI guided)
@@ -2010,6 +2003,54 @@ type RiskControlConfig struct {
 	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 2-contract
 	// default (the prior hidden const maxFuturesContracts). Toggle default ON.
 	MaxContractsPerOrder int `json:"max_contracts_per_order,omitempty"`
+
+	// MENTOR P3 — mentor mode, per strategy. OFF by default: while off the bot
+	// is byte-identical (L4). A mentor-mode trader takes AI entries off, sizes
+	// from the mentor table, and its exits follow the mentor §6 modes; the AI
+	// 0B size clamp and EXIT_MECHS_SUSPENDED do not apply to it.
+	MentorMode bool `json:"mentor_mode,omitempty"`
+	// Mentor size-table knobs (CTO defaults when unset — the owner can change
+	// them): base setup at a location 5; confluence 10; confluence+4h/1h agree
+	// + room≥2× target≥30pts 20 (hard cap); stop 20–25 pts or spent day 3;
+	// SWING4H 3; never above MentorMaxContracts (default 20).
+	MentorBaseContracts       int `json:"mentor_base_contracts,omitempty"`
+	MentorConfluenceContracts int `json:"mentor_confluence_contracts,omitempty"`
+	MentorBigContracts        int `json:"mentor_big_contracts,omitempty"`
+	MentorReducedContracts    int `json:"mentor_reduced_contracts,omitempty"`
+	MentorSwing4HContracts    int `json:"mentor_swing4h_contracts,omitempty"`
+	MentorSpentDayContracts   int `json:"mentor_spent_day_contracts,omitempty"`
+	MentorMaxContracts        int `json:"mentor_max_contracts,omitempty"`
+	// EXIT-SPEC-v3 (B): the candle-trail timeframe. "1m" default (course frame
+	// D2.4 p1 @08:35 on the 1-MINUTE chart); 30s/45s allowed (@09:07); "off" =
+	// the video-8 legacy "never trail on the 1m" (SUPERSEDED, kept as a knob).
+	MentorTrailTF string `json:"mentor_trail_tf,omitempty"`
+	// STOP RULES (owner ruling 00:1x CT "exactly like he said") — class rules,
+	// NOT his personal routine. All default ON:
+	// (a) done for the day after a winning close with the day net positive
+	//     (nil → ON; explicit false disables);
+	// (b) the trading window: MentorWindowStart (HH:MM CT) + MentorWindowMinutes
+	//     (30/60/90/120; unset → 60). The SWING setup is exempt.
+	// (c)/(d) never-widen / never-add are guards, not knobs.
+	MentorDoneAfterWin  *bool  `json:"mentor_done_after_win,omitempty"`
+	MentorWindowStart   string `json:"mentor_window_start,omitempty"`
+	MentorWindowMinutes int    `json:"mentor_window_minutes,omitempty"`
+	// Knob routing (CTO 1791033257041): the evaluator's G1/L1/E4/location
+	// knobs ride the strategy config like the other mentor knobs, defaults as
+	// ruled:
+	//   MentorLegBudgetEnabled — G1 leg budget (nil → ON);
+	//   MentorLegResetOn — G1 parity ("close" default | "touch"; bad → close);
+	//   MentorLvlRevisitMinPts — L1 per-visit departure (default 0);
+	//   MentorEmaMaxCross30m — E4 "xien len xien xuong" (0 = OFF, base);
+	//   MentorLocationTriggerFilter — the 5m trigger filter at locations
+	//     (nil → ON, L3: keep it ON in the base).
+	//   MentorLossDeparturePts — optional fixed-points fallback for B22's
+	//     structural loss-area departure (default 0 = OFF).
+	MentorLegBudgetEnabled      *bool   `json:"mentor_leg_budget_enabled,omitempty"`
+	MentorLegResetOn            string  `json:"mentor_leg_reset_on,omitempty"`
+	MentorLvlRevisitMinPts      float64 `json:"mentor_lvl_revisit_min_pts,omitempty"`
+	MentorEmaMaxCross30m        int     `json:"mentor_ema_max_cross_30m,omitempty"`
+	MentorLocationTriggerFilter *bool   `json:"mentor_loc_trigger_filter,omitempty"`
+	MentorLossDeparturePts      float64 `json:"mentor_loss_departure_pts,omitempty"`
 	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the
 	// contracts clamp is always-on venue safety. Field kept so old stored
 	// configs still parse; nothing reads it, the UI no longer writes it.
@@ -2079,18 +2120,11 @@ func (s *StrategyStore) initDefaultData() error {
 }
 
 // defaultCoinSource returns the seed coin source for a fresh strategy.
-// Futures mode (TRADING_MODE=futures) seeds the single NT8 instrument as a
-// static coin. Crypto mode seeds an empty static list — the AI500 pool went
-// with the legacy provider (D2-DEAD item 12), so the operator sets coins.
+// Futures-only build (C2): seeds the single NT8 instrument as a static coin.
 func defaultCoinSource() CoinSourceConfig {
-	if cfg := config.Get(); cfg != nil && cfg.TradingMode == "futures" {
-		return CoinSourceConfig{
-			SourceType:  "static",
-			StaticCoins: []string{"MNQ"},
-		}
-	}
 	return CoinSourceConfig{
-		SourceType: "static",
+		SourceType:  "static",
+		StaticCoins: []string{"MNQ"},
 	}
 }
 
@@ -2135,7 +2169,7 @@ func GetDefaultStrategyConfig(lang string) StrategyConfig {
 			BTCETHMaxPositionValueRatio:  5.0, // BTC/ETH: max position = 5x equity (CODE ENFORCED)
 			AltcoinMaxPositionValueRatio: 1.0, // Altcoin: max position = 1x equity (CODE ENFORCED)
 			MaxMarginUsage:               0.9, // Max 90% margin usage (CODE ENFORCED)
-			MinPositionSize:              12,  // Min 12 USDT per position (CODE ENFORCED)
+			MinPositionSize:              12,  // Min 12 USD per position (CODE ENFORCED)
 			MinRiskRewardRatio:           3.0, // Min 3:1 profit/loss ratio (AI guided)
 			MinConfidence:                75,  // Min 75% confidence (AI guided)
 		},
@@ -2176,17 +2210,15 @@ Only enter positions when multiple signals resonate. Freely use any effective an
 	// enable the technical indicators the futures prompt leans on (the deleted
 	// crypto-only feeds need no disabling any more). Defaults-only (new-strategy
 	// template); existing saved strategies are never mutated. See helper.
-	if isFuturesMode() {
-		applyFuturesIndicatorDefaults(&config.Indicators)
-	}
+	applyFuturesIndicatorDefaults(&config.Indicators)
 
 	return config
 }
 
 // applyFuturesIndicatorDefaults tunes the indicator defaults for a NEW
-// CME-futures strategy (called only when isFuturesMode()):
+// CME-futures strategy:
 //
-//  1. Keep Open Interest OFF — it is the Binance crypto-perp feed and the
+//  1. Keep Open Interest OFF — it is the legacy crypto-perp feed and the
 //     futures path never reads it (W-NO-BINANCE A).
 //  2. Enable the computed technical indicators the futures prompt actually leans
 //     on — ATR (stop sizing), EMA (trend), RSI (momentum) — which otherwise
@@ -2198,7 +2230,7 @@ Only enter positions when multiple signals resonate. Freely use any effective an
 // GetDefaultStrategyConfig (the new-strategy template) — existing saved
 // strategies are never touched. MACD/BOLL are deliberately left off.
 func applyFuturesIndicatorDefaults(ind *IndicatorConfig) {
-	// Open Interest is the Binance crypto-perp feed too — the futures path never
+	// Open Interest is the legacy crypto-perp feed too — the futures path never
 	// reads it (W-NO-BINANCE A: OI is absent and renders n/a on MNQ; the NT8
 	// bridge carries OHLCV only). Off by default so a new futures strategy
 	// doesn't list an OI section that can only say n/a.
@@ -2207,14 +2239,6 @@ func applyFuturesIndicatorDefaults(ind *IndicatorConfig) {
 	ind.EnableATR = true
 	ind.EnableEMA = true
 	ind.EnableRSI = true
-}
-
-// isFuturesMode reports whether the bot is running in CME-futures mode. Lives
-// in its own function because GetDefaultStrategyConfig shadows the `config`
-// package name with a local StrategyConfig variable.
-func isFuturesMode() bool {
-	c := config.Get()
-	return c != nil && c.TradingMode == "futures"
 }
 
 // Create create a strategy
@@ -2407,16 +2431,11 @@ func (c *StrategyConfig) applyMissingDefaults() {
 	// agree — rather than a legacy pool default, which would be wrong for a
 	// futures trader. An empty static list then degrades to the upstream
 	// "no candidates" path instead of the unknown-type hard error.
-	if c.CoinSource.SourceType == "" && len(c.CoinSource.StaticCoins) == 0 &&
-		!c.CoinSource.UseHyperAll && !c.CoinSource.UseHyperMain {
+	if c.CoinSource.SourceType == "" && len(c.CoinSource.StaticCoins) == 0 {
 		c.CoinSource.SourceType = "static"
 	}
-	// D2-DEAD (item 12): the ai500/oi_top/oi_low coin sources were backed by the
-	// deleted legacy provider. Stored rows still carry those values (the owner's
-	// saved strategies are read, never migrated), so the loader degrades them to
-	// the static coin list here instead of leaving an unknown source_type live.
 	switch c.CoinSource.SourceType {
-	case "ai500", "oi_top", "oi_low":
+	case "ai500", "oi_top", "oi_low", "hyper_all", "hyper_main", "mixed":
 		c.CoinSource.SourceType = "static"
 	}
 
@@ -2509,30 +2528,7 @@ func GetContextLimit(provider string) int {
 }
 
 // GetContextLimitForClient returns context limit for a provider+model pair.
-// For claw402, the underlying model is inferred from the model name prefix.
 func GetContextLimitForClient(provider, model string) int {
-	if provider == "claw402" {
-		switch {
-		case strings.HasPrefix(model, "claude"):
-			return ModelContextLimits["claude"]
-		case strings.HasPrefix(model, "gpt"), strings.HasPrefix(model, "o1"), strings.HasPrefix(model, "o3"):
-			return ModelContextLimits["openai"]
-		case strings.HasPrefix(model, "gemini"):
-			return ModelContextLimits["gemini"]
-		case strings.HasPrefix(model, "grok"):
-			return ModelContextLimits["grok"]
-		case strings.HasPrefix(model, "kimi"):
-			return ModelContextLimits["kimi"]
-		case strings.HasPrefix(model, "qwen"):
-			return ModelContextLimits["qwen"]
-		case strings.HasPrefix(model, "minimax"):
-			return ModelContextLimits["minimax"]
-		case strings.HasPrefix(model, "deepseek"):
-			return ModelContextLimits["deepseek"]
-		default:
-			return ModelContextLimits["deepseek"]
-		}
-	}
 	return GetContextLimit(provider)
 }
 
@@ -2561,7 +2557,7 @@ func (c *StrategyConfig) EstimateTokens() TokenEstimate {
 	}
 
 	// --- Fixed Overhead ---
-	// Time, BTC price, account info, section headers
+	// Time, price, account info, section headers
 	breakdown.FixedOverhead = 800 / 4 // ~200 tokens
 
 	// --- Market Data ---
@@ -2673,8 +2669,6 @@ func (c *StrategyConfig) getEffectiveCoinCount() int {
 	switch c.CoinSource.SourceType {
 	case "static":
 		count = len(c.CoinSource.StaticCoins)
-	case "hyper_main":
-		count = c.CoinSource.HyperMainLimit
 	default:
 		count = len(c.CoinSource.StaticCoins)
 	}

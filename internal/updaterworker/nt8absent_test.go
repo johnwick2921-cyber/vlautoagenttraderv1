@@ -100,31 +100,38 @@ func TestDrainNt8AbsentLinkDownBelowWindowRefuses(t *testing.T) {
 }
 
 func TestDrainNt8AbsentNonSIMAccountRefuses(t *testing.T) {
+	// P-D ruling item 3: with the absent verdict eligible, PREFLIGHT runs the
+	// absent legs — the refusal is pre-hold (stronger: no hold ever lands).
 	r := newRig(t, withNT8Down(absentDown), func(b *box) { b.absentSim = false })
 	if r.runCrashing(t) {
-		t.Fatal("drain passed although the bound account is not SIM-tradeable")
+		t.Fatal("the job passed although the bound account is not SIM-tradeable")
 	}
 	j := r.job()
-	if j.State != updaterjob.StateRecoveryNeeded {
-		t.Fatalf("state=%s", j.State)
+	if j.State != updaterjob.StateRefused {
+		t.Fatalf("state=%s, want refused pre-hold", j.State)
 	}
-	// the drain must NOT pass and the named failing leg must be the blocker
-	// text (CTO fold (a) — K_ready skips the ready check and passes the drain)
+	if r.hold().Present {
+		t.Fatal("a non-SIM account must refuse BEFORE the hold is written")
+	}
+	// the named failing leg must be the blocker text
 	if !strings.Contains(j.Error, "sim_accounts: ") || !strings.Contains(j.Error, "tradeable") {
 		t.Fatalf("error %q must carry the named leg's blocker text", j.Error)
 	}
 }
 
-// The db_open_positions leg failing (the CTO P1 leg) must block the drain the
+// The db_open_positions leg failing (the CTO P1 leg) must refuse pre-hold the
 // same way, with its own name in the blocker text.
 func TestDrainNt8AbsentOpenPositionLegRefuses(t *testing.T) {
 	r := newRig(t, withNT8Down(absentDown), func(b *box) { b.absentDbOpen = true })
 	if r.runCrashing(t) {
-		t.Fatal("drain passed although an OPEN trader_positions row exists")
+		t.Fatal("the job passed although an OPEN trader_positions row exists")
 	}
 	j := r.job()
-	if j.State != updaterjob.StateRecoveryNeeded {
-		t.Fatalf("state=%s", j.State)
+	if j.State != updaterjob.StateRefused {
+		t.Fatalf("state=%s, want refused pre-hold", j.State)
+	}
+	if r.hold().Present {
+		t.Fatal("an open position must refuse BEFORE the hold is written")
 	}
 	if !strings.Contains(j.Error, "db_open_positions: ") {
 		t.Fatalf("error %q must carry the db_open_positions blocker text", j.Error)
@@ -188,12 +195,31 @@ func TestDrainNt8AbsentRefusesWhenTheHoldIsNotOurs(t *testing.T) {
 	}
 }
 
+// P-D ruling item 3: the queued_signals absent leg now runs at PREFLIGHT too,
+// so a queued signal refuses pre-hold (stronger than the old drain-time
+// not-ready).
+func TestNT8AbsentQueuedSignalRefusesPreflight(t *testing.T) {
+	r := newRig(t, withNT8Down(absentDown), func(b *box) { b.absentQueued = 1 })
+	if r.runCrashing(t) {
+		t.Fatal("the job passed although a signal is queued for the AddOn")
+	}
+	j := r.job()
+	if j.State != updaterjob.StateRefused {
+		t.Fatalf("state=%s, want refused pre-hold on queued_signals", j.State)
+	}
+	if r.hold().Present {
+		t.Fatal("a queued signal must refuse BEFORE the hold is written")
+	}
+	if !strings.Contains(j.Error, "queued_signals: ") {
+		t.Fatalf("error %q must carry the queued_signals blocker text", j.Error)
+	}
+}
+
 // A reconnect mid-DRAIN revokes the verdict: the normal ack/census path
 // applies from that moment, never grandfathered.
 func TestDrainNt8AbsentReconnectMidDrainRevokes(t *testing.T) {
-	r := newRig(t, withNT8Down(absentDown), func(b *box) { b.absentQueued = 1 })
-	// crash the instant the drain STARTS (a queued signal keeps the absent
-	// verdict not-ready), then the AddOn reconnects
+	r := newRig(t, withNT8Down(absentDown))
+	// crash the instant the drain STARTS, then the AddOn reconnects
 	r.w.crash = func(q string) {
 		if q == "drained_acked/started" {
 			panic(crashPanic{q})
@@ -203,7 +229,7 @@ func TestDrainNt8AbsentReconnectMidDrainRevokes(t *testing.T) {
 		t.Fatal("drain never started")
 	}
 	r.w.crash = nil
-	r.set(func() { r.addonDownSince, r.addonConnected, r.absentQueued = 0, true, 0 })
+	r.set(func() { r.addonDownSince, r.addonConnected = 0, true })
 	r.w.crash = func(q string) {
 		if q == "drained_acked/done" {
 			panic(crashPanic{q})

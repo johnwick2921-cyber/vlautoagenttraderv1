@@ -2,10 +2,10 @@ package store
 
 import (
 	"fmt"
-	"vl/crypto"
-	"vl/logger"
 	"strings"
 	"time"
+	"vl/crypto"
+	"vl/logger"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,26 +18,17 @@ type ExchangeStore struct {
 
 // Exchange exchange configuration
 type Exchange struct {
-	ID                      string                 `gorm:"primaryKey" json:"id"`
-	ExchangeType            string                 `gorm:"column:exchange_type;not null;default:''" json:"exchange_type"`
-	AccountName             string                 `gorm:"column:account_name;not null;default:''" json:"account_name"`
-	UserID                  string                 `gorm:"column:user_id;not null;default:default;index" json:"user_id"`
-	Name                    string                 `gorm:"not null" json:"name"`
-	Type                    string                 `gorm:"not null" json:"type"` // "cex" or "dex"
-	Enabled                 bool                   `gorm:"default:false" json:"enabled"`
-	APIKey                  crypto.EncryptedString `gorm:"column:api_key;default:''" json:"apiKey"`
-	SecretKey               crypto.EncryptedString `gorm:"column:secret_key;default:''" json:"secretKey"`
-	Passphrase              crypto.EncryptedString `gorm:"column:passphrase;default:''" json:"passphrase"`
-	Testnet                 bool                   `gorm:"default:false" json:"testnet"`
-	HyperliquidWalletAddr   string                 `gorm:"column:hyperliquid_wallet_addr;default:''" json:"hyperliquidWalletAddr"`
-	HyperliquidUnifiedAcct  bool                   `gorm:"column:hyperliquid_unified_account;default:true" json:"hyperliquidUnifiedAccount"` // Unified Account mode (Spot as collateral)
-	AsterUser               string                 `gorm:"column:aster_user;default:''" json:"asterUser"`
-	AsterSigner             string                 `gorm:"column:aster_signer;default:''" json:"asterSigner"`
-	AsterPrivateKey         crypto.EncryptedString `gorm:"column:aster_private_key;default:''" json:"asterPrivateKey"`
-	LighterWalletAddr       string                 `gorm:"column:lighter_wallet_addr;default:''" json:"lighterWalletAddr"`
-	LighterPrivateKey       crypto.EncryptedString `gorm:"column:lighter_private_key;default:''" json:"lighterPrivateKey"`
-	LighterAPIKeyPrivateKey crypto.EncryptedString `gorm:"column:lighter_api_key_private_key;default:''" json:"lighterAPIKeyPrivateKey"`
-	LighterAPIKeyIndex      int                    `gorm:"column:lighter_api_key_index;default:0" json:"lighterAPIKeyIndex"`
+	ID           string                 `gorm:"primaryKey" json:"id"`
+	ExchangeType string                 `gorm:"column:exchange_type;not null;default:''" json:"exchange_type"`
+	AccountName  string                 `gorm:"column:account_name;not null;default:''" json:"account_name"`
+	UserID       string                 `gorm:"column:user_id;not null;default:default;index" json:"user_id"`
+	Name         string                 `gorm:"not null" json:"name"`
+	Type         string                 `gorm:"not null" json:"type"` // "cex" or "dex"
+	Enabled      bool                   `gorm:"default:false" json:"enabled"`
+	APIKey       crypto.EncryptedString `gorm:"column:api_key;default:''" json:"apiKey"`
+	SecretKey    crypto.EncryptedString `gorm:"column:secret_key;default:''" json:"secretKey"`
+	Passphrase   crypto.EncryptedString `gorm:"column:passphrase;default:''" json:"passphrase"`
+	Testnet      bool                   `gorm:"default:false" json:"testnet"`
 	// NinjaTrader CSV bridge configuration (no API key required)
 	NTDataDir            string    `gorm:"column:nt_data_dir;default:''" json:"ntDataDir"`
 	NTInstrumentName     string    `gorm:"column:nt_instrument_name;default:''" json:"ntInstrumentName"`
@@ -87,6 +78,19 @@ func (s *ExchangeStore) initTables() error {
 	return nil
 }
 
+// missingContainsexchangeType reports whether the missing-fields list names the
+// unsupported-type marker (the visibility default arm returns ["exchange_type"]
+// for any type this build no longer supports). C1 P0 (PR #188 D1 port): such a
+// row is a legacy crypto row and is KEPT, never deleted.
+func missingContainsexchangeType(missing []string) bool {
+	for _, m := range missing {
+		if m == "exchange_type" {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *ExchangeStore) cleanupIncompleteExchangeConfigs() error {
 	var exchanges []Exchange
 	if err := s.db.Find(&exchanges).Error; err != nil {
@@ -98,14 +102,12 @@ func (s *ExchangeStore) cleanupIncompleteExchangeConfigs() error {
 			string(exchange.APIKey),
 			string(exchange.SecretKey),
 			string(exchange.Passphrase),
-			exchange.HyperliquidWalletAddr,
-			exchange.AsterUser,
-			exchange.AsterSigner,
-			string(exchange.AsterPrivateKey),
-			exchange.LighterWalletAddr,
-			string(exchange.LighterAPIKeyPrivateKey),
 			exchange.NTDataDir,
 		)
+		if missingContainsexchangeType(missing) {
+			logger.Infof("exchange row %s type=%s unsupported in this build — kept, never deleted", exchange.ID, exchange.ExchangeType)
+			continue
+		}
 		if len(missing) > 0 {
 			if err := s.db.Delete(&Exchange{}, "id = ? AND user_id = ?", exchange.ID, exchange.UserID).Error; err != nil {
 				return err
@@ -207,26 +209,10 @@ func (s *ExchangeStore) GetByID(userID, id string) (*Exchange, error) {
 // getExchangeNameAndType returns the display name and type for an exchange type
 func getExchangeNameAndType(exchangeType string) (name string, typ string) {
 	switch exchangeType {
-	case "binance":
-		return "Binance Futures", "cex"
-	case "bybit":
-		return "Bybit Futures", "cex"
-	case "okx":
-		return "OKX Futures", "cex"
-	case "bitget":
-		return "Bitget Futures", "cex"
-	case "hyperliquid":
-		return "Hyperliquid", "dex"
-	case "aster":
-		return "Aster DEX", "dex"
-	case "lighter":
-		return "LIGHTER DEX", "dex"
-	case "indodax":
-		return "Indodax", "cex"
 	case "ninjatrader":
 		return "NinjaTrader", "futures"
 	default:
-		return exchangeType + " Exchange", "cex"
+		return exchangeType + " Exchange", "futures"
 	}
 }
 
@@ -235,15 +221,10 @@ func getExchangeNameAndType(exchangeType string) (name string, typ string) {
 // only meaningful when exchangeType=="ninjatrader"; pass "" / 0 otherwise.
 func (s *ExchangeStore) Create(userID, exchangeType, accountName string, enabled bool,
 	apiKey, secretKey, passphrase string, testnet bool,
-	hyperliquidWalletAddr string, hyperliquidUnifiedAcct bool,
-	asterUser, asterSigner, asterPrivateKey,
-	lighterWalletAddr, lighterPrivateKey, lighterApiKeyPrivateKey string, lighterApiKeyIndex int,
 	ntDataDir, ntInstrumentName string, ntDefaultContractQty int) (string, error) {
 
 	if missing := MissingRequiredExchangeCredentialFields(
 		exchangeType, apiKey, secretKey, passphrase,
-		hyperliquidWalletAddr, asterUser, asterSigner, asterPrivateKey,
-		lighterWalletAddr, lighterApiKeyPrivateKey,
 		ntDataDir,
 	); len(missing) > 0 {
 		return "", fmt.Errorf("missing required exchange fields: %s", strings.Join(missing, ", "))
@@ -260,29 +241,20 @@ func (s *ExchangeStore) Create(userID, exchangeType, accountName string, enabled
 		userID, exchangeType, accountName, id)
 
 	exchange := &Exchange{
-		ID:                      id,
-		ExchangeType:            exchangeType,
-		AccountName:             accountName,
-		UserID:                  userID,
-		Name:                    name,
-		Type:                    typ,
-		Enabled:                 true,
-		APIKey:                  crypto.EncryptedString(apiKey),
-		SecretKey:               crypto.EncryptedString(secretKey),
-		Passphrase:              crypto.EncryptedString(passphrase),
-		Testnet:                 testnet,
-		HyperliquidWalletAddr:   hyperliquidWalletAddr,
-		HyperliquidUnifiedAcct:  hyperliquidUnifiedAcct,
-		AsterUser:               asterUser,
-		AsterSigner:             asterSigner,
-		AsterPrivateKey:         crypto.EncryptedString(asterPrivateKey),
-		LighterWalletAddr:       lighterWalletAddr,
-		LighterPrivateKey:       crypto.EncryptedString(lighterPrivateKey),
-		LighterAPIKeyPrivateKey: crypto.EncryptedString(lighterApiKeyPrivateKey),
-		LighterAPIKeyIndex:      lighterApiKeyIndex,
-		NTDataDir:               ntDataDir,
-		NTInstrumentName:        ntInstrumentName,
-		NTDefaultContractQty:    ntDefaultContractQty,
+		ID:                   id,
+		ExchangeType:         exchangeType,
+		AccountName:          accountName,
+		UserID:               userID,
+		Name:                 name,
+		Type:                 typ,
+		Enabled:              true,
+		APIKey:               crypto.EncryptedString(apiKey),
+		SecretKey:            crypto.EncryptedString(secretKey),
+		Passphrase:           crypto.EncryptedString(passphrase),
+		Testnet:              testnet,
+		NTDataDir:            ntDataDir,
+		NTInstrumentName:     ntInstrumentName,
+		NTDefaultContractQty: ntDefaultContractQty,
 	}
 
 	if err := s.db.Create(exchange).Error; err != nil {
@@ -295,22 +267,14 @@ func (s *ExchangeStore) Create(userID, exchangeType, accountName string, enabled
 // NinjaTrader fields (ntDataDir/ntInstrumentName/ntDefaultContractQty) are
 // only meaningful when the row is type "ninjatrader"; pass "" / 0 otherwise.
 func (s *ExchangeStore) Update(userID, id string, enabled bool, apiKey, secretKey, passphrase string, testnet bool,
-	hyperliquidWalletAddr string, hyperliquidUnifiedAcct bool,
-	asterUser, asterSigner, asterPrivateKey, lighterWalletAddr, lighterPrivateKey, lighterApiKeyPrivateKey string, lighterApiKeyIndex int,
 	ntDataDir, ntInstrumentName string, ntDefaultContractQty int) error {
 
 	logger.Debugf("🔧 ExchangeStore.Update: userID=%s, id=%s", userID, id)
 
 	updates := map[string]interface{}{
-		"enabled":                     true,
-		"testnet":                     testnet,
-		"hyperliquid_wallet_addr":     hyperliquidWalletAddr,
-		"hyperliquid_unified_account": hyperliquidUnifiedAcct,
-		"aster_user":                  asterUser,
-		"aster_signer":                asterSigner,
-		"lighter_wallet_addr":         lighterWalletAddr,
-		"lighter_api_key_index":       lighterApiKeyIndex,
-		"updated_at":                  time.Now().UTC(),
+		"enabled":    true,
+		"testnet":    testnet,
+		"updated_at": time.Now().UTC(),
 	}
 	if ntDataDir != "" {
 		updates["nt_data_dir"] = ntDataDir
@@ -332,16 +296,6 @@ func (s *ExchangeStore) Update(userID, id string, enabled bool, apiKey, secretKe
 	if passphrase != "" {
 		updates["passphrase"] = crypto.EncryptedString(passphrase)
 	}
-	if asterPrivateKey != "" {
-		updates["aster_private_key"] = crypto.EncryptedString(asterPrivateKey)
-	}
-	if lighterPrivateKey != "" {
-		updates["lighter_private_key"] = crypto.EncryptedString(lighterPrivateKey)
-	}
-	if lighterApiKeyPrivateKey != "" {
-		updates["lighter_api_key_private_key"] = crypto.EncryptedString(lighterApiKeyPrivateKey)
-	}
-
 	result := s.db.Model(&Exchange{}).Where("id = ? AND user_id = ?", id, userID).Updates(updates)
 	if result.Error != nil {
 		return result.Error
@@ -380,36 +334,4 @@ func (s *ExchangeStore) Delete(userID, id string) error {
 	}
 	logger.Infof("🗑️ Deleted exchange: id=%s, userID=%s", id, userID)
 	return nil
-}
-
-// CreateLegacy creates exchange configuration (legacy API for backward compatibility)
-// This method is deprecated, use Create instead
-func (s *ExchangeStore) CreateLegacy(userID, id, name, typ string, enabled bool, apiKey, secretKey string, testnet bool,
-	hyperliquidWalletAddr, asterUser, asterSigner, asterPrivateKey string) error {
-
-	// Check if this is an old-style ID (exchange type as ID)
-	if id == "binance" || id == "bybit" || id == "okx" || id == "bitget" || id == "hyperliquid" || id == "aster" || id == "lighter" {
-		_, err := s.Create(userID, id, "Default", enabled, apiKey, secretKey, "", testnet,
-			hyperliquidWalletAddr, true, // Default to Unified Account mode
-			asterUser, asterSigner, asterPrivateKey, "", "", "", 0,
-			"", "", 0) // NinjaTrader fields not used in legacy create
-		return err
-	}
-
-	// Otherwise assume it's already a UUID
-	exchange := &Exchange{
-		ID:                    id,
-		UserID:                userID,
-		Name:                  name,
-		Type:                  typ,
-		Enabled:               enabled,
-		APIKey:                crypto.EncryptedString(apiKey),
-		SecretKey:             crypto.EncryptedString(secretKey),
-		Testnet:               testnet,
-		HyperliquidWalletAddr: hyperliquidWalletAddr,
-		AsterUser:             asterUser,
-		AsterSigner:           asterSigner,
-		AsterPrivateKey:       crypto.EncryptedString(asterPrivateKey),
-	}
-	return s.db.Where("id = ?", id).FirstOrCreate(exchange).Error
 }

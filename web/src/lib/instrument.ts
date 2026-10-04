@@ -2,7 +2,7 @@
 //
 // Mirrors the Go market.cmeFuturesRoots / store.cmeFuturesRootsStore tables
 // (Phase 1). Lifted out of CoinSourceEditor so the Strategy editors can condition
-// their crypto-only UI (leverage tiers, USDT labels, funding-rate) on whether the
+// their legacy crypto-only UI (leverage tiers, funding-rate labels) on whether the
 // active symbol is a CME futures contract — without each component re-declaring it.
 
 // The 18 recognized CME roots (index + treasury resolve live; energy/metals are

@@ -1,14 +1,10 @@
-import { Brain, Landmark, Eye, EyeOff, Copy, Check } from 'lucide-react'
+import { Brain, Landmark } from 'lucide-react'
 import type { AIModel, Exchange, ExchangeAccountState } from '../../types'
 import type { Language } from '../../i18n/translations'
 import { t } from '../../i18n/translations'
 import { getModelIcon } from '../common/ModelIcons'
 import { getExchangeIcon } from '../common/ExchangeIcons'
-import {
-  getShortName,
-  AI_PROVIDER_CONFIG,
-  truncateAddress,
-} from './model-constants'
+import { getShortName } from './model-constants'
 
 interface UsageInfo {
   runningCount: number
@@ -20,8 +16,6 @@ interface ConfigStatusGridProps {
   configuredExchanges: Exchange[]
   exchangeAccountStates?: Record<string, ExchangeAccountState>
   isExchangeAccountStatesLoading?: boolean
-  visibleExchangeAddresses: Set<string>
-  copiedId: string | null
   language: Language
   isModelInUse: (modelId: string) => boolean | undefined
   getModelUsageInfo: (modelId: string) => UsageInfo
@@ -29,8 +23,6 @@ interface ConfigStatusGridProps {
   getExchangeUsageInfo: (exchangeId: string) => UsageInfo
   onModelClick: (modelId: string) => void
   onExchangeClick: (exchangeId: string) => void
-  onToggleExchangeAddress: (exchangeId: string) => void
-  onCopyAddress: (id: string, address: string) => void
 }
 
 export function ConfigStatusGrid({
@@ -38,8 +30,6 @@ export function ConfigStatusGrid({
   configuredExchanges,
   exchangeAccountStates,
   isExchangeAccountStatesLoading,
-  visibleExchangeAddresses,
-  copiedId,
   language,
   isModelInUse,
   getModelUsageInfo,
@@ -47,8 +37,6 @@ export function ConfigStatusGrid({
   getExchangeUsageInfo,
   onModelClick,
   onExchangeClick,
-  onToggleExchangeAddress,
-  onCopyAddress,
 }: ConfigStatusGridProps) {
   const getExchangeStateMeta = (state: ExchangeAccountState | undefined) => {
     if (!state) {
@@ -140,25 +128,8 @@ export function ConfigStatusGrid({
                       {getShortName(model.name)}
                     </div>
                     <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-2">
-                      {model.customModelName ||
-                        AI_PROVIDER_CONFIG[model.provider]?.defaultModel ||
-                        ''}
+                      {model.customModelName || ''}
                     </div>
-                    {model.provider === 'claw402' &&
-                    (model.balanceUsdc || model.walletAddress) ? (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] font-mono">
-                        {model.balanceUsdc ? (
-                          <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-emerald-400">
-                            {model.balanceUsdc} USDC
-                          </span>
-                        ) : null}
-                        {model.walletAddress ? (
-                          <span className="rounded border border-sky-500/20 bg-sky-500/10 px-1.5 py-0.5 text-sky-400">
-                            {truncateAddress(model.walletAddress)}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
                   </div>
                 </div>
 
@@ -238,9 +209,6 @@ export function ConfigStatusGrid({
                         {exchange.account_name || 'DEFAULT'}
                       </span>
                     </div>
-                    <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-2">
-                      {exchange.type?.toUpperCase() || 'CEX'}
-                    </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-mono">
                       <span
                         className={`rounded border px-1.5 py-0.5 ${stateMeta.className}`}
@@ -261,50 +229,6 @@ export function ConfigStatusGrid({
                 </div>
 
                 <div className="flex flex-col items-end gap-1">
-                  {/* Wallet Address Display Logic */}
-                  {(() => {
-                    const walletAddr =
-                      exchange.hyperliquidWalletAddr ||
-                      exchange.asterUser ||
-                      exchange.lighterWalletAddr
-                    if (exchange.type !== 'dex' || !walletAddr) return null
-                    const isVisible = visibleExchangeAddresses.has(exchange.id)
-                    const isCopied = copiedId === `exchange-${exchange.id}`
-
-                    return (
-                      <div
-                        className="flex items-center gap-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <span className="text-[10px] font-mono text-zinc-400 bg-black/40 px-1.5 py-0.5 rounded border border-zinc-800">
-                          {isVisible ? walletAddr : truncateAddress(walletAddr)}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onToggleExchangeAddress(exchange.id)
-                          }}
-                          className="text-zinc-600 hover:text-zinc-300"
-                        >
-                          {isVisible ? <EyeOff size={10} /> : <Eye size={10} />}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onCopyAddress(`exchange-${exchange.id}`, walletAddr)
-                          }}
-                          className="text-zinc-600 hover:text-vl-neo-gold"
-                        >
-                          {isCopied ? (
-                            <Check size={10} className="text-green-500" />
-                          ) : (
-                            <Copy size={10} />
-                          )}
-                        </button>
-                      </div>
-                    )
-                  })()}
-
                   {usageInfo.totalCount > 0 ? (
                     <span
                       className={`text-[10px] font-mono px-2 py-1 rounded border ${

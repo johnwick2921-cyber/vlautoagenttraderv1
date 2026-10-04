@@ -140,8 +140,6 @@ To keep your VL deployment secure:
 ### 1. API Key Management
 ```bash
 # ✅ DO: Use environment variables
-export BINANCE_API_KEY="your_key"
-export BINANCE_SECRET_KEY="your_secret"
 
 # ❌ DON'T: Hardcode in source files
 api_key = "abc123..."  # NEVER DO THIS
@@ -168,14 +166,11 @@ iptables -A INPUT -p tcp --dport 8080 -j DROP
 ```
 
 ### 4. Use Subaccounts
-- Create dedicated Binance subaccount for trading
 - Limit maximum balance
 - Restrict withdrawal permissions
 - Use IP whitelist
 
 ### 5. Test on Testnet First
-- Hyperliquid: Use testnet mode
-- Binance: Use testnet API (https://testnet.binancefuture.com)
 - Never test with real funds initially
 
 ### 6. Regular Updates
@@ -217,7 +212,6 @@ We thank the following security researchers for responsibly disclosing vulnerabi
 **Security Documentation:**
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [CWE Top 25](https://cwe.mitre.org/top25/)
-- [Binance API Security Best Practices](https://www.binance.com/en/support/faq/360002502072)
 
 **Audit Reports:**
 - No third-party audits completed yet
@@ -375,8 +369,6 @@ VL 是一个处理真实资金和 API 凭证的 AI 交易系统。我们非常�
 ### 1. API 密钥管理
 ```bash
 # ✅ 正确：使用环境变量
-export BINANCE_API_KEY="your_key"
-export BINANCE_SECRET_KEY="your_secret"
 
 # ❌ 错误：在源文件中硬编码
 api_key = "abc123..."  # 永远不要这样做
@@ -403,14 +395,11 @@ iptables -A INPUT -p tcp --dport 8080 -j DROP
 ```
 
 ### 4. 使用子账户
-- 为交易创建专用的 Binance 子账户
 - 限制最大余额
 - 限制提现权限
 - 使用 IP 白名单
 
 ### 5. 先在测试网上测试
-- Hyperliquid：使用测试网模式
-- Binance：使用测试网 API (https://testnet.binancefuture.com)
 - 最初永远不要用真实资金测试
 
 ### 6. 定期更新

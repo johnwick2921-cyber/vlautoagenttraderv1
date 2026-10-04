@@ -67,6 +67,15 @@ func install(t *testing.T) string {
 // attended sets the seams to an attended, non-root session at bNow.
 func attended(t *testing.T) {
 	t.Helper()
+	// P0 test-isolation: every attended-path test writes the worker env and
+	// the last-authz file under a THROWAWAY home — both the environment and
+	// the userHomeDir seam point there, so the real ~/.config/vl-updater is
+	// never reached (the package guard fails the run if it changes).
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	prevHome := userHomeDir
+	userHomeDir = func() (string, error) { return home, nil }
+	t.Cleanup(func() { userHomeDir = prevHome })
 	pT, pE, pN := isTerminal, geteuid, now
 	isTerminal = func(io.Reader) bool { return true }
 	geteuid = func() int { return 1000 }

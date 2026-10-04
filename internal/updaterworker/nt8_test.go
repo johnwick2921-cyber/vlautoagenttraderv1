@@ -128,7 +128,7 @@ func TestBootVerifyRefusesARefusedBootLine(t *testing.T) {
 		t.Fatalf("a REFUSED boot ended %s, want rolled_back\n%v", j.State, states(j))
 	}
 	steps := strings.Join(receiptSteps(j), ",")
-	if !strings.Contains(steps, "activate,watch,boot_verify(fail),rollback,watch,boot_verify,release_hold") {
+	if !strings.Contains(steps, "activate,watch,boot_verify(fail),rollback,watch,boot_verify,release_hold,main_tree_lock") {
 		t.Fatalf("receipts %s", steps)
 	}
 	if !strings.Contains(j.Error, "REFUSED boot line") {
@@ -173,7 +173,7 @@ func TestBootVerifyRefusesARefusedBootLine(t *testing.T) {
 		{name: "an OK line for another pid does not satisfy", after: strings.Replace(ok, " pid "+strconv.Itoa(bootPID)+" ", " pid 9999 ", 1), wantErr: "no \"BOOT INTEGRITY OK"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			p := filepath.Join(t.TempDir(), "nofx_2026-09-24.log")
+			p := filepath.Join(t.TempDir(), "vl_2026-09-24.log")
 			writeFile(t, p, c.before)
 			off := int64(len(c.before))
 			f, _ := os.OpenFile(p, os.O_APPEND|os.O_WRONLY, 0)

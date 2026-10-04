@@ -6,20 +6,12 @@ import {
   Pencil,
   Eye,
   EyeOff,
-  Copy,
-  Check,
 } from 'lucide-react'
 import type { TraderInfo, Exchange, AIModel } from '../../types'
 import type { Language } from '../../i18n/translations'
 import { t } from '../../i18n/translations'
 import { PunkAvatar, getTraderAvatar } from '../common/PunkAvatar'
-import {
-  getModelDisplayName,
-  getExchangeDisplayName,
-  isPerpDexExchange,
-  getWalletAddress,
-  truncateAddress,
-} from './model-constants'
+import { getModelDisplayName, getExchangeDisplayName } from './model-constants'
 
 interface TradersListProps {
   traders: TraderInfo[] | undefined
@@ -28,8 +20,6 @@ interface TradersListProps {
   models: AIModel[]
   configuredModelsCount: number
   configuredExchangesCount: number
-  visibleTraderAddresses: Set<string>
-  copiedId: string | null
   language: Language
   // The currently-selected trader (persisted selection) — marked active in the list.
   activeTraderId?: string
@@ -42,8 +32,6 @@ interface TradersListProps {
     currentShowInCompetition: boolean
   ) => void
   onDeleteTrader: (traderId: string) => void
-  onToggleTraderAddress: (traderId: string) => void
-  onCopyAddress: (id: string, address: string) => void
 }
 
 export function TradersList({
@@ -53,8 +41,6 @@ export function TradersList({
   models,
   configuredModelsCount,
   configuredExchangesCount,
-  visibleTraderAddresses,
-  copiedId,
   language,
   activeTraderId,
   onTraderSelect,
@@ -63,8 +49,6 @@ export function TradersList({
   onToggleTrader,
   onToggleCompetition,
   onDeleteTrader,
-  onToggleTraderAddress,
-  onCopyAddress,
 }: TradersListProps) {
   return (
     <div className="binance-card p-4 md:p-6">
@@ -92,8 +76,6 @@ export function TradersList({
               isActive={trader.trader_id === activeTraderId}
               allExchanges={allExchanges}
               models={models}
-              visibleTraderAddresses={visibleTraderAddresses}
-              copiedId={copiedId}
               language={language}
               onTraderSelect={onTraderSelect}
               onNavigate={onNavigate}
@@ -101,8 +83,6 @@ export function TradersList({
               onToggleTrader={onToggleTrader}
               onToggleCompetition={onToggleCompetition}
               onDeleteTrader={onDeleteTrader}
-              onToggleTraderAddress={onToggleTraderAddress}
-              onCopyAddress={onCopyAddress}
             />
           ))}
         </div>
@@ -180,8 +160,6 @@ function TraderRow({
   isActive,
   allExchanges,
   models,
-  visibleTraderAddresses,
-  copiedId,
   language,
   onTraderSelect,
   onNavigate,
@@ -189,15 +167,11 @@ function TraderRow({
   onToggleTrader,
   onToggleCompetition,
   onDeleteTrader,
-  onToggleTraderAddress,
-  onCopyAddress,
 }: {
   trader: TraderInfo
   isActive?: boolean
   allExchanges: Exchange[]
   models: AIModel[]
-  visibleTraderAddresses: Set<string>
-  copiedId: string | null
   language: Language
   onTraderSelect?: (traderId: string) => void
   onNavigate: (path: string) => void
@@ -208,15 +182,7 @@ function TraderRow({
     currentShowInCompetition: boolean
   ) => void
   onDeleteTrader: (traderId: string) => void
-  onToggleTraderAddress: (traderId: string) => void
-  onCopyAddress: (id: string, address: string) => void
 }) {
-  const exchange = allExchanges.find((e) => e.id === trader.exchange_id)
-  const walletAddr = getWalletAddress(exchange)
-  const isPerpDex = isPerpDexExchange(exchange?.exchange_type)
-  const isVisible = visibleTraderAddresses.has(trader.trader_id)
-  const isCopied = copiedId === trader.trader_id
-
   return (
     <div
       className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 rounded transition-all hover:translate-y-[-1px] gap-3 md:gap-4"
@@ -287,58 +253,6 @@ function TraderRow({
       </div>
 
       <div className="flex items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap">
-        {/* Wallet Address for Perp-DEX */}
-        {isPerpDex && walletAddr && (
-          <div
-            className="flex items-center gap-1 px-2 py-1 rounded"
-            style={{
-              background: 'rgba(240, 185, 11, 0.08)',
-              border: '1px solid rgba(240, 185, 11, 0.2)',
-            }}
-          >
-            <span className="text-xs font-mono" style={{ color: '#F0B90B' }}>
-              {isVisible ? walletAddr : truncateAddress(walletAddr)}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggleTraderAddress(trader.trader_id)
-              }}
-              className="p-0.5 rounded hover:bg-gray-700 transition-colors"
-              title={
-                isVisible
-                  ? language === 'zh'
-                    ? '隐藏'
-                    : 'Hide'
-                  : language === 'zh'
-                    ? '显示'
-                    : 'Show'
-              }
-            >
-              {isVisible ? (
-                <EyeOff className="w-3 h-3" style={{ color: '#848E9C' }} />
-              ) : (
-                <Eye className="w-3 h-3" style={{ color: '#848E9C' }} />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onCopyAddress(trader.trader_id, walletAddr)
-              }}
-              className="p-0.5 rounded hover:bg-gray-700 transition-colors"
-              title={language === 'zh' ? '复制' : 'Copy'}
-            >
-              {isCopied ? (
-                <Check className="w-3 h-3" style={{ color: '#0ECB81' }} />
-              ) : (
-                <Copy className="w-3 h-3" style={{ color: '#848E9C' }} />
-              )}
-            </button>
-          </div>
-        )}
         {/* Status */}
         <div className="text-center">
           <div

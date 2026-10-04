@@ -3,7 +3,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 <p align="center">
   <strong>Ваш персональний AI торговий асистент.</strong><br/>
-  <strong>Будь-який ринок. Будь-яка модель. Оплата USDC, без API ключів.</strong>
+
 </p>
 
 <p align="center">
@@ -12,8 +12,6 @@ names rewritten to vl on 2026-09-30 (VL rename)
 <p align="center">
   <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go" alt="Go"></a>
   <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react" alt="React"></a>
-  <a href="https://x402.org"><img src="https://img.shields.io/badge/x402-USDC%20Payments-2775CA?style=flat" alt="x402"></a>
-  <a href="https://claw402.ai"><img src="https://img.shields.io/badge/Claw402-AI%20Gateway-FF6B35?style=flat" alt="Claw402"></a>
 </p>
 
 <p align="center">
@@ -30,9 +28,9 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 VL Intelligent — це **автономний** AI торговий асистент з відкритим кодом. На відміну від традиційних AI інструментів, де потрібно вручну налаштовувати моделі, керувати API ключами та підключати джерела даних — AI у VL Intelligent **сам аналізує ринки, обирає моделі та отримує дані**. Нульове втручання людини. Ви задаєте стратегію, AI робить все інше.
 
-**Повна автономність**: AI сам вирішує, яку модель використовувати, які ринкові дані отримати, коли торгувати. Без ручного налаштування моделей. Без жонглювання API ключами різних сервісів. Просто поповніть USDC гаманець і запустіть.
 
-Ключова відмінність: **вбудовані [x402](https://x402.org) мікроплатежі**. Без API ключів. Поповніть USDC гаманець і платіть за кожен запит. Гаманець — це ваша ідентифікація.
+
+
 
 Відкрийте **http://127.0.0.1:3000**. Готово.
 
@@ -52,30 +50,11 @@ VL Intelligent — це **автономний** AI торговий асист�
 
 ---
 
-## Як працює x402
-
-Традиційний процес: реєстрація → купівля кредитів → отримання API ключа → управління квотою → ротація ключів.
-
-x402 процес:
-
-```
-Запит → 402 (ось ціна) → гаманець підписує USDC → повтор → готово
-```
-
-Без акаунтів. Без API ключів. Без передоплати. Один гаманець, усі моделі.
-
-### Вбудовані x402 провайдери
-
-| Провайдер | Мережа | Моделі |
-| <img src="../../../web/public/icons/claw402.png" width="20" height="20" style="vertical-align: middle;"/> **[Claw402](https://claw402.ai)** | Base | GPT-5.4, Claude Opus, DeepSeek, Qwen, Grok, Gemini, Kimi — 15+ моделей |
-
----
-
 ## Можливості
 
 | Функція | Опис |
 | **Мульти-AI** | DeepSeek, Qwen, GPT, Claude, Gemini, Grok, Kimi, MiniMax — перемикання будь-коли |
-| **Мульти-біржа** | Binance, Bybit, OKX, Bitget, KuCoin, Gate, Hyperliquid, Aster, Lighter |
+
 | **Студія стратегій** | Візуальний конструктор — джерела монет, індикатори, контроль ризиків |
 | **AI Арена дебатів** | Кілька AI обговорюють угоди, голосують, виконують |
 | **AI Змагання** | AI змагаються в реальному часі, рейтинг у таблиці лідерів |
@@ -86,23 +65,6 @@ x402 процес:
 ### Ринки
 
 Криптовалюта · Акції США · Форекс · Метали
-
-### Біржі (CEX)
-
-| Біржа | Статус | Реєстрація (знижка) |
-| <img src="../../../web/public/exchange-icons/binance.jpg" width="20" height="20" style="vertical-align: middle;"/> **Binance** | ✅ | [Реєстрація](https://www.binance.com/join?) |
-| <img src="../../../web/public/exchange-icons/bybit.png" width="20" height="20" style="vertical-align: middle;"/> **Bybit** | ✅ | [Реєстрація](https://partner.bybit.com/b/83856) |
-| <img src="../../../web/public/exchange-icons/okx.svg" width="20" height="20" style="vertical-align: middle;"/> **OKX** | ✅ | [Реєстрація](https://www.okx.com/join/1865360) |
-| <img src="../../../web/public/exchange-icons/bitget.svg" width="20" height="20" style="vertical-align: middle;"/> **Bitget** | ✅ | [Реєстрація](https://www.bitget.com/referral/register?from=referral&clacCode=c8a43172) |
-| <img src="../../../web/public/exchange-icons/kucoin.svg" width="20" height="20" style="vertical-align: middle;"/> **KuCoin** | ✅ | [Реєстрація](https://www.kucoin.com/r/broker/CXEV7XKK) |
-| <img src="../../../web/public/exchange-icons/gate.svg" width="20" height="20" style="vertical-align: middle;"/> **Gate** | ✅ | [Реєстрація](https://www.gatenode.xyz/share/VQBGUAxY) |
-
-### Біржі (Perp-DEX)
-
-| Біржа | Статус | Реєстрація (знижка) |
-| <img src="../../../web/public/exchange-icons/hyperliquid.png" width="20" height="20" style="vertical-align: middle;"/> **Hyperliquid** | ✅ | [Реєстрація](https://app.hyperliquid.xyz/join/AITRADING) |
-| <img src="../../../web/public/exchange-icons/aster.svg" width="20" height="20" style="vertical-align: middle;"/> **Aster DEX** | ✅ | [Реєстрація](https://www.asterdex.com/en/referral/fdfc0e) |
-| <img src="../../../web/public/exchange-icons/lighter.png" width="20" height="20" style="vertical-align: middle;"/> **Lighter** | ✅ | [Реєстрація](https://app.lighter.xyz/?referral=68151432) |
 
 ### AI Моделі (Режим API ключів)
 
@@ -115,10 +77,6 @@ x402 процес:
 | <img src="../../../web/public/icons/grok.svg" width="20" height="20" style="vertical-align: middle;"/> **Grok** | ✅ | [Отримати](https://console.x.ai) |
 | <img src="../../../web/public/icons/kimi.svg" width="20" height="20" style="vertical-align: middle;"/> **Kimi** | ✅ | [Отримати](https://platform.moonshot.cn) |
 | <img src="../../../web/public/icons/minimax.svg" width="20" height="20" style="vertical-align: middle;"/> **MiniMax** | ✅ | [Отримати](https://platform.minimaxi.com) |
-
-### AI Моделі (Режим x402 — без API ключів)
-
-15+ моделей через [Claw402](https://claw402.ai) — лише USDC гаманець
 
 ---
 

@@ -14,7 +14,7 @@ VL is a full-stack AI trading platform for cryptocurrency and US stock markets:
 - **Backend:** Go (Gin framework, SQLite)
 - **Frontend:** React/TypeScript (Vite, TailwindCSS)
 - **AI Models:** DeepSeek, Qwen, OpenAI (GPT-5.2), Claude, Gemini, Grok, Kimi
-- **Exchanges:** Binance, Bybit, OKX, Hyperliquid, Aster, Lighter
+- **Exchange:** NinjaTrader 8 (CME futures, SIM execution)
 
 ---
 
@@ -63,7 +63,7 @@ VL is a full-stack AI trading platform for cryptocurrency and US stock markets:
 
 #### Strategy Module
 Complete strategy configuration system including:
-- Coin source selection (static list, AI500 pool, OI ranking)
+- Coin source selection (static list)
 - Market data indicators (K-lines, EMA, MACD, RSI, ATR)
 - Prompt construction (system prompt, user prompt, sections)
 - AI response parsing and decision execution
@@ -101,7 +101,6 @@ vl/
 | Package | Purpose |
 |---------|---------|
 | `gin-gonic/gin` | HTTP API framework |
-| `adshao/go-binance` | Binance API client |
 | `markcheno/go-talib` | Technical indicators |
 | `golang-jwt/jwt` | JWT authentication |
 

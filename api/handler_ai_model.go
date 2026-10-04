@@ -13,7 +13,6 @@ import (
 	"vl/mcp"
 	"vl/security"
 	"vl/store"
-	"vl/wallet"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,8 +39,6 @@ type SafeModelConfig struct {
 	// defaults; a set value overrides per-model without env/redeploy.
 	ThinkingMode    string `json:"thinkingMode,omitempty"`
 	ReasoningEffort string `json:"reasoningEffort,omitempty"`
-	WalletAddress   string `json:"walletAddress,omitempty"`
-	BalanceUSDC     string `json:"balanceUsdc,omitempty"`
 }
 
 type UpdateModelConfigRequest struct {
@@ -102,17 +99,6 @@ func (s *Server) handleGetModelConfigs(c *gin.Context) {
 			CustomModelName: model.CustomModelName,
 			ThinkingMode:    model.ThinkingMode,
 			ReasoningEffort: model.ReasoningEffort,
-		}
-
-		if model.Provider == "claw402" {
-			if privateKey := strings.TrimSpace(model.APIKey.String()); privateKey != "" {
-				if walletAddress, addrErr := walletAddressFromPrivateKey(privateKey); addrErr == nil {
-					safeModel.WalletAddress = walletAddress
-					safeModel.BalanceUSDC = wallet.QueryUSDCBalanceStr(walletAddress)
-				} else {
-					logger.Warnf("⚠️ Failed to derive claw402 wallet address for model %s: %v", model.ID, addrErr)
-				}
-			}
 		}
 
 		safeModels = append(safeModels, safeModel)
@@ -274,9 +260,6 @@ func (s *Server) handleGetSupportedModels(c *gin.Context) {
 		{"id": "grok", "name": "Grok (xAI)", "provider": "grok", "defaultModel": "grok-3-latest"},
 		{"id": "kimi", "name": "Kimi (Moonshot)", "provider": "kimi", "defaultModel": "moonshot-v1-auto"},
 		{"id": "minimax", "name": "MiniMax", "provider": "minimax", "defaultModel": "MiniMax-M2.7"},
-		{"id": "blockrun-base", "name": "BlockRun (Base Wallet)", "provider": "blockrun-base", "defaultModel": "auto"},
-		{"id": "blockrun-sol", "name": "BlockRun (Solana Wallet)", "provider": "blockrun-sol", "defaultModel": "auto"},
-		{"id": "claw402", "name": "Claw402 (Base USDC)", "provider": "claw402", "defaultModel": "deepseek-v4-flash"},
 	}
 
 	c.JSON(http.StatusOK, supportedModels)

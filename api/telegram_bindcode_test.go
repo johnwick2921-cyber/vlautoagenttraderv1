@@ -46,8 +46,8 @@ func TestTelegramBindCodeIssuedAndConsumable(t *testing.T) {
 		t.Fatalf("owner bind-code: want 200, got %d (%s)", w.Code, w.Body.String())
 	}
 	var resp struct {
-		Code              string `json:"code"`
-		ExpiresInMinutes  int    `json:"expires_in_minutes"`
+		Code             string `json:"code"`
+		ExpiresInMinutes int    `json:"expires_in_minutes"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("bad response shape: %v (%s)", err, w.Body.String())

@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "job_id": "e141a9c2cab2f33257e026cd7eddc152",
+  "release_id": "v2026.10.02.4",
+  "source_sha": "32d5b5d25cf7476cc9d6b049bdfeb1acf6cee929",
+  "state": "refused",
+  "phase": "done",
+  "attempts": 0,
+  "created_at": "2026-10-02T23:13:39.867637844Z",
+  "updated_at": "2026-10-02T23:13:40.062096899Z",
+  "error": "the install binary's vcs.revision is unreadable, not 40 hex, or already this release",
+  "transitions": [
+    {
+      "state": "requested",
+      "phase": "done",
+      "at": "2026-10-02T23:13:39.867637844Z",
+      "receipts": 0
+    },
+    {
+      "state": "downloaded",
+      "phase": "started",
+      "at": "2026-10-02T23:13:39.869995845Z",
+      "receipts": 0
+    },
+    {
+      "state": "downloaded",
+      "phase": "done",
+      "at": "2026-10-02T23:13:40.052027643Z",
+      "receipts": 1
+    },
+    {
+      "state": "verified",
+      "phase": "started",
+      "at": "2026-10-02T23:13:40.054376582Z",
+      "receipts": 1
+    },
+    {
+      "state": "verified",
+      "phase": "done",
+      "at": "2026-10-02T23:13:40.057195653Z",
+      "receipts": 2
+    },
+    {
+      "state": "preflight_ok",
+      "phase": "started",
+      "at": "2026-10-02T23:13:40.059485525Z",
+      "receipts": 2
+    },
+    {
+      "state": "refused",
+      "phase": "done",
+      "at": "2026-10-02T23:13:40.062096899Z",
+      "receipts": 4
+    }
+  ],
+  "receipts": [
+    {
+      "step": "download",
+      "started_at": "2026-10-02T23:13:39.872382463Z",
+      "ended_at": "2026-10-02T23:13:40.051912864Z",
+      "ok": true,
+      "evidence": {
+        "artifacts": "88",
+        "manifest_sha256": "295938bc21136f871e67c5f194d49118ab3c9c301b93bbd44e6ff7c5252ee91f"
+      }
+    },
+    {
+      "step": "verify",
+      "started_at": "2026-10-02T23:13:40.056391425Z",
+      "ended_at": "2026-10-02T23:13:40.057156569Z",
+      "ok": true,
+      "evidence": {
+        "signer_fingerprint": "SHA256:IvzjG35bsg2Ak3pwpka4GP1HM2PUCriy65nRjOjw8/o",
+        "source_sha": "32d5b5d25cf7476cc9d6b049bdfeb1acf6cee929"
+      }
+    },
+    {
+      "step": "preflight",
+      "started_at": "2026-10-02T23:13:40.062016155Z",
+      "ended_at": "2026-10-02T23:13:40.06201672Z",
+      "ok": false,
+      "err": "the install binary's vcs.revision is unreadable, not 40 hex, or already this release"
+    },
+    {
+      "step": "main_tree_lock",
+      "started_at": "2026-10-02T23:13:40.062096899Z",
+      "ended_at": "2026-10-02T23:13:40.064132863Z",
+      "ok": true,
+      "evidence": {
+        "outcome": "free",
+        "session": "updater-e141a9c2cab2"
+      }
+    }
+  ],
+  "release": {
+    "dir": "/home/hoang/vl-releases/32d5b5d25cf7476cc9d6b049bdfeb1acf6cee929",
+    "sha": "32d5b5d25cf7476cc9d6b049bdfeb1acf6cee929",
+    "binary": "/home/hoang/vl-releases/32d5b5d25cf7476cc9d6b049bdfeb1acf6cee929/vl-bin",
+    "dist": "/home/hoang/vl-releases/32d5b5d25cf7476cc9d6b049bdfeb1acf6cee929/web/dist",
+    "release_file": "/home/hoang/vl-releases/32d5b5d25cf7476cc9d6b049bdfeb1acf6cee929/RELEASE",
+    "manifest_path": "/home/hoang/vl-releases/32d5b5d25cf7476cc9d6b049bdfeb1acf6cee929/manifest.json"
+  }
+}

@@ -60,7 +60,7 @@ interface AdvancedChartProps {
   interval?: string
   traderID?: string
   height?: number
-  exchange?: string // Exchange type: binance, bybit, okx, bitget, hyperliquid, aster, lighter
+  exchange?: string // Exchange type: ninjatrader only in the vl product.
   onSymbolChange?: (symbol: string) => void // Symbol change callback
   selectedAccount?: string // Dashboard-selected account; open orders stay trader-bound (F31)
 }
@@ -82,7 +82,7 @@ const getQuoteUnit = (exchange: string): string => {
   if (['forex', 'metals'].includes(exchange)) {
     return '' // Forex/metals have no real volume
   }
-  return 'USDT' // Crypto defaults to USDT
+  return 'USD'
 }
 
 // Get base volume unit
@@ -98,7 +98,7 @@ const getBaseUnit = (
     return ''
   }
   // Crypto: extract base asset from symbol
-  const base = symbol.replace(/USDT$|USD$|BUSD$/, '')
+  const base = symbol.replace(/USD$/, '')
   return base || t('advancedChart.units', language as 'en' | 'zh' | 'id')
 }
 
@@ -111,11 +111,11 @@ const formatVolume = (value: number): string => {
 }
 
 export function AdvancedChart({
-  symbol = 'BTCUSDT',
+  symbol = 'MNQ',
   interval = '5m',
   traderID,
   height = 550,
-  exchange = 'binance', // Default to binance
+  exchange = 'ninjatrader', // Default to ninjatrader (the only venue)
   onSymbolChange: _onSymbolChange, // Available for future use
   selectedAccount,
 }: AdvancedChartProps) {
@@ -174,8 +174,8 @@ export function AdvancedChart({
     priceChangePercent: number
     high: number
     low: number
-    volume: number // Quantity (BTC/shares)
-    quoteVolume: number // Turnover (USDT/USD)
+    volume: number // Quantity (contracts/shares)
+    quoteVolume: number // Turnover (USD)
   } | null>(null)
 
   // Indicator configuration
@@ -261,8 +261,8 @@ export function AdvancedChart({
         high: candle.high,
         low: candle.low,
         close: candle.close,
-        volume: candle.volume, // Quantity (BTC/shares)
-        quoteVolume: candle.quoteVolume, // Turnover (USDT/USD)
+        volume: candle.volume, // Quantity (contracts/shares)
+        quoteVolume: candle.quoteVolume, // Turnover (USD)
       }))
 
       // Sort by time and deduplicate (lightweight-charts requires ascending, unique times)
@@ -1424,11 +1424,8 @@ export function AdvancedChart({
             <span
               className="text-[10px] px-1.5 py-0.5 rounded font-medium uppercase"
               style={{
-                background:
-                  exchange === 'hyperliquid'
-                    ? 'rgba(80, 227, 194, 0.1)'
-                    : 'rgba(243, 186, 47, 0.1)',
-                color: exchange === 'hyperliquid' ? '#50E3C2' : '#F3BA2F',
+                background: 'rgba(243, 186, 47, 0.1)',
+                color: '#F3BA2F',
               }}
             >
               {exchange?.toUpperCase()}

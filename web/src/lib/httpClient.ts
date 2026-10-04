@@ -171,7 +171,10 @@ export class HttpClient {
           description: 'You do not have permission to access this resource',
         })
       }
-      throw new Error('Permission denied')
+      // The SERVER's own reason rides to the caller (e.g. the updates check
+      // answers 403 cross-origin with a body) — never hide it behind the
+      // generic text. ApiError carries the status so a page can render both.
+      throw new ApiError(serverMessage || 'Permission denied', undefined, undefined, status)
     }
 
     // Handle 404 Not Found - system error

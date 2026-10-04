@@ -62,6 +62,10 @@ func TestUpdaterBootstrapEnrollsWhereTheBotReads(t *testing.T) {
 	}
 
 	// ── the operator, attended, from somewhere else ──
+	// P0 (TEST-WROTE-REAL-WORKER-ENV-2): enroll writes the worker credential
+	// to $HOME/.config/vl-updater/env — isolate HOME so the REAL one is never
+	// touched (the root-package testhome guard fails the run otherwise).
+	t.Setenv("HOME", t.TempDir())
 	t.Chdir(t.TempDir())
 	os.Unsetenv("DB_PATH")
 	master, slave := openPTY(t)

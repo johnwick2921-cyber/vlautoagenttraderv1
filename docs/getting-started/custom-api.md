@@ -22,10 +22,10 @@ names rewritten to vl on 2026-09-30 (VL rename)
       "id": "trader_custom",
       "name": "My Custom AI Trader",
       "ai_model": "custom",
-      "exchange": "binance",
+      "exchange": "ninjatrader",
 
-      "binance_api_key": "your_binance_api_key",
-      "binance_secret_key": "your_binance_secret_key",
+      "ninjatrader_api_key": "your_ninjatrader_api_key",
+      "ninjatrader_secret_key": "your_ninjatrader_secret_key",
 
       "custom_api_url": "https://api.openai.com/v1",
       "custom_api_key": "sk-your-openai-api-key",

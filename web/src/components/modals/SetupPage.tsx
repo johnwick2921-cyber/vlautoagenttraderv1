@@ -2,12 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { invalidateSystemConfig } from '../../lib/config'
-import { OnboardingModeSelector } from '../auth/OnboardingModeSelector'
-import type { UserMode } from '../../lib/onboarding'
-import {
-  VL_BEGINNER_ONBOARDING_COMPLETED_KEY,
-  VL_BEGINNER_WALLET_ADDRESS_KEY,
-} from '../../lib/storageMigration'
+import { VL_BEGINNER_ONBOARDING_COMPLETED_KEY } from '../../lib/storageMigration'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { LanguageSwitcher } from '../common/LanguageSwitcher'
 
@@ -61,7 +56,6 @@ export function SetupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState<UserMode>('beginner')
 
   // Clean up any stale auth/onboarding state on setup page load
   useEffect(() => {
@@ -69,7 +63,6 @@ export function SetupPage() {
     localStorage.removeItem('auth_user')
     localStorage.removeItem('user_id')
     localStorage.removeItem(VL_BEGINNER_ONBOARDING_COMPLETED_KEY)
-    localStorage.removeItem(VL_BEGINNER_WALLET_ADDRESS_KEY)
   }, [])
 
   const l = labels[language as keyof typeof labels] || labels.en
@@ -82,7 +75,7 @@ export function SetupPage() {
       return
     }
     setLoading(true)
-    const result = await register(email, password, undefined, mode)
+    const result = await register(email, password, undefined)
     setLoading(false)
     if (result.success) {
       invalidateSystemConfig()
@@ -205,12 +198,6 @@ export function SetupPage() {
                   </button>
                 </div>
               </div>
-
-              <OnboardingModeSelector
-                language={language}
-                mode={mode}
-                onChange={setMode}
-              />
 
               {/* Error */}
               {error && (

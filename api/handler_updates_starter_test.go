@@ -96,7 +96,8 @@ var completeWalk = []updaterjob.State{
 	updaterjob.StateDownloaded, updaterjob.StateVerified, updaterjob.StatePreflightOK,
 	updaterjob.StateMaintenanceHeld, updaterjob.StateDrainedAcked, updaterjob.StateGateOK,
 	updaterjob.StateBackupDone, updaterjob.StateNT8Skipped, updaterjob.StateActivated,
-	updaterjob.StateBooted, updaterjob.StateBootVerified, updaterjob.StateComplete,
+	updaterjob.StateBooted, updaterjob.StateBootVerified, updaterjob.StateWorkerSwapped,
+	updaterjob.StateComplete,
 }
 
 // walkTestJob writes a job with updaterjob's PRODUCTION writer and walks it
@@ -119,7 +120,7 @@ func walkTestJob(t *testing.T, dataDir, jobID, releaseID string, to ...updaterjo
 	// an activated job without its rollback inputs).
 	base := t.TempDir()
 	half := func(dir, sha string) *updaterjob.Release {
-		return &updaterjob.Release{Dir: dir, SHA: sha, Binary: dir + "/nofx", Dist: dir + "/web/dist", ReleaseFile: dir + "/deploy/RELEASE"}
+		return &updaterjob.Release{Dir: dir, SHA: sha, Binary: dir + "/vl", Dist: dir + "/web/dist", ReleaseFile: dir + "/deploy/RELEASE"}
 	}
 	const newSHA, oldSHA = "1111111111111111111111111111111111111111", "2222222222222222222222222222222222222222"
 	for i, s := range to {

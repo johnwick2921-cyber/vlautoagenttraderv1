@@ -1211,6 +1211,7 @@ func (s *TCPServer) Start(ctx context.Context) error {
 	// W-ONE-BUTTON M2 site 7 — push the installation hold (silent when unheld).
 	s.maint.mu.Lock()
 	s.maint.tick, s.maint.resend = maintenanceTick, maintenanceResend
+	s.maint.listening, s.maint.listenMono = true, monoMs(time.Now())
 	s.maint.mu.Unlock()
 	go s.maintenanceLoop(cctx.Done(), maintenanceTick)
 	// FIX-DOUBLE-ENTRY boot line — READ values only: the guard is always on,
@@ -1486,6 +1487,14 @@ func (s *TCPServer) SetStaleSignalAgeForTest(d time.Duration) {
 // need an ephemeral port via "127.0.0.1:0"). Production callers leave the
 // constructor default in place.
 func (s *TCPServer) SetAddrForTest(addr string) { s.addr = addr }
+
+// SetListeningSinceForTest sets the listener-up stamp (tests only: simulates
+// how long the bot has been up with no AddOn connection).
+func (s *TCPServer) SetListeningSinceForTest(t time.Time) {
+	s.maint.mu.Lock()
+	s.maint.listening, s.maint.listenMono = true, monoMs(t)
+	s.maint.mu.Unlock()
+}
 
 // ListenAddrForTest returns the bound listen address (valid after Start) so
 // in-process fixtures can dial the real accept loop and observe sent frames.
@@ -2088,6 +2097,14 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			var oup OrderUpdatePayload
 			if err := json.Unmarshal(env.Payload, &oup); err != nil {
 				s.logger.Warn("tcp_server: bad order_update payload", "err", err)
+				continue
+			}
+			// N9 (review r2, 2026-10-03): a cancel-report ECHO is a report,
+			// not a state event. With the regime OFF it is dropped HERE, at
+			// the read loop, so nothing downstream (NoteEntryExecution, the
+			// ordered worker's snapshot wait, RetryPendingNT8Exits,
+			// picture-HTF) ever sees a frame the regime ignores.
+			if oup.CancelReport && !CancelReportRegimeOn() {
 				continue
 			}
 			// W117 F2 — enqueue to the owner's worker (stamped with the

@@ -70,7 +70,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 > 2. **Universal CME Phase 1 + Phase 2 SHIPPED.** Phase 1 (`1620a5e7`) —
 >    recognize 18 CME roots with correct per-root multipliers (micro≠mini
 >    guaranteed by test: NQ $20 vs MNQ $2, ES $50 vs MES $5); FE no longer
->    USDT-mangles CME symbols. Phase 2 (`dba04d01`) — the hardwired `"MNQ"`
+>    crypto-suffix-mangles CME symbols. Phase 2 (`dba04d01`) — the hardwired `"MNQ"`
 >    subscription is GONE (subscription follows the active symbol); index +
 >    treasury families resolve via a quarterly H/M/U/Z resolver
 >    (`VLContractResolver`, `RollDaysBeforeExpiry=8`), LIVE-verified
@@ -152,7 +152,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 
 > **STATUS (2026-06-02):** branch `feat/nt8-stage4-chart` tip `cef42d61`.
 > SHIPPED since the last doc-sync (`2a0801b6`): the **bar-feed restart fix**
-> (`345bce2b` — resubscribe-on-Connected + fast `.Update` watchdog + ETH
+
 > hours; bars reattach ~14s after a clean restart, operator-verified) and
 > the **pre-prompt risk-gate fix** (`cef42d61` — the stale crypto notional
 > cap no longer trips in-position, so the AI can manage/close its own
@@ -173,7 +173,7 @@ names rewritten to vl on 2026-09-30 (VL rename)
 > See `## Current State (2026-05-30, session-verified)` (immediately below)
 > for the current truth. Older claims about a `$50k mock balance`,
 > `FuturesChart` as the chart path, "decisions skip / unknown coin source",
-> a `100000` P&L baseline, and **"kernel reads Binance klines"** are
+> a `100000` P&L baseline, and **"kernel reads crypto-exchange klines"** are
 > SUPERSEDED in place (the kernel reads NT8 BarCache for CME futures on this
 > branch — verified `market/data.go:197-210`; Stage 3 source-swap is DONE
 > here). Markers added, nothing deleted.
@@ -215,8 +215,8 @@ C# (`cp` → F5 → one full NT8 restart)". That deploy **happened**:
 `market/futures_symbol.go` (+55) + test (+49), `store/strategy.go`,
 `web/.../CoinSourceEditor.tsx` (+194). Recognizes 18 CME roots with correct
 **per-root multipliers**; micro≠mini is guaranteed by test (NQ $20 vs MNQ $2,
-ES $50 vs MES $5). The FE no longer USDT-mangles a CME symbol (the
-`MNQ`→`MNQUSDT` crypto-bypass bug — see the Strategy-build P1🔴 — is handled
+ES $50 vs MES $5). The FE no longer crypto-suffix-mangles a CME symbol (the
+`MNQ`→`MNQUSD` crypto-bypass bug — see the Strategy-build P1🔴 — is handled
 for recognition). Recognition only: no subscription/resolution yet (that's
 Phase 2).
 
@@ -315,8 +315,8 @@ with no risk of trading the wrong contract in the meantime.
     `FAST_MAX_ATTEMPTS = 3` per dead window so a genuine closed-market gap
     can't churn recreates.
   - **75-min backstop KEPT** (`WATCHDOG_STALL_MS = 75 min`, > the 60-min
-    daily halt) + **ETH TradingHours** (`BARS_TRADING_HOURS = "CME US Index
-    Futures ETH"`) so bars survive the 16:00 CT session close.
+
+
   - **VERIFIED LIVE (operator, 2026-06-02):** bars reattach within ~14s of a
     clean restart and stream continuously.
 
@@ -382,7 +382,7 @@ with no risk of trading the wrong contract in the meantime.
 | SHA | message |
 |---|---|
 | `cef42d61` | fix(nt8): don't apply the crypto notional cap at the pre-prompt risk gate — let the AI run in-position **[BRANCH TIP]** |
-| `345bce2b` | fix(nt8): revive bar .Update fast after restart — resubscribe-on-Connected + fast watchdog (+ ETH hours) |
+
 | `2f59fd7f` | fix(nt8): record entry from NT8 fill/position avg, not the frozen 5m mark |
 | `7bc2dd8c` | fix(nt8): position uPnL from NT8's live UnrealizedPnL, not a stale 5m bar close |
 | `dde10cf1` | fix(dashboard): position-card side label case-insensitive — NT8 LONG no longer shows as SHORT |
@@ -457,7 +457,7 @@ with no risk of trading the wrong contract in the meantime.
   REST `/api/klines`, NOT the deleted `FuturesChart`; `bars_subscribe`
   auto-sent on reconnect `tcp_server.go:431`, revert `cf5b76b3` never broke
   streaming) + `f267d09e` (chart defaults to the trader's market symbol MNQ,
-  not BTC) + `3a3dfb31` (indicators redraw on toggle — fixed the stale-closure
+
   clobber, so indicators NOW WORK on NT8/MNQ). **B/S is a MARKER TOGGLE, not
   an order placer — there is no manual-order route, by design.** Saturday =
   static historical MNQ bars; live ticks need RTH (Sun ~17:00 CT).
@@ -561,19 +561,19 @@ AddOn update). **Q1 DECIDED: the AI uses ALL selected TFs (no cap).**
 
 - **STAGE 1 — UI + phantom (frontend + a few Go store/api + DB; NO C#, NO
   wire).** Severity-ordered:
-  - **P1 🔴 — TAB2 CoinSource USDT→CME bypass** (`CoinSourceEditor.tsx:78`
-    + `:107`). The bypass has ZERO CME roots today → `MNQ`→`MNQUSDT` →
+  - **P1 🔴 — TAB2 CoinSource crypto-suffix→CME bypass** (`CoinSourceEditor.tsx:78`
+    + `:107`). The bypass has ZERO CME roots today → `MNQ`→`MNQUSD` →
     `IsCMEFuturesSymbol=false` → silently routes to the crypto branch →
     futures decisions skip. **THE critical fix.** Plus the universal
     'Symbol Source' rename + help text.
   - **P2 🟠 — TAB3 indicator gating** (add a `variant` prop; hide
-    funding/OI/NetFlow/VLOS for futures — also stops crypto vocab leaking
+    funding/OI/flow ranking/crypto data feed for futures — also stops crypto vocab leaking
     into the futures prompt via the shared `writeAvailableIndicators`) +
     **TAB6 add a 'Futures' variant** to BOTH the preview and AI-Test selects
     (`StrategyStudioPage.tsx:1198-1206` / `:1306-1314` — the futures prompt
     `engine_prompt_futures.go` EXISTS but is currently UI-unreachable) +
-    **TAB4 universal risk labels** (BTC/ETH/Altcoin → Leverage/Tier; fix the
-    hardcoded `USDT` span at `RiskControlEditor.tsx:277-278`, NOT via i18n).
+
+    hardcoded `USD` span at `RiskControlEditor.tsx:277-278`, NOT via i18n).
   - **P3 🟡 — TAB5 futures persona + TAB1/7 cleanup.**
   - **Cross-cutting phantom cleanup:** `UPDATE strategies SET is_default=0
     WHERE id=''` + add `ORDER BY` to GetDefault (`store/strategy.go:1157`) —
@@ -642,7 +642,7 @@ AddOn update). **Q1 DECIDED: the AI uses ALL selected TFs (no cap).**
 | `587a1386` | fix(nt8): make account dropdown rows selectable; funded stays gated |
 | `82bdca1c` | fix(nt8): account select re-binds dashboard data (invalidate 5 SWR keys on switch) |
 | `c4e2cb13` | fix(nt8): poll account_balance so real equity populates (Tradovate AccountItemUpdate doesn't fire) — kills $50k mock |
-| `f267d09e` | fix(nt8): chart defaults to the trader's market symbol (MNQ), not BTC |
+
 | `3a3dfb31` | fix(nt8): chart indicators redraw on toggle (stop stale-closure clobber) |
 | `d3c18f0f` | feat(nt8): MNQ chart shows all 7 timeframe buttons (adds 3m, drops 4h) |
 | `063bc311` | fix(nt8): chart timeframe row wraps so all 7 buttons stay visible |
@@ -730,7 +730,7 @@ Status block — concise. All facts verified against `git` on `feat/nt8-stage4-c
 
 ### SHIPPED ON `main` (PR# / tag from git)
 
-- **Stage 3 data spine** — PR #38, tag `v1.0-nt8-stage3-dataspine`: kernel reads real NT8 MNQ bars from BarCache (not Binance/CoinAnk).
+- **Stage 3 data spine** — PR #38, tag `v1.0-nt8-stage3-dataspine`: kernel reads real NT8 MNQ bars from BarCache (not crypto data feed).
 - **Futures prompt** — PR #39: futures system prompt emits the existing parseable decision JSON; `AI_MAX_TOKENS` 2000 → 8000.
 - **Risk-gate + executor futures sizing** — PR #40, tag `v1.0-nt8-futures-decisions`: equity × 20 cap, 1–10 contracts.
 - **Fast cycles** — PR #41: dead crypto-enrichment flags off; ~30s cycles.
@@ -877,11 +877,11 @@ WSL2 reaches Windows files via `/mnt/c/Users/<windows_username>/VLTrader/data/`.
 
 The system already has rich per-trader configuration via the **Exchange**, **Strategy**, **AI Model**, and **Trader** entities (documented in upstream `STRATEGY_MODULE.md`). This plan integrates NQ trading **into those patterns** rather than introducing a parallel "futures mode" branch:
 
-- **NinjaTrader is added as a new exchange type** in [store/exchange.go](store/exchange.go) (joining `binance`, `bybit`, `hyperliquid`, etc.). Per-account NT data dir lives on the Exchange row, not in global env vars.
+- **NinjaTrader is added as a new exchange type** in [store/exchange.go](store/exchange.go) (joining `crypto exchange`, `crypto exchange`, `crypto DEX`, etc.). Per-account NT data dir lives on the Exchange row, not in global env vars.
 - **NQ symbols use the existing static-coin-source mode** at [kernel/engine.go:437-442](kernel/engine.go#L437) — `CoinSource.SourceType="static"`, `StaticCoins=["NQ.c.0"]`. No engine fork needed.
 - **The futures prompt template is selected via the existing `PromptVariant` field** ([api/strategy.go:551](api/strategy.go#L551) already supports `req.PromptVariant`). NQ traders set `PromptVariant="futures"`.
-- **Data feed override:** when the engine sees `ExchangeType=="ninjatrader"`, it routes K-line fetches through Databento instead of vlos/coinank. This is a small branch in `kernel/engine.go` data-fetch, not a top-level mode switch.
-- **Symbol normalization fix:** [market.Normalize()](market/data.go) currently appends `USDT`. It needs a futures-aware path that detects CME symbol patterns (e.g., `NQ.c.0`, `MNQ`, `NQM6`) and skips the suffix. See Task NEW.
+- **Data feed override:** when the engine sees `ExchangeType=="ninjatrader"`, it routes K-line fetches through Databento instead of vlos/crypto data feed. This is a small branch in `kernel/engine.go` data-fetch, not a top-level mode switch.
+- **Symbol normalization fix:** [market.Normalize()](market/data.go) currently appends `USD`. It needs a futures-aware path that detects CME symbol patterns (e.g., `NQ.c.0`, `MNQ`, `NQM6`) and skips the suffix. See Task NEW.
 
 **Verified facts (from reading `claudetrader.cs` directly):**
 - Strategy places **market orders** (not limit, despite README claims) → `EnterLong(0, contractQuantity, "CT_Long")` at line 255. `Entry_Price` in CSV is a *reference* logged but not used for entry.
@@ -1319,7 +1319,7 @@ cd /home/hoang/vl && go test ./provider/databento/... -run TestParseOHLCV -v
 
 Expected: `--- PASS` for all three. If any fails, fix the parser.
 
-- [ ] **Step 2.4: Live smoke test (manual; costs ~$0.002 USDC equivalent on your Databento balance)**
+- [ ] **Step 2.4: Live smoke test (manual; costs ~$0.002 crypto stablecoin equivalent on your Databento balance)**
 
 Create a temporary file `/tmp/db_smoke.go`:
 
@@ -1574,7 +1574,7 @@ func TestBarsToKlines_Empty(t *testing.T) {
 }
 ```
 
-> **Note:** Before writing the adapter, **read `market/types.go:94-108` to confirm the field name** (`OpenTime` vs `Timestamp` vs `Time`) and **the unit** (seconds, milliseconds, or `time.Time`). Adjust the test and adapter to match. The test above assumes `OpenTime int64` in milliseconds; this matches Binance-style conventions.
+> **Note:** Before writing the adapter, **read `market/types.go:94-108` to confirm the field name** (`OpenTime` vs `Timestamp` vs `Time`) and **the unit** (seconds, milliseconds, or `time.Time`). Adjust the test and adapter to match. The test above assumes `OpenTime int64` in milliseconds; this matches crypto exchange-style conventions.
 
 - [ ] **Step 4.3: Run the test, verify failure**
 
@@ -2588,7 +2588,7 @@ func TestBuildFuturesSystemPrompt_NoCryptoVocab(t *testing.T) {
 
 	// Must NOT contain crypto vocabulary
 	forbidden := []string{
-		"cryptocurrency", "altcoin", "BTC", "ETH", "USDT", "perpetual",
+
 		"funding rate", "coins simultaneously",
 	}
 	for _, f := range forbidden {
@@ -3399,7 +3399,7 @@ func getKlinesFromDatabento(symbol string, timeframe string) ([]Kline, error) {
     return BarsToKlines(bars), nil
 }
 ```
-Then in `GetWithTimeframes` add (BEFORE the hyperliquid/coinank fork):
+Then in `GetWithTimeframes` add (BEFORE the crypto DEX/crypto data feed fork):
 ```go
 if IsCMEFuturesSymbol(symbol) {
     return getKlinesFromDatabento(symbol, tf)
@@ -3455,7 +3455,7 @@ GORM AutoMigrate will add the columns; no separate migration file needed.
 
 - [ ] **Step 2: Add ninjatrader case in manager**
 
-In `manager/trader_manager.go` find the `switch exchangeCfg.ExchangeType` block in `addTraderFromStore` (around line 661-700) and after the `case "indodax":` add:
+In `manager/trader_manager.go` find the `switch exchangeCfg.ExchangeType` block in `addTraderFromStore` (around line 661-700) and after the `case "crypto exchange":` add:
 ```go
 case "ninjatrader":
     traderConfig.NinjaTraderDataDir = exchangeCfg.NTDataDir
@@ -3539,7 +3539,7 @@ const [ntDefaultContractQty, setNtDefaultContractQty] = useState(1)
 
 - [ ] **Step 3: Add form UI section**
 
-After the existing `aster` form section (around line 720-756) add:
+After the existing `crypto DEX` form section (around line 720-756) add:
 ```tsx
 {selectedExchange === 'ninjatrader' && (
     <div className="space-y-4">
@@ -3644,11 +3644,11 @@ After npm build passes, verify the form actually renders and saves:
 
 ## Task 15: Frontend futures-gating (Dashboard + Strategy)
 
-**Why:** v4 audit found Dashboard hardcodes USDT/leverage; CoinSourceEditor appends USDT to "NQ"; IndicatorEditor + RiskControlEditor have no variant prop.
+**Why:** v4 audit found Dashboard hardcodes USD/leverage; CoinSourceEditor appends USD to "NQ"; IndicatorEditor + RiskControlEditor have no variant prop.
 
 **Files:**
 - Modify: `web/src/pages/TraderDashboardPage.tsx:513,522,530,609,663,673` (gate on exchange_type)
-- Modify: `web/src/components/strategy/CoinSourceEditor.tsx:69-79` (skip USDT for CME)
+- Modify: `web/src/components/strategy/CoinSourceEditor.tsx:69-79` (skip USD for CME)
 - Modify: `web/src/components/strategy/IndicatorEditor.tsx:656-688` (variant prop + hide crypto sources)
 - Modify: `web/src/components/strategy/RiskControlEditor.tsx:61-128` (variant prop + relabel)
 
@@ -3656,7 +3656,7 @@ After npm build passes, verify the form actually renders and saves:
 
 In `web/src/pages/TraderDashboardPage.tsx` around lines 513, 522, 530:
 ```tsx
-const unit = exchangeType === 'ninjatrader' ? 'USD' : 'USDT'
+const unit = exchangeType === 'ninjatrader' ? 'USD' : 'USD'
 <StatCard ... unit={unit} ... />
 ```
 `exchangeType` is already available via `getExchangeTypeFromList(...)` helper.
@@ -3671,13 +3671,13 @@ Around lines 609, 663, 673 wrap each `<th>` and `<td>` with:
 ```
 Same pattern for Liquidation Price column.
 
-- [ ] **Step 3: Skip USDT auto-append for CME futures**
+- [ ] **Step 3: Skip crypto-suffix auto-append for CME futures**
 
 In `web/src/components/strategy/CoinSourceEditor.tsx` around line 69-79:
 ```ts
 const cmeFuturesPattern = /^(NQ|MNQ|ES|MES|YM|MYM|RTY|M2K|CL|GC)(\.c\.0|[A-Z]\d)?$/i
 if (cmeFuturesPattern.test(symbol)) {
-    return symbol  // keep as-is, no USDT
+    return symbol  // keep as-is, no USD
 }
 ```
 Place BEFORE the existing xyzDexAssets check.
@@ -3690,7 +3690,7 @@ In `web/src/components/strategy/IndicatorEditor.tsx` add `variant?: 'crypto' | '
     <label><input type="checkbox" name="enable_funding_rate" /> Funding Rate</label>
 )}
 ```
-Same for OI Ranking, NetFlow Ranking, Price Ranking sources.
+
 
 Pass `variant={exchangeType === 'ninjatrader' ? 'futures' : 'crypto'}` from `StrategyStudioPage.tsx`.
 
@@ -3698,15 +3698,15 @@ Pass `variant={exchangeType === 'ninjatrader' ? 'futures' : 'crypto'}` from `Str
 
 In `web/src/components/strategy/RiskControlEditor.tsx` add `variant?: 'crypto' | 'futures'` prop. Relabel:
 ```tsx
-const leverageLabel = variant === 'futures' ? 'Primary Instrument Leverage' : 'BTC/ETH Leverage'
-const sizeUnit = variant === 'futures' ? 'contracts' : 'USDT'
+
+const sizeUnit = variant === 'futures' ? 'contracts' : 'USD'
 ```
 
 - [ ] **Step 6: Build + visual smoke**
 ```bash
 cd web && npm run build
 ```
-Then open Dashboard for a NT trader and verify no USDT unit, no Leverage/LiqPrice columns. Open Strategy Studio and verify no funding rate / OI sources for futures.
+Then open Dashboard for a NT trader and verify no crypto unit, no Leverage/LiqPrice columns. Open Strategy Studio and verify no funding rate / OI sources for futures.
 
 - [ ] **Step 7: Commit**
 ```bash
@@ -3720,7 +3720,7 @@ matters. With a NT trader configured:
 
 1. mcp__playwright__browser_navigate to /dashboard?trader=<NT-trader-id>
 2. mcp__playwright__browser_snapshot — assert StatCards show "USD"
-   text, NOT "USDT"
+   text, NOT "USD"
 3. mcp__playwright__browser_snapshot — positions table headers must
    NOT contain "Leverage" or "Liquidation Price"
 4. mcp__playwright__browser_navigate to /strategy
@@ -3728,7 +3728,7 @@ matters. With a NT trader configured:
 6. mcp__playwright__browser_snapshot — IndicatorEditor must NOT
    render funding rate or OI toggle sections
 7. mcp__playwright__browser_snapshot — RiskControlEditor labels read
-   "Primary Instrument Leverage" not "BTC/ETH Leverage"
+
 8. mcp__playwright__browser_console_messages — no errors
 
 ---
@@ -5662,7 +5662,7 @@ No UI development needed. No backend refactor needed. The system is built to let
 ## Upstream VL project (canonical source)
 
 - **Repository:** upstream github link (removed in the VL rename) (default branch: `dev`, last pushed 2026-05-11)
-- **Description:** *"Your personal AI trading assistant. Any market. Any model. Pay with USDC, not API keys."*
+- **Description:** *"Your personal AI trading assistant. Any market. Any model. Pay with crypto stablecoin, not API keys."*
 - **Local clone:** `/home/hoang/vl` (this working tree)
 
 ### Architecture documentation (upstream)
@@ -5674,7 +5674,7 @@ Located at upstream github link (removed in the VL rename) — these are the aut
 | [README.md](upstream github link (removed in the VL rename)) | 6.3 KB | Overall system architecture, module map |
 | [STRATEGY_MODULE.md](upstream github link (removed in the VL rename)) | **21.7 KB** | **PRIMARY REFERENCE** — full trading-cycle data flow, prompt construction, risk control. Plan 1's Tasks 4, 9, 10 align with this doc's stages 2 (Data Assembly), 3 (System Prompt), 4 (User Prompt), 6 (AI Parsing). |
 | [AGENT_MEMORY_AND_PLANNING.md](upstream github link (removed in the VL rename)) | 11.2 KB | Agent (VLi) memory + planning subsystem. Out of scope for this plan but informs future work. |
-| [X402_STREAMING_PAYMENT.md](upstream github link (removed in the VL rename)) | 12.7 KB | claw402 / x402 micropayment protocol. **Not used by Plan 1** (we bypass claw402 via direct Databento subscription). |
+| [crypto payment_STREAMING_PAYMENT.md](upstream github link (removed in the VL rename)) | 12.7 KB | crypto payment proxy / crypto payment micropayment protocol. **Not used by Plan 1** (we bypass crypto payment proxy via direct Databento subscription). |
 
 ### Confirmed alignment with STRATEGY_MODULE.md
 
@@ -5941,7 +5941,7 @@ Group 6: **End-to-end smoke runner**
 | # | File:Line | Change | Δ LOC |
 |---|-----------|--------|-------|
 | B1 | `market/data.go:557-558` (`Normalize`) | **Case-preserving fix:** capture raw symbol BEFORE the `strings.ToUpper` call (line 558), check `isCMEFuturesSymbol(raw)` first, and `return raw` if true. Otherwise proceed with existing logic. Databento continuous symbols use lowercase suffix (`NQ.c.0`, not `NQ.C.0`). Inserting the guard only at line 583 would receive an already-uppercased string and return `NQ.C.0`, which Databento rejects. Code shape: `func Normalize(symbol string) string { raw := symbol; if isCMEFuturesSymbol(raw) { return raw }; symbol = strings.ToUpper(symbol); ... }` | +5 |
-| B2 | `market/data_klines.go:getKlinesFromCoinAnk` line 18 (or one level up) | Branch: if symbol is CME futures, call Databento adapter instead | +30 |
+| B2 | `market/data_klines.go:getKlinesFromcrypto data feed` line 18 (or one level up) | Branch: if symbol is CME futures, call Databento adapter instead | +30 |
 | B3 | `store/exchange.go:43` (Exchange struct) | Add field `NinjaTraderDataDir string` with gorm tag | +2 |
 | B4 | `store/exchange.go:231` (Create) | Add `ninjaTraderDataDir string` param + assignment | +6 |
 | B5 | `store/exchange.go:277-323` (Update) | Add to updates map | +4 |
@@ -5973,7 +5973,7 @@ Group 6: **End-to-end smoke runner**
 | B31 | `web/src/router/paths.ts:23` | Remove `data: '/data',` line | -1 |
 | B32 | `web/src/components/common/HeaderBar.tsx:121-131 + 457-466` | Remove desktop + mobile Data nav entries (2 identical blocks) | -22 |
 | B33 | `web/src/pages/DataPage.tsx` | Delete file entirely (17 lines) | -17 |
-| B34 | `web/src/components/strategy/CoinSourceEditor.tsx:69-79` | Skip USDT auto-append when symbol matches CME futures pattern | +8 |
+| B34 | `web/src/components/strategy/CoinSourceEditor.tsx:69-79` | Skip crypto-suffix auto-append when symbol matches CME futures pattern | +8 |
 | B35 | `web/src/pages/StrategyStudioPage.tsx:1203-1206 + 1311-1313` (PromptVariant dropdown) | Add `<option value="futures">{tr('futuresVariant')}</option>` in 2 places | +4 |
 | B36 | `web/src/components/trader/ExchangeConfigModal.tsx:23-34` (templates array) | Add `{exchange_type:'ninjatrader', name:'NinjaTrader', type:'cex'}` | +5 |
 | B37 | `web/src/components/trader/ExchangeConfigModal.tsx` (form fields, new section ~720-756) | Add NinjaTrader form section: DataDir + InstrumentName + DefaultContractQty inputs | +35 |
@@ -5981,7 +5981,7 @@ Group 6: **End-to-end smoke runner**
 | B39 | `web/src/pages/SettingsPage.tsx:handleSaveExchange` | Accept + pass NT fields to create/update request | +6 |
 | B40 | `web/src/types/config.ts:49,91` (Exchange + CreateExchangeRequest) | Add `ninjaTraderDataDir?: string` (plus optional `instrumentName`, `defaultContractQty`) | +5 |
 | B41 | `web/src/components/common/ExchangeIcons.tsx:10-21` | Add `ninjatrader: '/exchange-icons/ninjatrader.png'` to ICON_PATHS | +1 |
-| B42 | `web/src/pages/TraderDashboardPage.tsx:513,522,530` (StatCard `unit="USDT"`) | Make conditional: USDT for crypto, "USD" for futures (read exchange.exchange_type) | +6 |
+| B42 | `web/src/pages/TraderDashboardPage.tsx:513,522,530` (StatCard `unit="USD"`) | Make conditional: USD for crypto, "USD" for futures (read exchange.exchange_type) | +6 |
 | B43 | `web/src/pages/TraderDashboardPage.tsx:609,663,673` (Leverage + Liquidation cols) | Hide for futures exchanges (`exchange_type==='ninjatrader'`) | +8 |
 | B44 | `web/src/i18n/translations.ts:347,1693,2971` (`invalidSymbolFormat`) | Soften message: futures-aware | +6 |
 | B45 | `web/src/i18n/translations.ts` (add 5 new keys × 3 languages) | `ninjatraderExchangeName`, `ninjatraderSetupGuide`, `dataDirectoryPath`, `chartInstrument`, `futuresVariant` | +30 |
@@ -6005,8 +6005,8 @@ These are 100% confirmed transferable as-is. **Do not modify these**:
 - `CoinSourceConfig` schema ([store/strategy.go:695-721](store/strategy.go#L695-L721))
 
 **Strategy engine — vlos paths** (no change; bypassed via config):
-- `FetchOIRankingData`, `FetchNetFlowRankingData`, `FetchPriceRankingData` ([kernel/engine.go:778,802,834](kernel/engine.go)) — already return `nil` if the corresponding indicator flag is disabled. NQ strategies just leave them disabled.
-- `getAI500Coins`, `getOITopCoins`, `getOILowCoins`, `getHyperAllCoins`, `getHyperMainCoins` — never called when `SourceType="static"`.
+- `FetchOIRankingData`, `Fetchflow rankingRankingData`, `FetchPriceRankingData` ([kernel/engine.go:778,802,834](kernel/engine.go)) — already return `nil` if the corresponding indicator flag is disabled. NQ strategies just leave them disabled.
+- `getcrypto coin poolCoins`, `getOITopCoins`, `getOILowCoins`, `getHyperAllCoins`, `getHyperMainCoins` — never called when `SourceType="static"`.
 
 **Risk control schema** (no schema change; fields repurposed):
 - `RiskControlConfig` ([store/strategy.go:802-825](store/strategy.go#L802-L825)) — `MaxPositions`, `MaxMarginUsage`, `MinPositionSize`, `MinRiskRewardRatio`, `MinConfidence` are generic. `BTCETHMaxLeverage` / `AltcoinMaxLeverage` can carry NQ values without rename (cosmetic-only labels).
@@ -6017,10 +6017,10 @@ These are 100% confirmed transferable as-is. **Do not modify these**:
 
 **AI Model store** (no change):
 - All of [store/ai_model.go](store/ai_model.go) — provider, API key, custom URL. Works for any LLM provider.
-- `ResolveClaw402WalletKey` returns `("", nil)` cleanly when no claw402 configured — NQ traders pass through without error.
+- `ResolvecryptoPaymentProxyKey` returns `("", nil)` cleanly when no crypto payment proxy configured — NQ traders pass through without error.
 
 **Strategy CRUD** (no change):
-- All of [api/strategy.go](api/strategy.go) — accepts arbitrary `StaticCoins` strings without USDT validation.
+- All of [api/strategy.go](api/strategy.go) — accepts arbitrary `StaticCoins` strings without crypto-suffix validation.
 - `POST /api/strategies/test-run` works for `SourceType="static"` (skips vlos calls entirely).
 - `POST /api/strategies/estimate-tokens` is pure math — works for any prompt.
 
@@ -6039,7 +6039,7 @@ These are 100% confirmed transferable as-is. **Do not modify these**:
 
 **Web UI components that work as-is** (no functional change; just minor i18n/conditional render edits in B):
 - `TraderDashboardPage` positions table, equity stat cards, decisions log
-- `DecisionCard` rendering (auto-strips USDT for display; works for NQ)
+- `DecisionCard` rendering (auto-strips USD for display; works for NQ)
 - `ModelConfigModal` (configures AI providers; provider-agnostic)
 - `TraderConfigModal` (only displays strategy; doesn't validate symbols)
 - `RiskControlEditor` (sliders work for any numeric range)
@@ -6149,15 +6149,15 @@ User flow: open Config → add NinjaTrader exchange + verify AI model. Open Stra
 
 | # | Touchpoint | Action |
 |---|------------|--------|
-| D1 | `TraderDashboardPage.tsx:513,522,530` (StatCard `unit="USDT"`) | Conditional unit: USD for ninjatrader, USDT otherwise |
+| D1 | `TraderDashboardPage.tsx:513,522,530` (StatCard `unit="USD"`) | Conditional unit: USD for ninjatrader, USD otherwise |
 | D2 | `TraderDashboardPage.tsx:609,663` (Leverage column) | Hide when `exchange_type === 'ninjatrader'` |
 | D3 | `TraderDashboardPage.tsx:611,673` (Liquidation Price column) | Hide for ninjatrader |
 | D4 | `api/handler_trader_status.go:159-201` (`handleClosePosition`) | Add ninjatrader case returning HTTP 400 with friendly message |
 | D5 | `api/handler_trader.go:457-481` (probe trader) | Return nil for ninjatrader (skip live API probe) |
 | D6 | `api/exchange_account_state.go:~50-120` (`buildExchangeProbeTrader`) | Add ninjatrader case: skip |
-| D7 | `web/src/i18n/translations.ts:250` etc. (USDT warnings) | Soften crypto-only warnings |
+| D7 | `web/src/i18n/translations.ts:250` etc. (crypto-unit warnings) | Soften crypto-only warnings |
 
-**Already works:** DecisionCard (auto-strips USDT, formats prices, renders reasoning), Recent Decisions panel, Equity/P&L chart, Position history, Run/Stop buttons, cycle counter, all sub-components. **The dashboard is the most asset-agnostic surface — least work.**
+**Already works:** DecisionCard (auto-strips USD, formats prices, renders reasoning), Recent Decisions panel, Equity/P&L chart, Position history, Run/Stop buttons, cycle counter, all sub-components. **The dashboard is the most asset-agnostic surface — least work.**
 
 **Surface 2 total: ~20 LOC frontend + ~15 LOC backend = ~35 LOC.**
 
@@ -6168,12 +6168,12 @@ User flow: open Config → add NinjaTrader exchange + verify AI model. Open Stra
 
 | # | Touchpoint | Action |
 |---|------------|--------|
-| S1 | `CoinSourceEditor.tsx:69-79` (USDT auto-append) | Skip USDT for CME futures patterns (`NQ.c.0`, `MNQ`, `ES`, etc.) |
-| S2 | same:195-201 (input placeholder) | "BTC, ETH, SOL, NQ.c.0, MNQ..." |
+| S1 | `CoinSourceEditor.tsx:69-79` (crypto-suffix auto-append) | Skip USD for CME futures patterns (`NQ.c.0`, `MNQ`, `ES`, etc.) |
+
 | S3 | `IndicatorEditor.tsx:658-687` (Market Sentiment) | Hide `enable_funding_rate` + `enable_oi` for futures (prop-controlled) |
-| S4 | `IndicatorEditor.tsx:226-449` (VLOS sources: AI500/OI/NetFlow/Price ranking) | Hide for futures strategies |
-| S5 | `RiskControlEditor.tsx:72-127` (leverage labels) | Conditional label: "NQ Leverage" for futures vs "BTC/ETH Leverage" for crypto |
-| S6 | `RiskControlEditor.tsx:277` (USDT min position unit) | Conditional unit |
+
+
+| S6 | `RiskControlEditor.tsx:277` (crypto-unit min position unit) | Conditional unit |
 | S7 | `StrategyStudioPage.tsx:1203-1206 + 1311-1313` (PromptVariant dropdown) | Add `<option value="futures">` in 2 places |
 | S8 | `web/src/i18n/strategy-translations.ts` | Add futures variant labels, soften coinSource descriptions |
 | S9 | `api/strategy.go:514-515` (PromptVariant validation) | Accept `"futures"` (currently no rejection — verify pass-through) |
@@ -6181,7 +6181,7 @@ User flow: open Config → add NinjaTrader exchange + verify AI model. Open Stra
 | S11 | **NEW** `kernel/engine_prompt_futures.go` | `BuildFuturesSystemPrompt(FuturesPromptConfig) string` + `BuildFuturesUserPrompt(FuturesContext) string` + helpers |
 | S12 | **NEW** `kernel/engine_position.go` (add helpers) | `roundTickNQ(price)` + `validateStopDistanceNQ(entry, stop, minPoints)` + futures branch in `validateDecisions` |
 | S13 | `kernel/engine_analysis.go:91` (`fetchMarketDataWithStrategy`) | Skip `GetOITopPositions()` when exchange is ninjatrader |
-| S14 | `market/data.go:583` (`Normalize`) | Skip USDT-append for CME futures symbols |
+| S14 | `market/data.go:583` (`Normalize`) | Skip crypto-suffix-append for CME futures symbols |
 | S15 | **NEW** `market/data.go` helper | `isCMEFuturesSymbol(symbol string) bool` |
 
 **Already works:** Strategy CRUD (accepts arbitrary `StaticCoins`), editor layout, Strategy Type selector, `PromptSections` editor, `CustomPrompt` field, test-run for static mode, token estimation, indicator math (EMA/MACD/RSI/ATR/Bollinger), backend `NormalizeProductSchema`.
@@ -6210,9 +6210,9 @@ The remaining ~1,500 LOC (provider/databento/, provider/ninjatrader/, trader/nin
 
 **Config:** A user can navigate to Settings → Exchanges tab → click Add → select "NinjaTrader" → enter DataDir path → save. The exchange appears in the list. No API key/secret required. **Done when this round-trip works.**
 
-**Strategy:** A user can navigate to Strategy Studio → create new strategy → set Source = "static" + Static Coins = `["NQ.c.0"]` → set PromptVariant = "futures" → save. Strategy editor shows NQ-friendly RiskControl labels and hides funding/OI indicators. Token estimate works. Test-run button (with no AI key) returns prompts containing NQ-aware language, no BTC/USDT references. **Done when this round-trip works.**
 
-**Dashboard:** A user can navigate to Trader Dashboard for an NQ trader → see positions in contracts (not coins, no USDT unit) → see Leverage column hidden → see Recent Decisions render with NQ symbols cleanly. **Done when this round-trip works.**
+
+**Dashboard:** A user can navigate to Trader Dashboard for an NQ trader → see positions in contracts (not coins, no crypto unit) → see Leverage column hidden → see Recent Decisions render with NQ symbols cleanly. **Done when this round-trip works.**
 
 When all three acceptance criteria pass, the user has a working NQ-trading workflow even before any actual order flows through NinjaTrader. The backbone layer is required for live orders, but the *control surfaces* are independently validatable first.
 
@@ -6242,7 +6242,7 @@ When all three acceptance criteria pass, the user has a working NQ-trading workf
 **Backend:** [api/handler_exchange.go](api/handler_exchange.go), [api/handler_ai_model.go](api/handler_ai_model.go), [store/exchange.go](store/exchange.go), [store/visibility.go](store/visibility.go)
 
 ### KEEP (47 — work unchanged for NQ)
-SettingsPage tab container + state mgmt, all useEffects, refreshModelConfigs, refreshExchangeConfigs, handleChangePassword, handleSaveModel, handleDeleteModel, handleDeleteExchange, all 4 tab containers (Account/AI Models/Exchanges/Telegram), ModelConfigModal entirely (DeepSeek/Claude/OpenAI/etc. work as-is). ExchangeConfigModal: StepIndicator, ExchangeCard, useEffect lifecycle, handleCopyIP, handleSecureInputComplete, handleSelectExchange, handleBack, all 5 existing CEX/DEX field sections (binance, bybit, okx, gate/kucoin/indodax, aster, hyperliquid, lighter), form buttons. API: `GET /api/exchanges`, `DELETE /api/exchanges/:id`. Store: Exchange.List, Exchange.Delete.
+SettingsPage tab container + state mgmt, all useEffects, refreshModelConfigs, refreshExchangeConfigs, handleChangePassword, handleSaveModel, handleDeleteModel, handleDeleteExchange, all 4 tab containers (Account/AI Models/Exchanges/Telegram), ModelConfigModal entirely (DeepSeek/Claude/OpenAI/etc. work as-is). ExchangeConfigModal: StepIndicator, ExchangeCard, useEffect lifecycle, handleCopyIP, handleSecureInputComplete, handleSelectExchange, handleBack, all 5 existing CEX/DEX field sections (crypto exchange, crypto exchange, crypto exchange, gate/crypto exchange/crypto exchange, crypto DEX, crypto DEX, crypto DEX), form buttons. API: `GET /api/exchanges`, `DELETE /api/exchanges/:id`. Store: Exchange.List, Exchange.Delete.
 
 ### MODIFY (18 items — exact edits)
 
@@ -6281,31 +6281,31 @@ Trader Header section, Debug Info, StatCard: Positions (count-only), GridRiskPan
 
 | # | File:Line | Change | Type |
 |---|-----------|--------|------|
-| D-M1 | `TraderDashboardPage.tsx:513` (StatCard Total Equity `unit="USDT"`) | Conditional: USD for ninjatrader, USDT otherwise | MODIFY |
+| D-M1 | `TraderDashboardPage.tsx:513` (StatCard Total Equity `unit="USD"`) | Conditional: USD for ninjatrader, USD otherwise | MODIFY |
 | D-M2 | `TraderDashboardPage.tsx:522` (StatCard Available Balance) | Conditional unit | MODIFY |
 | D-M3 | `TraderDashboardPage.tsx:530` (StatCard Total P&L) | Conditional unit | MODIFY |
 | D-D1 | `TraderDashboardPage.tsx:609, 663` (Leverage column header + cells, 7 render locations) | DELETE for ninjatrader (futures don't show leverage; conditional render) | DELETE |
 | D-D2 | `TraderDashboardPage.tsx:611, 673` (Liquidation Price column) | DELETE for ninjatrader (no liq for NT) | DELETE |
 | D-M4 | `TraderDashboardPage.tsx:67-71` (`isPerpDexExchange` helper) | Keep but extend: NT is neither perp nor dex; ensure helper returns false | MODIFY |
-| D-M5 | `TraderDashboardPage.tsx:73-87` (`getWalletAddress` helper) | Return empty for ninjatrader | MODIFY |
+| D-M5 | `TraderDashboardPage.tsx:73-87` (`getPaymentAddress` helper) | Return empty for ninjatrader | MODIFY |
 | D-D3 | `TraderDashboardPage.tsx:178-187` (`handleCopyAddress`) | Not invoked for NT; safe to keep but no UI to trigger | DELETE (cond) |
-| D-D4 | `TraderDashboardPage.tsx:395-440` (wallet address display section) | Hide for ninjatrader (conditional render) | DELETE (cond) |
-| D-D5 | `TraderDashboardPage.tsx:143-144` (showWalletAddress/copiedAddress useState) | Never set for NT | DELETE (cond) |
+| D-D4 | `TraderDashboardPage.tsx:395-440` (payment address display section) | Hide for ninjatrader (conditional render) | DELETE (cond) |
+| D-D5 | `TraderDashboardPage.tsx:143-144` (showPaymentAddress/copiedPaymentAddress useState) | Never set for NT | DELETE (cond) |
 | D-M6 | `DecisionCard.tsx:148-151` (ActionCard Leverage display `{leverage}x`) | Hide for ninjatrader (or show "1x" gracefully) | MODIFY |
 | D-D6 | `DecisionCard.tsx:?` Leverage field rendering when action is NQ trade | Conditional hide | DELETE (cond) |
-| D-M7 | `ChartTabs.tsx:184-204` (market type pills: hyperliquid/crypto/stocks/forex/metals) | For NT, force a single market type (or hide pills) | MODIFY |
+| D-M7 | `ChartTabs.tsx:184-204` (market type pills: crypto DEX/crypto/stocks/forex/metals) | For NT, force a single market type (or hide pills) | MODIFY |
 | D-M8 | `ChartTabs.tsx:67-71` (useEffect: auto-detect market type from exchangeId) | Add ninjatrader → "futures" mapping (or "crypto" as fallback so kline still works) | MODIFY |
-| D-M9 | `ChartTabs.tsx:283-294` (Quick Symbol Input + auto-append USDT) | Skip USDT append for CME futures symbol | MODIFY |
-| D-M10 | `ChartTabs.tsx:132-143` (`handleSymbolSubmit`) | Don't normalize CME symbols to USDT | MODIFY |
+| D-M9 | `ChartTabs.tsx:283-294` (Quick Symbol Input + auto-append USD) | Skip USD append for CME futures symbol | MODIFY |
+| D-M10 | `ChartTabs.tsx:132-143` (`handleSymbolSubmit`) | Don't normalize CME symbols to USD | MODIFY |
 | D-M11 | `ChartTabs.tsx:112-116` (`handleMarketTypeChange`) | Disable / no-op for ninjatrader | MODIFY |
-| D-M12 | `ChartTabs.tsx:60-64` (default symbol "BTCUSDT") | Use exchange's chart symbol or "NQ.c.0" for ninjatrader | MODIFY |
+
 | D-M13 | `api/handler_trader_status.go:159-201` (`handleClosePosition`) | Add `case "ninjatrader"` returning HTTP 400 with friendly message ("Close via NT UI; bridge does not support manual close") | MODIFY |
 | D-M14 | `api/handler_trader.go:457-481` (probe trader) | Return nil for ninjatrader (no live probe) | MODIFY |
 | D-M15 | `api/exchange_account_state.go:~50-120` (`buildExchangeProbeTrader`) | Add ninjatrader case: skip | MODIFY |
 | D-M16 | Position struct returned by `/api/positions` (handler + store) | Conditionally omit `leverage` + `liquidation_price` for NT — OR leave in API response and just hide in UI (recommended: hide in UI only, less backend churn) | MODIFY |
-| D-M17 | `web/src/i18n/translations.ts:250` (`asterUsdtWarning` and similar) | Soften crypto-specific warnings (multi-exchange-aware) | MODIFY |
-| D-M18 | `web/src/i18n/translations.ts` (`tradingSymbolsDescription`, `invalidSymbolFormat`) | Soften "must end with USDT" validators | MODIFY |
-| D-M19 | `web/src/components/trader/PositionHistory.tsx:126` (`stat.symbol.replace('USDT', '')`) | Safe as-is (replace returns original if no match for NQ) — no change needed BUT verify | KEEP-verify |
+| D-M17 | `web/src/i18n/translations.ts:250` (`cryptoDexUnitWarning` and similar) | Soften crypto-specific warnings (multi-exchange-aware) | MODIFY |
+| D-M18 | `web/src/i18n/translations.ts` (`tradingSymbolsDescription`, `invalidSymbolFormat`) | Soften "must end with USD" validators | MODIFY |
+| D-M19 | `web/src/components/trader/PositionHistory.tsx:126` (`stat.symbol.replace('USD', '')`) | Safe as-is (replace returns original if no match for NQ) — no change needed BUT verify | KEEP-verify |
 
 **Surface 2 LOC delta: ~80 (60 FE conditional renders, 20 BE). Most "DELETE" items are conditional renders — UI does not render the cell, but the data shape stays unchanged.**
 
@@ -6315,7 +6315,7 @@ Trader Header section, Debug Info, StatCard: Positions (count-only), GridRiskPan
 **Backend:** [api/strategy.go](api/strategy.go), [api/strategy.go](api/strategy.go), [store/strategy.go](store/strategy.go), [kernel/engine.go](kernel/engine.go), [kernel/engine_prompt.go](kernel/engine_prompt.go), [kernel/engine_position.go](kernel/engine_position.go), [market/data.go](market/data.go)
 
 ### KEEP (82 — work unchanged for NQ)
-StrategyConfig + AIStrategyConfig interfaces, KlineConfig (timeframes work for any asset), PromptSectionsConfig, StrategyStudioPage root + all state vars + accordion section state, all 12 strategy CRUD handlers (fetchStrategies, handleCreateStrategy, handleDeleteStrategy, handleDuplicateStrategy, handleActivateStrategy, handleExportStrategy, handleImportStrategy, handleSaveStrategy, updateConfig, updateAIConfig, handleStrategyTypeChange, fetchPromptPreview), all 7 accordion section render blocks (CoinSource/Indicators/RiskControl/PromptSections/GridConfig/PublishSettings/StrategyType selector), CoinSourceEditor's sourceTypes selector (all 4 modes work for any asset), all 4 source type cards (static/ai500/oi_top/oi_low — AI500/OI just disabled by config), all timeframe selections (14 timeframes), Raw Klines toggle, Technical Indicators section entirely (EMA/MACD/RSI/ATR/BOLL + period inputs — all asset-agnostic), enable_volume + enable_oi (volume always relevant; OI just left off for NQ), RiskControlEditor max_positions / max_margin_usage / min_position_size / min_risk_reward_ratio / min_confidence (all generic), PromptSectionsEditor entirely (free-form text), PublishSettingsEditor entirely, TokenEstimateBar entirely, GridConfigEditor (unused for NQ), all i18n: coinSource/gridConfig/riskControl/promptSections/publishSettings objects (no crypto-specific terms in keys), all 13 backend strategy API endpoints (estimate-tokens, list, get, public, get-active, get-default-config — the last needs minor extension for futures variant), all 12 store/strategy.go CRUD methods, ClampLimits, MergeStrategyConfig, EstimateTokens. Kernel: GetCandidateCoins for static mode at engine.go:262-271 (works for NQ after Normalize fix), BuildUserPrompt, validateDecisions (with futures branch added separately).
+
 
 ### MODIFY (34) + NEW (2)
 
@@ -6329,25 +6329,25 @@ StrategyConfig + AIStrategyConfig interfaces, KlineConfig (timeframes work for a
 | S-M6 | `StrategyStudioPage.tsx:650-678` (`runAiTest`) | Pass `prompt_variant` (may be `futures`) in request | MODIFY |
 | S-M7 | `CoinSourceEditor.tsx:31-42` (xyzDexAssets set) | Add NQ, MES, MNQ, ES patterns | MODIFY |
 | S-M8 | `CoinSourceEditor.tsx:44-47` (`isXyzDexAsset`) | Match CME futures patterns | MODIFY |
-| S-M9 | `CoinSourceEditor.tsx:60-88` (`handleAddCoin`) | For CME, store as "NQ.c.0" not "NQc.0USDT" | MODIFY |
-| S-M10 | `CoinSourceEditor.tsx:69-87` (symbol formatting logic) | Skip USDT suffix for CME symbols | MODIFY |
+| S-M9 | `CoinSourceEditor.tsx:60-88` (`handleAddCoin`) | For CME, store as "NQ.c.0" not "NQc.0USD" | MODIFY |
+| S-M10 | `CoinSourceEditor.tsx:69-87` (symbol formatting logic) | Skip crypto suffix for CME symbols | MODIFY |
 | S-M11 | `CoinSourceEditor.tsx:97-118` (`handleAddExcludedCoin`) | Same formatting fix | MODIFY |
-| S-M12 | `CoinSourceEditor.tsx:200` (input placeholder) | "BTC, ETH, SOL, NQ.c.0, MNQ..." | MODIFY |
-| S-M13 | `IndicatorEditor.tsx:226-275` (Quant Data section) | Hide for futures variant | MODIFY |
+
+
 | S-M14 | `IndicatorEditor.tsx:278-331` (OI Ranking section) | Hide for futures variant | MODIFY |
-| S-M15 | `IndicatorEditor.tsx:334-387` (NetFlow Ranking section) | Hide for futures variant | MODIFY |
-| S-M16 | `IndicatorEditor.tsx:390-449` (Price Ranking section) | Conditionally show (price ranking is asset-class-agnostic) | MODIFY |
+| S-M15 | `IndicatorEditor.tsx:334-387` (flow ranking Ranking section) | Hide for futures variant | MODIFY |
+
 | S-M17 | `IndicatorEditor.tsx:656-688` (Market Sentiment section: volume / OI / funding_rate) | Hide `enable_funding_rate` for futures | MODIFY |
 | S-M18 | `RiskControlEditor.tsx:61-128` (BTC/ETH + Altcoin leverage sliders) | Conditional labels for futures ("Primary Instrument Leverage" generic OR explicit "NQ/MNQ Leverage") | MODIFY |
 | S-M19 | `RiskControlEditor.tsx:139-?` (position value ratios) | Conditional labels | MODIFY |
-| S-M20 | `RiskControlEditor.tsx:277` (USDT min position unit) | Conditional unit | MODIFY |
+| S-M20 | `RiskControlEditor.tsx:277` (crypto-unit min position unit) | Conditional unit | MODIFY |
 | S-M21 | i18n `strategy-translations.ts:193-252` (indicator object) | Add `futuresVariant` key + remove crypto-only descriptions for indicators that don't apply | MODIFY |
 | S-M22 | i18n `strategy-translations.ts:144-169` (riskControl object) | Add NQ-aware labels | MODIFY |
 | S-M23 | `api/strategy.go:172-256` (`handleCreateStrategy`) | Accept `coin_source_variant=futures` → set futures default in `NormalizeProductSchema` | MODIFY |
 | S-M24 | `api/strategy.go:478-489` (`handleGetDefaultStrategyConfig`) | Support `?variant=futures` query param → return futures defaults | MODIFY |
 | S-M25 | `api/strategy.go:491-538` (`handlePreviewPrompt`) | Accept `prompt_variant="futures"` in body | MODIFY |
 | S-M26 | `api/strategy.go:540-711` (`handleStrategyTestRun`) | Accept `prompt_variant="futures"` + route to BuildFuturesSystemPrompt | MODIFY |
-| S-M27 | `store/strategy.go:134-150` (`NormalizeProductSchema`) | Detect "NQ.c.0" format and preserve (don't append USDT); detect `coin_source_variant` discriminator | MODIFY |
+| S-M27 | `store/strategy.go:134-150` (`NormalizeProductSchema`) | Detect "NQ.c.0" format and preserve (don't append USD); detect `coin_source_variant` discriminator | MODIFY |
 | S-M28 | `store/strategy.go:842` (`GetDefaultStrategyConfig`) | Add `futures` variant → static + NQ.c.0 + disabled funding/OI | MODIFY |
 | S-M29 | `kernel/engine.go:254-?` (`GetCandidateCoins`) | Accept NQ symbols cleanly through normalization | MODIFY |
 | S-M30 | `kernel/engine_prompt.go:17-150` (`BuildSystemPrompt`) | Branch: `if variant=="futures" → BuildFuturesSystemPrompt(...)` | MODIFY |
@@ -6372,24 +6372,24 @@ Main chat area, message stream + input box, quickActions (6 commands), sidebar a
 
 | # | File:Line | Change | Type |
 |---|-----------|--------|------|
-| A-M1 | `MarketTicker.tsx:14` (hardcoded SYMBOLS) | Replace `['BTCUSDT','ETHUSDT','SOLUSDT']` with prop-driven or mode-detected list (include NQ when in futures mode) | MODIFY |
+
 | A-M2 | `WelcomeScreen.tsx:22-34` (suggestion cards) | Replace crypto-only suggestions OR add NQ variants | MODIFY |
 | A-M3 | `UserPreferencesPanel.tsx:130-132` (example placeholder) | Update example to mention futures or be generic | MODIFY |
 | A-M4 | `agent/tools.go:~432` (exchange_type enum) | Add `ninjatrader` to supported exchange list | MODIFY |
 | A-M5 | `agent/tools.go:~551` (`manage_exchange_config` tool description) | Document NinjaTrader CSV bridge setup steps the agent should know | MODIFY |
-| A-M6 | `agent/tools.go:~592` (`manage_model_config` tool description) | Note that claw402/blockrun providers are crypto-only; not required for NQ | MODIFY |
+| A-M6 | `agent/tools.go:~592` (`manage_model_config` tool description) | Note that crypto payment proxy/crypto grid feature providers are crypto-only; not required for NQ | MODIFY |
 | A-M7 | `agent/tools.go:~627` (`manage_strategy` tool: coin_source enum + static_coins example) | Add "NQ.c.0" to example; document that futures use static mode | MODIFY |
-| A-M8 | `agent/tools.go:~691` (`execute_trade` description + examples) | Replace "long BTC, short ETH" examples with neutral or NQ-inclusive ones | MODIFY |
+
 | A-M9 | `agent/tools.go:~756` (`get_market_snapshot` description) | Add asset-class guard: if NQ symbol, skip funding-rate / OI sections in response | MODIFY |
 | A-M10 | `agent/tools.go:~796` (`get_candidate_coins`) | Note as crypto-only; if asked for NQ context, suggest static-mode strategy template | MODIFY |
-| A-M11 | `agent/agent.go:62-72` (DefaultConfig WatchSymbols) | Make symbols configurable (env or per-user pref); default still BTC/ETH/SOL but extensible | MODIFY |
+
 | A-M12 | `agent/agent.go:547-633` (Chinese system prompt) | Add NQ / CME context section ("If user mentions NQ/MNQ/futures, use NinjaTrader bridge + Databento data; skip funding rate questions") | MODIFY |
 | A-M13 | `agent/agent.go:636-721` (English system prompt) | Mirror NQ awareness in English | MODIFY |
-| A-M14 | `agent/web.go:207` (`HandleKlines`) | Abstract from hardcoded Binance futures URL OR route NQ symbols to Databento adapter | MODIFY |
-| A-M15 | `agent/onboard.go:36+` (`needsSetup`) | Detect "NQ", "futures", "NinjaTrader" intent — skip claw402 wallet flow | MODIFY |
+| A-M14 | `agent/web.go:207` (`HandleKlines`) | Abstract from hardcoded crypto-exchange futures URL OR route NQ symbols to Databento adapter | MODIFY |
+| A-M15 | `agent/onboard.go:36+` (`needsSetup`) | Detect "NQ", "futures", "NinjaTrader" intent — skip crypto payment proxy payment flow | MODIFY |
 | A-M16 | `web/src/components/agent/SuggestionCards.tsx` (if exists, otherwise inline in AgentChatPage) | Add NQ suggestion when appropriate | MODIFY |
 | A-M17 | `web/src/components/agent/MarketTicker.tsx:22-52` (fetch interval + UI) | Render NQ ticker entries cleanly (avoid stripping `.c.0` suffix) | MODIFY |
-| A-M18 | Agent tool descriptions that mention "crypto" or "USDT" in tools.go | Soften: "crypto or futures symbol" | MODIFY |
+| A-M18 | Agent tool descriptions that mention "crypto" or "USD" in tools.go | Soften: "crypto or futures symbol" | MODIFY |
 
 ### DEFER to Plan 2 (7 — full Agent NQ rewrite, not blocking)
 
@@ -6397,9 +6397,9 @@ Main chat area, message stream + input box, quickActions (6 commands), sidebar a
 |---|------|---------------|
 | A-D1 | `agent/tools.go` `get_candidate_coins` full futures support | Requires new data source for NQ-equivalent ranking; not core to NQ trading |
 | A-D2 | `agent/tools.go` `manage_strategy` `coin_source` enum extension | Static mode covers NQ; deeper futures-source registry is post-launch |
-| A-D3 | `agent/model_provider_catalog.go:32-42` claw402 spec | Crypto payment unrelated to NQ; leave as-is |
-| A-D4 | `agent/model_provider_catalog.go:44-52` blockrun-base | Same |
-| A-D5 | `agent/model_provider_catalog.go:54-62` blockrun-sol | Same |
+| A-D3 | `agent/model_provider_catalog.go:32-42` crypto payment proxy spec | Crypto payment unrelated to NQ; leave as-is |
+| A-D4 | `agent/model_provider_catalog.go:44-52` crypto grid feature-base | Same |
+| A-D5 | `agent/model_provider_catalog.go:54-62` crypto grid feature-sol | Same |
 | A-D6 | `agent/memory.go` asset-class memory isolation | Risk: past crypto memory contaminates NQ reasoning. Add Plan 2 once we see real conflicts. |
 | A-D7 | Deep agent-driven strategy generation for futures | Requires more sophisticated agent persona work; Plan 2 |
 
@@ -6411,8 +6411,8 @@ When all 4 surfaces are at MODIFY-complete:
 
 - **Config:** User adds NinjaTrader exchange via Settings → Exchanges → Add → select NT → enter DataDir + InstrumentName + DefaultContractQty → save. Listed correctly. No API key required.
 - **Strategy:** User creates Strategy → SourceType="static" → StaticCoins=["NQ.c.0"] → PromptVariant="futures" → save. Editor hides funding/OI sections, shows NQ-aware risk control labels. Token estimate works. Test-run prompts contain NQ language.
-- **Dashboard:** User creates Trader linking NinjaTrader exchange + NQ strategy + their AI model → opens Trader Dashboard → sees positions in contracts (no USDT unit, no leverage column, no liquidation column) → Recent Decisions render with NQ symbols → equity curve displays cleanly. AgentBeta sidebar markets list includes NQ.
-- **AgentBeta:** User types "set up NinjaTrader for NQ trading" → agent suggests creating an exchange + strategy (does not push claw402 wallet) → user types "what's NQ doing today" → agent calls `get_market_price` (works) → "show NQ funding rate" → agent responds "futures don't have funding rate" gracefully.
+- **Dashboard:** User creates Trader linking NinjaTrader exchange + NQ strategy + their AI model → opens Trader Dashboard → sees positions in contracts (no crypto unit, no leverage column, no liquidation column) → Recent Decisions render with NQ symbols → equity curve displays cleanly. AgentBeta sidebar markets list includes NQ.
+- **AgentBeta:** User types "set up NinjaTrader for NQ trading" → agent suggests creating an exchange + strategy (does not push crypto payment proxy payment) → user types "what's NQ doing today" → agent calls `get_market_price` (works) → "show NQ funding rate" → agent responds "futures don't have funding rate" gracefully.
 
 ## Final scope (4-surface view)
 
@@ -6523,7 +6523,7 @@ go test ./trader/ninjatrader/...
 git commit -m "feat(nt): round entry/SL/TP to instrument tick size"
 ```
 
-## Task 18: CME session calendar + RTH/ETH gating
+
 
 **Why:** CME Globex hours: Sun 5pm CT → Fri 4pm CT, daily break 4-5pm CT. Holiday closures exist (Christmas, New Year, etc.). Trading outside these windows = rejected orders + risk in thin liquidity.
 
@@ -7595,12 +7595,12 @@ Recorded at file:line precision for surgical hotfix targeting.
 
 | Issue | File:Line | Scope | Plan |
 |---|---|---|---|
-| Chart has no Futures pill, falls back to BTC/HYPERLIQUID | `web/src/components/charts/ChartTabs.tsx:19,28-34,47-53` | ~200 LOC, 90min | 4.4 |
+
 | Backend `/api/klines` has no NT/Databento case (500s) | `api/handler_klines.go:48-78` | ~120 LOC, 60min | 4.5 |
-| Stat cards hardcode USDT label | `web/src/pages/TraderDashboardPage.tsx:520,529,537` | ~80 LOC, 45min | 4.3 |
+| Stat cards hardcode crypto-unit label | `web/src/pages/TraderDashboardPage.tsx:520,529,537` | ~80 LOC, 45min | 4.3 |
 | Leverage + Liquidation columns shown for NT (meaningless) | `web/src/pages/TraderDashboardPage.tsx:665,667,719,729` | (bundled in 4.3) | 4.3 |
-| Strategy Studio crypto-only (Coin Source AI500, BTC/ETH leverage, USDT grid) | `web/src/components/strategy/CoinSourceEditor.tsx`, `RiskControlEditor.tsx:80-127`, `GridConfigEditor.tsx:15-90` | ~400 LOC, 3hr | 4.6 |
-| AgentChat tickers hardcoded BTC/ETH/SOL | `web/src/components/agent/MarketTicker.tsx:14`, `WelcomeScreen.tsx:24-31` | ~60 LOC, 30min | 4.7 |
+
+
 | Settings exchange card shows API Key/Secret badges for NT | `web/src/pages/SettingsPage.tsx` | ~20 LOC, 20min | 4.13 |
 | `/api/symbols` returns 400 'Unsupported exchange' for NT | `api/handler_symbols.go` | (bundled in 4.5) | 4.5 |
 
@@ -7652,7 +7652,7 @@ Proposed order (lowest risk + highest visible value first):
 1. **Plan 4.9** — DecisionAudit React key warning
    ~6 LOC, 5min. Free hygiene. Removes console noise.
 
-2. **Plan 4.3** — USDT label + leverage/liq column hiding
+2. **Plan 4.3** — crypto-unit label + leverage/liq column hiding
    ~80 LOC, 45min. Cosmetic but immediate visual correctness.
 
 3. **Plan 4.13** — Settings exchange API Key badge for NT
@@ -7666,7 +7666,7 @@ Proposed order (lowest risk + highest visible value first):
 
 7. **Plan 4.4-build** — Go server bar-relay + C# AddOn bar subscription + frontend Futures pill + chart wiring. ~720 LOC across 3 languages. 3-4hr (likely with 1-2 compile hotfix cycles like Plan 1.5).
 
-8. **Plan 4.7** — AgentChat tickers BTC/ETH/SOL → MNQ default. ~60 LOC, 30min.
+
 
 9. **Plan 4.11** — NT trader real balance (no $50k mock). ~150 LOC + C# AddOn extension (new wire message: `account_balance`). 2hr.
 
@@ -7753,7 +7753,7 @@ Four new message types reuse Plan 1.5 framing (4-byte big-endian uint32 length p
     "period_type": "minute",
     "period_value": 1,
     "bars_back": 500,
-    "trading_hours": "CME US Index Futures ETH",
+
     "lookup_policy": "provider",
     "merge_policy": "merge_back_adjusted"
   }
@@ -7869,7 +7869,7 @@ SLO ceiling:                              200ms
 
 9. **`ErrorCode` enum only 7 documented members** (NoError, LogOnFailed, OrderRejected, UnableToCancelOrder, UnableToChangeOrder, UserAbort, Panic). NoData not in published list. Handler stringifies received value; anything != NoError is failure.
 
-10. **CME US Index Futures RTH template was updated in 2024** to remove the 15:15-15:30 CT halt. ETH recommended for MNQ algo trading (captures overnight session).
+
 
 (11-15: lock contention, memory leaks, dispose ordering, NT8 version differences, freeze-on-reconnect 10-15s — documented in research artifact.)
 
@@ -7964,9 +7964,9 @@ Real-world operator verification (NT8 + dashboard + live SIM signal flow + bar u
 
 ### Open questions (resolve before Plan 4.4-build dispatch)
 
-1. Trading hours default: ETH (recommended for algo) vs RTH
+
 2. MergePolicy default: BackAdjusted (chart-friendly) vs NonBackAdjusted
-3. `bars_back` default: 500 (≈ 8.3 ETH hours) vs 1000
+
 4. Multi-symbol overlay in Plan 4.4 or defer to 4.5
 5. JWT TTL for SSE query param (recommend 5 min, refreshable)
 6. Drop-newest backpressure policy confirmation
@@ -8004,12 +8004,12 @@ update (chronological by merge):
 | Tag | Date | PR | Summary |
 |---|---|---|---|
 | `v1.0-plan4-9` | 2026-05-26 | #19 | DecisionAudit React key warning fix (Dashboard Decisions tab console hygiene) |
-| `v1.0-plan4-3` | 2026-05-26 | #20 | USDT→USD labels + Leverage/Liquidation column hide on Dashboard StatCards + positions table |
+| `v1.0-plan4-3` | 2026-05-26 | #20 | USD→USD labels + Leverage/Liquidation column hide on Dashboard StatCards + positions table |
 | `v1.0-plan4-13` | 2026-05-26 | #21 | Settings → Exchanges NT card shows "TCP Bridge" badge instead of "API Key" / "Secret" |
-| `v1.0-plan4-3-1` | 2026-05-26 | #22 | EquityChart USDT residue cleanup (7 sites now use `currencyLabel`, wired from `isFutures` prop) |
-| `v1.0-plan4-7` | 2026-05-26 | #23 | AgentChat MarketTicker BTC/ETH/SOL → MNQ; WelcomeScreen prompts futures-aware |
+| `v1.0-plan4-3-1` | 2026-05-26 | #22 | EquityChart crypto-unit residue cleanup (7 sites now use `currencyLabel`, wired from `isFutures` prop) |
+
 | `(docs)` | 2026-05-26 | #24 | Vite HMR stale-module cache gotcha documented in `web/CLAUDE.md` |
-| `v1.0-plan4-7-1` | 2026-05-26 | #25 | UserPreferencesPanel placeholder MNQ-only (Plan 4.7 residue: "focusing on BTC and ETH" → "focusing on MNQ") |
+
 | `v1.0-plan1-5-6` | 2026-05-27 | #26 | TCP heartbeat write-deadline + concurrent-write mutex — fixes the 60s reconnect loop caught by 2026-05-27 comprehensive audit NEW-1 |
 | `v1.0-task12-symbols` | 2026-05-28 | #27 + #28 | Futures symbol normalization (Databento branch added in #27, then trimmed in #28 per the NT8 pivot); symbol fixes kept |
 | `(untagged merge)` | 2026-05-28 | #30 | Plan 1.5.7 — TCP read-deadline desync fix (Patch C). Merged to main at `6defdc84`; no release tag yet |
@@ -8086,14 +8086,14 @@ Plus the comprehensive 5-page UI inventory produced 2026-05-28 at
 
 ### N11 — Trader STARVED (not blocked by risk gate)
 
-> **SUPERSEDED 2026-05-28 → see `## N11 — RESOLVED (flip applied + cycle proven, 2026-05-28)`** (appended at end of doc). The N11 coin-source flip is applied and the decision cycle is proven end-to-end on SIM. The original `risk_check_passed=false` reasoning below is also corrected: that column is UNWIRED (never a rejection signal) — see `## 2026-05-28 — risk_check_passed is UNWIRED (not a rejection signal)`. The remaining WAIT decisions are the empty-market-data root cause, not ai500 starvation — see `## 2026-05-28 Root Cause — Kernel reads Binance klines, not NT8 BarCache`.
+> **SUPERSEDED 2026-05-28 → see `## N11 — RESOLVED (flip applied + cycle proven, 2026-05-28)`** (appended at end of doc). The N11 coin-source flip is applied and the decision cycle is proven end-to-end on SIM. The original `risk_check_passed=false` reasoning below is also corrected: that column is UNWIRED (never a rejection signal) — see `## 2026-05-28 — risk_check_passed is UNWIRED (not a rejection signal)`. The remaining WAIT decisions are the empty-market-data root cause, not crypto coin pool starvation — see `## 2026-05-28 Root Cause — Kernel reads crypto-exchange klines, not NT8 BarCache`.
 
 - **Symptom:** Trader `mnq sIM TEST` had `risk_check_passed=false`
   visible in DecisionAudit, and 5+ consecutive cycles showed "No
   candidate coins available, cycle skipped." Initial diagnosis:
   "risk gate is rejecting; flip the threshold."
 - **Actual root cause:** The active strategy was using a dead
-  `ai500` coin source (HTTP 402 from claw402 paywall). The cycle
+  `crypto coin pool` coin source (HTTP 402 from crypto payment proxy paywall). The cycle
   short-circuited at coin selection BEFORE running the AI brain or
   the risk gate. `risk_check_passed=false` was a GORM zero-value
   (the field was never set because that code path never ran), not
@@ -8105,7 +8105,7 @@ Plus the comprehensive 5-page UI inventory produced 2026-05-28 at
   the risk gate. That would have done nothing because the gate
   wasn't the blocker.
 - **Real fix path:** Data-fetch routing (the Plan 4.4 staged build).
-  Once decisions get bars from NT8 instead of dead AI500/Databento
+  Once decisions get bars from NT8 instead of dead crypto coin pool/Databento
   paths, the cycle reaches the AI brain and the risk gate, and
   trades can flow. Trader was STARVED of input data, not blocked
   by output gate.
@@ -8142,7 +8142,7 @@ both shipped work and the NT8 pivot.
   PROVEN flowing into BarCache; the C# bar-subscription work shipped
   under tag `v1.0-nt8-contract-resolver`. Moved to **Already SHIPPED**
   framing below. Remaining decision-side gap is NOT bar delivery —
-  it's the kernel reading the wrong source (Binance klines, not
+  it's the kernel reading the wrong source (crypto-exchange klines, not
   BarCache); see `## 2026-05-28 Root Cause` + `## 2026-05-28
   Reordered Fix Roadmap` (Stage 3).
 
@@ -8198,7 +8198,7 @@ both shipped work and the NT8 pivot.
   was a Databento backend route serving MNQ candles to the chart.
   Under the NT8 pivot, the chart consumes the same NT8 bar feed
   as decisions (Plan 4.4 Stage 4), so no separate klines route is
-  needed. The `/api/klines` silent Binance fallback for unknown
+  needed. The `/api/klines` silent crypto-exchange fallback for unknown
   exchanges (NEW-2 from 2026-05-27 audit) is still worth fixing
   as a hygiene cleanup (5 LOC: return 400 instead of silently
   defaulting), but not as part of the futures data path.
@@ -8239,9 +8239,9 @@ both shipped work and the NT8 pivot.
 ## Deferred / Open Items (refreshed 2026-05-28)
 
 ### Plan 4.4 open questions (gate detailed design of Stages 2 + 4)
-1. Trading hours default: ETH (recommended for algo) vs RTH
+
 2. MergePolicy default: BackAdjusted vs NonBackAdjusted
-3. `bars_back` default: 500 (~8.3 ETH hours) vs 1000
+
 4. Multi-symbol overlay in Plan 4.4 or defer to 4.5-equivalent
 5. JWT TTL for SSE query param (recommend 5 min, refreshable)
 6. Drop-newest backpressure policy confirmation
@@ -8612,18 +8612,18 @@ corrects the `risk_check_passed` interpretation, reorders the fix
 roadmap, reaffirms the Databento-dropped decision, and logs the new
 bugs the audit surfaced.
 
-## 2026-05-28 Root Cause — Kernel reads Binance klines, not NT8 BarCache
+## 2026-05-28 Root Cause — Kernel reads crypto-exchange klines, not NT8 BarCache
 
 > **SUPERSEDED 2026-05-31 (branch `feat/nt8-stage4-chart`) — the Stage 3
 > source-swap is DONE on this branch; the kernel reads NT8 BarCache for CME
-> futures, NEVER Binance/CoinAnk.** Verified live 2026-05-31 in
+> futures, NEVER crypto data feed.** Verified live 2026-05-31 in
 > `market/data.go`: `isFutures := IsCMEFuturesSymbol(symbol)` (`:197`) →
 > the futures branch reads `FuturesBarsProvider(symbol, tf, 200)` — the
 > BarCache (`:204-210`, with a "no NT8 bar provider wired; skipping" guard);
-> `getKlinesFromCoinAnk(..., "binance", ...)` is the **non-futures `else`
+> `getKlinesFromcrypto data feed(..., "crypto exchange", ...)` is the **non-futures `else`
 > branch only** (`:224`). The sibling 3m/4h helper does the same
 > (`:41-90`). **ONE SOURCE OF TRUTH CONFIRMED: chart + kernel both read NT8
-> BarCache.** The "reads Binance" diagnosis below was true on
+> BarCache.** The "reads crypto exchange" diagnosis below was true on
 > `origin/main @ 4f0843e5` (where Stage 3 had not landed); it is no longer
 > true on this branch. Kept verbatim below for history.
 
@@ -8635,11 +8635,11 @@ The two investigations converged on one cause:
   AI brain but on absent/mismatched data.
 
 Both trace to a single call. `buildTradingContext` →
-`getKlinesFromCoinAnk(symbol, tf, "binance", 200)` at
+`getKlinesFromcrypto data feed(symbol, tf, "crypto exchange", 200)` at
 **`market/data.go:192`**. The live log confirms it:
 
 ```
-Unknown exchange 'ninjatrader', defaulting to Binance for CoinAnk.
+Unknown exchange 'ninjatrader', defaulting to crypto exchange for crypto data feed.
 ```
 
 There are **NO `BarCache` references in `kernel/`, `market/`, or
@@ -8659,7 +8659,7 @@ single-call, no broad refactor.
 above — that post-mortem is preserved with a SUPERSEDED marker.)
 
 - **Flip applied:** Balanced Strategy (`d5412693`)
-  `ai_config.coin_source` flipped `ai500` → static `["NQ.c.0"]` at
+  `ai_config.coin_source` flipped `crypto coin pool` → static `["NQ.c.0"]` at
   runtime in `data/data.db` (gitignored). Pre-flip DB backed up to
   `/tmp/data.db.bak-pre-n11-flip`.
 - **Cycle PROVEN end-to-end on SIM:** decisions `#244` / `#245`,
@@ -8667,12 +8667,12 @@ above — that post-mortem is preserved with a SUPERSEDED marker.)
   (`ai_request_duration_ms` 11884 / 15379 ms, model `deepseek-v4-pro`),
   `action: wait`, `success: 1`, no order fired. **3/3 verify PASS.**
 - **Scope:** only Balanced changed; Conservative / Aggressive still
-  use `ai500`.
+  use `crypto coin pool`.
 - **NOT reseed-durable:** the flip lives in the runtime DB. A durable
   fix is either a `GetDefaultStrategyConfig` tweak OR a boot
   migration — **recommend folding into Stage 3's PR** (Stage 3 Step 2
   touches the kernel anyway).
-- **CORRECTION:** the WAIT decisions are **NOT** ai500 starvation
+- **CORRECTION:** the WAIT decisions are **NOT** crypto coin pool starvation
   (the flip worked — coins are now selected). They are the
   empty-market-data cause (see `## 2026-05-28 Root Cause` above). The
   flip removed the coin-selection short-circuit; Stage 3 removes the
@@ -8705,7 +8705,7 @@ rejection.)
 
 > **PARTIALLY SUPERSEDED 2026-05-30** (branch `feat/nt8-stage4-chart`):
 > the "Balance = hardcoded `$50k` MOCK", "decisions skip / unknown coin
-> source" (new strategies born broken on `ai500`), and the Binance/`BTCUSDT`
+
 > chart findings are RESOLVED — real per-account balance (`c4e2cb13`),
 > `static` MNQ coin_source + kernel guard (`abda753d`/`058e4a56`), and the
 > NT8 chart wiring (`273f85a3`). The crypto-prompt-served-to-futures and the
@@ -8721,29 +8721,29 @@ Per-page findings against the live app on `origin/main` @ `4f0843e5`:
     (`trader/ninjatrader/trader.go:156-163`,
     `trader/ninjatrader/tcp_trader.go:171-177`).
   - Positions empty (no fills yet).
-  - DecisionAudit all **WAIT** — empty data, NOT ai500 (the flip
+  - DecisionAudit all **WAIT** — empty data, NOT crypto coin pool (the flip
     worked; see Root Cause above).
   - Crypto "balanced" prompt served to the futures trader:
     `kernel/engine_prompt_futures.go` EXISTS but is **unused**
     (`auto_trader_loop.go:102` selects the crypto prompt).
 - **Strategy Studio.** Save/persist works and the store is
   futures-aware, BUT:
-  - symbol picker appends `USDT`;
-  - default config still `ai500`/`vlos` — **new strategies are
+  - symbol picker appends `USD`;
+  - default config still `crypto coin pool`/`vlos` — **new strategies are
     born broken** (`store/strategy.go:914`, `store/strategy.go:945`);
   - risk tiers are crypto;
   - the futures prompt is unreachable from the UI.
 - **Agent Chat.** Functional, BUT:
-  - market chart shows Binance `BTCUSDT`, not MNQ
+
     (`api/handler_klines.go:48-78`);
-  - MarketTicker empty (Binance proxy).
+  - MarketTicker empty (crypto-exchange proxy).
 
 **New bugs surfaced by the audit:**
 
 - account-state variadic bug
   (`api/exchange_account_state.go:327-339`) — falsely reports NT as
   `missing_credentials`. ~2 LOC.
-- `/api/klines` silent Binance fallback for unknown exchanges —
+- `/api/klines` silent crypto-exchange fallback for unknown exchanges —
   should return `400` instead of silently defaulting.
 - `/settings` → `/dashboard` auto-redirect (trace the cause). — RETRACTED
   2026-05-28: not a bug; SettingsPage has zero navigate calls, it was the
@@ -8774,7 +8774,7 @@ Reflects the audit + N11 convergence. Data plane unblocks everything.
   `feat/nt8-stage4-chart` (SUPERSEDED 2026-05-31).** The source-swap
   shipped: the futures branch now reads the NT8 BarCache via the injected
   `FuturesBarsProvider` (`market/data.go:197-210`), never
-  `getKlinesFromCoinAnk` (that is the non-futures `else` only, `:224`).
+  `getKlinesFromcrypto data feed` (that is the non-futures `else` only, `:224`).
   Verified live 2026-05-31. The N11 data-starvation cause is resolved by
   this same Stage-3 work being present on the branch. (Original target text
   below kept for history; the cited `market/data.go:192` line drifted —
@@ -8783,11 +8783,11 @@ Reflects the audit + N11 convergence. Data plane unblocks everything.
   `engine_prompt_futures.go` — tracked in the LOCKED Strategy build, Stage 1
   P2 TAB6), and (b) the reseed-durable default
   (`GetDefaultStrategyConfig`/boot migration — the phantom CLEAN SLATE note).
-  Original Stage-3 target: ~~Swap `getKlinesFromCoinAnk` →
+  Original Stage-3 target: ~~Swap `getKlinesFromcrypto data feed` →
   `BarCache().Get(symbol, tf)` in the futures branch
   (`market/data.go:192`).~~
 - **Stage 4 — FuturesChart + SSE relay** off the same NT8 feed →
-  fixes the Binance chart. **SUPERSEDED 2026-05-30:** the chart path is
+  fixes the crypto exchange chart. **SUPERSEDED 2026-05-30:** the chart path is
   `AdvancedChart` reading the NT8 BarCache via REST `/api/klines`
   (`273f85a3`), NOT `FuturesChart` (deleted) and NOT an SSE relay. See
   `## Current State (2026-05-30, session-verified)`.
@@ -8801,8 +8801,8 @@ Reflects the audit + N11 convergence. Data plane unblocks everything.
 ### 🟡 Quick wire-ups (zero-dependency)
 
 - account-state variadic fix (~2 LOC).
-- default-config off `ai500`.
-- `/api/klines` return `400` (instead of silent Binance fallback).
+- default-config off `crypto coin pool`.
+- `/api/klines` return `400` (instead of silent crypto-exchange fallback).
 - `/settings`→`/dashboard` redirect trace. — RETRACTED 2026-05-28: not a
   bug; SettingsPage has zero navigate calls, it was the shared Playwright
   browser driven by another agent.
@@ -8829,7 +8829,7 @@ that chain and can be batched in parallel:
   errors, onboarding error state.
 - 🟡 **safety/UX** — confirm dialogs on destructive Settings actions; the
   deferred security items (tokenless reset-password, reset-account
-  wipes-all); USDT-append symbol corruption.
+  wipes-all); crypto-suffix-append symbol corruption.
 - 🟢 **dead-code cleanup** — ~58KB dead charts + dead modals + dead schema
   fields + FAQ branches + PageNotFound decision (wire `*`→404 or delete).
 - 🔵 **crypto-residue → fold into Plan 4.6** — risk tiers, margin-mode,
@@ -8875,7 +8875,7 @@ user to regain access — integrity held.
 
 **DISCREPANCY (unresolved live).** Dashboard StatCards are **USD-correct**
 (`TraderDashboardPage.tsx:185-188`); a possibly-stale screenshot showed
-`USDT`. `EquityChart.tsx:45` is a **separate** `isFutures` unit-label path.
+`USD`. `EquityChart.tsx:45` is a **separate** `isFutures` unit-label path.
 **Action item:** confirm `isFutures` propagates into `EquityChart`.
 
 ## 2026-05-28 Depth Audit — Security Findings (DEFERRED, not yet fixed)
@@ -8917,21 +8917,21 @@ primary (NinjaTrader) broker.
 - **`account_name` silently dropped on exchange edit**
   (`handler_exchange.go` + `exchange.go:297-353`; dead `UpdateAccountName`
   uncalled).
-- **`hyperliquid_unified_account` flipped to `false` on edit** (form never
+- **`crypto DEX_unified_account` flipped to `false` on edit** (form never
   sends it; `exchange.go:308` writes unconditionally).
 - **`getTradersUsingExchange().join()` → `[object Object]` toast**
   (`AITradersPage.tsx:505`).
 - **`ensureRawKlines()` render-time setState anti-pattern**
   (`IndicatorEditor.tsx:106-115`) → spurious unsaved-changes flag;
   Raw-Klines checkbox disabled + always-on (dead control).
-- **"Fill Default" / default-config still writes the dead `VLOS`/`ai500`
+- **"Fill Default" / default-config still writes the dead `crypto data feed`/`crypto coin pool`
   key** (`IndicatorEditor.tsx:206-218`; `store/strategy.go` default) → new
   strategies born broken. (= the reseed-durable counterpart to the runtime
   N11 flip; **fold into Stage 3**.)
 - **5 of 9 risk fields are display-only "System enforced"**
   (`RiskControlEditor.tsx:54,158,180,244,280`); only 4 editable.
-- **Symbol inputs auto-append "USDT"** → corrupt CME roots (`"NQ"` →
-  `"NQUSDT"`, `"NQ.c.0"` → `"NQ.C.0USDT"`) in `CoinSourceEditor` + the chart
+- **Symbol inputs auto-append "USD"** → corrupt CME roots (`"NQ"` →
+  `"NQUSD"`, `"NQ.c.0"` → `"NQ.C.0USD"`) in `CoinSourceEditor` + the chart
   quick-input.
 - **BeginnerOnboarding broken error state** (no retry when `data===null`).
 - **Silent failures:** swallowed token-overflow `400` / missing-fields /
@@ -8947,10 +8947,10 @@ primary (NinjaTrader) broker.
 - `PageNotFound.tsx` — never imported; `*` route does `Navigate→/` so 404
   never renders (**decide:** wire `*`→404 or delete).
 - **Dead schema fields:** `external_data_sources`,
-  `use_hyper_all`/`_main`/`hyper_main_limit`,
+  `use_pool mode`/`_main`/`pool mode_limit`,
   `longer_timeframe`/`longer_count` (no UI).
 - `/faq` is an **orphan** (no nav link; URL-only); FAQ content **entirely
-  stale crypto** (Binance/HL/Docker/TA-Lib; zero NQ/MNQ/CME).
+  stale crypto** (crypto exchange/HL/Docker/TA-Lib; zero NQ/MNQ/CME).
 - **Dead footer social links** (`OFFICIAL_LINKS.*` empty → `href=""`
   reloads page).
 
@@ -9597,7 +9597,7 @@ gates ALREADY read the per-strategy config value with a system default — exact
 
 **FLOOR VERDICT (the critical safety question) — SAFE to expose.** Min Position Size has THREE
 independent guards: store-clamp ≥10, trader-gate ≥config, and the kernel reject-floor **12 general /
-60 BTC-ETH** (`kernel/engine_position.go:78-84`). A user value can therefore only ever **RAISE** the
+
 effective minimum — anything below the floor is still clamped/rejected (defense-in-depth). **No floor
 is removed; none is bypassed.** So min_position_size is exposed freely within [10,1000]. Max Positions
 has a genuine **ceiling of 3** (the const), so it is exposed within **[1,3]** (lets the user *tighten*
@@ -9611,7 +9611,7 @@ mirroring Chunk 1 (Min R/R was exposed within its `[1,10]` clamp range, NOT by r
   `Math.min(3, Math.max(1, …))` so the shown value always equals the saved value (no "typed 5, saved
   3" surprise). Label → `user-set · enforced (range 1–3)`.
 - Min Position Size: same treatment, input (`min=10 max=1000 step=1`) wired to
-  `updateField('min_position_size', …)`, onChange clamp `Math.min(1000, Math.max(10, …))`, USD/USDT
+  `updateField('min_position_size', …)`, onChange clamp `Math.min(1000, Math.max(10, …))`, USD/USD
   unit preserved. Label → `user-set · enforced`.
 - Mirrors the existing Min R/R input exactly (same className/style/fallback). Both boxes render on
   BOTH crypto + futures (outside the `!isFutures` gates) — correct, since the gate reads them on both.
@@ -9641,11 +9641,11 @@ zh/en/es) in `web/src/i18n/strategy-translations.ts`:
   `excludedCoins` "Excluded Coins"→"Excluded Symbols"; `excludedCoinsDesc` "These coins…"→"These
   symbols…".
 And in `web/src/components/strategy/CoinSourceEditor.tsx` (hardcoded): the max-symbols toast
-"…coins allowed"→"…symbols allowed"; the two add-symbol placeholders "BTC, ETH, SOL…" / "BTC, ETH,
-DOGE…" → "e.g. MNQ, ES, BTC, ETH" (shows both futures + crypto).
+
+
 **LEFT crypto wording (deliberate, verified):** the Leverage sliders + PVR tiles (crypto-only, already
-hidden on futures via `{!isFutures}`); `minPositionSizeDesc` USDT (already has a `…Futures` USD variant
-chosen by `isFutures`); the `USD/USDT` unit (already `isFutures`-conditional); the AI500 / OI / VLOS
+hidden on futures via `{!isFutures}`); `minPositionSizeDesc` USD (already has a `…Futures` USD variant
+chosen by `isFutures`); the `USD/USD` unit (already `isFutures`-conditional); the crypto coin pool / OI / crypto data feed
 data-source descriptions (genuinely crypto data providers — neutralizing them would falsely imply they
 serve futures); GridConfig symbol options (grid = a separate strategy type).
 
@@ -9910,7 +9910,7 @@ block untouched. tsc 0; `npm run build` ✓; Go untouched. SIM-only.
 
 FE/UX-only, additive:
 - **(1) Crypto data feeds hidden on futures.** CoinSourceEditor's Source-Type selector showed all 4
-  (Static / AI500 / OI-Top / OI-Low) on a futures strategy; AI500/OI are crypto-only feeds (would make
+  (Static / crypto coin pool / OI-Top / OI-Low) on a futures strategy; crypto coin pool/OI are crypto-only feeds (would make
   `GetCandidateCoins` fetch crypto data instead of trading MNQ). Now `isFutures = isCMEFutures(static_coins[0])`
   → `visibleSourceTypes` shows ONLY Static on futures, and `effectiveSourceType` (= 'static' on futures)
   drives the highlight + the option panels so the crypto panels also hide. **Display-only — saved data
@@ -9919,11 +9919,11 @@ FE/UX-only, additive:
   the trader-modal label). The config key `coin_source` / `static_coins` is UNCHANGED (the stored data
   shape — no migration; saved strategies load fine).
 - **(3) Sweep.** The Data Source labels were already neutralized (Custom Symbols / Add Symbol / symbols /
-  Excluded Symbols); the remaining crypto terms are the AI500/OI feed descriptions — genuinely crypto-only
+  Excluded Symbols); the remaining crypto terms are the crypto coin pool/OI feed descriptions — genuinely crypto-only
   feeds (now hidden on futures) — left as-is.
 
 **Verified LIVE (owner's session, no token forged):** futures (MNQ) → the selector shows only "Static"
-(1 button); flipping the symbol to BTC → all 4 reappear; section title "数据源 / Data Source" both; New
+
 Strategy's saved symbol still MNQ (no mutation). tsc 0; build ok; Go untouched. Crypto byte-identical;
 gates/guardrails/prompt/multi-account/P&L/chart-TZ untouched; live-account block untouched. SIM-only.
 
@@ -9955,8 +9955,8 @@ timeframe diagnosis. ADDITIVE; indicators/timeframes are prompt-data and NEVER g
   EXISTING MNQ strategies the same indicators, toggle EMA/RSI/ATR ON per-strategy in the Indicators UI
   (or a one-off, owner-approved DB update) — NOT auto-applied here (no mass-mutation).
 - **(C) VLOS + crypto-ranking feeds hidden on futures (FE — 0312a828).** The whole VLOS Data
-  Provider section (Quant Data / Quant OI / NetFlow + OI/NetFlow/Price ranking + the API Key field)
-  rendered but was inert on futures (crypto-only; disabled by default; claw402 402/404 on CME). Wrapped
+
+  rendered but was inert on futures (crypto-only; disabled by default; crypto payment proxy 402/404 on CME). Wrapped
   the section in `{!isFutures && (...)}` (the `isCMEFutures(static_coins[0])` → `isFuturesStrategy` flag,
   passed as `isFutures`). Futures → not rendered; crypto → renders exactly as before. FE-only display
   gate of already-inert controls; no saved-data mutation. (`git diff -w` shows the only change is the
@@ -9975,7 +9975,7 @@ live-account block untouched. SIM-only.
 
 ## 2026-06-07 — Open Interest honesty fix: hide + disable OI on futures (commit pending)
 
-Follow-up from the OI investigation. "Open Interest" on a futures strategy was the Binance crypto-perp
+Follow-up from the OI investigation. "Open Interest" on a futures strategy was the crypto exchange crypto-perp
 feed (`fapi/v1/openInterest`, market/data.go) → returns ZEROS for MNQ; the FE box was labeled "Futures
 open interest" (misleading); and the futures prompt LISTED OI as available, printed "Open Interest:
 Latest: 0.00 Average: 0.00", then said "ignore the empty OI" (a 3-way contradiction, one toggle away on
@@ -9992,7 +9992,7 @@ carries OHLCV only). Fix mirrors (and extends) the funding-rate treatment:
   Verified live: futures `/default-config` returns `enable_oi: false`.
 - **(3) Go fetch guard.** `getOpenInterestData` + `getFundingRate` now skip on futures in
   `GetWithTimeframes` (market/data.go, behind the in-scope `isFutures`). MNQ values were always {0,0}/0
-  from the failed Binance call — identical result, minus the wasted round-trip per cycle.
+  from the failed crypto-exchange call — identical result, minus the wasted round-trip per cycle.
 
 **Golden/tests:** kernel/engine_prompt_oi_test.go (OI availability line present IFF EnableOI — futures
 default drops it, crypto byte-identical); store/strategy_futures_indicators_test.go extended (futures
@@ -10251,7 +10251,7 @@ long one ends, skipped ticks are simply gone, and the cadence realigns — cycle
 concurrently. Trader-update reloads+restarts the running trader (handler_trader.go:698-708), so an
 interval edit applies live once the new binary is running.
 
-Cost note: at 1-minute the claw402 runway estimator (EstimateRunway, scanMinutes=1) correctly reports
+Cost note: at 1-minute the crypto payment proxy runway estimator (EstimateRunway, scanMinutes=1) correctly reports
 ~3× the daily AI cost vs 3-minute. SIM-only; gates/guardrails/live-account block untouched. Partner
 repo sync HELD — P5.3 is mid-flight in a concurrent session; sync at the next stable boundary.
 
@@ -10415,7 +10415,7 @@ selections. Replaced with a capability-driven design.
 (`provider/ninjatrader/tcp_server.go` `defaultAutoBarsTimeframes`), and an
 interval outside that set (probed: `2m`) returns 0 bars. So the genuine
 end-to-end capability is the fixed 14-set
-`1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w` (crypto/CoinAnk serves the same
+`1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w` (crypto/crypto data feed serves the same
 standard intervals). No new C#/wire work was needed — all 14 are already
 streamed; this was a de-cap + de-dup, not "enable arbitrary intervals."
 
