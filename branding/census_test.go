@@ -35,13 +35,13 @@ var censusTable = map[string][]censusEntry{
 		{count: 9, phase: "R5", reason: "transitional — re-pinned at final"},
 	},
 	"ninjascript/VLTraderTCPClient.cs": {
-		{count: 3, phase: "R5", reason: "transitional — re-pinned at final"},
+		{count: 0, phase: "final", reason: "zero-name ruling 2026-10-03: the three pre-rename folder mentions reworded to the pre-rename folder (owner: zero old-name tokens, no exceptions)"},
 	},
 }
 
 // Ceiling = sum of allowed counts at the R1b merge (1160) + 11 for the
 // e1dcc173 legacy job fixture (2026-10-02 #307).
-const censusCeiling = 14
+const censusCeiling = 11
 
 func TestCensusGuard(t *testing.T) {
 	tok := "no" + "fx" // runtime assembly — never the literal
