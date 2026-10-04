@@ -68,6 +68,7 @@ func ISBOrders(candle market.Kline, cfg Config) (long, short Intent) {
 	stopPts := (candle.High - candle.Low) + 2*cfg.ISBBufferPts
 	long = Intent{
 		Action: PlaceStopLimitEntry,
+		Setup:  "ISB",
 		Side:   SideLong,
 		Price:  candle.High + cfg.ISBBufferPts,
 		Limit:  candle.High + cfg.ISBBufferPts,
@@ -78,6 +79,7 @@ func ISBOrders(candle market.Kline, cfg Config) (long, short Intent) {
 	}
 	short = Intent{
 		Action: PlaceStopLimitEntry,
+		Setup:  "ISB",
 		Side:   SideShort,
 		Price:  candle.Low - cfg.ISBBufferPts,
 		Limit:  candle.Low - cfg.ISBBufferPts,
