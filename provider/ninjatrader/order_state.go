@@ -102,6 +102,7 @@ var orderStateLiveness = map[string]OrderLiveness{
 	"working":    LivenessLive,
 	"suspended":  LivenessLive,
 	"partfilled": LivenessLive,
+	"partial":    LivenessLive, // N3 P0: the AddOn emits "partial" (VLTraderTCPClient.cs:1545)
 
 	// held on this PC — NOT at the exchange
 	"triggerpending": LivenessLocal,
@@ -168,3 +169,24 @@ func (o NT8Order) IsHeldLocally() bool { return o.Liveness() == LivenessLocal }
 // IsStateReadable reports whether we understood the state at all. A false here
 // is the A24 case: log, count, and take no destructive branch.
 func (o NT8Order) IsStateReadable() bool { return o.Liveness() != LivenessUnknown }
+
+// Terminal broker-order OUTCOMES (N7 part 5, CTO release #4). One table in the
+// broker-state package: a terminal order either FILLED (a position exists) or
+// left UNFILLED (cancelled / rejected / expired). Callers ask the order, never
+// re-type the state names.
+const (
+	OrderOutcomeFilled   = "filled"
+	OrderOutcomeUnfilled = "unfilled"
+)
+
+var orderTerminalOutcome = map[string]string{
+	"filled":         OrderOutcomeFilled,
+	"partfilleddone": OrderOutcomeFilled,
+	"cancelled":      OrderOutcomeUnfilled,
+	"canceled":       OrderOutcomeUnfilled,
+	"rejected":       OrderOutcomeUnfilled,
+	"expired":        OrderOutcomeUnfilled,
+}
+
+// TerminalOutcome is "filled", "unfilled", or "" for a non-terminal/unknown state.
+func (o NT8Order) TerminalOutcome() string { return orderTerminalOutcome[normalizeOrderState(o.State)] }
