@@ -31,7 +31,7 @@ permissions:
 
 env:
   # PARTNER CARVE-OUT (sync PR): fail-closed default is THIS (partner) repo.
-  # Changeable by the owner in ONE line. Never the nofx source repo —
+  # Changeable by the owner in ONE line. Never the owner's source repo —
   # deploy/release_contract_test.go fails if that name appears here.
   RELEASE_REPO: johnwick2921-cyber/vlautoagenttraderv1
 
