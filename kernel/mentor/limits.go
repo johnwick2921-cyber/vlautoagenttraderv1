@@ -69,10 +69,11 @@ type Limits struct {
 
 // Leg is one G1 leg per side.
 type Leg struct {
-	Side    Side
-	Extreme float64 // the old extreme the leg runs to (the prior high/low)
-	Entries int     // fills registered in this leg
-	Stopped bool    // a stop-out inside the leg closed it
+	Side      Side
+	Extreme   float64 // the old extreme the leg runs to (the prior high/low)
+	Entries   int     // fills registered in this leg
+	PHLFilled bool    // a PHL/PLH (not an ISB) already filled in this leg
+	Stopped   bool    // a stop-out inside the leg closed it
 }
 
 // Place is the G2 loss box at one place, keyed by the setup's place (R-b).
@@ -103,6 +104,7 @@ type pendOrder struct {
 	target float64
 	expiry int64
 	isISB  bool
+	armID  string  // the intent's ArmID — a CancelArm drops this pend (X15-5)
 	legExt float64 // G1 extreme carried from placement; 0 = none
 	anchor float64 // G2 loss price (level / EMA / box midpoint); 0 = none
 	place  string  // G2 place key (AnchorKey); "" = use the quarter-tick
@@ -211,15 +213,13 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 				l.refuse("orphan_not_location") // K2: not a location
 				continue
 			}
-			if pid := placeID(ref.key, ref.anchor); pid != "" {
-				if p := l.Places[pid]; p != nil && (p.Blocked || p.OffDay) {
-					if p.OffDay {
-						l.refuse("loss_box_off_day")
-					} else {
-						l.refuse("loss_box_blocked")
-					}
-					continue // G2: the place is boxed after a loss
+			if p := l.blockedPlace(ref, in.Price); p != nil {
+				if p.OffDay {
+					l.refuse("loss_box_off_day")
+				} else {
+					l.refuse("loss_box_blocked")
 				}
+				continue // G2: the place is boxed after a loss
 			}
 			kept = append(kept, in)
 			l.pend = append(l.pend, &pendOrder{
@@ -227,7 +227,8 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 				entry:  in.Price,
 				stop:   in.Stop,
 				target: in.Target,
-				expiry: in.ExpiryMs,
+				expiry: pendExpiry(in, now),
+				armID:  in.ArmID,
 				legExt: ext,
 				anchor: ref.anchor,
 				place:  ref.key,
@@ -243,16 +244,36 @@ func (l *Limits) Apply(out []Intent, prev, cur market.Kline, now int64, levels [
 					continue
 				}
 			}
+			// D2-17 (D4.2-13): an ISB participates in G2 — a blocked band
+			// refuses the entry, and the ISB's own stop-out boxes its
+			// entry-to-stop band.
+			if p := l.blockedPlace(placeRef{}, in.Price); p != nil {
+				if p.OffDay {
+					l.refuse("loss_box_off_day")
+				} else {
+					l.refuse("loss_box_blocked")
+				}
+				continue
+			}
 			kept = append(kept, in)
 			l.pend = append(l.pend, &pendOrder{
 				side:   in.Side,
 				entry:  in.Price,
 				stop:   in.Stop,
 				target: in.Target,
-				expiry: in.ExpiryMs,
+				expiry: pendExpiry(in, now),
 				isISB:  true,
+				armID:  in.ArmID,
+				anchor: in.Price, // the ISB band: the loss is boxed by price band
+				place:  isbBandKey(in.Price, in.Stop),
+				box:    true,
+				lo:     math.Min(in.Price, in.Stop),
+				hi:     math.Max(in.Price, in.Stop),
 			})
 		default:
+			if in.Action == CancelArm {
+				l.dropPend(in.ArmID) // X15-5: a cancelled order must never phantom-fill
+			}
 			kept = append(kept, in) // cancels, extends, moves — never filtered
 		}
 	}
@@ -291,7 +312,7 @@ func (l *Limits) simulate(cur market.Kline, now int64, levels []Level) {
 			// Entry touched = filled. A stop-out on the SAME candle is a
 			// loss (the trade existed for the span of the candle) — the
 			// open-trade loop below catches it.
-			l.registerLeg(p.side, p.legExt, levels, p.entry)
+			l.registerLeg(p.side, p.legExt, levels, p.entry, p.isISB)
 			wave := cur.Low
 			if p.side == SideShort {
 				wave = cur.High
@@ -312,6 +333,13 @@ func (l *Limits) simulate(cur market.Kline, now int64, levels []Level) {
 		}
 		if p.expiry != 0 && now >= p.expiry {
 			continue // never touched before the expiry — NOT a loss (case b)
+		}
+		if p.expiry == 0 {
+			// X15-5: a zero-expiry level/box order rests exactly ONE candle
+			// live (the trader's N12 next-candle default, mentor_tick.go);
+			// here it has just missed that candle, so it expires — it must
+			// not sit forever and phantom-fill on a later candle.
+			continue
 		}
 		keepP = append(keepP, p)
 	}
@@ -346,8 +374,10 @@ func (l *Limits) simulate(cur market.Kline, now int64, levels []Level) {
 // registerLeg records a FILL in the side's leg, creating the leg at the
 // extreme it runs to. ext 0 falls back to the nearest old extreme beyond
 // the entry (the replay's most-recent swing fallback); no extreme -> no leg
-// (the replay skips registration too).
-func (l *Limits) registerLeg(side Side, ext float64, levels []Level, entry float64) {
+// (the replay skips registration too). isISB distinguishes the fill kind
+// (X15-4): a PHL/PLH fill stamps PHLFilled so a 2nd PHL/PLH is refused
+// while an ISB-then-PHL is allowed.
+func (l *Limits) registerLeg(side Side, ext float64, levels []Level, entry float64, isISB bool) {
 	if ext == 0 {
 		ext = nearestOldExtreme(levels, entry, side)
 	}
@@ -360,6 +390,9 @@ func (l *Limits) registerLeg(side Side, ext float64, levels []Level, entry float
 		l.setLeg(side, leg)
 	}
 	leg.Entries++
+	if !isISB {
+		leg.PHLFilled = true
+	}
 }
 
 // loss registers a stop-out: one loss at the place (G2) and the leg is
@@ -412,10 +445,39 @@ func (l *Limits) legVerdict(side Side, isISB bool) string {
 		}
 		return ""
 	}
-	if leg.Entries >= 1 {
-		return "leg_budget_second_phl" // the PHL is only ever the FIRST entry
+	if leg.PHLFilled {
+		return "leg_budget_second_phl" // at most ONE PHL/PLH per leg (X15-4)
 	}
 	return ""
+}
+
+// dropPend removes every still-pending order with the given ArmID. A
+// CancelArm from the evaluator (level through-the-level / window-end, ISB
+// 4th-candle) must remove the simulated order so it never phantom-fills
+// later and spends the budget (X15-5). Already-filled orders live in `open`
+// and are NOT undone — a fill that happened is real.
+func (l *Limits) dropPend(armID string) {
+	if armID == "" {
+		return
+	}
+	keep := l.pend[:0]
+	for _, p := range l.pend {
+		if p.armID == armID {
+			continue
+		}
+		keep = append(keep, p)
+	}
+	l.pend = keep
+}
+
+// DropArm removes the still-pending simulated order for an ArmID (X-07): the
+// TRADER calls it when it refuses an emitted entry intent (R8 25-pt ceiling,
+// window, done-after-win, news, no-chase, N4, MENTOR_PLACE off), so a
+// trader-side refusal never phantom-fills on a later candle and spends the G1
+// leg budget or opens a G2 loss box. Already-filled orders live in `open` and
+// are NOT undone — a fill that happened is real.
+func (l *Limits) DropArm(armID string) {
+	l.dropPend(armID)
 }
 
 func (l *Limits) leg(side Side) *Leg {
@@ -472,6 +534,51 @@ func placeID(anchorKey string, anchor float64) string {
 		return placeKey(anchor)
 	}
 	return ""
+}
+
+// isbBandKey is the G2 registry key for an ISB loss: its entry-to-stop price
+// band (D2-17, D4.2-13) — two ISB losses in the SAME band turn that band off
+// for the day, like any other place.
+func isbBandKey(entry, stop float64) string {
+	return "isb:" + placeKey(math.Min(entry, stop)) + ":" + placeKey(math.Max(entry, stop))
+}
+
+// blockedPlace is the G2 placement check (D2-17): an entry is refused when its
+// place is boxed — by the EXACT place key, or by PRICE BAND (the entry lies
+// inside the loss's [wave, swing] area / ISB band), so a different level a few
+// points away inside the same area is also refused, both sides.
+func (l *Limits) blockedPlace(ref placeRef, price float64) *Place {
+	if pid := placeID(ref.key, ref.anchor); pid != "" {
+		if p := l.Places[pid]; p != nil && (p.Blocked || p.OffDay) {
+			return p
+		}
+	}
+	for _, p := range l.Places {
+		if !p.Blocked && !p.OffDay {
+			continue
+		}
+		if p.insideBand(price) {
+			return p
+		}
+	}
+	return nil
+}
+
+// insideBand reports whether a price lies inside the place's blocked area —
+// the box edges for a box place, else the [wave, swing] structural band of a
+// level/EMA loss (D2-17, D4.2-13).
+func (p *Place) insideBand(price float64) bool {
+	if p.Box {
+		return price >= p.Lo && price <= p.Hi
+	}
+	if p.Swing == 0 || p.Wave == 0 {
+		return false // no structural band — the exact key is the only match
+	}
+	lo, hi := p.Swing, p.Wave
+	if lo > hi {
+		lo, hi = hi, lo
+	}
+	return price >= lo && price <= hi
 }
 
 // placeRef is the normalized G2 place for one entry.

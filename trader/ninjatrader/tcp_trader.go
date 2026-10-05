@@ -47,8 +47,19 @@ type TCPTrader struct {
 
 	mu       sync.Mutex
 	stopLoss map[string]float64 // key: "<symbol>:<side>"
-	takePrft map[string]float64
-	guard    *orderGuard // B3: dupe-drop + rate breaker at the order-submission chokepoint
+	// stopBySignal is the per-signal live stop for the mentor exit-drive's
+	// signal-keyed moves (two legs of one mentor intent carry two signal ids on
+	// the SAME side, so the side-keyed stopLoss cannot guard both). Keyed by
+	// signal id; read first, with stopLoss as the fallback. Guarded by mu.
+	stopBySignal map[string]float64
+	// splitBySignal records the split that actually went on the wire for an
+	// entry signal (leg 1 qty + its tick-rounded TP) — after the far-side
+	// build gate and the leg1_tp check, which can both drop it. The mentor
+	// exit drive registers two legs ONLY from this record (SentSplit), so it
+	// never addresses a leg 2 the AddOn was never told to build.
+	splitBySignal map[string]SentSplit
+	takePrft      map[string]float64
+	guard         *orderGuard // B3: dupe-drop + rate breaker at the order-submission chokepoint
 	// openOrdersSrc (class 33) — the ledger-backed working-order source for
 	// GetOpenOrders (flat-gate leg 4). nil = unwired = the leg FAILS.
 	openOrdersSrc func(symbol string) ([]types.OpenOrder, error)
@@ -773,8 +784,8 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 // same bracket-on-fill contract as limits. stopPx is the TRIGGER price (the
 // tick offset is applied by the caller). Back-compat law: the frame is
 // additive JSON — only send it when the far-side AddOn has proven it.
-func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error) {
-	return t.placeStopEntry(symbol, side, quantity, stopPx, sl, tp, false, beforeSend...)
+func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, leg1Qty int, leg1TP float64, beforeSend ...func(string) error) (string, error) {
+	return t.placeStopEntry(symbol, side, quantity, stopPx, sl, tp, false, leg1Qty, leg1TP, beforeSend...)
 }
 
 // PlaceStopEntryWithLimit (MENTOR STOP-LIMIT, PR B 2026-10-03) is PlaceStopEntry
@@ -784,11 +795,11 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 // the order's expiry (expiry_ms, authored by the evaluator's intent) cancels it
 // unfilled when it lapses. Fail-closed: refused when the far side does not
 // prove MinAddonBuildStopLimit (an older AddOn would build StopMarket).
-func (t *TCPTrader) PlaceStopEntryWithLimit(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error) {
-	return t.placeStopEntry(symbol, side, quantity, stopPx, sl, tp, true, beforeSend...)
+func (t *TCPTrader) PlaceStopEntryWithLimit(symbol, side string, quantity float64, stopPx, sl, tp float64, leg1Qty int, leg1TP float64, beforeSend ...func(string) error) (string, error) {
+	return t.placeStopEntry(symbol, side, quantity, stopPx, sl, tp, true, leg1Qty, leg1TP, beforeSend...)
 }
 
-func (t *TCPTrader) placeStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, stopLimit bool, beforeSend ...func(string) error) (string, error) {
+func (t *TCPTrader) placeStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, stopLimit bool, leg1Qty int, leg1TP float64, beforeSend ...func(string) error) (string, error) {
 	// CAPABILITY HANDSHAKE — the far-side AddOn must PROVE, by a build_id that
 	// arrived on the wire, that it will BUILD this order correctly. Two distinct
 	// failures live behind this one gate:
@@ -856,6 +867,24 @@ func (t *TCPTrader) placeStopEntry(symbol, side string, quantity float64, stopPx
 	if rerr != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: refusing stop-entry %s on %s: %w", side, symbol, rerr)
 	}
+	// REVIEW-353: only send the split when the far side proves the two-OCO-pair
+	// build. An older AddOn ignores leg1_qty → single bracket, byte-identical
+	// (fail-closed: the split degrades, never half-applies).
+	if leg1Qty > 0 && !ntwire.FarSideProven(t.server.FarSideBuildID(), ntwire.MinAddonBuildSplitLegs) {
+		leg1Qty, leg1TP = 0, 0
+	}
+	// leg1_tp gets the SAME wire treatment as the trade target: nearest tick,
+	// and it must sit on the profit side of the entry. A leg-1 TP that fails
+	// either drops the split (single bracket) — never a leg 1 resting at or
+	// through the entry.
+	if leg1Qty > 0 {
+		var why string
+		leg1TP, why = wireLeg1TP(side, entry, leg1TP, tick)
+		if why != "" {
+			logger.Warnf("⚠️ stop-entry %s %s: split dropped — %s; sending the single bracket", side, symbol, why)
+			leg1Qty, leg1TP = 0, 0
+		}
+	}
 	tid := t.traderID
 	signalID := uuid.NewString()
 	payload := ntwire.SignalPayload{
@@ -872,6 +901,10 @@ func (t *TCPTrader) placeStopEntry(symbol, side string, quantity float64, stopPx
 		OrderType:  "stop_entry",
 		StopPrice:  entry,
 		StopLimit:  stopLimit,
+		// REVIEW-353: the split rides the ONE frame — leg1_qty + leg1_tp tell
+		// the AddOn to place TWO OCO pairs on the one fill (0 = single bracket).
+		Leg1Qty: leg1Qty,
+		Leg1TP:  leg1TP,
 	}
 	if err := assertBoundAccount("stop-entry", symbol, payload.Account, t.boundAccount); err != nil {
 		logger.Errorf("🚨 %v — REFUSING to submit stop-entry", err)
@@ -895,7 +928,56 @@ func (t *TCPTrader) placeStopEntry(symbol, side string, quantity float64, stopPx
 	if err := serr; err != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: send stop-entry signal: %w", err)
 	}
+	if leg1Qty > 0 {
+		t.mu.Lock()
+		if t.splitBySignal == nil {
+			t.splitBySignal = map[string]SentSplit{}
+		}
+		t.splitBySignal[signalID] = SentSplit{Leg1Qty: leg1Qty, Leg1TP: leg1TP}
+		t.mu.Unlock()
+	}
 	return signalID, nil
+}
+
+// SentSplit is the split one entry frame actually carried (see splitBySignal).
+type SentSplit struct {
+	Leg1Qty int
+	Leg1TP  float64
+}
+
+// SplitSentFor returns the split the entry frame for signalID carried; ok=false
+// = a single bracket (or a frame this process did not send — the record is
+// memory-only, so after a restart the caller falls back to the single-leg view).
+func (t *TCPTrader) SplitSentFor(signalID string) (SentSplit, bool) {
+	if t == nil || signalID == "" {
+		return SentSplit{}, false
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	s, ok := t.splitBySignal[signalID]
+	return s, ok && s.Leg1Qty > 0
+}
+
+// wireLeg1TP rounds leg 1's TP to the nearest tick and checks it sits on the
+// profit side of the (wire) entry. why != "" = refuse the split.
+func wireLeg1TP(side string, entry, leg1TP, tick float64) (float64, string) {
+	if leg1TP <= 0 {
+		return 0, "leg1_tp is not set"
+	}
+	tp := RoundToTick(leg1TP, tick)
+	switch strings.ToLower(strings.TrimSpace(side)) {
+	case "long":
+		if tp <= entry {
+			return 0, fmt.Sprintf("leg1_tp %.2f is not above the long entry %.2f", tp, entry)
+		}
+	case "short":
+		if tp >= entry {
+			return 0, fmt.Sprintf("leg1_tp %.2f is not below the short entry %.2f", tp, entry)
+		}
+	default:
+		return 0, fmt.Sprintf("unknown side %q", side)
+	}
+	return tp, ""
 }
 
 // CancelOrder REQUESTS a cancel. ITS RETURN MEANS SENT, NOT CONFIRMED.
@@ -922,6 +1004,41 @@ func (t *TCPTrader) CancelOrder(signalID string) error {
 	return t.server.SendCancelOrder(ntwire.CancelOrderPayload{
 		Symbol: t.symbol, SignalID: signalID, Account: t.boundAccount, TraderID: t.traderID,
 	})
+}
+
+// ForgetPending clears the queued-entry marker for a signal whose entry has
+// SETTLED CANCELLED — a confirmed cancel, never a cancel request. It is the N7
+// counterpart to the settlement pass: t.pending is otherwise cleared only by a
+// fill or a rejection (handleFillInbound) or the 45s stale sweep
+// (reconcilePositions), so a cancelled entry would hold the one-entry latch as
+// "queued_entry" and — via the recent-send stamp — "recent_send" for up to 60s,
+// and the entry that follows the cancel would be refused and lost.
+//
+// It also drops the latch's recent-send stamp for this account|symbol: a
+// confirmed cancel is not a duplicate-send risk, so the EntryLatchRecentWindow
+// must not hold the next entry. The key lock serializes this against
+// acquireEntryLatch, so the stamp can never be cleared in the gap between a
+// concurrent entry's check and its stamp. Unconfirmed cancels are untouched —
+// the protections stay fail-closed.
+func (t *TCPTrader) ForgetPending(signalID string) {
+	if signalID == "" {
+		return
+	}
+	ls := latchFor(t.server)
+	key := t.latchKey()
+	m := ls.keyLock(key)
+	m.Lock()
+	defer m.Unlock()
+	t.pendingMu.Lock()
+	delete(t.pending, signalID)
+	delete(t.pendingAt, signalID)
+	t.pendingMu.Unlock()
+	t.mu.Lock()
+	if t.lastEntrySignalID == signalID {
+		t.lastEntrySignalID = ""
+	}
+	t.mu.Unlock()
+	ls.clearSent(key)
 }
 
 // ModifyBracket (PHASE 2 armed orders) modifies the live bracket SL/TP in place.
@@ -1067,6 +1184,72 @@ func (t *TCPTrader) MoveStopToBreakeven(side string, newStop float64) error {
 	// Track the new stop so a subsequent move is checked against it.
 	t.mu.Lock()
 	t.stopLoss[key] = newStop
+	t.mu.Unlock()
+	return nil
+}
+
+// MoveStopForSignal (mentor exit-drive, DS-107) asks the AddOn to move the
+// resting stop for an EXPLICIT signal id to newStop, tick-rounded, WITHOUT
+// closing the position — the SAME move_stop frame MoveStopToBreakeven sends.
+// The side-keyed MoveStopToBreakeven resolves the LAST entry's signal id via
+// resolveEntrySignalID, which cannot address two legs of one mentor intent
+// (leg 1 and the runner share a side but carry distinct signal ids). No C#
+// change: the AddOn's HandleMoveStop reads only signal_id + new_stop_loss.
+// The B1 stop-widen ban still applies — against the per-signal live stop when
+// known, else the side-keyed one — so a signal-keyed move can never widen.
+func (t *TCPTrader) MoveStopForSignal(signalID, side string, newStop float64) error {
+	return t.MoveStopForSignalLeg(signalID, side, newStop, 0)
+}
+
+// MoveStopForSignalLeg is MoveStopForSignal for ONE leg of a split bracket:
+// leg 1 (-sl) or leg 2 (-sl2) under the one signal id; 0 = every leg (the
+// single bracket). The widen ban is judged per leg — both legs share the
+// signal id, so a signal-only key would let one leg's stop judge the other's.
+func (t *TCPTrader) MoveStopForSignalLeg(signalID, side string, newStop float64, leg int) error {
+	if strings.TrimSpace(signalID) == "" {
+		return fmt.Errorf("ninjatrader/tcp: move_stop needs a signal id")
+	}
+	if leg < 0 || leg > 2 {
+		return fmt.Errorf("ninjatrader/tcp: move_stop leg %d is not 0, 1 or 2", leg)
+	}
+	stopKey := signalID
+	if leg > 0 {
+		stopKey = fmt.Sprintf("%s#leg%d", signalID, leg)
+	}
+	t.mu.Lock()
+	cur := 0.0
+	if t.stopBySignal != nil {
+		cur = t.stopBySignal[stopKey]
+	}
+	tid := t.traderID
+	t.mu.Unlock()
+	newStop = RoundToTick(newStop, InstrumentTickSize(t.symbol))
+	// B1 stop-widen ban, PER SIGNAL: two legs of one mentor intent carry two
+	// signal ids on the same side, so the side-keyed stopLoss must never be the
+	// reference here (it would cross-contaminate leg 1's stop into the runner's
+	// widen check). No per-signal record → nothing to compare against (the
+	// mentor loop's mentorNeverWiden already guarded the move).
+	if cur > 0 && stopWouldWiden(side, cur, newStop) {
+		logger.Warnf("⛔ stop-widen REFUSED: %s %s signal %s new stop %.2f would WIDEN from %.2f (risk-increasing) — NOT sent.",
+			t.symbol, side, signalID, newStop, cur)
+		return fmt.Errorf("ninjatrader/tcp: stop-widen ban — %s %s signal %s new stop %.2f widens from %.2f", t.symbol, side, signalID, newStop, cur)
+	}
+	if err := t.server.SendMoveStop(ntwire.MoveStopPayload{
+		Symbol:      t.symbol,
+		SignalID:    signalID,
+		NewStopLoss: newStop,
+		Timestamp:   time.Now().UTC().Format(time.RFC3339),
+		Leg:         leg,
+		Account:     t.boundAccount,
+		TraderID:    tid,
+	}); err != nil {
+		return err
+	}
+	t.mu.Lock()
+	if t.stopBySignal == nil {
+		t.stopBySignal = map[string]float64{}
+	}
+	t.stopBySignal[stopKey] = newStop
 	t.mu.Unlock()
 	return nil
 }

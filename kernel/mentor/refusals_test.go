@@ -18,21 +18,22 @@ func TestEveryRefusalNamesReason(t *testing.T) {
 		return Intent{Action: PlaceStopEntry, Side: side, Price: price, Reason: "test"}
 	}
 
-	// ORB stages.
+	// ORB stages (post-open: 09:00 CT, so the pre-market exemption is off).
+	postOpen := auditMs(2026, 9, 15, 9, 0, 0)
 	orb := ORB{Day: 0, High: 90, Low: 85, Drawn: true, Escaped: SideLong}
-	_, r := orbGateFilter([]Intent{entry(SideShort, 92)}, orb, cfg)
+	_, r := orbGateFilter([]Intent{entry(SideShort, 92)}, orb, postOpen, cfg)
 	if len(r) != 1 || r[0] != "orb_wrong_side" {
 		t.Fatalf("wrong-side ORB refusal = %v", r)
 	}
-	_, r = orbGateFilter([]Intent{entry(SideLong, 88)}, orb, cfg)
+	_, r = orbGateFilter([]Intent{entry(SideLong, 88)}, orb, postOpen, cfg)
 	if len(r) != 1 || r[0] != "orb_inside" {
 		t.Fatalf("inside ORB refusal = %v", r)
 	}
-	_, r = orbGateFilter([]Intent{entry(SideLong, 92)}, ORB{Day: 0, Drawn: false}, cfg)
+	_, r = orbGateFilter([]Intent{entry(SideLong, 92)}, ORB{Day: 0, Drawn: false}, postOpen, cfg)
 	if len(r) != 1 || r[0] != "orb_not_drawn" {
 		t.Fatalf("not-drawn ORB refusal = %v", r)
 	}
-	_, r = orbGateFilter([]Intent{entry(SideLong, 92)}, ORB{Day: 0, High: 90, Low: 85, Drawn: true}, cfg)
+	_, r = orbGateFilter([]Intent{entry(SideLong, 92)}, ORB{Day: 0, High: 90, Low: 85, Drawn: true}, postOpen, cfg)
 	if len(r) != 1 || r[0] != "orb_not_escaped" {
 		t.Fatalf("not-escaped ORB refusal = %v", r)
 	}
@@ -50,8 +51,9 @@ func TestEveryRefusalNamesReason(t *testing.T) {
 		t.Fatalf("fail-closed refusal = %v", r)
 	}
 
-	// G1 leg budget: a filled leg refuses the second PHL.
-	l := &Limits{Long: &Leg{Side: SideLong, Extreme: 120, Entries: 1}}
+	// G1 leg budget: a leg whose PHL already filled refuses the second PHL
+	// (X15-4: an ISB-filled leg does NOT — only the PHL fill does).
+	l := &Limits{Long: &Leg{Side: SideLong, Extreme: 120, Entries: 1, PHLFilled: true}}
 	out := l.Apply([]Intent{entry(SideLong, 100)}, market.Kline{}, market.Kline{}, 0,
 		[]Level{{Key: "k", Kind: KindKeyLevel, Price: 95}}, cfg)
 	if len(out) != 0 || l.Refusals["leg_budget_second_phl"] != 1 {
@@ -84,6 +86,7 @@ func TestEveryRefusalNamesReason(t *testing.T) {
 func TestRefusalLedgerInTick(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Enabled = true
+	cfg.RoomMultiple = 0 // item 25: this fixture pins the seed fail-closed ledger, not the room rule
 	e := New(cfg)
 	e.State.Trigger = TriggerLine{Dir: SideLong, Price: 90}
 	e.State.HTF = HTF{FourH: TriggerLine{Dir: SideLong, Price: 90}}

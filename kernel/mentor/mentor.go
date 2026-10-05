@@ -9,7 +9,11 @@
 // off nothing in this package is consulted (L4: byte-identical bot).
 package mentor
 
-import "vl/market"
+import (
+	"strings"
+
+	"vl/market"
+)
 
 // Action is what the evaluator asks the outside world to do. It is an intent,
 // not an execution: no order, wire frame or ledger write happens here.
@@ -68,6 +72,20 @@ const (
 	// KindTriggerRetest is the 5m trigger-line retest location (§5.1
 	// [D3.4 p2 @ 20:51]: the retest is a level confirm).
 	KindTriggerRetest LevelKind = "trigger_retest"
+	// KindTrendline is an intraday trendline location (X9 slide 27, D2.3,
+	// DAY-3 row 27): two same-role swings joined, valid as a location only
+	// after the 3rd touch; discarded by a 5m close through. Location only,
+	// never a target.
+	KindTrendline LevelKind = "trendline"
+	// KindHTFTrigger is the 4h/1h trigger line as a TARGET-LADDER level only
+	// (D4.4-15): it joins the level set so nextLevelBeyond can pick it, but it
+	// is never touched, never located and never a PHL/PLH place.
+	KindHTFTrigger LevelKind = "htf_trigger"
+	// KindWickMicroscalp is the D4.3 wick-microscalp target (D4.3-02/-07): the
+	// rejecting 5m candles' far wick, target-only — it joins the level set so
+	// nextLevelBeyond can pick it, but it is never touched and never a
+	// PHL/PLH location.
+	KindWickMicroscalp LevelKind = "wick_microscalp"
 )
 
 // Level is one mentor level line. Lo/Hi are equal (a line); AtTime is the bar
@@ -91,13 +109,20 @@ type Intent struct {
 	Limit  float64 // PlaceStopLimitEntry: the limit price (== Price)
 	Stop   float64 // stop-loss
 	Target float64 // take-profit level
-	Flag   string  // sizing/routing flags for the injector (e.g. "isb_at_old_extreme")
+	Flag   string  // sizing/routing flags for the injector, joined with "|" (FlagISBAtOldExtreme, FlagISBInRange)
 
 	// ExpiryMs is the per-order expiry the injector arms on placement (N12
 	// correction): cancel when now >= expiry_ms and the order is unfilled.
 	// 0 = no expiry — the order is never auto-cancelled by the expiry sweep
 	// (the setup carries its own explicit CancelArm instead).
 	ExpiryMs int64
+
+	// RefBarMs (N10) is the reference candle's CLOSE time (ms) — the bar the
+	// entry geometry was measured from. The injector refuses any entry whose
+	// reference candle is not the newest closed bar (a reload replay of stale
+	// box/ISB/PHL returns must never become live orders). 0 = not stamped
+	// (swing — gated by its own 5m watermark instead).
+	RefBarMs int64
 
 	// Confluence is the R2 flag [00-METHOD Risk-reward, D3.4 p3 @ 07:38]:
 	// box edge + a key level inside the box or within 2 pts of its edge +
@@ -124,6 +149,19 @@ type Intent struct {
 	// evaluator stamps it on EVERY intent; the injector's size table then
 	// holds 1-2 (spent_day tier) and the R9 15-pt stop cap applies.
 	SpentDay bool
+	// HTFAgree: the 4h AND 1h triggers BOTH stand and point this entry's side
+	// (D4.4 p1 @16:00 case 1: "4h trigger buy, 1h trigger buy" → trade that
+	// side). The evaluator stamps it on every ENTRY where intents leave Tick;
+	// the trader's size table needs it for the 20-contract tier ("size 20 only
+	// when 4h AND 1h agree and room ≥ 30 pts"). A silent 1h (case 2: follow the
+	// 4h) is NOT agreement.
+	HTFAgree bool
+	// RunnerTarget is the mode-A runner target BEYOND the old high (D2-49 /
+	// D2.4 p1 @01:56: "resonance breaks the old high 70–80%"). The PHL/PLH
+	// emit site stamps the next level beyond the old extreme (nextLevelBeyond);
+	// 0 = none — in mode A the runner's native TP is removed and the exit is
+	// the BE stop or EOD flat. The trader's resonance arming consumes it.
+	RunnerTarget float64
 }
 
 // Config is every knob. Enabled is mentor_mode and defaults to false (L4):
@@ -188,8 +226,12 @@ type Config struct {
 	LevelMaxVisits int
 	// EmaMaxCross30m — E4 knob (CTO 12:27:25Z): refuse the EMA34 setup when the
 	// close crossed the line this many times over the last 30 closed 1m candles
-	// ("xien len xien xuong", D4.2 p1 @ 22:27 — he never gives a number).
-	// Default 0 = OFF (base). Sensitivity rows: v5_ema_cross2 / v5_ema_cross4.
+	// ("xien len xien xuong", D4.2 p1 @ 22:27). Default ON (item 16, CTO
+	// 23:49Z): 2 — the most conservative of the replay sensitivity rows
+	// v5_ema_cross2 / v5_ema_cross4. MENTOR QUESTION OPEN: the course states no
+	// count and no window — at the exact second he says "xiên lên xiên xuống"
+	// the frame D4.2 p1 @22:28 shows the indicator already OFF the chart, so
+	// 2 is our reading, not his number (reread OPEN-NUMBERS Q4). 0 = OFF.
 	EmaMaxCross30m int
 
 	// ISB (PLAN v1 §3).
@@ -198,22 +240,54 @@ type Config struct {
 	ISBTwentiesPts float64 // a stop at/above this ("in the twenties") must not be taken; default 20 [D4.1 p1 @ 05:41]
 
 	// ISBReverseEMA9Enabled turns on R7, the reverse-ISB-at-EMA9 setup
-	// (RULES-FIX-v3, its own knob per the dispatch). Default OFF (L4).
+	// (RULES-FIX-v3, its own knob per the dispatch). Default ON — OWNER RULING
+	// 2026-10-04 R-C "do all as mentor": it is the mentor's own reading [D5.4].
 	ISBReverseEMA9Enabled bool
+	// WickMicroscalpEnabled turns on the D4.3 wick microscalp (advanced —
+	// "đừng có tập khúc này đầu tiên" [D4.3 @04:55]): 2+ consecutive CLOSED 5m
+	// candles rejecting with wicks the SAME way (lower wicks in an uptrend,
+	// upper wicks in a downtrend) put a bounded target at the rejecting
+	// candles' far wick. Default OFF (advanced, behind a knob per D4.3-02).
+	WickMicroscalpEnabled bool
 
 	// PHL/PLH (PLAN v1 §3).
 	PHLMinCandlesFromExtreme int     // entry at least N candles from the old extreme; default 3 [D4.1 p1 @ 09:40 written]
 	PHLTargetShyPts          float64 // target this far short of the old extreme; default 5 (Q2 knob; worked example 5–15 [D2.2 p1 @ 06:50])
+	PHLEntryBufferPts        float64 // entry buffer beyond the candle extreme (outward); default 1.0 [D2.2 p1 @ 06:50 drawn: high 29,396.25 → entry 29,397.25]
 
 	// Filters (PLAN v1 §4).
 	StopCeilingPts float64 // hard stop ceiling; default 25 [D3.3 p1 @ 02:04]
 	RoomMultiple   float64 // room rule: reward >= RoomMultiple x risk; default 2 [D5.3 p1 @ 09:16]
 	RangeGapPts    float64 // mid-range: levels bracketing price within this gap both sides; default 0 = disabled
 
+	// HTFGateNewsOnly — D4.4-11 [D4.4 p1 @13:44–14:06, @24:48]: the 4h/1h
+	// direction gate is for NEWS first, not ordinary trading yet
+	// ("đánh news NÊN SỬ DỤNG CHO NEWS TRƯỚC ĐI. ĐỪNG SỬ DỤNG CHO [trade]
+	// THƯỜNG"). true: the HTF gate applies only inside the 07:20–07:35 CT
+	// news window; ordinary intraday entries are not HTF-gated. Default false
+	// = the all-day gate (CTO 2026-10-04: U-6 is open — D5.1's later
+	// pre-session routine reads 4h/1h for the whole day). Studio switch:
+	// risk_control.mentor_tuning.htf_gate_news_only.
+	HTFGateNewsOnly bool
+
+	// NearBoxRoomMultiple — Day-3 row 24 [D3.2 p1 @ 21:53–23:08]: a setup
+	// whose nearest box edge IN the trade direction is closer than this × its
+	// own risk is refused ("sát box"); 0 disables. Default 2 — the same 2R
+	// room the target rule demands. Between two boxes (row 25) is exempt.
+	NearBoxRoomMultiple float64
+
 	// §7 day gate knobs (fold item 4, DS-106): the method defaults until the
 	// routed Config integration lands.
 	DayGateSpentPts     float64 // run >= this before the open = spent; default 300 [D5.1 p1 @ 15:57]
 	DayGateTargetCapPts float64 // spent-day target cap; default 15 ("15 điểm bán, 10 điểm bán")
+
+	// PrintWindows (item 18 part 1) lists the day's red-folder 07:30 print
+	// windows (FromMs inclusive, ToMs exclusive). The evaluator skips HTF
+	// breaks from 1m bars whose open falls inside any listed window — the
+	// 07:30 print candle never moves the 1h/4h trigger lines [D4.4 p1 @18:13,
+	// @22:15]. The trader plumbs it from the calendar before each Tick; empty
+	// = no print today, and the HTF feed is byte-identical.
+	PrintWindows []PrintWindow
 
 	// §8 SWING4H knobs (DS-106): the method defaults. The 5m-zone gate
 	// lives in SwingCfg.Respects5mZone (default false, [C]) and is wired
@@ -224,6 +298,14 @@ type Config struct {
 	// default. The evaluator builds the boxes per tick and wires their
 	// edges into the location gate and InsideAnyBox into the bans.
 	Box BoxCfg
+
+	// Exec2mAfter30m — X5-10 optional knob (default OFF): after the first 30
+	// minutes of RTH (09:00 CT) the ISB entry is read on the 2m chart instead
+	// of the 1m ("sau 30 phút em sẽ chuyển qua khung 2 phút" [X5 @00:41–01:17;
+	// X11 @17:06–17:32]) — the 1m wicks sweep stops, so the 2m read is the
+	// quieter one. The course trades the 1m throughout, so this stays behind a
+	// knob and OFF by default; while OFF the ISB read is byte-identical.
+	Exec2mAfter30m bool
 
 	// OrbGateEnabled turns on the §7 step 0 ORB gate (default ON): the high and
 	// low of the FIRST 2-minute candle of the regular session gate every
@@ -262,20 +344,26 @@ func DefaultConfig() Config {
 		ISBStopMinPts:  5,
 		ISBTwentiesPts: 20,
 
-		ISBReverseEMA9Enabled: false,
+		ISBReverseEMA9Enabled: true,
+
+		WickMicroscalpEnabled: false, // D4.3 advanced wick read — OFF by default
 
 		PHLMinCandlesFromExtreme: 3,
 		PHLTargetShyPts:          5,
+		PHLEntryBufferPts:        1.0,
 
 		StopCeilingPts:         25,
 		RoomMultiple:           2,
-		LossDeparturePts:       0, // B22: structural departure; the numeric fallback is OFF
+		HTFGateNewsOnly:        false, // U-6 open: D5.1's later routine runs the 4h/1h read all day — the all-day gate stays the default (Studio switch)
+		NearBoxRoomMultiple:    2,     // Day-3 row 24: near-box room = 2 × risk; between two boxes exempt (row 25)
+		LossDeparturePts:       0,     // B22: structural departure; the numeric fallback is OFF
 		LocTriggerFilter:       true,
 		TriggerSchool:          1,  // B20: school 1 — level/box entries without 5m agreement
 		PingPongMinGapPts:      50, // B21: gap > 50 AND candles <= 20 over the last 30
 		PingPongCandleMaxPts:   20, // B21: "nến tầm mười mấy điểm" (D4.2 p2 @05:17–06:37)
 		PingPongCandleLookback: 30, // B21 [C: ours]: keeps the on-camera rejection @06:21
 		LevelMaxVisits:         3,  // B23: first 3 visits/day trade, the 4th refuses
+		EmaMaxCross30m:         2,  // E4 (item 16): default ON, most conservative — mentor question open (no count in the course)
 		RangeGapPts:            0,
 
 		DayGateSpentPts:     300,
@@ -342,4 +430,22 @@ func bucketOpen(openMs int64, tfMin int) int64 {
 		return fourHBucketStart(openMs, ctime())
 	}
 	return (openMs / (int64(tfMin) * 60_000)) * (int64(tfMin) * 60_000)
+}
+
+// ISB size flags carried on Intent.Flag (written rules 2 and 3, D4.1 p1 @08:05 /
+// @09:40). isbFlags produces them and the trader's size decision reads them, so
+// both sides use these constants.
+const (
+	FlagISBAtOldExtreme = "isb_at_old_extreme"
+	FlagISBInRange      = "isb_in_range"
+)
+
+// HasFlag reports whether the "|"-joined Intent.Flag contains the exact flag.
+func HasFlag(flag, want string) bool {
+	for _, f := range strings.Split(flag, "|") {
+		if strings.TrimSpace(f) == want {
+			return true
+		}
+	}
+	return false
 }

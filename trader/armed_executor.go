@@ -210,7 +210,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 	defer at.armedPassMu.Unlock()
 	defer armedPassEntered(at.id)()
 	scope := opts.scope
-	if !at.dayPlanEnabled() || at.store == nil || at.exchange != "ninjatrader" {
+	if at.store == nil || at.exchange != "ninjatrader" || at.armedPassDormant() {
 		at.dayPlanOffPassHead(now) // W5 R8 settle, then D21
 		return
 	}
@@ -245,6 +245,11 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 	}
 	pictureHandOffSweepHook(at, now) // W5 D17 — the interrupted-hand-off sweep, once per pass (Builder A binds it)
 
+	// B3 (release #3b): mentor placement does NOT depend on the AI day plan.
+	// Mentor rows are governed by mentor mode + their own expiry + the evaluator's
+	// CancelArm/ExtendArm — never the AI plan's lifecycle.
+	mentor := at.mentorEnabled()
+
 	// 1.4 — plan → dormant/no_trade/absent = ALL its armed orders cancelled
 	// instantly. Re-arm does NOT auto-re-arm (fresh AI authorization required).
 	// 2.4 — no active session (EOD flat) cancels everything too.
@@ -272,18 +277,39 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 		// S-list closer: synchronous (ack-waited) cancel on session end and
 		// dormancy too — the resting limit must be dead BEFORE any flatten or
 		// the next cycle, not up to 2m later.
-		if n, unacked := at.cancelArmedOrdersSync(reason); n > 0 {
+		// B3 (release #3b): this cancel is NON-mentor only. Mentor rows are
+		// governed by mentor mode + their own expiry + the evaluator's
+		// CancelArm/ExtendArm — never the AI plan's lifecycle.
+		if n, unacked := at.cancelArmedOrdersSyncNonMentor(reason); n > 0 {
 			at.logWarnf("🔒 armed cancel: %s — %d order(s) disarmed", reason, n)
 			if unacked > 0 {
 				at.logWarnf("⚠️ armed cancel: %d unacked after retry (ledger cancelled; wire reconciles next cycle)", unacked)
 			}
 		}
-		// W1 EPISODE CONTRACT — E6: every episode closes, and says why. This is
-		// the session-close path: the plan is gone, dormant or the session has
-		// ended, so no touch recorded under it can still be open. Idempotent by
-		// predicate (it selects on a NULL outcome), so running it on every cycle
-		// that reaches here closes each row exactly once.
-		at.closeEpisodesForSessionClose(reason)
+		// EOD flat is a NON-AI safety and is KEPT for INTRADAY mentor arms; a
+		// SWING4H arm is exempt (the course holds the swing by the 4h, "set an
+		// alert and go to bed" [D5.2]). Gated on the day plan, matching the
+		// enforceEODFlatAt position flatten.
+		if mentor && reason == "session ended (EOD flat)" {
+			at.cancelIntradayMentorArms()
+		}
+		if !mentor {
+			// W1 EPISODE CONTRACT — E6: every episode closes, and says why. This is
+			// the session-close path: the plan is gone, dormant or the session has
+			// ended, so no touch recorded under it can still be open. Idempotent by
+			// predicate (it selects on a NULL outcome), so running it on every cycle
+			// that reaches here closes each row exactly once.
+			at.closeEpisodesForSessionClose(reason)
+			return
+		}
+		// mentor: fall through to the mentor-only placement path below.
+	}
+
+	// B3 (release #3b) — MENTOR-ONLY PLACEMENT PATH. Mentor rows are governed by
+	// mentor mode + their own expiry + the evaluator's CancelArm/ExtendArm; no
+	// plan-doc authoring, conditions, one-setup or supersede runs for them.
+	if mentor {
+		at.mentorOnlyPlacementPass(now, scope)
 		return
 	}
 
@@ -1291,6 +1317,17 @@ func (at *AutoTrader) armedLines() string {
 // maybeManageArmedOrdersAt, passes its set; the wall-clock wrapper
 // runArmedPlacement was removed (no production caller — A29).
 func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, now time.Time, admitted armAdmission, scopes ...*armedPassScope) {
+	at.runArmedPlacementAtFiltered(bars, sinceMs, now, admitted, nil, scopes...)
+}
+
+// runArmedPlacementAtFiltered is runArmedPlacementAt with a row filter: keep
+// (non-nil) restricts the PLACEMENT loop to the rows it accepts. B3 (release
+// #3b) P0: the mentor-only placement pass keeps ONLY mentor-origin rows, so a
+// planner arm never places through the mentor path — it stays unplaced
+// (fail-closed) and keeps its own cancel rules. The housekeeping tail (stale-
+// working reaper, order_update drain, cancel settlement) still runs for every
+// row, whatever the filter.
+func (at *AutoTrader) runArmedPlacementAtFiltered(bars []market.Kline, sinceMs int64, now time.Time, admitted armAdmission, keep func(store.ArmedOrderDB) bool, scopes ...*armedPassScope) {
 	nt := at.armedTrader()
 	if nt == nil {
 		return
@@ -1337,8 +1374,31 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 	holdReason, held := MaintenanceHeld()
 	scope := firstPassScope(scopes)
 
+	// N7 (2026-10-04) — settle cancels BEFORE placing. The placement loop's
+	// one-entry latch refuses "ledger_open" on any cancel_pending row left by a
+	// previous pass's cancel (entryLatchLedgers lists cancel_pending as placed),
+	// and "queued_entry"/"recent_send" on the broker pending map that only a
+	// fill/reject clears. Settling first confirms those cancels (terminal, or
+	// re-armed) and — via forgetPendingEntry — drops the pending marker, so the
+	// entry that follows a confirmed cancel places in the SAME pass instead of
+	// expiring unplaced. Unconfirmed cancels stay cancel_pending and keep
+	// refusing (fail-closed).
+	cancelFn := func(sid string) error {
+		// A re-request is still a cancel. If the entry filled while the first
+		// cancel was in flight, re-sending would reach the protections — and a
+		// refused re-request is not recorded as one (W-EXEC-TRUTH W0 (f)).
+		if !at.cancelSignalIfSafe(nt.CancelOrder, sid, "cancel re-request", now) {
+			return errCancelRefused
+		}
+		return nil
+	}
+	at.confirmPendingCancels(ledger, cancelFn, now)
+
 	for _, r := range rows {
 		if r.TraderID != at.id {
+			continue
+		}
+		if keep != nil && !keep(r) {
 			continue
 		}
 		// N12 (REVIEW-309 r2, PR B 2026-10-03) — per-order EXPIRY, not a
@@ -1350,16 +1410,26 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 		// the existing settlement path; no expiry stored → this code never
 		// sweeps it (additive, OFF by absence).
 		//
-		// A working order with a PARTIAL fill is a trade in progress: expiry
-		// never cancels it — it is logged once and left to the position logic
-		// (the bot is one contract per leg anyway).
+		// N3 P1 (2026-10-04): a working order with a PARTIAL fill cancels the
+		// REMAINDER at expiry (never "keep forever") — the filled part keeps
+		// its bracket; only the unfilled contracts are cancelled.
 		if r.ExpiryMs > 0 && now.UnixMilli() >= r.ExpiryMs &&
 			r.State == store.StateWorking && r.FillQuantity > 0 {
-			expKey := "expiry_partial_fill:" + strconv.FormatInt(r.ID, 10)
-			if armRefusalChanged(&at.armRefusalLast, expKey, "partial_fill_kept") {
-				at.logWarnf("⏳ armed %s row %d working with a partial fill at its expiry — KEPT (never auto-cancelled by expiry); the position logic owns it",
-					r.Scenario, r.ID)
+			if remain := mentorRemainderToCancel(r); remain > 0 {
+				total := *r.Contracts
+				if strings.TrimSpace(r.SignalID) != "" {
+					if v := at.cancelSafetyFor(r, now); !v.Allow {
+						at.logWarnf("🛟 armed remainder cancel REFUSED: %s %s signal=%s — %s", r.Session, r.Scenario, shortID(r.SignalID), v.Why)
+					} else if cerr := nt.CancelOrder(r.SignalID); cerr != nil {
+						at.logWarnf("✕ armed remainder cancel SEND failed: %s %s: %v", r.Session, r.Scenario, cerr)
+					}
+				}
+				at.armLifecycleWrite("request_cancel(remainder)", r,
+					ledger.RequestCancel(r.ID, fmt.Sprintf("stop-limit expiry: remainder cancelled %d of %d", remain, total), now.UnixMilli()))
+				at.logInfof("⏳ armed %s row %d partial fill at expiry — remainder cancelled %d of %d (the filled part keeps its bracket)",
+					r.Scenario, r.ID, remain, total)
 			}
+			continue
 		}
 		if armExpired(r, now.UnixMilli()) {
 			// REVIEW-313 F2: an expired row that was NEVER SENT (armed, no
@@ -1555,15 +1625,7 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 	// cancel_pending, says so once past the timeout, and is re-requested up to
 	// the cap. Nothing here ever promotes a row on ignorance.
 	at.confirmPendingPlacements(ledger, now)
-	at.confirmPendingCancels(ledger, func(sid string) error {
-		// A re-request is still a cancel. If the entry filled while the first
-		// cancel was in flight, re-sending would reach the protections — and a
-		// refused re-request is not recorded as one (W-EXEC-TRUTH W0 (f)).
-		if !at.cancelSignalIfSafe(nt.CancelOrder, sid, "cancel re-request", now) {
-			return errCancelRefused
-		}
-		return nil
-	}, now)
+	at.confirmPendingCancels(ledger, cancelFn, now)
 	// D4 — the once-per-boot three-state reconciliation, run at the first cycle
 	// where a book actually exists. Nothing is auto-cancelled by it.
 	at.reconcileOncePerBoot(ledger, now)
@@ -1774,8 +1836,8 @@ func decideStopEntry(rawSide string, entryPx, offset, tick, price float64) stopE
 // A29's "built ≠ wired ≠ used" is proven here by a FAKE that records what was
 // sent, not by grepping this file for the call's spelling.
 type stopEntryPlacer interface {
-	PlaceStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error)
-	PlaceStopEntryWithLimit(symbol, side string, quantity float64, stopPx, sl, tp float64, beforeSend ...func(string) error) (string, error)
+	PlaceStopEntry(symbol, side string, quantity float64, stopPx, sl, tp float64, leg1Qty int, leg1TP float64, beforeSend ...func(string) error) (string, error)
+	PlaceStopEntryWithLimit(symbol, side string, quantity float64, stopPx, sl, tp float64, leg1Qty int, leg1TP float64, beforeSend ...func(string) error) (string, error)
 }
 
 // armStateWriter is the ledger seam: atomic pre-send registration plus refusal.
@@ -1861,22 +1923,21 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// so everything after it is the send itself. An error before it is a
 	// refusal (build, account, permit, B3, the ledger CAS) — provably unsent.
 	stamped := false
-	// MENTOR STOP-LIMIT (PR B, 2026-10-03, REVIEW-313 F3): the routing reads
-	// the arm's EXPLICIT origin, never the expiry as a proxy. The mentor
-	// injector stamps origin=mentor and expiry_ms (DS-102, #316):
-	//   mentor + knob ON + expiry > 0  -> the limit variant (the AddOn builds
+	// MENTOR STOP-LIMIT (PR B, 2026-10-03, REVIEW-313 F3; ALWAYS ON since
+	// 2026-10-04): the routing reads the arm's EXPLICIT origin, never the
+	// expiry as a proxy, and NO environment variable. The mentor injector
+	// stamps origin=mentor and expiry_ms (DS-102, #316):
+	//   mentor + expiry > 0  -> the limit variant (the AddOn builds
 	//     OrderType.StopLimit with LimitPrice == StopPrice: the entry fills at
-	//     its price or misses, never a stop-MARKET).
-	//   mentor + knob ON + no expiry -> REFUSED fail-closed: a counted
-	//     refusal, the arm stays armed, and there is NO stop-market fallback —
-	//     a mentor arm without its expiry must never rest unbounded.
-	//   non-mentor -> today's path (stop-market) whatever the expiry; the knob
-	//     OFF is also today's path for everyone.
-	// Default OFF keeps the wire byte-identical. The send itself and the
-	// beforeSend callback are shared verbatim: the only difference is the
-	// stop_limit frame flag behind the far-side floor.
+	//     its price or misses, never a stop-MARKET) [D1.4 p1 @24:41–24:55].
+	//   mentor + no expiry -> REFUSED fail-closed: a counted refusal, the arm
+	//     stays armed, and there is NO stop-market fallback — a mentor arm
+	//     without its expiry must never rest unbounded.
+	//   non-mentor -> today's path (stop-market) whatever the expiry.
+	// The send itself and the beforeSend callback are shared verbatim: the only
+	// difference is the stop_limit frame flag behind the far-side floor.
 	placeStopFn := pl.PlaceStopEntry
-	if isMentorArmOrigin(r) && stopLimitEntriesEnabled() {
+	if isMentorArmOrigin(r) {
 		if r.ExpiryMs <= 0 {
 			if armRefusalChanged(&at.armRefusalLast, armKey, "stop_entry:stop_limit_no_expiry") {
 				shown := at.countStopEntryRefusal(r, "stop_entry:stop_limit_no_expiry", now)
@@ -1887,7 +1948,67 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 		}
 		placeStopFn = pl.PlaceStopEntryWithLimit
 	}
-	sid, perr := placeStopFn(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error {
+	// B2 MENTOR SIZE (2026-10-04): the mentor arm carries its signed contract
+	// count on the row. A mentor row WITHOUT one is REFUSED (counted + logged),
+	// never sent as 1 (absent ≠ 0). Non-mentor rows stay 1.
+	qty := 1.0
+	if isMentorArmOrigin(r) {
+		n, why := at.mentorArmQuantity(r)
+		if why != "" {
+			if armRefusalChanged(&at.armRefusalLast, armKey, "stop_entry:mentor_no_contracts") {
+				shown := at.countStopEntryRefusal(r, "stop_entry:mentor_no_contracts", now)
+				at.logWarnf("📛 armed %s mentor stop-entry REFUSED [guard=mentor_contracts verdict=%s] %s stop-limit trigger=%.2f: %s%s",
+					r.Scenario, d.Verdict, strings.ToUpper(d.Side), d.Trigger, why, shown)
+			}
+			return stopPlaceNotSent
+		}
+		qty = n
+	}
+	// N4 (2026-10-04, DAY-1 #15/#42): the +2-tick wire offset moves the entry
+	// 0.5 pt against the trade (trigger = entry ± offset, stop and target
+	// stay), so a mentor intent that passed the 1:1 floor at the authored
+	// price can land UNDER 1:1 at the wire. Re-check R at the WIRE trigger and
+	// refuse (counted) rather than send a sub-1:1 mentor entry [D1.2 p1
+	// @08:02–08:33: "risk reward phải là 1-1 trong bất kỳ tình huống nào"].
+	//
+	// The 1R FLOOR is re-based, not refused (CTO 2026-10-04, DS-105 replay b5:
+	// 48 of 461 entries, ALL SWING4H — R43's first target = max(1R, EMA34) sat
+	// on the floor and every one was refused; 2026-09-28 went to zero). A
+	// target authored at exactly 1:1 is DERIVED from the entry, so it moves
+	// with the entry to the 1:1 point at the trigger; a LEVEL target is a
+	// price that cannot move and is still refused under 1:1.
+	targetPx := r.TargetPx
+	if isMentorArmOrigin(r) && r.TargetPx > 0 && r.StopPx > 0 {
+		targetPx = mentorWireOneRFloor(r.EntryPx, d.Trigger, r.StopPx, r.TargetPx, at.mentorInstrumentTick())
+		reward := math.Abs(targetPx - d.Trigger)
+		risk := math.Abs(d.Trigger - r.StopPx)
+		if reward < risk {
+			if armRefusalChanged(&at.armRefusalLast, armKey, "stop_entry:wire_rr_below_1") {
+				shown := at.countStopEntryRefusal(r, "stop_entry:wire_rr_below_1", now)
+				at.logWarnf("📛 armed %s mentor stop-entry REFUSED [guard=wire_rr verdict=%s] %s stop-limit trigger=%.2f stop=%.2f target=%.2f: the 2-tick offset pushes the wire R:R under 1:1 (%.2f < %.2f)%s",
+					r.Scenario, d.Verdict, strings.ToUpper(d.Side), d.Trigger, r.StopPx, targetPx, reward, risk, shown)
+			}
+			return stopPlaceNotSent
+		}
+		if targetPx != r.TargetPx {
+			mentorCount("wire_target_1r_rebased")
+		}
+	}
+	// REVIEW-353: the split rides the ONE frame — leg1_qty + leg1_tp (0, 0)
+	// = the single-bracket legacy path. Only the mentor origin stamps them.
+	leg1Qty := 0
+	leg1TP := 0.0
+	if isMentorArmOrigin(r) {
+		// P0-1: leg 1 from the quantity actually SENT (mentorArmQuantity clamps
+		// to the trader max; the row was sized from the UNclamped intent).
+		// The leg-1 TP keeps its R-multiple at the WIRE trigger: the +2-tick
+		// offset moves the entry, so entry ± R from the authored price would
+		// take the half off UNDER 1:1 from the fill (N4's twin for leg 1).
+		if leg1Qty = mentorWireLeg1(r, int(qty)); leg1Qty > 0 {
+			leg1TP = mentorWireLeg1TP(r.EntryPx, d.Trigger, r.StopPx, r.Leg1TP)
+		}
+	}
+	sid, perr := placeStopFn(at.futuresSymbol(), d.Side, qty, d.Trigger, r.StopPx, targetPx, leg1Qty, leg1TP, func(sid string) error {
 		if err := ledger.BeginPlacement(r.ID, sid); err != nil {
 			return err
 		}
@@ -2365,7 +2486,25 @@ func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *st
 			continue
 		}
 		switch strings.ToLower(u.State) {
-		case "filled", "partfilled":
+		case "filled", "partfilled", "partial":
+			// N3 P0 (partial fills): the AddOn emits "partial" for a part-fill
+			// (VLTraderTCPClient.cs:1545) and "filled" only when complete; the
+			// wire comment named "partfilled". A PARTIAL fill (< the row's
+			// signed contracts) keeps the row WORKING — only a FULL fill is
+			// terminal. u.Quantity is CUMULATIVE (e.Filled, .cs:2006).
+			total := 1
+			if r.Contracts != nil && *r.Contracts > 0 {
+				total = *r.Contracts
+			}
+			if !mentorFillIsFull(u.State, u.Quantity, total) {
+				at.armLifecycleWrite("set_fill_quantity(part)", r, ledger.SetFillQuantity(r.ID, u.Quantity))
+				at.armLifecycleWrite("set_fill_price", r, ledger.SetFillPrice(r.ID, u.FillPrice))
+				at.armLifecycleWrite("touch", r, ledger.Touch(r.ID))
+				at.materializeArmedEntry(r, u)
+				at.logInfof("⚡ armed PART fill %s @ %.2f (%d/%d) — row stays working; the remainder is cancelled at expiry",
+					r.Scenario, u.FillPrice, u.Quantity, total)
+				return
+			}
 			at.armLifecycleWrite("set_state(filled)", r, ledger.SetState(r.ID, "filled", "fill@"+strconv.FormatFloat(u.FillPrice, 'f', 2, 64)))
 			at.armLifecycleWrite("set_fill_price", r, ledger.SetFillPrice(r.ID, u.FillPrice))
 			at.armLifecycleWrite("touch", r, ledger.Touch(r.ID))
@@ -2378,6 +2517,15 @@ func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *st
 			at.materializeArmedEntry(r, u)
 			at.stampArmedFillLineage(r, u.FillPrice)
 			at.logInfof("⚡ armed fill %s @ %.2f (entry_class=armed_fill — stale_reeval NOT applied)", r.Scenario, u.FillPrice)
+			// N12 funnel + MENTOR EXIT DRIVE (DS-107): a mentor-origin full fill
+			// is counted once, registered from the ONE row (dev's one-row entry,
+			// no split legs — #353 rejected) and poked so the loop wakes on the
+			// fill instead of waiting for the next FINAL bar.
+			if isMentorArmOrigin(r) && strings.EqualFold(u.State, "filled") {
+				at.mentorFunnel.bumpFilled()
+				at.registerMentorLivePos(r, u)
+				at.pokeMentorExitDrive()
+			}
 		case "cancelled":
 			// CANCEL-REPORT REGIME (2026-10-03, knob default OFF): for a row
 			// awaiting cancel confirmation, the AddOn's positive report is
@@ -2398,6 +2546,11 @@ func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *st
 			// A received live ENTRY state proves placement. Preserve pending
 			// cancellation and terminal outcomes; protective legs cannot promote.
 			if ntwire.ClassifyOrderState(u.State) == ntwire.LivenessLive {
+				// N12 funnel stage: the FIRST live receipt for a mentor-origin
+				// row is the placement (subsequent live receipts don't re-count).
+				if isMentorArmOrigin(r) && r.State != store.StateWorking {
+					at.mentorFunnel.bumpPlaced()
+				}
 				_ = ledger.ApplyPlacementReceipt(at.id, u.SignalID, store.StateWorking, fmt.Sprintf("order_update signal=%s state=%s seq=%d", u.SignalID, u.State, u.Seq))
 				at.recordAcceptedRisk(r, u)
 			}
@@ -2424,11 +2577,28 @@ func (at *AutoTrader) materializeArmedEntry(r store.ArmedOrderDB, u ntwire.Order
 	if side == "" {
 		return
 	}
+	// N2/N3 (2026-10-04, CTO ruling): the AddOn's fill frame quantity is
+	// CUMULATIVE (e.Filled) and its price the running AVERAGE
+	// (e.AverageFillPrice). The DELTA is measured against the arm row's LAST
+	// RECORDED cumulative fill (r.FillQuantity) — never the current position
+	// quantity — because an exit can take the position to 0 while a late
+	// cumulative frame still arrives (3 filled → exit → late 5 → position 2,
+	// not 5). A delta ≤ 0 is a duplicate/out-of-order frame and is ignored.
+	qty := u.Quantity
+	if qty < 1 {
+		qty = 1
+	}
+	delta := qty - r.FillQuantity
+	if delta <= 0 {
+		return
+	}
 	if pos, err := at.store.Position().GetOpenPositionBySymbol(at.id, at.futuresSymbol(), side); err == nil && pos != nil {
-		return // already materialized (reconcile won the race)
+		at.growMaterializedEntry(pos, r, u, qty, delta)
+		return
 	}
 	if pos, err := at.store.Position().GetOpenPositionBySymbol(at.id, at.futuresSymbol(), strings.ToLower(side)); err == nil && pos != nil {
-		return // legacy lowercase row already exists for the same fill
+		at.growMaterializedEntry(pos, r, u, qty, delta)
+		return
 	}
 	tradeDate := r.PlanID
 	if i := strings.Index(r.PlanID, ":"); i > 0 {
@@ -2441,8 +2611,8 @@ func (at *AutoTrader) materializeArmedEntry(r store.ArmedOrderDB, u ntwire.Order
 		ExchangePositionID: fmt.Sprintf("armed_%s_%d", r.SignalID, nowMs),
 		Symbol:             at.futuresSymbol(),
 		Side:               side,
-		Quantity:           1,
-		EntryQuantity:      1,
+		Quantity:           float64(delta),
+		EntryQuantity:      float64(delta),
 		EntryPrice:         u.FillPrice,
 		EntryTime:          nowMs,
 		EntryOrderID:       r.SignalID,
@@ -2462,10 +2632,32 @@ func (at *AutoTrader) materializeArmedEntry(r store.ArmedOrderDB, u ntwire.Order
 		at.logWarnf("🧩 armed fill %s materialize OPEN failed: %v", r.Scenario, err)
 		return
 	}
+	if err := at.store.ArmedOrders().SetFillQuantity(r.ID, qty); err != nil {
+		at.logWarnf("🧩 armed fill %s fill_quantity stamp failed: %v", r.Scenario, err)
+	}
 	at.logInfof("🧩 armed fill %s @ %.2f materialized OPEN (source=armed_entry — sub-60s round-trips are ledger-visible)", r.Scenario, u.FillPrice)
 	// E1 (wave 1A) — the excursion row's entry half. An armed fill carries its
 	// own levels in the ledger row, so nothing has to be resolved later.
 	at.excursionOnOpen(row, r.StopPx, r.TargetPx, plannerATR5m(at.futuresSymbol()))
+}
+
+// growMaterializedEntry (N2/N3, 2026-10-04) grows an already-open position by
+// the DELTA between the frame's cumulative fill quantity and the arm row's last
+// recorded cumulative fill (r.FillQuantity). The delta is computed by the
+// caller; here it is applied and the arm row's fill_quantity is stamped to the
+// new cumulative AFTER the grow, so the next frame measures against the right
+// baseline. The entry price is SET to the frame's running average
+// (e.AverageFillPrice) — not re-weighted — because the broker's cumulative
+// price already averages every contract.
+func (at *AutoTrader) growMaterializedEntry(pos *store.TraderPosition, r store.ArmedOrderDB, u ntwire.OrderUpdatePayload, qty, delta int) {
+	if err := at.store.Position().SetPositionQuantityAndPrice(pos.ID, pos.Quantity+float64(delta), u.FillPrice); err != nil {
+		at.logWarnf("🧩 armed fill %s part-fill grow failed (pos %d): %v", r.Scenario, pos.ID, err)
+		return
+	}
+	if err := at.store.ArmedOrders().SetFillQuantity(r.ID, qty); err != nil {
+		at.logWarnf("🧩 armed fill %s fill_quantity stamp failed (pos %d): %v", r.Scenario, pos.ID, err)
+	}
+	at.logInfof("🧩 armed fill %s grew position %d to %.0f @ %.2f (cumulative %d)", r.Scenario, pos.ID, pos.Quantity+float64(delta), u.FillPrice, qty)
 }
 
 // stampArmedFillLineage links the freshly-filled position row to the plan the
@@ -2491,12 +2683,10 @@ func (at *AutoTrader) stampArmedFillLineage(r store.ArmedOrderDB, fillPrice floa
 	if err := at.store.Position().SetPlanLinkFull(pos.ID, r.Version, r.Scenario, true, "armed_fill", r.PlanID, tradeDate, r.Session); err != nil {
 		at.logWarnf("⚡ armed fill lineage stamp failed: %v", err)
 	}
-	// F3 (2026-09-03) — the contracts the fill delivered, on the same path that
-	// stamps lineage. Row 35 read filled with fill_quantity=0 beside a position
-	// of quantity 1.
-	if err := at.store.ArmedOrders().SetFillQuantity(r.ID, int(pos.Quantity)); err != nil {
-		at.logWarnf("⚡ armed fill quantity stamp failed: %v", err)
-	}
+	// fill_quantity is stamped by materializeArmedEntry (the cumulative frame
+	// quantity, in BOTH the create and grow paths) — do not re-stamp
+	// pos.Quantity here: after an exit + late cumulative frame the position is
+	// the DELTA (2), and re-stamping 2 would corrupt the cumulative baseline.
 	// F2 (2026-09-03) — the fill line names the version the arm BELONGS to,
 	// not whatever version is live by the time it fills.
 	at.logInfof("⚡ armed fill %s: armed under v%d %s %s (%s) · qty %.0f",
@@ -2638,7 +2828,83 @@ func (at *AutoTrader) armGateVerdictFor(sc kernel.PlanScenario, leg kernel.PlanA
 // pace (W1b FOLD-12, window_sweep_pace.go) is the window sweep's: a
 // cancel_pending row whose cancel was requested < 30 s ago is skipped — its
 // intent is already on record. Absent = every row, every call (unchanged).
-func (at *AutoTrader) cancelArmedOrders(reason string, pace ...*armedCancelPace) (retired, unsettled int) {
+
+// armCancelSkip selects rows a cancel must NOT reach (nil = every row). B3
+// (release #3b): the AI plan-lifecycle and session-window cancels skip the
+// mentor injector's rows — mentor rows are governed by mentor mode + their own
+// expiry + the evaluator's CancelArm/ExtendArm, never the AI plan's lifecycle.
+type armCancelSkip func(r store.ArmedOrderDB) bool
+
+// skipMentorArms is the B3 origin filter: it excludes ArmOriginMentor rows.
+func skipMentorArms(r store.ArmedOrderDB) bool { return isMentorArmOrigin(r) }
+
+// skipNonIntradayMentor keeps only INTRADAY mentor rows (mentor origin, not
+// SWING4H): it skips every non-mentor row and every SWING4H mentor arm.
+func skipNonIntradayMentor(r store.ArmedOrderDB) bool {
+	if !isMentorArmOrigin(r) {
+		return true
+	}
+	return strings.EqualFold(strings.TrimSpace(r.Condition), "SWING4H")
+}
+
+// skipSwingArms (N4) keeps a SWING4H mentor arm resting at the EOD flat: the
+// course holds the swing by the 4h and its own expiry owns it.
+func skipSwingArms(r store.ArmedOrderDB) bool {
+	return isMentorArmOrigin(r) && strings.EqualFold(strings.TrimSpace(r.Condition), "SWING4H")
+}
+
+// cancelIntradayMentorArms (B3 Q2) cancels INTRADAY mentor arms at the session
+// close — the non-AI EOD-flat safety stays for intraday setups. A SWING4H arm
+// is EXEMPT: the course holds the swing by the 4h and its own expiry owns it.
+func (at *AutoTrader) cancelIntradayMentorArms() {
+	n, unacked := at.cancelArmedOrdersSyncFiltered("session ended (EOD flat) — intraday mentor arm", skipNonIntradayMentor)
+	if n > 0 {
+		at.logWarnf("🔒 EOD-FLAT (mentor intraday): %d armed order(s) cancelled — SWING4H arms are exempt (held by the 4h)", n)
+	}
+	if unacked > 0 {
+		at.logWarnf("⚠️ EOD-FLAT (mentor intraday): %d unacked after retry — held cancel_pending, the settlement pass owns them", unacked)
+	}
+}
+
+// armedPassDormant reports whether the armed pass has nothing to run on: the
+// day plan is OFF and mentor mode is OFF. B3 (release #3b): mentor mode ON alone
+// keeps the pass alive through the mentor-only placement path, so the day-plan
+// gate must not return for a mentor-mode trader.
+func (at *AutoTrader) armedPassDormant() bool {
+	return !at.dayPlanEnabled() && !at.mentorEnabled()
+}
+
+// mentorOnlyPlacementPass is the B3 (release #3b) mentor-only placement path.
+// It runs the SAME placement engine as the planner pass — admission chain,
+// maintenance hold, one-contract guard, the account/SIM gate, the slot guard,
+// per-order expiry and the stop-limit origin routing — but for the mentor
+// injector's rows only: no plan-doc authoring, conditions, one-setup or
+// supersede. The consecutive-loss breaker stays a mentor safety; the lunch /
+// first-N band and the force-flat windows do NOT refuse mentor rows (Q1).
+func (at *AutoTrader) mentorOnlyPlacementPass(now time.Time, scope *armedPassScope) {
+	var bars []market.Kline
+	if market.FuturesBarsProvider != nil {
+		bars = market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
+	}
+	// B3 Q1 + N5 — the mentor ignores ONLY the lunch and first-N windows. The
+	// consecutive-loss breaker, the red-news T1 blackout, the per-session trade
+	// cap, the force-flat windows and outside-session/session-off all still
+	// refuse (session_risk.go labels them one class; mentorWaivesSessionBand
+	// splits the lunch/first-N sub-windows).
+	if risk := at.sessionRiskGateAt(now); risk.Refuse && !mentorWaivesSessionBand(risk) {
+		if armRefusalChanged(&at.armRefusalLast, at.id+":mentor_session_risk", risk.Class) {
+			at.logWarnf("🛑 mentor placement REFUSED (%s): %s", risk.Class, risk.Reason)
+		}
+		scope.note(scope.scenarioOrEmpty(), "refused: "+risk.Class+": "+risk.Reason)
+		return
+	}
+	// P0 (B3 review): the mentor-only pass places ONLY mentor-origin rows. A
+	// planner arm (authored before mentor mode, or in a mixed state) stays
+	// unplaced — fail-closed — and keeps its own cancel rules.
+	at.runArmedPlacementAtFiltered(bars, 0, now, nil, isMentorArmOrigin, scope)
+}
+
+func (at *AutoTrader) cancelArmedOrders(reason string, skip armCancelSkip, pace ...*armedCancelPace) (retired, unsettled int) {
 	rows, err := at.store.ArmedOrders().ListNonTerminal(at.id)
 	if err != nil {
 		return 0, 0
@@ -2648,6 +2914,9 @@ func (at *AutoTrader) cancelArmedOrders(reason string, pace ...*armedCancelPace)
 	now := p.nowMs()
 	for _, r := range rows {
 		if r.TraderID != at.id {
+			continue
+		}
+		if skip != nil && skip(r) {
 			continue
 		}
 		if r.SignalID == "" {
@@ -2737,6 +3006,18 @@ func (at *AutoTrader) armedUpdateStream(nt *ntTrader.TCPTrader) <-chan ntwire.Or
 // window_sweep_pace.go) and is honoured on every branch below; the EOD flat,
 // session end, news and T1 enforce callers pass none and are unchanged.
 func (at *AutoTrader) cancelArmedOrdersSync(reason string, pace ...*armedCancelPace) (n, unacked int) {
+	return at.cancelArmedOrdersSyncFiltered(reason, nil, pace...)
+}
+
+// cancelArmedOrdersSyncNonMentor (B3) cancels every non-terminal NON-mentor
+// armed row with ack-waited wire cancels. Mentor rows are excluded — they are
+// governed by mentor mode + their own expiry + the evaluator's CancelArm/
+// ExtendArm, never the AI plan's lifecycle or session bands.
+func (at *AutoTrader) cancelArmedOrdersSyncNonMentor(reason string, pace ...*armedCancelPace) (n, unacked int) {
+	return at.cancelArmedOrdersSyncFiltered(reason, skipMentorArms, pace...)
+}
+
+func (at *AutoTrader) cancelArmedOrdersSyncFiltered(reason string, skip armCancelSkip, pace ...*armedCancelPace) (n, unacked int) {
 	if at.store == nil {
 		return 0, 0
 	}
@@ -2745,17 +3026,17 @@ func (at *AutoTrader) cancelArmedOrdersSync(reason string, pace ...*armedCancelP
 		if timeout <= 0 {
 			timeout = armedCancelAckTimeout()
 		}
-		return at.cancelArmedOrdersSyncWith(reason, timeout, s.Cancel, s.Stream, pace...)
+		return at.cancelArmedOrdersSyncWith(reason, timeout, s.Cancel, s.Stream, skip, pace...)
 	}
 	nt := at.armedTrader()
 	if nt == nil {
 		// The unsettled rows are UNACKED, not cancelled — this used to return
 		// them in `n`, so the operator-facing flat line reported rows nothing
 		// had confirmed as "armed order(s) cancelled".
-		return at.cancelArmedOrders(reason, pace...)
+		return at.cancelArmedOrders(reason, skip, pace...)
 	}
 	return at.cancelArmedOrdersSyncWith(reason, armedCancelAckTimeout(), nt.CancelOrder,
-		func() <-chan ntwire.OrderUpdatePayload { return at.armedUpdateStream(nt) }, pace...)
+		func() <-chan ntwire.OrderUpdatePayload { return at.armedUpdateStream(nt) }, skip, pace...)
 }
 
 // cancelArmedOrdersSyncWith is the pure body: per-row cancel + ack drain. Every
@@ -2763,7 +3044,7 @@ func (at *AutoTrader) cancelArmedOrdersSync(reason string, pace ...*armedCancelP
 // consumer uses, so no ledger state is lost and no second subscription is ever
 // made (a second subscribe would close the consumer's channel). pace: see
 // cancelArmedOrdersSync.
-func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Duration, cancelFn func(string) error, src func() <-chan ntwire.OrderUpdatePayload, pace ...*armedCancelPace) (n, unacked int) {
+func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Duration, cancelFn func(string) error, src func() <-chan ntwire.OrderUpdatePayload, skip armCancelSkip, pace ...*armedCancelPace) (n, unacked int) {
 	ledger := at.store.ArmedOrders()
 	if ledger == nil {
 		return 0, 0
@@ -2780,7 +3061,7 @@ func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Dura
 	filled := 0
 	var mine []store.ArmedOrderDB
 	for _, r := range rows {
-		if r.TraderID == at.id {
+		if r.TraderID == at.id && (skip == nil || !skip(r)) {
 			mine = append(mine, r)
 		}
 	}
@@ -3044,7 +3325,7 @@ func (at *AutoTrader) TestArmPlaceStop(side string, trigger, stop, target float6
 	if trigger <= 0 || stop <= 0 || target <= 0 {
 		return out, fmt.Errorf("entry(trigger)/stop/target must be > 0")
 	}
-	sid, perr := nt.PlaceStopEntry(at.futuresSymbol(), side, 1, trigger, stop, target, func(sid string) error {
+	sid, perr := nt.PlaceStopEntry(at.futuresSymbol(), side, 1, trigger, stop, target, 0, 0, func(sid string) error {
 		row := &store.ArmedOrderDB{
 			TraderID: at.id,
 			PlanID:   "TEST-E7:" + sid,

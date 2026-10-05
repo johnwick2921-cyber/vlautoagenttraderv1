@@ -5,6 +5,7 @@ import (
 	"math"
 	"strings"
 	"sync"
+	"time"
 
 	"vl/kernel"
 	"vl/kernel/mentor"
@@ -36,12 +37,6 @@ const (
 	mentorRoomBigMultiple    = 2.0  // room ≥ this × risk for the big tier
 	mentorStopTwentiesMinPts = 20.0 // stop 20–25 pts → reduced [D3.3 p1 @ 01:09]
 	mentorStopTwentiesMaxPts = 25.0
-	// R8 (RULES-FIX v3): a SWING4H stop of 30–60 pts is allowed, ~100 is
-	// refused, and SWING4H is EXEMPT from the 25-pt ceiling.
-	mentorSwingStopMaxPts = 60.0
-	// R9 (RULES-FIX v3): the target is never smaller than the stop; on a spent
-	// day (cap 15) any setup whose stop is over 15 is skipped.
-	mentorSpentDayStopCapPts = 15.0
 )
 
 // mentorTierInputs is everything the size table reads. The trader computes
@@ -57,6 +52,12 @@ type mentorTierInputs struct {
 	StrongDay     bool    // S9: 5m candles running 50–80 pts → size 1–2
 	ISBOldExtreme bool    // ISB at an old high/low → reduce size, tier 3 [D4.1 p1 rule 2]
 	ISBInRange    bool    // ISB traded inside a range → reduce size, tier 3 [D4.1 p1 rule 3]
+
+	// Rule-gate limits resolved from the strategy (mentorTuningResolve): the
+	// SAME numbers the evaluator reads. Zero (a bare table test) falls back to
+	// the kernel defaults, never to a second constant.
+	SwingMaxStopPts    float64
+	SpentDayStopCapPts float64
 }
 
 // mentorSizeChoice is the tier decision: contracts, the tier name and why.
@@ -81,9 +82,13 @@ func mentorContractsFor(in mentorTierInputs, base, conf, big, reduced, swing4h, 
 		}
 		return n
 	}
-	if in.SpentDay {
-		return mentorSizeChoice{Contracts: clamp(spentCap), Tier: "spent_day", Why: "§7 spent day — hold 1–2 only [D5.1 p1 @ 16:13]"}, nil
-	}
+	// R09 (owner ruling 2026-10-04, D5.1 p1 @16:13–16:35): a range/spent day
+	// cuts the RUNNER and the TARGET only — never the whole trade. Size
+	// normally here; the spent-day cut rides the 15-pt target cap
+	// (DayGateTargetCapPts, applied by the evaluator) and the runner cap
+	// (mentorSpentDayRunnerCap) in the exit drive. spentCap remains the
+	// spent-day knob value for DS-103's split redesign.
+	_ = spentCap
 	// ISB at an old high/low → reduce size, tier 3 (owner ruling 00:1x CT,
 	// written rule 2, D4.1 p1). The flag comes from DS-103's evaluator and is
 	// only ever set for ISB setups. It beats big/confluence — the location
@@ -218,10 +223,8 @@ func (at *AutoTrader) mentorRiskControl() *store.RiskControlConfig {
 // ── KNOB ROUTING (CTO 1791033257041) — defaults as ruled ───────────────────
 //
 // The evaluator's G1/L1/E4/location knobs ride the strategy config like the
-// other mentor knobs. Each resolver is the single defaults site; the
-// evaluator config builder (mentorEvaluatorConfig) applies the two that exist
-// on feat/mentor-eval today, and the rest wire in when the evaluator fields
-// land (DS-107's limits, DS-103's location trigger knob).
+// other mentor knobs. Each resolver is the single defaults site, and
+// mentorEvaluatorConfig applies every one of them to the evaluator.
 
 // mentorLegBudgetEnabled — G1 leg budget: nil → ON (default).
 func mentorLegBudgetEnabled(rc *store.RiskControlConfig) bool {
@@ -254,12 +257,14 @@ func mentorLvlRevisitMinPts(rc *store.RiskControlConfig) float64 {
 
 // mentorEmaMaxCross30m — E4 knob: refuse the EMA34 setup when the close
 // crossed the line this many times over the last 30 closed 1m candles.
-// Default 0 = OFF (base).
+// Default ON (item 16, CTO 23:49Z): 2 — the most conservative of the replay
+// rows v5_ema_cross2/4. MENTOR QUESTION OPEN: the course states no count
+// (frame D4.2 p1 @22:28 shows the indicator OFF); 0 = OFF.
 func mentorEmaMaxCross30m(rc *store.RiskControlConfig) int {
 	if rc != nil && rc.MentorEmaMaxCross30m > 0 {
 		return rc.MentorEmaMaxCross30m
 	}
-	return 0
+	return 2
 }
 
 // mentorLocationTriggerFilter — the 5m trigger filter at locations (L3: kept
@@ -347,6 +352,78 @@ func (at *AutoTrader) mentorAdmitRefusal(in admitIntent) string {
 	return "mentor_mode: AI entries are OFF — every entry comes from the mentor evaluator"
 }
 
+// mentorPastDailyHaltCutoff (B3 N6) is the mentor's one hard last-entry: no new
+// mentor entry after 15:45 CT — the 15-minute lead into the 16:00 CT daily
+// maintenance break (which CMEClosedReason then refuses 16:00–17:00).
+func (at *AutoTrader) mentorPastDailyHaltCutoff(now time.Time) (string, bool) {
+	ct := now.In(kernel.CTLocation())
+	if ct.Hour() == 15 && ct.Minute() >= 45 {
+		return "past 15:45 CT (CME daily halt) — no new mentor entries until the 17:00 reopen", true
+	}
+	return "", false
+}
+
+// isSwingPosition (N4) reports whether an open position is a SWING4H mentor
+// position (identified by its cited arm id "swing-…"), which is EXEMPT from the
+// intraday EOD flat.
+func isSwingPosition(p *store.TraderPosition) bool {
+	if p == nil {
+		return false
+	}
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(p.CitedScenarioID)), "swing-")
+}
+
+// clearMentorLevelArmLocked (D2-44, item 11) is the LOCK-FREE half of the
+// level-arm clear. It drops the evaluator's LevelArms entry for one level
+// ("lvl-") arm. It MUST be called with mentorEvalMu already held: the only
+// production callers are mentorCancelArm (reached from mentorEvalOnce under
+// N11) and mentorReconcileLevelArms (also under N11). Never call it from the
+// armed pass's scan path — the armed pass can run inside mentorEvalOnce (via
+// mentorPlaceNow) and a second Lock() there would deadlock, while the scan
+// path without the lock would race the evaluator Tick.
+func (at *AutoTrader) clearMentorLevelArmLocked(armID string) {
+	if !strings.HasPrefix(strings.TrimSpace(armID), "lvl-") {
+		return
+	}
+	if at.mentorEval != nil {
+		at.mentorEval.ClearLevelArm(armID)
+	}
+}
+
+// mentorReconcileLevelArms (D2-44, item 11) runs once per tick under mentorEvalMu
+// (from mentorEvalOnce) and clears every LevelArms entry whose ledger row is no
+// longer RESTING — terminal, cancel_pending, filled, or gone. It is the single
+// reconciler that covers every trader-side terminal transition (the N12 expiry
+// sweep, session-end cancels, one-live-entry cancels) without any hook at those
+// sites — which would deadlock inside mentorEvalOnce's mutex or race it outside.
+func (at *AutoTrader) mentorReconcileLevelArms() {
+	if at.mentorEval == nil || len(at.mentorEval.State.LevelArms) == 0 {
+		return
+	}
+	ledger := at.store.ArmedOrders()
+	if ledger == nil {
+		return
+	}
+	for key, arm := range at.mentorEval.State.LevelArms {
+		// CTO fixup (release #4 gate): resolve the row through the arm
+		// registry, never by scenario. The ledger scenario is the ArmID
+		// PREFIXED with the epoch (N1, mentorArmIntent), so a scenario =
+		// ArmID lookup never matched a production row and cleared every
+		// resting level arm on every tick. Not registered = never authored
+		// (refused at dispatch) or a previous process — not resting.
+		var r store.ArmedOrderDB
+		found := false
+		if live, ok := mentorLiveArmFor(arm.ArmID); ok {
+			found = ledger.DB().Where("trader_id = ?", at.id).First(&r, live.RowID).Error == nil
+		}
+		resting := found &&
+			!store.IsTerminalArmState(r.State) && !strings.EqualFold(strings.TrimSpace(r.State), store.StateCancelPending)
+		if !resting {
+			delete(at.mentorEval.State.LevelArms, key)
+		}
+	}
+}
+
 // mentorRuleGate is the injector-side R8/R9 gate: it refuses intents the
 // evaluator should never have let through, fail-closed, before any sizing.
 // (R8) SWING4H: stop 30–60 allowed, ≥100 refused, exempt from the 25-pt
@@ -402,8 +479,12 @@ func mentorRuleGate(in mentor.Intent, extra mentorTierInputs) string {
 	stop := mentorIntentRisk(in)
 	target := mentorIntentTargetPts(in)
 	if swing {
-		if stop > mentorSwingStopMaxPts {
-			return fmt.Sprintf("R8: SWING4H stop %.1f pts — ~100 is refused (allowed 30–60, no 25-pt ceiling for the swing)", stop)
+		swingMax := extra.SwingMaxStopPts
+		if swingMax <= 0 {
+			swingMax = mentor.DefaultSwingCfg().MaxStopPts
+		}
+		if stop >= swingMax {
+			return fmt.Sprintf("R8: SWING4H stop %.1f pts — a stop at or over %.0f is skipped [D5.2; owner ruling 2026-10-04 R-D] (no 25-pt ceiling for the swing)", stop, swingMax)
 		}
 	} else {
 		if stop > mentorStopTwentiesMaxPts {
@@ -413,8 +494,14 @@ func mentorRuleGate(in mentor.Intent, extra mentorTierInputs) string {
 	if target > 0 && target < stop {
 		return fmt.Sprintf("R9: target %.1f pts smaller than the stop %.1f pts — never trade it [D1.2 p1 @ 07:48–09:00]", target, stop)
 	}
-	if extra.SpentDay && stop > mentorSpentDayStopCapPts {
-		return fmt.Sprintf("R9: spent day cap 15 — stop %.1f pts skips", stop)
+	spentCap := extra.SpentDayStopCapPts
+	if spentCap <= 0 {
+		spentCap = mentor.DefaultConfig().DayGateTargetCapPts
+	}
+	// R13 [D5.2 §6]: DayOff does not stop the swing, so the spent-day stop cap
+	// must not either — the overnight SWING4H is exempt from the R9 cap.
+	if extra.SpentDay && !swing && stop > spentCap {
+		return fmt.Sprintf("R9: spent day cap %.0f — stop %.1f pts skips", spentCap, stop)
 	}
 	return ""
 }
@@ -432,6 +519,12 @@ func (at *AutoTrader) mentorSizeFor(in mentor.Intent, extra mentorTierInputs) (m
 		mentorSizeForHook()
 	}
 	extra.Setup = in.Setup
+	// ISB size rules 2 and 3 (D4.1 p1 @08:05/09:40, written): the evaluator
+	// stamps Intent.Flag on an ISB at an old high/low or inside a range; here
+	// the flags reach the size table, which cuts both to tier 3. Set at the ONE
+	// sizing call site so no caller can forget them.
+	extra.ISBOldExtreme = extra.ISBOldExtreme || mentor.HasFlag(in.Flag, mentor.FlagISBAtOldExtreme)
+	extra.ISBInRange = extra.ISBInRange || mentor.HasFlag(in.Flag, mentor.FlagISBInRange)
 	// Defence in depth (CTO 1791058442006): the tier inputs are the GEOMETRY
 	// (abs(Price−Stop), abs(Target−Price)), never a bare intent field an
 	// emit site forgot to set — a swing sized as a base trade is the bug this
@@ -523,6 +616,40 @@ func mentorSplitLegs(n, runnerCap int) (leg1, leg2 int) {
 // mentorSpentDayRunnerCap is D: at most 2 contracts run after leg 1.
 const mentorSpentDayRunnerCap = 2
 
+// mentorLeg1ForFrame is the REVIEW-353 split-at-entry math feeding the ONE
+// entry frame: leg 1 = ceil(n/2) with its OWN TP, leg 2 = the runner with
+// the trade target. Returns the leg-1 qty + TP for the wire (leg1_qty /
+// leg1_tp); (0, 0) = the single-bracket legacy path (n <= 1 or swing).
+// forkTP is the exit fork leg-1 target (non-zero only for mode C, >=2R);
+// 0 -> the +1R default (entry +/- R). Spent day caps the runner at 2 (D).
+func mentorLeg1ForFrame(in mentor.Intent, n int, forkMode string, forkTP float64) (leg1Qty int, leg1TP float64) {
+	if forkMode == "swing" || n <= 1 {
+		return 0, 0
+	}
+	runnerCap := 0
+	if in.SpentDay {
+		runnerCap = mentorSpentDayRunnerCap
+	}
+	_, leg2 := mentorSplitLegs(n, runnerCap)
+	if leg2 <= 0 {
+		return 0, 0 // n = 1 -> a single leg, no scale-out
+	}
+	// The AddOn sizes the runner as fill - leg1_qty, so the frame's leg 1 is
+	// n - runner: with the spent-day cap (D) the contracts the cap takes off
+	// the runner go to leg 1 — never a runner above the cap on the wire.
+	leg1 := n - leg2
+	tp := forkTP
+	if tp == 0 {
+		r := mentorIntentRisk(in)
+		if in.Side == mentor.SideShort {
+			tp = in.Price - r
+		} else {
+			tp = in.Price + r
+		}
+	}
+	return leg1, tp
+}
+
 // mentorLeg1TPForC is the C (confluence) leg-1 target: hold to at least 1:2 —
 // leg 1's TP at 2× risk, set AT ENTRY; the stop never moves up.
 func mentorLeg1TPForC(entry, r float64, side string) float64 {
@@ -548,11 +675,16 @@ func mentorConfluenceFlag(in mentor.Intent) bool {
 // A5 (CTO 1791041016051): the §7 spent-day flag rides the intent (stamped by
 // the evaluator) — before this line the flag existed in the table but was
 // never SET, so the spent_day tier (2) and the R9 15-pt stop cap never fired.
+// The 4h+1h agreement rides the intent the same way (HTFAgree).
 func mentorExtraFor(in mentor.Intent, strongDay bool) mentorTierInputs {
 	return mentorTierInputs{
 		StrongDay:  strongDay,
 		Confluence: mentorConfluenceFlag(in),
 		SpentDay:   in.SpentDay,
+		// the evaluator stamps the 4h+1h agreement on the entry intent; before
+		// this line HTFAgree was never set, so the 20-contract tier was
+		// unreachable (SETTINGS-VS-LESSONS-1004 P1-2).
+		HTFAgree: in.HTFAgree,
 	}
 }
 
@@ -734,18 +866,11 @@ func mentorExitB(pos mentorPosition, c, h, l float64, trail bool) mentorExitResu
 			res.ExitPrice, res.ExitReason, res.Exited = pos.Stop, "stop", true
 			return res
 		}
-		// ISB EXIT [D1.4]: the fill candle's close closes leg 1 — modify its
-		// TP to the current price (a limit at or through the market). The
-		// runner continues.
-		if pos.Origin == "ISB" {
-			tp := c
-			res.ModifyTP = &tp
-			if hitHalfR {
-				res.NewStop = pos.Entry
-				res.MoveStops = []string{"leg1", "leg2"} // BE for BOTH legs
-			}
-			return res
-		}
+		// NOTE (item 8, 2026-10-05): the old "ISB EXIT" branch that re-fired a
+		// leg-1 TP modify to the CURRENT close on EVERY candle (and could book
+		// a loss) is DELETED. The ISB partial is now resolved ONCE at the fill
+		// candle's close in the live drive loop (mentorISBPartialTP): +1R if it
+		// printed first, else the candle-3 close only when in profit.
 		if hit1R {
 			// one candle crossed both +0.5R and +1R: BE for both legs and leg
 			// 1's +1R TP is hit (the runner trails from the NEXT candle).
@@ -801,27 +926,38 @@ const mentorResonanceMaxCandles = 3
 // the REST's stop goes to BREAK-EVEN immediately, NO candle trail. R-RES
 // (CTO 1791040643329, D2.4 p1 @02:17-02:29 "@03:36-03:45"): the resonance
 // STILL takes the 1:1 partial — "RISK REWARD 1-1 toi van se ban bot" — so
-// leg 1's +1R TP STAYS (no modify, returned 0); leg 2 runs with its stop at
-// BE. Returns whether it armed and the modify-bracket TP (0 = no modify).
-func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill int) (armed bool, modifyTP float64) {
+// leg 1's +1R TP STAYS (no modify).
+//
+// D2-49 (D2.4 p1 @01:56 "resonance breaks the old high 70–80%"): in mode A
+// the RUNNER's target goes BEYOND the old high. runnerTarget is the next
+// level beyond the old extreme (stamped by the evaluator as Intent.RunnerTarget).
+// > 0 → the runner's native TP moves there; 0 → the runner's native TP is
+// REMOVED (the exit is the BE stop or EOD flat, never a near-old-high cap).
+// Returns (armed, modifyLeg1TP, modifyLeg2TP): leg 1's TP modify is always 0;
+// the runner's TP modify is the third value (0 = remove).
+func mentorMaybeArmResonance(pos *mentorPosition, isbSide string, barsSinceFill int, runnerTarget float64) (armed bool, modifyLeg1TP, modifyLeg2TP float64) {
 	if pos == nil || pos.Mode == "A-resonance" {
-		return false, 0
+		return false, 0, 0
 	}
 	if pos.Origin != "PHL" && pos.Origin != "PLH" {
-		return false, 0 // only a PHL/PLH fill can resonate
+		return false, 0, 0 // only a PHL/PLH fill can resonate
 	}
 	if barsSinceFill < 1 || barsSinceFill > mentorResonanceMaxCandles {
-		return false, 0
+		return false, 0, 0
 	}
 	if !strings.EqualFold(pos.Side, isbSide) {
-		return false, 0
+		return false, 0, 0
 	}
 	pos.Mode = "A-resonance"
 	pos.ArmedBE = true
 	pos.Stop = pos.Entry
+	// D2-49: the runner aims past the old high — move its TP beyond, or remove
+	// it when no level sits beyond (fail-closed: the runner then exits only via
+	// the BE stop or EOD flat, never capped at the near-old-high).
+	pos.Target = runnerTarget
 	mentorCount("resonance_armed")
-	// R-RES: leg 1's +1R take-profit STAYS resting — no TP modify.
-	return true, 0
+	// R-RES: leg 1's +1R take-profit STAYS resting — no leg-1 TP modify.
+	return true, 0, runnerTarget
 }
 
 // mentorExitHold applies the stop-only holds: the stop NEVER moves and nothing

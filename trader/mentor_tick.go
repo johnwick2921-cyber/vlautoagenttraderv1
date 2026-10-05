@@ -62,11 +62,8 @@ func (at *AutoTrader) mentorTick(ctx *kernel.Context) {
 	if len(bars) == 0 {
 		return
 	}
-	// Same once-per-bar watermark as the event pass: Tick is not idempotent
-	// per bar (a repeat tick re-emits intents and double-counts refusals).
-	if bars[len(bars)-1].OpenTime <= at.mentorLastTickOpen {
-		return
-	}
+	// N11: the once-per-bar watermark is enforced inside mentorEvalOnce under
+	// the evaluator mutex (the scan and the event loop can race here).
 	at.mentorEvalOnce(bars)
 }
 
@@ -129,11 +126,9 @@ func (at *AutoTrader) mentorEventPassAt(now time.Time) bool {
 	if len(bars) == 0 {
 		return false
 	}
-	if bars[len(bars)-1].OpenTime <= at.mentorLastTickOpen {
-		return false // already evaluated this bar (the scan or an earlier pass)
-	}
-	at.mentorEvalOnce(bars)
-	return true
+	// N11: the once-per-bar watermark is enforced inside mentorEvalOnce under
+	// the evaluator mutex (the scan and the event loop can race here).
+	return at.mentorEvalOnce(bars)
 }
 
 // mentorEvaluatorConfig applies strategy overrides to the evaluator. B22's
@@ -143,6 +138,11 @@ func (at *AutoTrader) mentorEvaluatorConfig() mentor.Config {
 	cfg.Enabled = true
 	rc := at.mentorRiskControl()
 	cfg.LossDeparturePts = mentorLossDeparturePts(rc)
+	// The resolvers are nil-safe and return the ruled default for an unset field.
+	cfg.LegBudgetEnabled = mentorLegBudgetEnabled(rc)
+	cfg.LegResetOn = mentorLegResetOn(rc)
+	cfg.LocTriggerFilter = mentorLocationTriggerFilter(rc)
+	applyMentorTuning(&cfg, rc)
 	if rc != nil {
 		cfg.LvlRevisitMinPts = mentorLvlRevisitMinPts(rc)
 		cfg.EmaMaxCross30m = mentorEmaMaxCross30m(rc)
@@ -150,15 +150,81 @@ func (at *AutoTrader) mentorEvaluatorConfig() mentor.Config {
 	return cfg
 }
 
+// mentorPlaceNow (B3 item 4) runs the mentor-only armed pass immediately after
+// the evaluator authors rows, instead of waiting for the 2-minute scan. It is
+// the same serialized pass the scan would run (armedPassMu) — the pass is now
+// mentor-aware and needs no day plan.
+func (at *AutoTrader) mentorPlaceNow(bars []market.Kline) {
+	now := mentorClockNow()
+	at.maybeManageArmedOrdersAt(kernel.StructureSnapshot(bars, now.UnixMilli()), now)
+}
+
+// mentorPlaceCadence (N7 part 3) is how often the event loop re-runs the
+// mentor-only placement while an unexpired mentor arm sits UNPLACED. A package
+// var so the event-loop pin can shorten it; production leaves it at 5s.
+var mentorPlaceCadence = 5 * time.Second
+
+// mentorPlacementDue reports whether the mentor-only placement pass should run
+// NOW: mentor mode + MENTOR_PLACE on, AND at least one mentor-authored row is
+// UNPLACED (armed, no signal) and unexpired. A working row needs no retry — the
+// pass already reached it; an expired row is cancelled by the pass, not placed.
+func (at *AutoTrader) mentorPlacementDue(now time.Time) bool {
+	if at == nil || at.store == nil || !at.mentorEnabled() || !mentorPlaceEnv() {
+		return false
+	}
+	rows, err := at.store.ArmedOrders().ListNonTerminal(at.id)
+	if err != nil {
+		return false
+	}
+	nowMs := now.UnixMilli()
+	for _, r := range rows {
+		if !mentorAuthoredRow(r) || r.State != store.StateArmed {
+			continue
+		}
+		if r.ExpiryMs == 0 || nowMs < r.ExpiryMs {
+			return true
+		}
+	}
+	return false
+}
+
+// mentorPlacementCadencePass runs the mentor-only placement pass when due (the
+// event loop's cadence tick calls it). Returns whether a pass ran.
+func (at *AutoTrader) mentorPlacementCadencePass() bool {
+	if !at.mentorPlacementDue(mentorClockNow()) {
+		return false
+	}
+	var bars []market.Kline
+	if market.FuturesBarsProvider != nil {
+		bars = market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
+	}
+	at.mentorPlaceNow(bars)
+	return true
+}
+
 // mentorEvalOnce runs one evaluator tick over the bars and processes every
-// intent (size → latency → no-chase → place-or-hold).
-func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
+// intent (size → latency → no-chase → place-or-hold). Returns whether it ran —
+// false when another goroutine (scan vs event) already ticked this bar.
+// N11 (DS-104): the scan loop and the event loop both call this; the mutex
+// serializes the evaluator (its Tick mutates shared maps) AND makes the
+// once-per-bar watermark atomic.
+func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) bool {
 	last := bars[len(bars)-1]
+	at.mentorEvalMu.Lock()
+	defer at.mentorEvalMu.Unlock()
+	if last.OpenTime <= at.mentorLastTickOpen {
+		return false // already ticked (the other goroutine won the race)
+	}
 	at.mentorLastTickOpen = last.OpenTime
 
 	if at.mentorEval == nil {
 		at.mentorEval = mentor.New(at.mentorEvaluatorConfig())
 	}
+	// item 18 part 1: plumb the day's red-folder 07:30 print windows from the
+	// calendar into the evaluator so the print candle never moves the 1h/4h
+	// trigger lines [D4.4 p1 @18:13, @22:15]. No calendar / no print today →
+	// empty → the HTF feed is byte-identical.
+	at.mentorEval.Cfg.PrintWindows = at.mentorNewsPrintWindows()
 	emitMs := time.Now().UnixMilli()
 	// The evaluator's clock is the instant the last bar CLOSED: every closedness
 	// test inside Tick then reads the just-closed bar as closed, never as forming
@@ -168,12 +234,28 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 	// source that was short at boot (94/102 closed 4h candles) clears on its
 	// own instead of needing a restart.
 	at.mentorRefreshDepths()
+	// EXIT DRIVE (DS-107): event-driven resonance arming first — a same-side
+	// ISB within 3 candles of a PHL/PLH fill flips it to mode A (both stops to
+	// BE NOW) — then the candle-driven exit loop, once per closed 1m bar.
+	for _, in := range intents {
+		if isISBEntryIntent(in) {
+			at.mentorArmResonanceOnISB(string(in.Side))
+		}
+	}
+	at.mentorExitDrive(bars)
 	// S9 (D5.2 p2 @05:21): strong-day detection from the recent CLOSED 5m bars
 	// — 50–80 pt candles cut every tier to 1–2.
 	strongDay := false
 	if bars5 := mentorClosedBars(market.FuturesBarsProvider("MNQ", "5m", 12)); len(bars5) > 0 && mentorStrongDayFrom5m(bars5) {
 		strongDay = true
 	}
+	// item 18 part 2 (R12): at print −10m on a red-folder print day, cancel
+	// live INTRADAY mentor arms by ArmID and flatten intraday mentor positions
+	// BEFORE the 07:30 print. SWING4H arms and positions are exempt (the course
+	// holds the swing by the 4h [D5.2]). Idempotent: retried each bar in the
+	// window; no-ops once flat. Runs under the N11 mutex so the ArmID cancel
+	// can clear the evaluator's LevelArms safely.
+	at.mentorNewsCancelFlattenAt(mentorClockNow())
 	for _, in := range intents {
 		// B20 trader half (CTO 1791058836784, FIXES.md B20): the trigger
 		// LATER flipped to the trade's side — the OPEN position upgrades
@@ -194,6 +276,21 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 		// every arm action; an unknown action is refused, never silent.
 		at.mentorDispatchIntent(in, extra, last.CloseTime, emitMs)
 	}
+	// B3 (release #3b) item 4: place at the authoring event, not on the 2-min
+	// scan — a 1-candle mentor arm must not expire before the scan runs.
+	if mentorPlaceEnv() {
+		at.mentorPlaceNow(bars)
+	}
+	// D2-44 (item 11): reconcile the evaluator's LevelArms against the ledger —
+	// a level order the trader cancelled/expired on its side must stop resting
+	// in the evaluator, so the level can re-emit on the next valid touch.
+	// Under the N11 mutex (the whole function is the critical section).
+	at.mentorReconcileLevelArms()
+	// N12 funnel visibility (read-only): one closed bar + this tick's intents.
+	// Runs inside the N11 evaluator mutex (taken at the top of mentorEvalOnce),
+	// after the event placement so this tick's placements are counted.
+	at.mentorFunnelTick(1, len(intents))
+	return true
 }
 
 // mentorPlaceIntent runs the placement gates (sources wired, stop rules,
@@ -203,6 +300,15 @@ func (at *AutoTrader) mentorEvalOnce(bars []market.Kline) {
 // The no-chase rule runs FIRST: a stop entry whose price is already through
 // the trigger is skipped — he never enters at market (§3).
 func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoice, barCloseMs, emitMs int64) {
+	// N10 (stale intent): an entry whose reference candle is not the newest
+	// closed bar came from a reload replay of stale box/ISB/PHL state — never
+	// a live order. The swing is exempt (RefBarMs 0 — gated by its own 5m
+	// watermark). Counted, never silent.
+	if in.RefBarMs != 0 && in.RefBarMs != barCloseMs {
+		mentorCount("stale_intent")
+		at.logWarnf("🧑‍🏫 mentor placement REFUSED — stale %s intent: reference bar close %d ≠ newest closed bar %d", in.Setup, in.RefBarMs, barCloseMs)
+		return
+	}
 	// WIRING PROOF (fail-closed): with any mentor source seam missing, EVERY
 	// entry refuses here — the boot line logs it, this line enforces it.
 	if missing := at.mentorSourcesBlocking(in.Setup); len(missing) > 0 {
@@ -227,6 +333,13 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 		return
 	}
 	if refuse, why := at.mentorAddGate(in); refuse {
+		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
+		return
+	}
+	// §5(a) — the daily loss limit is checked AT PLACEMENT, not only by the
+	// 60s sweep: a placement while the session-day's realized loss is already
+	// at/past the limit is refused and counted.
+	if refuse, why := at.mentorDailyLossGate(mentorClockNow()); refuse {
 		at.logWarnf("🧑‍🏫 mentor placement REFUSED — %s", why)
 		return
 	}
@@ -265,7 +378,7 @@ func (at *AutoTrader) mentorPlaceIntent(in mentor.Intent, choice mentorSizeChoic
 		mentorPlaceRecorderForTest(in, choice.Contracts)
 		return // test seam: the real pipeline is never reached from a test
 	}
-	at.mentorArmIntent(in, choice, barCloseMs, emitMs)
+	at.mentorArmIntent(in, choice, barCloseMs, emitMs, forkMode, forkTP)
 }
 
 // mentorExpiryGuard is the F3 fail-closed pin (CTO 1791035117415): a mentor
@@ -286,17 +399,32 @@ var mentorSetArmExpiryWire func(armID int64, expiryMs int64) error
 
 // mentorIntentExpiry resolves the N12 per-order expiry (PR #313): the expiry
 // belongs to the RULES, not a blanket timer. An intent-carried expiry wins;
-// otherwise the injector computes the setup's default — a level touch or a
-// single ISB expires at the close of the NEXT 1m candle; the swing lives until
+// otherwise the injector computes the setup's default — a LEVEL order (PHL/PLH/
+// EMA, ArmID prefix "lvl-") RESTS until the RTH window end at 15:00 CT
+// (D2-44, item 11); a single ISB expires at the close of the NEXT 1m candle
+// (the one-candle rule is the ISB only [D1.4 p1 @18:32]); the swing lives until
 // the close of the current 4h candle (mentorSwingExpiry).
 func mentorIntentExpiry(in mentor.Intent, barCloseMs int64) int64 {
 	if in.ExpiryMs > 0 {
 		return in.ExpiryMs
 	}
+	if strings.HasPrefix(strings.TrimSpace(in.ArmID), "lvl-") {
+		return mentorLevelExpiry(barCloseMs)
+	}
 	if strings.EqualFold(in.Setup, "SWING4H") {
 		return mentorSwingExpiry(barCloseMs + 1) // +1: the instant the bar closed, so a 4h-boundary bar reads the NEW 4h candle
 	}
 	return barCloseMs + 60_000 // the close of the NEXT 1m candle
+}
+
+// mentorLevelExpiry (D2-44, item 11) is the B6 lifetime for a LEVEL order
+// (ArmID prefix "lvl-"): it RESTS until the RTH window end at 15:00 CT, or
+// until the evaluator's close-through sweep cancels it — never the next 1m
+// candle [D2.3 p1 @17:42–18:14, @18:46–19:12]. At or after 15:00 CT it
+// fail-safes to tomorrow's 15:00 (placement past RTH is already refused
+// upstream, so this is a guard, never the live path).
+func mentorLevelExpiry(nowMs int64) int64 {
+	return mentor.LevelArmExpiry(nowMs) // one definition, shared with the leg budget
 }
 
 // mentorSwingExpiry (RULING [C], knob swing_order_expiry): a swing stop order
@@ -477,6 +605,47 @@ func mentorNewsHold(events []calendar.Event, now time.Time) (hold bool, why stri
 	return false, ""
 }
 
+// mentorNewsPrintWindowsFromEvents is the pure window builder (item 18 part 1):
+// one [printAt−10m, printAt+5m) window per T1 CPI/PPI/Unemployment 07:30 CT
+// print — the same events and the same window the hold above uses. No match →
+// nil (a non-print day is byte-identical).
+func mentorNewsPrintWindowsFromEvents(events []calendar.Event) []mentor.PrintWindow {
+	var out []mentor.PrintWindow
+	for _, e := range events {
+		if e.Impact != calendar.T1 || kernel.CloseHHMMCT(e.Time) != "07:30" {
+			continue
+		}
+		title := strings.ToLower(e.Title)
+		matched := false
+		for _, tok := range mentorNewsPrintTitleTokens {
+			if strings.Contains(title, tok) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			continue
+		}
+		out = append(out, mentor.PrintWindow{
+			FromMs: e.Time.Add(-mentorNewsPreWindow).UnixMilli(),
+			ToMs:   e.Time.Add(mentorNewsPostWindow).UnixMilli(),
+		})
+	}
+	return out
+}
+
+// mentorNewsPrintWindows returns the day's red-folder print windows from the
+// stored calendar. ok=false (missing/unreadable calendar) → nil: the HTF feed
+// stays byte-identical (the destructive news flat below is the half that needs
+// the calendar to fire).
+func (at *AutoTrader) mentorNewsPrintWindows() []mentor.PrintWindow {
+	evs, ok := at.mentorDayEvents()
+	if !ok {
+		return nil
+	}
+	return mentorNewsPrintWindowsFromEvents(evs)
+}
+
 // mentorNowSource is the clock seam for every mentor time gate (tests).
 var mentorNowSource func() time.Time
 
@@ -531,6 +700,80 @@ func (at *AutoTrader) mentorNewsGate() (bool, string) {
 		mentorCount("news_hold")
 	}
 	return hold, why
+}
+
+// mentorNewsCancelFlattenAt (item 18 part 2, R12) cancels live INTRADAY mentor
+// arms by ArmID and flattens intraday mentor positions at print −10m on a
+// red-folder print day [D4.4 p1 @20:44–21:46]. It is the DESTRUCTIVE half of
+// the news window: the hold above refuses NEW placements through the print;
+// this sweep clears what already REMAINS before the 07:30 print. SWING4H arms
+// and positions are exempt (the course holds the swing by the 4h [D5.2]).
+// Idempotent by construction: an already-cancelled arm and an already-closed
+// position both no-op, so the sweep may run on every bar of the window.
+// The calendar is REQUIRED — a destructive flatten must not fire on a
+// guess; with no readable calendar the hold still blocks placements fail-closed
+// but nothing is force-closed. Returns whether it acted.
+func (at *AutoTrader) mentorNewsCancelFlattenAt(now time.Time) bool {
+	if !at.mentorEnabled() || at.store == nil || at.trader == nil {
+		return false
+	}
+	evs, ok := at.mentorDayEvents()
+	if !ok {
+		return false // cannot name a print day — no force-close on a guess
+	}
+	if hold, _ := mentorNewsHold(evs, now); !hold {
+		return false // not inside a print window on a print day
+	}
+	acted := at.cancelLiveIntradayMentorArms()
+	positions, err := at.store.Position().GetOpenPositions(at.id)
+	if err != nil {
+		at.logWarnf("🧑‍🏫 news flat: open-position read failed (%v) — flatness UNVERIFIED before the print", err)
+		return acted
+	}
+	if len(positions) > 0 {
+		at.logWarnf("🧑‍🏫 news flat: print −10m — flattening %d intraday mentor position(s) (SWING4H exempt)", len(positions))
+	}
+	for _, p := range positions {
+		if isSwingPosition(p) {
+			at.logInfof("🧑‍🏫 news flat: SWING4H position %d (%s) EXEMPT — held by the 4h", p.ID, p.CitedScenarioID)
+			continue
+		}
+		at.flattenPosition(p, "🧑‍🏫 NEWS FLAT")
+		acted = true
+	}
+	return acted
+}
+
+// cancelLiveIntradayMentorArms cancels every live (current-process) INTRADAY
+// mentor arm by its ArmID — SWING4H arms ("swing-…") are exempt. It resolves
+// through the injector's live-arm registry and the real mentorCancelArm path,
+// so each cancel is named and the evaluator's LevelArms entry is cleared.
+// Returns whether any cancel was requested.
+func (at *AutoTrader) cancelLiveIntradayMentorArms() bool {
+	ids := make([]string, 0, len(mentorLiveArms))
+	mentorLiveMu.Lock()
+	for id := range mentorLiveArms {
+		ids = append(ids, id)
+	}
+	mentorLiveMu.Unlock()
+	acted := false
+	cancelled := 0
+	for _, id := range ids {
+		if strings.HasPrefix(strings.TrimSpace(id), "swing-") {
+			continue // SWING4H arm — held by the 4h
+		}
+		at.mentorCancelArm(mentor.Intent{
+			Action: mentor.CancelArm,
+			ArmID:  id,
+			Reason: "news 07:30 print — cancel intraday mentor arm before the print [D4.4 p1 @20:44]",
+		})
+		acted = true
+		cancelled++
+	}
+	if acted {
+		at.logWarnf("🧑‍🏫 news flat: cancelled %d live intraday mentor arm(s) (SWING4H exempt)", cancelled)
+	}
+	return acted
 }
 
 // ── STOP RULES (owner ruling 00:1x CT, "exactly like he said") ─────────────
@@ -629,11 +872,14 @@ func mentorDoneAfterWin(dayNetPnl float64, closedInProfit bool) bool {
 	return closedInProfit && dayNetPnl > 0
 }
 
-// mentorDayNetSource / mentorClosedProfitSource are the session seams for (a)
-// (nil → no data → the gate stays open; the live driver fills them at P1).
+// mentorDayNetSource / mentorClosedProfitSource are the session seams for (a).
+// nil → unwired (fail closed). A wired seam that returns ok=false means the
+// day's data is UNRESOLVED (a NULL pnl_corrected closed row or a read error) —
+// an unknown is not "no win", so the gate fails CLOSED. The production wiring
+// (mentorWireProductionSeams) binds both to the strict-corrected day read.
 var (
-	mentorDayNetSource       func() float64
-	mentorClosedProfitSource func() bool
+	mentorDayNetSource       func() (float64, bool)
+	mentorClosedProfitSource func() (bool, bool)
 )
 
 // mentorDoneAfterWinGate is the call-site half of (a); the knob is default ON
@@ -650,8 +896,13 @@ func (at *AutoTrader) mentorDoneAfterWinGate() (bool, string) {
 		at.logWarnf("🧑‍🏫 mentor done-after-win source missing (day net / closed profit) — refusing the entry (fail-closed)")
 		return true, "done-after-win: day P&L or closed-trade source not wired — an unknown is not 'no win'; refusing (fail-closed) [D1.2 p1 @20:53–21:16]"
 	}
-	net := mentorDayNetSource()
-	closed := mentorClosedProfitSource()
+	net, okNet := mentorDayNetSource()
+	closed, okClosed := mentorClosedProfitSource()
+	if !okNet || !okClosed {
+		mentorCount("done_after_win_unresolved")
+		at.logWarnf("🧑‍🏫 mentor done-after-win day UNRESOLVED (a NULL pnl_corrected closed row or a read error) — refusing the entry (fail-closed)")
+		return true, "done-after-win: day P&L unresolved (a NULL pnl_corrected closed row) — an unknown is not 'no win'; refusing (fail-closed) [D1.2 p1 @20:53–21:16]"
+	}
 	if mentorDoneAfterWin(net, closed) {
 		mentorCount("done_after_win_refused")
 		return true, "done for the day after a win — a trade closed in profit and the day is net positive; no new entries until the next trading day (17:00 CT) [D1.2 p1 @20:53–21:16]"
@@ -682,6 +933,42 @@ func (at *AutoTrader) mentorAddGate(in mentor.Intent) (bool, string) {
 	if strings.EqualFold(open, string(in.Side)) {
 		mentorCount("add_refused")
 		return true, fmt.Sprintf("never add/average [D1.1 p1 @17:06–17:44]: %s already open — the resonance ISB is a hold signal, not an entry", open)
+	}
+	return false, ""
+}
+
+// mentorDailyLossGate is the §5(a) placement-time daily-loss check: the daily
+// loss limit is enforced HERE, not only by the 60s sweep. A placement while the
+// session-day's realized loss is already at/past the limit is refused and
+// counted. It reads the SAME production readers the desk strip uses
+// (deskGuardrail for the enforced limit, deskRealizedToday for the corrected
+// session-day P&L) — one definition, no second copy (A24).
+//
+// FAIL-OPEN on a read error (deskRealizedToday returns 0 when the store read
+// fails) — the 60s sweep still enforces the flatten, and a circuit breaker that
+// trips on a DB hiccup is worse than the gap it closes (sessionRiskGateAt's
+// contract). The limit is only checked when BOTH toggles are on and a value is
+// configured (deskGuardrail returns enforced=false otherwise).
+func (at *AutoTrader) mentorDailyLossGate(now time.Time) (bool, string) {
+	limit, _, enforced := at.deskGuardrail()
+	if !enforced || limit <= 0 {
+		return false, ""
+	}
+	// CTO fold (release 10-05-1): fail CLOSED on an UNRESOLVED close today
+	// (pnl NULL — canon 40): an unknown loss is not a confident "under the
+	// limit" — the same rule as the B1 day-net source. The 60s sweep is a
+	// backstop, not the gate.
+	if at.store == nil {
+		return false, "" // no store exists only in unit fixtures; production always has one
+	}
+	realized, _, unresolved := at.deskRealizedToday(now)
+	if unresolved > 0 {
+		mentorCount("daily_loss_refused")
+		return true, fmt.Sprintf("daily loss limit enforced but %d close(s) today have unresolved P&L — no new entry (fail-closed) [guardrail]", unresolved)
+	}
+	if realized <= -limit {
+		mentorCount("daily_loss_refused")
+		return true, fmt.Sprintf("daily loss limit hit at placement (realized today=%.2f, limit=-%.2f) — no new entry [guardrail]", realized, limit)
 	}
 	return false, ""
 }
@@ -832,6 +1119,9 @@ func (at *AutoTrader) mentorSeedAtStart() {
 	if at == nil || at.store == nil {
 		return
 	}
+	// N1 (DS-104): each construction (boot or reload) gets its own arm epoch, so
+	// a rebuilt evaluator's "isb-1" never collides with a prior terminal row.
+	bumpMentorArmEpoch()
 	if at.mentorEval == nil {
 		at.mentorEval = mentor.New(at.mentorEvaluatorConfig())
 	}
@@ -948,12 +1238,6 @@ func (at *AutoTrader) mentorMissingSources(includeSwingOnly bool) []string {
 	for _, n := range mentorSeamMissing() {
 		missing = append(missing, "seam: "+n)
 	}
-	if mentorDayNetSource == nil {
-		missing = append(missing, "day net")
-	}
-	if mentorClosedProfitSource == nil {
-		missing = append(missing, "closed profit")
-	}
 	if at.store == nil && mentorDayEventsForTest == nil {
 		missing = append(missing, "news events")
 	}
@@ -988,6 +1272,36 @@ func (at *AutoTrader) mentorMissingSources(includeSwingOnly bool) []string {
 	return missing
 }
 
+// mentorSourcesLine is the single-trader "mentor sources" line ("" when the
+// trader is nil or not mentor-mode). The boot line and the reload line both
+// join these per-trader lines, so a save that arms mentor mode reports the
+// exact same facts as boot.
+func mentorSourcesLine(id string, at *AutoTrader) string {
+	if at == nil || !at.mentorEnabled() {
+		return ""
+	}
+	if missing := at.mentorSourcesBlocking("ISB"); len(missing) > 0 {
+		line := fmt.Sprintf("🧑‍🏫 mentor sources MISSING for trader %s: [%s] — mentor_mode refuses to arm (fail-closed)", id, strings.Join(missing, ", "))
+		logger.Errorf("%s", line)
+		return line
+	}
+	if swingOnly := at.mentorSourcesMissing(); len(swingOnly) > 0 {
+		// only the swing-only source (4h EMA 34) is short: intraday entries
+		// are allowed, SWING4H entries are refused until it warms up.
+		return fmt.Sprintf("🧑‍🏫 mentor sources wired for trader %s — intraday entries allowed; SWING4H entries refused until: [%s]", id, strings.Join(swingOnly, ", "))
+	}
+	var depths []string
+	for _, req := range mentorDepthRequirements {
+		depth, known := mentorSourceDepth(req.Name)
+		if !known {
+			depths = append(depths, fmt.Sprintf("%s=n/a", req.Name))
+		} else {
+			depths = append(depths, fmt.Sprintf("%s=%d", req.Name, depth))
+		}
+	}
+	return fmt.Sprintf("🧑‍🏫 mentor sources wired for trader %s — seeded depths: %s", id, strings.Join(depths, ", "))
+}
+
 // MentorSourcesBootLine is the boot wiring check: with mentor_mode ON every
 // mentor source seam must be non-nil, or mentor_mode refuses to arm — one ERROR
 // line names the missing seams per trader. A wired trader prints the seeded
@@ -995,31 +1309,26 @@ func (at *AutoTrader) mentorMissingSources(includeSwingOnly bool) []string {
 func MentorSourcesBootLine(loaded map[string]*AutoTrader) string {
 	var lines []string
 	for id, at := range loaded {
-		if at == nil || !at.mentorEnabled() {
-			continue
-		}
-		if missing := at.mentorSourcesBlocking("ISB"); len(missing) > 0 {
-			logger.Errorf("🧑‍🏫 mentor sources MISSING for trader %s: [%s] — mentor_mode refuses to arm (fail-closed)", id, strings.Join(missing, ", "))
-			lines = append(lines, fmt.Sprintf("🧑‍🏫 mentor sources MISSING for trader %s: [%s] — mentor_mode refuses to arm (fail-closed)", id, strings.Join(missing, ", ")))
-		} else if swingOnly := at.mentorSourcesMissing(); len(swingOnly) > 0 {
-			// only the swing-only source (4h EMA 34) is short: intraday entries
-			// are allowed, SWING4H entries are refused until it warms up.
-			lines = append(lines, fmt.Sprintf("🧑‍🏫 mentor sources wired for trader %s — intraday entries allowed; SWING4H entries refused until: [%s]", id, strings.Join(swingOnly, ", ")))
-		} else {
-			var depths []string
-			for _, req := range mentorDepthRequirements {
-				depth, known := mentorSourceDepth(req.Name)
-				if !known {
-					depths = append(depths, fmt.Sprintf("%s=n/a", req.Name))
-				} else {
-					depths = append(depths, fmt.Sprintf("%s=%d", req.Name, depth))
-				}
-			}
-			lines = append(lines, fmt.Sprintf("🧑‍🏫 mentor sources wired for trader %s — seeded depths: %s", id, strings.Join(depths, ", ")))
+		if line := mentorSourcesLine(id, at); line != "" {
+			lines = append(lines, line)
 		}
 	}
 	if len(lines) == 0 {
 		return "🧑‍🏫 mentor sources: n/a (no mentor-mode trader)"
+	}
+	return strings.Join(lines, " | ")
+}
+
+// MentorSourcesReloadLine re-prints the sources line for exactly the traders a
+// strategy reload just rebuilt (B1). The boot line covers process boot; this
+// covers "mentor mode turned ON by a save" without a restart. Empty when none
+// of the ids is a mentor-mode trader.
+func MentorSourcesReloadLine(loaded map[string]*AutoTrader, ids []string) string {
+	var lines []string
+	for _, id := range ids {
+		if line := mentorSourcesLine(id, loaded[id]); line != "" {
+			lines = append(lines, line)
+		}
 	}
 	return strings.Join(lines, " | ")
 }

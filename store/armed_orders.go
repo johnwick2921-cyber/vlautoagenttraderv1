@@ -20,7 +20,7 @@ import (
 // plan version change, re-armed only by a NEW authorization).
 // ArmOriginMentor (REVIEW-313 F3) is the ONLY origin value the stop-limit
 // routing reads as "mentor-authored". The mentor injector stamps it; every
-// other author leaves the origin ''.
+// other author leaves the origin ”.
 const ArmOriginMentor = "mentor"
 
 type ArmedOrderDB struct {
@@ -54,14 +54,27 @@ type ArmedOrderDB struct {
 	// evaluator's intent authors when it places a stop-limit. The armed pass
 	// cancels an unfilled order at now >= expiry_ms. 0 = no expiry authored =
 	// this code never auto-cancels the row.
-	ExpiryMs     int64 `gorm:"default:0"`
+	ExpiryMs int64 `gorm:"default:0"`
 	// Origin (REVIEW-313 F3, 2026-10-03): who authored this arm. The mentor
 	// injector (DS-102, #316) sets ArmOriginMentor; every other author leaves
 	// it ''. The stop-limit routing reads THIS field, never the expiry as a
 	// proxy: mentor + knob ON + expiry > 0 routes to the limit variant; a
 	// mentor arm with the knob ON and no expiry is REFUSED fail-closed; a
 	// non-mentor arm takes today's path whatever its expiry.
-	Origin       string `gorm:"default:''"`
+	Origin string `gorm:"default:''"`
+	// Contracts (B2 mentor size, 2026-10-04): the mentor-signed contract count
+	// the armed pass must send. NULL = ABSENT (absent ≠ 0) — only the mentor
+	// injector stamps it; every historical and non-mentor row is NULL. The
+	// armed pass sends this count for origin=mentor rows (clamped to the
+	// trader's max) and REFUSES a mentor row without one — never sent as 1.
+	Contracts *int
+	// Leg1Qty / Leg1TP (REVIEW-353 redesign, 2026-10-04): the split AT ENTRY
+	// rides the ONE entry frame — leg 1 = ceil(n/2) with its OWN TP at +1R (or
+	// ≥2R for mode C), leg 2 = the runner (TP = TargetPx). NULL / 0 = the
+	// single-bracket legacy path (byte-identical wire). Only the mentor
+	// injector stamps them; the AddOn places TWO OCO pairs on the one fill.
+	Leg1Qty      *int
+	Leg1TP       float64 `gorm:"default:0"`
 	FillPrice    float64
 	FillQuantity int
 
@@ -300,6 +313,14 @@ func (s *ArmedOrderStore) Migrate() error {
 			// injector stamps ArmOriginMentor; '' on every historical
 			// row = not a mentor arm, which is the truth for them.
 			{"origin", "TEXT NOT NULL DEFAULT ''"},
+			// B2 MENTOR SIZE (2026-10-04): the mentor-signed contract count.
+			// NULL = ABSENT on every historical and non-mentor row — a mentor
+			// row without one is REFUSED by the armed pass, never sent as 1.
+			{"contracts", "INTEGER"},
+			// REVIEW-353 split-at-entry redesign: leg 1 qty + its own TP ride
+			// the ONE entry frame. NULL/0 = single-bracket legacy.
+			{"leg1_qty", "INTEGER"},
+			{"leg1_tp", "REAL NOT NULL DEFAULT 0"},
 			// W3 market_in_zone (2026-09-23): NULLable where 0 would be a
 			// fabricated value (absent ≠ 0); '' where the text is a label.
 			{"policy", "TEXT NOT NULL DEFAULT ''"},
@@ -519,6 +540,10 @@ func (s *ArmedOrderStore) UpsertArm(row *ArmedOrderDB) error {
 				// planner row writes '' / NULL over '' / NULL).
 				"source": row.Source, "source_ref": row.SourceRef, "source_rule": row.SourceRule,
 				"eligible_until_ms": row.EligibleUntilMs, "source_run_epoch": row.SourceRunEpoch,
+				// REVIEW-SPLIT-2 P2: the mentor size and split follow the
+				// authorization — leg1_tp moves with a re-armed stop. Every
+				// other author writes NULL / 0 over NULL / 0.
+				"contracts": row.Contracts, "leg1_qty": row.Leg1Qty, "leg1_tp": row.Leg1TP,
 			}).Error
 		}
 		// MANUAL-CANCEL-WINS (2026-08-30 E7 incident): a TERMINAL row is
@@ -570,6 +595,8 @@ func (s *ArmedOrderStore) UpsertArm(row *ArmedOrderDB) error {
 			// W5 — the new authorization's machine source ('' on planner rows).
 			"source": row.Source, "source_ref": row.SourceRef, "source_rule": row.SourceRule,
 			"eligible_until_ms": row.EligibleUntilMs, "source_run_epoch": row.SourceRunEpoch,
+			// REVIEW-SPLIT-2 P2: the new authorization's mentor size and split.
+			"contracts": row.Contracts, "leg1_qty": row.Leg1Qty, "leg1_tp": row.Leg1TP,
 		}).Error
 	}
 	if err != gorm.ErrRecordNotFound {
@@ -706,6 +733,24 @@ func (s *ArmedOrderStore) BeginPlacement(id int64, signalID string) error {
 		return fmt.Errorf("armed_orders: row %d is no longer eligible for placement", id)
 	}
 	return nil
+}
+
+// CancelUnplaced (N7 part 4, CTO release #4) ends a row that was NEVER SENT —
+// armed, no signal id — straight in 'cancelled'. A cancel_pending row with an
+// empty signal id can never settle (no regime has an id to look for), so the
+// request path would strand it forever. The WHERE is the CAS: a placement that
+// stamped a signal id in the meantime (BeginPlacement) makes this a no-op
+// (false), and the caller must then cancel the placed order the normal way.
+func (s *ArmedOrderStore) CancelUnplaced(id int64, reason string) (bool, error) {
+	if s == nil || s.db == nil {
+		return false, nil
+	}
+	r := s.db.Model(&ArmedOrderDB{}).Where("id = ? AND state = ? AND (signal_id = '' OR signal_id IS NULL)", id, StateArmed).
+		Updates(map[string]any{"state": StateCancelled, "state_reason": reason})
+	if r.Error != nil {
+		return false, r.Error
+	}
+	return r.RowsAffected == 1, nil
 }
 
 // SetArmExpiry (PR B stop-limit, 2026-10-03) stamps the per-order expiry the
