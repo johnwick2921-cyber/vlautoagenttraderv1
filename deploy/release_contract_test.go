@@ -66,7 +66,7 @@ func TestReleaseWorkflowEnforcesCleanVcsStampAndTheGuideRev(t *testing.T) {
 // THIS repo; the partner repo must never be reachable by accident.
 // The artifact repository must be the partner's own base, and the owner repo
 // name must never appear anywhere in the workflow.
-func TestReleaseWorkflowPublishesOnlyUnderThePartnerRepoAndNeverNofx(t *testing.T) {
+func TestReleaseWorkflowPublishesOnlyUnderThePartnerRepoAndNeverTheSourceRepo(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	if !strings.Contains(y, "RELEASE_REPO") {
 		t.Fatalf("the artifact target must be ONE variable, RELEASE_REPO, so the owner changes it in one line")

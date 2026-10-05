@@ -25,15 +25,6 @@ type censusEntry struct {
 }
 
 var censusTable = map[string][]censusEntry{
-	".github/workflows/release.yml": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"deploy/release_contract_test.go": {
-		{count: 1, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
-	"docs/superpowers/runbooks/2026-09-22-vl-partner-update.md": {
-		{count: 9, phase: "R5", reason: "transitional — re-pinned at final"},
-	},
 	"ninjascript/VLTraderTCPClient.cs": {
 		{count: 0, phase: "final", reason: "zero-name ruling 2026-10-03: the three pre-rename folder mentions reworded to the pre-rename folder (owner: zero old-name tokens, no exceptions)"},
 	},
