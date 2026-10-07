@@ -321,6 +321,10 @@ export interface RiskControlConfig {
   // minutes (unset/0 → 60; -1 = no window, entries at any hour). SWING is exempt.
   mentor_window_start?: string
   mentor_window_minutes?: number
+  // Stop-after-loss (mentor day-stop): once a mentor trade closes today with a
+  // net loss, refuse new entries until the next trading day (17:00 CT).
+  // Absent = OFF (byte-identical to the prior config).
+  mentor_stop_after_loss?: boolean
   // Mentor method numbers (K3). Every field unset = the ruled default; the
   // Go side (store.MentorTuning) fails closed to the default on a bad value.
   mentor_tuning?: MentorTuning
@@ -349,7 +353,7 @@ export interface RiskControlConfig {
   consecutive_loss_halt?: number | null
   reentry_cooldown_minutes?: number // B7: after a stop-loss, block same-dir re-entry for N min or until price moves ≥1×ATR15 from the stop (0=off; futures-only)
   max_contracts_per_order?: number // futures contracts-per-order clamp
-  max_contracts_enabled?: boolean // default ON
+  max_contracts_enabled?: boolean // parse-only — no consumer (knob registry KnobIneffective)
   max_notional_leverage?: number // futures notional ceiling = equity × this (default 20)
   notional_cap_enabled?: boolean // default ON
   blackout_enabled?: boolean // default OFF

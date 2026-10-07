@@ -590,6 +590,12 @@ type mentorPosition struct {
 	ArmedBE   bool    // stops are at entry (B: half the target distance seen; A: resonance armed)
 	Scaled    bool    // leg 1's +1R TP candle seen → the runner's trail begins
 	Leg1TP    float64 // leg 1's TP (0 → the +1R default: entry ± R)
+	// Leg1ExitedAtMs (I6) is the instant leg 1's exit was CONFIRMED (the broker
+	// TP receipt, or the I7 broker-snapshot fallback). 0 = no confirmation yet.
+	// The runner's trail may begin only on candles that OPEN after this time —
+	// a receipt that lands MID-candle starts the trail NEXT candle, never on the
+	// crossing candle.
+	Leg1ExitedAtMs int64
 }
 
 // ── SPLIT LEGS AT ENTRY (CTO ruling 2026-10-03 05:42Z) ─────────────────────
@@ -716,7 +722,7 @@ func mentorIntentTargetPts(in mentor.Intent) float64 {
 //	C     — the confluence flag: hold ≥ 1:2, stop never moves up, size 10
 //	        (20 with 4h+1h agree + room ≥ 2× + target ≥ 30). Leg 1's TP at
 //	        2× risk is set AT ENTRY (mentorLeg1TPForC).
-//	B     — normal: BE once price covers half the distance to leg 1's target,
+//	B     — normal: BE once price covers half the distance to the TRADE's target,
 //	        leg 1 exits at its +1R TP, the runner trails each closed 1m
 //	        candle. A PHL/PLH fill starts as B with the resonance watch armed:
 //	        a same-direction ISB within 3 candles flips it to A
@@ -735,7 +741,7 @@ func mentorExitFork(in mentor.Intent, confluence bool) (mode string, leg1TP floa
 	case in.Setup == "PHL" || in.Setup == "PLH":
 		return "B", 0, "PHL/PLH: B at entry, resonance watch armed — a same-direction ISB within 3 candles flips to A (BE, no trail, no 1:1 scale-out)"
 	default:
-		return "B", 0, "normal: BE at half the distance to leg 1's target, leg 1 TP +1R, runner trails each closed 1m candle"
+		return "B", 0, "normal: BE at half the distance to the TRADE's target, leg 1 TP +1R, runner trails each closed 1m candle"
 	}
 }
 
@@ -834,7 +840,7 @@ func mentorBEHalfDistance(pos mentorPosition) float64 {
 // mentorExitB applies the v3 B rules to ONE closed 1m candle (pure) on the
 // SPLIT-LEGS model: leg 1 carries its own TP at +1R set AT ENTRY, so the
 // driver never scales — it only arms BE once price has covered HALF THE
-// DISTANCE TO LEG 1'S TARGET (mentorBEHalfDistance — +0.5R only for a 1:1
+// DISTANCE TO THE TRADE'S TARGET (mentorBEHalfDistance — +0.5R only for a 1:1
 // target; BOTH legs), records leg 1's +1R crossing (the runner's trail begins
 // on the NEXT candle), and trails the runner behind each CLOSED candle (long:
 // the candle's low, short: its high) unless trail is off (video-8 legacy
@@ -846,7 +852,7 @@ func mentorBEHalfDistance(pos mentorPosition) float64 {
 func mentorExitB(pos mentorPosition, c, h, l float64, trail bool) mentorExitResult {
 	res := mentorExitResult{NewStop: pos.Stop}
 	long := pos.Side == "long"
-	half := mentorBEHalfDistance(pos) // half the distance to leg 1's target
+	half := mentorBEHalfDistance(pos) // half the distance to the trade's target
 	var hitStop, hitHalfR, hit1R bool
 	if long {
 		hitStop = l <= pos.Stop
@@ -1043,39 +1049,20 @@ func mentorNeverWiden(side string, curStop, newStop float64) (refuse bool, why s
 	return false, ""
 }
 
-// mentorOpenStopSource is the current open stop for the never-widen guard
-// (nil → no open mentor position known; the live driver sets it from the
-// position registry at P1).
-var mentorOpenStopSource func() (float64, bool)
-
-// mentorMoveStop sends a mentor stop move through the SAME last hop the AI
-// mechanisms use, but WITHOUT the 0B suspension gate: EXIT_MECHS_SUSPENDED does
-// NOT apply to mentor mode (the AI mechanisms keep it — both sides are pinned
-// by TestMentorExitMechSuspensionAppliesToAIOnly). Every move passes the
-// never-widen guard (c) first: an amendment that increases open risk never
-// reaches the wire.
-func (at *AutoTrader) mentorMoveStop(nt *ntTrader.TCPTrader, side string, newStop float64) error {
-	// FAIL-CLOSED (c): with mentor mode ON and no open-stop source, refuse the
-	// move — the stop stays where it is.
-	if at.mentorEnabled() && mentorOpenStopSource == nil {
-		mentorCount("stop_move_no_source")
-		at.logWarnf("🧑‍🏫 mentor stop move refused: open-stop source not wired (fail-closed) — the stop stays where it is")
-		return fmt.Errorf("mentor stop move refused: open-stop source not wired (fail-closed)")
-	}
-	if mentorOpenStopSource != nil {
-		if cur, ok := mentorOpenStopSource(); ok {
-			if refuse, why := mentorNeverWiden(side, cur, newStop); refuse {
-				mentorCount("widen_refused")
-				at.logWarnf("🧑‍🏫 %s", why)
-				return fmt.Errorf("mentor stop move refused: %s", why)
-			}
-		}
-	}
-	return moveStopWire(nt, side, newStop)
-}
-
-// mentorLogPositionState dumps the driver state for the daily log.
+// mentorLogPositionState dumps the driver state for the daily log. It snapshots
+// the shared fields under mentorExitMu — the receipt (mentorMarkLeg1Scaled) and
+// the I7 fallback write Scaled/Leg1ExitedAtMs from other goroutines, so an
+// unlocked read of pos.Scaled races (P3 rel9 review).
 func (at *AutoTrader) mentorLogPositionState(pos *mentorPosition, event string) {
+	if pos == nil {
+		return
+	}
+	at.mentorExitMu.Lock()
+	sym, side, origin := pos.Symbol, pos.Side, pos.Origin
+	entry, stop, r, mode := pos.Entry, pos.Stop, pos.R, pos.Mode
+	contracts := pos.Contracts
+	armedBE, scaled := pos.ArmedBE, pos.Scaled
+	at.mentorExitMu.Unlock()
 	at.logInfof("🧑‍🏫 mentor exit driver [%s]: %s side=%s origin=%s entry=%.2f stop=%.2f R=%.2f contracts=%d mode=%s armedBE=%v scaled=%v",
-		event, pos.Symbol, pos.Side, pos.Origin, pos.Entry, pos.Stop, pos.R, pos.Contracts, pos.Mode, pos.ArmedBE, pos.Scaled)
+		event, sym, side, origin, entry, stop, r, contracts, mode, armedBE, scaled)
 }
