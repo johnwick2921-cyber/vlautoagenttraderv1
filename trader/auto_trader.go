@@ -232,6 +232,39 @@ func (at *AutoTrader) autoBEMentorBlockedOnce(symbol, side string, pts float64) 
 		symbol, side, pts)
 }
 
+// drawdownMentorBlockedCount is the session counter for "drawdown emergency close
+// not applied because mentor mode is ON" (owner ruling 2026-10-09). Visible to
+// tests and reports via DrawdownMentorBlockedCount.
+var drawdownMentorBlockedCount atomic.Int64
+
+// DrawdownMentorBlockedCount returns the session count of drawdown emergency
+// closes refused because the trader runs mentor mode ON.
+func DrawdownMentorBlockedCount() int64 { return drawdownMentorBlockedCount.Load() }
+
+// resetDrawdownMentorBlockedCountForTest clears the process-wide counter.
+func resetDrawdownMentorBlockedCountForTest() { drawdownMentorBlockedCount.Store(0) }
+
+// drawdownMentorBlockedOnce logs ONCE per position that the AI-era drawdown
+// emergency close was not applied because mentor mode is ON (the mentor's exits
+// own the trade), and bumps the visible counter. Idempotent per "symbol_side"
+// via drawdownMentorBlocked.
+func (at *AutoTrader) drawdownMentorBlockedOnce(symbol, side string, profitPct, peakPct, drawdownPct float64) {
+	key := symbol + "_" + side
+	at.breakevenMu.Lock()
+	if at.drawdownMentorBlocked == nil {
+		at.drawdownMentorBlocked = make(map[string]bool)
+	}
+	if at.drawdownMentorBlocked[key] {
+		at.breakevenMu.Unlock()
+		return
+	}
+	at.drawdownMentorBlocked[key] = true
+	at.breakevenMu.Unlock()
+	drawdownMentorBlockedCount.Add(1)
+	logger.Warnf("🎯 drawdown emergency close: not applied — mentor mode ON (the mentor's exits own the trade) [%s %s profit %.2f%% peak %.2f%% drawdown %.2f%%]",
+		symbol, side, profitPct, peakPct, drawdownPct)
+}
+
 // defaultBreakevenTriggerPoints is the shipped auto-breakeven trigger (points in
 // profit) when the strategy leaves breakeven_trigger_points unset or ≤ 0.
 const defaultBreakevenTriggerPoints = 50.0
@@ -283,6 +316,11 @@ func (at *AutoTrader) pruneBreakevenDone(openKeys map[string]bool) {
 	for k := range at.autoBEMentorBlocked {
 		if !openKeys[k] {
 			delete(at.autoBEMentorBlocked, k)
+		}
+	}
+	for k := range at.drawdownMentorBlocked {
+		if !openKeys[k] {
+			delete(at.drawdownMentorBlocked, k)
 		}
 	}
 }
@@ -462,6 +500,29 @@ type AutoTrader struct {
 	// mentorExitMu. Cleared by a full fill (the position is provably open) and
 	// by the cancel-settlement forget (the row is terminal).
 	mentorFlatSignals map[string]struct{}
+	// REL17-F2 restart rebuild: one boot-time pass that rebuilds open mentor
+	// positions from the broker book before the first exit-drive pass. The
+	// pass retries on every candle until it has run with a FRESH book, then
+	// mentorRebuildDone latches true. Guarded by mentorRebuildMu.
+	mentorRebuildMu               sync.Mutex
+	mentorRebuildDone             bool
+	mentorRebuildPositionsWarned  bool
+	// mentorPendingStopMoves is the F1 stop-move TRUTH registry: one entry per
+	// (signal, wire leg) stop move that has been SENT but not yet VERIFIED
+	// against the broker's order book. Keyed "<signalID>#<wireLeg>". Guarded by
+	// mentorExitMu.
+	mentorPendingStopMoves map[string]*mentorPendingStopMove
+	// mentorStopMoveEpisodes is the F1 miss-count ledger that SURVIVES a
+	// superseding move: one entry per (signal, wire leg), keyed the same as the
+	// pending map, so a fresh drive move every candle does NOT reset the count.
+	// Reset only when a verdict CONFIRMS (or a tighter broker stop is adopted).
+	// Guarded by mentorExitMu.
+	mentorStopMoveEpisodes map[string]*mentorStopMoveEpisode
+	// mentorStopMoveManual is the F1 manual-management latch: once a leg misses
+	// twice the drive sends nothing more for it (belief = broker truth) until a
+	// snapshot shows broker == belief again or the position is gone. Keyed
+	// "<signalID>#<wireLeg>". Guarded by mentorExitMu.
+	mentorStopMoveManual map[string]*mentorStopMoveManual
 	// mentorFillCh carries REAL mentor fill receipts from the fill callback
 	// (the executor goroutine) to the evaluator (mentorEvalOnce, under
 	// mentorEvalMu) for FU-1: G1/G2 fed from real fills, never a
@@ -522,7 +583,7 @@ type AutoTrader struct {
 	pictureHtfMu       sync.Mutex
 	pictureHtfSig      string
 	pictureHtf         *PictureHtfEvaluator
-	ai402OutageStartMs int64 // P5 402-outage latch (0 = no outage) — one banner per outage
+	ai402OutageStartMs atomic.Int64 // P5 402-outage latch (0 = no outage) — one banner per outage; atomic (F5: planner/watcher clear from other goroutines)
 	// G4 (regime wave 2026-08-21) — transition stand-down state + the G4.6 MSS
 	// wake dedupe key (plan:version:eventInstant — one planner wake per MSS).
 	transition           kernel.TransitionState
@@ -573,6 +634,7 @@ type AutoTrader struct {
 	peakPnLCacheMutex     sync.RWMutex           // Cache read-write lock
 	breakevenDone         map[string]bool        // auto-breakeven: "symbol_side" already moved to breakeven (idempotent; reset on flat)
 	autoBEMentorBlocked   map[string]bool        // auto-breakeven: "symbol_side" already logged "not applied — mentor mode ON" (idempotent; reset on flat)
+	drawdownMentorBlocked map[string]bool        // drawdown emergency close: "symbol_side" already logged "not applied — mentor mode ON" (idempotent; reset on flat)
 	entryTheses           map[string]entryThesis // Phase 3: original entry decision per "symbol_side" (run-loop goroutine)
 	watchStates           map[string]*watchState // Phase 3: watcher hysteresis state per "symbol_side" (run-loop goroutine)
 	trailStates           map[string]*trailState // Phase 3B: trailing-stop state per "symbol_SIDE" (guarded by trailMu — monitor + watcher goroutines)
