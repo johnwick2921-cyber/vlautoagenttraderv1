@@ -8238,3 +8238,50 @@ resolve another owner's entry is REFUSED (WARN naming both) and never acted on.
 Reference: trader/mentor_actions.go (mentorArmKey, mentorLiveArmFor, mentorPlanID,
 mentorRegisterLiveArmForTest), store/armed_orders.go UpsertArm (plan_id carries
 the trader), trader/armed_ledger_loud.go (fail key +trader_id).
+
+## CLASS NN (assigned at merge) — a per-account snapshot streamed for one account only
+
+symptom: REL19-ADDON (2026-10-13, owner runs two SIM accounts Sim101 +
+SimAccount1): the AddOn sent the PERIODIC order_snapshot only for its single
+active account (account.txt else Sim101); a non-active account got a snapshot
+only on an order state change. The update gate's working_orders leg refused
+(`snapshots are arriving on this link but none for SimAccount1/MNQ`), and every
+broker-book reader keyed by bound account (F1 stop-move verify, cancel-confirm,
+slot guard, F4 protection, leg 4) read NOTHING between order events for a
+non-active-account trader → stop moves/cancels unconfirmed.
+probe: when one link serves MULTIPLE accounts, every per-account frame that was
+extended for positions/balances must also be extended for the working-order
+snapshot — a reader keyed by bound account reads an EMPTY book (not "no answer")
+when its account's frames stop flowing.
+rule: the all-account snapshot enumerates every target account (all SIM + every
+account Go declared bound via account_register) on connect, in the periodic
+heartbeat, and after account_register; the per-order state_change snapshot stays.
+Frame shape is unchanged (the Account field was already there) — no protocol bump.
+Reference: ninjascript/VLTraderTCPClient.cs (SendAllOrderSnapshots, heartbeat
+:3367, connect SendAllOrderSnapshots("connect"), HandleAccountRegister
+SendAllOrderSnapshots("account_register")); Go side already keyed by account —
+provider/ninjatrader/order_snapshot.go OrderSnapshotCache (snapKey per account),
+trader/ninjatrader/tcp_trader.go OrderSnapshotBook → LatestReceived(boundAccount).
+
+## CLASS NN (assigned at merge) — an ops-facing time rendered in the host zone instead of CT
+
+symptom: CT-EVERYWHERE (2026-10-13, owner "why has to make linux system change
+time to chicago"): the trading code is CT-canonical (~45 files route through
+kernel.CTLocation) but two ops surfaces still followed the MACHINE clock —
+(1) vl-backup.timer's OnCalendar had no zone suffix, so the backup fired at
+05:00/17:30 in the host's zone, and (2) the compact log formatter rendered its
+line timestamp and the log-file date in the host zone, so on a non-Chicago box
+the file's date and its line times disagreed near midnight and the updater's
+boot-line predictor (also host-zone) could point at the wrong file and roll
+back a good install.
+probe: grep for the machine-zone forms — time.Local, a bare time.Format of a
+clock/date layout without an explicit .In(zone), an OnCalendar= without a zone
+suffix, `date +%F` in shell — anywhere a rendered time or a named file is read
+by a different component or a person.
+rule: one canonical zone (America/Chicago) for every rendered time AND every
+date-derived FILE NAME; the writer and every predictor/reader of that name
+derive it from the SAME helper (logger.CTDate), never the host clock; systemd
+timers carry an explicit zone suffix.
+Reference: logger/logger.go (ctLocation, CTDate, LogFileNameFor, compactFormatter),
+logger/log_prune.go (pruneOldLogs), internal/updaterworker/runner.go (predictedLog),
+internal/updaterworker/recovery.go (the grep hint), deploy/systemd-user/vl-backup.timer.

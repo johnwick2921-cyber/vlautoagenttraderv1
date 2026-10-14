@@ -105,3 +105,64 @@ this tree is `0b45081d` exactly, verified by blob-sha match table). Partner-mach
    `deploy/release_contract_test.go` (partner assertions),
    `deploy/install-updater-worker.sh` (`REPO_URL` defaults to the partner repo),
    `deploy/RELEASE` (names the partner build commit), this runbook.
+
+## REL19 — partner sync (release #19, vl `192ef87d9`, DS-105, 2026-10-13)
+
+Syncs the partner tree to release #19 (vl `192ef87d9c045…`, tag
+`v2026.10.13.2`). **AddOn change in this release** — the partner machine MUST
+copy the AddOn files and fully restart NT8, not just build the Go binary.
+
+1. **Build at the sha named in `deploy/RELEASE`** (`afb7ce565…` — the REL19
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   then build at that sha from a clean clone and verify
+   `go version -m vl-bin` shows `vcs.revision=afb7ce565…` `vcs.modified=false`.
+   For a FRESH install, build at `main` HEAD and re-arm `deploy/RELEASE` to the
+   built sha (`echo -n "$HEAD_SHA" > deploy/RELEASE`) plus `GUIDE_BUILT_REV` in
+   `web/src/guide/types.ts`, then `(cd web && npm run build)`.
+2. **AddOn (HARD RULE):** copy ALL 5 `ninjascript/*.cs` files
+   (`VLTraderTCPClient.cs`, `VLBarsSubscriptionManager.cs`,
+   `VLContractResolver.cs`, `VLHistoryPull.cs`, `VLInstrumentLookup.cs`) to the
+   NT8 `bin/Custom/AddOns/` folder, **F5 compile inside NT8, then FULL NT8
+   restart** (AddOns do NOT hot-reload). The new build id is
+   `VL_BUILD_ID = 2026-10-13-a` (`SendAllOrderSnapshots` for every SIM + bound
+   account, sent on connect / periodic / account_register).
+3. **Boot-line check:** after restart the boot line must read
+   `nt8 addon: build_id=2026-10-13-a … match=yes` (Go's
+   `ExpectedAddonBuild` is `2026-10-13-a`; `match=yes` means the wire
+   build-id matches the Go constant). A `match=no` means the AddOn copy/F5/
+   restart was missed — repeat step 2.
+4. **Restart the bot** and verify `BOOT INTEGRITY OK … goldens PASS`,
+   `bundle-rev == binary rev`, `hello handshake OK`, positions `count=0`.
+5. **Carve-outs on this tree** (differ from vl@192ef87d9 BY DESIGN, the same 8
+   as every prior sync): `.github/workflows/release.yml`,
+   `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
+   runbook, `internal/updatersource/source.go`.
+
+## REL20 — partner sync (release #20, vl `2afdd65fa`, DS-105, 2026-10-13)
+
+Syncs the partner tree to release #20 (vl `2afdd65fafee…`, tag
+`v2026.10.13.3`). No NEW AddOn change in #20 — the AddOn build id stays
+`2026-10-13-a` (same 5 `.cs` files as REL19).
+
+1. **Build at the sha named in `deploy/RELEASE`** (`a91575e129…` — the REL20
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   build at that sha from a clean clone with **Go 1.26.9** (or
+   `GOTOOLCHAIN=auto` to fetch it) and verify `go version -m vl-bin` shows
+   `vcs.revision=a91575e129…` `vcs.modified=false`. A FRESH install builds at
+   `main` HEAD and re-arms `deploy/RELEASE` + `GUIDE_BUILT_REV`, then
+   `(cd web && npm run build)`.
+2. **AddOn** — unchanged from REL19 (`VL_BUILD_ID 2026-10-13-a`). If the
+   partner machine is still on `2026-10-04-d1`, copy all 5 `ninjascript/*.cs`
+   files, F5 compile, FULL NT8 restart (HARD RULE — no hot reload). If it is
+   already on `2026-10-13-a`, skip this step.
+3. **DB backup timer** — the timer moved to `America/Chicago`: re-run
+   `bash deploy/install-db-backup.sh` once after install.
+4. **Boot-line check:** `nt8 addon: build_id=2026-10-13-a … match=yes`.
+5. **Restart the bot** and verify `BOOT INTEGRITY OK … goldens PASS`,
+   `bundle-rev == binary rev`, `hello handshake OK`, positions `count=0`.
+6. **Carve-outs on this tree** (differ from vl@2afdd65fa BY DESIGN, the same 8
+   as every prior sync): `.github/workflows/release.yml`,
+   `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
+   runbook, `internal/updatersource/source.go`.
