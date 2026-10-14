@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -712,6 +713,10 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		// more than one strategy is bound; this line is where each one reads.
 		logger.Infof("%s", trader.ReplanCapBootLine(strategyConfig.DayPlan))
 		logger.Infof("🛑 [%s] %s", traderCfg.Name, trader.BreakerBootLineForStrategy(strategyConfig))
+		// r22 RISK-GATES — what the daily-loss gate does for THIS strategy
+		// (OFF, or ENFORCED with its refuse/cancel/flatten/latch), READ from
+		// the resolver the gate runs.
+		logger.Infof("🛑 [%s] %s", traderCfg.Name, trader.DailyLossGateBootLineForStrategy(strategyConfig))
 		// W-KNOB-PRUNE (2026-09-18) — every folded knob whose STORED value
 		// differs from its constant, once, so a removed control never keeps
 		// a value silently.
@@ -819,22 +824,33 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		}
 		logger.Infof("%s 🔄 Auto-starting trader (was running before shutdown)...", traderLogTag(traderCfg.ID, traderCfg.Name))
 		safe.GoNet("trader-autostart", traderCfg.ID, func() {
-			trader := at
 			traderName := traderCfg.Name
 			traderID := traderCfg.ID
 			userID := traderCfg.UserID
-			if err := trader.Run(); err != nil {
-				logger.Warnf("%s trader stopped with error: %v", traderLogTag(traderID, traderName), err)
-				// Update database to reflect stopped state
-				if st != nil {
-					if serr := st.Trader().UpdateStatus(userID, traderID, false); serr != nil {
-						logger.Warnf("%s failed to mark trader not-running after it stopped with error: %v", traderLogTag(traderID, traderName), serr)
-					}
-				}
+			if err := at.Run(); err != nil {
+				tm.handleAutoStartRunError(st, traderID, userID, traderName, err)
 			}
 		})
 		logger.Infof("%s ✅ Trader auto-started successfully", traderLogTag(traderCfg.ID, traderCfg.Name))
 	}
 
 	return nil
+}
+
+// handleAutoStartRunError is the SINGLE place the auto-start decides whether a
+// Run error clears is_running. FIX-RUNNING-FLAG: ErrTraderAlreadyRunning (a
+// duplicate self-start — the trader is already running in memory) is a NO-OP and
+// must never write is_running=0 over the live instance; any other error clears
+// it, as before.
+func (tm *TraderManager) handleAutoStartRunError(st *store.Store, traderID, userID, traderName string, runErr error) {
+	if errors.Is(runErr, trader.ErrTraderAlreadyRunning) {
+		return
+	}
+	logger.Warnf("%s trader stopped with error: %v", traderLogTag(traderID, traderName), runErr)
+	// Update database to reflect stopped state
+	if st != nil {
+		if serr := st.Trader().UpdateStatus(userID, traderID, false); serr != nil {
+			logger.Warnf("%s failed to mark trader not-running after it stopped with error: %v", traderLogTag(traderID, traderName), serr)
+		}
+	}
 }

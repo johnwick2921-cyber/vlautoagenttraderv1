@@ -81,21 +81,47 @@ func (at *AutoTrader) ninjaLinkConnected() (connected, ok bool) {
 	return ntTCP.IsConnected(), true
 }
 
+// ninjaLinkEpoch is the current NT8 connection's accept sequence (1, 2, 3 …
+// per accept, per process), read from the same server record the
+// installation gate reads. ok=false for a non-NT trader or no server.
+func (at *AutoTrader) ninjaLinkEpoch() (uint64, bool) {
+	if at.exchange != "ninjatrader" {
+		return 0, false
+	}
+	ntTCP, isNT := at.trader.(*ntTrader.TCPTrader)
+	if !isNT {
+		return 0, false
+	}
+	rec, _, _, ok := ntTCP.MaintenanceView()
+	if !ok || rec.AcceptSeq == 0 {
+		return 0, false
+	}
+	return rec.AcceptSeq, true
+}
+
 // driveDeadManWatchdog (B5) advances the dead-man watchdog once per cycle from the
 // NT8 TCP link. A dropped link blocks NEW entries (open-position management/exits
 // are never gated); on reconnect it sweeps any unfilled entries and holds entries
 // blocked until a clean positions/orders reconciliation, then auto-resumes. Called
 // from runCycle; non-NT traders are a no-op.
-func (at *AutoTrader) driveDeadManWatchdog() {
+func (at *AutoTrader) driveDeadManWatchdog() watchdogEvent {
 	connected, ok := at.ninjaLinkConnected()
 	if !ok {
-		return
+		return wdNone
 	}
-	switch at.deadMan.step(connected, at.watchdogReconcileClean) {
+	// Release #22 (EXECUTION F-3): the connection epoch catches a disconnect +
+	// reconnect that both fell between two samples.
+	epoch, epochKnown := at.ninjaLinkEpoch()
+	ev, missed, prev := at.deadMan.stepEpoch(connected, epoch, epochKnown, at.watchdogReconcileClean)
+	switch ev {
 	case wdWentDown:
 		at.logWarnf("🚨 dead-man watchdog: NT8 TCP link DOWN — NEW entries BLOCKED until a clean reconciliation. Open positions & exits are unaffected.")
 	case wdReconnected:
-		at.logWarnf("🔌 dead-man watchdog: NT8 TCP link back UP — sweeping unfilled entries; entries stay BLOCKED until a clean positions/orders reconciliation.")
+		if missed {
+			at.logWarnf("🔌 dead-man watchdog: NT8 TCP link was REPLACED between two samples (accept_seq %d → %d) — a disconnect this trader never saw; treating it as a reconnect: sweeping unfilled entries; entries BLOCKED until a clean positions/orders reconciliation.", prev, epoch)
+		} else {
+			at.logWarnf("🔌 dead-man watchdog: NT8 TCP link back UP — sweeping unfilled entries; entries stay BLOCKED until a clean positions/orders reconciliation.")
+		}
 		at.cancelUnfilledEntriesAfterReconnect()
 		// D5 (2026-09-07) — C6: nothing rebuilds the bracket after a reconnect.
 		// The AddOn's placedBrackets is in-memory and repopulated from nowhere,
@@ -108,6 +134,7 @@ func (at *AutoTrader) driveDeadManWatchdog() {
 	case wdResumed:
 		at.logInfof("✅ dead-man watchdog: clean positions/orders reconciliation — NEW entries RESUMED.")
 	}
+	return ev
 }
 
 // watchdogReconcileClean is the reconcile probe: the link is considered reconciled
@@ -513,6 +540,11 @@ type AutoTrader struct {
 	// prior terminal row — and never with ANOTHER trader's row (the ledger key
 	// carries the trader too). Read once per placement, never shared.
 	mentorArmEpoch int64
+	// mentorIntentTap is a READ-ONLY test observer (FULL-DAY-REPLAY): when set,
+	// mentorEvalOnce hands it every intent the evaluator emitted this tick,
+	// before any dispatch. nil in production (never assigned outside tests) —
+	// the tick is byte-identical.
+	mentorIntentTap func(in mentor.Intent)
 	// mentorPendingStopMoves is the F1 stop-move TRUTH registry: one entry per
 	// (signal, wire leg) stop move that has been SENT but not yet VERIFIED
 	// against the broker's order book. Keyed "<signalID>#<wireLeg>". Guarded by
@@ -676,7 +708,7 @@ type AutoTrader struct {
 	consecutiveAIFailures int             // Consecutive AI call failures
 	safeMode              bool            // Safe mode: no new positions, protect existing ones
 	safeModeReason        string          // Why safe mode was activated
-	deadMan               deadManWatchdog // B5 dead-man watchdog: NT8 link-gap → block NEW entries until reconciled (zero value = live/allowed; touched only from runCycle)
+	deadMan               deadManWatchdog // B5 dead-man watchdog: NT8 link-gap → block NEW entries until reconciled (zero value = live/allowed; driven from runCycle AND monitorTick, step serialized by its own mutex)
 
 	// armedSyncSeam — fixture seam for the synchronous armed cancel (S-list
 	// closer FIX1): wire cancel + ack stream + timeout. nil = production TCP
@@ -742,6 +774,10 @@ type AutoTrader struct {
 	// nil = not yet observed. Touched only from runCycle (single goroutine), so
 	// no mutex is required.
 	cmePrevOpen *bool
+	// R22 P1-B — the calendar date whose early-close retirement completed on
+	// the closed path (runCycle goroutine only, like cmePrevOpen).
+	earlyCloseRetiredDate string
+	earlyCloseNotedDate   string // the closed-path retirement line is logged once per date
 
 	// P2.1 — bar-close cadence: CloseTime (ms) of the last primary-TF bar we ran
 	// a cycle for. Only meaningful when barCloseCadenceActive() (day_plan futures);
@@ -1107,17 +1143,35 @@ func (at *AutoTrader) runBeatSafely(where string, fn func()) {
 	fn()
 }
 
+// ErrTraderAlreadyRunning is returned by Run when the trader is already running
+// in memory: a second start of a running trader is a NO-OP, never a rollback.
+// Callers that write is_running on a Run error must NOT write 0 for this error —
+// the winning instance is live and the DB bit must keep matching it.
+var ErrTraderAlreadyRunning = errors.New("trader is already running")
+
 func (at *AutoTrader) Run() error {
+	// FIX-RUNNING-FLAG: idempotent start. The CAS is the FIRST statement — a
+	// losing duplicate start must not mutate ANY state (not even
+	// limitFlattenStopped) and never reaches startPictureRun / the ordered
+	// install. Two concurrent starts yield exactly one running instance.
+	at.isRunningMutex.Lock()
+	if at.isRunning {
+		at.isRunningMutex.Unlock()
+		return ErrTraderAlreadyRunning
+	}
+	at.isRunning = true
+	at.isRunningMutex.Unlock()
+
 	at.limitFlattenMu.Lock()
 	at.limitFlattenStopped = false
 	at.limitFlattenMu.Unlock()
-	at.isRunningMutex.Lock()
-	at.isRunning = true
-	at.isRunningMutex.Unlock()
 	at.startPictureRun()                        // W3 D14 event loop + run epoch, THEN Picture's live-bar routing (W5 R2)
 	at.logInfof("🚦 %s", entryLatchBootLine(at)) // W-EXEC-TRUTH W0 (b) — READ, never asserted
 	if at.exchange == "ninjatrader" {
 		if _, ok := kernel.TFDurationMs(at.primaryTimeframe()); !ok {
+			at.isRunningMutex.Lock()
+			at.isRunning = false
+			at.isRunningMutex.Unlock()
 			return fmt.Errorf("primary_timeframe %q is not in the timeframe table (kernel/timeframes.go) — refusing to run on a corrupt bar clock", at.primaryTimeframe())
 		}
 	}
@@ -1172,6 +1226,9 @@ func (at *AutoTrader) Run() error {
 				// path) — never fall back to the legacy advisory path.
 				at.signalRunReady(err)
 				at.cancelStopMonitor()
+				at.isRunningMutex.Lock()
+				at.isRunning = false
+				at.isRunningMutex.Unlock()
 				return fmt.Errorf("ordered-execution install refused: %w", err)
 			}
 			// Anchor entry_price to the NT8 position average + clear orphan rows
@@ -1196,6 +1253,9 @@ func (at *AutoTrader) Run() error {
 		if err := at.InitializeGrid(); err != nil {
 			at.logErrorf("❌ Failed to initialize grid: %v", err)
 			at.cancelStopMonitor() // NOTE-leak fix: the drawdown monitor started above must not orphan on this error path
+			at.isRunningMutex.Lock()
+			at.isRunning = false
+			at.isRunningMutex.Unlock()
 			return fmt.Errorf("grid initialization failed: %w", err)
 		}
 	}
@@ -1530,22 +1590,36 @@ func (at *AutoTrader) installNTOrderedExecutions(nt *ntTrader.TCPTrader) error {
 			if strings.TrimSpace(other) == "" {
 				other = "an already-running trader"
 			}
+			// FIX-RUNNING-FLAG: after Run's idempotent CAS, a same-ID hit here can
+			// only be a STALE slot held by ANOTHER instance of this trader (a Run
+			// that exited without Stop, or a reload whose old object still holds
+			// the slot). This object is NOT the live instance, so it must be
+			// refused the same as any foreign owner — P0 + is_running=0 — never
+			// silently "already running", which would leave is_running=1 with
+			// nothing running. A different-ID hit is the REL18-C O2 duplicate —
+			// its owner is a different trader, not a second copy of this one.
+			var reason string
+			if otherID == at.id {
+				reason = fmt.Sprintf("slot held by a stale instance of this same trader (%q)", other)
+			} else {
+				reason = fmt.Sprintf("slot already owned by trader %q", other)
+			}
 			telemetry.IncGateBlock(at.id, "ordered_owner_exists")
 			at.emitAlert("P0", "ordered_owner_conflict",
 				"ordered-owner:"+at.id,
 				"Two traders bound to one account — trader stopped",
-				fmt.Sprintf("Trader %q (%s) tried to start on %s / %s, but %q already owns that ordered-execution slot. %q was STOPPED and marked not-running; it did not fall back to the legacy path.",
-					at.name, at.id, symbol, account, other, at.name))
-			at.logErrorf("❌ ordered-execution install refused (%v) — a running trader (%q) already owns (symbol=%s, account=%s); stopping %q (%s), no legacy fallback",
-				err, other, symbol, account, at.name, at.id)
+				fmt.Sprintf("Trader %q (%s) tried to start on %s / %s, but the ordered-execution %s. %q was STOPPED and marked not-running; it did not fall back to the legacy path.",
+					at.name, at.id, symbol, account, reason, at.name))
+			at.logErrorf("❌ ordered-execution install refused (%v) — %s (symbol=%s, account=%s); stopping %q (%s), no legacy fallback",
+				err, reason, symbol, account, at.name, at.id)
 			// Mark this trader not-running so the DB matches the refused start.
 			if at.store != nil {
 				if serr := at.store.Trader().UpdateStatus(at.userID, at.id, false); serr != nil {
 					at.logErrorf("❌ ordered-execution refused but the not-running DB write FAILED (%v) — trader %q may still read running", serr, at.id)
 				}
 			}
-			return fmt.Errorf("ordered-execution owner for (symbol=%s, account=%s) already exists (held by %q): %w",
-				symbol, account, other, err)
+			return fmt.Errorf("ordered-execution owner for (symbol=%s, account=%s) already exists — %s: %w",
+				symbol, account, reason, err)
 		}
 		at.logErrorf("❌ ordered-execution install refused (%v) — the durable consumers stay on the legacy advisory path", err)
 		return nil
