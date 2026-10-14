@@ -166,3 +166,55 @@ Syncs the partner tree to release #20 (vl `2afdd65fafee…`, tag
    `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
    `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
    runbook, `internal/updatersource/source.go`.
+
+## REL22 — partner sync (releases #21 + #22, vl `f3ec96d85`, CTO lane, 2026-10-14)
+
+Syncs the partner tree to release #22 (vl `f3ec96d85f07…`, tag
+`v2026.10.14.3`, booted on the owner box 08:22:40 CT 10-14), and with it
+release #21 (vl `269745e1a`). Net diff vl `2afdd65fa..f3ec96d85`. **No AddOn
+change in #21 or #22**: `ninjascript/` is byte-identical to REL19/REL20, and
+the AddOn build id stays `2026-10-13-a`. No `go.mod` or `web/package*.json`
+change either (still **Go 1.26.9**).
+
+1. **Build at the sha named in `deploy/RELEASE`** (`e56f7f02e42d…` — the REL22
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   build at that sha from a clean clone with **Go 1.26.9** (or
+   `GOTOOLCHAIN=auto`) and verify `go version -m vl-bin` shows
+   `vcs.revision=e56f7f02e42d…` `vcs.modified=false`. Build the web with
+   `VITE_GUIDE_BUILT_REV=<that sha> npm run build`. A FRESH install builds at
+   `main` HEAD and re-arms `deploy/RELEASE` to the built sha instead.
+2. **AddOn** — unchanged (`VL_BUILD_ID 2026-10-13-a`). If the partner
+   machine is still on `2026-10-04-d1`, copy all 5 `ninjascript/*.cs` files,
+   F5 compile, FULL NT8 restart (HARD RULE — no hot reload). If it is already
+   on `2026-10-13-a`, skip this step.
+3. **Restart the bot in a flat window** and verify `BOOT INTEGRITY OK …
+   goldens PASS`, `bundle-rev == binary rev`, `hello handshake OK`,
+   `nt8 addon: build_id=2026-10-13-a … match=yes`, positions `count=0`.
+4. **New boot lines to expect on a partner machine:**
+   - `🧾 manual origin (R1): … this boot marked=0 [] already=0 skipped=4 ·
+     backup=none`. The R1 migration (owner ruling, release #22) is pinned to
+     four row ids AND the owner's own trader id AND a reconcile-adoption
+     fingerprint, so on a partner database it writes nothing and takes no
+     backup. A partner line that says `marked=` anything but 0 is a defect —
+     stop and report it.
+   - `daily-loss gate: …` — the gate is now **OFF by default**, and an
+     unsaved switch reads OFF. If you want it, turn it ON with a dollar limit
+     in Studio and save; when ON it refuses new entries, cancels resting
+     entries, flattens bot positions and latches until 17:00 CT.
+5. **Behaviour changes worth knowing** (all ship ON unless noted):
+   mentor trail after the NT8-confirmed +1R partial (knob
+   `mentor_trail_mode`: `candle` default, `off` = the pre-#22 rule);
+   swing break-even at +1R; sweep setups wait for their trigger; the Studio
+   prompt reaches the planner; the weekly read uses CME weeks; holiday early
+   close (11-27, 12-24 flat + cancel at 12:15 CT); new entries freeze while an
+   Update job is in preflight; `/api/equity-history` now needs login.
+   Optional env overrides `CLOCK_STEP_DETECT_MS` / `CLOCK_STEP_FREEZE_MS` /
+   `CLOCK_STEP_HOLD_S` default to 100 / 1000 / 120 — no action needed.
+6. **Updater worker** (optional for partners): the #22 updater check-order
+   change only takes effect once the updater binary is rebuilt; the bot-side
+   preflight freeze works without it.
+7. **Carve-outs on this tree** (differ from vl@f3ec96d85 BY DESIGN, the same 8
+   as every prior sync): `.github/workflows/release.yml`,
+   `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
+   runbook, `internal/updatersource/source.go`.
