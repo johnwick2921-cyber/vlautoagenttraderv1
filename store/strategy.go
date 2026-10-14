@@ -952,7 +952,7 @@ type DayPlanConfig struct {
 	// text only, R25 pending); the stored value is still honoured at read and
 	// logged once at trader load (FoldedKnobLines).
 	StructureMap *bool `json:"structure_map,omitempty"`
-	// ProximityFilterATR: day-trade lock, 0.5–3.0 (default 1.5).
+	// ProximityFilterATR: day-trade lock, 0.1–3.0 (default 1.5).
 	ProximityFilterATR float64 `json:"proximity_filter_atr,omitempty"`
 	// MaxLevels: level table cap, 3–12 (default 8).
 	MaxLevels int `json:"max_levels,omitempty"`
@@ -1159,7 +1159,7 @@ type DayPlanSessionOverride struct {
 	// EODFlatOffsetMin: minutes before this session's end at which any open
 	// position is force-flattened. Same day-scope disease as last-entry (the
 	// 14:45 CT literal would have flattened an Asia position on sight the moment
-	// the last-entry fix landed). nil → default 15.
+	// the last-entry fix landed). nil → default 0 (flat AT session end).
 	EODFlatOffsetMin *int `json:"eod_flat_offset_min,omitempty"`
 	// ConditionStatus (0C shadow demotion, 2026-08-31) — per-session live|
 	// shadow map override; nil inherits the strategy-level map.
@@ -1998,12 +1998,14 @@ type RiskControlConfig struct {
 	// === Strategy Studio Phase 1 — prop-firm daily guardrails (per-strategy;
 	// env = fallback for the value; the per-guardrail toggle governs enforcement). ===
 
-	// Master switch: nil/true = guardrails active; false = ALL guardrails bypassed.
+	// Master switch: true = guardrails active; nil/false = ALL guardrails
+	// bypassed (r22 RISK-GATES, owner R4: absent = OFF — the gate now
+	// flattens, so it never turns itself on).
 	GuardrailsEnabled *bool `json:"guardrails_enabled,omitempty"`
 
 	// Daily realized-LOSS limit (USD, positive): loss ≥ this halts new entries for
-	// the CME session-day. Enabled defaults ON (nil) to preserve the existing live
-	// env daily-loss gate; the value falls back to RISK_MAX_DAILY_LOSS_USD when 0.
+	// the CME session-day. Enabled defaults OFF (nil) since r22 (owner R4); the
+	// VALUE still falls back to RISK_MAX_DAILY_LOSS_USD when 0.
 	DailyLossLimitUSD float64 `json:"daily_loss_limit_usd,omitempty"`
 	DailyLossEnabled  *bool   `json:"daily_loss_enabled,omitempty"`
 
@@ -2047,9 +2049,9 @@ type RiskControlConfig struct {
 	// 0B size clamp and EXIT_MECHS_SUSPENDED do not apply to it.
 	MentorMode bool `json:"mentor_mode,omitempty"`
 	// Mentor size-table knobs (CTO defaults when unset — the owner can change
-	// them): base setup at a location 5; confluence 10; confluence+4h/1h agree
-	// + room≥2× target≥30pts 20 (hard cap); stop 20–25 pts or spent day 3;
-	// SWING4H 3; never above MentorMaxContracts (default 20).
+	// them): base setup at a location 5; confluence 5; confluence+4h/1h agree
+	// + room≥2× target≥30pts 5; stop 20–25 pts 3; spent day 2; SWING4H 1;
+	// never above MentorMaxContracts (default 20, ceiling only).
 	MentorBaseContracts       int `json:"mentor_base_contracts,omitempty"`
 	MentorConfluenceContracts int `json:"mentor_confluence_contracts,omitempty"`
 	MentorBigContracts        int `json:"mentor_big_contracts,omitempty"`
@@ -2061,6 +2063,15 @@ type RiskControlConfig struct {
 	// D2.4 p1 @08:35 on the 1-MINUTE chart); 30s/45s allowed (@09:07); "off" =
 	// the video-8 legacy "never trail on the 1m" (SUPERSEDED, kept as a knob).
 	MentorTrailTF string `json:"mentor_trail_tf,omitempty"`
+	// MentorTrailMode — owner ruling R3 (release #22, 2026-10-14): what moves a
+	// SPLIT mentor position's runner stop. "candle" (default; ""/unset = candle)
+	// = nothing moves until leg 1's +1R partial is CONFIRMED filled at NT8, then
+	// the runner stop goes to break-even, then it trails 1 tick beyond each
+	// CLOSED candle (the trail_tf frame) — only ever tighter, judged against the
+	// broker's own stop. "off" = the pre-R3 rule (BE at half the distance to the
+	// trade target, live 1:1, trail after the 1:1 point). Any other value fails
+	// closed to "candle" (the shipped default) and is counted.
+	MentorTrailMode string `json:"mentor_trail_mode,omitempty"`
 	// STOP RULES (owner ruling 00:1x CT "exactly like he said") — class rules,
 	// NOT his personal routine. All default ON:
 	// (a) done for the day after a winning close with the day net positive
