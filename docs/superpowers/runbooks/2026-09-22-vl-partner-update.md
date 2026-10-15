@@ -260,3 +260,48 @@ build id stays `2026-10-13-a`. No `go.mod` or `web/package*.json` change
    `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
    `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
    runbook, `internal/updatersource/source.go`.
+
+## REL24 — partner sync (releases #24 + #25, vl `e52203393`, DS-108, 2026-10-15)
+
+Syncs the partner tree to release #24 (vl `e522033935dcd…`, tag
+`v2026.10.14.5`, booted on the owner box 07:43:57 CT 10-15), and with it #25,
+on top of REL23 (already in partner `main`). Net diff vl
+`7129b7646..e52203393` (121 commits, 17 merges). No `go.mod` or
+`web/package*.json` change (still **Go 1.26.9**, `GOTOOLCHAIN=auto`).
+
+**AddOn CHANGES this release**: `VL_BUILD_ID 2026-10-14-a` (was
+`2026-10-13-a`). One `.cs` file changed — `ninjascript/VLTraderTCPClient.cs`
+(+ `vltrader_tcp_PROTOCOL.md` doc). The fix (AC-1): `close_position` honours
+its account field, fail-closed — one AddOn serving two MNQ traders on two SIM
+accounts no longer flattens the wrong account on an Emergency Flat / EOD flat.
+No wire shape change; `ExpectedAddonBuild` is `2026-10-14-a` in lockstep.
+
+1. **Build at the sha named in `deploy/RELEASE`** (`06413856e2a9…` — the REL24
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   build at that sha from a clean clone with **Go 1.26.9** (or
+   `GOTOOLCHAIN=auto`) and verify `go version -m vl-bin` shows
+   `vcs.revision=06413856e2a9…` `vcs.modified=false`. Build the web with
+   `VITE_GUIDE_BUILT_REV=<that sha> npm run build`.
+2. **AddOn** — copy `ninjascript/VLTraderTCPClient.cs` (build
+   `2026-10-14-a`), F5 compile, FULL NT8 restart (HARD RULE — no hot reload).
+   The other 4 `ninjascript/*.cs` files are unchanged from REL19/REL20.
+3. **Restart the bot in a flat window** and verify `BOOT INTEGRITY OK …
+   goldens PASS`, `bundle-rev == binary rev`, `hello handshake OK`,
+   `nt8 addon: build_id=2026-10-14-a … match=yes`, positions `count=0`.
+4. **Behaviour changes worth knowing** (release #24; all ship ON unless
+   noted): planner touch-fills wait for the touch reaction; exec follow-ups
+   (a BE stop is not ignored, a NOT APPLIED fill is not re-sent, dead-man needs
+   an order snapshot, the cutoff holds); mentor seed-state replay is not
+   re-seeded on a latch; the updater preflight freeze also withdraws resting
+   entries; machine tokens may READ and REDUCE risk but never ADD it (deny by
+   default); Emergency Flat / Positions → Close now honour the bound account
+   end-to-end (the AddOn fix above).
+5. **Updater worker** (optional for partners): the W26 PART C updater-addon-proof
+   fix lives in the updater binary and only takes effect after it is rebuilt
+   via `deploy/install-updater-worker.sh`; the bot-side behaviour needs no
+   updater change.
+6. **Carve-outs on this tree** (differ from vl@e52203393 BY DESIGN, the same 8
+   as every prior sync): `.github/workflows/release.yml`,
+   `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
+   runbook, `internal/updatersource/source.go`.
