@@ -339,3 +339,35 @@ stale-print tf-bound). **No AddOn change** (`VL_BUILD_ID 2026-10-14-a`), no
    `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
    `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
    runbook, `internal/updatersource/source.go`.
+
+## REL28 — partner sync (release #28, vl `2444616cc`, DS-108, 2026-10-15)
+
+Syncs the partner tree to release #28 (vl `2444616cc6929…`, tag
+`v2026.10.15.3`, booted on the owner box 16:34:51 CT 10-15; RELEASE marker
+`0e1b74721`), on top of REL27 (already in partner `main`). Net diff vl
+`4ee511df8..2444616cc` (6 commits: #548 test race + #549 addon stale-reemit
+HTF cross-check). **No AddOn change** (`VL_BUILD_ID 2026-10-14-a`), no `go.mod`
+or `web/package*.json` change (still **Go 1.26.9**).
+
+1. **Build at the sha named in `deploy/RELEASE`** (`9ca59b0da728…` — the REL28
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   build at that sha from a clean clone with **Go 1.26.9** (or
+   `GOTOOLCHAIN=auto`) and verify `go version -m vl-bin` shows
+   `vcs.revision=9ca59b0da728…` `vcs.modified=false`. Build the web with
+   `VITE_GUIDE_BUILT_REV=<that sha> npm run build`.
+2. **AddOn** — unchanged (`VL_BUILD_ID 2026-10-14-a`); no F5 needed on a machine
+   already at `2026-10-14-a`.
+3. **Restart the bot in a flat window** and verify `BOOT INTEGRITY OK …
+   goldens PASS`, `bundle-rev == binary rev`, `hello handshake OK`,
+   `nt8 addon: build_id=2026-10-14-a … match=yes`, positions `count=0`.
+4. **What changes (#548, #549):** a test-race fix in
+   `trader/run_owner_alert_episode_test.go` (test-only); the AddOn stale-reemit
+   cross-check — the stale-print path re-verifies the bar on the HTF tape
+   before re-emitting (`provider/ninjatrader/bar_stale_print.go`,
+   `bar_cache.go`), its tests, the Updates guide line (`status.ts`), and an
+   AUDIT-CHECKLIST addendum.
+5. **Carve-outs on this tree** (differ from vl@2444616cc BY DESIGN, the same 8
+   as every prior sync): `.github/workflows/release.yml`,
+   `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
+   runbook, `internal/updatersource/source.go`.
