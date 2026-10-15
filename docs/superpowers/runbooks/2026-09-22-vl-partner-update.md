@@ -218,3 +218,45 @@ change either (still **Go 1.26.9**).
    `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
    `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
    runbook, `internal/updatersource/source.go`.
+
+## REL23 — partner sync (release #23, vl `7129b7646`, CTO lane, 2026-10-14)
+
+Syncs the partner tree to release #23 (vl `7129b7646af0…`, tag
+`v2026.10.14.4`, PR #521, booted on the owner box 11:22:42 CT 10-14), on top of
+REL22 (already in partner `main`). Net diff vl `f3ec96d85..7129b7646`. **No AddOn
+change**: `ninjascript/` is byte-identical to REL19–REL22, and the AddOn
+build id stays `2026-10-13-a`. No `go.mod` or `web/package*.json` change
+(still **Go 1.26.9**). No DB migration.
+
+1. **Build at the sha named in `deploy/RELEASE`** (`678254c1caf3…` — the REL23
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   build at that sha from a clean clone with **Go 1.26.9** and verify
+   `go version -m vl-bin` shows `vcs.revision=678254c1caf3…`
+   `vcs.modified=false`. Build the web with
+   `VITE_GUIDE_BUILT_REV=<that sha> npm run build`.
+2. **AddOn** — unchanged (`VL_BUILD_ID 2026-10-13-a`). Copy the 5
+   `ninjascript/*.cs` + F5 + FULL NT8 restart ONLY if the machine is still on
+   `2026-10-04-d1`.
+3. **Restart the bot in a flat window** and verify `BOOT INTEGRITY OK …
+   goldens PASS`, `bundle-rev == binary rev`, `hello handshake OK`,
+   `nt8 addon: build_id=2026-10-13-a … match=yes`, positions `count=0`.
+4. **What changes (#519, #520):**
+   - **Bar gaps refill themselves.** After an NT8 feed outage the bot finds
+     any hole of 3+ open minutes (`BARS_HOLE_MIN_GAP_MIN`, optional env,
+     default 3) and re-asks NT8 for history at +1/+3/+10/+30 min, never while
+     the feed is down. If NT8 still has nothing, ONE
+     `🚨 bars hole UNFILLED … Reload All Historical Data` line is logged and
+     the bot retries every 15 min — the fix is an NT8 history reload. Holes
+     show in `/api/health` `bars_holes`.
+   - **ORB / trendline follow the course:** the ORB escape needs the candle
+     BODY outside, the ORB side follows the LATEST escape (the old all-day
+     lock is gone), the trendline breaks on a 5m CLOSE read at the candle's
+     close time. A 2m entry trails on 2m candles (dormant until
+     `exec_2m_after_30m` is ON).
+   - `mentor_trail_tf` values `30s`/`45s` are now REFUSED at config load
+     with a log line and run as `1m` (the bot has no sub-minute bars).
+5. **Carve-outs on this tree** (differ from vl@7129b7646 BY DESIGN, the same 8
+   as every prior sync): `.github/workflows/release.yml`,
+   `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
+   runbook, `internal/updatersource/source.go`.
