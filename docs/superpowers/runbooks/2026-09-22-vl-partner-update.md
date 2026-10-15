@@ -305,3 +305,37 @@ No wire shape change; `ExpectedAddonBuild` is `2026-10-14-a` in lockstep.
    `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
    `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
    runbook, `internal/updatersource/source.go`.
+
+## REL27 — partner sync (releases #26 + #27, vl `4ee511df8`, DS-108, 2026-10-15)
+
+Syncs the partner tree to release #27 (vl `4ee511df8bd75…`, tag
+`v2026.10.15.2`, booted on the owner box 13:43:31 CT 10-15), and with it
+release #26 (`v2026.10.15.1`, `dde67b760`). Net diff vl
+`e52203393..4ee511df8` (62 commits, 20 merges, the W26 wave folds + the #27
+stale-print tf-bound). **No AddOn change** (`VL_BUILD_ID 2026-10-14-a`), no
+`go.mod` or `web/package*.json` change (still **Go 1.26.9**,
+`GOTOOLCHAIN=auto`), no DB migration.
+
+1. **Build at the sha named in `deploy/RELEASE`** (`a5ddd43e8549…` — the REL27
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   build at that sha from a clean clone with **Go 1.26.9** (or
+   `GOTOOLCHAIN=auto`) and verify `go version -m vl-bin` shows
+   `vcs.revision=a5ddd43e8549…` `vcs.modified=false`. Build the web with
+   `VITE_GUIDE_BUILT_REV=<that sha> npm run build`.
+2. **AddOn** — unchanged (`VL_BUILD_ID 2026-10-14-a`); no F5 needed if the
+   machine is already on `2026-10-14-a`.
+3. **Restart the bot in a flat window** and verify `BOOT INTEGRITY OK …
+   goldens PASS`, `bundle-rev == binary rev`, `hello handshake OK`,
+   `nt8 addon: build_id=2026-10-14-a … match=yes`, positions `count=0`.
+4. **What changes (#26 + #27, all ship ON unless noted):** the W26 folds —
+   risk-ledger truth, planner stale-zone truth, dead-man escalation, bar
+   stale-print, UI/studio truth, alert down-episodes, mentor P2S, mentor
+   test-clock, fdr-clock (Stop wakes promptly in the halt backoff),
+   updater-addon-proof (already-compiled AddOn is not re-F5'd), test-clock-arms
+   (arm fixtures pinned off the wall clock) — plus #27's stale-print tf-bound.
+   Machine tokens may READ and REDUCE risk but never ADD it (deny by default).
+5. **Carve-outs on this tree** (differ from vl@4ee511df8 BY DESIGN, the same 8
+   as every prior sync): `.github/workflows/release.yml`,
+   `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
+   runbook, `internal/updatersource/source.go`.
