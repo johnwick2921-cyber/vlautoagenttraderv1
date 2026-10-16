@@ -90,6 +90,10 @@ jobs:
   release:
     needs: [dbcompat]
     runs-on: ubuntu-latest
+    # Job-scoped write (B6): only this job may create the release; the
+    # workflow default stays `contents: read` and dbcompat inherits it.
+    permissions:
+      contents: write
     # The protected Environment carries the owner as a REQUIRED REVIEWER and
     # holds the signing key. No approval, no release, no signature.
     environment: release
