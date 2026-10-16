@@ -186,3 +186,56 @@ func TestPartnerFirstTimeSetupRefusesReleaseDirInsideInstall(t *testing.T) {
 		t.Fatalf("inside install: exit %d stderr %q, want the containment refusal", code, stderr)
 	}
 }
+
+// The installed systemd unit hardcodes %h/vl, so a non-default install dir
+// refuses (exit 2) with the exact reason the fold ordered.
+func TestPartnerFirstTimeSetupRefusesNonDefaultInstallDir(t *testing.T) {
+	home := t.TempDir()
+	bin := fakeBin(t)
+	install := filepath.Join(home, "elsewhere")
+	_ = partnerInstallTree(t, home, partnerSignerLine(t)) // the $HOME/vl tree (unused)
+	// A DIFFERENT, valid install dir (exists + has .env + signers).
+	if err := os.MkdirAll(filepath.Join(install, "deploy"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(install, ".env"), []byte("JWT_SECRET=test-secret-0123456789abcdef0123456789abcdef\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(install, "deploy", "release_allowed_signers"), []byte(partnerSignerLine(t)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr, code := runSetup(t, home, bin,
+		"--dry-run", "--install-dir", install, "--release-dir", filepath.Join(home, "releases"), "owner@example.com")
+	if code != 2 || !strings.Contains(stderr, "a different install dir is not supported") {
+		t.Fatalf("non-default install: exit %d stderr %q, want the unit-path refusal", code, stderr)
+	}
+}
+
+// An existing ~/.config/vl-updater/env that is not mode 0600 refuses (the same
+// condition install-updater-worker.sh enforces).
+func TestPartnerFirstTimeSetupRefusesEnvNot0600(t *testing.T) {
+	home := t.TempDir()
+	bin := fakeBin(t)
+	install := partnerInstallTree(t, home, partnerSignerLine(t)) // $HOME/vl
+	// Already enrolled: admin.json present so enroll is skipped, and an env
+	// file with a token line but the WRONG mode (644) so the env-file step
+	// refuses before anything is written.
+	if err := os.MkdirAll(filepath.Join(install, "data", "updater"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(install, "data", "updater", "admin.json"), []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	envFile := filepath.Join(home, ".config", "vl-updater", "env")
+	if err := os.MkdirAll(filepath.Dir(envFile), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(envFile, []byte("VL_CUTOVER_TOKEN=planted\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr, code := runSetup(t, home, bin,
+		"--install-dir", install, "--release-dir", filepath.Join(home, "releases"), "owner@example.com")
+	if code != 2 || !strings.Contains(stderr, "not mode 0600") {
+		t.Fatalf("env 0600: exit %d stderr %q, want the mode refusal", code, stderr)
+	}
+}

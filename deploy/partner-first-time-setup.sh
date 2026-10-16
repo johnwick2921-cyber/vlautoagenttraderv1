@@ -102,6 +102,16 @@ linger="$(loginctl show-user "$USER" -p Linger --value 2>/dev/null || true)"
 [ -d "$INSTALL_DIR" ] || refuse "install dir does not exist: $INSTALL_DIR (set --install-dir or VL_UPDATER_INSTALL_DIR)"
 [ -f "$INSTALL_DIR/.env" ] || refuse "$INSTALL_DIR/.env does not exist (the bot's env; back up first, then create it)"
 
+# The installed systemd unit hardcodes %h/vl (deploy/systemd-user/vl-updater.service
+# ExecStart=%h/bin/vl-updater --install-dir %h/vl). A worker built for any other
+# install dir would never run under that unit — refuse it rather than install a
+# worker that never starts.
+real_default_install="$(realpath -m "$HOME/vl" 2>/dev/null || echo "$HOME/vl")"
+real_cfg_install="$(realpath -m "$INSTALL_DIR" 2>/dev/null || echo "$INSTALL_DIR")"
+if [ "$real_cfg_install" != "$real_default_install" ]; then
+  refuse "the updater unit runs against $HOME/vl; a different install dir is not supported"
+fi
+
 # The trust anchor: exactly the partner key, never the owner's.
 SIGNERS="$INSTALL_DIR/deploy/release_allowed_signers"
 [ -f "$SIGNERS" ] || refuse "$SIGNERS does not exist (the worker verifies releases against it)"
