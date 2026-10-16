@@ -371,3 +371,36 @@ or `web/package*.json` change (still **Go 1.26.9**).
    `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
    `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`, this
    runbook, `internal/updatersource/source.go`.
+
+## REL30 — partner sync (release #30, vl `a27936e28`, DS-107, 2026-10-16)
+
+Syncs the partner tree to release #30 (vl `a27936e2812…`, tag `v2026.10.16.1`,
+owner "FULL FOR VLTRADER TOO"; RELEASE marker published by the CTO). Net diff
+vl `2444616cc..a27936e28` (release #29 #550/#551 + release #30 #555/#556/#557/
+#558/#560 + #553/#554 CI/test). **No AddOn change** (`VL_BUILD_ID 2026-10-14-a`),
+no `go.mod` or `web/package*.json` change (still **Go 1.26.9**).
+
+1. **Build at the sha named in `deploy/RELEASE`** (`b2d43e1df032…` — the REL30
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   build at that sha from a clean clone with **Go 1.26.9** (or
+   `GOTOOLCHAIN=auto`) and verify `go version -m vl-bin` shows
+   `vcs.revision=b2d43e1df032…` `vcs.modified=false`. Build the web with
+   `VITE_GUIDE_BUILT_REV=<that sha> npm run build`.
+2. **AddOn** — unchanged (`VL_BUILD_ID 2026-10-14-a`); no F5 needed on a machine
+   already at `2026-10-14-a`.
+3. **Restart the bot in a flat window** and verify `BOOT INTEGRITY OK …
+   goldens PASS`, `bundle-rev == binary rev`, `hello handshake OK`,
+   `nt8 addon: build_id=2026-10-14-a … match=yes`, positions `count=0`.
+4. **What changes (#29 + #30):** box watermark re-judgement (P2-N2), one-entry-
+   per-side (no flip), the day-seed replay + its testdata, the planner-HTF
+   veto-snapshot, stale-print HTF cross-check follow-ups, CI coverage timeout
+   30m→60m (#553/#554). All ship ON unless a knob says otherwise; machine
+   tokens may READ and REDUCE risk but never ADD it.
+5. **Carve-outs on this tree — now 9** (differ from vl@a27936e28 BY DESIGN):
+   `.github/workflows/release.yml` (partner `RELEASE_REPO`, no `if: false`
+   guards, release job `permissions: contents: write`), `deploy/release_allowed_signers`
+   (the PARTNER key), `deploy/release_contract_test.go` (partner version),
+   `deploy/partner_signers_test.go` (partner-only), `branding/census_test.go`,
+   `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_source_pin_test.go`, this runbook, and
+   `internal/updatersource/source.go` (ReleaseRepo line).
