@@ -27,28 +27,36 @@ func repoFile(t *testing.T, rel string) string {
 
 // The trigger is the whole safety story: a release is cut from a TAG that a
 // human approved, never from a push to a branch.
-// PARTNER CARVE-OUT (PARTNER-SYNC-BOOT7) — this repo is NEVER a release
-// source. No partner CI run may ever create a release or tag in
-// johnwick2921-cyber/vl. The only permitted trigger is a manual
-// workflow_dispatch, and BOTH jobs carry `if: ${{ false }}` so even a manual
-// dispatch cannot run them. This test asserts exactly that: the workflow has
-// NO trigger that can fire.
-func TestReleaseWorkflowHasNoTriggerThatCanFire(t *testing.T) {
+// PARTNER RELEASES (2026-10-16, owner-ordered): this repo publishes its OWN
+// signed releases (its own key in deploy/release_allowed_signers, the private
+// half only in the `release` Environment secret RELEASE_SIGNING_KEY). Until
+// then both jobs carried `if: ${{ false }}`; those guards are gone. What keeps
+// it safe instead: the ONLY trigger is a manual workflow_dispatch, and the job
+// that holds the key runs in the protected `release` Environment, whose
+// required reviewer is the owner — no approval, no release, no signature. The
+// release target stays THIS repo (the RELEASE_REPO tests below), never
+// johnwick2921-cyber/vl.
+func TestReleaseWorkflowOnlyManualDispatchBehindTheReleaseEnvironment(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	if !strings.Contains(y, "workflow_dispatch:") {
 		t.Fatalf("release.yml must keep workflow_dispatch as its ONLY trigger key")
 	}
 	for _, forbidden := range []string{"push:", "tags:", "branches:", "pull_request:", "schedule:", "workflow_call:", "workflow_run:"} {
 		if strings.Contains(y, forbidden) {
-			t.Fatalf("release.yml must have NO trigger that can fire — found %q", forbidden)
+			t.Fatalf("release.yml must have NO automatic trigger — found %q", forbidden)
 		}
 	}
-	// Both jobs must be permanently disabled; count the `if: ${{ false }}`
-	// occurrences and the job declarations to make sure every job carries one.
-	jobCount := len(regexp.MustCompile(`(?m)^  [a-z]+:$`).FindAllString(y, -1))
-	ifCount := strings.Count(y, "if: ${{ false }}")
-	if jobCount == 0 || ifCount < jobCount {
-		t.Fatalf("every job must carry `if: ${{ false }}`: %d jobs, %d if-guards", jobCount, ifCount)
+	// The job that signs must run in the protected `release` Environment, and
+	// the key must come only from that Environment's secret.
+	rel := regexp.MustCompile(`(?ms)^  release:\n(.*?)(?:^  [a-z]+:\n|\z)`).FindStringSubmatch(y)
+	if rel == nil {
+		t.Fatalf("release.yml must declare the `release` job")
+	}
+	if !strings.Contains(rel[1], "environment: release") {
+		t.Fatalf("the `release` job must run in the protected `release` Environment (owner = required reviewer)")
+	}
+	if !strings.Contains(rel[1], "secrets.RELEASE_SIGNING_KEY") {
+		t.Fatalf("the signing key must come only from the `release` Environment secret RELEASE_SIGNING_KEY")
 	}
 }
 
