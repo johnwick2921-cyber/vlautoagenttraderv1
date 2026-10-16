@@ -61,7 +61,7 @@ const mentorKnobKeys: Record<string, { settingId: string; live: boolean }> = {
     settingId: 'risk_control.mentor_tuning.news_wait_both_lines',
     live: true,
   },
-  'News day: post-print bars off the 1h/4h lines': {
+  'News day: freeze the pre-print 1h/4h read': {
     settingId: 'risk_control.mentor_tuning.news_bars_excluded',
     live: true,
   },
@@ -99,6 +99,10 @@ const mentorKnobKeys: Record<string, { settingId: string; live: boolean }> = {
   },
   'Flag wall as a target': {
     settingId: 'risk_control.mentor_tuning.flag_wall_target',
+    live: true,
+  },
+  'Box new zone after escape': {
+    settingId: 'risk_control.mentor_tuning.box_new_zone_after_escape',
     live: true,
   },
   'PHL min candles from old extreme': {
@@ -527,12 +531,12 @@ export const mentor: GuideSection = {
         ],
         [
           'Day gate (§7)',
-          'Measure the Globex run (17:00 → 08:30 CT) before the open. Conflict on a spent day → the machine is OFF for the day (latched at 08:30). A restart (or a feed gap) after 08:30 latches on the 4h/1h of THAT moment, and the day-gate log line then reads "day gate RE-LATCHED @HH:MM CT, not the 08:30 read" instead of "@08:30". After a BOOT past 08:30 it reads "day gate re-read at boot HH:MM CT, not the 08:30 decision" and shows what the 08:30 decision read (replayed from the same bars) — "the 08:30 decision read 4h … · 1h … (DIFFERENT …)" or "same 4h/1h as the 08:30 decision". Spent + agree → trade but cap the target at 15 pts; on a spent day skip any setup whose stop is over 15',
+          'Measure the Globex run (17:00 → 08:30 CT) before the open. Conflict on a spent day → the machine is OFF for the day (latched at 08:30). The day gate is frozen AT the 08:30 read: a restart after 08:30 RESTORES that decision (the seed replays the 08:30 4h/1h read and the frozen run, then replays the one-way DayOff recheck over the closed 1h bars since), so a restart never re-decides the day — the log line reads "RESTORED from the 08:30 read". Only when the 08:30 read is not possible (no bars closed by 08:30) does the line read "re-read at boot … not the 08:30 decision". Spent + agree → trade but cap the target at 15 pts; on a spent day skip any setup whose stop is over 15',
           'DayGateSpentPts 300 · DayGateTargetCapPts 15',
         ],
         [
           '4h/1h direction',
-          'Entries only WITH the 4h trigger. The 1h counts only when it fired at or after the 4h (an earlier 1h trigger is ignored — it is silent): 1h agreeing or silent → follow the 4h; 1h opposite → sit out until it flips. No 4h trigger → nothing to follow. The 4h/1h lines (and the 5m trigger line) are seeded from history at boot by replaying every stored 1m bar through the same intrabar break rule the running bot uses, so a restart lands on exactly the line a bot that never stopped would hold — including a candle that broke both sides (which side broke first decides). The boot line prints each line as "<tf> trigger <dir> @<price> since <bucket CT>", and every 4h/1h move is logged as it happens ("4h trigger moved long @… → short @…"). On a red-folder print day the seed drops each replayed day\u2019s 07:20–07:35 print candles exactly as the running bot did (release #23). History that reaches the store AFTER the boot — NinjaTrader\u2019s replay is held until the first live bar, and a refilled bar hole — re-seeds the trigger lines, the swing line, the 1m EMA 34/9 and the key-level deletion on the next tick, keeping every latch, arm, leg and visit count; the log line "🧑‍🏫 mentor re-seed after a history refill (…): CHANGED|UNCHANGED … before → after" names what moved (counted reseed_after_refill / reseed_changed). 10-14: the 08:22 boot seeded before the 03:44–07:47 hole reached the store and traded on 1h short @30790.75 instead of 30716.00.',
+          'Entries only WITH the 4h trigger. The 1h counts only when it fired at or after the 4h (an earlier 1h trigger is ignored — it is silent): 1h agreeing or silent → follow the 4h; 1h opposite → sit out until it flips. No 4h trigger → nothing to follow. The 4h/1h lines (and the 5m trigger line) are seeded from history at boot by replaying every stored 1m bar through the same intrabar break rule the running bot uses, so a restart lands on exactly the line a bot that never stopped would hold — including a candle that broke both sides (which side broke first decides). The boot line prints each line as "<tf> trigger <dir> @<price> since <bucket CT>", and every 4h/1h move is logged as it happens ("4h trigger moved long @… → short @…"). On a red-folder print day the seed freezes each replayed day\u2019s print-window trigger read exactly as the running bot did (release #29: the read is frozen from the print to the 08:30 CT open — the candles are never rewritten; release #23 dropped the 07:20–07:35 print candles). History that reaches the store AFTER the boot — NinjaTrader\u2019s replay is held until the first live bar, and a refilled bar hole — re-seeds the trigger lines, the swing line, the 1m EMA 34/9 and the key-level deletion on the next tick, keeping every latch, arm, leg and visit count; the log line "🧑‍🏫 mentor re-seed after a history refill (…): CHANGED|UNCHANGED … before → after" names what moved (counted reseed_after_refill / reseed_changed). 10-14: the 08:22 boot seeded before the 03:44–07:47 hole reached the store and traded on 1h short @30790.75 instead of 30716.00.',
           '—',
         ],
         [
@@ -578,9 +582,9 @@ export const mentor: GuideSection = {
           cite: 'Engineering rule — mentorDailyLossGate → dailyGuardVerdictAt (one daily-guardrail verdict for every path) · trader/mentor_tick.go mentorDailyLossGate, trader/daily_loss_gate.go — live. The course’s own figure is deck slide 14: “Lỗ tối đa một ngày không được vượt quá 30% account” (max daily loss ≤ 30% of the account; never spoken in the videos). The gate is the OWNER’s switch — OFF by owner ruling R4; the owner sets the $',
         },
         {
-          title: 'Never widen a stop, never add',
-          body: 'A stop only ever moves toward break-even. Never add to a position.',
-          cite: 'D2.3 p1 @18:08 — "Không bao giờ được dời lệnh buy stop của mình xuống cây nến kế tiếp" (never move your buy stop down to the next candle) — live',
+          title: 'Never widen a stop, never add, never flip',
+          body: 'A stop only ever moves toward break-even. Never add to a position, and never flip while one is open: ANY entry (same or opposite side) is refused while a mentor position is open — flat first (owner ruling 2026-09-03 "no adds, no flips"). Once flat, the next tick may place the other side (the box "Uno reverse" trades after the stop, never before). A fill also cancels every other working mentor entry on both sides (one working entry per side + OCO) before it can fill.',
+          cite: 'D2.3 p1 @18:08 — "Không bao giờ được dời lệnh buy stop của mình xuống cây nến kế tiếp" (never move your buy stop down to the next candle); owner ruling 2026-09-03 "no adds, no flips" — live',
         },
         {
           title: '"One loss → done" is NOT used',
@@ -1065,17 +1069,17 @@ export const mentor: GuideSection = {
           perSession: 'No.',
         },
         {
-          label: 'News day: post-print bars off the 1h/4h lines',
+          label: 'News day: freeze the pre-print 1h/4h read',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'D4.4 p1 @18:18–18:25 "Chứ tính cái lúc trước news, chứ không phải tính cái lúc news ra rồi nha… Còn cái khúc mà news ra rồi thì không tính" (count the read from before the news, not after; what prints after the news does not count). OFF (default) = only the 07:20–07:35 CT print-window bars are dropped from the 1h/4h trigger feed. ON = every 1m bar from the print window start until the 08:30 CT RTH open is dropped, so post-print follow-through cannot move the 1h/4h lines before the open. Knob rule case (b), OFF: the course does not say until when the exclusion runs — the 08:30 end is our reading of D4.4 p2 ("open nó cũng giống news thôi").',
+          what: 'D4.4 p1 @18:13–18:25 "Chứ tính cái lúc trước news, chứ không phải tính cái lúc news ra rồi nha… Còn cái khúc mà news ra rồi thì không tính" (read the trigger from before the news, not from when it prints; what prints after the news does not count). ON (default) = the 1h/4h trigger read FREEZES at its pre-print values from the print window start until the 08:30 CT day-gate read — the 1h/4h candles are never rewritten (no bar is deleted), so after 08:30 the lines resume on whole candles. OFF = the item-18 print-window drop (07:20–07:35 only), byte-identical. Knob rule case (a): the course line, no ruling against.',
           trader:
-            'OFF — case (b): the end of the exclusion is not in the course.',
+            'ON — case (a): the course reads the trigger from before the print and never rewrites candles after the open.',
           consumer:
-            'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/news_print.go htfFeedBars',
+            'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/news_print.go newsHTFFrozen / newsBarFrozen',
           range: 'true / false',
-          systemDefault: 'false',
+          systemDefault: 'true',
           recommended:
-            'OFF — D4.4 p1 @18:18–18:25; knob rule (b): the 08:30 end is a reading, not a course line.',
+            'ON — D4.4 p1 @18:13–18:25; the freeze is the faithful reading (the old behaviour deleted the 07:20–08:30 bars and corrupted every later 1h/4h candle all day).',
           whenToTouch: 'Only on an owner ruling.',
           perSession: 'No.',
         },
@@ -1205,6 +1209,20 @@ export const mentor: GuideSection = {
           recommended:
             'OFF — X9 extra @05:47–06:12; turn ON only on an owner ruling.',
           whenToTouch: 'Only on an owner ruling.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Box new zone after escape',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'D3.4 p3 recovered2 @00:00–00:21 "khi nào nó rớt xuống đây, nó bật ngược lên, nó tạo cái failure to go lower dưới này nè… thì anh chị mới có được cái range giữa cái này và cái này" (when it drops down here, bounces back, and makes a failure-to-go-lower down here — only then do you get the range between this and this) — a range escape makes a NEW zone, not a redraw. D3.2 p2 @09:47–09:54 "Đừng vẽ vùng thứ 3… Rối lắm" (do not draw a third zone… it gets messy) caps it: the new zone must sit entirely outside the escaped range. D4.1 p2 @02:38–03:31: a higher high / lower low does NOT redraw the drawn box, and the drawn box is never deleted. true (default) = after a standing FTGH/FTGL box escapes (a closed 1m body fully outside), ONE new same-role box is latched from confirmed swings that form after the escape and lie wholly beyond the old range (a new FTGL below the floor, a new FTGH above the ceiling); the old box keeps its flipped role and the new box is the active one, so one new zone per further escape. false = the pre-#29 rule (the first box per role per day is the only box). Knob rule case (a), ON.',
+          trader: 'ON — case (a).',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/box.go latchPostEscapeBoxes / boxAfterEscapeBuild',
+          range: 'true / false',
+          systemDefault: 'true',
+          recommended:
+            'ON — D3.4 p3 recovered2 @00:00–00:21; knob rule (a): course, no ruling against.',
+          whenToTouch: 'Rarely — OFF only to compare with the pre-#29 rule.',
           perSession: 'No.',
         },
         {
