@@ -17,37 +17,44 @@ answers `install_enabled: true` + `worker_listening: true`.
 
 ## 1. First-time setup (once)
 
-1. **Release keypair** (the CTO adds the public half; you keep the private):
-   generate an ed25519 keypair for releases. The allowed-signers line goes into
-   `deploy/release_allowed_signers` in the repo (the CTO commits it — do not
-   hand-edit it yourself); the private key goes into the GitHub Environment
-   `release` as the secret `RELEASE_SIGNING_KEY`. The workflow refuses to run a
-   release without both (missing file or missing secret = REFUSED).
-2. **GitHub Environment `release`:** repo → Settings → Environments → `release`:
-   add yourself as a REQUIRED REVIEWER. The signing key lives ONLY there.
-3. **Enroll this box:** see the M3 enrollment runbook —
-   `go run ./cmd/vl-updater-bootstrap --install-dir <bot folder> enroll <your exact account email>`.
-4. **Turn the glue on:** `VL_UPDATER=1` (exactly 1) in the bot's environment,
-   then restart the bot. Unset, nothing installs and the verifier is the stub.
-5. **Worker install** (no privilege escalation anywhere):
-   - create `~/.config/vl-updater/env`, mode 0600, with exactly two lines:
-     `VL_RELEASE_DIR=/absolute/path/outside/vl` (never inside `~/vl` —
-     the worker refuses it, and so does the installer) and
-     `VL_CUTOVER_TOKEN=<a fresh gate-jwt>`.
-   - run `deploy/install-updater-worker.sh <40-hex sha>` from a checkout — it
-     builds `~/bin/vl-updater` from that exact commit in a throwaway clone
-     (proves `vcs.modified=false` and `vcs.revision=<sha>`), installs the
-     systemd --user unit, and never prints the token.
-6. **Start the worker attended:** `systemctl --user start vl-updater`, then
-   open Settings → Updates: once the page reads install_enabled and
-   worker_listening both true (and the review constant is off), the button is
-   live.
+Run ONE script on the partner machine, then every release is one button:
 
-**The token clock:** `VL_CUTOVER_TOKEN` is a gate-jwt with a **24-hour**
-lifetime (`auth/auth.go:227`). There is no longer-lived token type. Re-mint it
-and replace the env line **before each install window**, then
-`systemctl --user restart vl-updater`. An `authorize` grant is valid **5
-minutes**, single use.
+```
+bash deploy/partner-first-time-setup.sh <your exact account email>
+```
+
+The script is idempotent and attended, no sudo. It prints each step and
+REFUSES with a reason on any failure:
+
+1. checks prerequisites — `go`, `git`, `curl`, `systemctl --user` + linger,
+   the bot install dir, and that `deploy/release_allowed_signers` holds the
+   PARTNER key (never the owner repo's);
+2. runs the attended `vl-updater-bootstrap --install-dir <bot> enroll <email>`
+   (writes the enrollment files + the worker token into
+   `~/.config/vl-updater/env`, mode 0600 — the token is never printed);
+3. writes `VL_RELEASE_DIR` (absolute, OUTSIDE the install) beside the token
+   line, preserving every other line byte-identically;
+4. sets `VL_UPDATER=1` in the bot's `.env` (backed up first, other lines kept),
+   then you restart the bot to read it;
+5. runs `deploy/install-updater-worker.sh` at the CURRENT partner main sha
+   (builds `~/bin/vl-updater` from that exact clean commit in a throwaway
+   clone) and starts the worker: `systemctl --user start vl-updater`;
+6. finishes by checking that `GET /api/updates` answers
+   `install_enabled: true` + `worker_listening: true`, printing **PASS** or
+   **FAIL** (auth is required — export `VL_ADMIN_TOKEN` with your logged-in
+   session Bearer token, or open Settings → Updates in a browser).
+
+`--dry-run` prints every action and changes nothing.
+
+Then **each release = press Update** in Settings → Updates (plus F5 in NT8 when
+the job says `nt8_updated`, step 7 of the loop below). No token refresh, no
+per-release CLI: the worker token is long-lived.
+
+**The token clock:** `VL_CUTOVER_TOKEN` is a long-lived machine token
+(`auth.WorkerTokenTTL` = 10 years), written ONCE by `enroll` — **not** a
+24-hour gate-jwt. The earlier "refresh before each window" text was stale; the
+installer and the worker read the same `~/.config/vl-updater/env` file. An
+`authorize` grant is valid **5 minutes**, single use.
 
 ## 2. Every-release loop
 

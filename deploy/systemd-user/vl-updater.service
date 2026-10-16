@@ -8,9 +8,9 @@
 #
 # Installed by deploy/install-updater-worker.sh (no sudo, builds from a named
 # clean sha). The env file is %h/.config/vl-updater/env, mode 0600, holding
-# VL_RELEASE_DIR (absolute, outside %h/vl) and VL_CUTOVER_TOKEN (a gate-jwt
-# with a 24-hour lifetime — refresh it before each attended install window;
-# no longer-lived token type exists).
+# VL_RELEASE_DIR (absolute, outside %h/vl) and VL_CUTOVER_TOKEN (a long-lived
+# machine token written ONCE by `vl-updater-bootstrap enroll` — auth.WorkerTokenTTL,
+# never a 24-hour gate-jwt; no refresh is needed before each window).
 [Unit]
 Description=vl updater worker (W-ONE-BUTTON M4/M5)
 Documentation=file://%h/vl/docs/superpowers/runbooks/2026-09-27-one-button-update.md
