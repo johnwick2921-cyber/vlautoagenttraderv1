@@ -87,4 +87,5 @@ produces the bundle or the frontend image must supply it. Adding a new one?
 | `INSTALL.md` (documented fresh-install command) | from `git rev-parse HEAD` |
 | `CONTRIBUTING.md` (documented local-build commands) | from `git rev-parse HEAD` |
 | `deploy/cutover.sh` | instructs the human: build with `VITE_GUIDE_BUILT_REV=$NEW_SHA`; refuses to proceed otherwise |
+| `deploy/new-install.sh` | `VITE_GUIDE_BUILT_REV="$(git rev-parse HEAD)"` on the same line as `npm run build` |
 | the manual boot | `cd web && VITE_GUIDE_BUILT_REV=<sha> npm run build`, verified by finding the sha in `web/dist/assets/*.js` |
