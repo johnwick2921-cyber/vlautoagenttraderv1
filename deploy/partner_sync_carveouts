@@ -1,0 +1,17 @@
+# deploy/partner_sync_carveouts — the partner-only files an owner→partner sync
+# MUST NEVER overwrite (each is pinned by a deploy/ test). One path per line,
+# '#' starts a comment, blank lines are ignored. The sync drops these paths and
+# keeps the partner copy. Sorted.
+.github/workflows/release.yml
+branding/census_test.go
+deploy/RELEASE
+deploy/install-updater-worker.sh
+deploy/new-install.sh
+deploy/new_install_test.go
+deploy/partner_signers_test.go
+deploy/partner_sync_carveouts
+deploy/release_allowed_signers
+deploy/release_contract_test.go
+deploy/release_source_pin_test.go
+docs/superpowers/runbooks/2026-09-22-vl-partner-update.md
+internal/updatersource/source.go
