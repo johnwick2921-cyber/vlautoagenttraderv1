@@ -88,6 +88,11 @@ type State struct {
 	// LatchedBoxesDay is the trading day the latch belongs to; on a new day
 	// the latch is cleared and the first box of the new day is drawn.
 	LatchedBoxesDay string `json:"latched_boxes_day,omitempty"`
+	// PostEscapeBoxes (B52, release #29) holds the NEW-zone boxes latched
+	// after the standing box escaped: one per further escape, outside the old
+	// range. Order is formation order; the last of a role is that role's
+	// active box.
+	PostEscapeBoxes []Box `json:"post_escape_boxes,omitempty"`
 	// TallBoxNoted (CX-11) dedups the "box too tall" note per box.
 	TallBoxNoted map[string]bool `json:"-"`
 	// ISBBox15m is the 15m ISB rest box (D4.1-25): the latest CLOSED 15m
@@ -1242,14 +1247,21 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) (out []Intent) {
 	// must not move the 1h/4h trigger lines [D4.4 p1 @18:13, @22:15] — the
 	// day's print windows (plumbed from the trader's calendar) are dropped
 	// from the HTF feed. Empty windows = no print today = byte-identical.
-	// CE-4 (release #25, knob news_bars_excluded): ON runs each window to the
-	// 08:30 CT open — "Còn cái khúc mà news ra rồi thì không tính" [D4.4 p1
-	// @18:18–18:25]. OFF = the print windows unchanged (byte-identical).
-	htfBars := htfFeedBars(bars, newsHTFWindows(e.Cfg.PrintWindows, e.Cfg))
-	bars4h := e.barsTFMemo(htfBars, 240)
-	bars1h := e.barsTFMemo(htfBars, 60)
+	// CE-4 (release #25, knob news_bars_excluded) was REWORKED (release #29):
+	// ON no longer deletes the 07:20–08:30 1m bars (that corrupted every later
+	// 1h/4h candle ALL DAY); it FREEZES the pre-print 1h/4h trigger read until
+	// the 08:30 CT day-gate read — "tính cái lúc trước news… Còn cái khúc mà
+	// news ra rồi thì không tính" [D4.4 p1 @18:13–18:25]. The candles stay
+	// whole (htfFeed = the full bars), and after 08:30 the lines resume on the
+	// whole candles. OFF = the item-18 print-window drop, byte-identical.
+	htfFeed := bars
+	if !e.Cfg.NewsBarsExcluded {
+		htfFeed = htfFeedBars(bars, e.Cfg.PrintWindows)
+	}
 	prevHTF := e.State.HTF
-	e.State.HTF = HTFAdvance(e.State.HTF, bars4h, bars1h, e.Cfg)
+	if !newsHTFFrozen(e.Cfg, now) {
+		e.State.HTF = HTFAdvance(e.State.HTF, e.barsTFMemo(htfFeed, 240), e.barsTFMemo(htfFeed, 60), e.Cfg)
+	}
 	e.noteTriggerMove("4h", prevHTF.FourH, e.State.HTF.FourH, bars)
 	e.noteTriggerMove("1h", prevHTF.OneH, e.State.HTF.OneH, bars)
 	// D4.4-11: the HTF direction gate applies only in the news window (the
@@ -1293,7 +1305,7 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) (out []Intent) {
 	// closed 1h bars are the same print-filtered feed the HTF lines advanced
 	// on, with the still-forming bucket dropped.
 	if e.Cfg.DayOffRecheck {
-		e.State.Day = recheckDayOff(e.State.Day, &e.State.DayRecheck, e.State.HTF, e.closedBucketsTFMemo(htfBars, 60, now), now, ctime())
+		e.State.Day = recheckDayOff(e.State.Day, &e.State.DayRecheck, e.State.HTF, e.closedBucketsTFMemo(htfFeed, 60, now), now, ctime())
 	}
 	// B23: the visit counters belong to the latched trading day — a new day
 	// starts every level's cap over.
@@ -1365,6 +1377,7 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) (out []Intent) {
 			e.note("box latch cleared at the 17:00 CT session roll (or the 08:30 CT fresh RTH pair, mentor_box_fresh_rth_pair): trading day %s → %s (FTGH/FTGL redraw from the new session only) [D4.1 p2 @02:58]", e.State.LatchedBoxesDay, boxDay)
 		}
 		e.State.LatchedBoxes = nil
+		e.State.PostEscapeBoxes = nil // B52: the new-zone boxes die with the day too
 		e.State.LatchedBoxesDay = boxDay
 	}
 	boxes = e.latchBoxes(boxes, bars, e.Cfg.Box)
@@ -1763,8 +1776,12 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) (out []Intent) {
 	//
 	// P2-1 (L7): the reverse ISB was dropped silently while the 15m/5m conflict
 	// stood. Name and count it; no behaviour change (the !conflict path below
-	// still does not run).
-	if conflict && e.Cfg.ISBReverseEMA9Enabled && IsISB(execPrev, execCur) {
+	// still does not run). Release #30: isbrev_tf_conflict / isbrev_day_off
+	// count only a REAL reverse-ISB candidate (an ISB at the EMA 9 pointing
+	// against the trend) — before they fired for every ISB.
+	revEma9 := emaValue(bars, e.Cfg.EMAPeriod9)
+	revIn, revCandidate, _ := ReverseISBAtEMA9(execPrev, execCur, revEma9, e.State.Trigger.Dir, e.Cfg)
+	if conflict && e.Cfg.ISBReverseEMA9Enabled && revCandidate {
 		e.refuse("isbrev_tf_conflict")
 	}
 	// B6 (L14): the reverse ISB must stand behind the SAME standing gates as the
@@ -1772,14 +1789,15 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) (out []Intent) {
 	// fail closed when the 5m trigger has no direction yet (it used to fall
 	// through to SHORT unconditionally).
 	if !conflict && e.Cfg.ISBReverseEMA9Enabled && IsISB(execPrev, execCur) {
-		if r := dayGateRefusal(e.State.Day.Verdict); r != "" {
+		if r := dayGateRefusal(e.State.Day.Verdict); revCandidate && r != "" {
 			e.refuse("isbrev_" + r)
 		} else if e.State.Trigger.Dir == "" {
 			// B6: with no 5m trigger there is no trend to reverse — R7 always
 			// resolved to SHORT here before. Fail closed [D5.4: "đánh theo xu
 			// hướng" — the trend must exist].
 			e.refuse("isbrev_no_trigger")
-		} else if in, ok, _ := ReverseISBAtEMA9(execPrev, execCur, emaValue(bars, e.Cfg.EMAPeriod9), e.State.Trigger.Dir, e.Cfg); ok {
+		} else if revCandidate {
+			in := revIn
 			// N12: an R7 reverse ISB fills by the close of the NEXT candle on
 			// the execution timeframe (the R1 family rule).
 			in.ExpiryMs = execCur.CloseTime + int64(execTFMin)*60_000
@@ -1942,8 +1960,9 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) (out []Intent) {
 	// D4.2-03: while the 15m/5m conflict stands, NO setup trades — PHL/PLH
 	// included (the old one-shot veto covered only the ISB path).
 	// P2-1 (L7): a conflict drop of a candidate PHL/PLH was silent — name and
-	// count it once per tick where a candidate level exists. No behaviour
-	// change: the level still does not trade.
+	// count it. Release #30: count EVERY rejected level in the tick (the `break`
+	// used to count only the first). No behaviour change: the level still does
+	// not trade.
 	if conflict {
 		for _, lvl := range levels {
 			tr := e.State.Touches[lvl.Key]
@@ -1951,7 +1970,6 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) (out []Intent) {
 				continue
 			}
 			e.refuse("phl_tf_conflict")
-			break
 		}
 	}
 	if !conflict {
@@ -2258,13 +2276,17 @@ func (e *Evaluator) Tick(bars []market.Kline, now int64) (out []Intent) {
 				if r.RefBar <= lastIdx {
 					continue
 				}
-				// A10: the day gate fires BEFORE any box state is recorded
-				// (BoxRefs), and names the blocked setup.
+				// Release #30: consume the return FIRST — every return is
+				// evaluated exactly once, refused or not. Before this moved
+				// below the day gate, a day-off-refused return was re-walked
+				// every tick (10-15: 798 box_day_off from 24 returns), and once
+				// the ban lifted the stale returns were walked as fresh entries.
+				e.State.BoxRefs[b.Key] = bars[r.RefBar].OpenTime
+				// A10: the day gate fires and names the blocked setup.
 				if r := dayGateRefusal(e.State.Day.Verdict); r != "" {
 					e.refuse("box_" + r)
 					continue
 				}
-				e.State.BoxRefs[b.Key] = bars[r.RefBar].OpenTime
 				// B11 [D3.4 p2 @07:58–08:21]: inside the standing 5m-ISB box only
 				// a same-direction ISB trades ("em chỉ đánh inside bar cùng
 				// chiều") — box trades never.
