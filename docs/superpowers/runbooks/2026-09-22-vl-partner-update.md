@@ -404,3 +404,39 @@ no `go.mod` or `web/package*.json` change (still **Go 1.26.9**).
    `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
    `deploy/release_source_pin_test.go`, this runbook, and
    `internal/updatersource/source.go` (ReleaseRepo line).
+
+## REL31 — partner sync (release #31, vl `f31beef13`, DS-108, 2026-10-16)
+
+Syncs the partner tree to release #31 (vl `f31beef1345…`, tag `v2026.10.16.2`,
+published by the CTO). Net diff vl `a27936e28..f31beef13` (release #31: #559
+fix/course-exits + #561 fix/course-defaults-30). **No AddOn change**
+(`VL_BUILD_ID 2026-10-14-a`), no `go.mod` or `web/package*.json` change (still
+**Go 1.26.9**).
+
+1. **Build at the sha named in `deploy/RELEASE`** (`80ad38870f85…` — the REL31
+   tree-sync commit): `git checkout main && git pull --ff-only origin main`,
+   build at that sha from a clean clone with **Go 1.26.9** (or
+   `GOTOOLCHAIN=auto`) and verify `go version -m vl-bin` shows
+   `vcs.revision=80ad38870f85…` `vcs.modified=false`. Build the web with
+   `VITE_GUIDE_BUILT_REV=<that sha> npm run build`.
+2. **AddOn** — unchanged (`VL_BUILD_ID 2026-10-14-a`); no F5 needed on a machine
+   already at `2026-10-14-a`.
+3. **Restart the bot in a flat window** and verify `BOOT INTEGRITY OK …
+   goldens PASS`, `bundle-rev == binary rev`, `hello handshake OK`,
+   `nt8 addon: build_id=2026-10-14-a … match=yes`, positions `count=0`.
+4. **What changes (#31):** mentor exits follow the course — R1 marketable leg-1
+   take-profit modify through `modify_bracket` (no AddOn change), R2 swing 4h
+   trail, defect-6 PHL EMA, the candle-3 partial is a marketable limit; and
+   course-defaults-30 — mentor defaults aligned with the course (R8 ceiling,
+   reduced tier reach 30; `htf_gate_news_only` + `stop_after_loss` reverted to
+   the course text). The #559 swing changes were REVERTED to dev before the
+   merge.
+5. **Carve-outs on this tree — 10** (differ from vl@f31beef13 BY DESIGN):
+   `.github/workflows/release.yml` (partner `RELEASE_REPO`, no `if: false`
+   guards, release job `permissions: contents: write`),
+   `deploy/release_allowed_signers` (the PARTNER key),
+   `deploy/release_contract_test.go` (partner version),
+   `deploy/partner_signers_test.go` (partner-only), `branding/census_test.go`,
+   `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/release_source_pin_test.go`, this runbook, and
+   `internal/updatersource/source.go` (ReleaseRepo line).
