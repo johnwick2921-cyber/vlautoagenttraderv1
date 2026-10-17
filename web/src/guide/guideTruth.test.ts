@@ -197,17 +197,38 @@ describe('T20/T21/T22 — settings and gate numbers equal the code', () => {
 })
 
 describe('T17/T18/T19/T24/T8 — operations text equals the code', () => {
-  it('T17: the update job age limit is internal/updaterjob MaxJobAge and the NT8 restart comes after the park', () => {
+  it('T17: the one-click update — build → place → restart → reconnect (no terminal, no F5 park)', () => {
     const m = repo('internal/updaterjob/job.go').match(
       /const MaxJobAge = (\d+) \* time\.Minute/
     )
     expect(m).not.toBeNull()
     const u = sectionText('updates')
+    // The job-age rule is unchanged and still pinned to the Go constant.
     expect(u).toContain(`within ${m![1]} minutes of pressing Update`)
-    expect(repo('internal/updaterworker/runner.go')).toMatch(
-      /a\.AcceptSeq == j\.NT8\.AckAcceptSeq/
-    )
-    expect(u).toContain('restart NT8 AFTER the job has parked')
+    // The four plain-words statuses the owner sees (the CTO's contract).
+    expect(u).toContain('Building the NinjaTrader AddOn')
+    expect(u).toContain('Restarting NinjaTrader')
+    expect(u).toContain('Waiting for NinjaTrader to reconnect')
+    expect(u).toContain('running the new AddOn')
+    // No terminal instruction remains in the guide.
+    expect(u).not.toMatch(/run:? vl-updater resume/)
+    expect(u).not.toMatch(/copy → F5 → full NT8 restart/)
+    expect(u).not.toMatch(/parked for the attended AddOn F5/)
+  })
+  it('T17b: the reconnect is a NEW connection and a bounded wait, never silent', () => {
+    const u = sectionText('updates')
+    expect(u).toMatch(/new accept_seq/)
+    expect(u).toMatch(/NEW build id/)
+    expect(u).toMatch(/5 minutes/)
+    expect(u).toMatch(/held/)
+    expect(u).toMatch(/never a silent success/)
+  })
+  it('T17c: the one-time migration MOVES the sources and NT8-closed completes with nothing owed', () => {
+    const u = sectionText('updates')
+    expect(u).toMatch(/MOVES the VL source files/)
+    expect(u).toMatch(/one F5, one time, ever/i)
+    expect(u).toMatch(/never deletes them/)
+    expect(u).toMatch(/Nothing is owed/)
   })
   it('T18: pause never claims to stop resting orders (the pause has no cancel path)', () => {
     const pause = repo('trader/auto_trader_pause.go')
@@ -316,5 +337,37 @@ describe("C9 — the gate-label list is the panel's own map", () => {
     expect(block.title).toBe(
       `every human label the gate panel has (${Object.keys(GATE_LABELS).length})`
     )
+  })
+})
+
+// JOB 2.4 (knob recheck fixes, 2026-10-17): the three recheck-HIDDEN knobs that
+// had NO guide card at all now have one, each saying "No Studio control" and
+// stating the CODE default. Mutant: reword the default (or drop "No Studio
+// control") → RED.
+describe("JOB 2.4 — hidden-knob cards state the code default and 'No Studio control'", () => {
+  const fadeSrc = repo('trader/fade_facts.go')
+  const structSrc = repo('store/structural_geometry.go')
+  const stratSrc = repo('store/strategy.go')
+
+  it('fade_or_wide_k states the code default and "No Studio control"', () => {
+    const k = card('settings', 'Fade-or-wide k (W2 label)')
+    expect(k.where).toMatch(/No Studio control/)
+    expect(k.systemDefault).toContain(goConst(fadeSrc, 'fadeORWideKDefault'))
+  })
+
+  it('round_trip_cost_points states the code default 2 and "No Studio control"', () => {
+    const k = card('settings', 'Round-trip cost (structural stop)')
+    expect(k.where).toMatch(/No Studio control/)
+    // the shipped default is the CostPoints literal in ResolveStructuralStop
+    expect(structSrc).toMatch(/CostPoints:\s*2\b/)
+    expect(k.systemDefault).toBe('2')
+  })
+
+  it('transition_standdown states nil → ON and "No Studio control"', () => {
+    const k = card('settings', 'Transition stand-down (regime G4)')
+    expect(k.where).toMatch(/No Studio control/)
+    expect(k.systemDefault).toMatch(/ON/)
+    // the shipped default is the nil branch of TransitionStanddownEnabled
+    expect(stratSrc).toMatch(/if c\.Regime == nil \|\| c\.Regime\.TransitionStanddown == nil \{\s*return true/)
   })
 })
