@@ -3,7 +3,9 @@
 # '#' starts a comment, blank lines are ignored. The sync drops these paths and
 # keeps the partner copy. Sorted.
 .github/workflows/release.yml
+.github/workflows/vl-auto-sync.yml
 branding/census_test.go
+deploy/LAST_SYNCED_VL_TAG
 deploy/RELEASE
 deploy/install-updater-worker.sh
 deploy/partner-first-time-setup.sh
@@ -15,6 +17,7 @@ deploy/release_allowed_signers
 deploy/release_contract_test.go
 deploy/release_source_pin_test.go
 deploy/systemd-user/vl-updater.service
+deploy/vl-auto-sync.sh
 docs/superpowers/runbooks/2026-09-22-vl-partner-update.md
 docs/superpowers/runbooks/2026-09-27-one-button-update.md
 internal/updatersource/source.go

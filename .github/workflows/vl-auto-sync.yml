@@ -1,0 +1,107 @@
+# vl-auto-sync — the partner repo follows every vl release tag automatically.
+#
+# Design (DS-105, 2026-10-17): this workflow lives IN the partner repo, so the
+# partner signing key (the `release` Environment secret RELEASE_SIGNING_KEY)
+# NEVER leaves this repo. vl is read over the public URL with no auth — the only
+# repo boundary crossed is a public read. A box-side script was rejected because
+# it would have to hold the partner key (or a PAT) outside the repo, and the
+# box just survived a full wipe.
+#
+# Trigger: schedule (poll for a new vl v* tag) + workflow_dispatch. A
+# repository_dispatch from vl was rejected because it needs a PAT in vl with
+# partner-repo rights — a secret crossing repos.
+#
+# Flow: sync (script) → merge-and-tag (its own PR via GITHUB_TOKEN, then the
+# partner tag) → release (call ./.github/workflows/release.yml as a reusable
+# workflow). The `release` Environment approval (owner = the CTO) stays the one
+# human gate — the release job does not run until that approval, exactly as on
+# 2026-10-16. On a failed sync this workflow opens an ISSUE and publishes
+# nothing.
+
+name: vl-auto-sync
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write      # push the sync branch, merge the PR, create the tag
+  issues: write        # open an issue on failure
+  pull-requests: write # merge the sync PR
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.sync.outputs.tag }}
+      branch: ${{ steps.sync.outputs.branch }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.9'
+
+      - name: Auto-sync from vl
+        id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          if ! bash deploy/vl-auto-sync.sh 2>&1 | tee /tmp/vl-auto-sync.log; then
+            reason="$(tail -30 /tmp/vl-auto-sync.log || true)"
+            gh issue create \
+              --title "vl auto-sync failed" \
+              --body "The auto-sync run failed. Last output:\n\n\`\`\`\n${reason}\n\`\`\`" \
+              || true
+            exit 1
+          fi
+
+  merge-and-tag:
+    needs: sync
+    if: needs.sync.outputs.tag != ''
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.merge.outputs.tag }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge the sync PR and create the partner tag
+        id: merge
+        run: |
+          set -euo pipefail
+          branch="${{ needs.sync.outputs.branch }}"
+          tag="${{ needs.sync.outputs.tag }}"
+
+          # Merge our own PR (opened by the sync script). GITHUB_TOKEN can merge
+          # the PRs this workflow opens. Tolerate an already-merged PR.
+          pr_number="$(gh pr list --head "$branch" --state open --json number -q '.[0].number' || true)"
+          if [ -n "$pr_number" ]; then
+            gh pr merge "$pr_number" --merge --delete-branch
+          fi
+
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+
+          # The tag is the vl tag name mirrored into this repo. Idempotent.
+          if ! git rev-parse "refs/tags/${tag}" >/dev/null 2>&1; then
+            git tag "$tag" "$(git rev-parse HEAD)"
+            git push origin "refs/tags/${tag}"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: merge-and-tag
+    if: needs.merge-and-tag.outputs.tag != ''
+    # No secrets are passed here — release.yml pulls RELEASE_SIGNING_KEY from
+    # its own protected `release` Environment (required reviewer = the owner).
+    # That approval is the one human gate; nothing publishes without it.
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.merge-and-tag.outputs.tag }}
