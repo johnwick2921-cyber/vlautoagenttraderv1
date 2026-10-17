@@ -30,6 +30,12 @@ permissions:
   issues: write        # open an issue on failure
   pull-requests: write # merge the sync PR
 
+# One sync at a time: the 10-min schedule must never start a second run while
+# one is still syncing or waiting on the release approval.
+concurrency:
+  group: vl-auto-sync
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -82,7 +88,8 @@ jobs:
           # the PRs this workflow opens. Tolerate an already-merged PR.
           pr_number="$(gh pr list --head "$branch" --state open --json number -q '.[0].number' || true)"
           if [ -n "$pr_number" ]; then
-            gh pr merge "$pr_number" --merge --delete-branch
+            # The branch is kept: THE ONE RULE (no branch deletion).
+            gh pr merge "$pr_number" --merge
           fi
 
           git fetch origin main
