@@ -106,9 +106,26 @@ jobs:
   release:
     needs: merge-and-tag
     if: needs.merge-and-tag.outputs.tag != ''
-    # No secrets are passed here — release.yml pulls RELEASE_SIGNING_KEY from
-    # its own protected `release` Environment (required reviewer = the owner).
-    # That approval is the one human gate; nothing publishes without it.
-    uses: ./.github/workflows/release.yml
-    with:
-      tag: ${{ needs.merge-and-tag.outputs.tag }}
+    # START release.yml as its own top-level run on the tag — exactly how every
+    # partner release has been signed. It is NOT called as a reusable workflow:
+    # run 39073507478 proved the `release` Environment secret comes through
+    # EMPTY in a called workflow ("REFUSED: no signing key in the release
+    # Environment"). No secrets are referenced here; release.yml pulls
+    # RELEASE_SIGNING_KEY from its own protected `release` Environment
+    # (required reviewer = the owner). That approval is the one human gate;
+    # nothing publishes without it. A workflow_dispatch made with GITHUB_TOKEN
+    # does start a run (GitHub's documented exception).
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write   # start release.yml; nothing else
+    env:
+      GH_TOKEN: ${{ github.token }}
+      # The tag rides env:, where bash reads it as DATA, never spliced into run:.
+      TAG: ${{ needs.merge-and-tag.outputs.tag }}
+    steps:
+      - name: Start release.yml on the tag (waits for the release approval)
+        run: |
+          set -euo pipefail
+          case "$TAG" in v*) : ;; *) echo "REFUSED: tag '$TAG' is not a v* tag"; exit 1 ;; esac
+          gh workflow run release.yml -R "$GITHUB_REPOSITORY" --ref "$TAG" -f tag="$TAG"
+          echo "release.yml started on $TAG — approve the \`release\` Environment to publish"

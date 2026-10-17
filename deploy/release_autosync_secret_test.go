@@ -1,6 +1,6 @@
 package deploy
 
-// DS-105 auto-sync (2026-10-17) — vl-auto-sync.yml is a CALLER of release.yml,
+// DS-105 auto-sync (2026-10-17) — vl-auto-sync.yml STARTS release.yml (workflow_dispatch),
 // never a signer. The signing key (the `release` Environment secret
 // RELEASE_SIGNING_KEY) must live ONLY inside release.yml, behind the `release`
 // Environment's required-reviewer gate. vl-auto-sync.yml runs on a schedule and
@@ -9,7 +9,7 @@ package deploy
 // human approval.
 //
 // Pinned here: vl-auto-sync.yml contains no `secrets.` reference at all, and it
-// calls release.yml via `uses:` with only the `tag` string input — never a
+// starts release.yml with only the `tag` string input — never a
 // `secrets:` mapping. The mutation that proves it: writing
 // `secrets: inherit` (or `secrets.RELEASE_SIGNING_KEY`) into the caller fails
 // the assertions below.
@@ -28,17 +28,22 @@ func TestAutoSyncWorkflowCarriesNoSecrets(t *testing.T) {
 	if strings.Contains(y, "secrets:") {
 		t.Fatalf("vl-auto-sync.yml must not pass a secrets: mapping to the called workflow")
 	}
-	if !strings.Contains(y, "uses: ./.github/workflows/release.yml") {
-		t.Fatalf("vl-auto-sync.yml must call release.yml as a local reusable workflow")
+	// Run 39073507478: called as a reusable workflow, release.yml saw the
+	// `release` Environment secret EMPTY and refused to sign. The caller must
+	// START release.yml as its own run on the tag instead.
+	if strings.Contains(y, "uses: ./.github/workflows/release.yml") {
+		t.Fatalf("vl-auto-sync.yml must not call release.yml as a reusable workflow — the Environment key is empty there (run 39073507478)")
 	}
-
-	// The caller hands the called workflow only the `tag` string input (data,
-	// not a secret). The called workflow resolves its own Environment and key.
-	if !strings.Contains(y, "with:") {
-		t.Fatalf("vl-auto-sync.yml must pass the tag input to release.yml via with:")
+	if !strings.Contains(y, `gh workflow run release.yml -R "$GITHUB_REPOSITORY" --ref "$TAG" -f tag="$TAG"`) {
+		t.Fatalf("vl-auto-sync.yml must start release.yml on the tag (--ref the tag, tag input = the tag)")
 	}
-	if !strings.Contains(y, "tag: ${{ needs.merge-and-tag.outputs.tag }}") {
-		t.Fatalf("vl-auto-sync.yml must pass the tag output from merge-and-tag to the release call")
+	// The tag reaches bash only as env DATA from merge-and-tag, and is
+	// refused unless it is a v* tag.
+	if !strings.Contains(y, "TAG: ${{ needs.merge-and-tag.outputs.tag }}") {
+		t.Fatalf("vl-auto-sync.yml must pass the merge-and-tag output to the release step via env:")
+	}
+	if !strings.Contains(y, `case "$TAG" in v*)`) {
+		t.Fatalf("vl-auto-sync.yml must refuse a non-v* tag before starting a release")
 	}
 }
 
