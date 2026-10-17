@@ -107,7 +107,11 @@ if [ -s "$PARITY_BAD" ]; then
 fi
 say "parity: $(wc -l < "$CHANGED") files changed by vl $NEW_TAG are byte-identical"
 
-# --- 7. gates: build, vet, goldens, gitleaks --------------------------------------------
+# --- 7. commit the tree-sync (clean tree → the gates run at this sha) -------------------
+git commit --quiet -m "tree-sync vl ${LAST_SHA}..${NEW_SHA_RESOLVED} (auto: $NEW_TAG)"
+TREE_SYNC_SHA="$(git rev-parse HEAD)"
+
+# --- 8. gates: build, vet, goldens, gitleaks (at the clean tree-sync commit) ------------
 export HOME="$TH"
 export GOCACHE="${GOCACHE:-/home/hoang/.cache/go-build}"
 export GOMODCACHE="${GOMODCACHE:-/home/hoang/go/pkg/mod}"
@@ -115,6 +119,10 @@ export GOMODCACHE="${GOMODCACHE:-/home/hoang/go/pkg/mod}"
 say "gate: go build"
 go build -trimpath -o "$WORK/vl-bin" . >"$WORK/build.log" 2>&1 || die "go build failed: $(tail -5 "$WORK/build.log")"
 VCS="$(go version -m "$WORK/vl-bin" 2>/dev/null | grep -E 'vcs.revision|vcs.modified' | tr '\n' ' ')"
+case "$VCS" in
+  *"vcs.revision=$TREE_SYNC_SHA"*"vcs.modified=false"*) : ;;
+  *) die "build stamp wrong: $VCS (want revision=$TREE_SYNC_SHA modified=false)" ;;
+esac
 say "gate: build ok — $VCS"
 
 say "gate: go vet"
@@ -124,9 +132,11 @@ say "gate: goldens"
 go test ./kernel/ -run 'Golden|Selfcheck' -count=1 >"$WORK/golden.log" 2>&1 || die "goldens failed: $(tail -10 "$WORK/golden.log")"
 
 say "gate: gitleaks (delta)"
-if ! "$GITLEAKS_BIN" detect --no-git --source . --report-format json --report-path "$WORK/gitleaks.json" >"$WORK/gitleaks.log" 2>&1; then
-  # findings present — the sync is a byte-copy of vl, so in-range findings must be
-  # byte-identical to vl (pre-existing dummies). A NEW in-range finding is a refusal.
+if "$GITLEAKS_BIN" detect --no-git --source . --report-format json --report-path "$WORK/gitleaks.json" >"$WORK/gitleaks.log" 2>&1; then
+  say "gate: gitleaks ok — no findings"
+else
+  # findings present — the sync is a byte-copy of vl, so an in-range finding must be
+  # byte-identical to vl (pre-existing dummy). A NEW in-range finding is a refusal.
   FIND_FILES="$(python3 -c "import json;d=json.load(open('$WORK/gitleaks.json'));print('\n'.join(sorted({f['File'] for f in d})))" 2>/dev/null || true)"
   IN_RANGE="$WORK/inrange"
   : > "$IN_RANGE"
@@ -135,26 +145,19 @@ if ! "$GITLEAKS_BIN" detect --no-git --source . --report-format json --report-pa
     if git diff --quiet "$LAST_SHA" "$NEW_SHA_RESOLVED" -- "$f" 2>/dev/null; then
       : # untouched by the sync — pre-existing partner file
     else
-      # in-range: must be blob-identical to vl at the tag
+      # in-range: must be blob-identical to vl at the tag (HEAD is the tree-sync)
       A="$(git rev-parse "HEAD:$f" 2>/dev/null || echo none)"
       B="$(git rev-parse "$NEW_SHA_RESOLVED:$f" 2>/dev/null || echo none)"
-      if [ "$A" != "$B" ]; then
-        echo "$f (head=$A vl=$B)" >> "$IN_RANGE"
-      fi
+      [ "$A" = "$B" ] || echo "$f (head=$A vl=$B)" >> "$IN_RANGE"
     fi
   done <<< "$FIND_FILES"
   if [ -s "$IN_RANGE" ]; then
     die "gitleaks delta non-zero for in-range files: $(cat "$IN_RANGE")"
   fi
   say "gate: gitleaks ok — findings present but all pre-existing (delta 0)"
-else
-  say "gate: gitleaks ok — no findings"
 fi
 
-# --- 8. commit tree-sync + stamp + runbook ----------------------------------------------
-git commit --quiet -m "tree-sync vl ${LAST_SHA}..${NEW_SHA_RESOLVED} (auto: $NEW_TAG)"
-TREE_SYNC_SHA="$(git rev-parse HEAD)"
-
+# --- 9. stamp + runbook ----------------------------------------------------------------
 printf '%s' "$TREE_SYNC_SHA" > deploy/RELEASE
 git add deploy/RELEASE
 git commit --quiet -m "stamp tip: deploy/RELEASE = $TREE_SYNC_SHA"
@@ -171,7 +174,7 @@ git commit --quiet -m "runbook: auto section for $NEW_TAG"
 
 say "SYNCED $LAST_TAG .. $NEW_TAG — tree-sync $TREE_SYNC_SHA"
 
-# --- 9. publish (unless dry run) --------------------------------------------------------
+# --- 10. publish (unless dry run) -------------------------------------------------------
 if [ "${DRY_RUN:-0}" = "1" ]; then
   say "DRY_RUN — not pushed, no PR, state file untouched"
   exit 0
