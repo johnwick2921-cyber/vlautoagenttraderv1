@@ -193,15 +193,24 @@ if [ "${DRY_RUN:-0}" = "1" ]; then
   exit 0
 fi
 
+# The state file rides IN the PR, committed before the one push: a second
+# best-effort push could fail silently and merge a sync that never records
+# its tag (the next run would re-sync it).
+printf '%s\n' "$NEW_TAG" > "$STATE"
+git add "$STATE"
+git commit --quiet -m "record last synced vl tag: $NEW_TAG"
+
+# THE ONE RULE: a branch left by an earlier failed run is never deleted or
+# force-pushed over — a retry pushes to a fresh name instead.
 BRANCH="auto-sync/${NEW_TAG}"
+if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
+  BRANCH="auto-sync/${NEW_TAG}-${GITHUB_RUN_ID:-$(date +%s)}"
+  say "auto-sync/${NEW_TAG} already exists (earlier failed run) — using $BRANCH"
+fi
 git push origin "HEAD:$BRANCH" >"$WORK/push.log" 2>&1 || die "push failed: $(tail -5 "$WORK/push.log")"
 gh pr create --base main --head "$BRANCH" --title "partner auto-sync: vl $NEW_TAG" \
   --body "Auto-sync of vl tag \`$NEW_TAG\` (\`$NEW_SHA_RESOLVED\`). Gates: build/vet/goldens/gitleaks green." \
   >"$WORK/pr.log" 2>&1 || die "gh pr create failed: $(tail -5 "$WORK/pr.log")"
-printf '%s\n' "$NEW_TAG" > "$STATE"
-git add "$STATE"
-git commit --quiet -m "record last synced vl tag: $NEW_TAG"
-git push origin "HEAD:$BRANCH" >/dev/null 2>&1 || true
 say "PR opened: $(tail -1 "$WORK/pr.log")"
 
 # Report the resolved tag/branch to the calling workflow (GitHub Actions
