@@ -22,11 +22,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-# A bare clone has no identity; the CI checkout sets one. Fall back to a neutral
-# repo-local identity so the sync commits always succeed.
-if [ -z "$(git config user.email 2>/dev/null || true)" ]; then
-  git config user.email "vl-auto-sync@users.noreply.github.com"
-  git config user.name "vl-auto-sync"
+# A bare clone has no identity; the CI checkout sets one. Set a REPO-LOCAL
+# identity (survives the HOME redirection below, which hides ~/.gitconfig) so
+# the sync commits always succeed.
+if [ -z "$(git config --local user.email 2>/dev/null || true)" ]; then
+  git config --local user.email "vl-auto-sync@users.noreply.github.com"
+  git config --local user.name "vl-auto-sync"
 fi
 
 VL_REPO="${VL_REPO:-https://github.com/johnwick2921-cyber/vl.git}"
