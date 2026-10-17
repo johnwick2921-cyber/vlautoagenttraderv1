@@ -4,7 +4,7 @@
 # When vl publishes a release tag (vYYYY.MM.DD.N), this script brings the
 # partner tree to that tag: the machine-pinned carve-outs are kept, the
 # result is byte-parity-checked against the vl tag, then gated on
-# build + vet + goldens + gitleaks. On green it commits the tree-sync + stamp
+# build + vet + goldens + deploy/updater tests + gitleaks. On green it commits the tree-sync + stamp
 # + runbook and (unless DRY_RUN) pushes a branch + opens a PR. On any failure
 # it prints "REFUSED — <reason>" and exits non-zero WITHOUT publishing.
 #
@@ -144,6 +144,15 @@ go vet ./... >"$WORK/vet.log" 2>&1 || die "go vet failed: $(tail -10 "$WORK/vet.
 say "gate: goldens"
 go test ./kernel/ -run 'Golden|Selfcheck' -count=1 >"$WORK/golden.log" 2>&1 || die "goldens failed: $(tail -10 "$WORK/golden.log")"
 
+# The partner's own carve-out tests ride here (2026-10-17: the vl #35 sync
+# merged with deploy/release_contract_test.go — a carve-out — missing vl's new
+# fixture line, and partner main went red after the merge). deploy/ holds the
+# release contract + carve-out pins; internal/updaterworker/ is the one-click
+# Update path the partner box runs.
+say "gate: deploy + updater tests"
+go test ./deploy/... ./internal/updaterworker/... -count=1 >"$WORK/deploytest.log" 2>&1 \
+  || die "deploy/updater tests failed: $(grep -E -- '--- FAIL|FAIL|panic' "$WORK/deploytest.log" | head -10)"
+
 say "gate: gitleaks (delta)"
 if "$GITLEAKS_BIN" detect --no-git --source . --report-format json --report-path "$WORK/gitleaks.json" >"$WORK/gitleaks.log" 2>&1; then
   say "gate: gitleaks ok — no findings"
@@ -209,7 +218,7 @@ if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
 fi
 git push origin "HEAD:$BRANCH" >"$WORK/push.log" 2>&1 || die "push failed: $(tail -5 "$WORK/push.log")"
 gh pr create --base main --head "$BRANCH" --title "partner auto-sync: vl $NEW_TAG" \
-  --body "Auto-sync of vl tag \`$NEW_TAG\` (\`$NEW_SHA_RESOLVED\`). Gates: build/vet/goldens/gitleaks green." \
+  --body "Auto-sync of vl tag \`$NEW_TAG\` (\`$NEW_SHA_RESOLVED\`). Gates: build/vet/goldens/deploy+updater tests/gitleaks green." \
   >"$WORK/pr.log" 2>&1 || die "gh pr create failed: $(tail -5 "$WORK/pr.log")"
 say "PR opened: $(tail -1 "$WORK/pr.log")"
 

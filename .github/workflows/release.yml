@@ -25,17 +25,6 @@ on:
         description: 'optional 40-hex sha of the last released commit to prove rollback against (default: previous v* tag)'
         required: false
         default: ''
-  workflow_call:
-    inputs:
-      tag:
-        description: 'existing tag to release'
-        required: true
-        type: string
-      rollback_from:
-        description: 'optional 40-hex sha of the last released commit to prove rollback against (default: previous v* tag)'
-        required: false
-        type: string
-        default: ''
 
 permissions:
   contents: read

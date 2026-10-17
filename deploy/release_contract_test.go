@@ -31,11 +31,11 @@ func repoFile(t *testing.T, rel string) string {
 // signed releases (its own key in deploy/release_allowed_signers, the private
 // half only in the `release` Environment secret RELEASE_SIGNING_KEY). Until
 // then both jobs carried `if: ${{ false }}`; those guards are gone. What keeps
-// it safe instead: the triggers are a manual workflow_dispatch AND a
-// workflow_call from .github/workflows/vl-auto-sync.yml, and the job that
+// it safe instead: the trigger is workflow_dispatch only — manual, or
+// started on the tag by .github/workflows/vl-auto-sync.yml — and the job that
 // holds the key runs in the protected `release` Environment, whose required
 // reviewer is the owner — no approval, no release, no signature. The
-// workflow_call caller passes only the `tag` string input (data, not a
+// auto-sync passes only the `tag` string input (data, not a
 // secret); the key never leaves this workflow's Environment. The release
 // target stays THIS repo (the RELEASE_REPO tests below), never
 // johnwick2921-cyber/vl.
@@ -334,6 +334,7 @@ func TestManifestRendersUncomputedListsAsNullNotEmpty(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(stage, "deploy/RELEASE"), []byte(sha+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	addonConstSource(t, stage, "2026-09-30-contract")
 	out, err := runScript(t, "deploy/release/manifest.sh", stage, sha, "v9.9.9")
 	if err != nil {
 		t.Fatalf("manifest failed: %v\n%s", err, out)
@@ -385,6 +386,7 @@ func TestManifestRefusesWhenTheStagedReleaseDisagreesWithTheSourceSha(t *testing
 	if err := os.WriteFile(filepath.Join(stage, "deploy/RELEASE"), []byte(strings.Repeat("a", 40)+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	addonConstSource(t, stage, "2026-09-30-contract")
 	if out, err := runScript(t, "deploy/release/manifest.sh", stage, want, "v1"); err == nil {
 		t.Fatalf("a staged RELEASE that disagrees with the source sha must be REFUSED:\n%s", out)
 	}

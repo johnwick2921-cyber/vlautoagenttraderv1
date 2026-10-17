@@ -62,3 +62,27 @@ func TestAutoSyncRunsOneAtATime(t *testing.T) {
 		t.Fatal("vl-auto-sync.yml must hold a workflow-level concurrency group (no cancel) — one sync at a time")
 	}
 }
+
+// Run 39073507478: release.yml called via workflow_call saw the `release`
+// Environment secret empty and refused to sign. It is started, never called.
+func TestReleaseWorkflowIsNeverAReusableWorkflow(t *testing.T) {
+	r := repoFile(t, ".github/workflows/release.yml")
+	if strings.Contains(r, "workflow_call:") {
+		t.Fatal("release.yml must not be a reusable workflow (workflow_call) — its Environment key is empty there; vl-auto-sync.yml starts it with gh workflow run")
+	}
+}
+
+// 2026-10-17: the vl #35 sync merged with a carve-out test missing vl's new
+// fixture line and partner main went red AFTER the merge — the sync's gates
+// never ran the partner's own deploy tests. They gate every sync now.
+func TestAutoSyncGatesOnTheDeployAndUpdaterTests(t *testing.T) {
+	s := repoFile(t, "deploy/vl-auto-sync.sh")
+	gate := strings.Index(s, `go test ./deploy/... ./internal/updaterworker/... -count=1`)
+	push := strings.Index(s, `git push origin "HEAD:$BRANCH"`)
+	if gate < 0 {
+		t.Fatal("vl-auto-sync.sh must run the deploy + updaterworker tests as a sync gate")
+	}
+	if push < 0 || gate > push {
+		t.Fatal("the deploy/updater test gate must run BEFORE the sync branch is pushed")
+	}
+}
