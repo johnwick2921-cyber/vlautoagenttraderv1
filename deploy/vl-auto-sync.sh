@@ -198,3 +198,13 @@ git add "$STATE"
 git commit --quiet -m "record last synced vl tag: $NEW_TAG"
 git push origin "HEAD:$BRANCH" >/dev/null 2>&1 || true
 say "PR opened: $(tail -1 "$WORK/pr.log")"
+
+# Report the resolved tag/branch to the calling workflow (GitHub Actions
+# reads these as step outputs). Absent outside CI; harmless when unset.
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  {
+    echo "tag=$NEW_TAG"
+    echo "branch=$BRANCH"
+    echo "sha=$NEW_SHA_RESOLVED"
+  } >> "$GITHUB_OUTPUT"
+fi
