@@ -42,11 +42,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          bash deploy/vl-auto-sync.sh || {
-            reason="$(tail -20 /tmp/vl-auto-sync.log 2>/dev/null || true)"
+          if ! bash deploy/vl-auto-sync.sh 2>&1 | tee /tmp/vl-auto-sync.log; then
+            reason="$(tail -30 /tmp/vl-auto-sync.log || true)"
             gh issue create \
               --title "vl auto-sync failed" \
               --body "The auto-sync run failed. Last output:\n\n\`\`\`\n${reason}\n\`\`\`" \
               || true
             exit 1
-          }
+          fi
