@@ -31,17 +31,20 @@ func repoFile(t *testing.T, rel string) string {
 // signed releases (its own key in deploy/release_allowed_signers, the private
 // half only in the `release` Environment secret RELEASE_SIGNING_KEY). Until
 // then both jobs carried `if: ${{ false }}`; those guards are gone. What keeps
-// it safe instead: the ONLY trigger is a manual workflow_dispatch, and the job
-// that holds the key runs in the protected `release` Environment, whose
-// required reviewer is the owner — no approval, no release, no signature. The
-// release target stays THIS repo (the RELEASE_REPO tests below), never
+// it safe instead: the triggers are a manual workflow_dispatch AND a
+// workflow_call from .github/workflows/vl-auto-sync.yml, and the job that
+// holds the key runs in the protected `release` Environment, whose required
+// reviewer is the owner — no approval, no release, no signature. The
+// workflow_call caller passes only the `tag` string input (data, not a
+// secret); the key never leaves this workflow's Environment. The release
+// target stays THIS repo (the RELEASE_REPO tests below), never
 // johnwick2921-cyber/vl.
 func TestReleaseWorkflowOnlyManualDispatchBehindTheReleaseEnvironment(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
 	if !strings.Contains(y, "workflow_dispatch:") {
-		t.Fatalf("release.yml must keep workflow_dispatch as its ONLY trigger key")
+		t.Fatalf("release.yml must keep workflow_dispatch as its manual trigger")
 	}
-	for _, forbidden := range []string{"push:", "tags:", "branches:", "pull_request:", "schedule:", "workflow_call:", "workflow_run:"} {
+	for _, forbidden := range []string{"push:", "tags:", "branches:", "pull_request:", "schedule:", "workflow_run:"} {
 		if strings.Contains(y, forbidden) {
 			t.Fatalf("release.yml must have NO automatic trigger — found %q", forbidden)
 		}
