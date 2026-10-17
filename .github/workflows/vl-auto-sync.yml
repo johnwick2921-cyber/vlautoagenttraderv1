@@ -1,0 +1,52 @@
+# vl-auto-sync — the partner repo follows every vl release tag automatically.
+#
+# Design (DS-105, 2026-10-17): this workflow lives IN the partner repo, so the
+# partner signing key (the `release` Environment secret RELEASE_SIGNING_KEY)
+# NEVER leaves this repo. vl is read over the public URL with no auth — the only
+# repo boundary crossed is a public read. A box-side script was rejected because
+# it would have to hold the partner key (or a PAT) outside the repo, and the
+# box just survived a full wipe.
+#
+# Trigger: schedule (poll for a new vl v* tag) + workflow_dispatch. A
+# repository_dispatch from vl was rejected because it needs a PAT in vl with
+# partner-repo rights — a secret crossing repos.
+#
+# On a failed sync this workflow opens an ISSUE (publishes nothing). On a green
+# sync it pushes a branch + PR; the release Environment approval (owner = the
+# CTO) stays the publish gate, as on 2026-10-16.
+
+name: vl-auto-sync
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write      # push the sync branch, create the tag
+  issues: write        # open an issue on failure
+  pull-requests: write # open the PR
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.9'
+
+      - name: Auto-sync from vl
+        id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash deploy/vl-auto-sync.sh || {
+            reason="$(tail -20 /tmp/vl-auto-sync.log 2>/dev/null || true)"
+            gh issue create \
+              --title "vl auto-sync failed" \
+              --body "The auto-sync run failed. Last output:\n\n\`\`\`\n${reason}\n\`\`\`" \
+              || true
+            exit 1
+          }
