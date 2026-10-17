@@ -440,3 +440,48 @@ fix/course-exits + #561 fix/course-defaults-30). **No AddOn change**
    `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
    `deploy/release_source_pin_test.go`, this runbook, and
    `internal/updatersource/source.go` (ReleaseRepo line).
+
+## REL32 — partner sync (release #32, vl `a22dd3fad`, DS-105, 2026-10-17)
+
+Syncs the partner tree to release #32 (vl `a22dd3fad6…` — the release #32 tip,
+which includes the THE ONE RULE home-wipe guards #575 and the census token fix
+that followed). Net diff vl `f31beef13..a22dd3fad` (release #32: #564
+planner-4-split, #568 mentor-size-4 (4 = 2+2), #570 risk-knob-truth, #569
+planner-knob-truth, #563 leg-3 bracket, #565 orb-course-rules, #572
+done-after-win readers, #574 exited-candle pin, #576 mentor-knob-truth, #577
+knob-recheck-fixes, #575 home-wipe-guards, then the homeguard round-3 + census
+token fix).
+**AddOn CHANGED** (`VL_BUILD_ID 2026-10-14-a` → `2026-10-16-a`); no `go.mod` or
+`web/package*.json` change (still **Go 1.26.9**).
+
+1. **Build at the sha named in `deploy/RELEASE`** (the REL32 tree-sync commit):
+   `git checkout main && git pull --ff-only origin main`, build at that sha from
+   a clean clone with **Go 1.26.9** (or `GOTOOLCHAIN=auto`) and verify
+   `go version -m vl-bin` shows `vcs.revision=<that sha>` `vcs.modified=false`.
+   Build the web with `VITE_GUIDE_BUILT_REV=<that sha> npm run build`.
+2. **AddOn — CHANGED** (`VL_BUILD_ID 2026-10-16-a`; leg-3 bracket): copy
+   `ninjascript/VLTraderTCPClient.cs` into the NT8 AddOns folder, **F5 compile,
+   full NT8 restart** (the HARD RULE — copy, compile, full restart, no hot
+   reload).
+3. **Restart the bot in a flat window** and verify `BOOT INTEGRITY OK …
+   goldens PASS`, `bundle-rev == binary rev`, `hello handshake OK`,
+   `nt8 addon: build_id=2026-10-16-a … match=yes`, positions `count=0`.
+4. **What changes (#32):** mentor 4-contract = 2+2 sizing, the leg-3 bracket (the
+   AddOn change), planner 4-way split, mentor/risk/planner knob truth fixes,
+   orb course rules, done-after-win readers, the exited-candle double-exit guard,
+   and the THE ONE RULE home-wipe guards (`internal/safepath`,
+   `internal/testhome`, `internal/homeguard` + a `homeguard_main_test.go` in
+   every test package).
+5. **Carve-outs on this tree — 16, machine-pinned in `deploy/partner_sync_carveouts`**
+   (differ from vl@a22dd3fad BY DESIGN): `.github/workflows/release.yml`
+   (partner `RELEASE_REPO`, release job `permissions: contents: write`),
+   `branding/census_test.go`, `deploy/RELEASE`, `deploy/install-updater-worker.sh`,
+   `deploy/partner-first-time-setup.sh` (partner-only),
+   `deploy/partner_first_time_setup_test.go` (partner-only),
+   `deploy/partner_signers_test.go` (partner-only), `deploy/partner_sync_carveouts`
+   (the pinned list itself), `deploy/partner_sync_carveouts_test.go` (partner-only),
+   `deploy/release_allowed_signers` (the PARTNER key),
+   `deploy/release_contract_test.go`, `deploy/release_source_pin_test.go`,
+   `deploy/systemd-user/vl-updater.service` (partner-only),
+   `docs/superpowers/runbooks/2026-09-27-one-button-update.md` (partner-only),
+   this runbook, and `internal/updatersource/source.go` (ReleaseRepo line).
