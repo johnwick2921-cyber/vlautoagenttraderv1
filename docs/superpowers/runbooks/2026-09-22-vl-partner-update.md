@@ -485,3 +485,9 @@ token fix).
    `deploy/systemd-user/vl-updater.service` (partner-only),
    `docs/superpowers/runbooks/2026-09-27-one-button-update.md` (partner-only),
    this runbook, and `internal/updatersource/source.go` (ReleaseRepo line).
+
+## AUTO — partner sync (vl v2026.10.17.4, DS-105 auto-sync, 2026-10-17)
+
+Auto-synced to vl tag `v2026.10.17.4` (`80e5464b6a2e273a8547d18e377213d81e9d4739…`). Build commit `de63614ea22f90fe1a67044843d7e122932c7ff9…` (see deploy/RELEASE).
+AddOn VL_BUILD_ID: 2026-10-16-a
+Carve-outs: 19 machine-pinned paths kept (deploy/partner_sync_carveouts).
