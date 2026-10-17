@@ -120,9 +120,14 @@ git commit --quiet -m "tree-sync vl ${LAST_SHA}..${NEW_SHA_RESOLVED} (auto: $NEW
 TREE_SYNC_SHA="$(git rev-parse HEAD)"
 
 # --- 8. gates: build, vet, goldens, gitleaks (at the clean tree-sync commit) ------------
+# Resolve the Go caches from the REAL environment BEFORE HOME is pointed at the
+# throwaway dir (THE ONE RULE isolation), so go keeps its caches on any machine —
+# a CI runner or a box. Never a hard-coded box path (auto-sync run 39056053329
+# refused on /home/hoang: "mkdir /home/hoang: permission denied").
+GOCACHE="${GOCACHE:-$(go env GOCACHE)}"
+GOMODCACHE="${GOMODCACHE:-$(go env GOMODCACHE)}"
+export GOCACHE GOMODCACHE
 export HOME="$TH"
-export GOCACHE="${GOCACHE:-/home/hoang/.cache/go-build}"
-export GOMODCACHE="${GOMODCACHE:-/home/hoang/go/pkg/mod}"
 
 say "gate: go build"
 go build -trimpath -o "$WORK/vl-bin" . >"$WORK/build.log" 2>&1 || die "go build failed: $(tail -5 "$WORK/build.log")"
