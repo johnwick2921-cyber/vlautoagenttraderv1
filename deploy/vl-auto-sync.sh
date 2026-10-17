@@ -88,13 +88,24 @@ if ! git apply --3way --whitespace=nowarn "$DIFF" 2>"$WORK/apply.log"; then
 fi
 git add -A
 
-# --- 6. byte parity: non-carve-out tree must equal the vl tag ---------------------------
-if ! git diff --quiet --cached "$NEW_SHA_RESOLVED" -- . "${EXCLUDES[@]}"; then
-  say "parity diff (non-carve-out; partner-only files are expected):"
-  git diff --cached --name-status "$NEW_SHA_RESOLVED" -- . "${EXCLUDES[@]}" | head -40
-  die "byte parity failed — a non-carve-out file differs from vl $NEW_TAG"
+# --- 6. byte parity: every non-carve-out file vl CHANGED must equal the vl tag ----------
+# (Files vl did not touch in the range — e.g. partner-only files — are allowed to differ.)
+CHANGED="$WORK/changed"
+git diff --name-only "$LAST_SHA" "$NEW_SHA_RESOLVED" -- . "${EXCLUDES[@]}" > "$CHANGED"
+PARITY_BAD="$WORK/paritybad"
+: > "$PARITY_BAD"
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  A="$(git rev-parse ":$f" 2>/dev/null || echo none)"          # staged blob
+  B="$(git rev-parse "$NEW_SHA_RESOLVED:$f" 2>/dev/null || echo none)"  # vl blob
+  [ "$A" = "$B" ] || echo "$f (staged=$A vl=$B)" >> "$PARITY_BAD"
+done < "$CHANGED"
+if [ -s "$PARITY_BAD" ]; then
+  say "parity failures:"
+  cat "$PARITY_BAD"
+  die "byte parity failed — a non-carve-out file changed by vl $NEW_TAG differs"
 fi
-say "parity: non-carve-out tree equals vl $NEW_TAG (byte-identical)"
+say "parity: $(wc -l < "$CHANGED") files changed by vl $NEW_TAG are byte-identical"
 
 # --- 7. gates: build, vet, goldens, gitleaks --------------------------------------------
 export HOME="$TH"
