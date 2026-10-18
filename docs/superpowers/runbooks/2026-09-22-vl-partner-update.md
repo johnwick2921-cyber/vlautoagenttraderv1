@@ -491,3 +491,9 @@ token fix).
 Auto-synced to vl tag `v2026.10.17.4` (`80e5464b6a2e273a8547d18e377213d81e9d4739…`). Build commit `bb22da28c8103a0f159fe1389af69ce4d33d8cbb…` (see deploy/RELEASE).
 AddOn VL_BUILD_ID: 2026-10-16-a
 Carve-outs: 19 machine-pinned paths kept (deploy/partner_sync_carveouts).
+
+## AUTO — partner sync (vl v2026.10.17.5, DS-105 auto-sync, 2026-10-18)
+
+Auto-synced to vl tag `v2026.10.17.5` (`f8faa0bcb96adfafd9f77ed0cd679ee496c3fa8a…`). Build commit `bbbfc532666b3b330dbf7910f4435d983f538237…` (see deploy/RELEASE).
+AddOn VL_BUILD_ID: 2026-10-16-a
+Carve-outs: 19 machine-pinned paths kept (deploy/partner_sync_carveouts).
