@@ -126,7 +126,8 @@ func TestPartnerFirstTimeSetupDryRunWritesNothing(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("dry-run exit %d\nstdout: %s\nstderr: %s", code, stdout, stderr)
 	}
-	for _, want := range []string{"would run: go run", "would run:", "nothing was written", "would run: systemctl --user start vl-updater"} {
+	for _, want := range []string{"would run: go run", "would run:", "nothing was written", "would run: systemctl --user start vl-updater",
+		"VL_RELEASE_SOURCE=github", "would: mkdir -p"} {
 		if !strings.Contains(stdout, want) {
 			t.Errorf("dry-run output missing %q:\n%s", want, stdout)
 		}
@@ -212,7 +213,9 @@ func TestPartnerFirstTimeSetupRefusesNonDefaultInstallDir(t *testing.T) {
 }
 
 // An existing ~/.config/vl-updater/env that is not mode 0600 refuses (the same
-// condition install-updater-worker.sh enforces).
+// condition install-updater-worker.sh enforces) — AND, because the release-dir
+// mkdir (m385) runs BEFORE that refusal, the release dir is created first.
+// MUTANT: drop the mkdir from step 2 → the release dir is missing → RED.
 func TestPartnerFirstTimeSetupRefusesEnvNot0600(t *testing.T) {
 	home := t.TempDir()
 	bin := fakeBin(t)
@@ -237,5 +240,11 @@ func TestPartnerFirstTimeSetupRefusesEnvNot0600(t *testing.T) {
 		"--install-dir", install, "--release-dir", filepath.Join(home, "releases"), "owner@example.com")
 	if code != 2 || !strings.Contains(stderr, "not mode 0600") {
 		t.Fatalf("env 0600: exit %d stderr %q, want the mode refusal", code, stderr)
+	}
+	// m385: the release-dir mkdir (step 2) runs BEFORE the env-0600 refusal
+	// (step 4), so the dir must exist even though the run was refused.
+	rel, err := os.Stat(filepath.Join(home, "releases"))
+	if err != nil || !rel.IsDir() {
+		t.Fatalf("the release dir must be created before the env-0600 refusal: %v", err)
 	}
 }

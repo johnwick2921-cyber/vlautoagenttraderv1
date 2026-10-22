@@ -13,8 +13,9 @@
 #      — writes the enrollment files and mints the worker token into
 #      ~/.config/vl-updater/env (the token is NEVER printed).
 #   3. env file: ensures ~/.config/vl-updater/env (mode 0600) carries
-#      VL_RELEASE_DIR (absolute, OUTSIDE the install) — the token line enroll
-#      wrote is preserved byte-identically.
+#      VL_RELEASE_DIR (absolute, OUTSIDE the install) and VL_RELEASE_SOURCE=github
+#      (the fail-closed release-source knob) — the token line enroll wrote is
+#      preserved byte-identically.
 #   4. VL_UPDATER=1 in <install>/.env (backed up first; every other line kept).
 #   5. deploy/install-updater-worker.sh at the CURRENT partner main sha (built
 #      from that exact commit in a throwaway clone).
@@ -144,6 +145,32 @@ case "$real_root" in
     refuse "VL_RELEASE_DIR ($RELEASE_DIR) must be OUTSIDE the install ($INSTALL_DIR)" ;;
 esac
 say "release dir ok: $RELEASE_DIR (outside the install)"
+# m385: the validation above never CREATED the dir — the worker's lstat of it
+# failed at runtime. Create it (0700) after the inside-install refusal.
+if [ "$DRY_RUN" = true ]; then
+  say "would: mkdir -p $RELEASE_DIR (mode 0700)"
+else
+  mkdir -p "$RELEASE_DIR" || refuse "cannot create $RELEASE_DIR"
+  chmod 700 "$RELEASE_DIR" || refuse "cannot chmod 700 $RELEASE_DIR"
+  say "release dir created: $RELEASE_DIR (mode 0700)"
+fi
+
+# ── 2b. NT8 docs dir (informational) ───────────────────────────────────────
+# The one-button update rebuilds the AddOn into Documents/NinjaTrader 8, which
+# addonbuild.Detect() resolves as the single dir with bin/Custom under EITHER
+# the plain Documents path or a OneDrive-redirected one (m385). If neither has
+# it, the update's AddOn rebuild will fail — print the exact line to add.
+nt8_hit=""
+for cand in /mnt/c/Users/*/Documents/NinjaTrader\ 8 /mnt/c/Users/*/OneDrive/*/NinjaTrader\ 8; do
+  if [ -d "$cand/bin/Custom" ]; then nt8_hit="$cand"; break; fi
+done
+if [ -z "$nt8_hit" ]; then
+  say "WARNING — no Documents/NinjaTrader 8 with bin/Custom found (Documents or OneDrive); the AddOn rebuild needs VL_NT8_DOCS_DIR"
+  echo "  add to ~/.config/vl-updater/env:"
+  echo "  VL_NT8_DOCS_DIR=/mnt/c/Users/<you>/Documents/NinjaTrader 8"
+else
+  say "NT8 docs dir detected: $nt8_hit"
+fi
 
 # ── 3. enroll (attended, idempotent) ───────────────────────────────────────
 ENV_FILE="$HOME/.config/vl-updater/env"
@@ -175,30 +202,32 @@ if [ "$already_enrolled" = false ]; then
   fi
 fi
 
-# ── 4. env file: VL_RELEASE_DIR (token line preserved, never printed) ──────
+# ── 4. env file: VL_RELEASE_DIR + VL_RELEASE_SOURCE (token line preserved,
+# ──    never printed) ──────────────────────────────────────────────────────
 ENV_DIR="$(dirname "$ENV_FILE")"
 if [ "$DRY_RUN" = true ]; then
-  say "would: ensure $ENV_FILE (mode 0600) has VL_RELEASE_DIR=$RELEASE_DIR (token line untouched)"
+  say "would: ensure $ENV_FILE (mode 0600) has VL_RELEASE_DIR=$RELEASE_DIR and VL_RELEASE_SOURCE=github (token line untouched)"
 else
   mkdir -p "$ENV_DIR" || refuse "cannot create $ENV_DIR"
   chmod 700 "$ENV_DIR"
   if [ -f "$ENV_FILE" ]; then
     [ "$(stat -c '%a' "$ENV_FILE" 2>/dev/null)" = "600" ] || refuse "$ENV_FILE exists but is not mode 0600"
   fi
-  # Replace only the VL_RELEASE_DIR line; every other line (including the
-  # token enroll wrote) is preserved byte-identically.
+  # Replace only the VL_RELEASE_DIR and VL_RELEASE_SOURCE lines; every other
+  # line (including the token enroll wrote) is preserved byte-identically.
   tmp_env="$(mktemp)"
   if [ -f "$ENV_FILE" ]; then
-    grep -v '^VL_RELEASE_DIR=' "$ENV_FILE" > "$tmp_env" || true
+    grep -v -e '^VL_RELEASE_DIR=' -e '^VL_RELEASE_SOURCE=' "$ENV_FILE" > "$tmp_env" || true
   else
     : > "$tmp_env"
   fi
   printf 'VL_RELEASE_DIR=%s\n' "$RELEASE_DIR" >> "$tmp_env"
+  printf 'VL_RELEASE_SOURCE=github\n' >> "$tmp_env"
   install -m 0600 "$tmp_env" "$ENV_FILE" || refuse "cannot write $ENV_FILE"
   rm -f "$tmp_env"
   # The token must still be there (enroll wrote it), and never printed.
   grep -Eq '^VL_CUTOVER_TOKEN=.+' "$ENV_FILE" || refuse "$ENV_FILE is missing VL_CUTOVER_TOKEN after the write"
-  say "env file ok: $ENV_FILE (VL_RELEASE_DIR set; token present, not shown)"
+  say "env file ok: $ENV_FILE (VL_RELEASE_DIR + VL_RELEASE_SOURCE=github set; token present, not shown)"
 fi
 
 # ── 5. VL_UPDATER=1 in the bot's .env (backed up; other lines kept) ────────
