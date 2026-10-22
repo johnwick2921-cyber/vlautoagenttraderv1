@@ -170,10 +170,149 @@ func (at *AutoTrader) mentorExitDrive(bars []market.Kline) {
 		if p.TrailTFMin > 1 {
 			p.trailBar, p.trailBarOK = mentor.ClosedCandleTF(bars, p.TrailTFMin)
 		}
+		// X8 trap-dodge [X8 part1 @07:31–08:07]: a 2m close through the EMA34
+		// against the 5m trigger trend, with the 5m trigger swept against the
+		// position, is a FAKE breakout — exit, do not sit. Fires before the
+		// normal stop-drive; SWING4H is exempt (held by the 4h).
+		if at.mentorX8TrapDodgeExit(nt, p, bars) {
+			continue
+		}
 		at.mentorExitDrivePos(nt, p, c, h, l, last.OpenTime)
 		brokerStop, brokerKnown := at.mentorBrokerStopForPos(nt, p)
 		at.mentorLogPositionState(&p.Pos, "exit-drive", brokerStop, brokerKnown)
 	}
+}
+
+// mentorX8TrapDodgeExit is the X8 trap-dodge exit [X8 "Cách né trap & Setup
+// gồng lời" part1 @07:31–08:07]: the 2m candle closed through the EMA34 against
+// the 5m trigger trend while the 5m trigger swept against the position — the
+// breakout is a fake, so CLOSE at market and do not sit. The evaluator state
+// (Trigger + EMA34) is read under the N11 mutex (mentorExitDrive runs inside
+// mentorEvalOnce). SWING4H is exempt (held by the 4h, D5.2). Returns true when
+// it fired and the position is being closed.
+func (at *AutoTrader) mentorX8TrapDodgeExit(nt *ntTrader.TCPTrader, p *mentorLivePos, bars []market.Kline) bool {
+	if at == nil || at.mentorEval == nil || p == nil || p.Pos.Symbol == "" || p.Pos.Side == "" {
+		return false
+	}
+	if p.Pos.Mode == "swing" {
+		return false // the swing is held by the 4h — X8 is an intraday rule
+	}
+	if at.mentorX8LimitFallback(nt, p) {
+		return true
+	}
+	two, ok := mentor.ClosedCandleTF(bars, 2)
+	if !ok {
+		return false // never fire on a forming 2m candle
+	}
+	dir := at.mentorEval.State.Trigger.Dir
+	// m308: X8 compares the closed 2m candle against the EMA34 on the 2m chart
+	// the mentor actually trades ("mình trade khung 2 phút"), not the evaluator's
+	// 1m EMA34 (State.EMA34). Build the EMA from the closed 2m series.
+	ema34 := mentor.EMAOnTF(bars, 2, at.mentorEval.Cfg.EMAPeriod34)
+	if !mentor.X8TrapDodge(p.Pos.Side, dir, ema34, two.Close) {
+		return false
+	}
+	// m262 one-shot latch: once the market close is SENT for this position,
+	// never send a second close while the fill is in flight (never rely on
+	// "NT8 is idempotent"). Two candles that both meet X8 → exactly ONE close.
+	at.mentorExitMu.Lock()
+	if p.X8Exited {
+		at.mentorExitMu.Unlock()
+		return false
+	}
+	p.X8Exited = true
+	at.mentorExitMu.Unlock()
+	at.mentorCount("x8_trap_dodge_exit")
+	at.logWarnf("🧑‍🏫 X8 trap-dodge: %s %s — the 2m closed through the EMA34 (%.2f) against the 5m trigger (%s) and the 5m swept against the position; exiting, not sitting [X8 part1 @07:31–08:07]",
+		p.Pos.Symbol, p.Pos.Side, ema34, dir)
+	if err := at.mentorX8SendExit(nt, p); err != nil {
+		at.mentorCount("x8_trap_dodge_close_failed")
+		at.logWarnf("🧑‍🏫 X8 trap-dodge close failed for %s %s: %v", p.Pos.Symbol, p.Pos.Side, err)
+		at.mentorExitMu.Lock()
+		p.X8Exited = false // no fill in flight — the next candle may retry
+		at.mentorExitMu.Unlock()
+		return false
+	}
+	at.mentorCount("x8_trap_dodge_close_sent")
+	return true
+}
+
+// B1 (m329, #45 money review): a market close_position is Account.Flatten at
+// NT8 (ninjascript/VLTraderTCPClient.cs "closeTarget.Flatten"), which cancels
+// EVERY working order for the instrument on the account — including other
+// resting mentor stop-entry arms that have nothing to do with this position
+// ("cancelled in NT8"). X8 therefore exits with a MARKETABLE LIMIT instead
+// (close_position with limit_price through the market, collar below): the AddOn
+// submits one "-lx" limit, and its fill cancels only THIS position's bracket
+// (CancelBracketsFor). No fresh price, or a send error, takes the old market
+// flatten (a close always wins over preserving an arm). If the position is
+// still open mentorX8LimitFallbackAfter later, ONE market flatten finishes it.
+const (
+	mentorX8LimitCollarTicks   = 20
+	mentorX8LimitFallbackAfter = 15 * time.Second
+)
+
+// mentorX8LimitWire sends the marketable-limit exit (seam for tests).
+var mentorX8LimitWire = func(at *AutoTrader, nt *ntTrader.TCPTrader, side string, limit float64) error {
+	if nt == nil {
+		return fmt.Errorf("mentor X8 limit close: no armed trader")
+	}
+	_, err := nt.CloseWithLimit(at.futuresSymbol(), strings.ToLower(strings.TrimSpace(side)), 0, limit)
+	return err
+}
+
+// mentorX8SendExit sends X8's single exit order for the position.
+func (at *AutoTrader) mentorX8SendExit(nt *ntTrader.TCPTrader, p *mentorLivePos) error {
+	if price, fresh := mentorLatestPriceSeam(at); fresh && price > 0 {
+		tick := market.FuturesTickSize(at.futuresSymbol())
+		if tick > 0 {
+			collar := float64(mentorX8LimitCollarTicks) * tick
+			limit := price - collar // long: sell through the bid
+			if strings.EqualFold(strings.TrimSpace(p.Pos.Side), "short") {
+				limit = price + collar
+			}
+			if limit > 0 {
+				err := mentorX8LimitWire(at, nt, p.Pos.Side, limit)
+				if err == nil {
+					at.mentorExitMu.Lock()
+					p.X8LimitAt = time.Now()
+					at.mentorExitMu.Unlock()
+					at.mentorCount("x8_trap_dodge_limit_exit")
+					at.logInfof("🧑‍🏫 X8 trap-dodge: marketable limit exit %s %s @ %.2f (only this position's bracket is cancelled; other resting arms stay)", p.Pos.Symbol, p.Pos.Side, limit)
+					return nil
+				}
+				at.logWarnf("🧑‍🏫 X8 trap-dodge: limit exit failed (%v) — market flatten instead", err)
+			}
+		}
+	}
+	return mentorCloseLegAtMarketWire(at, nt, p.Pos.Side, 0)
+}
+
+// mentorX8LimitFallback: the X8 limit was sent and the position is STILL open
+// (this runs only for open positions) after the grace window — send ONE market
+// flatten. Returns true while the X8 exit is in flight / just finished.
+func (at *AutoTrader) mentorX8LimitFallback(nt *ntTrader.TCPTrader, p *mentorLivePos) bool {
+	at.mentorExitMu.Lock()
+	if !p.X8Exited || p.X8LimitAt.IsZero() {
+		at.mentorExitMu.Unlock()
+		return false
+	}
+	if p.X8MarketFallback || time.Since(p.X8LimitAt) < mentorX8LimitFallbackAfter {
+		at.mentorExitMu.Unlock()
+		return false
+	}
+	p.X8MarketFallback = true
+	at.mentorExitMu.Unlock()
+	at.mentorCount("x8_trap_dodge_market_fallback")
+	at.logWarnf("🧑‍🏫 X8 trap-dodge: limit exit on %s %s unfilled after %s — market flatten", p.Pos.Symbol, p.Pos.Side, mentorX8LimitFallbackAfter)
+	if err := mentorCloseLegAtMarketWire(at, nt, p.Pos.Side, 0); err != nil {
+		at.mentorCount("x8_trap_dodge_close_failed")
+		at.logWarnf("🧑‍🏫 X8 market fallback failed for %s %s: %v", p.Pos.Symbol, p.Pos.Side, err)
+		at.mentorExitMu.Lock()
+		p.X8MarketFallback = false
+		at.mentorExitMu.Unlock()
+	}
+	return true
 }
 
 // mentorDriveOpenSides is the loop's open-side read (a seam so the call-site
@@ -282,17 +421,21 @@ func (at *AutoTrader) mentorExitDrivePos(nt *ntTrader.TCPTrader, p *mentorLivePo
 
 	switch pos.Mode {
 	case "swing":
-		// SWING: no moves — the swing rules own it [D4.2].
+		// SWING: no moves — the swing rules own it [D5.2 p1 @05:52–06:09].
 		return
 	case "C":
 		// C (confluence): the stop NEVER moves [D3.4 p3 @07:38: "hold… at least
 		// risk reward 1-2"]. No action.
 		return
 	case "A-resonance":
-		// A (resonance): both stops already at BE, leg 1's +1R TP stays (the
-		// 1:1 partial still fires), the RUNNER's TP out to the level beyond
-		// the old high (CX-3), NO trail, NO 1:1 tightening [D2.4 p1]. Nothing
-		// to do on a candle — the native bracket holds.
+		// A (resonance): leg 1's +1R TP stays (the 1:1 partial still fires),
+		// the RUNNER's TP out to the level beyond the old high (CX-3), NO
+		// trail, NO 1:1 tightening [D2.4 p1 @00:24–00:30, @02:24–02:47]. m134 (b)/(d): the runner's stop
+		// is NOT moved at arm — the deferred break-even runs on this CLOSED 1m
+		// candle (after the 1:1 partial is confirmed, or once price is on the
+		// profit side).
+		scaledNow, _ := at.mentorScaledState(p)
+		at.mentorExitDriveResonance(nt, p, c, scaledNow, at.mentorExitedLegs(p))
 		return
 	}
 
@@ -301,7 +444,7 @@ func (at *AutoTrader) mentorExitDrivePos(nt *ntTrader.TCPTrader, p *mentorLivePo
 	if p.SpentDay {
 		if runner := mentorRunnerLeg(p); runner != nil && runner.Qty > mentorSpentDayRunnerCap {
 			at.mentorCount("spent_day_runner_over_cap")
-			at.logWarnf("🧑‍🏫 mentor spent-day runner %d over the cap %d — asserting, not reducing [D5.1]", runner.Qty, mentorSpentDayRunnerCap)
+			at.logWarnf("🧑‍🏫 mentor spent-day runner %d over the cap %d — asserting, not reducing [D5.1 p1 @16:24-16:31]", runner.Qty, mentorSpentDayRunnerCap)
 		}
 	}
 
@@ -419,7 +562,7 @@ func (at *AutoTrader) mentorExitDrivePos(nt *ntTrader.TCPTrader, p *mentorLivePo
 
 	// ── R3 (release #22, mentor_trail_mode=candle, the default): a SPLIT
 	// position's runner goes to break-even once leg 1's partial is CONFIRMED
-	// filled at NT8, then trails 1 tick beyond each closed candle. A single
+	// filled at NT8, then trails one tick beyond each closed candle. A single
 	// bracket has no leg-1 partial to confirm and keeps the rule below.
 	if leg1OnWire && mentorRunnerLeg(p) != nil && at.mentorTrailMode() == mentorTrailModeCandle {
 		// fold #565 (D8): the BE close is the entry's frame close — a 2m entry's
@@ -470,6 +613,14 @@ func (at *AutoTrader) mentorExitDrivePos(nt *ntTrader.TCPTrader, p *mentorLivePo
 				if errors.Is(err, errMentorStopBrokerTighter) {
 					applied = true // the broker is already past BE (belief corrected)
 					continue
+				}
+				if errors.Is(err, errMentorStopThroughMarket) {
+					// m198 #43-B: the wrong-side BE closed the WHOLE symbol at
+					// market (the close wire is a full flatten) — the position
+					// is flat, so every remaining leg would be a redundant close
+					// on an already-flat position. Stop the pass.
+					at.mentorCount("stop_move_skipped_leg_closed")
+					return
 				}
 				if !mentorMoveApplied(err) {
 					if !mentorMoveErrAlreadyLogged(err) {
@@ -541,14 +692,14 @@ func (at *AutoTrader) mentorExitDrivePos(nt *ntTrader.TCPTrader, p *mentorLivePo
 				}
 				applyTrail = trail && trailOK && trailScaledBefore // the 1:1 point printed on a PRIOR candle (of the trail frame)
 				if applyTrail {
-					// Item 7 ruling [X8 @15:40–17:13]: 1 tick BEYOND the closed
-					// candle's low (long) / high (short), never exactly at it —
-					// the candle of the frame the entry was read on.
-					if long {
-						trailPrice = trailL - at.mentorInstrumentTick()
-					} else {
-						trailPrice = trailH + at.mentorInstrumentTick()
-					}
+					// m283 P2: one tick BEYOND the closed candle's low (long) /
+					// high (short) — the SAME rule as mentorCandleTrailStop
+					// [X8 part1 @16:18–16:31 "đặt ở dưới đáy cây nến"; D2.4 p1
+					// @08:11–08:24 the candle breaking past the prior extreme].
+					// One function, one price: both the split runner's candle
+					// trail (mentorExitDriveCandle) and this single-bracket /
+					// off-mode trail read the extreme through the same helper.
+					trailPrice = mentorCandleTrailStop(side, trailH, trailL, at.mentorInstrumentTick())
 				}
 			}
 			next := mentorLegStopB(side, leg.Stop, c, target, trailPrice, applyTrail)
@@ -581,8 +732,66 @@ var mentorMoveStopForSignalWire = func(nt *ntTrader.TCPTrader, signalID, side st
 // the callers skip the WARN (the latch message already logged once).
 var errMentorStopManual = errors.New("mentor stop move: leg under manual management")
 
+// errMentorStopThroughMarket is the sentinel mentorMoveLegStop returns when the
+// new stop is through the market and the leg was CLOSED at market instead —
+// nothing was sent, the leg is closing, and the callers skip their own WARN.
+var errMentorStopThroughMarket = errors.New("mentor stop move: stop through the market — leg closed at market instead")
+
+// mentorStopMoveWrongSide reports whether newStop sits on the WRONG side of the
+// market at price: a stop that NT8 would refuse (a buy stop below the market)
+// or that would trigger immediately (the exit already happened). A short's
+// protective stop is a buy stop and must be ABOVE price; a long's is a sell
+// stop and must be BELOW price.
+func mentorStopMoveWrongSide(side string, newStop, price float64) bool {
+	if strings.EqualFold(strings.TrimSpace(side), "short") {
+		return newStop <= price
+	}
+	return newStop >= price
+}
+
+// mentorStopMovePriceMaxAge is the wrong-side guard's freshness window: a 1m
+// bar older than this is stale and the move is sent as before (today's
+// behaviour), logged.
+const mentorStopMovePriceMaxAge = 90 * time.Second
+
+// mentorLatestPriceSeam reads the freshest 1m close from BarCache (price,
+// fresh). Tests substitute it to pin the wrong-side guard deterministically.
+var mentorLatestPriceSeam = func(at *AutoTrader) (float64, bool) {
+	if at == nil || market.FuturesBarsProvider == nil {
+		return 0, false
+	}
+	bars := market.FuturesBarsProvider(at.futuresSymbol(), "1m", 1)
+	if len(bars) == 0 {
+		return 0, false
+	}
+	b := bars[len(bars)-1]
+	return b.Close, time.Since(time.UnixMilli(b.OpenTime)) <= mentorStopMovePriceMaxAge
+}
+
+// mentorCloseLegAtMarketWire is the last hop for the wrong-side market close
+// (tests substitute it to capture closes; production binds it to the
+// TCPTrader's CloseShort/CloseLong on the futures symbol). NOTE: the close
+// wire is a FULL FLATTEN of the symbol's position — the qty is advisory and
+// ignored by the AddOn (ClosePositionPayload.Quantity).
+var mentorCloseLegAtMarketWire = func(at *AutoTrader, nt *ntTrader.TCPTrader, side string, qty int) error {
+	if nt == nil {
+		return fmt.Errorf("mentor leg close: no armed trader")
+	}
+	switch strings.ToLower(strings.TrimSpace(side)) {
+	case "long":
+		_, err := nt.CloseLong(at.futuresSymbol(), float64(qty))
+		return err
+	case "short":
+		_, err := nt.CloseShort(at.futuresSymbol(), float64(qty))
+		return err
+	}
+	return fmt.Errorf("mentor leg close: unknown side %q", side)
+}
+
 // mentorMoveLegStop sends one leg's stop move through the signal-keyed
-// move_stop frame, guarded by mentorNeverWiden (never widen, D2.3 p1 @18:08)
+
+// move_stop frame, guarded by mentorNeverWiden (never widen, D1.2 p2 @00:08–00:24)
+
 // against the belief AND — release #22, P2-3 — against the BROKER's own stop
 // (mentorJudgeAgainstBroker): no fresh book refuses, no live stop for the leg
 // sends nothing (F-6), a broker stop already tighter is kept. A latched leg
@@ -600,6 +809,30 @@ func (at *AutoTrader) mentorMoveLegStop(nt *ntTrader.TCPTrader, side string, leg
 	if refuse, why := mentorNeverWiden(side, leg.Stop, newStop); refuse {
 		at.mentorCount("widen_refused")
 		return fmt.Errorf("mentor leg stop move refused: %s", why)
+	}
+	// P0 stop-move-wrong-side (2026-10-21, c6cdfdc3): BEFORE any move_stop, read
+	// the freshest 1m close. A stop through the market (short: newStop <= price;
+	// long: newStop >= price) is refused by NT8 or triggers immediately — the
+	// exit has effectively happened, so CLOSE the leg at market (reduce-only)
+	// instead of sending. A stale price keeps today's behaviour (send), logged.
+	if price, fresh := mentorLatestPriceSeam(at); fresh {
+		if mentorStopMoveWrongSide(side, newStop, price) {
+			at.mentorCount("stop_move_through_market_close")
+			at.logWarnf("🧑‍🏫 mentor stop move %s leg %d → %.2f is through the market (price %.2f) — closing the leg at market instead (= the BE exit)",
+				leg.SignalID, leg.Wire, newStop, price)
+			if err := mentorCloseLegAtMarketWire(at, nt, side, leg.Qty); err != nil {
+				at.mentorCount("close_failed")
+				return err
+			}
+			at.mentorCount("close_sent")
+			// m151 (5): the close wire is a FULL FLATTEN — mark the position's
+			// legs exited so the next candle does not close it again.
+			at.mentorMarkPosExitedAtMarket(leg.SignalID)
+			return errMentorStopThroughMarket
+		}
+	} else {
+		at.logInfof("🧑‍🏫 mentor stop move %s leg %d → %.2f: no fresh 1m price (stale) to judge wrong-side against — sending as before",
+			leg.SignalID, leg.Wire, newStop)
 	}
 	if err := at.mentorJudgeAgainstBroker(nt, side, leg, newStop); err != nil {
 		return err
@@ -1107,12 +1340,15 @@ func (at *AutoTrader) mentorVerifyPendingStopMoves(nt *ntTrader.TCPTrader) {
 	at.mentorSweepManualLatches(nt)
 }
 
-// mentorArmResonanceOnISB flips an open PHL/PLH position into mode A the moment
-// a same-direction ISB intent appears within 3 candles of the fill: both stops
-// move to break-even NOW, leg 1's +1R TP STAYS (the 1:1 partial still fires),
-// the RUNNER's TP moves out to the level beyond the old high (CX-3), NO trail,
-// NO 1:1 tightening [D2.4 p1]. Called from the
-// evaluator's intent loop when an ISB entry is emitted.
+// mentorArmResonanceOnISB flips an open PHL/PLH position into mode A when a
+// same-direction ISB entry passes every placement gate EXCEPT the never-add
+// gate, within 3 candles of the fill: leg 1's +1R TP STAYS (the 1:1 partial
+// still fires), the RUNNER's TP moves out to the level beyond the old high
+// (CX-3), NO trail, NO 1:1 tightening [D2.4 p1 @00:24–00:30, @02:24–02:47]. m134 (b)/(c): arming does NOT
+// move any stop — the break-even is deferred to the closed-1m exit drive
+// (mentorExitDriveResonance). m151: called from the add-gate refusal in
+// mentorPlaceIntent (the resonance ISB is a hold signal, not an entry), and the
+// mode-A flip is PERSISTED so a restart rebuilds A, not the row's B.
 func (at *AutoTrader) mentorArmResonanceOnISB(isbSide string) {
 	if at == nil || !at.mentorEnabled() {
 		return
@@ -1129,28 +1365,156 @@ func (at *AutoTrader) mentorArmResonanceOnISB(isbSide string) {
 		if !armed {
 			continue
 		}
-		// Move BOTH legs' stops to BE immediately (the resonance arms "at that
-		// moment", not on the next candle).
-		for i := range p.Legs {
-			leg := &p.Legs[i]
-			if leg.SignalID == "" || leg.Qty <= 0 {
-				continue
-			}
-			if err := at.mentorMoveLegStop(nt, p.Pos.Side, leg, p.Pos.Entry); !mentorMoveApplied(err) {
-				if !mentorMoveErrAlreadyLogged(err) {
-					at.logWarnf("🧑‍🏫 mentor resonance BE leg %d move FAILED: %v", i, err)
-				}
-				continue
-			}
-			leg.Stop = p.Pos.Entry
-		}
+		// m151 (4): persist mode A on the open position's armed row so a restart
+		// rebuilds A (plus the pending BE), not the row's original B.
+		at.mentorPersistResonanceMode(p)
 		// Mode A, CX-3 (release #25): the RUNNER's TP moves out to the level
 		// beyond the old high through the leg-scoped modify_bracket (wire leg
 		// 2) — leg 1's +1R TP stays (R-RES). It was logged as "WOULD set TP …
 		// UNWIRED" and never sent from 10-05 to 10-14. Knob
 		// mentor_resonance_runner_tp_old_high (nil → ON); OFF = logged only.
 		at.mentorResonanceRunnerTP(nt, p, p.RunnerTarget)
-		at.logInfof("🧑‍🏫 mentor resonance ARMED: %s %s → mode A (BE, no trail; the 1:1 partial still fires) [D2.4 p1]", p.Pos.Symbol, p.Pos.Side)
+		at.logInfof("🧑‍🏫 mentor resonance ARMED: %s %s → mode A (runner BE deferred to the exit drive; no trail; the 1:1 partial still fires) [D2.4 p1 @00:24–00:30, @02:24–02:47]", p.Pos.Symbol, p.Pos.Side)
+	}
+}
+
+// mentorPersistResonanceMode writes mode A onto the open position's armed row
+// (m151 fix 4): the arm flips the live position in memory only, so a restart
+// would rebuild the row's original B while the runner-TP modify stays out at
+// the broker. Counted either way; a failed or empty write WARNs, never silent.
+func (at *AutoTrader) mentorPersistResonanceMode(p *mentorLivePos) {
+	if at == nil || p == nil || at.store == nil {
+		return
+	}
+	sig := p.Legs[0].SignalID
+	if sig == "" {
+		return
+	}
+	ledger := at.store.ArmedOrders()
+	if ledger == nil {
+		at.mentorCount("resonance_persist_failed")
+		at.logWarnf("🧑‍🏫 mentor resonance mode A NOT persisted for %s — no armed ledger (a restart would rebuild B)", sig)
+		return
+	}
+	n, err := ledger.SetExitModeBySignal(sig, "A-resonance")
+	if err != nil || n == 0 {
+		at.mentorCount("resonance_persist_failed")
+		at.logWarnf("🧑‍🏫 mentor resonance mode A NOT persisted for %s — %d row(s) changed, err=%v (a restart would rebuild B)", sig, n, err)
+		return
+	}
+	at.mentorCount("resonance_persisted")
+}
+
+// mentorResonanceBEMinRR is the minimum distance BEYOND entry (in R) the close
+// must reach before a mode-A position's break-even is placed while leg 1's 1:1
+// partial has NOT yet confirmed. A BE stop one tick from price gets scratched;
+// 0.25R gives it room [CTO default, m151 — the owner may change it; disclosed
+// in the guide].
+const mentorResonanceBEMinRR = 0.25
+
+// mentorExitDriveResonance is the mode-A break-even on one CLOSED 1m candle
+// (plan §Exits B). m134 (b)/(d): the stop moves to break-even only AFTER the
+// 1:1 partial is confirmed (scaledNow) OR — with no partial yet — once the
+// close is at least 0.25R beyond entry (mirrored for short). Once armed, mode A
+// holds the native bracket (no trail, no 1:1 tightening).
+// m134 (c) + m151 (1): the leg.Stop / ArmedBE belief is written ONLY after
+// EVERY leg that needs BE was applied by the broker; an unapplied leg is
+// retried on the next closed candle (tracked by leg.Stop).
+// m151 (2): ALL open legs move to BE — leg 1 (wire 1) included [D2.4 @02:29].
+func (at *AutoTrader) mentorExitDriveResonance(nt *ntTrader.TCPTrader, p *mentorLivePos, c float64, scaledNow bool, exited [3]bool) {
+	if p == nil || p.Pos.ArmedBE {
+		return
+	}
+	pos := &p.Pos
+	legs := mentorResonanceOpenLegs(p, exited)
+	if len(legs) == 0 {
+		return
+	}
+	side := pos.Side
+	tick := at.mentorInstrumentTick()
+	be := mentorBEStopPrice(side, pos.Entry, tick)
+	// m151 (3): before the partial is confirmed, BE needs the close at least
+	// 0.25R beyond entry (long; mirrored for short). After the partial it moves
+	// on the next closed candle — the wrong-side guard in mentorMoveLegStop keeps
+	// it on the protective side (a through-the-market BE is closed, not sent).
+	if !scaledNow {
+		dist := pos.R * mentorResonanceBEMinRR
+		reached := (side == "long" && c >= pos.Entry+dist) || (side != "long" && c <= pos.Entry-dist)
+		if !reached {
+			at.mentorCount("resonance_be_waiting")
+			return
+		}
+	}
+	allApplied := true
+	brokerTighter := false
+	for _, leg := range legs {
+		if legAtOrBeyondBE(side, leg.Stop, be) {
+			continue // already at BE (or a tighter broker stop) from a prior candle
+		}
+		err := at.mentorMoveLegStop(nt, side, leg, be)
+		switch {
+		case errors.Is(err, errMentorStopBrokerTighter):
+			// m151 (6): the broker holds a tighter stop; mentorJudgeAgainstBroker
+			// already wrote leg.Stop to it, so the belief matches.
+			brokerTighter = true
+		case errors.Is(err, errMentorLegClosed):
+			// closed on its own TP — not a blocker.
+			at.mentorCount("stop_move_skipped_leg_closed")
+		case errors.Is(err, errMentorStopThroughMarket):
+			// m176 (Sonnet probe 8): the wrong-side BE closed the WHOLE symbol at
+			// market (the close wire is a full flatten) — the position is flat, so
+			// every remaining open leg would be a redundant close on an
+			// already-flat position. Stop the leg loop here.
+			at.mentorCount("stop_move_skipped_leg_closed")
+			return
+		case !mentorMoveApplied(err):
+			allApplied = false
+			if err != nil && !mentorMoveErrAlreadyLogged(err) {
+				at.logWarnf("🧑‍🏫 mentor resonance BE leg %d move FAILED: %v", leg.Wire, err)
+			}
+		default:
+			leg.Stop = be
+		}
+	}
+	if !allApplied {
+		return // at least one leg is not at BE — ArmedBE stays false, retried next candle
+	}
+	pos.Stop = be
+	pos.ArmedBE = true
+	if brokerTighter {
+		at.mentorCount("resonance_be_broker_tighter")
+	} else {
+		at.mentorCount("resonance_be_after_partial_or_profit")
+	}
+	at.logInfof("🧑‍🏫 mentor resonance BE: %s stop(s) → %.2f (entry %.2f) [D2.4 p1 @03:36–03:45]", legs[0].SignalID, be, pos.Entry)
+}
+
+// legAtOrBeyondBE reports whether a leg's stop is already at break-even or on
+// the protective side of it (a tighter broker stop). Used to skip legs already
+// applied on a prior candle (m151 fix 1: per-leg retry, tracked by leg.Stop).
+func legAtOrBeyondBE(side string, stop, be float64) bool {
+	if strings.EqualFold(side, "short") {
+		return stop <= be
+	}
+	return stop >= be
+}
+
+// mentorMarkPosExitedAtMarket marks every leg of a live position exited after a
+// successful wrong-side market close (m151 fix 5): the close wire is a FULL
+// FLATTEN of the symbol's position, so the exit drive must not retry the move
+// on the next candle (Sonnet saw 3 full-flatten closes on 3 candles).
+func (at *AutoTrader) mentorMarkPosExitedAtMarket(signalID string) {
+	if at == nil || signalID == "" {
+		return
+	}
+	at.mentorExitMu.Lock()
+	defer at.mentorExitMu.Unlock()
+	p := at.mentorLivePos[signalID]
+	if p == nil {
+		return
+	}
+	for i := range p.Legs {
+		p.Legs[i].Exited = true
 	}
 }
 

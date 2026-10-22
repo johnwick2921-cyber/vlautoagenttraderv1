@@ -11,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"vl/internal/updaterjob"
 )
 
 // ── W-FRIEND-HOSTED Segment 5: the friend sweep (flat → restart → boot) ────
@@ -192,16 +194,66 @@ func TestUpdateFriendsNoRegistryNoSweep(t *testing.T) {
 
 func TestUpdateFriendsRegistryReadErrorIsAdvisory(t *testing.T) {
 	r, registryPath := friendRig(t, nil)
-	// Corrupt the registry: the sweep records + notifies, never errors.
+	// Corrupt the registry: the sweep records + notifies, never errors, and
+	// (R8) persists a synthetic failed entry so api/friend_alert.go relays it.
 	if err := os.WriteFile(registryPath, []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	receipts, results := r.w.updateFriends(context.Background(), strings40())
-	if len(receipts) == 0 || results != nil {
-		t.Fatalf("corrupt registry → a receipt and no fabricated results, got receipts=%d results=%d", len(receipts), len(results))
+	if len(receipts) == 0 {
+		t.Fatalf("corrupt registry → a receipt, got %d", len(receipts))
+	}
+	if len(results) != 1 || results[0].Name != "*" || results[0].State != "failed" || results[0].Note != "friend sweep disabled: registry unreadable" {
+		t.Fatalf("corrupt registry → synthetic {name:*, state:failed} entry, got %+v", results)
 	}
 	if len(r.box.friendNotifications) != 1 {
 		t.Fatalf("notifications = %d, want 1", len(r.box.friendNotifications))
+	}
+}
+
+// TestUpdateFriendsNoTunnelIPNotifies pins U13 + R8: a registry WITH active
+// friends but no TUNNEL_IP (FriendHost) must NOT vanish silently — the owner
+// gets one notification, a receipt naming the reason, AND a synthetic
+// friends[] entry {name:"*", state:"failed"} that api/friend_alert.go relays
+// to the owner's Telegram (a notify alone only logs).
+func TestUpdateFriendsNoTunnelIPNotifies(t *testing.T) {
+	r, _ := friendRig(t, []friendRecord{
+		{Name: "tom", WebPort: 18081, State: "active"},
+	})
+	r.w.cfg.FriendHost = "" // TUNNEL_IP unset
+
+	receipts, results := r.w.updateFriends(context.Background(), strings40())
+	if len(results) != 1 {
+		t.Fatalf("results = %+v, want one synthetic failed entry", results)
+	}
+	if results[0].Name != "*" || results[0].State != "failed" || results[0].Note != "friend sweep disabled: TUNNEL_IP unset" {
+		t.Fatalf("synthetic entry = %+v, want {name:*, state:failed, note:\"friend sweep disabled: TUNNEL_IP unset\"}", results[0])
+	}
+	if len(receipts) != 1 {
+		t.Fatalf("receipts = %d, want exactly one", len(receipts))
+	}
+	if receipts[0].Step != "friend sweep disabled: TUNNEL_IP unset" {
+		t.Fatalf("receipt step = %q, want %q", receipts[0].Step, "friend sweep disabled: TUNNEL_IP unset")
+	}
+	if len(r.box.friendNotifications) != 1 {
+		t.Fatalf("notifications = %d, want 1", len(r.box.friendNotifications))
+	}
+	if got := r.box.friendRestartCalls["tom"]; got != 0 {
+		t.Fatalf("tom restarts = %d, want 0 (sweep disabled, never restarted)", got)
+	}
+}
+
+// TestUpdateFriendsNoTunnelIPNoActiveFriends pins the U13 boundary: an unset
+// TUNNEL_IP with NO active friends stays silent (nothing to sweep), matching
+// the no-registry path.
+func TestUpdateFriendsNoTunnelIPNoActiveFriends(t *testing.T) {
+	r, _ := friendRig(t, []friendRecord{
+		{Name: "tom", WebPort: 18081, State: "paused"},
+	})
+	r.w.cfg.FriendHost = ""
+	receipts, results := r.w.updateFriends(context.Background(), strings40())
+	if receipts != nil || results != nil {
+		t.Fatalf("no active friends + no TUNNEL_IP → nothing, got receipts=%d results=%d", len(receipts), len(results))
 	}
 }
 
@@ -272,5 +324,44 @@ func TestOSHostFriendFlat(t *testing.T) {
 	v, err = h.FriendFlat(context.Background(), srv.URL)
 	if err != nil || v.Flat || v.HasTraders {
 		t.Fatalf("missing traders field → (%+v, %v), want !Flat !HasTraders", v, err)
+	}
+}
+
+// TestCatchupCompleteNeverRestartsFriends pins the 2026-10-21 18:31:08
+// catch-up bug at the production call site (stepReleaseHold): a completed
+// catch-up job (no Release) restarted every friend and then failed the boot
+// check with an empty sha. MUTANT: drop `!j.Catchup && j.Release != nil` from
+// the gate in steps.go (the updateFriends sha guard is mutated out too) and
+// this goes RED.
+func TestCatchupCompleteNeverRestartsFriends(t *testing.T) {
+	r, _ := friendRig(t, []friendRecord{{Name: "tom", WebPort: 18081, State: "active"}})
+	r.box.friendWebPorts = map[string]int{"tom": 18081}
+	r.box.friendFlat = map[string]bool{"tom": true}
+	r.box.friendBootResults = map[string][]bool{"tom": {true}}
+	j, err := updaterjob.NewCatchup("catchup-pin1", r.w.host.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	j.State = updaterjob.StateComplete
+	res := r.w.stepReleaseHold(context.Background(), j)
+	if got := r.box.friendRestartCalls["tom"]; got != 0 {
+		t.Fatalf("catch-up complete restarted tom %d times, want 0 (res.err=%v)", got, res.err)
+	}
+	if res.set != nil {
+		t.Fatalf("catch-up must not persist friends[]")
+	}
+}
+
+// TestUpdateFriendsEmptySHANeverRestarts pins the defense layer.
+func TestUpdateFriendsEmptySHANeverRestarts(t *testing.T) {
+	r, _ := friendRig(t, []friendRecord{{Name: "tom", WebPort: 18081, State: "active"}})
+	r.box.friendWebPorts = map[string]int{"tom": 18081}
+	r.box.friendFlat = map[string]bool{"tom": true}
+	_, results := r.w.updateFriends(context.Background(), "")
+	if got := r.box.friendRestartCalls["tom"]; got != 0 {
+		t.Fatalf("restarted with empty sha %d times", got)
+	}
+	if len(results) != 1 || results[0].State != "failed" {
+		t.Fatalf("results = %+v", results)
 	}
 }

@@ -55,7 +55,10 @@ func contractFor(bh *store.BarHistoryStore, server *ntwire.TCPServer, symbol str
 // the callback writes can be pinned at the CALL SITE the worker actually
 // invokes (A29: built is not wired). The frame's `historical` flag names the
 // feed; a bar the ring has already labelled mixed (a boot minute across two
-// scales) keeps that label whichever feed carried it.
+// scales) keeps that label whichever feed carried it. The 2h/4h 16:00-close
+// stub is ALSO re-anchored at ring ingress (m169 DS-108 item 1); this call is
+// idempotent and still corrects the historical raw-frame path, whose bars arrive
+// close-stamped and bypass the ring on their way to the persister.
 func barRowsForPersist(symbol, tf, contract string, historical bool, closed []ntwire.Bar) []store.BarHistoryDB {
 	feedSrc := store.BarSourceLive
 	if historical {
@@ -68,7 +71,7 @@ func barRowsForPersist(symbol, tf, contract string, historical bool, closed []nt
 			bs = store.BarSourceMixed
 		}
 		rows = append(rows, store.BarHistoryDB{
-			Symbol: symbol, TF: tf, OpenTimeMs: b.T,
+			Symbol: symbol, TF: tf, OpenTimeMs: kernel.ReanchorCMEStub(tf, b.T),
 			O: b.O, H: b.H, L: b.L, C: b.C, V: b.V,
 			Convention: market.StampConvention(tf),
 			Contract:   contract,
@@ -295,6 +298,9 @@ func WireBarPersistence(st *store.Store) {
 // INSERT OR IGNORE) and logs the spec boot line. Returns the flushed count so
 // the caller can retry while the AddOn's bars_historical replay is still
 // arriving (the cache is empty for the first seconds after a Go restart).
+// The 2h/4h 16:00-close stub is also re-anchored at ring ingress; this call is
+// idempotent, so a bar the ring already re-anchored is left as-is (m169 DS-108
+// item 1).
 func backfillBars(bh *store.BarHistoryStore, server *ntwire.TCPServer) int {
 	now := time.Now().UnixMilli()
 	total, held := 0, 0
@@ -313,7 +319,7 @@ func backfillBars(bh *store.BarHistoryStore, server *ntwire.TCPServer) int {
 			// BAR-SOURCE WAVE — the ring stamped each bar at Seed/Upsert; the
 			// backfill carries that through. A ring bar with no source is a
 			// programming error and is refused by InsertBars rather than guessed.
-			rows = append(rows, store.BarHistoryDB{Symbol: pair[0], TF: pair[1], OpenTimeMs: b.T,
+			rows = append(rows, store.BarHistoryDB{Symbol: pair[0], TF: pair[1], OpenTimeMs: kernel.ReanchorCMEStub(pair[1], b.T),
 				O: b.O, H: b.H, L: b.L, C: b.C, V: b.V, Convention: market.StampConvention(pair[1]),
 				Contract: contract, Source: b.Source})
 		}
@@ -513,6 +519,17 @@ func resetAfterBackfillHookForTest() {
 // and WeeklyShadowRefs (1 → 3). The RULE (kernel.RVBaselineFrom5mDays) is
 // byte-for-byte unchanged and pinned so by an E7 golden.
 //
+// m134 / m149 (2026-10-21) — the "non-1m rings keep exactly what the AddOn
+// seeded" line above is now STALE for the epoch-aligned aggregate TFs
+// (3m/5m/15m/30m/1h): those are REBUILT from the stored 1m tape by time-UNION
+// (RehydrateUnion), so their OLDER end now comes from 1m aggregates, not from
+// the AddOn seed or the store's native rows for that TF. That MOVES the same
+// computed values the 09-09 measurement named — min5Long and RVBaseline are
+// served from 1m-derived 5m now (condition (b) ResolveRVBaselineTape), so the
+// measured 0.9% disagreement between stored-5m and 1m-agg-5m is the reason this
+// is the CORRECT source, not a regression. Native rows still extend the older
+// end beyond the 1m retention (m149 P2).
+//
 // A10: a failed store read WARNs and boot continues. Nothing here gates,
 // refuses, blocks or blanks.
 func rehydrateRingFromStore(bh *store.BarHistoryStore, server *ntwire.TCPServer, now time.Time) {
@@ -537,6 +554,7 @@ func rehydrateRingFromStoreWith(bh *store.BarHistoryStore, server *ntwire.TCPSer
 	skipped := len(pairs) - len(selected)
 	totalAdded, deepened, failed := 0, 0, 0
 	rehydrateKept, rehydrateFiltered := 0, 0
+	rehydrate1mMemo := map[string][]ntwire.Bar{}
 	for _, pair := range selected {
 		symbol, tf := pair[0], pair[1]
 		before := cache.Count(symbol, tf)
@@ -549,6 +567,39 @@ func rehydrateRingFromStoreWith(bh *store.BarHistoryStore, server *ntwire.TCPSer
 			failed++
 			logger.Warnf("🧯 ring rehydrate %s %s SKIPPED: no contract named and none in the store — the ring keeps the AddOn seed (%d bars)", symbol, tf, before)
 			continue
+		}
+		// m134 (a) — RESTART CHART HOLES: the epoch-aligned aggregate TFs
+		// (3m/5m/15m/30m/1h) are REBUILT from the complete stored 1m tape by
+		// time-UNION, so an INTERIOR hole left by a short NT8 replay tail is
+		// filled — not just the older end RehydrateOlder reaches. The 2h/4h
+		// session-anchored buckets and the 1m itself keep their own store rows.
+		if tfMin := rehydrateTFMinutes(tf); tfMin > 0 {
+			oneMin, err := rehydrate1mBarsFor(bh, symbol, contract, reseeded, &rehydrate1mMemo)
+			if err != nil {
+				// m149 P2: a failed 1m read does NOT skip the native rows —
+				// the older end still comes from the store's own rows.
+				logger.Warnf("🧯 ring rehydrate %s %s (from 1m) FAILED: %v — native rows still rehydrate the older end", symbol, tf, err)
+			} else if len(oneMin) > 0 {
+				bars := ntwire.Aggregate1mToTF(oneMin, tfMin, now.UnixMilli())
+				if added := cache.RehydrateUnion(symbol, tf, bars); added > 0 {
+					totalAdded += added
+					deepened++
+					// m327 (a): the aggregate tf was REBUILT from the STORE's 1m
+					// tape — the 1m store has history the boot seed may have
+					// missed (a restart hole healed after the seed). Announce the
+					// refill so the mentor tick re-seeds its 1m-derived state
+					// (EMA9/34, trigger lines) from the healed series.
+					NoteHistoryRefill(symbol, "1m", added, fmt.Sprintf("ring rehydrate %s %s from 1m (+%d union)", symbol, tf, added))
+					after := cache.Get(symbol, tf)
+					h := kernel.HorizonOf(barsToKlines(after, tf), tf, cache.MaxBars(), now)
+					logger.Infof("🧯 ring rehydrated %s %s FROM 1M [m134 2026-10-21]: nt8=%d 1m_bars=%d total=%d/%d (+%d union — interior holes filled, live bars win on overlap) · contract=%s (%s) · %s",
+						symbol, tf, before, len(oneMin), len(after), cache.MaxBars(), added, contract, src, h.Line())
+				}
+			}
+			// m149 P2: fall through — the native stored rows extend the OLDER
+			// end beyond the 1m retention, and historical_import rows are not
+			// bypassed. RehydrateOlder is strictly-older, so it never disturbs
+			// what the 1m union just wrote.
 		}
 		rows, err := bh.LastNBarsOn(symbol, tf, contract, cache.MaxBars())
 		// A9 — every bar the filter kept OUT is counted, per contract, so the
@@ -590,6 +641,13 @@ func rehydrateRingFromStoreWith(bh *store.BarHistoryStore, server *ntwire.TCPSer
 		}
 		totalAdded += added
 		deepened++
+		// m327 (a): the 1m ring deepened from the store — the store now holds
+		// 1m history the boot seed may have missed (a restart hole healed after
+		// the seed). Announce the refill so the mentor tick re-seeds its
+		// history-derived state (EMA9/34, trigger lines) from the healed series.
+		if tf == "1m" {
+			NoteHistoryRefill(symbol, "1m", added, fmt.Sprintf("ring rehydrate %s 1m (+%d older)", symbol, added))
+		}
 		after := cache.Get(symbol, tf)
 		h := kernel.HorizonOf(barsToKlines(after, tf), tf, cache.MaxBars(), now)
 		// nt8=<what the ring held from NT8 before> store_live/store_hist=<what
@@ -626,6 +684,51 @@ func rehydrateRingFromStoreWith(bh *store.BarHistoryStore, server *ntwire.TCPSer
 // other series is aggregated from, the one the regime baseline is served
 // from under condition (b)); it is no longer the selection.
 const rehydrateTimeframe = "1m"
+
+// rehydrate1mMax is how many stored 1m bars the 1m-rebuild reads: enough to
+// cover the deepest rebuilt TF (1h → 2500×60 minutes) — the store's ~21-day
+// retention (~30k minutes) is the real bound, so this is effectively "all of
+// it for the current contract".
+const rehydrate1mMax = 2500 * 60
+
+// rehydrateTFMinutes maps an EPOCH-ALIGNED aggregate timeframe to its minute
+// span for the 1m rebuild (m134). 1m and the session-anchored buckets
+// (2h/4h/6h/8h/12h/1d/3d/1w) return 0 and keep the older-only store path —
+// their anchor is not a whole-epoch multiple (4h is 17:00 CT) so they cannot
+// be rebuilt by plain epoch division.
+func rehydrateTFMinutes(tf string) int {
+	switch tf {
+	case "3m":
+		return 3
+	case "5m":
+		return 5
+	case "15m":
+		return 15
+	case "30m":
+		return 30
+	case "1h":
+		return 60
+	}
+	return 0
+}
+
+// rehydrate1mBarsFor reads the complete stored 1m tape for one symbol once per
+// pass and caches it in memo (the same 1m tape rebuilds every aggregate TF).
+// Guards (i) and (iii) are applied exactly as on the older-only path; every
+// row enters stamped historical (guard ii) via rehydrateBarsFromRows.
+func rehydrate1mBarsFor(bh *store.BarHistoryStore, symbol, contract string, reseeded bool, memo *map[string][]ntwire.Bar) ([]ntwire.Bar, error) {
+	if cached, ok := (*memo)[symbol]; ok {
+		return cached, nil
+	}
+	rows, err := bh.LastNBarsOn(symbol, "1m", contract, rehydrate1mMax)
+	if err != nil {
+		return nil, err
+	}
+	rows, _ = rehydrateRowsFor(rows, reseeded)
+	bars := rehydrateBarsFromRows(rows)
+	(*memo)[symbol] = bars
+	return bars, nil
+}
 
 // pairsToRehydrate is THE selection, extracted so a pin drives IT rather than a
 // copy of it (class 86).
@@ -680,6 +783,10 @@ func rehydrateRowsFor(rows []store.BarHistoryDB, reseeded bool) (kept []store.Ba
 // rehydrateBarsFromRows applies guard (ii): EVERY row enters the ring stamped
 // historical. The scale check, the merge and the persister then treat it as
 // the replay it is to this process — never as a sacred live bar.
+//
+// Final is left false on rehydrated bars (it predates the m134 wave): the
+// AddOn's Final proof is a LIVE-boundary fact this process has not witnessed
+// for a stored row, so a rehydrated bar is "unproven closed", never "closed".
 func rehydrateBarsFromRows(rows []store.BarHistoryDB) []ntwire.Bar {
 	bars := make([]ntwire.Bar, 0, len(rows))
 	for _, r := range rows {

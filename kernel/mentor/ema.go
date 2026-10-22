@@ -57,3 +57,96 @@ func emaValue(bars []market.Kline, period int) float64 {
 	}
 	return ema
 }
+
+// EMAOnTF computes the standard EMA (seeded with the first close, k = 2/(n+1))
+// over the bars aggregated to tfMin-minute CLOSED candles. It returns 0 when
+// there are no closed candles or period <= 0. Used by the X8 trap-dodge exit to
+// read the EMA34 on the 2m chart the mentor actually trades ("mình trade khung 2
+// phút") — NOT the evaluator's 1m EMA34 (State.EMA34), which was the m308 bug.
+func EMAOnTF(bars []market.Kline, tfMin, period int) float64 {
+	if len(bars) == 0 || period <= 0 {
+		return 0
+	}
+	tf := closedBucketsTF(bars, tfMin, BarCloseInstant(bars[len(bars)-1]))
+	if len(tf) == 0 {
+		return 0
+	}
+	return emaValue(tf, period)
+}
+
+// ChartEMA is one point of the display-only EMA curve (m134): the EMA 9 and
+// EMA 34 values at a 1m bar's open time.
+type ChartEMA struct {
+	Ms    int64   `json:"ms"`
+	Ema9  float64 `json:"ema9"`
+	Ema34 float64 `json:"ema34"`
+}
+
+// emaSeriesChart builds the per-bar EMA 9/34 curve for the chart (display only,
+// m134). Seeds with the first bar's close — the same recurrence as emaValue —
+// so the tail lands on the same values the EMA levels use. The series is only
+// meaningful on the evaluator's tick timeframe (EMATFMinutes==1): it is the
+// per-1m-bar EMA the levels read, so the chart snaps it onto the drawn bars.
+// A non-positive period disables that curve (its values stay 0 across the whole
+// series and the frontend drops the all-zero curve) — guarding against
+// k = 2/(n+1) dividing by zero or emitting a nonsense value for a bad config.
+//
+// m327 (c): the first `warmup` points are DROPPED (the unconverged head) — an
+// EMA seeded at the slice head needs ~6×period bars before the seed's error
+// decays below 0.01 pts, so the head used to be up to 6.9 pts off a
+// long-seeded EMA. Every EMITTED point is now converged (within 0.01 of an EMA
+// seeded from long history); the curve simply starts `warmup` bars in.
+func emaSeriesChart(bars []market.Kline, period9, period34 int) []ChartEMA {
+	if len(bars) == 0 {
+		return nil
+	}
+	k9, k34 := 0.0, 0.0
+	if period9 > 0 {
+		k9 = 2.0 / float64(period9+1)
+	}
+	if period34 > 0 {
+		k34 = 2.0 / float64(period34+1)
+	}
+	e9, e34 := bars[0].Close, bars[0].Close
+	if period9 <= 0 {
+		e9 = 0
+	}
+	if period34 <= 0 {
+		e34 = 0
+	}
+	warmup := emaWarmupBars(period9, period34)
+	capHint := len(bars) - warmup
+	if capHint < 0 {
+		capHint = 0 // the whole window is unconverged head — emit nothing
+	}
+	out := make([]ChartEMA, 0, capHint)
+	for i := range bars {
+		if i > 0 {
+			if period9 > 0 {
+				e9 += k9 * (bars[i].Close - e9)
+			}
+			if period34 > 0 {
+				e34 += k34 * (bars[i].Close - e34)
+			}
+		}
+		if i >= warmup {
+			out = append(out, ChartEMA{Ms: bars[i].OpenTime, Ema9: e9, Ema34: e34})
+		}
+	}
+	return out
+}
+
+// emaWarmupBars returns the number of head bars to DROP so every emitted EMA
+// point is converged (m327 c): 6×period decays the seed's weight to < 1e-5,
+// so even a 1000-pt seed error shrinks below 0.01 pts. The max over the enabled
+// periods wins — a disabled period contributes 0.
+func emaWarmupBars(period9, period34 int) int {
+	w := 0
+	if period9 > 0 && 6*period9 > w {
+		w = 6 * period9
+	}
+	if period34 > 0 && 6*period34 > w {
+		w = 6 * period34
+	}
+	return w
+}

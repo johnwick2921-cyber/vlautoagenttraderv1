@@ -34,6 +34,7 @@ import { PlanCard } from '../components/plan/PlanCard'
 import { PictureHtfPanel } from '../components/trader/PictureHtfPanel'
 import { MentorTruthCard } from '../components/mentor/MentorTruthCard'
 import { useMentorTruth } from '../components/mentor/useMentorTruth'
+import { AddonOutdatedBanner } from '../components/friend/AddonOutdatedBanner'
 import type {
   SystemStatus,
   AccountInfo,
@@ -197,6 +198,19 @@ export function TraderDashboardPage({
     [mentor, mentorStaleSinceMs]
   )
   const mentorTrendlines = mentor?.enabled ? mentor.trendlines : undefined
+  // m134 — the per-bar EMA 9/34 curve.
+  const mentorEMASeries = mentor?.enabled ? mentor.ema_series : undefined
+  // m325 — the EMA34 location line's CURRENT value (kind ema34_htf), drawn as a
+  // short right-edge segment, never a full-width flat line through history.
+  const mentorEMALocationPrice = useMemo(
+    () =>
+      mentor?.enabled
+        ? (mentor.levels ?? []).find(
+            (l) => l.kind === 'ema34_htf' && l.price > 0
+          )?.price
+        : undefined,
+    [mentor]
+  )
   // Plan 4 Task 23.4 — Dashboard tab switcher (Overview / Decisions).
   const [dashboardTab, setDashboardTab] = useState<'overview' | 'decisions'>(
     'overview'
@@ -412,6 +426,10 @@ export function TraderDashboardPage({
             entries blocked; stops, targets and position management continue
           </div>
         )}
+
+        {/* Friend mode: connected AddOn older than the manifest — owner's bot
+            never renders this (the friend route 404s there). */}
+        <AddonOutdatedBanner />
 
         {/* Trader Header */}
         <div
@@ -785,8 +803,10 @@ export function TraderDashboardPage({
               )}
               mentorLevels={mentorLevels}
               mentorTrendlines={mentorTrendlines}
+              mentorEMASeries={mentorEMASeries}
               mentorSymbol={mentor?.symbol}
               mentorStaleSinceMs={mentorStaleSinceMs}
+              mentorEMALocationPrice={mentorEMALocationPrice}
             />
           </div>
 
