@@ -2,6 +2,19 @@
 
 # VL update for Tin and Binnie — September 22, 2026
 
+> **AddOn note (m385, 2026-10-22) — supersedes the copy+F5 steps in the
+> historical REL sections below.** The AddOn is now built and placed as a
+> compiled DLL (`VL.AddOn.dll`) by the one-button update via `build-addon.ps1`
+> (`-Src` + `-Out` + `-CustomDir`; no .NET SDK, no per-release F5). The old
+> "copy `ninjascript/*.cs` → AddOns → F5" procedure is retired. The only manual
+> NT8 step is a ONE-TIME migration for boxes that previously used copy+F5: the
+> job MOVEs the old `VL*.cs` out of `bin\Custom\AddOns\` and asks for ONE F5
+> (so `NinjaTrader.Custom.dll` drops the old VL classes), then places the DLL.
+> See `INSTALL.md` → "NinjaTrader 8 AddOn" and
+> `2026-09-27-one-button-update.md` step 7. Windows can redirect `Documents`
+> into OneDrive; the detector accepts either `Documents\NinjaTrader 8\bin\Custom`
+> or `OneDrive\...\Documents\NinjaTrader 8\bin\Custom`.
+
 Prepared on a fresh clone of `johnwick2921-cyber/vlautoagenttraderv1`, based on
 published main `78d35c25eca2e51853339bc5cf10ec30340cf40d`. Shared source changes
 from vl `8dcaca66` through `0960a6ac` were applied using format-patch → am.

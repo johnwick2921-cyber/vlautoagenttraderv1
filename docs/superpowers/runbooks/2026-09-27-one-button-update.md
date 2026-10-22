@@ -46,9 +46,10 @@ REFUSES with a reason on any failure:
 
 `--dry-run` prints every action and changes nothing.
 
-Then **each release = press Update** in Settings → Updates (plus F5 in NT8 when
-the job says `nt8_updated`, step 7 of the loop below). No token refresh, no
-per-release CLI: the worker token is long-lived.
+Then **each release = press Update** in Settings → Updates. The AddOn is built
+and placed as a compiled DLL automatically (step 7) — the only manual NT8 step
+is the ONE-TIME migration F5 if this box previously used the copy-`.cs` method.
+No token refresh, no per-release CLI: the worker token is long-lived.
 
 **The token clock:** `VL_CUTOVER_TOKEN` is a long-lived machine token
 (`auth.WorkerTokenTTL` = 10 years), written ONCE by `enroll` — **not** a
@@ -85,20 +86,22 @@ installer and the worker read the same `~/.config/vl-updater/env` file. An
    either way — authorize a new one.
 6. **Watch.** The job runs its states until it parks at `nt8_updated`; the
    maintenance hold covers the bot meanwhile.
-7. **Update the AddOn and F5 in NT8** when the job says `nt8_updated`. Copy the
-   AddOn source from the RELEASE folder the job materialized — never from
-   `~/vl/ninjascript/`: the activation swaps ONLY `vl-bin`, `web/dist` and
-   `deploy/RELEASE`, so `~/vl/ninjascript/` still holds the previous build and
-   copying it leaves the AddOn on the old build id (`match=NO` forever; the
-   2026-10-04 checklist had this wrong). At the park the install has NOT been
-   activated yet, so `deploy/RELEASE` still names the OLD release — take the
-   folder from the job file instead:
-   `REL=$(jq -r .release.dir ~/vl/data/updater/jobs/<job_id>.json)`,
-   `grep -n 'VL_BUILD_ID  *=' "$REL/ninjascript/VLTraderTCPClient.cs"` (must print the
-   release's build id), then
-   `cp "$REL/ninjascript/VLTraderTCPClient.cs" "/mnt/c/Users/<you>/Documents/NinjaTrader 8/bin/Custom/AddOns/"`,
-   F5 in NT8, full NT8 restart. (After a completed NT8-closed install,
-   `$(cat ~/vl/deploy/RELEASE)` names the new release and gives the same folder.)
+7. **The AddOn is built and placed automatically** — no manual `cp`, no
+   per-release F5. The worker compiles the release's `ninjascript/*.cs` into
+   `VL.AddOn.dll` with `build-addon.ps1` (NT8's bundled Roslyn, no .NET SDK —
+   it FAILS FAST unless `-Src`, `-Out` AND `-CustomDir` are all passed) and
+   places it under `Documents\NinjaTrader 8\bin\Custom\`. The old copy-`.cs`-
+   then-F5 path is retired.
+   **One-time migration only** for a box that previously used copy+F5: the job
+   refuses with `One-time step: open NinjaTrader → NinjaScript Editor → press F5
+   once, then click Update again.` It has already MOVEd the old `VL*.cs` out of
+   `bin\Custom\AddOns\` (never deleted), so that one F5 recompiles
+   `NinjaTrader.Custom.dll` WITHOUT the old VL classes — otherwise NT8 would
+   load the AddOn twice. After that single F5, re-run the Update; every later
+   release is DLL-only. (Windows can redirect `Documents` into OneDrive; the
+   detector accepts either `Documents\NinjaTrader 8\bin\Custom` or
+   `OneDrive\...\Documents\NinjaTrader 8\bin\Custom`, and refuses if it finds
+   more than one — set `VL_NT8_DOCS_DIR` to pin the folder.)
 8. **Resume (attended):** `vl-updater resume <job>` — a TERMINAL only: it
    refuses when stdin is not a terminal (a pipe or a script cannot resume),
    prints the job's state and blocker, and makes you type the job id back.
@@ -132,16 +135,18 @@ PROCEEDS instead of waiting for an AddOn that cannot answer:
   2026-10-04 07:27) until NT8 was opened. If the link has been down less than
   60 s the job is refused at preflight with that blocker: wait, then re-run.
   With NT8 OPEN instead, take the normal path: flat → the job parks at
-  `nt8_updated` → copy + F5 + restart (step 7) → `vl-updater resume` (step 8).
+  `nt8_updated` → the AddOn DLL was already built and placed by the worker
+  (step 7) → `vl-updater resume` (step 8). The only F5 is the ONE-TIME
+  migration when a box previously used copy+F5 (the job says so).
 - If NT8 reconnects DURING the job, the normal ack/census legs apply again
   from that moment — the absent verdict is revoked, never grandfathered.
-- The NT8 step with NT8 absent: **no `.cs` change → nt8_skipped** (as
-  today); **a `.cs` change → the Go side completes and the job records
-  "AddOn F5 owed at next NT8 start"** — it does NOT park (NT8 is closed;
-  nobody can F5 now). `boot_verified` skips the AddOn-ack wait in this mode
-  and records that it did.
+- The NT8 step with NT8 absent: **no AddOn change → nt8_skipped** (as
+  today); **an AddOn change → the Go side builds + places the DLL and the job
+  records "AddOn owed at next NT8 start"** — it does NOT park (NT8 is closed;
+  the DLL will load on the next NT8 start). `boot_verified` skips the
+  AddOn-ack wait in this mode and records that it did.
 - The simple owner flow: **close NT8 → authorize → paste → Update now →
-  wait for complete → open NT8** (and F5 first if the job recorded it).
+  wait for complete → open NT8** (the DLL is already in place; no F5).
 - With NT8 OPEN, live (non-SIM) connections may stay connected: the census
   admits them when **every account is flat** — the census proves
   `positions=0` and `working=0` across ALL accounts, live ones included

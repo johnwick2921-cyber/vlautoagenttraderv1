@@ -80,6 +80,11 @@ esac
 say()  { echo "partner-first-time-setup: $*"; }
 refuse() { echo "partner-first-time-setup: REFUSED — $*" >&2; exit 2; }
 
+# m385 (a): the enroll step (step 3) is INTERACTIVE and needs a human at the
+# terminal — an agent (no TTY) cannot run it. Say so up front, before any step
+# has run, so an unattended run does not fail mid-way at enroll.
+say "NOTE — the enroll step needs YOU at the terminal (an agent cannot run it); if enroll is required, re-run this script from a real terminal"
+
 # step_run prints and executes a step; in --dry-run it prints only.
 step_run() {
   if [ "$DRY_RUN" = true ]; then
@@ -99,6 +104,21 @@ systemctl --user is-system-running >/dev/null 2>&1 \
   || refuse "systemctl --user is not usable (run: loginctl enable-linger $USER, then re-open the session)"
 linger="$(loginctl show-user "$USER" -p Linger --value 2>/dev/null || true)"
 [ "$linger" = "yes" ] || refuse "linger is not enabled for $USER (run: loginctl enable-linger $USER)"
+
+# m385 (c): the SYSTEM autostart services (vl, vl-web) are installed by
+# deploy/install-autostart.sh — a sudo-once step, like linger. Check for them;
+# when missing, print the exact two sudo commands (autostart is optional for
+# the update itself, so this is a note, not a refusal).
+svc_missing=""
+systemctl is-enabled --quiet vl 2>/dev/null || svc_missing="vl"
+systemctl is-enabled --quiet vl-web 2>/dev/null || svc_missing="${svc_missing:+$svc_missing }vl-web"
+if [ -n "$svc_missing" ]; then
+  say "NOTE — system autostart services missing ($svc_missing); run once, with sudo:"
+  echo "  sudo bash $INSTALL_DIR/deploy/install-autostart.sh"
+  echo "  sudo loginctl enable-linger $USER"
+else
+  say "system autostart services (vl, vl-web) present"
+fi
 
 [ -d "$INSTALL_DIR" ] || refuse "install dir does not exist: $INSTALL_DIR (set --install-dir or VL_UPDATER_INSTALL_DIR)"
 [ -f "$INSTALL_DIR/.env" ] || refuse "$INSTALL_DIR/.env does not exist (the bot's env; back up first, then create it)"
@@ -181,6 +201,9 @@ if [ -f "$INSTALL_DIR/data/updater/admin.json" ] || { [ -f "$ENV_FILE" ] && grep
 fi
 
 if [ "$already_enrolled" = false ]; then
+  if [ "$DRY_RUN" != true ] && [ ! -t 0 ]; then
+    refuse "the enroll step needs YOU at the terminal (an agent cannot run it) — re-run this script from a real terminal"
+  fi
   if [ "$DRY_RUN" = true ]; then
     say "would run: go run ./cmd/vl-updater-bootstrap --install-dir $INSTALL_DIR enroll $EMAIL (attended)"
   else
