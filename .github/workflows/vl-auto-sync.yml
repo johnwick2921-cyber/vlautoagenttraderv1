@@ -47,7 +47,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.26.9'
+          go-version-file: go.mod   # was pinned '1.26.9' while go.mod needs 1.26.10 (vl #42) → cgofree driver-pin builds failed on the runner
 
       - name: Auto-sync from vl
         id: sync
