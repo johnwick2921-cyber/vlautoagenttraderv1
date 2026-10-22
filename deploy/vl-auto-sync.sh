@@ -88,7 +88,10 @@ done < "$CARVEOUTS"
 
 # --- 5. net-diff apply (carve-outs kept) -------------------------------------------------
 DIFF="$WORK/sync.diff"
-git diff "$LAST_SHA" "$NEW_SHA_RESOLVED" -- . "${EXCLUDES[@]}" > "$DIFF"
+# --binary: vl ships binary test fixtures (e.g. trader/testdata/*.json.gz, vl #45);
+# a text-only diff cannot carry them and git apply refuses the WHOLE sync
+# ("cannot apply binary patch ... without full index line", 10-22 runs).
+git diff --binary "$LAST_SHA" "$NEW_SHA_RESOLVED" -- . "${EXCLUDES[@]}" > "$DIFF"
 [ -s "$DIFF" ] || die "empty diff $LAST_TAG..${NEW_TAG} (carve-out list may be wrong)"
 
 if ! git apply --3way --whitespace=nowarn "$DIFF" 2>"$WORK/apply.log"; then
