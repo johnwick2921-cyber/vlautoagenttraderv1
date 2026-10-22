@@ -1987,7 +1987,8 @@ type MentorTuning struct {
 	// ISBReverseEMA9Enabled: the reverse ISB at EMA 9 (D5.4; nil → ON, R-C).
 	ISBReverseEMA9Enabled *bool `json:"isb_reverse_ema9_enabled,omitempty"`
 	// HTFGateNewsOnly (D4.4-11): the 4h/1h direction gate only inside the
-	// 07:20–07:35 CT news window (nil → ON = news-only; owner order 2026-10-17).
+	// 07:20–07:35 CT news window (nil → OFF = all-day gate; owner decision A
+	// 2026-10-21 m134).
 	HTFGateNewsOnly *bool `json:"htf_gate_news_only,omitempty"`
 	// Exec2mAfter30m (X5-10): after the first 30 minutes of RTH (09:00 CT)
 	// the named setups — the ISB pair AND PHL/PLH — are read on the 2m chart
@@ -1999,8 +2000,9 @@ type MentorTuning struct {
 	// and any setup whose stop is over the cap is skipped (R9).
 	DayGateSpentPts     float64 `json:"day_gate_spent_pts,omitempty"`
 	DayGateTargetCapPts float64 `json:"day_gate_target_cap_pts,omitempty"`
-	// SwingMaxStopPts: SWING4H skips at a stop >= this (R-D, default 100). The
-	// trader rule gate and the kernel swing gate read this ONE value.
+	// SwingMaxStopPts: a SWING4H stop >= this is SIZED DOWN to <= 2 MNQ (B5; never
+	// skipped, never widened; default 100). The trader size table and the kernel
+	// swing config read this ONE value.
 	SwingMaxStopPts float64 `json:"swing_max_stop_pts,omitempty"`
 	// SwingMinStopPts (W26 P2-4): SWING4H skips at a stop NARROWER than this.
 	// 0 = OFF (the course states no minimum — only the 100-pt ceiling and "a
@@ -2173,9 +2175,9 @@ type RiskControlConfig struct {
 	MentorTrailMode string `json:"mentor_trail_mode,omitempty"`
 	// STOP RULES (owner ruling 00:1x CT "exactly like he said") — class rules,
 	// NOT his personal routine. The window is default ON; done-after-win is
-	// default OFF (owner order 2026-10-16):
+	// default ON (the course default; m186 reverts the 2026-10-16 owner order):
 	// (a) done for the day after a winning close with the day net positive
-	//     (nil → OFF, owner order 2026-10-16; explicit true enables);
+	//     (nil → ON; an explicit false disables);
 	// (b) the trading window: MentorWindowStart (HH:MM CT) + MentorWindowMinutes
 	//     (30/60/90/120; unset → 60). The SWING setup is exempt.
 	// (c)/(d) never-widen / never-add are guards, not knobs.

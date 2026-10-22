@@ -15,9 +15,16 @@ const repo = (p: string) =>
 const web = (p: string) => readFileSync(resolve(process.cwd(), p), 'utf8')
 
 function goConst(src: string, name: string): string {
-  const m = src.match(new RegExp(`\\b${name}\\s*=\\s*([0-9.]+)`))
+  const m = src.match(
+    new RegExp(`\\b${name}\\s*=\\s*([A-Za-z_][A-Za-z0-9_]*|\\d+(?:\\.\\d+)?)`)
+  )
   if (!m) throw new Error(`Go constant ${name} not found — re-anchor this pin`)
-  return m[1]
+  const val = m[1]
+  // m186 d3-exact aliases the confluence/big tiers to the base constant
+  // (mentorConfluenceContractsDefault = mentorBaseContractsDefault): follow the
+  // alias chain to the numeric literal the guide actually pins, instead of
+  // failing the regex on a non-numeric RHS. Decimal literals (1.5) stay intact.
+  return /^[0-9]/.test(val) ? val : goConst(src, val)
 }
 
 const knobs = (sectionId: string): KnobSpec[] =>
@@ -76,7 +83,9 @@ describe('T3 — max contracts card tells the mentor truth', () => {
     const k = card('settings', /^Max contracts \(always-on\)/)
     expect(k.what).toContain('MENTOR MODE IS NOT CLAMPED')
     expect(k.what).toContain(`${SIZE.base} by default`)
-    expect(k.what).toContain(`${SIZE.reduced} when the stop is 20–<30 pts`)
+    expect(k.what).toContain(
+      `${SIZE.reduced} when the stop is over 20 and up to 25 pts`
+    )
     expect(k.what).toContain(`${SIZE.swing} on the SWING4H`)
     expect(k.what).toContain(`mentor_max_contracts (default ${SIZE.max})`)
     expect(k.what).not.toMatch(
@@ -368,6 +377,8 @@ describe("JOB 2.4 — hidden-knob cards state the code default and 'No Studio co
     expect(k.where).toMatch(/No Studio control/)
     expect(k.systemDefault).toMatch(/ON/)
     // the shipped default is the nil branch of TransitionStanddownEnabled
-    expect(stratSrc).toMatch(/if c\.Regime == nil \|\| c\.Regime\.TransitionStanddown == nil \{\s*return true/)
+    expect(stratSrc).toMatch(
+      /if c\.Regime == nil \|\| c\.Regime\.TransitionStanddown == nil \{\s*return true/
+    )
   })
 })

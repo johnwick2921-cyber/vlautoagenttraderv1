@@ -1,4 +1,26 @@
 // Dispatch 102 freezes load-bearing identifiers, including their surrounding guards.
+// Wire baselines advanced 2026-10-21 for release #43 re-integration:
+//   ninjascript/VLTraderTCPClient.cs sha256 65b120fa… — reconnect backoff resets
+//     only on the server hello, hello-first write gate, unreadable connect.json
+//     classified corrupt, empty-key error (fix/addon-reconnect-json 9639e2e5b,
+//     DS-103) and VL_BUILD_ID advances to 2026-10-21-c; the order name / account
+//     / signal-id contract is untouched. #45: bug-hunt #4 (m227 25e3743dc, DS-103)
+//     re-keys the order_update de-dupe to state:filled so each larger PartFilled
+//     partial is sent — the order-name / account / signal-id contract is untouched.
+//     #46: m337 (f9dfe5e14, DS-103) bumps VL_BUILD_ID to 2026-10-22-a and adds a
+//     sha256 guard over all 6 ninjascript/*.cs files (trader/addon_source_snapshot_test.go);
+//     the wire / order-name / account / signal-id contract is untouched.
+//     #46: m373 (P0, DS-103) fixes order_update FormatException — e.Filled is an
+//     int so ToString("R") throws on every order_update (47× in NT8 log since
+//     #45 boot); drops "R", bumps VL_BUILD_ID to 2026-10-22-b. Contract untouched.
+//   provider/ninjatrader/tcp_server.go  sha256 a59169a4… — connect-key auth gate
+//     root fix (fix/connect-key-auth-gate e64281dca, DS-104) + m188 keyed-conn
+//     deadline fix (7f1a89133, CTO): a pre-auth dial is held as a pending conn
+//     and published as s.conn only after a matching hello; the first-hello
+//     deadline is cleared on auth and connGone runs in a closure so a close frees
+//     the slot. Additive; no frame/order/position path changed. #45: m220 #36
+//     (ecc0053ea, DS-104) makes sampleIngestDepth session-day aware (CMESessionDayStart)
+//     and CAS against the previously stored day — additive; no wire change.
 // Wire baselines advanced 2026-10-19 for P0 feed-freshness (release #40,
 // C# fix/p0-addon-feed-freshness 52a88a004 + Go/UI fix/p0-feed-freshness-status
 // f5ff7e0ae): the additive feed_status freshness field is added to the TCP wire
