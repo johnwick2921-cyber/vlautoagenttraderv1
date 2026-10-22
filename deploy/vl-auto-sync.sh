@@ -152,6 +152,10 @@ go test ./kernel/ -run 'Golden|Selfcheck' -count=1 >"$WORK/golden.log" 2>&1 || d
 # fixture line, and partner main went red after the merge). deploy/ holds the
 # release contract + carve-out pins; internal/updaterworker/ is the one-click
 # Update path the partner box runs.
+# the sqldriverpin probe runs go list OFFLINE (GOPROXY=off) and needs every module in go.sum cached,
+# incl. the -tags cgofree glebarez drivers a plain build never fetches.
+say "gate: go mod download"
+go mod download >"$WORK/moddownload.log" 2>&1 || die "go mod download failed: $(tail -5 "$WORK/moddownload.log")"
 say "gate: deploy + updater tests"
 go test ./deploy/... ./internal/updaterworker/... -count=1 >"$WORK/deploytest.log" 2>&1 \
   || die "deploy/updater tests failed: $(grep -E -- '--- FAIL|FAIL|panic' "$WORK/deploytest.log" | head -10)"
