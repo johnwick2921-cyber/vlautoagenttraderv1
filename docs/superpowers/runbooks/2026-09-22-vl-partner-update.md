@@ -540,3 +540,9 @@ Carve-outs: 19 machine-pinned paths kept (deploy/partner_sync_carveouts).
 Auto-synced to vl tag `v2026.10.22.4` (`c4dfb1d1ba4044768dd8186f3c48903b2316c626…`). Build commit `1b11b300b9ec3acaf590e23046dafab35c27e66e…` (see deploy/RELEASE).
 AddOn VL_BUILD_ID: 2026-10-22-c
 Carve-outs: 19 machine-pinned paths kept (deploy/partner_sync_carveouts).
+
+## AUTO — partner sync (vl v2026.10.22.5, DS-105 auto-sync, 2026-10-23)
+
+Auto-synced to vl tag `v2026.10.22.5` (`2d658e67687d325efd243cbebd9b875f2b980621…`). Build commit `7a4ea1247e6bef9e99aa15de07093f197e88e0f0…` (see deploy/RELEASE).
+AddOn VL_BUILD_ID: 2026-10-22-c
+Carve-outs: 19 machine-pinned paths kept (deploy/partner_sync_carveouts).
