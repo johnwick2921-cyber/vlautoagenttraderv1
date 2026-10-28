@@ -570,6 +570,37 @@ func (t *TCPTrader) IsAccountTradeable(name string) bool {
 	return t.isAccountTradeable(name)
 }
 
+// LiveAccountCount is how many accounts the wire's LIVE accounts_list holds
+// right now (0 = none received, or NT8 linked with its broker connection down
+// so the AddOn sent an empty frame). READ-ONLY, for the installation gate's
+// sim_accounts leg to tell an EMPTY live list from an account missing out of a
+// NON-empty one (m430). It never feeds an order path.
+func (t *TCPTrader) LiveAccountCount() int {
+	accts, _ := t.server.GetAccountsList()
+	return len(accts)
+}
+
+// LastPositionsFrame is the last positions frame the AddOn sent for THIS
+// trader's bound account, however old: how many NON-FLAT positions it carried,
+// when it was received, and the symbol's latest entry receipt (zero when none).
+// ok=false means no frame was ever received in this process. READ-ONLY, for the
+// installation gate's broker-quiet rule (m433); it never feeds an order path.
+func (t *TCPTrader) LastPositionsFrame() (open int, received, entryAfter time.Time, ok bool) {
+	if t == nil || t.server == nil {
+		return 0, time.Time{}, time.Time{}, false
+	}
+	snap, received, entryAfter, ok := t.server.PositionsForExecutionReceipt(t.boundAccount, t.symbol)
+	if !ok {
+		return 0, time.Time{}, entryAfter, false
+	}
+	for _, p := range snap {
+		if p.Quantity != 0 {
+			open++
+		}
+	}
+	return open, received, entryAfter, true
+}
+
 // entryBracket is a market entry's OWN stop and target, carried INTO the send
 // (W1b FOLD-3) instead of through the shared (symbol, side) maps.
 type entryBracket struct{ stop, target float64 }
