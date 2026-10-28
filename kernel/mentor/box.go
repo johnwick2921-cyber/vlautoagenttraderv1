@@ -104,7 +104,9 @@ type Box struct {
 // BoxCfg holds the §4.1 knobs.
 type BoxCfg struct {
 	// TF is the box timeframe: "1m" (default, the course frame), "2m"
-	// (2025 extra), "5mha" (5m Heikin Ashi, 2025 extra). Default off for
+	// (2025 extra), "5mha" (the same FTGH/FTGL two-swing algorithm run on 5m
+	// Heikin Ashi candles — it is NEITHER the 2025 X10 one-colour-change
+	// supply/demand zone NOR the 2026 box; see the guide card). Default off for
 	// the non-course options.
 	TF string
 	// TouchBandPts: a wick within this of an edge counts as a touch;
@@ -435,7 +437,15 @@ func (e *Evaluator) latchBoxes(fresh []Box, bars []market.Kline, cfg BoxCfg) []B
 	}
 	for _, b := range fresh {
 		role := string(b.Kind)
-		if _, ok := e.State.LatchedBoxes[role]; ok {
+		if old, ok := e.State.LatchedBoxes[role]; ok {
+			// m429 (R4, owner 2026-10-25 "if there is a new box use it, if not
+			// use the old box"): a fresh RTH box of this role replaces the
+			// evening one; a role with no fresh RTH box keeps its evening box.
+			if e.freshRTHReplaces(old, b) {
+				e.State.LatchedBoxes[role] = b
+				e.State.PostEscapeBoxes = dropPreRTHPost(e.State.PostEscapeBoxes, b)
+				e.note("box %s replaced by the fresh RTH box %.2f–%.2f (formed %s CT; evening box %.2f–%.2f formed %s CT) — mentor_box_fresh_rth_pair [D4.1 p2 @02:39]", strings.ToUpper(role), b.Bottom, b.Top, kernel.TableTimeCT(time.UnixMilli(b.FormedAtMs)), old.Bottom, old.Top, kernel.TableTimeCT(time.UnixMilli(old.FormedAtMs)))
+			}
 			continue
 		}
 		e.State.LatchedBoxes[role] = b

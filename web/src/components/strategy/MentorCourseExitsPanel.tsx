@@ -35,11 +35,11 @@ export type CourseExitsKey =
 export const MENTOR_COURSE_EXITS_DEFAULTS = {
   mentor_swing_ema34_is_first_target: true,
   mentor_swing_runner: true,
-  mentor_resonance_runner_tp_old_high: true,
+  mentor_resonance_runner_tp_old_high: false,
   mentor_be_before_partial: true,
   mentor_isb_c3_partial_any_profit: true,
   mentor_reverse_isb_as_phl: true,
-  mentor_box_fresh_rth_pair: false,
+  mentor_box_fresh_rth_pair: true,
   mentor_ema9_visit_cap: 'shared',
   mentor_swing4h_contracts: 2,
   mentor_isb_max_pts: 30,
@@ -72,9 +72,9 @@ const COPY = {
     es: 'SWING: mantener un runner (≥ 2 contratos)',
   },
   mentor_resonance_runner_tp_old_high: {
-    zh: '共振：runner 止盈移到前高之外',
-    en: 'Resonance: move the runner TP past the old high',
-    es: 'Resonancia: mover el TP del runner más allá del máximo anterior',
+    zh: '共振：runner 止盈封顶在前高之外（关 = 不封顶，课程默认）',
+    en: 'Resonance: cap the runner TP at the level past the old high (OFF = no cap, the course default)',
+    es: 'Resonancia: limitar el TP del runner al nivel tras el máximo anterior (OFF = sin tope, el curso por defecto)',
   },
   mentor_be_before_partial: {
     zh: '1:1 部分止盈前，到一半就保本（课程默认）',
@@ -92,9 +92,9 @@ const COPY = {
     es: 'Tratar el ISB inverso como PHL/PLH',
   },
   mentor_box_fresh_rth_pair: {
-    zh: '08:30 CT 重新画 RTH 箱体',
-    en: 'Fresh FTGH/FTGL pair at the 08:30 CT RTH open',
-    es: 'Nuevo par FTGH/FTGL en la apertura RTH 08:30 CT',
+    zh: 'RTH 新箱体取代夜盘箱体(同方向)',
+    en: 'A fresh RTH FTGH/FTGL replaces the evening box of its role',
+    es: 'Un FTGH/FTGL nuevo de RTH reemplaza la caja nocturna de su rol',
   },
   mentor_ema9_visit_cap: {
     zh: 'EMA 9 触碰次数上限',

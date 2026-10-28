@@ -51,11 +51,11 @@ it('the course-exits defaults are the code defaults (course-defaults-30)', () =>
   expect(MENTOR_COURSE_EXITS_DEFAULTS).toMatchObject({
     mentor_swing_ema34_is_first_target: true,
     mentor_swing_runner: true,
-    mentor_resonance_runner_tp_old_high: true,
+    mentor_resonance_runner_tp_old_high: false,
     mentor_be_before_partial: true,
     mentor_isb_c3_partial_any_profit: true,
     mentor_reverse_isb_as_phl: true,
-    mentor_box_fresh_rth_pair: false,
+    mentor_box_fresh_rth_pair: true,
     mentor_swing4h_contracts: 2,
     mentor_isb_max_pts: 30,
   })
