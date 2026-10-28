@@ -2,6 +2,11 @@
 # MUST NEVER overwrite (each is pinned by a deploy/ test). One path per line,
 # '#' starts a comment, blank lines are ignored. The sync drops these paths and
 # keeps the partner copy. Sorted.
+# The whole workflows dir: the sync job's GITHUB_TOKEN can never push a change to
+# any .github/workflows/* file (GitHub refuses without the 'workflows' permission),
+# so one vl workflow edit used to REFUSE the entire sync (docker-build.yml 10-20,
+# pr-go-test-coverage.yml 10-26). Workflow changes are brought over by a normal PR.
+.github/workflows
 .github/workflows/release.yml
 .github/workflows/vl-auto-sync.yml
 branding/census_test.go
