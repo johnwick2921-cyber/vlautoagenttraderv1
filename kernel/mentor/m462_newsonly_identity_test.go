@@ -52,7 +52,20 @@ func m462LegacyState(st State) State {
 	}
 	st.Refusals = out
 	st.RollingHTFRefusedAt = 0
+	// m465 P1 (release #60): the escalation lines and the early-read watermark
+	// are new state the pre-m462 golden never carried; the identity runs with
+	// the m465 knobs at their pre-#60 values (m462PreM465Knobs).
+	st.Trigger15, st.Trigger30, st.TriggerGovTF, st.LastForming15mAt = nil, nil, 0, 0
 	return st
+}
+
+// m462PreM465Knobs puts the release #60 P1 knobs at their pre-#60 values (no
+// early 15m read, mode C from the last closed pairs, no trigger escalation), so
+// the stored-news-only identity still compares like with like.
+func m462PreM465Knobs(cfg *Config) {
+	cfg.Early15mRead = false
+	cfg.MTFConfluenceSource = MTFConfluenceLastPair
+	cfg.TriggerEscalation = false
 }
 
 func TestM462StoredNewsOnlyIsThePreM462Behaviour(t *testing.T) {
@@ -78,6 +91,15 @@ func TestM462StoredNewsOnlyIsThePreM462Behaviour(t *testing.T) {
 			old := flatNearScale
 			flatNearScale = c.scale
 			defer func() { flatNearScale = old }()
+			// m465 (#60): E6's inside-the-opposing-box rule has no knob (the
+			// course is explicit); switch it off here so the pre-#60 golden
+			// still proves every other m465 change is undone by its knob.
+			nearBoxInsideOpposingOff.Store(true)
+			defer nearBoxInsideOpposingOff.Store(false)
+			midRangeLegacyRole.Store(true) // m466 G37 (#61, no knob): the pre-#61 b.Kind mid-range read
+			defer midRangeLegacyRole.Store(false)
+			boxConflictLegacySkip.Store(true) // release #61 review round 2 (no knob): the pre-#61 conflict skip of the box-return walk
+			defer boxConflictLegacySkip.Store(false)
 			bars := c.tape(t)
 			from := c.from
 			if from < 0 {
@@ -90,6 +112,16 @@ func TestM462StoredNewsOnlyIsThePreM462Behaviour(t *testing.T) {
 			}
 			cfg := c.cfg()
 			cfg.HTFGateNewsOnly = true // the explicitly STORED old value
+			// m465 P2 (release #60): the reference predates the ISB loss range
+			// box; mentor_isb_loss_box=band is the pre-#60 rule, so this pin
+			// also proves band mode reproduces the old State byte for byte.
+			cfg.ISBLossBox = ISBLossBoxBand
+			m465PreValues(&cfg) // m465 (#60): the pre-#60 knob values — this golden predates them
+			m462PreM465Knobs(&cfg)
+			m466PreValues(&cfg)   // m466 P3 (#61): the pre-#61 knob values — this golden predates them
+			m61PreP4(&cfg)        // m466 P4 (#61): the pre-#61 swing ISB knobs (required, keep OFF) — this golden predates them
+			m466P2PreValues(&cfg) // m466 P2 (#61): the pre-#61 knob values — this golden predates them
+			m466P1PreValues(&cfg) // m466 P1 (#61): the pre-#61 knob values — this golden predates them
 			e := New(cfg)
 			w := want[c.name]
 			if len(w) != len(bars)-from {

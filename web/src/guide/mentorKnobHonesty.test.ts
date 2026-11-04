@@ -72,6 +72,56 @@ describe('mentor guide knob honesty', () => {
     expect(card?.systemDefault).toBe(m![1])
   })
 
+  // m465 P2 (release #60, D4.2-R27): the ISB loss box card's default is the
+  // kernel DefaultConfig value, read — never retyped.
+  it('the ISB loss box card defaults to the kernel ISBLossBox (m465, range)', () => {
+    const goCfg = readFileSync(
+      resolve(process.cwd(), '..', 'kernel/mentor/mentor.go'),
+      'utf8'
+    )
+    const goLim = readFileSync(
+      resolve(process.cwd(), '..', 'kernel/mentor/limits.go'),
+      'utf8'
+    )
+    const c = /ISBLossBox:\s+(\w+),/.exec(goCfg)
+    expect(c).not.toBeNull()
+    const v = new RegExp(c![1] + '\\s+=\\s+"(\\w+)"').exec(goLim)
+    expect(v).not.toBeNull()
+    const card = mentorKnobs.find((k) => k.settingId === 'mentor_isb_loss_box')
+    expect(card?.live).toBe(true)
+    expect(card?.systemDefault).toBe(v![1])
+  })
+
+  // m466 P4 (release #61): the three swing knob cards' defaults are the Go
+  // resolver defaults, read — never retyped.
+  it('the swing ISB / runner TP cards default to the Go resolver defaults (m466 P4)', () => {
+    const swing = readFileSync(
+      resolve(process.cwd(), '..', 'kernel/mentor/swing4h.go'),
+      'utf8'
+    )
+    const exits = readFileSync(
+      resolve(process.cwd(), '..', 'trader/mentor_course_exits.go'),
+      'utf8'
+    )
+    const cb = /SwingISBCloseBackNotRequired\s+=\s+"(\w+)"/.exec(swing)
+    expect(cb).not.toBeNull()
+    const tp = /mentorSwingRunnerTPNone\s+=\s+"(\w+)"/.exec(exits)
+    expect(tp).not.toBeNull()
+    const keep = /mentorBoolKnob\(rc\.MentorSwingISBKeep, (true|false)\)/.exec(
+      exits
+    )
+    expect(keep).not.toBeNull()
+    const card = (id: string) => mentorKnobs.find((k) => k.settingId === id)
+    expect(card('mentor_swing_isb_close_back')?.live).toBe(true)
+    expect(card('mentor_swing_isb_close_back')?.systemDefault).toBe(cb![1])
+    expect(card('mentor_swing_runner_tp')?.live).toBe(true)
+    expect(card('mentor_swing_runner_tp')?.systemDefault).toBe(tp![1])
+    expect(card('mentor_swing_isb_keep')?.live).toBe(true)
+    expect(card('mentor_swing_isb_keep')?.systemDefault).toBe(
+      keep![1] === 'true' ? 'ON' : 'OFF'
+    )
+  })
+
   it('has no card for the retired ISBStopMinPts field (no runtime reader)', () => {
     expect(
       mentorKnobs.find((k) => k.settingId === 'Config.ISBStopMinPts')

@@ -32,6 +32,10 @@ func c52w4Fixture(t *testing.T, curLow, curHigh float64) (*Evaluator, []market.K
 	cfg.ISBBufferPts = 0
 	cfg.LocTriggerFilter = false
 	cfg.RoomMultiple = 0.5
+	// m466 G33 (release #61): the synthetic ramp's wide 47-pt red mother inside
+	// a ~50-pt window IS a too-small range for its candles (D4.2-R33); this pin
+	// is the EMA frame, so the guard is off.
+	cfg.SmallRangeGuard = false
 	t0 := time.Date(2026, time.September, 15, 10, 0, 0, 0, ctime()).UnixMilli()
 	mk := func(i int, o, h, l, c float64) market.Kline {
 		return market.Kline{OpenTime: t0 + int64(i)*60_000, CloseTime: t0 + int64(i)*60_000 + 59_999, Open: o, High: h, Low: l, Close: c}
@@ -111,6 +115,10 @@ func TestC52W4ReverseISBUsesThe2mEMA9(t *testing.T) {
 // the trader watches, so no reverse ISB. Mutant: 1m EMA -> RED (it fired).
 func TestC52W4ReverseISBRefusesWhenOnly1mEMA9Touches(t *testing.T) {
 	e, bars, now := c52w4Fixture(t, 137, 141.5)
+	// m465 (#60, D5.4-R7): the default touch is the mother + ISB pair, and the
+	// wide mother reaches the 2m EMA 9; this pins the FRAME (1m vs 2m EMA), so
+	// it reads the ISB candle alone (the knob's pre-#60 side).
+	e.Cfg.ISBReverseTouch = ISBReverseTouchISBCandle
 	e1m, e2m := c52w4EMAs(bars, now)
 	if !(e1m >= 137 && e1m <= 141.5 && e2m > 141.5) {
 		t.Fatalf("fixture premise broken: ema9(1m)=%.3f inside [137,141.5], ema9(2m)=%.3f above", e1m, e2m)

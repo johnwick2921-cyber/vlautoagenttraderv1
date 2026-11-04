@@ -54,6 +54,19 @@ const mentorKnobKeys: Record<string, { settingId: string; live: boolean }> = {
     settingId: 'risk_control.mentor_tuning.15m_ib_requires_5m_isb',
     live: true,
   },
+  // m465 P1 (release #60): early 15m read, standing-box mode C, trigger escalation.
+  'Early 15m read (two 5m candles)': {
+    settingId: 'risk_control.mentor_tuning.15m_early_read',
+    live: true,
+  },
+  'Mode C reads the standing 15m + 5m boxes': {
+    settingId: 'risk_control.mentor_tuning.mtf_confluence_source',
+    live: true,
+  },
+  'Trigger escalation 5m → 15m → 30m': {
+    settingId: 'risk_control.mentor_tuning.trigger_escalation',
+    live: true,
+  },
   '5m/15m box conflict end': {
     settingId: 'risk_control.mentor_tuning.tf_conflict_end',
     live: true,
@@ -123,7 +136,14 @@ const mentorKnobKeys: Record<string, { settingId: string; live: boolean }> = {
     live: true,
   },
   'PHL entry buffer': { settingId: 'Config.PHLEntryBufferPts', live: false },
-  'Wick microscalp': { settingId: 'Config.WickMicroscalpEnabled', live: false },
+  'Wick microscalp': {
+    settingId: 'risk_control.mentor_tuning.wick_microscalp',
+    live: true,
+  },
+  'Wick safe play': {
+    settingId: 'risk_control.mentor_tuning.wick_safe_play',
+    live: true,
+  },
   'Stop ceiling': { settingId: 'Config.StopCeilingPts', live: false },
   'Room multiple': { settingId: 'Config.RoomMultiple', live: false },
   'Near-box room': {
@@ -160,6 +180,56 @@ const mentorKnobKeys: Record<string, { settingId: string; live: boolean }> = {
   },
   'ISB size cut: in-range gap': {
     settingId: 'risk_control.mentor_tuning.isb_in_range_gap_pts',
+    live: true,
+  },
+  // m465 P3 (release #60) structure-fidelity knobs.
+  'Trendline entry touch': {
+    settingId: 'risk_control.mentor_tuning.trendline_entry_touch',
+    live: true,
+  },
+  'Near-box: between two boxes exempt': {
+    settingId: 'risk_control.mentor_tuning.near_box_between_exempt',
+    live: true,
+  },
+  'PHL flat low': {
+    settingId: 'risk_control.mentor_tuning.phl_flat_low',
+    live: true,
+  },
+  'Reverse ISB: EMA 9 touch': {
+    settingId: 'risk_control.mentor_tuning.isb_reverse_touch',
+    live: true,
+  },
+  'Key level: Uno Reverse after a hold': {
+    settingId: 'risk_control.mentor_tuning.uno_key_levels',
+    live: true,
+  },
+  'Session-open wick + gap edge levels': {
+    settingId: 'risk_control.mentor_tuning.session_open_levels',
+    live: true,
+  },
+  'Line order cancel: current line price': {
+    settingId: 'risk_control.mentor_tuning.level_arm_line_cancel',
+    live: true,
+  },
+  'PHL higher low: whole pullback': {
+    settingId: 'risk_control.mentor_tuning.phl_pullback_low',
+    live: true,
+  },
+  // m466 P1 (release #61) boxes, breaks, ranges.
+  '5m ISB box: newest inside bar': {
+    settingId: 'risk_control.mentor_tuning.mentor_5m_box_source',
+    live: true,
+  },
+  'Break direction lock': {
+    settingId: 'risk_control.mentor_tuning.mentor_break_direction_lock',
+    live: true,
+  },
+  'Too-small range guard': {
+    settingId: 'risk_control.mentor_tuning.mentor_small_range_guard',
+    live: true,
+  },
+  'Mid-range: trade with the rejection': {
+    settingId: 'risk_control.mentor_tuning.mentor_mid_range_reject_side',
     live: true,
   },
   'Mid-range gap': { settingId: 'Config.RangeGapPts', live: false },
@@ -256,6 +326,14 @@ const mentorKnobKeys: Record<string, { settingId: string; live: boolean }> = {
     settingId: 'mentor_resonance_runner_tp_old_high',
     live: true,
   },
+  'Resonance on any same-way inside bar': {
+    settingId: 'mentor_resonance_raw_isb',
+    live: true,
+  },
+  'Smaller size on a 2m entry': {
+    settingId: 'mentor_2m_reduce_size',
+    live: true,
+  },
   'Break-even before the 1:1 partial': {
     settingId: 'mentor_be_before_partial',
     live: true,
@@ -278,6 +356,25 @@ const mentorKnobKeys: Record<string, { settingId: string; live: boolean }> = {
   'Max box height': { settingId: 'mentor_box_max_height_pts', live: true },
   'Swing skip stop (đừng vô)': {
     settingId: 'mentor_swing_max_stop_pts',
+    live: true,
+  },
+  'ISB loss box': { settingId: 'mentor_isb_loss_box', live: true },
+  'Opening 5m range break': { settingId: 'mentor_open5m_break', live: true },
+  'News wait: which lines': { settingId: 'mentor_news_wait_mode', live: true },
+  'News: read the 1h/4h lines before the print': {
+    settingId: 'mentor_news_read_lead_min',
+    live: true,
+  },
+  'Swing inside bar — close back': {
+    settingId: 'mentor_swing_isb_close_back',
+    live: true,
+  },
+  'Swing inside-bar order kept on a close through': {
+    settingId: 'mentor_swing_isb_keep',
+    live: true,
+  },
+  'Swing runner take-profit': {
+    settingId: 'mentor_swing_runner_tp',
     live: true,
   },
 }
@@ -371,7 +468,7 @@ export const mentor: GuideSection = {
       items: [
         {
           title: 'Read-only live evaluator state',
-          body: 'The planner page and the trader dashboard show a card titled "Mentor — what trades". It is read-only and reports what the mentor evaluator holds RIGHT NOW: the 4h trigger direction and since-when, the 1h trigger, the 5m trigger (price + since), the HTF verdict (follow / sit-out / no-trigger) and whether the HTF gate is active (htf_gate_news_only), the mentor levels in effect (price, a readable kind name, drawn-at, visits today — the 4h trigger line and the wick-microscalp extreme are tagged "target only": they join the level set for the target ladder but the touch loop never trades them; the 1h trigger line is not a target and is not listed (release #52 B5)), the history depth line, and the next-window / day-stop state (done-after-win, stop-after-loss, window — a -1 window reads "no time window" and still names the 15:45 CT entry cutoff and the 14:45 CT EOD flat; it never means any hour). It never mutates the evaluator — it reads under the existing locks and never blocks the tick.',
+          body: 'The planner page and the trader dashboard show a card titled "Mentor — what trades". It is read-only and reports what the mentor evaluator holds RIGHT NOW: the 4h trigger direction and since-when, the 1h trigger, the 5m trigger (price + since), the HTF verdict (follow / sit-out / no-trigger) and whether the HTF gate is active (htf_gate_news_only), the mentor levels in effect (price, a readable kind name, drawn-at, visits today — the 4h trigger line and the D4.3 5m-wick targets (wick_microscalp) are tagged "target only": they join the level set for the target ladder but the touch loop never trades them; a D4.3 wick zone (wick_zone, knob wick_microscalp) is listed by its two edges and drawn on the chart as one rectangle; the 1h trigger line is not a target and is not listed (release #52 B5)), the history depth line, and the next-window / day-stop state (done-after-win, stop-after-loss, window — a -1 window reads "no time window" and still names the 15:45 CT entry cutoff and the 14:45 CT EOD flat; it never means any hour). It never mutates the evaluator — it reads under the existing locks and never blocks the tick.',
           cite: 'Engineering rule — read-only truth panel (release #10), not from the course · trader/mentor_truth_panel.go MentorTruthSnapshot · api/handler_mentor_truth.go · target-only kinds: kernel/mentor/eval.go (the touch loop skips KindHTFTrigger / KindWickMicroscalp) · web/src/components/mentor/MentorTruthCard.tsx MENTOR_TARGET_ONLY_KINDS · web/src/components/mentor/mentorWindowLabel.ts',
         },
         {
@@ -389,6 +486,12 @@ export const mentor: GuideSection = {
             'Old highs/lows: ONE old high and ONE old low — the chart draws what trades',
           body: 'The bot keeps exactly one old high and one old low: the NEAREST UNBROKEN old high above price and the nearest unbroken old low below it. They are picked from ALL the 5m/15m swing pivots of the lookback (12 h of 5m, 24 h of 15m; every pivot price is a 1m wick) — release #23: the bot used to keep only the newest 3 per side BEFORE testing them, so an older unbroken high behind 3 broken ones was invisible (10-13 08:30: old low 30613.25 missing); a pivot drops out the moment a later closed 1m candle trades beyond it (a wick above an old high breaks it — the candle need not close). The candle being judged is measured against the extremes that stood BEFORE it. Either side can be empty — at a fresh high of the window there is no old high above. The panel and the chart draw exactly these two lines, never folded into a key level and never pruned: the lines you see are the lines the bot sizes, targets and builds legs from. (Before release #22 the bot used 12 raw pivots, most already broken, while the chart drew a cleaned 3–5.)',
           cite: '§6 ladder "nearest old high → EMA 34 → next level" [D3.3 p1 @04:11, 07:12] · §2.1 rule 2 [D4.1 p1 @08:05 written] · law 2 / D3.4 p1 @08:19 (a break needs no close) · kernel/mentor/eval.go swingOldExtremeLevels · kernel/mentor/level_display.go DisplayLevels',
+        },
+        {
+          title:
+            'Levels and touches (release #61): the open wick, the gap edge, the Uno flip, the line cancel, the whole pullback',
+          body: 'Five course rules from the full video read, each ON by default with a knob back to the pre-#61 behaviour (Mentor method numbers). (1) The session OPEN candle’s wick is an old high/low: the first 5m candle of the CME session (17:00–17:05 CT) — "cái râu này nó sẽ là cái đỉnh" (29,136.00, Sun 13 Sep) — joins the old-high/low candidates with no left-neighbour test; the usual unbroken test and nearest pick decide (knob session_open_levels). (2) The GAP edge is a level: when the open candle left empty space of 20 pts or more to the prior session’s last close, that last close (Friday 29,391.25 in the lesson) is drawn as a "gap edge" — a location, a target and an obstacle — until a 1m candle trades through it; the bot never trades the gap fill itself ("em không đánh theo gap") (same knob). (3) Uno Reverse: a key level that HELD today and then breaks flips its role once — the backtest from the other side is a fresh first touch and its reject arms a PHL/PLH (counter level_broken_uno); a first touch that closes through, or a second break after the flip, still makes it ISB-only for the day (knob uno_key_levels). (4) A resting order on a trendline or the EMA 34 is cancelled by a close through the line where it is NOW, not where it was when the order was placed, and a trendline that died cancels its order (level_arm_cancel_current_line / level_arm_line_gone; knob level_arm_line_cancel). (5) A PHL needs a higher low for the WHOLE pullback: a pullback candle that already went at or under the prior low refuses it (phl_pullback_lower_low, mirror plh_pullback_higher_high; knob phl_pullback_low).',
+          cite: 'G10 D3.1-R26 [D3.1 p1 @11:32–12:22] · G11 D3.1-R20/R16/R23 [D3.1 p1 @07:48–09:51] · G2 D1.3-R21 [D1.3 p1 @12:31–12:58] vs D5.2-R22 [D5.2 p1 @19:44–20:25] · G17 D2.3-R34 [D2.3 p1 @23:35–24:03] · G41 D2.2-R59 [D2.2 p3 @08:25–09:25] · kernel/mentor/session_open_levels.go · kernel/mentor/uno_key_level.go · kernel/mentor/level_arm_line.go · kernel/mentor/phl.go phlPullbackRefusal',
         },
         {
           title: 'Fold it away',
@@ -411,17 +514,17 @@ export const mentor: GuideSection = {
       cards: [
         {
           title: 'Inside bar (ISB)',
-          body: 'Candle 2’s BODY inside candle 1’s FULL range (wicks included). Direction = candle 1’s colour (“nó chỉ có 2 màu thôi, nó không có màu thứ 3” [D1.4 p1 @09:20–09:38]); a DOJI candle 1 has no colour, so the bot REFUSES it — the course is silent on a doji, this fail-closed refusal is OURS (CTO ruling 2026-10-03; the old doji-long was audited wrong) and awaits an owner ruling. Entry at the ISB candle’s own extreme + 1.5 pt (6 ticks) — exactly that on the wire, nothing is added at placement — stop 1.5 beyond its opposite extreme, no fixed stop size — reduce the size for a 20–25 pt stop and skip above 25. The FIRST inside-bar candle is I1 — the order sits at its extremes and the containment test is against I1. A following candle that does not fill and whose BODY is NOT inside I1 → cancel at once. Body inside I1 → keep. I1 counts as candle 1 of the stack; candles 2 and 3 inside → keep; the 4th not filling → cancel (it becomes a 5m inside bar = rest). The course counts 1m candles; on the 2m the same 4 is OURS (knob isb_stack_cancel_candle_2m), and an optional tiny-stop exception (isb_stack_tiny_stop_pts, OFF) keeps a very small-stop arm past the cancel candle.',
+          body: 'Candle 2’s BODY inside candle 1’s FULL range (wicks included). Direction = candle 1’s colour (“nó chỉ có 2 màu thôi, nó không có màu thứ 3” [D1.4 p1 @09:20–09:38]); a DOJI candle 1 has no colour, so the bot REFUSES it — the course is silent on a doji, this fail-closed refusal is OURS (CTO ruling 2026-10-03; the old doji-long was audited wrong) and awaits an owner ruling. Entry at the ISB candle’s own extreme + 1.5 pt (6 ticks) — exactly that on the wire, nothing is added at placement — stop 1.5 beyond its opposite extreme, no fixed stop size — skip a stop above 20 pts (release #61, D4.1-R12 “inside bar mà nó hai mươi mấy điểm, làm ơn giúp em đừng vô” [D4.1 p1 @05:41–06:08]; the D3.3 “20–25 reduce size” option no longer applies to an ISB). The FIRST inside-bar candle is I1 — the order sits at its extremes and the containment test is against I1. A following candle that does not fill and whose BODY is NOT inside I1 → cancel at once. Body inside I1 → keep. I1 counts as candle 1 of the stack; candles 2 and 3 inside → keep; the 4th not filling → cancel (it becomes a 5m inside bar = rest). The course counts 1m candles; on the 2m the same 4 is OURS (knob isb_stack_cancel_candle_2m), and the tiny-stop exception (isb_stack_tiny_stop_pts, 12.5 pts since release #60 — the worked example’s measured stop, D5.1-R26 [D5.1 p2 @02:24–04:41]) keeps an arm whose stop is at or under 12.5 pts past the cancel candle.',
           tag: 'D1.4 p1',
         },
         {
           title: 'PHL / PLH — the pullback',
-          body: 'Uptrend pullback → buy stop 0.50 over the previous candle’s high, stop 0.50 under that candle’s low (the drawn rays, D2.2-R10), target NEAR the old high (5 pts short of it — the 5 is ours, knob phl_target_shy_pts). Downtrend bounce → the exact mirror. The pullback stop can ROLL: with NO drawn level touched, the buy/sell stop is re-armed to EACH closed pullback candle’s extreme until it fills — "Mình ra một lệnh buy stop trên đỉnh của từng cây nến đã đóng xong" [D2.2 p1 @02:44–03:34, 11:05–11:36]. This rolling entry is ON by default (release #52) and works as a LADDER (release #59, m464): the ladder STARTS only when the pullback SHOWS — a RED candle in an uptrend, a GREEN candle in a downtrend [D2.2 p1 @01:52–01:57, @10:47–10:51] — and once it runs EVERY closed candle is the next rung, whatever its colour: the mentor’s own last rung is the small GREEN candle of an uptrend pullback (he draws the buy stop 29,396.25 over its high 29,395.75 and the stop 29,386.00 under its low 29,386.50; since the release #59 fix round the bot’s rung is exactly that — entry 0.50 over the high, stop 0.50 under the low, the drawn rays) [D2.2-R7 p1 @02:26–03:27; D2.2-R9/R10 p1 @04:14–05:43]. On the REAL candles of the lesson’s replay day (Fri 11 Sep 2026) the bot computes the mentor’s rungs to the tick, but at 10:14 it REFUSES the last one (rolling_phl_15m_box_ban): the 10:00 15m candle closes at that very instant as an inside bar of the RED 09:45 one — a SHORT 15m ISB box (29,433.00 / 29,360.00) around a LONG rung — and from Day 4 on the course bans every PHL/PLH inside a standing 15m ISB box and every lower-timeframe trade against a 15m ISB until price leaves it (“đừng trade. Đợi nó thoát cả luôn” [D4.2-R8/R10 p1 @04:01–04:03, @05:34–05:37]); with the tape’s own 5m trigger (it flips short at 29,410 on the pullback) the same rung is also refused rolling_room. A Day-2 example against Day-4 rules: the bot follows the later rules, every skipped rung is named and counted, and the conflict is an open question for the mentor (release #59 review). Each rung is checked on its own: a rung refused by the 25-pt stop ceiling, the room rule, the 1:1 floor, a higher low that broke, a location ban or the 5m trigger line (like every entry it must agree with the 5m trigger [X8 @06:25, @08:37–08:48]) is SKIPPED with its name counted (rolling_phl_stop_ceiling, rolling_room, rolling_phl_trigger_side, …), the older resting stop is cancelled because the ladder has moved past it, and the ladder goes on to the next closed candle — a refused rung never ends the ladder (before #59 it did, so the 10:13 candle of the lesson’s worked buy, a 29-pt stop, killed the ladder and the mentor’s 10:14 entry was never placed). The ladder ENDS when a candle breaks the newest rung — the fill when it was armed; when that rung had been refused it is the reaction we have no order for, counted rolling_ladder_reacted_no_order, and the bot does not chase it — and when the 4h side flips, no old extreme is left to target, or a level touch owns the entry. The breaking candle never starts a new ladder; the next pullback candle can. It follows the 4h direction (inside the 08:30–09:30 CT open window and the news period the 4h/1h gate also applies, so a 1h trigger opposite the 4h sits the roll out; outside them the 4h alone is the trend — the roll has no clock window of its own, and a resting roll is not cancelled when the open window closes), and it needs a nearest old high/low, the 1–2 candle wait and a higher low. It obeys the same location bans as every PHL/PLH: inside a standing 5m/15m/30m ISB box, between an FTGL and an FTGH, mid-range between two levels, next to a box (the nearest box edge in the trade direction closer than 2 x the candle’s range) or when the candle is as big as the rank to the next key level, that rung is refused (counted as rolling_<name>, e.g. rolling_phl_5m_box_ban) and a resting stop is cancelled — the next candle’s rung is read again [D3.4 p2 @07:27–10:35; D3.2 p2 @08:34–08:55, @21:53–23:08; D2.2 p3 @14:03–16:03; X4 @06:31]. A level that has left the level set no longer "owns" the entry, so a stale touch can never switch the roll off for the rest of the day. A candle TOUCHING A DRAWN LEVEL is a different entry: the FIRST touching candle is the reference and never rolls [D2.3 p1 @17:55–19:12; D5.3 p1 @22:10]. Wait 1–2 more pullback candles; a higher low is required (a flat low is an FTGL, not a PHL). The old high is the nearest UNBROKEN old high, and its role is fixed when it is drawn: a PHL (long) only ever targets an old HIGH and a PLH (short) an old LOW — an old low is never a long’s target. Inside a standing 5m (or 15m/30m) ISB box, or between an FTGL and an FTGH, there is no PHL/PLH at all (only the ISB) [D3.4 p2 @07:27–10:35; D3.2 p2 @08:51].',
+          body: 'Uptrend pullback → buy stop 0.50 over the previous candle’s high, stop 0.50 under that candle’s low (the drawn rays, D2.2-R10), target NEAR the old high (5 pts short of it — the 5 is ours, knob phl_target_shy_pts). Downtrend bounce → the exact mirror. The pullback stop can ROLL: with NO drawn level touched, the buy/sell stop is re-armed to EACH closed pullback candle’s extreme until it fills — "Mình ra một lệnh buy stop trên đỉnh của từng cây nến đã đóng xong" [D2.2 p1 @02:44–03:34, 11:05–11:36]. This rolling entry is ON by default (release #52) and works as a LADDER (release #59, m464): the ladder STARTS only when the pullback SHOWS — a RED candle in an uptrend, a GREEN candle in a downtrend [D2.2 p1 @01:52–01:57, @10:47–10:51] — and once it runs EVERY closed candle is the next rung, whatever its colour: the mentor’s own last rung is the small GREEN candle of an uptrend pullback (he draws the buy stop 29,396.25 over its high 29,395.75 and the stop 29,386.00 under its low 29,386.50; since the release #59 fix round the bot’s rung is exactly that — entry 0.50 over the high, stop 0.50 under the low, the drawn rays) [D2.2-R7 p1 @02:26–03:27; D2.2-R9/R10 p1 @04:14–05:43]. On the REAL candles of the lesson’s replay day (Fri 11 Sep 2026) the bot computes the mentor’s rungs to the tick, but at 10:14 it REFUSES the last one (rolling_phl_15m_box_ban): the 10:00 15m candle closes at that very instant as an inside bar of the RED 09:45 one — a SHORT 15m ISB box (29,433.00 / 29,360.00) around a LONG rung — and from Day 4 on the course bans every PHL/PLH inside a standing 15m ISB box and every lower-timeframe trade against a 15m ISB until price leaves it (“đừng trade. Đợi nó thoát cả luôn” [D4.2-R8/R10 p1 @04:01–04:03, @05:34–05:37]); with the tape’s own 5m trigger (it flips short at 29,410 on the pullback) the same rung is also refused rolling_room. A Day-2 example against Day-4 rules: the bot follows the later rules, every skipped rung is named and counted, and the conflict is an open question for the mentor (release #59 review). Each rung is checked on its own: a rung refused by the 25-pt stop ceiling, the room rule, the 1:1 floor, a higher low that broke, a location ban or the 5m trigger line (like every entry it must agree with the 5m trigger [X8 @06:25, @08:37–08:48]) is SKIPPED with its name counted (rolling_phl_stop_ceiling, rolling_room, rolling_phl_trigger_side, …), the older resting stop is cancelled because the ladder has moved past it, and the ladder goes on to the next closed candle — a refused rung never ends the ladder (before #59 it did, so the 10:13 candle of the lesson’s worked buy, a 29-pt stop, killed the ladder and the mentor’s 10:14 entry was never placed). The ladder ENDS when a candle breaks the newest rung — the fill when it was armed; when that rung had been refused it is the reaction we have no order for, counted rolling_ladder_reacted_no_order, and the bot does not chase it — and when the 4h side flips, no old extreme is left to target, or a level touch owns the entry. The breaking candle never starts a new ladder; the next pullback candle can. It follows the 4h direction (inside the 08:30–09:30 CT open window and the news period the 4h/1h gate also applies, so a 1h trigger opposite the 4h sits the roll out; outside them the 4h alone is the trend — the roll has no clock window of its own, and a resting roll is not cancelled when the open window closes), and it needs a nearest old high/low, the 1–2 candle wait and a higher low. It obeys the same location bans as every PHL/PLH: inside a standing 5m/15m/30m ISB box, between an FTGL and an FTGH, mid-range between two levels, next to a box (the nearest box edge in the trade direction closer than 2 x the candle’s range) or when the candle is as big as the rank to the next key level, that rung is refused (counted as rolling_<name>, e.g. rolling_phl_5m_box_ban) and a resting stop is cancelled — the next candle’s rung is read again [D3.4 p2 @07:27–10:35; D3.2 p2 @08:34–08:55, @21:53–23:08; D2.2 p3 @14:03–16:03; X4 @06:31]. A level that has left the level set no longer "owns" the entry, so a stale touch can never switch the roll off for the rest of the day. A candle TOUCHING A DRAWN LEVEL is a different entry: the FIRST touching candle is the reference and never rolls [D2.3 p1 @17:55–19:12; D5.3 p1 @22:10]. Wait 1–2 more pullback candles; a higher low is required (a flat low is an FTGL, not a PHL — since release #60 (D2.2-R64, "nó ngang phè… failure to go lower" [D2.2 p3 @07:44–10:15]) a low within the day’s "same price" distance of the prior low (half the average candle range of the last 20 closed candles, the owner’s m428 R2 measure) is refused phl_flat_low_is_ftgl, mirror plh_flat_high_is_ftgh; knob phl_flat_low). The old high is the nearest UNBROKEN old high, and its role is fixed when it is drawn: a PHL (long) only ever targets an old HIGH and a PLH (short) an old LOW — an old low is never a long’s target. Inside a standing 5m (or 15m/30m) ISB box, or between an FTGL and an FTGH, there is no PHL/PLH at all (only the ISB) [D3.4 p2 @07:27–10:35; D3.2 p2 @08:51].',
           tag: 'D2.2 p1',
         },
         {
           title: 'SWING4H — 4h EMA 34',
-          body: 'The line is the 4h EMA 34 known at the start of the current 4h bar (17:00 CT anchor), drawn BEFORE price gets there. If a 4h bucket that the CME calendar says was OPEN has no bars in the stored 1m tape (a data hole, not a weekend or a halt), the line is missing one fold and is wrong by a few tenths of a point (about 0.4 pt during the 10-28 swing trades): the bot marks the line STALE and refuses new SWING4H entries (counted swing_line_gap_stale, named on the boot line) until the hole is refilled and the line re-seeded; a hole older than about 68 folded 4h closes has decayed to nothing and is ignored (release #56, m456). A contract roll is not a hole: a minute that any stitched contract stores counts as present, and the shortened 4h buckets on the two DST-change days are read as the line folds them (release #56, m456). Release #59 (m463, owner order 2026-11-01 “full of it”) makes the swing exactly D5.2: (1) Switch straight down to the 5m; the touch must be LITERAL — the 5m candle’s range must reach the line itself, a wick into it counts (“bắt buộc phải đụng, không được gần đụng”; “đụng ít đụng nhiều gì vẫn phải đụng” [D5.2 p2 @09:12–09:27, @13:56–14:05]). The old 5-pt “line offset toward the approach” is gone — it armed trade 707 off a candle 1.28 pts short of the line; a near miss is now only counted (swing_near_touch). (2) Only the FIRST touching candle counts, with 2 candles of leeway (“lúc nào cũng phải lấy cây nến đầu tiên. Đừng bao giờ lấy cây nến thứ 2”; “em sẽ du di là 2 cây nến” [D5.2 p1 @13:23–13:40, @15:37–15:51]). Reject (closes back on the approach side) → stop order tight on the candle, stop 30 beyond the line. After those two candles there is NO further plain reject in that 4h candle however far price travels in between (swing_not_first_touch) — the old “re-arm once price left the line by the stop distance” rule is removed (it re-armed trades 709/710). (3) Any 5m CLOSE beyond the line — the touching candle, a later candle, or a gap over the line — makes the level INVALID for the rest of that 4h candle (“level đó invalid, không chạm vô nữa, không đụng vô nữa” [D5.2 p3 @19:15–21:56]): any resting order is cancelled and every later reject-shaped touch is refused (swing_level_invalid). The ONLY way back in: a candle closes back across the line and, ONE 5m beat later, an inside bar of that close-back candle (its body inside candle 1’s full range) also closes back → 5m inside bar on the 4H line’s side with the stop AT the line, no time limit [D5.2 p1 @20:31–21:57 · p2 @10:23–10:51]. An inside-bar order that is CANCELLED unfilled (a later 5m close back through the line) does not use the level up — the next inside bar of that 4h candle may enter (“xuất hiện inside bar, tôi vô lệnh”, D5.2-R25; release #59 review: on 10-28 the 18:25 inside bar was cancelled at 18:40 and the 19:00 inside bar was then refused with no note at all); once an inside-bar order has FILLED, later inside bars of that 4h candle are refused, named swing_isb_spent. One setup per level: if the reject order already FILLED and price then closes beyond the line (the trade going against you, short of its stop), the level is invalid but the open swing stays the level’s trade — the inside bar is refused (swing_position_open) and never arms a second swing beside it [D5.2-R19/R23 p1 @13:23–13:40, p3 @19:15–21:56] (release #59 fix round; before it a second arm could fill and the bot lost the first leg’s break-even/hold tracking). Candle 1’s colour does NOT matter (“không quan trọng màu” [D5.2 p3 @06:24–06:52]) — the colour rule borrowed from the 1m ISB is removed, and a doji candle 1 is fine for the swing. (4) A stop of ~100 pts → DO NOT ENTER (“100 điểm quá nhiều rủi ro” — his own example is 91.75 pts; 30–40 or 50–60 are fine with 2 contracts [D5.2 p2 @19:34–21:43]): a swing whose stop is ABOVE mentor_swing_max_stop_pts (default 90) is refused, on the reject and the inside-bar entry alike (swing_max_stop at the evaluator, R31 at the trader’s rule gate — one number). This REVERSES the earlier owner ruling m186 (“take 1–2 MNQ and sit”), on the owner’s order of 2026-11-01 after being shown the quote. A tall reject candle is what makes a reject stop wide: the entry is the candle’s extreme, the stop 30 beyond the line (trades 709/710: 102.25 pts). The B5 sizing cap (swing_max_stop_pts, default 100 → at most 2 MNQ) only bites if you raise the skip above it. (5) When the 4h candle closes the instance is over (“9h đó là xong rồi… mình không có lệnh nào hết” [D5.2 p3 @12:16–13:18]): the line re-bases, the first-touch window resets, and an unfilled order expires at the candle’s close. The candle’s LAST 5m bar is only readable at that close: it is read against ITS OWN candle’s line (not the next one), and a setup on it arms nothing — the instance is over (named swing_candle_closed; release #59 review — before it, that bar was read against the NEXT candle’s line and could arm a swing off a line it never touched). Bars of 4h candles that closed before the bot could read them (a feed gap, or the first minutes after a cold start) are never walked for entries either (named once) — at the MARKET close when the CME shuts inside the candle (the 13:00 CT candle ends at the 16:00 halt, a Friday at the weekend close, an early-close holiday at its close), and the trader cancels a due order on the closed path, so nothing rests into the 17:00 reopen (trade 678 filled 41 s after the reopen off an expiry left inside the break). (6) The swing follows the 4H EMA 34, not the 5m trend: price below the 4h EMA = resistance → short at the touch, above it = support → long (“4 giờ đụng resistance thì mình đánh xuống chứ không lẽ đánh lên?” [D5.2 p3 @18:07–18:25]); no 5m-trend filter. The side comes from where price is against the line only — the EMA’s slope is not read (the course only shows price below a falling EMA and above a rising one; a counter-slope case is an open question for the mentor). Late in the day — an entry inside the LAST 4h bucket (13:00–16:00 CT normal; the shortened close’s bucket on early-close days) — the swing target is cut to at most 30 pts, but never below 1:1 — with a wider stop the target stays at 1:1 [derived: D5.2 p2 @07:00–07:58 “market sắp đóng cửa” → the last 4h bucket; 30 = top of 20–30 @07:21; 1:1 floor 03-CHECKLIST.md:160]. The line folds EVERY closed 4h candle — after a feed gap of 4h or more the candles that opened and closed unseen are folded from the bars on the next tick ("swing 4h EMA34 line folded N 4h closes after a feed gap"). A gap longer than the live slice (~25 h) hides closes the bot cannot read: the line is marked STALE and SWING4H entries are refused (counted swing_line_gap_stale) until a restart — or a history refill (see the re-seed below) — reseeds it from the store; never a guessed line. Every swing refusal is logged as a note and counted in the mentor funnel.',
+          body: 'The line is the 4h EMA 34 known at the start of the current 4h bar (17:00 CT anchor), drawn BEFORE price gets there. If a 4h bucket that the CME calendar says was OPEN has no bars in the stored 1m tape (a data hole, not a weekend or a halt), the line is missing one fold and is wrong by a few tenths of a point (about 0.4 pt during the 10-28 swing trades): the bot marks the line STALE and refuses new SWING4H entries (counted swing_line_gap_stale, named on the boot line) until the hole is refilled and the line re-seeded; a hole older than about 68 folded 4h closes has decayed to nothing and is ignored (release #56, m456). A contract roll is not a hole: a minute that any stitched contract stores counts as present, and the shortened 4h buckets on the two DST-change days are read as the line folds them (release #56, m456). Release #59 (m463, owner order 2026-11-01 “full of it”) makes the swing exactly D5.2: (1) Switch straight down to the 5m; the touch must be LITERAL — the 5m candle’s range must reach the line itself, a wick into it counts (“bắt buộc phải đụng, không được gần đụng”; “đụng ít đụng nhiều gì vẫn phải đụng” [D5.2 p2 @09:12–09:27, @13:56–14:05]). The old 5-pt “line offset toward the approach” is gone — it armed trade 707 off a candle 1.28 pts short of the line; a near miss is now only counted (swing_near_touch). (2) Only the FIRST touching candle counts, with 2 candles of leeway (“lúc nào cũng phải lấy cây nến đầu tiên. Đừng bao giờ lấy cây nến thứ 2”; “em sẽ du di là 2 cây nến” [D5.2 p1 @13:23–13:40, @15:37–15:51]). Reject (closes back on the approach side) → stop order tight on the candle, stop 30 beyond the line. After those two candles there is NO further plain reject in that 4h candle however far price travels in between (swing_not_first_touch) — the old “re-arm once price left the line by the stop distance” rule is removed (it re-armed trades 709/710). (3) Any 5m CLOSE beyond the line — the touching candle, a later candle, or a gap over the line — makes the level INVALID for the rest of that 4h candle (“level đó invalid, không chạm vô nữa, không đụng vô nữa” [D5.2 p3 @19:15–21:56]): any resting order is cancelled and every later reject-shaped touch is refused (swing_level_invalid). The ONLY way back in: a candle closes back across the line and, ONE 5m beat later, an inside bar of that close-back candle (its body inside candle 1’s full range) also closes back → 5m inside bar on the 4H line’s side with the stop AT the line, no time limit [D5.2 p1 @20:31–21:57 · p2 @10:23–10:51]. An inside-bar order that is CANCELLED unfilled (a later 5m close back through the line) does not use the level up — the next inside bar of that 4h candle may enter (“xuất hiện inside bar, tôi vô lệnh”, D5.2-R25; release #59 review: on 10-28 the 18:25 inside bar was cancelled at 18:40 and the 19:00 inside bar was then refused with no note at all); once an inside-bar order has FILLED, later inside bars of that 4h candle are refused, named swing_isb_spent. One setup per level: if the reject order already FILLED and price then closes beyond the line (the trade going against you, short of its stop), the level is invalid but the open swing stays the level’s trade — the inside bar is refused (swing_position_open) and never arms a second swing beside it [D5.2-R19/R23 p1 @13:23–13:40, p3 @19:15–21:56] (release #59 fix round; before it a second arm could fill and the bot lost the first leg’s break-even/hold tracking). Candle 1’s colour does NOT matter (“không quan trọng màu” [D5.2 p3 @06:24–06:52]) — the colour rule borrowed from the 1m ISB is removed, and a doji candle 1 is fine for the swing. Release #61 (m466 P4): by default the close back is NOT required — the inside bar ALONE is the setup, even while price still closes beyond the line (“chị đợi đóng ngược lại cũng được, không thành vấn đề, nhưng chị đợi hơi lâu” [D5.2 p3 @04:49–05:09]); its stop order must sit on the trade side of the line (else named swing_isb_entry_beyond_line, not spent), stop AT the line; mentor_swing_isb_close_back=required restores the close-back rule. And a resting INSIDE-BAR order is no longer cancelled by a later close through the line — only the reject order is (“Để cái cây inside bar này cho em” [D5.2 p2 @10:23–10:51]; mentor_swing_isb_keep, default ON); it rests until it fills or the 4h candle closes. The split swing’s runner has no take-profit by default (mentor_swing_runner_tp=none — held by the 4h [D5.2 p1 @05:40–06:14]). (4) A stop of ~100 pts → DO NOT ENTER (“100 điểm quá nhiều rủi ro” — his own example is 91.75 pts; 30–40 or 50–60 are fine with 2 contracts [D5.2 p2 @19:34–21:43]): a swing whose stop is ABOVE mentor_swing_max_stop_pts (default 90) is refused, on the reject and the inside-bar entry alike (swing_max_stop at the evaluator, R31 at the trader’s rule gate — one number). This REVERSES the earlier owner ruling m186 (“take 1–2 MNQ and sit”), on the owner’s order of 2026-11-01 after being shown the quote. A tall reject candle is what makes a reject stop wide: the entry is the candle’s extreme, the stop 30 beyond the line (trades 709/710: 102.25 pts). The B5 sizing cap (swing_max_stop_pts, default 100 → at most 2 MNQ) only bites if you raise the skip above it. (5) When the 4h candle closes the instance is over (“9h đó là xong rồi… mình không có lệnh nào hết” [D5.2 p3 @12:16–13:18]): the line re-bases, the first-touch window resets, and an unfilled order expires at the candle’s close. The candle’s LAST 5m bar is only readable at that close: it is read against ITS OWN candle’s line (not the next one), and a setup on it arms nothing — the instance is over (named swing_candle_closed; release #59 review — before it, that bar was read against the NEXT candle’s line and could arm a swing off a line it never touched). Bars of 4h candles that closed before the bot could read them (a feed gap, or the first minutes after a cold start) are never walked for entries either (named once) — at the MARKET close when the CME shuts inside the candle (the 13:00 CT candle ends at the 16:00 halt, a Friday at the weekend close, an early-close holiday at its close), and the trader cancels a due order on the closed path, so nothing rests into the 17:00 reopen (trade 678 filled 41 s after the reopen off an expiry left inside the break). (6) The swing follows the 4H EMA 34, not the 5m trend: price below the 4h EMA = resistance → short at the touch, above it = support → long (“4 giờ đụng resistance thì mình đánh xuống chứ không lẽ đánh lên?” [D5.2 p3 @18:07–18:25]); no 5m-trend filter. The side comes from where price is against the line only — the EMA’s slope is not read (the course only shows price below a falling EMA and above a rising one; a counter-slope case is an open question for the mentor). Late in the day — an entry inside the LAST 4h bucket (13:00–16:00 CT normal; the shortened close’s bucket on early-close days) — the swing target is cut to at most 30 pts, but never below 1:1 — with a wider stop the target stays at 1:1 [derived: D5.2 p2 @07:00–07:58 “market sắp đóng cửa” → the last 4h bucket; 30 = top of 20–30 @07:21; 1:1 floor 03-CHECKLIST.md:160]. The line folds EVERY closed 4h candle — after a feed gap of 4h or more the candles that opened and closed unseen are folded from the bars on the next tick ("swing 4h EMA34 line folded N 4h closes after a feed gap"). A gap longer than the live slice (~25 h) hides closes the bot cannot read: the line is marked STALE and SWING4H entries are refused (counted swing_line_gap_stale) until a restart — or a history refill (see the re-seed below) — reseeds it from the store; never a guessed line. Every swing refusal is logged as a note and counted in the mentor funnel.',
           tag: 'D5.2',
         },
       ],
@@ -459,7 +562,7 @@ export const mentor: GuideSection = {
         [
           'Trendline',
           'Two CONFIRMED two-sided structural swings (left fractal + the next bar confirms it), at least 5 bars apart (a floor that is OURS, not the course — the mentor only says a trendline must slope [D2.3 p1 @06:26–07:00]; an open question to him; a 1H/4H line needs 2 HTF bars; bars of the frame the line is drawn on: the 1m in the first 30 minutes after the 08:30 CT open, the closed 2m candles after that — the mentor draws his trendlines on the 2m, "Thường em sẽ vẽ trendline khung 2 phút" [X9 @03:35–03:49], and trades the 1m only until 09:00 [Routine trước khi trade @00:00:34–00:01:14]; exec_2m_after_30m OFF = the 1m all day; the break below still reads closed 5m candles), joined — a low and a HIGHER low (support) or a high and a LOWER high (resistance); never horizontal: two same-role swing wicks at (nearly) the SAME price are a flat SUPPORT (two lows) or RESISTANCE (two highs) level — drawn and traded as an old low / old high, labelled "support" / "resistance" — never a trendline, and "near" is the day\u2019s own measure, HALF the average high-low range of the last 20 closed candles of the traded frame (a quiet day ~4–5 pts, a run day 10–20 pts; owner ruling 2026-10-25, Q2). EVERY consecutive pair of today\u2019s qualifying swings draws a line, plus at most ONE non-adjacent line per side at a time (the most significant extreme joined to the later swing, angled and uncrossed; a better or continuing one replaces it), so a side never fans. An UNBROKEN drawn line stays all session — it is DELETED (not drawn, not a level) the moment a closed 5m candle is WHOLLY beyond it, and a 1H/4H trendline breaks the same way, on a 5m candle wholly beyond it, not on the 1H close (owner rulings R1/R3, 2026-10-25) — what counts as wholly beyond: (a support line: the whole candle, wicks included, below the line; a resistance line: the whole candle above it; a close beyond the line with a wick still back at it is NOT a break; the line is read at BOTH the candle\u2019s open and its close time and the candle must be beyond both, so on a sloped line a candle that traded on the line\u2019s own side earlier in its five minutes is not a break) — "n\u1ebfn n\u00f3 \u0111\u1ee5ng level m\u00e0 n\u00f3 \u0110\u00d3NG D\u01af\u1edaI level… n\u00f3 G\u00c3Y level" [D2.3 p1 @14:36–15:17] on the 5m [X9 @06:25] — or the session ends (owner ruling R4; "never erase during the session, delete at end of day" [D4.1 p2 @01:17]). A VALID line carries across the 08:30/09:00 frame switch until a 5m candle wholly beyond it breaks it; FORMING lines are redrawn on the new frame (m407). A pair that price crossed between its own two points (a 1m wick beyond the line by more than the 0.5-pt touch band) is not a trendline and is not drawn ("TRENDLINE chứ không phải CẦU TUỘT" [X9 @01:22]) — counted once per day as trendline_crossed_between_anchors. The log says when a line turns VALID, when one is BROKEN and when the day\u2019s lines are deleted',
-          'Becomes a location only on the 3rd touch, and that touch must be a RETURN ("ph\u1ea3i V\u1ec0 TEST L\u1ea6N TH\u1ee8 3 th\u00ec m\u1edbi VALID" [D3.2 p2 @03:45]): price first LEAVES the line \u2014 a confirmed swing high above a support line, or a confirmed swing low below a resistance line, beyond the touch band \u2014 and then comes BACK to touch it — a REJECTION: the candle\u2019s low (high) comes within the 0.5-pt band of the line (0.5 is ours, not the course — the mentor says a near-touch is fine on the 1m and a real touch is needed on the 5m, with no number [Ngày 5.2 part2 @00:18:30–00:18:45]) and it closes on the line\u2019s own side; a wick that goes beyond the band, or a close through the line, is not a touch. The bars that confirm the 2nd swing and still sit on the line never count. A closed 5m candle WHOLLY beyond it discards it ("đóng dưới NGUYÊN CÂY" [X9 @06:28–06:45]; a close beyond the line alone is not a break; a break is never a reversal and NOT an entry). Box beats trendline: a trendline whose price sits inside a live box\u2019s [Bottom, Top] is NOT a location. A respected level (a key level, an old high/low or an FTGH/FTGL box edge — the mentor\u2019s own example is the failure-to-go-higher/lower box, c52 W9) within 2 pts of the line (the 2 pts is OURS, not the course: he gives no number) beats a FRESH trendline — but only on its FIRST test, the 3rd touch that just closed; a valid line past its 3rd-touch return has itself been respected and is no longer suppressed by a nearby level ("chọn cái mà nó đã respect nhiều lần thay vì … cái mà nó mới quay về, nó test lần đầu tiên … Đừng chọn cái nó mới tạo" [D2.3 p1 @02:19–03:45])',
+          'Becomes a location only on the 3rd touch, and that touch must be a RETURN ("ph\u1ea3i V\u1ec0 TEST L\u1ea6N TH\u1ee8 3 th\u00ec m\u1edbi VALID" [D3.2 p2 @03:45]): price first LEAVES the line \u2014 a confirmed swing high above a support line, or a confirmed swing low below a resistance line, beyond the touch band \u2014 and then comes BACK to touch it — a REJECTION: the candle\u2019s low (high) comes within the 0.5-pt band of the line (0.5 is ours, not the course — the mentor says a near-touch is fine on the 1m and a real touch is needed on the 5m, with no number [Ngày 5.2 part2 @00:18:30–00:18:45]) and it closes on the line\u2019s own side; a wick that goes beyond the band, or a close through the line, is not a touch. The bars that confirm the 2nd swing and still sit on the line never count. A closed 5m candle WHOLLY beyond it discards it ("đóng dưới NGUYÊN CÂY" [X9 @06:28–06:45]; a close beyond the line alone is not a break; a break is never a reversal and NOT an entry). Box beats trendline: a trendline whose price sits inside a live box\u2019s [Bottom, Top] is NOT a location. A respected level (a key level, an old high/low or an FTGH/FTGL box edge — the mentor\u2019s own example is the failure-to-go-higher/lower box, c52 W9) within 2 pts of the line (the 2 pts is OURS, not the course: he gives no number) beats a FRESH trendline — but only on its FIRST test, the 3rd touch that just closed; a valid line past its 3rd-touch return has itself been respected and is no longer suppressed by a nearby level ("chọn cái mà nó đã respect nhiều lần thay vì … cái mà nó mới quay về, nó test lần đầu tiên … Đừng chọn cái nó mới tạo" [D2.3 p1 @02:19–03:45]). Release #60 (D2.3-R7): the 3rd touch is the TEST, not the entry — "thà nó về một lần, rồi nó test, rồi nó hold rồi, là lần thứ ba đó, thì lần thứ tư mới dám tự tin mình vô" [D2.3 p1 @02:34–02:47, 03:03–03:16] — so on the candle of its 3rd touch a 1m/2m line is NOT a location (refused trendline_third_touch_is_test, counted); from the next candle it is, and the entry comes on a later touch (knob trendline_entry_touch; 1h/4h lines unchanged)',
         ],
       ],
     },
@@ -484,8 +587,8 @@ export const mentor: GuideSection = {
         },
         {
           title: 'Only same-direction inside a 5m ISB box',
-          body: 'The latest 5m ISB candle is boxed; only a same-direction 1m ISB trades inside it.',
-          cite: 'D3.4 p2 @09:09–09:39 — ISB rest box, same-direction only · ISB rest box filter — merged',
+          body: 'The latest 5m ISB candle is boxed; only a same-direction 1m ISB trades inside it. Release #61: "latest" means the NEWEST — a newer 5m inside bar replaces the standing box (mentor_5m_box_source); a 1m CLOSE outside the box breaks it (isb_box_escape = close), and after the break only setups in the break direction trade until a close back inside (mentor_break_direction_lock).',
+          cite: 'D3.4 p2 @09:09–09:39 — ISB rest box, same-direction only · D4.1-R37 p1 @22:31–22:49 · D4.1-R34 p1 @20:36–21:03 · D4.1-R31 p1 @18:27–20:33',
         },
         {
           title: 'Smaller size at an old high/low',
@@ -503,9 +606,9 @@ export const mentor: GuideSection = {
           cite: 'Go over lớp học part1 @00:13:21–00:15:19 · trader/mentor_mode.go mentorSizeFor · kernel/mentor/eval.go pullbackWarning5m / isbFlagsFor (side-aware) · kernel/mentor/box.go structureTrend5m',
         },
         {
-          title: 'Skip a stop of 30 or more',
-          body: 'An ISB stop above 25 pts must not be taken ("trên nữa thì thôi" [D3.3 p1 @02:04–02:08] — those orders are not worth trading). A stop of 20–25 pts cuts to the reduced tier ("giảm size" [D3.3 p1 @01:09–01:20]); a stop of 20 or less keeps the base size. This reverts course-defaults-30 (owner order "move to 30") — the course skips the twenties [D4.1 p1 @05:41].',
-          cite: 'W-MENTOR-EXACT (owner order 10-21 "i want all exactly like mentor") — CourseExits.ISBMaxStopPts 25 · D3.3 p1 @01:09–02:09 (20–25 reduce, > 25 skip) · D4.1 p1 @05:41 (twenties skip)',
+          title: 'Skip an ISB stop above 20',
+          body: 'Release #61 (m466 G23): an ISB stop (entry to stop, the ISB range + 2 × 1.5) above 20 pts must not be taken — "nếu như một cái setup inside bar mà nó hai mươi mấy điểm, làm ơn giúp em đừng vô, làm ơn đừng vô… lệnh inside bar phải là một lệnh có stop loss nhỏ" [D4.1 p1 @05:41–06:08]; his own stop that morning was 20 points [D4.1 p1 @02:39–03:20], so exactly 20 is taken. D4.1 is a LATER lesson than D3.3 (20–25 = reduce size, above 25 skip [D3.3 p1 @01:09–02:09]), so for an ISB the 20–25 reduce option is gone; PHL/PLH and box stops keep the D3.3 rule (reduced at 20–25, skipped above 25). Example: the D3.4 short ISB at 29,034.25 with its stop at 29,056.75 (22.50 pts) is refused (isb_stop_over_max). A stored mentor_isb_max_pts (e.g. 25) still wins.',
+          cite: 'm466 G23 — CourseExits.ISBMaxStopPts 20 · D4.1 p1 @05:41–06:08 (twenty-something: do not enter) · D4.1 p1 @02:39–03:20 (his 20-pt stop) · D3.3 p1 @01:09–02:09 (PHL/PLH keep 20–25 reduce, > 25 skip)',
         },
       ],
     },
@@ -535,8 +638,8 @@ export const mentor: GuideSection = {
         },
         {
           title: '15m and 30m ISB rest boxes + the escalation ladder',
-          body: 'Like the 5m ISB rest box, the latest CLOSED 15m and 30m inside-bar candles are boxed and extended right. Inside a standing box, nothing trades against that box\u2019s direction — a 1m ISB is gated on the box direction, PHL/PLH and box returns inside are banned. When a timeframe\u2019s ISBs are CROSSING (2 opposite ISBs within the last 3 closed buckets) that timeframe is unreadable and its box gate is skipped — the next timeframe up governs (5m → 15m → 30m). A 1m candle with its OPEN and CLOSE both beyond the edge deletes the box (isb_box_escape, default body; close = the older close-only test). While a 15m box stands, a 1m ISB in its direction also needs a 5m ISB in that direction (15m_ib_requires_5m_isb, default require_5m_isb).',
-          cite: 'D4.1 p2 @07:35–08:11 · D4.2 p1 @16:28–16:46 · D3.4 p2 @17:07–17:49 · D4.1 p1 @20:52–21:02 (body escape) · D4.2 p1 @17:09–17:13 (5m ISB under a 15m box)',
+          body: 'Like the 5m ISB rest box, the latest CLOSED 15m and 30m inside-bar candles are boxed and extended right. Inside a standing box, nothing trades against that box\u2019s direction — a 1m ISB is gated on the box direction, PHL/PLH and box returns inside are banned. When a timeframe\u2019s ISBs are CROSSING (2 opposite ISBs within the last 3 closed buckets) that timeframe is unreadable and its box gate is skipped — the next timeframe up governs (5m → 15m → 30m). A 1m candle that CLOSES beyond the edge deletes the box (isb_box_escape, default close since release #61 — D4.1-R34 "nó đóng bên ngoài cái box là at least"; body = open AND close beyond, the #25–#60 default), and the side it exits is the side you trade (mentor_break_direction_lock, D4.1-R55 "thoát đầu nào thì mình trade đầu đó"). While a 15m box stands, a 1m ISB in its direction also needs a 5m ISB in that direction (15m_ib_requires_5m_isb, default require_5m_isb). Release #60: the 15m box is read EARLY — two 5m candles of the forming 15m inside the last 15m box it at once, provisionally, and refuse under _forming names until the 15m closes (15m_early_read, D4.2-R2); mode C holds while the standing 15m and 5m boxes agree (mtf_confluence_source, D4.2-R17); and when the 5m inside bars cross, the 15m (then 30m) TRIGGER line governs the side (trigger_escalation, D3.4-R43).',
+          cite: 'D4.1 p2 @07:35–08:11 · D4.2 p1 @16:28–16:46 · D3.4 p2 @17:07–17:49 · D4.1 p1 @20:36–21:03 (close escape, #61) · D4.1 p1 @07:47–08:07 (exit side) · D4.2 p1 @17:09–17:13 (5m ISB under a 15m box) · D4.2-R2 p1 @00:08–00:39 · D4.3-R21 @12:20–12:32 (early 15m read) · D4.2-R17 p1 @14:57–15:37 (mode C, standing boxes) · D3.4-R43 p2 @17:07–17:49 (trigger escalation)',
         },
         {
           title: 'The 4h trigger line is a target, never a location',
@@ -544,9 +647,10 @@ export const mentor: GuideSection = {
           cite: 'D4.4 p2 @05:04–05:44 · kernel/mentor/mentor.go KindHTFTrigger · kernel/mentor/eval.go (htf_4h_trigger level only; the touch loop skips KindHTFTrigger) · kernel/mentor/chart_seed.go · kernel/mentor/location.go levelIsLocation',
         },
         {
-          title: 'Wick microscalp (advanced, OFF by default)',
-          body: '2+ consecutive CLOSED 5m candles rejecting with wicks the SAME way (lower wicks in an uptrend, upper wicks in a downtrend) put a bounded target at their far wick — target-only, never a location. OFF by default ("đừng có tập khúc này đầu tiên").',
-          cite: 'D4.3 @00:00–03:20, @09:27–09:46 · WickMicroscalpEnabled',
+          title:
+            'Wick microscalp — "follow trend 5, kiếm lệnh 1" (advanced, OFF by default)',
+          body: 'm465 (release #60), knob wick_microscalp, default OFF — the mentor calls it advanced and asks people who still get muddled trading ranges not to practise it first ("làm ơn đừng… đừng có tập khúc này đầu liền"). (1) TREND: the 5m trend read left to right — the d43_trend_source knob (default structure: the confirmed 5m swing highs/lows); a ranging read lets the run\u2019s own side decide ("cho dù là khung 5 phút nó đang ranging"). (2) RUN: on every CLOSED 5m candle the last 3 closed 5m candles are read; at least 2 must pull the wick WITH the trend (lower wicks for a long, upper for a short) and the summed with-trend wick must beat the summed against wick — one odd candle is tolerated ("technically nhìn ra nó vẫn có sự rút râu từ dưới rút lên"). Refusals, each named and counted: wick_run_too_short (only 1), wick_mixed_direction (the wicks pull both ways), wick_against_trend (upper wicks in an uptrend / lower wicks in a downtrend — "đang xu hướng giảm mà rút dưới là tôi không biết đường tôi đánh"). (3) ZONE: a box from the lowest to the highest wick extreme of the run, at least 5.00 and at most 14.25 pts tall measured from the extreme wick (his boxes: 5.00 / ~10 / 14.00 / 14.25 pts), drawn on the chart as a rectangle and extended right; one per side; a new run at a NEW place replaces it; it dies on a 1m close beyond its far edge (wick_zone_broken) or at the 17:00 CT trading-day roll. (4) ENTRY: never at market ("Vô market là nó đâm cho lủng bụng"); the zone\u2019s near edge is a LOCATION, so a 1m PHL/PLH whose reference candle dips into the box and closes back out arms through the ordinary touch loop, and a 1m ISB touching the box is the ordinary ISB (all its gates unchanged). A visit to the zone that produced no setup is named wick_zone_no_setup; a PHL/PLH read off the box on the WRONG side is dropped (wick_zone_wrong_side). (5) TARGET: the nearby 5m wicks — the highs of the last 12 closed 5m candles that carry an upper wick, above the box, at most 100 pts away (lows for a short) — "Target thì là những cái râu của khung 5 phút", never "100-200 điểm". The nearest one beyond the entry is the target when it leaves at least 1R of room (a wick target needs 1R, D1.4 "at least 1:1" — every other target keeps the 2R room rule); a wick closer than 1R is named wick_target_no_room and the target falls through to the next level. (6) SAFE PLAY (knob wick_safe_play, OFF): the setup waits until its reference candle CLOSED outside the box (under it for a short, over it for a long), else wick_safe_play_wait. Not built: the 30-second / 45-second views (NT8 sends 1m bars only).',
+          cite: 'D4.3-R1/R2/R3/R5/R8/R10/R11/R12/R13/R15/R17/R19/R20/R27 · D4.3 p1 @01:27–02:02, @03:22–03:44, @04:44–05:46, @06:03–06:42, @09:17–09:46, @12:43–13:44, @14:07–15:47 · kernel/mentor/wick_zone.go · kernel/mentor/wick_microscalp.go · risk_control.mentor_tuning.wick_microscalp / wick_safe_play',
         },
         {
           title: 'Intraday confluence (exit C, size 5)',
@@ -555,8 +659,8 @@ export const mentor: GuideSection = {
         },
         {
           title: 'A loss at a place blocks it',
-          body: 'After a LOSS at a level, a box edge or the EMA line (entry filled, then the stop hit), that place is blocked until a departure candle. Two losses at one place → that place is off for the day (the “off for the day” part is OURS, stricter than the course: “thua 2 lần ở cùng 1 chỗ thì là mọi người đang sai” — and “đừng trade ở 1 khu vực, trade hoài ngay chỗ đó không có được cái gì đâu”; no day-long rule is stated, and the departure wait is OURS [D4.2 p2 @06:58–07:37]).',
-          cite: 'E2 · G2 · D4.2 p2 @01:56',
+          body: 'After a LOSS at a level, a box edge or the EMA line (entry filled, then the stop hit), that place is blocked until a departure candle. Two losses at one place → that place is off for the day (the “off for the day” part is OURS, stricter than the course: “thua 2 lần ở cùng 1 chỗ thì là mọi người đang sai” — and “đừng trade ở 1 khu vực, trade hoài ngay chỗ đó không có được cái gì đâu”; no day-long rule is stated, and the departure wait is OURS [D4.2 p2 @06:58–07:37]). An ISB loss (release #60, knob mentor_isb_loss_box, default range) boxes the WHOLE 5m range that held the trade — every closed 5m candle from the one the entry filled in through the one the stop hit in — not only the entry-to-stop band: “Market này có tổng cộng 3 phần: Trend, Range và Trend… em đợi cho cái điểm entry nằm ở vòng vòng bên ngoài” [D4.2 p2 @02:41–03:17]; his Box 1 28,880.50–28,934.00 is exactly the 08:30 5m candle. An entry inside that range — either side — is refused loss_range_blocked for the rest of the trading day; a 1m candle lying completely outside it frees only entries OUTSIDE the range (“em đợi cho cái điểm entry nằm ở vòng vòng bên ngoài” [D4.2 p2 @02:41–03:17]; “Tôi sẽ không trade bên trong khu vực này” [@03:43–04:07]) — a wick out and straight back is not a different zone. Each new range gets its own box (“tạo thêm cái range nữa… Đợi thoát ra đánh tiếp” [@03:06–03:31]); a loss whose range overlaps an earlier ISB loss range of the day joins it, and two losses there turn it off for the day (loss_box_off_day) — Winnie’s re-entries in the 57-pt chop 29,020.50 / 28,963.50, “cứ đè đây đánh, đè đây đánh” [@04:13–05:03].',
+          cite: 'E2 · G2 · D4.2 p2 @01:56 · D4.2-R27/R28/R30 p2 @02:41–05:03',
         },
         {
           title: 'Leg budget — two entries per leg',
@@ -581,23 +685,33 @@ export const mentor: GuideSection = {
         ],
         [
           'ISB rest box',
-          'The latest 5m ISB candle is boxed and extended right; only a same-direction 1m ISB trades inside; a 1m candle with its open AND close beyond the edge deletes the box (isb_box_escape, default body; close = the older close-only test)',
-          'isb_box_escape = body (default) · D4.1 p1 @20:52–21:02',
+          'The NEWEST 5m ISB candle is boxed and extended right (a newer 5m inside bar replaces the box — release #61); only a same-direction 1m ISB trades inside; a 1m candle that CLOSES beyond the edge deletes the box (isb_box_escape, default close since #61; body = open AND close beyond, #25–#60); after it breaks, only setups in the break direction until a close back inside (break_counter_setup)',
+          'isb_box_escape = close (default) · mentor_5m_box_source = newest · mentor_break_direction_lock = ON · D4.1-R34 p1 @20:36–21:03 · D4.1-R37 @22:31–22:49 · D4.1-R31 @18:27–20:33',
+        ],
+        [
+          'Too-small range',
+          'Knob ON only (default OFF): the last 15 closed 1m candles span ≤ 61.50 pts with two candles ≥ 30.00 pts → no entry inside that range until a 1m close outside it (range_too_small_big_candles) — release #61',
+          'mentor_small_range_guard = OFF (default since #61 final — count / margin unstated, on the mentor list) · D4.2-R33 p2 @06:16–06:30',
+        ],
+        [
+          'Mid-range rejection side',
+          'Between the floor and the ceiling box, after a candle rejects the ceiling no LONG entry until a candle reaches the floor (mirror for a floor reject) — mid_range_against_rejection, release #61',
+          'mentor_mid_range_reject_side = ON · D2.2-R71 p3 @14:28–15:58',
         ],
         [
           'Day gate (§7)',
           'Measure the Globex run (17:00 → 08:30 CT) before the open. Conflict on a spent day → the machine is OFF for the day (latched at 08:30). The day gate is frozen AT the 08:30 read: a restart after 08:30 RESTORES that decision (the seed replays the 08:30 4h/1h read and the frozen run, then replays the one-way DayOff recheck over the closed 1h bars since — only when mentor_day_off_recheck is ON; course-defaults-30 turns it OFF, so the seed replays no clear), so a restart never re-decides the day — the log line reads "RESTORED from the 08:30 read". Only when the 08:30 read is not possible (no bars closed by 08:30) does the line read "re-read at boot … not the 08:30 decision". Spent + agree → trade but cap the target at 15 pts; on a spent day skip any setup whose stop is over 15',
-          'DayGateSpentPts 300 · DayGateTargetCapPts 15',
+          'DayGateSpentPts 265 (release #60, D5.1-R18) · DayGateTargetCapPts 15',
         ],
         [
           '4h/1h direction',
-          'ALL SESSION (release #59, m462 — the course\u2019s final review: "Lúc nào khi anh chị open ra, không cần phải là news" [D5.1-R9, D5.1 p1 @08:46–09:13] and "Trigger 4h, trigger 1h nằm ngược nhau… mình không làm được gì hết trơn" [D5.1-R11, D5.1 p1 @08:29–09:52, @11:27–11:50]): the 4h/1h direction gate applies at every minute of the session, not only around news and the open. One shared check (HTFEntryCheck) covers every intraday setup — ISB, reverse ISB, PHL/PLH at a level and the rolling PHL/PLH, box returns — and a backstop filter re-checks every entry before it leaves the evaluator; each refusal is named per setup (…_htf_conflict / …_htf_side_mismatch / …_htf_no_4h) and counted. A strategy that STORED htf_gate_news_only = ON keeps the old windows (print day 07:20–08:30 CT and the 08:30–09:30 CT open; outside them not gated). SWING4H is EXEMPT: its direction is the 4h EMA 34, not the trigger lines [D5.2-R7, D5.2 p3 @15:04–18:25]; planner/AI entries have their own G1 HTF veto. The live trader inherits this with no config edit (the default flipped from news + open to all session). Entries only WITH the 4h trigger. At the OPEN (08:30–09:30 CT) a with-4h entry additionally waits for the 5m range to break in the 4h’s direction — "không phải là cứ cắm đầu mà cứ vô lệnh buy market … chuyển về khung 5 phút … nó break được cái rank khung 5 phút" [D4.4 p2 @04:41–06:00]; the opening 5m range is the first 5m candle (08:30–08:35) [example: the ORB’s 08:30 anchor]. The 1h counts only when it fired at or after the 4h — compared by the MINUTE each line really fired, not by which candle opened first (an earlier 1h trigger is ignored — it is silent; W7 B3): 1h agreeing or silent → follow the 4h; 1h opposite → sit out until it flips. No 4h trigger → nothing to follow. The 4h/1h lines (and the 5m trigger line) are seeded from history at boot by replaying every stored 1m bar through the same intrabar break rule the running bot uses, so a restart lands on exactly the line a bot that never stopped would hold — including a candle that broke both sides (which side broke first decides). The boot line prints each line as "<tf> trigger <dir> @<price> since <CT>" (the minute the line fired; the 4h/1h lines carry the break minute since release #52, the 5m line its bucket open), and every 4h/1h move is logged as it happens ("4h trigger moved long @… → short @…"). On a red-folder print day the seed freezes each replayed day\u2019s print-window trigger read exactly as the running bot did (release #29: the read is frozen from the print to the 08:30 CT open — the candles are never rewritten; release #23 dropped the 07:20–07:35 print candles). History that reaches the store AFTER the boot — NinjaTrader\u2019s replay is held until the first live bar, and a refilled bar hole — re-seeds the trigger lines, the swing line, the EMA 34/9 on the execution frame (1m 08:30–09:00 CT, otherwise 2m) and the key-level deletion on the next tick, keeping every latch, arm, leg and visit count; the log line "🧑‍🏫 mentor re-seed after a history refill (…): CHANGED|UNCHANGED … before → after" names what moved (counted reseed_after_refill / reseed_changed). 10-14: the 08:22 boot seeded before the 03:44–07:47 hole reached the store and traded on 1h short @30790.75 instead of 30716.00.',
+          'ALL SESSION (release #59, m462 — the course\u2019s final review: "Lúc nào khi anh chị open ra, không cần phải là news" [D5.1-R9, D5.1 p1 @08:46–09:13] and "Trigger 4h, trigger 1h nằm ngược nhau… mình không làm được gì hết trơn" [D5.1-R11, D5.1 p1 @08:29–09:52, @11:27–11:50]): the 4h/1h direction gate applies at every minute of the session, not only around news and the open. One shared check (HTFEntryCheck) covers every intraday setup — ISB, reverse ISB, PHL/PLH at a level and the rolling PHL/PLH, box returns — and a backstop filter re-checks every entry before it leaves the evaluator; each refusal is named per setup (…_htf_conflict / …_htf_side_mismatch / …_htf_no_4h) and counted. A strategy that STORED htf_gate_news_only = ON keeps the old windows (print day 07:20–08:30 CT and the 08:30–09:30 CT open; outside them not gated). SWING4H is EXEMPT: its direction is the 4h EMA 34, not the trigger lines [D5.2-R7, D5.2 p3 @15:04–18:25]; planner/AI entries have their own G1 HTF veto. The live trader inherits this with no config edit (the default flipped from news + open to all session). Entries only WITH the 4h trigger. At the OPEN (08:30–09:30 CT) a with-4h entry additionally waits for the 5m range to break in the 4h’s direction — "không phải là cứ cắm đầu mà cứ vô lệnh buy market … chuyển về khung 5 phút … nó break được cái rank khung 5 phút" [D4.4 p2 @04:41–06:00]; the opening 5m range is the first 5m candle (08:30–08:35) [example: the ORB’s 08:30 anchor]. Release #61: the break is a CLOSED 1m candle outside the range — "một cây nến một phút… đóng bên ngoài cái box là at least" [D4.1 p1 @20:36–21:03], "nó break được cái range khung 5 phút, nó đi lên rồi, tôi biết tôi đánh" [D4.4 p2 @05:15–05:36] (on 14 Sep the mentor acted at the 08:43 1m escape of the 28,880.50–28,933.75 range) — switch mentor_open5m_break (1m_close default; 5m_close = the pre-#61 rule, a closed 5m candle, up to 4 minutes later). The 1h counts only when it fired at or after the 4h — compared by the MINUTE each line really fired, not by which candle opened first (an earlier 1h trigger is ignored — it is silent; W7 B3): 1h agreeing or silent → follow the 4h; 1h opposite → sit out until it flips. No 4h trigger → nothing to follow. The 4h/1h lines (and the 5m trigger line) are seeded from history at boot by replaying every stored 1m bar through the same intrabar break rule the running bot uses, so a restart lands on exactly the line a bot that never stopped would hold — including a candle that broke both sides (which side broke first decides). The boot line prints each line as "<tf> trigger <dir> @<price> since <CT>" (the minute the line fired; the 4h/1h lines carry the break minute since release #52, the 5m line its bucket open), and every 4h/1h move is logged as it happens ("4h trigger moved long @… → short @…"). On a red-folder print day the seed freezes each replayed day\u2019s print-window trigger read exactly as the running bot did (release #29: the read is frozen from the print to the 08:30 CT open — the candles are never rewritten; release #61: the freeze starts 30 minutes BEFORE the print, mentor_news_read_lead_min; release #23 dropped the 07:20–07:35 print candles). History that reaches the store AFTER the boot — NinjaTrader\u2019s replay is held until the first live bar, and a refilled bar hole — re-seeds the trigger lines, the swing line, the EMA 34/9 on the execution frame (1m 08:30–09:00 CT, otherwise 2m) and the key-level deletion on the next tick, keeping every latch, arm, leg and visit count; the log line "🧑‍🏫 mentor re-seed after a history refill (…): CHANGED|UNCHANGED … before → after" names what moved (counted reseed_after_refill / reseed_changed). 10-14: the 08:22 boot seeded before the 03:44–07:47 hole reached the store and traded on 1h short @30790.75 instead of 30716.00.',
           '—',
         ],
         [
           'Room rule',
           'The room to the FIRST available level must be at least 2× the first take-profit — leg 1 at 1:1 → 2R; a confluence (mode C) leg 1 at 1:2 → 4R [D5.3 p1 @09:16–10:17 · D2.2 p3 @12:13 · D1.2 p1 @07:41–08:45]. Release #30: the EMA 9 / EMA 34 lines are PARTIAL points along the way, not the level the room (and the 1:1 floor) measure — "ta ghẹt tôi đầu tiên phải là về gần đỉnh cũ … tiếp tục là EMA 34 … những cái chỗ này là những cái chỗ anh chị bán bớt" [D3.3 p1 @05:15–07:38]; an EMA must not by itself kill the trade (the room/floor read the next non-EMA level — the nearest old high/low, a key level, or a trendline target; the EMA is the target only when no other level stands beyond). The room is measured to the LEVEL, also on a spent day: the 15-pt take-profit cap shortens the take-profit, never the room — "dù target của em là 15 điểm … từ điểm entry xuống target nó phải từ 30 điểm đổ lên" [D5.3 p1 @09:32–09:50]. So a spent-day setup needs stop ≤ 15 (the 1:1 floor on the capped take-profit), room ≥ 2R to the level, AND room to the level ≥ 2× the capped take-profit — his worked figure: target 15 → room 30 (a take-profit sitting right at the level is refused). A PHL/PLH stop never exceeds 25 pts (SWING4H exempt — its ceiling is 100)',
-          'RoomMultiple 2 · StopCeilingPts 25 (PHL/PLH and box stops only) · mentor_isb_max_pts 25 (the ISB and reverse ISB only — the SAME knob the trader’s R8 gate reads; P2-1 one number) · swing_max_stop_pts 100 (the swing SIZING cap, ≤ 2 MNQ) · mentor_swing_max_stop_pts 90 (the swing SKIP — above it the swing is not entered, m463 D5.2 p2 @19:34–21:43)',
+          'RoomMultiple 2 · StopCeilingPts 25 (PHL/PLH and box stops only) · mentor_isb_max_pts 20 (release #61, D4.1-R12 — the ISB and reverse ISB only; the trader’s R8 gate reads the SAME knob for an ISB, PHL/PLH/BOX keep 25) · swing_max_stop_pts 100 (the swing SIZING cap, ≤ 2 MNQ) · mentor_swing_max_stop_pts 90 (the swing SKIP — above it the swing is not entered, m463 D5.2 p2 @19:34–21:43)',
         ],
         [
           'ORB gate (opening range)',
@@ -653,8 +767,8 @@ export const mentor: GuideSection = {
           cite: 'OWNER RULING 00:1x CT',
         },
         {
-          title: 'Spent 300+ overnight AND 4h/1h disagree at 08:30 → day OFF',
-          body: 'The day gate reads the Globex run at 08:30 CT. If the overnight daily candle already ran 300+ pts AND the 4h and 1h disagree, the machine is OFF for the day (latched at 08:30) — no box/ISB trades all day, the swing exempt. course-defaults-30 (item 4): the re-check is OFF (mentor_day_off_recheck, nil → OFF) — the day STAYS off, a whole-day latch. The pre-30 owner ruling (2026-10-09) that re-checked the OFF on every closed 1h bar is superseded.',
+          title: 'Spent 265+ overnight AND 4h/1h disagree at 08:30 → day OFF',
+          body: 'The day gate reads the Globex run at 08:30 CT. If the overnight daily candle already ran 265+ pts (release #60, D5.1-R18: the course says 300–400, and its worked example — a −265.00 run, "nó chạy gần được 300 điểm… nó chạy gần hết cây daily luôn rồi", "phải còn 100 điểm" [D5.1 p1 @17:56–18:14] — was already spent) AND the 4h and 1h disagree, the machine is OFF for the day (latched at 08:30) — no box/ISB trades all day, the swing exempt. course-defaults-30 (item 4): the re-check is OFF (mentor_day_off_recheck, nil → OFF) — the day STAYS off, a whole-day latch. The pre-30 owner ruling (2026-10-09) that re-checked the OFF on every closed 1h bar is superseded.',
           cite: 'Ngày 5.1 p1 @19:22 — "Còn nếu như 2 khung giờ đang ngược nhau / Mà khung daily nó đã chạy được 300-400 điểm rồi / Tắt máy nghỉ luôn cho em" (shut down for the day; @19:40 "Ngày hôm đó không đáng để trade") — the course has NO re-check later in the day. course-defaults-30: the re-check is OFF (mentor_day_off_recheck, nil → OFF) — the day stays off. The pre-30 owner ruling (2026-10-09) that added the re-check is superseded.',
         },
       ],
@@ -673,7 +787,7 @@ export const mentor: GuideSection = {
         ['Big (the hard tier)', '5', 'mentor_big_contracts'],
         ['Hard cap', '20', 'mentor_max_contracts'],
         [
-          'Reduced (stop 20–25 pts; also an ISB at an old high/low or inside a range; the 5m pullback warning)',
+          'Reduced (a PHL/PLH/box stop of 20–25 pts — an ISB stop above 20 is skipped since release #61; also an ISB at an old high/low or inside a range; the 5m pullback warning)',
           '3',
 
           'mentor_reduced_contracts',
@@ -709,7 +823,7 @@ export const mentor: GuideSection = {
       rows: [
         [
           'A — resonance',
-          'A PHL/PLH filled and then an ISB in the SAME direction within 3 candles AFTER the fill candle — counted in candles of the frame the entry was read on (1m, 2m or 5m; the fill candle itself is not counted — ours, the course does not say [D2.4 p1 @01:44–01:56, @04:44–04:53; X8 @18:02–18:14]) — where that ISB passes every placement gate EXCEPT the never-add gate: the position flips to mode A (do not trail it); leg 1’s 1:1 take-profit stays, and the RUNNER is NOT capped: its resting PHL/PLH take-profit is moved far out of reach (600 points beyond the entry — ours, the course only says “let it run”; the AddOn cannot delete a take-profit leg) so it exits only by its break-even stop, the X8 trap-dodge or the EOD flat [D2.4 p1 @01:58–02:09, @02:24–02:47]. With mentor_resonance_runner_tp_old_high ON the runner’s take-profit is instead moved to the level beyond the old high (the bot’s older inference); a one-bracket position is never touched. A position REBUILT from the broker after a restart has an unknown fill age, so its 3-candle window is treated as already spent and a later same-side ISB cannot flip it to A (release #53 m437). The stop does NOT move at the arm: on the CLOSED 1m candle, a split position’s RUNNER moves to break-even only AFTER leg 1’s 1:1 partial is confirmed filled at NinjaTrader (leg 1 keeps its original stop until its take-profit — “mình bán bớt rồi… thì cứ để break even cho nó chạy” [D2.4 p1 @03:36–03:45]); a one-bracket position has no partial, so it goes to break-even once the close is at least 0.25R beyond entry (a CTO default the owner may change)',
+          'A PHL/PLH filled and then an ISB in the SAME direction within 3 candles AFTER the fill candle — counted in candles of the frame the entry was read on (1m, 2m or 5m; the fill candle itself is not counted — ours, the course does not say [D2.4 p1 @01:44–01:56, @04:44–04:53; X8 @18:02–18:14]). Release #60 (D2.4-R2): ANY inside bar of that frame whose candle 1 has the trade’s colour counts — read straight off the closed candles, even when that ISB’s own entry was refused (its stop above the ISB max, room, location…): “trong vòng 3 cây nến sau đó xuất hiện một setup Inside bar cùng chiều” [D2.4 p1 @01:37, @04:54] (switch mentor_resonance_raw_isb, ON; OFF = only an ISB that passes every placement gate except the never-add gate, as before; counter resonance_armed_raw_isb). The position flips to mode A (do not trail it); leg 1’s 1:1 take-profit stays, and the RUNNER is NOT capped: its resting PHL/PLH take-profit is moved far out of reach (600 points beyond the entry — ours, the course only says “let it run”; the AddOn cannot delete a take-profit leg) so it exits only by its break-even stop, the X8 trap-dodge or the EOD flat [D2.4 p1 @01:58–02:09, @02:24–02:47]. With mentor_resonance_runner_tp_old_high ON the runner’s take-profit is instead moved to the level beyond the old high (the bot’s older inference); a one-bracket position is never touched. A position REBUILT from the broker after a restart has an unknown fill age, so its 3-candle window is treated as already spent and a later same-side ISB cannot flip it to A (release #53 m437). The stop does NOT move at the arm: on the CLOSED 1m candle, a split position’s RUNNER moves to break-even only AFTER leg 1’s 1:1 partial is confirmed filled at NinjaTrader (leg 1 keeps its original stop until its take-profit — “mình bán bớt rồi… thì cứ để break even cho nó chạy” [D2.4 p1 @03:36–03:45]); a one-bracket position has no partial, so it goes to break-even once the close is at least 0.25R beyond entry (a CTO default the owner may change)',
         ],
         [
           'B — normal',
@@ -803,8 +917,8 @@ export const mentor: GuideSection = {
         },
         {
           title: 'Same-direction wick zone entry on the 5m',
-          body: 'Two or three 5m candles with wicks all the same way make a small zone the mentor fades (“advanced, đừng có tập khúc này đầu tiên”). The bot has only a TARGET-only wick level (wick_microscalp, OFF, no setter) — no entry. Not built; recorded as the mentor’s advanced trade, not part of the standard setups.',
-          cite: 'D4.3 p1 @00:00–00:25, @01:23–01:50, @06:30–06:44 · owner decision B15',
+          body: 'Two or three 5m candles with wicks all the same way make a small zone the mentor fades (“advanced, đừng có tập khúc này đầu liền”). BUILT in m465 (release #60) behind the Studio switch wick_microscalp, default OFF — see "Wick microscalp" in the setups above. Still open: the 30-second / 45-second views he mentions (NT8 sends 1m bars only) and the mentor questions on the exact box height and the tolerance for one odd candle.',
+          cite: 'D4.3 p1 @00:00–00:25, @01:23–01:50, @06:30–06:44 · owner decision B15 · m465 P5',
         },
         {
           title: 'Trend-day nine-line test',
@@ -815,11 +929,6 @@ export const mentor: GuideSection = {
           title: 'VWAP ±1 standard deviation module',
           body: 'The 2025 VWAP + ±1 sd bands (three support/resistance lines, a target ladder, a size tier, a ranging detector, an ORB re-entry) are NOT built in mentor mode. It is unknown whether the mentor still teaches it (zero hits in the 2026 course), so nothing is built until he answers. VWAP exists only in the non-mentor planner.',
           cite: 'VWAP Stddiv part1 @00:01:44–00:20:32 · open mentor question B24 (Q6)',
-        },
-        {
-          title: 'Smaller size when trading the 2m',
-          body: 'The mentor says a 2m stop is larger than a 1m stop, so reduce size ("khung 2 phút … stop loss lớn hơn khung 1 phút … mình phải giảm size lại"). He gives no number, so there is NO frame-based size cut: the size table reads the stop (20–25 pts = reduced tier) and the setup flags only, never the frame. A 2m ISB with a small stop trades the normal size.',
-          cite: 'D3.1 p1 @00:14:07–00:14:47 · open mentor question B26',
         },
       ],
     },
@@ -905,13 +1014,13 @@ export const mentor: GuideSection = {
         {
           label: 'Reduced contracts',
           where: 'Strategy → Mentor mode → sizing',
-          what: 'Size when the stop is 20–25 pts, where the ceiling is the mentor_isb_max_pts knob (default 25 — trader/mentor_mode.go mentorContractsFor). A SWING4H is EXEMPT from this band (the swing tier ranks first, so a swing stop in (20,25] sizes swing4h, not the reduced tier). A spent day does NOT use this tier — it keeps the normal size and cuts the target and the runner. The reduced tier actually reduces: 3 (D4.1 p1 @04:37–05:04 “giảm size”).',
+          what: 'Size when the stop is 20–25 pts, where the band top is the setup’s own ceiling (trader/mentor_mode.go mentorStopCeilingFor → mentorContractsFor): 25 for PHL/PLH/box stops; for an ISB the mentor_isb_max_pts knob — 20 since release #61 (D4.1-R12), so the ISB 20–25 band is UNREACHABLE at default (an ISB stop above 20 is skipped first); it is reached only with a stored mentor_isb_max_pts above 20. A SWING4H is EXEMPT from this band (the swing tier ranks first, so a swing stop in (20,25] sizes swing4h, not the reduced tier). A spent day does NOT use this tier — it keeps the normal size and cuts the target and the runner. The reduced tier actually reduces: 3 (D4.1 p1 @04:37–05:04 “giảm size”). Release #60: an ISB/PHL/PLH entry read on the 2m (or 5m) also sizes this tier (tier exec_2m_reduce, switch “Smaller size on a 2m entry”, D3.1 p1 @14:09–14:35).',
           trader: '3 contracts on the reduced tier.',
           consumer: 'trader/mentor_mode.go mentorReducedContractsDefault',
           range: 'int',
           systemDefault: '3',
           recommended:
-            '3 — the course’s reduced tier (D4.1 p1 @04:37–05:04 rules 2+3 “giảm size”; m186 reverts the 2026-10-16 “no longer cuts below 4”). The band is a 20–25 pt stop (top = mentor_isb_max_pts, default 25 — W-MENTOR-EXACT). An ISB at an old high/low or in a range also sizes 3.',
+            '3 — the course’s reduced tier (D4.1 p1 @04:37–05:04 rules 2+3 “giảm size”; m186 reverts the 2026-10-16 “no longer cuts below 4”). The band is a 20–25 pt PHL/PLH/box stop (an ISB above 20 is skipped since release #61 — D4.1 p1 @05:41–06:08). An ISB at an old high/low or in a range also sizes 3.',
           whenToTouch: 'With the 20–25 reduced band.',
           perSession: 'No.',
         },
@@ -934,7 +1043,7 @@ export const mentor: GuideSection = {
         {
           label: 'Spent-day contracts',
           where: 'Strategy → Mentor mode → sizing',
-          what: 'NOT READ FOR SIZING. The value is resolved and then discarded (trader/mentor_mode.go mentorContractsFor: `_ = spentCap`). A spent day (§7: the day already ran 300+) keeps the normal size; what it cuts is the target (15-pt cap) and the runner — at most 2 contracts run, a fixed code constant (mentorSpentDayRunnerCap), not this knob [R09].',
+          what: 'NOT READ FOR SIZING. The value is resolved and then discarded (trader/mentor_mode.go mentorContractsFor: `_ = spentCap`). A spent day (§7: the day already ran 265+, release #60 D5.1-R18) keeps the normal size; what it cuts is the target (15-pt cap) and the runner — at most 2 contracts run, a fixed code constant (mentorSpentDayRunnerCap), not this knob [R09].',
           trader:
             'Changing it changes nothing today — the course\'s "on range days hold 1–2 contracts only" is carried by the fixed runner cap of 2.',
           consumer:
@@ -1098,7 +1207,7 @@ export const mentor: GuideSection = {
         {
           label: 'Reverse ISB at EMA 9',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'R7: an ISB pointing AGAINST the trend at EMA 9 reverses — uptrend → long buy stop above the ISB high + 1.5-pt buffer; downtrend → the mirror (sell stop below the ISB low − 1.5-pt buffer). The entry buffer is mandatory on the 1m [D1.4 p1 @ 22:26–23:26]. Requires price to actually reach EMA 9, read on the frame the pair is read on (C52-W4): the 2m EMA 9 against a 2m pair, the 1m EMA 9 against a 1m pair — "anh trade khung nào thì anh bật khung đó, khung M1 cũng được, khung M2 cũng được" [Ngày 5.4 ISB đảo chiều p1 @08:15–08:40]. The touch is exact for now (the EMA 9 must lie inside the candle’s range; the course’s loose “vòng vòng EMA 9” band waits for the mentor’s width), and the slow-evening 5m pair keeps the 1m EMA 9 until the mentor says which frame the evening lines are drawn on. It carries a target (the next level beyond, with the 1:1 floor and the spent-day cap) and runs through the normal ISB gates — the 30-pt stop ceiling, 4h side, near-box room — before it can place; with it ON, the normal ISB does not arm the opposite side on the same candle pair.',
+          what: 'R7: an ISB pointing AGAINST the trend at EMA 9 reverses — uptrend → long buy stop above the ISB high + 1.5-pt buffer; downtrend → the mirror (sell stop below the ISB low − 1.5-pt buffer). The entry buffer is mandatory on the 1m [D1.4 p1 @ 22:26–23:26]. Requires price to actually reach EMA 9, read on the frame the pair is read on (C52-W4): the 2m EMA 9 against a 2m pair, the 1m EMA 9 against a 1m pair — "anh trade khung nào thì anh bật khung đó, khung M1 cũng được, khung M2 cũng được" [Ngày 5.4 ISB đảo chiều p1 @08:15–08:40]. The touch is the candle GROUP (release #60, D5.4-R7): the EMA 9 must lie inside the mother + ISB candles’ combined range — "nó không cần đụng, nó cứ đụng vòng vòng ngay EMA 9 là được … không quan trọng là nó đụng ngay tại EMA 9 hay là nó lố EMA 9" [D5.4 p1 @03:35–03:46], on screen the 09:45–09:48 candles straddle the line; price must still reach it (knob isb_reverse_touch; isb_candle = the ISB candle alone, pre-#60), and the slow-evening 5m pair keeps the 1m EMA 9 until the mentor says which frame the evening lines are drawn on. It carries a target (the next level beyond, with the 1:1 floor and the spent-day cap) and runs through the normal ISB gates — the 30-pt stop ceiling, 4h side, near-box room — before it can place; with it ON, the normal ISB does not arm the opposite side on the same candle pair.',
           trader: 'ON — R-C owner ruling 2026-10-04.',
           consumer:
             'trader/mentor_tuning.go mentorTuningResolve (ISBReverseEMA9Enabled) · kernel/mentor/eval.go (reverse ISB emit)',
@@ -1157,9 +1266,53 @@ export const mentor: GuideSection = {
           perSession: 'No.',
         },
         {
+          label: 'Early 15m read (two 5m candles)',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'D4.2-R2 [D4.2 p1 @00:08–00:39] "3 cây 5 phút mà nó cứ xào quần xào quần ngay chỗ đó mà nó không đi đâu hết... ngay lập tức mình biết khung 15 phút đang tạo inside bar" (three 5m candles churning in one place, going nowhere — you know at once the 15m is making an inside bar) · @07:40 "2, 3 cây 5 phút anh chị đã có được 1 cây 15 phút" · D4.3-R21 [D4.3 @12:20–12:32] "2 cái nến 5 phút, 3 cái nến 5 phút, nó đang làm cái nến 15 phút rồi đó" · D4.2-R11 [@11:40–11:42] the benefit is defensive: "anh chị sẽ né được rất nhiều đoạn ranging và bị bớt thua". ON (default, release #60): when no 15m box stands and the FORMING 15m candle already holds exactly TWO closed 5m candles whose body (open of the 1st, close of the 2nd) sits inside the last closed 15m candle (wicks included), that forming candle is boxed at once — a PROVISIONAL 15m inside-bar box (the high/low of the two 5m candles, direction = the colour of the last closed 15m). Every 15m-box rule applies to it and refuses under its own name: isb_15m_box_dir_forming (a 1m ISB against it), isb_15m_needs_5m_isb_forming, isb_tf_conflict_forming (a 5m box the other way), phl_15m_box_ban_forming, box_isb_ban_15m_forming (isbrev_… for the reverse ISB). At the 15m close (the 3rd 5m — the 5m and the 15m close together) the real 15m box replaces it (counted isb_15m_forming_confirmed) or, if the 15m closed as no inside bar, it is dropped (isb_15m_forming_dropped); a tf_conflict_end both_boxes hold that only the provisional box started is settled when that 15m candle closes, even if the provisional box was already escaped: closed as no inside bar → the hold is released (tf_conflict_forming_released) — no 15m inside bar ever existed; closed as an inside bar → the hold now rests on a real 15m inside bar and stays until both boxes escape. The early read needs the 15m candle immediately before the forming one as its mother, so it never reads across the 16:00–17:00 CT halt, a weekend or a missing bucket. It only ever REFUSES — it never counts for mode C. WE-1 (Mon 14 Sep): the 15m mother 29,026.00 / 28,970.75, the next 5m candles churn inside it.',
+          trader:
+            'ON — the course reads the 15m from the 5m at once; OFF restores the closed-15m read only (pre-#60).',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/mtf_forming15.go forming15mISB / advance15mBox · kernel/mentor/eval.go Tick (the 15m box gates)',
+          range: 'true / false',
+          systemDefault: 'true',
+          recommended:
+            'ON — D4.2-R2 / D4.2-R11 / D4.3-R21 (release #60, owner order 2026-11-02 "fix everything the video check found").',
+          whenToTouch: 'Only on an owner ruling.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Mode C reads the standing 15m + 5m boxes',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'D4.2-R17 [D4.2 p1 @14:57–15:37] "tại sao hồi sáng em lại không move stop loss mà em đặt stop loss ở dưới để cho nó chạy, tại vì đây nó cộng hưởng quá nhiều thứ... Khung 15 phút nó cũng kêu mình làm vậy, khung 5 phút cũng kêu mình làm vậy" (I did not move the stop — I left it below and let it run, because so much resonates: the 15m says so, the 5m says so). WE-2: the 15m box 29,079.25 / 28,985.00, the 5m inside bar (the red 10:10 candle) 29,048.50 / 29,017.25, the 1m entry ~29,040, ran ~+100. standing_boxes (default, release #60) = mode C while a CLOSED 15m inside-bar box stands in the entry direction AND the 5m agrees — a standing 5m box the same way, or the last 5m box (drawn after the 15m candle) pointed and escaped the same way (the same 5m test as "15m inside-bar box needs a 5m ISB"). A provisional (early-read) 15m box never counts. last_pair = the pre-#60 read: the LATEST closed 5m and 15m candle pairs must both be inside bars — one 5m candle after the 5m inside bar that read was gone, though both boxes still stood.',
+          trader:
+            'standing_boxes — the course holds while both boxes say so; last_pair restores the pre-#60 read.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/mtf.go MTFConfluenceStanding / mtfConfluence · kernel/mentor/eval.go (ISB, reverse ISB, PHL/PLH emit)',
+          range: 'standing_boxes / last_pair',
+          systemDefault: 'standing_boxes',
+          recommended: 'standing_boxes — D4.2-R17 (release #60).',
+          whenToTouch: 'Only on an owner ruling.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Trigger escalation 5m → 15m → 30m',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'D3.4-R43 [D3.4 p2 @17:07–17:49]: when inside bars cross back and forth so the 5m buy/sell trigger is not valid, go to the 15m; if that fails, the 30m; then the 1h and the 4h. ON (default, release #60): the bot keeps a 15m and a 30m trigger line beside the 5m one (same break rule, seeded from history at boot). When the last 3 closed 5m candles hold 2 inside bars pointing opposite ways (the same "crossing" read the ISB-box ladder already uses — no new number), the 15m trigger line governs every trigger read of the intraday setups: the ISB side, the reverse ISB trend, the PHL/PLH level side, the trigger-retest direction, box returns and the trigger-box zone. When the 15m inside bars cross too, the 30m governs. The 1h/4h steps are the existing 4h/1h direction gate. Refusals carry the TF: isb_trigger_side_15m / isb_trigger_side_mismatch_15m (… _30m, isbrev_…, phl_level_trigger_side_15m, trigger_retest_wrong_way_15m, box_trigger_side_15m); every switch is logged and counted once (trigger_escalated_15m / trigger_escalated_30m / trigger_escalation_ended). Before #60, a standing 5m inside-bar box hid the trigger while the crossing skipped that box’s gate — in exactly that chop nothing governed the side. The trigger-retest LEVEL stays the 5m line; the rolling PHL/PLH (X8 "nhìn khung 5 phút") and the swing zone stay on the 5m.',
+          trader:
+            'ON — the course escalates; OFF restores the 5m line always (pre-#60).',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/trigger_escalate.go governingTrigger · kernel/mentor/eval.go Tick (every gating trigger read) · kernel/mentor/seed.go (15m/30m lines seeded)',
+          range: 'true / false',
+          systemDefault: 'true',
+          recommended:
+            'ON — D3.4-R43 (release #60). The crossing count (2 opposite ISBs in 3 buckets) is the open mentor question Q10.',
+          whenToTouch: 'Only on an owner ruling.',
+          perSession: 'No.',
+        },
+        {
           label: '5m/15m box conflict end',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'D4.2 p1 @07:54–08:02 "Khi anh chị thấy nó messed up như vậy — Đừng trade. Đợi nó thoát cả luôn" (when you see it messed up like that — do not trade; wait until it escapes entirely). While a 5m box and a 15m box conflict, nothing trades. first_box = the conflict ends when the small 5m box escapes; both_boxes (default, course-defaults-30) = no trade until BOTH the 5m and the 15m boxes have escaped (refusals counted isb_tf_conflict_both_boxes). The course says "đợi nó thoát cả luôn" (wait for it to escape ENTIRELY).',
+          what: 'D4.2 p1 @07:54–08:02 "Khi anh chị thấy nó messed up như vậy — Đừng trade. Đợi nó thoát cả luôn" (when you see it messed up like that — do not trade; wait until it escapes entirely). While a 5m box and a 15m box conflict, nothing trades. A box return met during the conflict is refused box_tf_conflict and used up — it is not traded late once the conflict ends (release #61 review round 2; before, it was skipped with no count and could be placed minutes later above/below the market). first_box = the conflict ends when the small 5m box escapes; both_boxes (default, course-defaults-30) = no trade until BOTH the 5m and the 15m boxes have escaped (refusals counted isb_tf_conflict_both_boxes). The course says "đợi nó thoát cả luôn" (wait for it to escape ENTIRELY).',
           trader: 'both_boxes — course-defaults-30.',
           consumer:
             'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/eval.go Tick (5m/15m conflict)',
@@ -1173,7 +1326,7 @@ export const mentor: GuideSection = {
         {
           label: 'News day: wait beyond the 4h line',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'D4.4 p1 @21:55–22:12 "Đợi canh nó nằm trên hai cái đường line này, kiếm insert bar đu vô… Hoặc anh chị chỉ cần đợi nó nằm ở trên cái đường line 4 giờ" (wait for price to sit above both lines and take an inside bar — or at least above the 4h line). ON (default, course-defaults-30) = on a red-folder print day, from the print window until the 08:30 CT RTH open, an intraday entry needs the last close beyond the 4h trigger line on its own side (above it for a long, below it for a short); refusals counted news_wait_4h_line. OFF = no such wait (the print window itself still refuses). The 30-second ISB of the same lesson (@23:08–23:13 "Đánh inside bar lệnh long 30 giây cho em") is NOT built: NinjaTrader streams 1m bars and up, there are no sub-minute bars, and the bot does not fake them.',
+          what: 'D4.4 p1 @21:55–22:12 "Đợi canh nó nằm trên hai cái đường line này, kiếm insert bar đu vô… Hoặc anh chị chỉ cần đợi nó nằm ở trên cái đường line 4 giờ" (wait for price to sit above both lines and take an inside bar — or at least above the 4h line). ON (default, course-defaults-30) = on a red-folder print day, from the print window until the 08:30 CT RTH open, an intraday entry needs the last close beyond the 4h trigger line on its own side (above it for a long, below it for a short); refusals counted news_wait_4h_line. Release #61 (switch “News wait: which lines”, mentor_news_wait_mode, default both): the close must ALSO be beyond the pre-print 1h line on its side (refusal news_wait_1h_line) — the course’s first method, both lines; with no 1h line, or a 1h line older than the 4h one (“mình sẽ coi 4 giờ thôi” D4.4-R12), the 4h alone. Example: 4h 29,342.25, 1h 29,360 — a long with the close at 29,350 waits; at 29,365 it may go. OFF = no such wait (the print window itself still refuses). The 30-second ISB of the same lesson (@23:08–23:13 "Đánh inside bar lệnh long 30 giây cho em") is NOT built: NinjaTrader streams 1m bars and up, there are no sub-minute bars, and the bot does not fake them.',
           trader: 'ON — course-defaults-30.',
           consumer:
             'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/news_print.go newsWaitFilter',
@@ -1186,7 +1339,7 @@ export const mentor: GuideSection = {
         {
           label: 'News day: freeze the pre-print 1h/4h read',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'D4.4 p1 @18:13–18:25 "Chứ tính cái lúc trước news, chứ không phải tính cái lúc news ra rồi nha… Còn cái khúc mà news ra rồi thì không tính" (read the trigger from before the news, not from when it prints; what prints after the news does not count). ON (default) = the 1h/4h trigger read FREEZES at its pre-print values from the print window start until the 08:30 CT day-gate read — the 1h/4h candles are never rewritten (no bar is deleted), so after 08:30 the lines resume on whole candles. OFF = the item-18 print-window drop (07:20–07:35 only), byte-identical. Knob rule case (a): the course line, no ruling against.',
+          what: 'D4.4 p1 @18:13–18:25 "Chứ tính cái lúc trước news, chứ không phải tính cái lúc news ra rồi nha… Còn cái khúc mà news ra rồi thì không tính" (read the trigger from before the news, not from when it prints; what prints after the news does not count). ON (default) = the 1h/4h trigger read FREEZES at its pre-print values from 30 minutes before the print (07:00 for a 07:30 print — release #61, D4.4-R6, switch “News: read the 1h/4h lines before the print”, mentor_news_read_lead_min; before #61 it started at the 07:20 print window) until the 08:30 CT day-gate read — the 1h/4h candles are never rewritten (no bar is deleted), so after 08:30 the lines resume on whole candles. OFF = the item-18 print-window drop (07:20–07:35 only), byte-identical. Knob rule case (a): the course line, no ruling against.',
           trader:
             'ON — case (a): the course reads the trigger from before the print and never rewrites candles after the open.',
           consumer:
@@ -1201,15 +1354,15 @@ export const mentor: GuideSection = {
         {
           label: 'ISB rest box escape test',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'D4.1 p1 @20:52–21:02 "cái thân nến nó chỉ nằm ở cái thân nến nằm bên ngoài mà cái râu nến nằm bên trong cái box ok bình thường không sao hết. Cái đó là at least" (the body outside with the wick still inside the box is fine — that is the minimum). body (default) = the 5m/15m/30m inside-bar rest box is escaped (and deleted) only when a 1m candle’s OPEN and CLOSE are both beyond the edge — the same test as the FTGH/FTGL boxes and the ORB escape; close = the older close-only test (pre-#25). Knob rule case (a), ON: the course line, no ruling against.',
-          trader: 'body — case (a).',
+          what: 'D4.1-R34 [D4.1 p1 @20:36–21:03] "Break là sao? Là một cây nến một phút anh chị trade, nó đóng bên ngoài cái box là at least… cái thân nến nó chỉ nằm bên ngoài mà cái râu nến nằm bên trong cái box, OK bình thường không sao hết. Cái đó là at least" (what is a break? the 1-minute candle you trade CLOSES outside the box — that is the minimum; a whole candle outside is fine, a body outside with the wick inside is fine) and D3.4-R34 "nó đóng một cái nến một phút ở ngoài" [D3.4 p2 @05:37–06:01]. close (default since release #61, m466 G20/G49) = the 5m/15m/30m inside-bar rest box (and the #60 provisional forming-15m box) is escaped and deleted when a 1m candle CLOSES beyond the edge — the same candle read the PHL/PLH 5m-box ban already used, so the two gates now agree on one candle; body = the #25–#60 default (OPEN and CLOSE both beyond the edge). The FTGH/FTGL boxes keep their own body escape (D3.2-R16). A stored body still wins.',
+          trader: 'close — the course minimum (release #61).',
           consumer:
-            'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/isb_box.go ISBBoxEscape',
+            'trader/mentor_tuning.go mentorTuningResolve · kernel/mentor/isb_box.go ISBBoxEscapeWith · kernel/mentor/mtf_forming15.go advance15mBox',
           range: 'close / body',
-          systemDefault: 'body',
+          systemDefault: 'close',
           recommended:
-            'body — D4.1 p1 @20:52–21:02; knob rule (a): course, no ruling against.',
-          whenToTouch: 'Rarely — close only to compare with the pre-#25 test.',
+            'close — D4.1-R34 p1 @20:36–21:03 (a close-only test satisfies every sentence of it; the body test rejects the first).',
+          whenToTouch: 'Rarely — body only to restore the #25–#60 test.',
           perSession: 'No.',
         },
         {
@@ -1302,14 +1455,14 @@ export const mentor: GuideSection = {
         {
           label: 'ISB tiny-stop exception',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'Release #52 B8. With a very small stop the mentor kept a resting ISB past the 4th candle: "stop loss của mình ở thời điểm đó rất nhỏ. Có 12 điểm… Trade nó là take risk" [Ngày 5.1 Go over lại tất cả part2 @02:50–03:40, @04:10–04:58]. He frames it as personal discretion and gives no threshold, so it is OFF. Set a number and an arm whose ISB stop (candle range + 2 × the 1.5-pt buffer) is at or under it is NOT cancelled at the cancel candle; it still cancels the moment a body leaves I1. Blank / 0 = off.',
-          trader: 'OFF — the number is the mentor’s to give (he said 11–12).',
+          what: 'Release #52 B8; default changed in release #60 (D5.1-R26). With a very small stop the mentor kept a resting ISB past the 4th candle: "stop loss của mình lúc đó rất nhỏ, có 12 điểm… cancel làm chi trời… Anh chị có một cái quyền: thấy stop loss nhỏ… cứ việc đặt lệnh, mặc dù sau 3 cây" [Ngày 5.1 Go over lại tất cả part2 @02:24–04:41]; the on-screen stop is 29,285.75 → 29,273.25 = 12.50 pts (50 ticks), so the default is 12.5. An arm whose ISB stop (candle range + 2 × the 1.5-pt buffer) is at or under it is NOT cancelled at the cancel candle; it still cancels the moment a body leaves I1. Blank = 12.5; 0.01 is effectively off (no ISB stop is under 3 pts).',
+          trader: '12.5 pts — the worked example’s measured stop (D5.1-R26).',
           consumer:
             'trader/mentor_tuning.go mentorTuningResolve (ISBStackTinyStopPts) · kernel/mentor/isb.go ISBStackTick',
-          range: '0.01–25 pts (blank = off)',
-          systemDefault: '0 (off)',
+          range: '0.01–25 pts (blank = 12.5)',
+          systemDefault: '12.5',
           recommended:
-            'OFF — not from the course: Ngày 5.1 part2 @02:50–03:40 gives no threshold; a number here is a guess.',
+            '12.5 — Ngày 5.1 part2 @02:24–04:41, the stop measured on screen (29,285.75 → 29,273.25).',
           whenToTouch: 'Only on an owner ruling.',
           perSession: 'No.',
         },
@@ -1381,6 +1534,167 @@ export const mentor: GuideSection = {
           recommended:
             'Blank — ours, not from the course: Ngày 4.1 part1 @00:04:31–00:05:19 defines no range in points.',
           whenToTouch: 'Only when the mentor gives the definition.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Trendline entry touch',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #60 (D2.3-R7, the full video read). "thà nó về một lần, rồi nó test, rồi nó hold rồi, là lần thứ ba đó, thì lần thứ tư mới dám tự tin mình vô" (better that it comes back once, tests, holds — that is the third time — and only on the fourth do I dare go in) [D2.3 p1 @02:34–02:47, 03:03–03:16]; "test lần thứ 3 thì mới valid" (D3.2-R34) [D3.2 p2 @02:43–04:11]. fourth (default) = on the candle of its 3rd touch a 1m/2m trendline is NOT a location — refused and counted trendline_third_touch_is_test — and it stays refused while price keeps sitting on the line; only after a candle LEAVES the line (clear of it by more than its 0.5-pt touch band) does it become a location, so the entry comes on a NEW, 4th touch (“thì lần thứ tư mới dám tự tin mình vô” [D2.3 p1 @02:34–02:47]). While held it is still a valid line, so it stays a target. third = the pre-#60 behaviour (the line arms on its 3rd-touch candle). 1h/4h lines are unchanged.',
+          trader: 'fourth — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (TrendlineEntryTouch) · kernel/mentor/trendline.go TrendlineLevelsTouch',
+          range: 'fourth / third',
+          systemDefault: 'fourth',
+          recommended: 'fourth — D2.3 p1 @02:34–02:47, 03:03–03:16.',
+          whenToTouch: 'Rarely — third only to restore the pre-#60 entry.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Near-box: between two boxes exempt',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #60 (D3.2-R29/R30). The mentor refused E6 — a short ISB candle (~29,015–29,025) sitting on the top of the FTGL box 28,980.75–29,014.00 with the FTGH box drawn above it: "sát box, gần box, gần supply quá, mình không được đánh" [D3.2 p1 @22:12–23:08] — and allowed the ISB in the middle because "nó đâu có làm gì đâu" (nothing was near it) [@23:14–24:41]. OFF (default) = no blanket "between two boxes" exemption: the middle setup passes on its own room (the Near-box room card). ON = the pre-#60 exemption (one box wholly above AND one wholly below → never near). An entry inside the box that opposes its side is refused near_box_inside_opposing either way.',
+          trader: 'OFF — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (NearBoxBetweenExempt) · kernel/mentor/box.go nearBoxRefusal',
+          range: 'true / false',
+          systemDefault: 'false (off)',
+          recommended:
+            'OFF — D3.2 p1 @22:12–24:41 (E6 refused, the middle case judged on its own).',
+          whenToTouch: 'Rarely — ON only to restore the pre-#60 exemption.',
+          perSession: 'No.',
+        },
+        {
+          label: 'PHL flat low',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #60 (D2.2-R64/R65). "đang đi kiếm một cái lệnh có đáy cao hơn đáy trước đó; mà ngay chỗ này nó ngang phè" (we look for a low higher than the previous low; here it is dead flat) [D2.2 p3 @07:44–09:46]; "Cái chỗ này anh đang gọi nó là failure to go lower" [@09:46–10:15] — on screen the pink box 29,369.00–~29,380.25. flat_near (default) = a PHL whose low sits above the prior low by no more than the day’s "same price" distance (half the average high-low range of the last 20 closed candles of the traded frame — the owner’s m428 R2 measure, no new number) is refused phl_flat_low_is_ftgl; the mirror refuses a PLH on a flat high (plh_flat_high_is_ftgh). The flat pair is already a flat support/resistance level, so the FTGL reading of that place still trades. strict = the pre-#60 strict comparison only.',
+          trader: 'flat_near — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (PHLFlatLow) · kernel/mentor/phl.go phlFlatExtremeRefusal',
+          range: 'flat_near / strict',
+          systemDefault: 'flat_near',
+          recommended: 'flat_near — D2.2 p3 @07:44–10:15.',
+          whenToTouch: 'Rarely — strict only to restore the pre-#60 check.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Reverse ISB: EMA 9 touch',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #60 (D5.4-R7). "nó không cần đụng, nó cứ đụng vòng vòng ngay EMA 9 là được … không quan trọng là nó đụng ngay tại EMA 9 hay là nó lố EMA 9" (it need not touch exactly — hovering around the EMA 9 is enough, at it or overshooting it) [D5.4 p1 @03:35–03:46]; on screen the 09:45–09:48 candles straddle the line as a group. pair (default) = the EMA 9 must lie inside the mother + ISB candles’ combined range; isb_candle = the pre-#60 read (inside the ISB candle’s own range). A group that never reached the line is still refused.',
+          trader: 'pair — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (ISBReverseTouch) · kernel/mentor/isb_reverse.go ReverseISBAtEMA9',
+          range: 'pair / isb_candle',
+          systemDefault: 'pair',
+          recommended: 'pair — D5.4 p1 @03:35–03:46.',
+          whenToTouch: 'Rarely — isb_candle only to restore the pre-#60 read.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Key level: Uno Reverse after a hold',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #61 (G2, D1.3-R21). "Kháng cự bị phá → sẽ thành hỗ trợ khi backtest / Hỗ trợ bị phá → sẽ thành kháng cự khi backtest" (broken resistance becomes support on the backtest, and the mirror) [D1.3 p1 @12:31–12:58]; his drawing: the level 29,104.25 bounces, breaks, then is backtested from below and rejects. on (default) = a KEY level that HELD today (at least one reject visit) and then breaks — a later visit whose first candle closes through it, or a later candle of the held visit closing through it — is NOT made ISB-only: its role flips once (counter level_broken_uno, the resting order is still cancelled), and the next touch from the other side is a fresh first touch, so the backtest reject arms a PHL/PLH through every normal gate. A wrong-way FIRST visit (the level never held — "cây nến chạm đầu tiên đóng ở trên level… invalid" [D5.2 p1 @19:44–20:25]) and a second wrong-way close after the flip stay ISB-only for the day. One flip per level per session day. Moving lines, box edges and old highs/lows keep their own rules. off = the pre-#61 ISB-only on any break.',
+          trader: 'on — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (UnoKeyLevels) · kernel/mentor/uno_key_level.go unoKeyLevelBreak / unoSameVisitBreak',
+          range: 'on / off',
+          systemDefault: 'on',
+          recommended: 'on — D1.3 p1 @12:31–12:58.',
+          whenToTouch:
+            'Rarely — off only to restore the pre-#61 ISB-only rule.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Session-open wick + gap edge levels',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #61 (G10 D3.1-R26, G11 D3.1-R20). "đây là mới lúc open… cái râu này nó sẽ là cái đỉnh" (at the open, this wick will be the high — 29,136.00, Sun 13 Sep 17:00) [D3.1 p1 @11:58–12:22]; "Cái cạnh dưới của cái gap, lúc nào nó cũng sẽ là resistance… Level là resistance" (the gap’s edge is always resistance — it is a level) [@09:41–09:51], the gap marked from Friday’s last close 29,391.25 down to the Sunday first candle. on (default) = (1) the first 5m candle of the current CME session (17:00–17:05 CT, after the daily halt or a weekend) is an old high AND an old low candidate with no left-neighbour test (the fractal pivots could not see it because the Friday candle to its left is higher); the ordinary unbroken test and nearest pick decide; (2) when that candle left empty space to the prior session’s last close (gap down: its high under the last close; gap up: its low over it) of at least 20 pts (the key-level prune distance — two lines closer keep the newer one, the open wick), the far edge (the prior last close) is a level (gap_edge: a location, a target and an obstacle) until a 1m candle trades through it — a fill may take days. There is no gap-fill entry ("em không đánh theo gap", R23). off = neither.',
+          trader: 'on — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (SessionOpenLevels) · kernel/mentor/session_open_levels.go sessionOpenPivots / gapEdgeLevels',
+          range: 'on / off',
+          systemDefault: 'on',
+          recommended: 'on — D3.1 p1 @09:41–12:22.',
+          whenToTouch: 'Rarely — off only to restore the pre-#61 level set.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Line order cancel: current line price',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #61 (G17, D2.3-R34). "Mình làm gì? Mình cancel. Cancel. Chẳng làm gì khác hết" (what do we do? cancel — nothing else) [D2.3 p1 @23:35–24:03], when a later candle closes through the level. A trendline moves (~0.45 pt a minute on a typical slope), so the level of a resting order on a trendline or the EMA 34 is where the line is NOW. current_line (default) = the close-through cancel reads the trendline’s price at the checked candle’s close (the EMA 34: this minute’s line), counted level_arm_cancel_current_line when the frozen price would have kept the order; a trendline that died (5m close through) or left the set cancels its order (level_arm_line_gone). Key levels, old highs/lows, box and gap edges, the 5m trigger retest and the wick zone keep the price they were placed at. placement_price = the pre-#61 frozen placement price for every order.',
+          trader: 'current_line — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (LevelArmLineCancel) · kernel/mentor/level_arm_line.go levelArmLinePrice · eval.go levelArmCancels',
+          range: 'current_line / placement_price',
+          systemDefault: 'current_line',
+          recommended: 'current_line — D2.3 p1 @23:35–24:03.',
+          whenToTouch:
+            'Rarely — placement_price only to restore the pre-#61 read.',
+          perSession: 'No.',
+        },
+        {
+          label: 'PHL higher low: whole pullback',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #61 (G41, D2.2-R59). "nghĩa là anh đang đi kiếm một cái lệnh có đáy cao hơn đáy trước đó" (we are looking for a trade whose low is higher than the previous low) [D2.2 p3 @08:25–09:25], compared with the lows on the left [@02:51–03:41]. pullback (default) = a PHL is refused phl_pullback_lower_low when ANY candle of the pullback — from the candle after the old high up to the signal candle — printed a low at or under the prior low (the low the leg to the old high started from); mirror for a PLH: plh_pullback_higher_high. Before #61 only the signal candle’s low was compared, so a pullback that had already broken the prior low passed once its newest candle’s low sat higher. The rolling PHL ladder keeps its own rules. signal = the pre-#61 signal-candle-only check.',
+          trader: 'pullback — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (PHLPullbackLow) · kernel/mentor/phl.go phlPullbackRefusal',
+          range: 'pullback / signal',
+          systemDefault: 'pullback',
+          recommended: 'pullback — D2.2 p3 @08:25–09:25.',
+          whenToTouch: 'Rarely — signal only to restore the pre-#61 check.',
+          perSession: 'No.',
+        },
+        {
+          label: '5m ISB box: newest inside bar',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #61 (m466 G28 D4.1-R37 + G32 D4.2-R10). "cái nến inside bar nào gần với thời điểm đó nhất, bọc lại cho em" (box the inside-bar candle NEAREST in time) [D4.1 p1 @22:31–22:49]. newest (default) = while a 5m ISB rest box stands, a NEWER closed 5m inside bar replaces it (counted isb_5m_box_replaced). When the newer one points the OTHER way it is counted isb_5m_box_replaced_opposite and, under a standing 15m box of the first direction, the 15m/5m conflict refuses every setup (isb_tf_conflict*) — "messed up… đừng trade. Đợi nó thoát cả luôn" [D4.2 p1 @05:34–08:33]. Before #61 the first box stood until it escaped and hid every newer 5m inside bar. first = the pre-#61 read.',
+          trader: 'newest — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (FiveMinBoxSource) · kernel/mentor/eval.go Tick (the R5 5m box)',
+          range: 'newest / first',
+          systemDefault: 'newest',
+          recommended: 'newest — D4.1 p1 @22:31–22:49.',
+          whenToTouch: 'Rarely — first only to restore the pre-#61 read.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Break direction lock',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #61 (m466 G21 D4.1-R31/R33 + G29 D4.1-R55). "Break ra phải có setup… nếu nó break đầu trên thì xuất hiện inside bar cho lệnh long hoặc potential high low… còn nếu break đầu dưới thì… inside bar cho lệnh short hoặc potential low high" [D4.1 p1 @18:27–20:33], for "the 5m box, anything — một cái vùng range, failure to go higher/lower, inside-bar box"; "thoát [đầu] nào thì mình trade [đầu] đó" [D4.1 p1 @07:47–08:07]. ON (default): a BREAK — an FTGH/FTGL box’s first body escape, or a 5m/15m/30m ISB rest box’s 1m-close escape — sets a lock to the break side. While it stands every intraday entry on the OTHER side (ISB, reverse ISB, PHL/PLH level and rolling rungs, box returns) is refused break_counter_setup. It clears when a 1m candle closes back through the broken edge (the failed break, D4.1-R30 "bull flag đi lên xong bắn ngược xuống, cũng như không" [D4.1 p1 @17:43–18:29], counted break_lock_failed), on an opposite break (break_lock_flipped) or at the 17:00 CT roll. A lock set by the EARLY (provisional) 15m box also ends when that 15m candle closes as no inside bar — there never was a 15m inside bar to break (counted break_lock_forming_released, D4.2-R11 [D4.2 p1 @07:20–08:15]); a lock that early break had replaced (an FTGH/FTGL or ISB break that never failed) comes back then — or when the early break itself fails — unless its own edge was closed back through meanwhile (counted break_lock_restored, release #61 review round 2). The break candle itself is never an entry (unchanged). The swing is exempt. The lock refuses NEW entries only: an opposite-side stop order already resting before the break is not cancelled by the lock (its own setup cancels it — level broken, box escaped, expiry). Note: a pullback that breaks a 5m inside-bar box DOWN in an uptrend now refuses the rolling buy rungs until a close back above that box (pinned on the D2.2 tape, TestM61BreakLockRefusesRollingRungAfterFiveMinBreakDown).',
+          trader: 'ON — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (BreakDirectionLock) · kernel/mentor/break_lock.go advanceBreakLock / courseRangeFilter · kernel/mentor/eval.go Tick',
+          range: 'true / false',
+          systemDefault: 'true',
+          recommended: 'ON — D4.1 p1 @18:27–20:33.',
+          whenToTouch: 'Only on an owner ruling.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Too-small range guard',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #61 (m466 G33 D4.2-R33). "từ đây trên đây có 50-60 điểm, mà cây nến vừa vậy 30-40 điểm… bên trong một cái range nó quá nhỏ đi, đừng bao giờ đụng tới" (50-60 points top to bottom with 30-40-point candles — a range that small, never touch it) [D4.2 p2 @06:16–06:30]. The numbers are the video’s measurement, not ours: the 1m chart 09:44–09:59 spans 61.50 pts with a 33.75 / 34.50-pt candle. DEFAULT OFF (release #61 final): the course gives only this one worked example — no count of 30–40-pt candles and no breakout margin — and three review rounds kept finding mis-latches (a latch on the breakout candle itself; a churn close just outside the prior 14 wicks read as a break with no margin), so the guard stays available behind this knob and the count + margin are on the mentor list. A stored true still wins. ON: when the last 15 closed 1m candles span at most 61.50 pts and at least TWO of them are 30.00 pts or more (the video’s two candles; one outlier wick in a chop of teens-sized candles is the normal range of D4.2-R31 “nến tầm mười mấy điểm”), every intraday entry priced inside that range is refused range_too_small_big_candles until a 1m candle CLOSES outside it (counted range_small_set / range_small_cleared). The range stays the box it latched, and the close outside ENDS it: a new too-small range needs 15 candles that all came after that break, so the break-direction entry is never refused by a range re-drawn around the breakout candle (release #61 review round). A window whose NEWEST candle closes outside the 14 before it is a break, not a range: nothing latches and that candle counts as the break (range_small_breakout, D4.1-R34 [D4.1 p1 @20:36–21:03] — release #61 review round 2). The box ping-pong 50-pt rule is unchanged (it is the same idea for two boxes).',
+          trader:
+            'OFF — the course states no candle count or breakout margin (mentor question).',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (SmallRangeGuard) · kernel/mentor/range_small.go advanceSmallRange · kernel/mentor/break_lock.go courseRangeFilter',
+          range: 'true / false',
+          systemDefault: 'false',
+          recommended:
+            'OFF until the mentor states the candle count and breakout margin — D4.2 p2 @06:16–06:30 is one worked example.',
+          whenToTouch: 'Only on an owner ruling.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Mid-range: trade with the rejection',
+          where: 'Strategy → Risk control → Mentor method numbers',
+          what: 'Release #61 (m466 G43 D2.2-R71). "nếu thật sự nó vừa reject FTGH thì về tới đây tôi đánh short xuống tiếp chứ… mắc mớ gì tôi đánh ngược lên? Nó mới reject thì đánh theo hướng nó reject" [D2.2 p3 @14:28–15:58]. ON (default): between the floor box and the ceiling box (where only an inside bar may trade, D2.2-R72), after a 1m candle rejects the ceiling (High at or above its bottom, Close below it) a LONG entry is refused mid_range_against_rejection until a later candle reaches the box below (the ceiling is an FTGH, or a box that flipped — an un-flipped FTGL hit from below is no FTGH reject, release #61 review round 2); the mirror for a floor reject refuses SHORT entries until a candle reaches the box above. The newest rejection replaces an older one (counted mid_range_reject_long / _short / _done). Release #61 also fixed the between-two-boxes read itself (G37, no knob): a box’s role is the side of price it is on — an FTGH that escaped up and is now below price is the floor (Uno Reverse, "Kháng cự bị phá → hỗ trợ khi backtest" [D1.3 p1 @12:31–12:58]); a box that never flipped keeps its own role only (an FTGH merely wicked through is no floor).',
+          trader: 'ON — the course.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve (MidRangeRejectSide) · kernel/mentor/reject_side.go advanceMidRangeReject · kernel/mentor/break_lock.go courseRangeFilter · kernel/mentor/eval.go midRangeBoxed',
+          range: 'true / false',
+          systemDefault: 'true',
+          recommended: 'ON — D2.2 p3 @14:28–15:58.',
+          whenToTouch: 'Only on an owner ruling.',
           perSession: 'No.',
         },
         {
@@ -1523,21 +1837,37 @@ export const mentor: GuideSection = {
         },
         {
           label: 'Wick microscalp',
-          where: 'Strategy → Mentor mode → setups',
-          what: 'D4.3 advanced wick read: 2+ consecutive CLOSED 5m candles rejecting with wicks the SAME way (lower wicks in an uptrend, upper wicks in a downtrend) put a bounded target at their far wick — target-only, never a location. OFF by default ("đừng có tập khúc này đầu tiên").',
+          where: 'Strategy → Mentor mode → Mentor method numbers',
+          what: 'm465 (release #60) — the whole D4.3 setup: ≥2 of the last 3 closed 5m candles pulling the wick WITH the 5m trend (lower wicks long, upper wicks short; one odd candle tolerated) draw a 5.00–14.25-pt zone box, extended right until a 1m close beyond its far edge; a 1m ISB/PHL at the box arms through the ordinary paths; the target is the nearby 5m wicks (≤100 pts). Every refusal named: wick_run_too_short, wick_mixed_direction, wick_against_trend, wick_zone_broken, wick_zone_no_setup, wick_zone_wrong_side, wick_target_no_room, wick_safe_play_wait.',
           trader: 'OFF.',
-          consumer: 'kernel/mentor/mentor.go WickMicroscalpEnabled',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve → kernel/mentor/wick_zone.go wickZoneLevels / wickZoneLeave · kernel/mentor/wick_microscalp.go wickTargetLadder',
           range: 'true / false',
           systemDefault: 'OFF',
           recommended:
-            'OFF — D4.3 @00:00–03:20 advanced; the course says practise it later.',
+            'OFF — "làm ơn đừng… đừng có tập khúc này đầu liền, từ từ rập vô sau" [D4.3 @04:55–05:17]: advanced; practise it after the core setups.',
           whenToTouch: 'Only after the core setups are proven on SIM.',
+          perSession: 'No.',
+        },
+        {
+          label: 'Wick safe play',
+          where: 'Strategy → Mentor mode → Mentor method numbers',
+          what: 'm465 (release #60) — D4.3-R20: while the wick microscalp is ON, a setup at a wick zone counts only once its reference candle CLOSED outside the box on the trade side (under a supply box for a short, over a demand box for a long); otherwise it waits (wick_safe_play_wait). Read only while wick_microscalp is ON.',
+          trader: 'OFF.',
+          consumer:
+            'trader/mentor_tuning.go mentorTuningResolve → kernel/mentor/wick_zone.go wickZoneLeave',
+          range: 'true / false',
+          systemDefault: 'OFF',
+          recommended:
+            'OFF — "Mọi người vẫn có thể trade bình thường, là thêm một sự confirm" [D4.3 @14:07–14:27]: optional.',
+          whenToTouch:
+            'When the zone entries take too many touches that close inside the box.',
           perSession: 'No.',
         },
         {
           label: 'Stop ceiling',
           where: 'Strategy → Mentor mode → risk',
-          what: 'The evaluator’s hard stop ceiling for PHL/PLH stops and box-return stops — its only two readers. The ISB is not checked against it: the ISB (and the reverse ISB) meet the mentor_isb_max_pts ceiling (default 25, the SAME knob the trader R8 gate reads), which this value does not move.',
+          what: 'The evaluator’s hard stop ceiling for PHL/PLH stops and box-return stops — its only two readers. The ISB is not checked against it: the ISB (and the reverse ISB) meet the mentor_isb_max_pts ceiling (default 20 since release #61 — D4.1-R12; the SAME knob the trader R8 gate reads for an ISB), which this value does not move. The trader’s R8 gate keeps 25 for PHL/PLH/box stops.',
           trader: '25 pts — the SWING4H is exempt (its ceiling is 100).',
           consumer:
             'kernel/mentor/mentor.go StopCeilingPts — read only by kernel/mentor/phl.go phlPLHR2 and kernel/mentor/box_trade.go boxEntryIntent',
@@ -1562,15 +1892,15 @@ export const mentor: GuideSection = {
         {
           label: 'Near-box room',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'Release #52 B11. Refuse an ISB or PHL/PLH whose nearest box edge in the trade direction is closer than this × its own risk — the setup is "sát box" ("Insaba Sword ngay chỗ đó mình không được đánh… sát box gần box gần supply quá mình không được đánh" [Ngày 3.2 FTGH FTGL part1 @00:22:44–00:23:10]). The mentor gives NO distance, so the 2× is OURS (the same room the target rule demands), not the course. Exempt only between two DIFFERENT boxes: one wholly above the entry and another wholly below. A price inside a single box is not exempt. Blank = 2; an explicit 0 turns the refusal off for every setup.',
+          what: 'Release #52 B11. Refuse an ISB or PHL/PLH whose nearest box edge in the trade direction is closer than this × its own risk — the setup is "sát box" ("Insaba Sword ngay chỗ đó mình không được đánh… sát box gần box gần supply quá mình không được đánh" [Ngày 3.2 FTGH FTGL part1 @00:22:44–00:23:10]). The mentor gives NO distance, so the 2× is OURS (the same room the target rule demands), not the course. Release #60 (D3.2-R29/R30): an entry INSIDE the box that opposes its side (an FTGL for a short, an FTGH for a long) is refused near_box_inside_opposing — the mentor’s E6, a short ISB sitting on the FTGL top with the FTGH drawn above [D3.2 p1 @22:12–23:08]; and "between two boxes" is no longer a blanket exemption — the middle ISB the mentor took was fine because nothing was near it ("nó đâu có làm gì đâu" [@23:14–24:41]), so it passes on its own room (the "Near-box: between two boxes exempt" card restores the old exemption). Blank = 2; an explicit 0 turns the refusal off for every setup.',
           trader:
-            '2× — ours, not the course. A setup between two different boxes is allowed.',
+            '2× — ours, not the course. Between two boxes the setup still needs its own room (release #60).',
           consumer:
             'trader/mentor_tuning.go mentorTuningResolve (NearBoxRoomMultiple) · kernel/mentor/box.go nearBoxRefusal',
           range: '0–10 × (0 = off)',
           systemDefault: '2',
           recommended:
-            '2 until the mentor names the distance — his own example (an ISB short 10–15 pts above an FTGL with a 5–6 pt risk) is 2–3R, so a strict 2× may refuse the 3R end. Between-two-boxes exemption row 25 @ 23:14–24:03.',
+            '2 until the mentor names the distance — his own example (an ISB short 10–15 pts above an FTGL with a 5–6 pt risk) is 2–3R, so a strict 2× may refuse the 3R end. The between-two-boxes case (D3.2-R30 @23:14–24:41) passes on its own room since release #60.',
           whenToTouch:
             'Only when the mentor gives the number. Zero disables the near-box refusal entirely.',
           perSession: 'No.',
@@ -1593,14 +1923,14 @@ export const mentor: GuideSection = {
         {
           label: 'Day gate spent threshold',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'The Globex run (17:00 → 08:30 CT) at/above this before the open = a spent day.',
-          trader:
-            '300 pts — "already run 300–400 before the open → 80–90% it ranges".',
+          what: 'The Globex run (17:00 → 08:30 CT) at/above this before the open = a spent day. Release #60 (D5.1-R18): 265 — the rule says "already run 300–400 before the open → 80–90% it ranges" [D5.1 p1 @16:05–16:11], and its worked example — a −265.00 run (1,060 ticks): "Một cây nến daily chạy 300 điểm, mà tới đây nó chạy gần được 300 điểm… nó chạy gần hết cây daily luôn rồi", "phải còn 100 điểm" [D5.1 p1 @17:56–18:14] — had nothing left to trade.',
+          trader: '265 pts — the worked example’s spent day (D5.1-R18).',
           consumer:
             'trader/mentor_tuning.go mentorTuningResolve (DayGateSpentPts)',
-          range: 'pts',
-          systemDefault: '300',
-          recommended: '300 — D5.1 p1 @ 15:57.',
+          range: '50–2000 pts',
+          systemDefault: '265',
+          recommended:
+            '265 — D5.1 p1 @17:56–18:14 (was 300 before release #60).',
           whenToTouch: 'Rarely.',
           perSession: 'No.',
         },
@@ -1726,7 +2056,7 @@ export const mentor: GuideSection = {
         {
           label: 'Swing max stop',
           where: 'Strategy → Risk control → Mentor method numbers',
-          what: 'The swing SIZING cap (B5): a swing whose stop is at/above this goes out at no more than min(your swing size, 2) MNQ — it is NOT a skip. The SKIP is “Swing skip stop (đừng vô)” (mentor_swing_max_stop_pts, default 90, m463): with that default a stop of 100+ is refused before sizing, so this cap only bites if you raise the skip above it. The swing is EXEMPT from the ISB stop ceiling (mentor_isb_max_pts, default 25).',
+          what: 'The swing SIZING cap (B5): a swing whose stop is at/above this goes out at no more than min(your swing size, 2) MNQ — it is NOT a skip. The SKIP is “Swing skip stop (đừng vô)” (mentor_swing_max_stop_pts, default 90, m463): with that default a stop of 100+ is refused before sizing, so this cap only bites if you raise the skip above it. The swing is EXEMPT from the ISB stop ceiling (mentor_isb_max_pts, default 20 since release #61).',
           trader: '100 pts — size ≤ 2 MNQ at/above it.',
           consumer:
             'trader/mentor_tuning.go mentorTuningResolve (SwingMaxStopPts) → trader/mentor_mode.go mentorSwingWideStopCap',
@@ -2033,9 +2363,9 @@ export const mentor: GuideSection = {
           label: 'Swing runner',
           where:
             'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25); size = mentor_swing4h_contracts',
-          what: 'With 2+ swing contracts, split the swing: leg 1 (half, rounded up) takes profit at the first target (max(1R, the 5m EMA 34)); the runner is held by the 4h — break-even at +1R and the close at the end of ONE 4h candle [D5.2 p1 @06:03–06:20] (the swing’s own rules), with its take-profit capped at max(100 pts, 2× the first-target distance). The hold-close never closes more than NinjaTrader still holds. With 1 contract the switch does nothing (counted swing_runner_needs_2_contracts).',
+          what: 'With 2+ swing contracts, split the swing: leg 1 (half, rounded up) takes profit at the first target (max(1R, the 5m EMA 34)); the runner is held by the 4h — break-even at +1R and the close at the end of ONE 4h candle [D5.2 p1 @06:03–06:20] (the swing’s own rules), with NO take-profit by default (mentor_swing_runner_tp=none — see “Swing runner take-profit”; capped = the pre-#61 max(100 pts, 2× the first-target distance)). The hold-close never closes more than NinjaTrader still holds. With 1 contract the switch does nothing (counted swing_runner_needs_2_contracts).',
           trader:
-            'Course: “Nhưng đừng vô 1 MNQ / Vô Addict là 2 của MNQ để có đường bắn bớt” (not 1 MNQ — at least 2, so you can take some off) [D5.2 p2 @06:08–06:23]; “gồng theo khung 4 giờ” [D5.2 p1 @05:52]; “hô tới đâu luôn” [D5.2 p2 @05:50]. He swings 1 MNQ himself (“Em vô đúng 1 MNQ thôi” [D5.2 p1 @00:43]). The 100-pt cap is the top of the course’s 50–100 pts per 4h candle — the course names no runner take-profit [C]. Case (b): sizing is the owner’s call.',
+            'Course: “Nhưng đừng vô 1 MNQ / Vô Addict là 2 của MNQ để có đường bắn bớt” (not 1 MNQ — at least 2, so you can take some off) [D5.2 p2 @06:08–06:23]; “gồng theo khung 4 giờ” [D5.2 p1 @05:52]; “hô tới đâu luôn” [D5.2 p2 @05:50]. He swings 1 MNQ himself (“Em vô đúng 1 MNQ thôi” [D5.2 p1 @00:43]). The course names no runner take-profit (“rồi tới đâu thì tới”), so since release #61 (m466 P4) the runner has none by default; the old 100-pt cap (the top of the course’s 50–100 pts per 4h candle) is the capped option. Case (b): sizing is the owner’s call.',
           consumer:
             'trader/mentor_course_exits.go mentorSwingRunnerLegs ← trader/mentor_actions.go mentorArmIntent · mentorSwingCloseQty ← mentorClosePosition',
           range: 'ON / OFF',
@@ -2060,6 +2390,40 @@ export const mentor: GuideSection = {
             'OFF — D2.4 p1 @02:02, @02:24–02:47 (no runner target, “cho nó chạy”). Counters resonance_runner_uncapped / resonance_runner_uncap_not_split; ON: resonance_runner_tp_sent / _none / _not_split / _not_beyond.',
           whenToTouch:
             'ON only to cap the runner at the level beyond the old high again (the bot’s older inference, not the course).',
+          perSession: 'No — per strategy.',
+        },
+        {
+          label: 'Resonance on any same-way inside bar',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25)',
+          what: 'ON (default, release #60): after a PHL/PLH fill, on every CLOSED candle of the frame the entry was read on (1m, 2m or 5m), if that candle is an inside bar of the one before it (body inside its full range) and the one before has the trade’s colour (green for a long, red for a short), and it is candle 1, 2 or 3 after the fill candle, the position flips to mode A (resonance) — once. Nothing is placed and no stop moves at that moment: the runner’s break-even waits for leg 1’s 1:1 partial exactly as before. The inside bar does NOT have to be a tradeable ISB entry: an ISB whose own entry the bot refused (stop above the ISB max, room, location, a gate) still counts. OFF: only a same-way ISB entry that passes every placement gate except the never-add gate arms it (m151).',
+          trader:
+            'Course: “sau khi nó khớp lệnh của mình, trong vòng 3 cây nến sau đó xuất hiện một setup Inside bar cùng chiều, thì đó là một setup cộng hưởng” (after it fills, within the next 3 candles a same-way inside bar appears — that is the resonance) [D2.4 p1 @01:37, @04:54]; “inside bar cho lệnh long, cùng chiều nha anh chị, chứ không phải inside bar lệnh short” [D2.4 p1 @03:56, @04:42–04:44]. He names no gate on that inside bar — it is a hold signal, not a new entry.',
+          consumer:
+            'trader/mentor_resonance_raw.go mentorResonanceRawTick ← trader/mentor_exit_drive.go mentorExitDrive (mentorResonanceRawDrive)',
+          range: 'ON / OFF',
+          systemDefault: 'ON (unset = ON)',
+          recommended:
+            'ON — D2.4-R2 is explicit. Counter resonance_armed_raw_isb (and the shared resonance_armed); the log line says “resonance ARMED on a RAW inside bar”.',
+          whenToTouch:
+            'OFF only to go back to the older rule (the resonance needs a placeable ISB entry).',
+          perSession: 'No — per strategy.',
+        },
+        {
+          label: 'Smaller size on a 2m entry',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25)',
+          what: 'ON (default, release #60): an ISB, PHL or PLH entry READ on the 2m (or the slow-evening 5m) sizes the reduced tier (mentor_reduced_contracts, 3) — tier exec_2m_reduce. It ranks after the ISB old-extreme / in-range cuts and the 5m pullback warning, before the 20–25-pt stop band. SWING4H (its own tier) and box entries are not touched. OFF: a 2m entry sizes like a 1m entry.',
+          trader:
+            'Course: “khi anh chị vô lệnh khung 2 phút, stop loss lớn hơn khung 1 phút. Thì bây giờ stop loss lớn, mình phải làm gì? Mình phải giảm size” (a 2m entry has a bigger stop than a 1m one — so reduce size) [D3.1 p1 @14:09–14:35]; his 2m entry candle measures 15.50 pts / 62 ticks. He gives NO count: the cut is the bot’s reduced tier (3) — the exact number is an open mentor question.',
+          consumer:
+            'trader/mentor_mode.go mentorContractsFor (tier exec_2m_reduce) ← mentorSizeFor (Intent.ExecTFMin)',
+          range: 'ON / OFF',
+          systemDefault: 'ON (unset = ON)',
+          recommended:
+            'ON — D3.1-R30. Counter tier_exec_2m_reduce; the size line names the frame and the stop.',
+          whenToTouch:
+            'OFF only if the mentor says a 2m entry keeps the 1m size.',
           perSession: 'No — per strategy.',
         },
         {
@@ -2127,19 +2491,135 @@ export const mentor: GuideSection = {
           perSession: 'No — per strategy.',
         },
         {
+          label: 'ISB loss box',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25) → ISB loss box',
+          what: 'What an ISB stop-out blocks. range (default): the whole 5m range that held the trade — every closed 5m candle from the fill candle’s through the stop-out candle’s — joined with the entry-to-stop band; an entry inside it, long or short, is refused loss_range_blocked for the rest of the trading day; a 1m candle completely outside the range frees only entries outside it. A later ISB loss whose range overlaps it joins the same box; two losses there → off for the day (loss_box_off_day). band: the pre-#60 rule — only the entry-to-stop band is blocked. A fill registered after a restart has lost the candles before the fill, so its range starts at the fill candle (counted loss_range_seed_only).',
+          trader:
+            'Course: “tôi bọc cái khu vực này lại. Tôi sẽ không trade bên trong khu vực này. Tôi đợi nó đi ra một cái khu vực khác” [D4.2 p2 @03:43–04:07]; Box 1 28,880.50–28,934.00 = the 08:30 5m candle (D4.3 Ex.1 H 28,933.75 L 28,880.50).',
+          consumer:
+            'trader/mentor_course_exits.go mentorCourseExitsResolve → kernel/mentor/limits.go rangeLoss (Config.ISBLossBox)',
+          range:
+            'range | band · unset → range (an unknown value → range, counted isb_loss_box_bad_value)',
+          systemDefault: 'range',
+          recommended:
+            'range — D4.2-R27/R28/R30 [D4.2 p2 @02:41–05:03]: enter only outside the range you lost in.',
+          whenToTouch: 'Only with a new owner ruling.',
+          perSession: 'No — per strategy.',
+        },
+        {
+          label: 'Opening 5m range break',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25) → Opening 5m range break',
+          what: 'In the open window (08:30–09:30 CT), with price still on the wrong side of the 4h trigger line, a with-4h entry waits for the opening 5m range (the 08:30–08:35 candle) to break in the 4h’s direction (refusal open_5m_range_not_broken). 1m_close (default, release #61): a CLOSED 1m candle at or after 08:35 that closes outside the range is the break. 5m_close: a closed 5m candle outside the range (the pre-#61 rule — up to 4 minutes later). Example 14 Sep: range 28,880.50–28,933.75; the 08:43 1m candle closes 28,940 → longs allowed at 08:44 (5m_close: not until 08:45).',
+          trader:
+            'Course: “nó break được cái range khung 5 phút, nó đi lên rồi, tôi biết tôi đánh” [D4.4 p2 @05:15–05:36]; the break minimum is “một cây nến một phút… đóng bên ngoài cái box là at least” [D4.1 p1 @20:36–21:03]. The mentor acted at the 08:43 1m escape.',
+          consumer:
+            'trader/mentor_course_exits.go mentorCourseExitsResolve → kernel/mentor/open5m.go open5mBrokenWith (CourseExits.Open5mBreak)',
+          range:
+            '1m_close | 5m_close · unset → 1m_close (an unknown value → 1m_close, counted open5m_break_bad_value)',
+          systemDefault: '1m_close',
+          recommended: '1m_close — D4.4-R40 + D4.1 p1 @20:36–21:03.',
+          whenToTouch: 'Only with a new owner ruling.',
+          perSession: 'No — per strategy.',
+        },
+        {
+          label: 'News wait: which lines',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25) → News wait',
+          what: 'What the news wait (“News day: wait beyond the 4h line”, ON) needs between a red-folder print and the 08:30 CT open. both (default, release #61): the last close beyond the 4h trigger line AND the pre-print 1h line on the trade side (refusals news_wait_4h_line / news_wait_1h_line); with no 1h line, or a 1h line older than the 4h one, the 4h alone. 4h_only: the 4h line only (pre-#61). Example: 4h 29,342.25, 1h 29,360 — a long with the close at 29,350 is refused news_wait_1h_line; at 29,365 it passes.',
+          trader:
+            'Course: “Đợi canh nó nằm trên hai cái đường line này, kiếm inside bar đu vô… Hoặc anh chị chỉ cần đợi nó nằm ở trên cái đường line 4 giờ” [D4.4 p1 @21:48–22:12]; case 2 — the 1h has nothing: “mình sẽ coi 4 giờ thôi, không cần coi 1 giờ” [D4.4 p1 @18:48–18:52].',
+          consumer:
+            'trader/mentor_course_exits.go mentorCourseExitsResolve → kernel/mentor/news_print.go newsWaitFilter (CourseExits.NewsWaitMode)',
+          range:
+            'both | 4h_only · unset → both (an unknown value → both, counted news_wait_mode_bad_value)',
+          systemDefault: 'both',
+          recommended: 'both — D4.4-R22, the course’s first method.',
+          whenToTouch: 'Only with a new owner ruling.',
+          perSession: 'No — per strategy.',
+        },
+        {
+          label: 'News: read the 1h/4h lines before the print',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25) → Read the 1h/4h lines before the news',
+          what: 'On a red-folder print day (with “News day: freeze the pre-print 1h/4h read” ON), the 1h/4h trigger read freezes this many minutes BEFORE the 07:30 print and holds until the 08:30 CT read. Default 30 (release #61): from 07:00 — a 07:05 1m bar that breaks the 1h line does not move it; a 06:55 bar does. The order hold around the print stays 07:20–07:35, and the news period for the wait and the stored news-only gate still starts at 07:20 — only the trigger READ moves. 0 = the pre-#61 start (07:20, the print window).',
+          trader:
+            'Course: “Một giờ thì đợi gần trước news, tầm 30 phút. Còn 4 giờ thì mình cứ kẻ ở dưới trước đi”; the board: “(trước news 30’)” [D4.4 p1 @05:28–05:36; board 14:33–15:36].',
+          consumer:
+            'trader/mentor_course_exits.go mentorNewsReadLeadMin · trader/mentor_tick.go mentorNewsPrintWindowsFromEvents (PrintAtMs) → kernel/mentor/news_print.go newsHTFWindows / newsReadStart',
+          range:
+            'minutes 0–120 · unset → 30 · 0 = from the print window (07:20) · outside 0–120 → 30, counted news_read_lead_min_bad_value',
+          systemDefault: '30',
+          recommended: '30 — D4.4-R6 “tầm 30 phút”.',
+          whenToTouch: 'Only with a new owner ruling.',
+          perSession: 'No — per strategy.',
+        },
+        {
+          label: 'Swing inside bar — close back',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25) → SWING: does the inside bar after an invalid cross need a close back?',
+          what: 'After a 5m close through the 4h line made the level invalid, the only way back in is a 5m inside bar (its body inside the previous candle’s full range) with the stop AT the line. not_required (default, release #61): the inside bar ALONE is the setup — even while that candle and the inside bar still close beyond the line; the buy stop (long) / sell stop (short) must sit on the trade side of the line, or it is refused swing_isb_entry_beyond_line (named, and the level is not used up — a later inside bar may still enter). required: the pre-#61 rule — candle 1 AND its inside bar must both close back across the line first. Either way the stop is AT the line and swing_isb_spent is unchanged.',
+          trader:
+            'Course, the student’s 11 Sep 09:10 trade (entry 29,424.25, stop at the line 29,405.25, +39.5 / +42.25): “Chị vô đúng mà… thế là đúng… còn nếu chị đợi đóng ngược lại cũng được, không thành vấn đề, nhưng chị đợi hơi lâu” [D5.2 p3 @04:49–05:09]; “cái điểm entry ở inside bar, basically nó vẫn nằm trên line… tùy góc nhìn” [D5.2 p3 @07:42–08:36] (D5.2-R26).',
+          consumer:
+            'trader/mentor_course_exits.go mentorCourseExitsResolve → applyMentorCourseExits → kernel/mentor/swing4h.go walkSwingBar (SwingCfg.ISBCloseBackRequired)',
+          range:
+            'not_required | required · unset → not_required (an unknown value → not_required, counted swing_isb_close_back_bad_value)',
+          systemDefault: 'not_required',
+          recommended:
+            'not_required — D5.2-R26 [p3 @04:49–05:09]: the student’s entry before the close back was “đúng”. On the recorded 10-28/29 tape this default adds three inside-bar entries that stopped out (17:50 long −14.47, 23:55 short −4.04, 01:45 long −14.27 pts) and loses the 19:00 inside bar (+53.72) and trade 715 (−9.77) — required is the stricter option.',
+          whenToTouch:
+            'required to wait for the close back (“valid but slower”).',
+          perSession: 'No — per strategy.',
+        },
+        {
+          label: 'Swing inside-bar order kept on a close through',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25) → SWING: the inside-bar order survives a later 5m close through the line',
+          what: 'ON (default, release #61): a resting swing INSIDE-BAR order is NOT cancelled when a later 5m candle closes back through the line; it rests until it fills, the 4h candle that carries the line closes (its expiry, D5.2-R27) or the day/EOD rules end it. The REJECT order is still cancelled by any close through the line (D5.2-R22). OFF: the pre-#61 behaviour — the inside-bar order is cancelled too (and, cancelled unfilled, does not use the level up).',
+          trader:
+            'Course, 11 Aug (level 29,553.50, inside-bar long 29,577.75, stop at the level): “Dù nó có xuống 1 cây nữa, nó trồi được 5 cây nữa. Để cái cây inside bar này cho em” [D5.2 p2 @10:23–10:51] (D5.2-R25).',
+          consumer:
+            'trader/mentor_course_exits.go mentorCourseExitsResolve → applyMentorCourseExits → kernel/mentor/swing4h.go stepSwingBar (SwingCfg.ISBCancelOnCloseThrough = !keep)',
+          range: 'ON / OFF · unset → ON',
+          systemDefault: 'ON',
+          recommended:
+            'ON — D5.2-R25 [p2 @10:23–10:51]. On the recorded 10-28 tape the kept 18:20 inside-bar long (29,730.75) fills and stops at the line (−85.22 pts) where the pre-#61 cancel let the 19:00 inside bar take +53.72.',
+          whenToTouch: 'OFF to cancel the inside-bar order on a close through.',
+          perSession: 'No — per strategy.',
+        },
+        {
+          label: 'Swing runner take-profit',
+          where:
+            'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25) → SWING: runner take-profit',
+          what: 'For a split swing (Swing runner ON, 2+ contracts): none (default, release #61) = the runner has NO take-profit — it is held by the 4h and exits by its stop / break-even, the 4h hold-close or the EOD flat. NinjaTrader’s bracket needs a take-profit leg, so it is parked 1,000 pts beyond the entry (counted swing_runner_no_tp; e.g. long 29,500 → 30,500). capped = the pre-#61 cap max(100 pts, 2 × the first-target distance) (long 29,500, first target 29,540 → 29,600). Leg 1 always takes the first target (max(1R, the 5m EMA 34)).',
+          trader:
+            'Course: “em đánh một lệnh lower high ở khung 5 phút nhưng em gồng theo khung 4 giờ” (one 4h candle = 152 pts) [D5.2 p1 @05:40–06:14] (D5.2-R6); first target the 5m EMA 34, then let it run (D5.2-R32).',
+          consumer:
+            'trader/mentor_course_exits.go mentorSwingRunnerLegs ← trader/mentor_actions.go mentorArmIntent',
+          range:
+            'none | capped · unset → none (an unknown value → none, counted swing_runner_tp_bad_value)',
+          systemDefault: 'none',
+          recommended:
+            'none — D5.2-R6 [p1 @05:40–06:14]: the runner is held by the 4h; 1,000 pts is ours (the bracket needs a number), not the course.',
+          whenToTouch: 'capped to bank the runner at the old cap.',
+          perSession: 'No — per strategy.',
+        },
+        {
           label: 'ISB max stop',
           where:
             'Strategy Studio → Risk control → 🧑‍🏫 Course exits & rules switches (#25)',
-          what: 'Refuse an ISB (and the reverse ISB) whose stop is ABOVE this many points, counted isb_stop_over_max / isbrev_stop_over_max. Default 25 (W-MENTOR-EXACT, owner order 2026-10-21 "i want all exactly like mentor" — "trên nữa thì thôi" [D3.3 p1 @02:04–02:08]): a stop of 20–25 pts is the REDUCED tier, a stop above 25 is REFUSED. This SAME knob is also the trader’s R8 ceiling for every non-swing setup (a PHL/PLH/BOX stop above it is refused R8, even below the kernel’s own StopCeilingPts 25) and the top of the 20–25 reduced band.',
+          what: 'Refuse an ISB (and the reverse ISB) whose stop — entry to stop, the ISB range + 2 × 1.5 — is ABOVE this many points, counted isb_stop_over_max / isbrev_stop_over_max. Default 20 since release #61 (m466 G23, D4.1-R12): exactly 20 is taken, 20.25 is refused; the D3.3 20–25 reduced tier is unreachable for an ISB at default. The trader’s R8 gate reads the SAME knob for an ISB and is the top of the ISB reduced band; PHL/PLH/BOX stops keep the D3.3 25 (R8 and the 20–25 band), or this knob when you store it above 25.',
           trader:
-            'Course: “nếu như một cái setup insidebar mà nó hai mươi mấy điểm … làm ơn giúp em đừng vô” (an ISB in the twenties — don’t enter) [D4.1 p1 @05:34–05:48]. The line is the course-exact 25 (W-MENTOR-EXACT, owner order 2026-10-21 "i want all exactly like mentor" — “trên nữa thì thôi” [D3.3 p1 @02:04–02:08]).',
+            'Course: “nếu như một cái setup inside bar mà nó hai mươi mấy điểm, làm ơn giúp em đừng vô, làm ơn đừng vô… lệnh inside bar phải là một lệnh có stop loss nhỏ” [D4.1 p1 @05:41–06:08]; his own stop was 20 points [D4.1 p1 @02:39–03:20]. D4.1 is later than D3.3 (“hơn 20, 25 đổ lại ok, chứ mà trên nữa thì thôi” [D3.3 p1 @01:59–02:09]), which stays the PHL/PLH rule.',
           consumer:
-            'kernel/mentor/course_exits.go isbOverMaxStop ← kernel/mentor/isb.go ISBStopVerdict · trader/mentor_mode.go mentorRuleGate (R8) + mentorContractsFor (band top) ← trader/mentor_actions.go mentorDispatchEntry',
+            'kernel/mentor/course_exits.go isbOverMaxStop ← kernel/mentor/isb.go ISBStopVerdict · trader/mentor_mode.go mentorStopCeilingFor → mentorRuleGate (R8) + mentorContractsFor (band top) ← trader/mentor_actions.go mentorDispatchEntry',
           range:
-            'pts, 0 → 30 (the knob has no OFF — unset/0 resolves to the 30 default)',
-          systemDefault: '30',
+            'pts, 0 → 20 (the knob has no OFF — unset/0 resolves to the 20 default)',
+          systemDefault: '20',
           recommended:
-            '30 — course-defaults-30 owner order; D4.1 p1 @05:41 (the course\u2019s twenties skip, moved to 30 by the owner).',
+            '20 — D4.1 p1 @05:41–06:08 (the twenty-something ISB: do not enter). 25 = the pre-#61 rule.',
           whenToTouch: 'Only to change the stop ceiling.',
           perSession: 'No — per strategy.',
         },
