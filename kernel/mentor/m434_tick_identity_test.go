@@ -23,6 +23,80 @@ package mentor
 // 15:19 SWING4H inside bars refused swing_position_open (this harness emulates
 // BE/hold receipts, never a stop-out, so the 05:00 / 14:30 legs stay "open";
 // on the tape they stopped at 05:16 / 14:52, and live — SwingEnded — still arms).
+// m465 P2 (release #60, ISB loss range box D4.2-R27): regenerated — 615 rows
+// of m423_1023_1m_read_near0 moved in the STATE stream only (Limits.Places now
+// carries the 5m range bounds + Range); zero intents, notes, levels or
+// trendlines moved on any tape. The pre-#60 State is pinned by
+// TestM462StoredNewsOnlyIsThePreM462Behaviour under mentor_isb_loss_box=band.
+// Regenerated again at the release #60 merge (m465 P1-P5 on dev c6777e230):
+// against the dev golden 303 intent / 382 note / 93 level / 5,216 state rows
+// moved, and EVERY moved stream row moved in at least one package's own golden
+// (intents: P1 44, P3 292; notes: P1; levels: P3; state: P1/P2/P3). 14 intent
+// rows (r22_1013 near1 2230-2713, exec2m 1945-2251) match no single package's
+// bytes; each of them moved in BOTH P1's and P3's golden (the two changes
+// compose). P4 (trader-side) and P5 (wick microscalp, knob OFF) move nothing.
+// Release #60 review round (D2.3-R7 leave-and-return 4th touch): regenerated —
+// ZERO intent and ZERO note rows moved on any tape; levels (416 rows) and state
+// (4,587 rows: the trendline_third_touch_is_test counts and the trendline
+// location/target sets) moved only. The D4.3-R17 1R wick room (knob OFF) and
+// the D4.2-R27 inside-the-range block (no fills in this harness) move nothing.
+// Then the forming-15m conflict latch origin (tf_conflict_latch_forming +
+// tf_conflict_forming_released): STATE stream only, 2,122 rows; zero intents
+// ON THESE GOLDEN TAPES. The real tape is not a golden: on the 10-21→11-02
+// kernel replay (stored strategy a5b7662e) it moved ONE entry — APPEARS 10-22
+// 18:29 ISB short 29,073 (stop 29,084.25): the 18:14 provisional 15m box was
+// dropped (the 18:00 15m closed as no inside bar) and the old latch refused
+// isb_tf_conflict_both_boxes for 15 minutes on a 15m ISB that never existed.
+// Review round 3 (the latch is settled when its forming BUCKET closes, escaped
+// box or not; a confirmed box makes it real-origin): STATE stream only, 98
+// rows (the forming flag cleared at the confirm); zero intent / note / level /
+// trendline rows. Real-tape replay vs b68db6879: zero entries moved.
+// m466 P4 (release #61, swing D5.2-R26 inside bar without close-back + D5.2-R25
+// inside-bar order kept on close-through, both knobs at the course default):
+// regenerated — 13 intent rows (ALL SWING4H: 10-23 near1 ticks 704/709/714/
+// 734/769/849/964/1204, 10-23 near0 984/999/1139, 10-13 near1 + exec2m 2084 —
+// an inside-bar arm one beat earlier and its BE / hold-close, the later arm it
+// pre-empts), 57 note and 4,078 state rows (the swing refusal ledger + touch
+// window); zero level / trendline rows. Under the pre-#61 knob values the
+// tapes reproduce the previous golden byte for byte —
+// TestM61StrictReadIsThePreP4Golden (testdata/m61_prep4_tick_identity.golden.gz).
+// Release #61 INTEGRATION (fix/m466-checklist-gaps; merge order P3 → P4 → P2 →
+// P1 on #60 cc264a9b4): regenerated ONCE at the merged head — vs the #60
+// golden 49 intent / 1,102 note / 90 level / 5,215 state rows moved, zero
+// trendline rows. Every moved intent, note and level row moved in at least
+// one package's own golden, and every moved intent and level row is byte-equal
+// to one package's own row (the 30 note rows that match none are the
+// concatenation of two packages' notes on one tick: P1+P4 on 10-23 swing
+// ticks, P1+P2 on 10-23 1111/1181 and 10-13 2606/2731). With EVERY #61 knob at
+// its pre-#61 value (m466Rel61PreValues + the P1 G37 hook) the four tapes
+// reproduce the #60 golden byte for byte — TestM61PreValuesReproduceThePre61Golden
+// and TestM61StrictReadIsThePreP4Golden (both .gz files = the #60 golden,
+// md5 d257798e5ef27c2f956643ed53d669e8) and TestM462StoredNewsOnlyIsThePreM462Behaviour.
+// Release #61 REVIEW ROUND (G33 two >= 30-pt candles, the break close ends the
+// guard with no same-tick re-latch and no slide; G37 floor/ceiling need the
+// native kind or a flip; a forming-15m break lock ends with its bucket):
+// regenerated — ONE intent row (m423_1023_default_cfg_near1 bar 743, 10-23
+// 05:23 CT: the PLH short 29,134.75 stop 29,151 now emits; before, a small
+// range 29,104–29,158 latched at 05:20 on ONE 41.25-pt impulse candle (05:06,
+// every other candle 4.75–24 pts) refused it range_too_small_big_candles),
+// 127 note and 4,886 state rows; zero level / trendline rows. The pre-#61
+// pins above are unchanged (every changed rule is behind a #61 knob at its
+// pre value, or the G37 hook).
+// Release #61 REVIEW ROUND 2 (a provisional-15m break lock keeps the lock it
+// replaced underneath it; G33 never latches on the breakout candle — it is
+// recorded as the break; a box return met in a 15m/5m conflict is consumed
+// and refused box_tf_conflict; G43 rejects only at a box that played the
+// role): regenerated — ZERO intent rows, 58 note and 5,020 state rows; zero
+// level / trendline rows. The pre-#61 pins are unchanged (the lock and the
+// range changes sit behind their #61 knobs; the box-return consume behind the
+// test hook boxConflictLegacySkip beside midRangeLegacyRole).
+// Release #61 FINAL (G33 mentor_small_range_guard default OFF — D4.2-R33 gives
+// no candle count or breakout margin, three review rounds of mis-latches):
+// regenerated — ZERO intent, level and trendline rows; 1,704 state rows (the
+// SmallRange / SmallRangeBreakAt / range_small_* counters no longer built) and
+// 26 note rows (the range_small set / ended / breakout notes gone), on all
+// four tapes (m423 near1 403, m423 near0 403, r22 near1 449, r22 exec2m 449).
+// The pre-#61 pins are unchanged (their pre-values already set it false).
 //
 // Regenerate (only when a deliberate behaviour change lands):
 //   M434_WRITE_GOLDEN=1 go test -count=1 -run TestM434TickOutputIsByteIdentical ./kernel/mentor

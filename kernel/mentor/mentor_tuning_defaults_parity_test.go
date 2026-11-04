@@ -105,7 +105,7 @@ func TestMentorTuningDefaultsParityWithTS(t *testing.T) {
 		{"tf_conflict_end", TFConflictBothBoxes},
 		{"news_wait_both_lines", cfg.NewsWaitBothLines},
 		{"news_bars_excluded", cfg.NewsBarsExcluded},
-		{"isb_box_escape", ISBBoxEscapeBody},
+		{"isb_box_escape", cfg.ISBBoxEscapeMode}, // m466 G20/G49: close
 		{"ema34_loss_relock", EmaRelockUntilZoneExit},
 		{"orb_edge_veto_pts", cfg.OrbEdgeVetoPts},
 		{"d43_trend_source", D43TrendStructure},
@@ -116,6 +116,8 @@ func TestMentorTuningDefaultsParityWithTS(t *testing.T) {
 		{"flag_wall_target", cfg.FlagWallTarget},
 		{"box_new_zone_after_escape", cfg.BoxNewZoneAfterEscape},
 		{"orb_escape_completely", cfg.OrbEscapeCompletely},
+		{"wick_microscalp", cfg.WickMicroscalpEnabled},
+		{"wick_safe_play", cfg.WickSafePlay},
 		{"isb_stack_cancel_candle_2m", cfg.ISBStackCancelCandle2m},
 		{"isb_stack_tiny_stop_pts", cfg.ISBStackTinyStopPts},
 		{"evening_slow_pts", cfg.EveningSlowPts},
@@ -126,6 +128,21 @@ func TestMentorTuningDefaultsParityWithTS(t *testing.T) {
 		{"phl_target_shy_pts", cfg.PHLTargetShyPts},
 		{"isb_old_extreme_pts", cfg.ISBOldExtremePts},
 		{"isb_in_range_gap_pts", cfg.ISBInRangeGapPts},
+		// m465 P3 (release #60) structure-fidelity knobs.
+		{"trendline_entry_touch", cfg.TrendlineEntryTouch},
+		{"near_box_between_exempt", cfg.NearBoxBetweenExempt},
+		{"phl_flat_low", cfg.PHLFlatLow},
+		{"isb_reverse_touch", cfg.ISBReverseTouch},
+		// m466 P2 (release #61) levels-and-touches knobs.
+		{"uno_key_levels", cfg.UnoKeyLevels},
+		{"session_open_levels", cfg.SessionOpenLevels},
+		{"level_arm_line_cancel", cfg.LevelArmLineCancel},
+		{"phl_pullback_low", cfg.PHLPullbackLow},
+		// m466 P1 (release #61) boxes, breaks, ranges.
+		{"mentor_5m_box_source", cfg.FiveMinBoxSource},
+		{"mentor_break_direction_lock", cfg.BreakDirectionLock},
+		{"mentor_small_range_guard", cfg.SmallRangeGuard},
+		{"mentor_mid_range_reject_side", cfg.MidRangeRejectSide},
 	}
 
 	for _, r := range rows {

@@ -89,6 +89,15 @@ func TestMentorTuningReachesTheEvaluator(t *testing.T) {
 	if got := tuningTick(t, &store.MentorTuning{}).OrbISBFractionOutside; got != 0.80 {
 		t.Errorf("unset orb_isb_fraction_outside must stay 0.80, got %.2f", got)
 	}
+	// m465 P1 (release #60): a STORED pre-#60 value reaches the evaluator —
+	// 15m_early_read=false, mtf_confluence_source=last_pair,
+	// trigger_escalation=false; unset = the #60 defaults (ON / standing_boxes / ON).
+	if c := tuningTick(t, &store.MentorTuning{Early15mRead: &off, MTFConfluenceSource: "last_pair", TriggerEscalation: &off}); c.Early15mRead || c.MTFConfluenceSource != mentor.MTFConfluenceLastPair || c.TriggerEscalation {
+		t.Errorf("stored m465 knobs did not reach the evaluator: early=%v source=%q escalation=%v", c.Early15mRead, c.MTFConfluenceSource, c.TriggerEscalation)
+	}
+	if c := tuningTick(t, &store.MentorTuning{}); !c.Early15mRead || c.MTFConfluenceSource != mentor.MTFConfluenceStandingBoxes || !c.TriggerEscalation {
+		t.Errorf("unset m465 knobs must run the #60 defaults: early=%v source=%q escalation=%v", c.Early15mRead, c.MTFConfluenceSource, c.TriggerEscalation)
+	}
 }
 
 // TestMentorTuningDefaultsAreTheRuledOnes — unset resolves to the owner's
@@ -105,15 +114,18 @@ func TestMentorTuningDefaultsAreTheRuledOnes(t *testing.T) {
 		want := mentorTuned{
 			TriggerSchool: 1, PingPongMinGapPts: 50, PingPongCandleMaxPts: 20, PingPongCandleLookback: 30,
 			LevelMaxVisits: 3, OrbGateEnabled: true, ISBReverseEMA9Enabled: true,
-			HTFGateNewsOnly:       false, // m462 (release #59): the 4h/1h gate applies ALL SESSION by default (D5.1-R9/R11)
-			Exec2mAfter30m:        true,  // X5-10 rule 4 (release #31): 1m for the first 30 min, then the 2m
-			OrbISBFractionOutside: 0.80,  // rule 5 (release #31): the ORB-edge ISB candle must be ≥ 80% outside
-			DayGateSpentPts:       300, DayGateTargetCapPts: 15, SwingMaxStopPts: 100,
+			HTFGateNewsOnly:       false,                                              // m462 (release #59): the 4h/1h gate applies ALL SESSION by default (D5.1-R9/R11)
+			Exec2mAfter30m:        true,                                               // X5-10 rule 4 (release #31): 1m for the first 30 min, then the 2m
+			OrbISBFractionOutside: 0.80,                                               // rule 5 (release #31): the ORB-edge ISB candle must be ≥ 80% outside
+			DayGateSpentPts:       265, DayGateTargetCapPts: 15, SwingMaxStopPts: 100, // m465 (#60) D5.1-R18: spent line 265
 			// Release #25 course-entry knobs (course-defaults-30 changes).
 			FifteenMinIBRule: mentor.FifteenMinRequire5mISB, TFConflictEnd: mentor.TFConflictBothBoxes,
-			NewsWaitBothLines: true, // CE-3 — course-defaults-30 [D4.4 p1 @21:55–22:12]
-			NewsBarsExcluded:  true, // CE-4 (a, release #29 rework: freeze the pre-print read, candles whole)
-			ISBBoxEscapeMode:  mentor.ISBBoxEscapeBody, EmaLossRelock: mentor.EmaRelockUntilZoneExit,
+			// m465 P1 (release #60): early 15m read ON (D4.2-R2), mode C from the
+			// standing boxes (D4.2-R17), trigger escalation ON (D3.4-R43).
+			Early15mRead: true, MTFConfluenceSource: mentor.MTFConfluenceStandingBoxes, TriggerEscalation: true,
+			NewsWaitBothLines: true,                                                                   // CE-3 — course-defaults-30 [D4.4 p1 @21:55–22:12]
+			NewsBarsExcluded:  true,                                                                   // CE-4 (a, release #29 rework: freeze the pre-print read, candles whole)
+			ISBBoxEscapeMode:  mentor.ISBBoxEscapeClose, EmaLossRelock: mentor.EmaRelockUntilZoneExit, // m466 G20/G49 (#61): D4.1-R34 the 1m close
 			D43TrendSource: mentor.D43TrendStructure, TrendlineIsTarget: true,
 			TrendlineBetweenBoxes: true, // CE-11/B13 — course-defaults-30 [D3.2 p2 @10:56–11:04]
 			FlagWallTarget:        true, // CE-11 — course-defaults-30 [X9 @05:59–06:12]
@@ -125,6 +137,22 @@ func TestMentorTuningDefaultsAreTheRuledOnes(t *testing.T) {
 			// the kernel hard-coded before (all "ours", none from the course).
 			ISBStackCancelCandle2m: 4, EveningSlowPts: 100, EveningSlowFromHour: 15,
 			NearBoxRoomMultiple: 2, NearBoxRoomPHL: true, PHLTargetShyPts: 5, ISBOldExtremePts: 2,
+			// m465 P3 (release #60): the course defaults from the full video read.
+			ISBStackTinyStopPts:  12.5,                        // D5.1-R26 [D5.1 p2 @02:24–04:41]
+			TrendlineEntryTouch:  mentor.TrendlineEntryFourth, // D2.3-R7
+			NearBoxBetweenExempt: false,                       // D3.2-R29/R30
+			PHLFlatLow:           mentor.PHLFlatLowNear,       // D2.2-R64
+			ISBReverseTouch:      mentor.ISBReverseTouchPair,  // D5.4-R7
+			// m466 P2 (release #61): the course defaults.
+			UnoKeyLevels:       mentor.UnoKeyLevelsOn,            // G2 D1.3-R21
+			SessionOpenLevels:  mentor.SessionOpenLevelsOn,       // G10/G11 D3.1-R26/R20
+			LevelArmLineCancel: mentor.LevelArmLineCancelCurrent, // G17 D2.3-R34
+			PHLPullbackLow:     mentor.PHLPullbackLowPullback,    // G41 D2.2-R59
+			// m466 P1 (release #61): boxes, breaks, ranges — the course defaults.
+			FiveMinBoxSource:   mentor.FiveMinBoxNewest, // D4.1-R37
+			BreakDirectionLock: true,                    // D4.1-R31/R33, D4.1-R55
+			SmallRangeGuard:    false,                   // D4.2-R33 — OFF since #61 final (count / margin unstated)
+			MidRangeRejectSide: true,                    // D2.2-R71
 		}
 		if got != want {
 			t.Errorf("%s: resolved %+v, want %+v", name, got, want)

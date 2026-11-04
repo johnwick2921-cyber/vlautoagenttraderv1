@@ -36,6 +36,9 @@ type mentorTuned struct {
 
 	// Release #25 course-entry knobs (fix/mentor-course-entries).
 	FifteenMinIBRule            string
+	Early15mRead                bool   // m465 P1 D4.2-R2/R11, D4.3-R21
+	MTFConfluenceSource         string // m465 P1 D4.2-R17
+	TriggerEscalation           bool   // m465 P1 D3.4-R43
 	TFConflictEnd               string
 	NewsWaitBothLines           bool
 	NewsBarsExcluded            bool
@@ -43,6 +46,8 @@ type mentorTuned struct {
 	EmaLossRelock               string
 	OrbEdgeVetoPts              float64
 	OrbEscapeCompletely         bool
+	WickMicroscalp              bool // m465 P5: D4.3 wick microscalp (default OFF)
+	WickSafePlay                bool // m465 P5: D4.3-R20 safe play (default OFF)
 	OrbISBFractionOutside       float64
 	D43TrendSource              string
 	LevelEntriesNeedTriggerSide bool
@@ -64,6 +69,23 @@ type mentorTuned struct {
 	PHLTargetShyPts        float64
 	ISBOldExtremePts       float64
 	ISBInRangeGapPts       float64
+
+	// m465 P3 (release #60) structure-fidelity knobs (defaults = the course).
+	TrendlineEntryTouch  string
+	NearBoxBetweenExempt bool
+	PHLFlatLow           string
+	ISBReverseTouch      string
+
+	// m466 P2 (release #61) levels-and-touches knobs (defaults = the course).
+	UnoKeyLevels       string
+	SessionOpenLevels  string
+	LevelArmLineCancel string
+	PHLPullbackLow     string
+	// m466 P1 (release #61) boxes, breaks, ranges (defaults = the course).
+	FiveMinBoxSource   string
+	BreakDirectionLock bool
+	SmallRangeGuard    bool // default OFF (release #61 final): course gives no count / margin
+	MidRangeRejectSide bool
 }
 
 func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTuned {
@@ -84,6 +106,9 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 		SwingMinStopPts:        d.Swing.MinStopPts,
 
 		FifteenMinIBRule:            d.FifteenMinIBRule,
+		Early15mRead:                d.Early15mRead,
+		MTFConfluenceSource:         d.MTFConfluenceSource,
+		TriggerEscalation:           d.TriggerEscalation,
 		TFConflictEnd:               d.TFConflictEnd,
 		NewsWaitBothLines:           d.NewsWaitBothLines,
 		NewsBarsExcluded:            d.NewsBarsExcluded,
@@ -91,6 +116,8 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 		EmaLossRelock:               d.EmaLossRelock,
 		OrbEdgeVetoPts:              d.OrbEdgeVetoPts,
 		OrbEscapeCompletely:         d.OrbEscapeCompletely,
+		WickMicroscalp:              d.WickMicroscalpEnabled,
+		WickSafePlay:                d.WickSafePlay,
 		OrbISBFractionOutside:       d.OrbISBFractionOutside,
 		D43TrendSource:              d.D43TrendSource,
 		LevelEntriesNeedTriggerSide: d.LevelEntriesNeedTriggerSide,
@@ -110,6 +137,20 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 		PHLTargetShyPts:        d.PHLTargetShyPts,
 		ISBOldExtremePts:       d.ISBOldExtremePts,
 		ISBInRangeGapPts:       d.ISBInRangeGapPts,
+
+		TrendlineEntryTouch:  d.TrendlineEntryTouch,
+		NearBoxBetweenExempt: d.NearBoxBetweenExempt,
+		PHLFlatLow:           d.PHLFlatLow,
+		ISBReverseTouch:      d.ISBReverseTouch,
+
+		UnoKeyLevels:       d.UnoKeyLevels,
+		SessionOpenLevels:  d.SessionOpenLevels,
+		LevelArmLineCancel: d.LevelArmLineCancel,
+		PHLPullbackLow:     d.PHLPullbackLow,
+		FiveMinBoxSource:   d.FiveMinBoxSource,
+		BreakDirectionLock: d.BreakDirectionLock,
+		SmallRangeGuard:    d.SmallRangeGuard,
+		MidRangeRejectSide: d.MidRangeRejectSide,
 	}
 	if rc == nil || rc.MentorTuning == nil {
 		return out
@@ -185,6 +226,7 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 		at.mentorCount("tuning_bad_value")
 	}
 	enum(t.FifteenMinIBRequires5mISB, &out.FifteenMinIBRule, mentor.FifteenMinOff, mentor.FifteenMinRequire5mISB, mentor.FifteenMinUntilEscape)
+	enum(t.MTFConfluenceSource, &out.MTFConfluenceSource, mentor.MTFConfluenceStandingBoxes, mentor.MTFConfluenceLastPair) // m465 P1
 	enum(t.TFConflictEnd, &out.TFConflictEnd, mentor.TFConflictFirstBox, mentor.TFConflictBothBoxes)
 	enum(t.ISBBoxEscape, &out.ISBBoxEscapeMode, mentor.ISBBoxEscapeClose, mentor.ISBBoxEscapeBody)
 	enum(t.EMA34LossRelock, &out.EmaLossRelock, mentor.EmaRelockSession, mentor.EmaRelockUntilZoneExit)
@@ -209,6 +251,8 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 			*dst = *p
 		}
 	}
+	flag(t.Early15mRead, &out.Early15mRead)           // m465 P1
+	flag(t.TriggerEscalation, &out.TriggerEscalation) // m465 P1
 	flag(t.NewsWaitBothLines, &out.NewsWaitBothLines)
 	flag(t.NewsBarsExcluded, &out.NewsBarsExcluded)
 	flag(t.LevelEntriesNeedTriggerSide, &out.LevelEntriesNeedTriggerSide)
@@ -218,6 +262,8 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 	flag(t.FlagWallTarget, &out.FlagWallTarget)
 	flag(t.BoxNewZoneAfterEscape, &out.BoxNewZoneAfterEscape)
 	flag(t.OrbEscapeCompletely, &out.OrbEscapeCompletely)
+	flag(t.WickMicroscalp, &out.WickMicroscalp)
+	flag(t.WickSafePlay, &out.WickSafePlay)
 
 	// Release #52 W11 invented-constant knobs. Zero = unset = the default for
 	// the plain ones; the pointer ones let an explicit 0 through (0 is a real
@@ -252,6 +298,26 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 	pickPtr(t.PHLTargetShyPts, 0, 50, &out.PHLTargetShyPts)
 	pickPtr(t.ISBOldExtremePts, 0, 20, &out.ISBOldExtremePts)
 	flag(t.NearBoxRoomPHL, &out.NearBoxRoomPHL)
+
+	// m465 P3 (release #60): unset = the course default; a stored value outside
+	// the enum fails closed to the default, counted (tuning_bad_value).
+	enum(t.TrendlineEntryTouch, &out.TrendlineEntryTouch, mentor.TrendlineEntryFourth, mentor.TrendlineEntryThird)
+	flag(t.NearBoxBetweenExempt, &out.NearBoxBetweenExempt)
+	enum(t.PHLFlatLow, &out.PHLFlatLow, mentor.PHLFlatLowNear, mentor.PHLFlatLowStrict)
+	enum(t.ISBReverseTouch, &out.ISBReverseTouch, mentor.ISBReverseTouchPair, mentor.ISBReverseTouchISBCandle)
+
+	// m466 P2 (release #61): same contract — unset = the course default, a
+	// value outside the enum fails closed to the default (tuning_bad_value).
+	enum(t.UnoKeyLevels, &out.UnoKeyLevels, mentor.UnoKeyLevelsOn, mentor.UnoKeyLevelsOff)
+	enum(t.SessionOpenLevels, &out.SessionOpenLevels, mentor.SessionOpenLevelsOn, mentor.SessionOpenLevelsOff)
+	enum(t.LevelArmLineCancel, &out.LevelArmLineCancel, mentor.LevelArmLineCancelCurrent, mentor.LevelArmLineCancelPlacement)
+	enum(t.PHLPullbackLow, &out.PHLPullbackLow, mentor.PHLPullbackLowPullback, mentor.PHLPullbackLowSignal)
+	// m466 P1 (release #61): unset = the course default; a stored value outside
+	// the enum fails closed to the default, counted (tuning_bad_value).
+	enum(t.Mentor5mBoxSource, &out.FiveMinBoxSource, mentor.FiveMinBoxNewest, mentor.FiveMinBoxFirst)
+	flag(t.MentorBreakDirectionLock, &out.BreakDirectionLock)
+	flag(t.MentorSmallRangeGuard, &out.SmallRangeGuard)
+	flag(t.MentorMidRangeRejectSide, &out.MidRangeRejectSide)
 	return out
 }
 
@@ -272,6 +338,9 @@ func applyMentorTuning(at *AutoTrader, cfg *mentor.Config, rc *store.RiskControl
 	cfg.Swing.MaxStopPts = t.SwingMaxStopPts
 	cfg.Swing.MinStopPts = t.SwingMinStopPts
 	cfg.FifteenMinIBRule = t.FifteenMinIBRule
+	cfg.Early15mRead = t.Early15mRead
+	cfg.MTFConfluenceSource = t.MTFConfluenceSource
+	cfg.TriggerEscalation = t.TriggerEscalation
 	cfg.TFConflictEnd = t.TFConflictEnd
 	cfg.NewsWaitBothLines = t.NewsWaitBothLines
 	cfg.NewsBarsExcluded = t.NewsBarsExcluded
@@ -279,6 +348,8 @@ func applyMentorTuning(at *AutoTrader, cfg *mentor.Config, rc *store.RiskControl
 	cfg.EmaLossRelock = t.EmaLossRelock
 	cfg.OrbEdgeVetoPts = t.OrbEdgeVetoPts
 	cfg.OrbEscapeCompletely = t.OrbEscapeCompletely
+	cfg.WickMicroscalpEnabled = t.WickMicroscalp
+	cfg.WickSafePlay = t.WickSafePlay
 	cfg.OrbISBFractionOutside = t.OrbISBFractionOutside
 	cfg.D43TrendSource = t.D43TrendSource
 	cfg.LevelEntriesNeedTriggerSide = t.LevelEntriesNeedTriggerSide
@@ -297,6 +368,18 @@ func applyMentorTuning(at *AutoTrader, cfg *mentor.Config, rc *store.RiskControl
 	cfg.PHLTargetShyPts = t.PHLTargetShyPts
 	cfg.ISBOldExtremePts = t.ISBOldExtremePts
 	cfg.ISBInRangeGapPts = t.ISBInRangeGapPts
+	cfg.TrendlineEntryTouch = t.TrendlineEntryTouch
+	cfg.NearBoxBetweenExempt = t.NearBoxBetweenExempt
+	cfg.PHLFlatLow = t.PHLFlatLow
+	cfg.ISBReverseTouch = t.ISBReverseTouch
+	cfg.UnoKeyLevels = t.UnoKeyLevels             // m466 P2 G2
+	cfg.SessionOpenLevels = t.SessionOpenLevels   // m466 P2 G10/G11
+	cfg.LevelArmLineCancel = t.LevelArmLineCancel // m466 P2 G17
+	cfg.PHLPullbackLow = t.PHLPullbackLow         // m466 P2 G41
+	cfg.FiveMinBoxSource = t.FiveMinBoxSource
+	cfg.BreakDirectionLock = t.BreakDirectionLock
+	cfg.SmallRangeGuard = t.SmallRangeGuard
+	cfg.MidRangeRejectSide = t.MidRangeRejectSide
 }
 
 // mentorCourseEntryBootLine renders the release #25 course-entry knobs for
@@ -308,7 +391,8 @@ func mentorCourseEntryBootLine(at *AutoTrader, rc *store.RiskControlConfig) stri
 	if at != nil && at.id != "" {
 		id = at.id
 	}
-	return fmt.Sprintf("🧑‍🏫 mentor course-entry knobs for trader %s: 15m_ib_requires_5m_isb=%s tf_conflict_end=%s news_wait_both_lines=%v news_bars_excluded=%v isb_box_escape=%s ema34_loss_relock=%s orb_edge_veto_pts=%g d43_trend_source=%s level_entries_need_trigger_side=%v trendline_is_target=%v trendline_between_boxes=%v leg_reset_on_wave_break=%v flag_wall_target=%v box_new_zone_after_escape=%v orb_escape_completely=%v",
-		id, t.FifteenMinIBRule, t.TFConflictEnd, t.NewsWaitBothLines, t.NewsBarsExcluded, t.ISBBoxEscapeMode, t.EmaLossRelock,
-		t.OrbEdgeVetoPts, t.D43TrendSource, t.LevelEntriesNeedTriggerSide, t.TrendlineIsTarget, t.TrendlineBetweenBoxes, t.LegResetOnWaveBreak, t.FlagWallTarget, t.BoxNewZoneAfterEscape, t.OrbEscapeCompletely)
+	return fmt.Sprintf("🧑‍🏫 mentor course-entry knobs for trader %s: 15m_ib_requires_5m_isb=%s 15m_early_read=%v mtf_confluence_source=%s trigger_escalation=%v tf_conflict_end=%s news_wait_both_lines=%v news_bars_excluded=%v isb_box_escape=%s ema34_loss_relock=%s orb_edge_veto_pts=%g d43_trend_source=%s level_entries_need_trigger_side=%v trendline_is_target=%v trendline_between_boxes=%v leg_reset_on_wave_break=%v flag_wall_target=%v box_new_zone_after_escape=%v orb_escape_completely=%v wick_microscalp=%v wick_safe_play=%v mentor_5m_box_source=%s mentor_break_direction_lock=%v mentor_small_range_guard=%v mentor_mid_range_reject_side=%v",
+		id, t.FifteenMinIBRule, t.Early15mRead, t.MTFConfluenceSource, t.TriggerEscalation, t.TFConflictEnd, t.NewsWaitBothLines, t.NewsBarsExcluded, t.ISBBoxEscapeMode, t.EmaLossRelock,
+		t.OrbEdgeVetoPts, t.D43TrendSource, t.LevelEntriesNeedTriggerSide, t.TrendlineIsTarget, t.TrendlineBetweenBoxes, t.LegResetOnWaveBreak, t.FlagWallTarget, t.BoxNewZoneAfterEscape, t.OrbEscapeCompletely, t.WickMicroscalp, t.WickSafePlay,
+		t.FiveMinBoxSource, t.BreakDirectionLock, t.SmallRangeGuard, t.MidRangeRejectSide)
 }

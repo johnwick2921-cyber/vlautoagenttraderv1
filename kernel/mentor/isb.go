@@ -96,8 +96,8 @@ func ISBOrders(candle market.Kline, cfg Config) (long, short Intent) {
 
 // ISBStopLimitOrder is the R1 order the evaluator emits: the single stop-limit
 // entry in the CANDLE-1 direction. ok is false (with a cited reason) when the
-// stop is ≥ the ISB ceiling — the ONLY stop-size skip R1 has (default 25 =
-// ISBMaxStopPts) [D4.1 p1 @ 05:41].
+// stop is ABOVE the ISB ceiling — the ONLY stop-size skip R1 has (default 20 =
+// ISBMaxStopPts) [D4.1 p1 @ 05:41–06:08].
 func ISBStopLimitOrder(prev, cur market.Kline, cfg Config) (Side, Intent, bool, string) {
 	dir := ISBDirection(prev)
 	if dir == "" {
@@ -116,16 +116,17 @@ func ISBStopLimitOrder(prev, cur market.Kline, cfg Config) (Side, Intent, bool, 
 	return dir, short, true, ""
 }
 
-// ISBStopVerdict applies the only stop-size skip R1 has (W-MENTOR-EXACT, owner
-// order 2026-10-21): an ISB whose stop is ABOVE 25 pts must NOT be taken
-// ("trên nữa thì thôi" [D3.3 p1 @02:04]); a stop of 20–25 pts is the REDUCED
-// tier ("giảm size" [D3.3 p1 @01:09]), applied by the size table. There is NO
-// fixed 5–6-pt stop. The skip ceiling lives in CourseExits.ISBMaxStopPts
-// (default 25, CX-9) — the old course-defaults-30 (take 20–29 at full size) is
-// reverted.
+// ISBStopVerdict applies the only stop-size skip R1 has: an ISB whose
+// entry-to-stop ((High−Low) + 2×buffer) is ABOVE the ceiling must NOT be taken
+// — m466 G23 D4.1-R12: "nếu như một cái setup inside bar mà nó hai mươi mấy
+// điểm, làm ơn giúp em đừng vô, làm ơn đừng vô… lệnh inside bar phải là một
+// lệnh có stop loss nhỏ" [D4.1 p1 @05:41–06:08]. The ceiling lives in
+// CourseExits.ISBMaxStopPts (CX-9, default 20; pre-#61 25 with a 20–25 reduced
+// tier from D3.3-R4 [D3.3 p1 @01:09], which the later D4.1 removes for the ISB).
+// There is NO fixed 5–6-pt stop.
 func ISBStopVerdict(candle market.Kline, cfg Config) (stopPts float64, ok bool, reason string) {
 	stopPts = (candle.High - candle.Low) + 2*cfg.ISBBufferPts
-	if isbOverMaxStop(stopPts, cfg) { // CX-9 knob (default 25)
+	if isbOverMaxStop(stopPts, cfg) { // CX-9 knob (default 20, D4.1-R12)
 		return stopPts, false, ISBMaxStopReason
 	}
 	return stopPts, true, ""
@@ -150,9 +151,9 @@ type ISBArm struct {
 // 2026-10-03 [A]: the reference is the FIRST inside-bar candle (I1, = stack
 // candle 1). Candles 2 and 3 whose bodies stay inside I1 → KEEP the order;
 // candle 4 not filling → CANCEL ("sau 3 cây nến… cây thứ 4 mà nó không fill →
-// mình cancel" [D5.1 p2 @ 04:00–04:08]). The §14 tiny-stop exception is OFF by
-// default (personal discretion, not a class rule; release #52 W11 B8 adds the
-// optional knob ISBStackTinyStopPts, see ISBStackTick). inside counts the
+// mình cancel" [D5.1 p2 @ 04:00–04:08]). The §14 tiny-stop exception
+// (ISBStackTinyStopPts, see ISBStackTick) is ON at 12.5 pts since m465
+// (D5.1-R26, the worked example's measured stop). inside counts the
 // FOLLOWING candles that stayed inside (1 = stack candle 2).
 func ISBStackAdvice(inside int) string {
 	return ISBStackAdviceAt(inside, isbStackCancelCandle1m)
@@ -204,10 +205,11 @@ func ISBStackTick(arm *ISBArm, bar market.Kline, cfg Config) []Intent {
 	arm.Inside++
 	cancelCandle := cfg.isbStackCancelCandle(arm.TFMin)
 	if ISBStackAdviceAt(arm.Inside, cancelCandle) == "cancel" {
-		// W11 B8 tiny-stop exception (knob, default OFF): a stop at or under
-		// ISBStackTinyStopPts keeps the arm past the cancel candle [D5.1 p2
-		// @02:50–03:40; the 11–12-pt example]. The body-outside-I1 cancel above
-		// still applies.
+		// W11 B8 tiny-stop exception — m465 (D5.1-R26) default 12.5, the
+		// worked example's measured stop: a stop at or under
+		// ISBStackTinyStopPts keeps the arm past the cancel candle ("thấy stop
+		// loss nhỏ… cứ việc đặt lệnh, mặc dù sau 3 cây" [D5.1 p2 @02:24–04:41]).
+		// The body-outside-I1 cancel above still applies.
 		if cfg.ISBStackTinyStopPts > 0 {
 			if stop, _, _ := ISBStopVerdict(arm.FirstBar, cfg); stop <= cfg.ISBStackTinyStopPts {
 				return nil
