@@ -16,10 +16,10 @@ import (
 	"testing"
 )
 
-// fakeGh writes a stand-in gh that answers `gh api repos/<slug>/releases/tags/<tag> --jq ...`
+// fakeGhReleaseTags writes a stand-in gh that answers `gh api repos/<slug>/releases/tags/<tag> --jq ...`
 // from states: "published" -> "false false", "held" -> "false true",
 // "missing" -> HTTP 404, "error" -> a 500.
-func fakeGh(t *testing.T, states map[string]string) string {
+func fakeGhReleaseTags(t *testing.T, states map[string]string) string {
 	t.Helper()
 	dir := t.TempDir()
 	var b strings.Builder
@@ -69,7 +69,7 @@ func pickNewestPublished(t *testing.T, gh string, tags []string) (string, string
 }
 
 func TestAutoSyncSkipsATagVlDidNotPublish(t *testing.T) {
-	gh := fakeGh(t, map[string]string{
+	gh := fakeGhReleaseTags(t, map[string]string{
 		"v2026.11.04.1": "published",
 		"v2026.11.07.1": "missing", // refused by the vl quality gate
 		"v2026.11.06.1": "held",    // HOLD = pre-release
@@ -86,7 +86,7 @@ func TestAutoSyncSkipsATagVlDidNotPublish(t *testing.T) {
 }
 
 func TestAutoSyncSortsTagsByVersionNotByName(t *testing.T) {
-	gh := fakeGh(t, map[string]string{"v2026.11.10.1": "published", "v2026.11.9.1": "published"})
+	gh := fakeGhReleaseTags(t, map[string]string{"v2026.11.10.1": "published", "v2026.11.9.1": "published"})
 	got, _, rc := pickNewestPublished(t, gh, []string{"v2026.11.9.1", "v2026.11.10.1"})
 	if rc != 0 || got != "v2026.11.10.1" {
 		t.Fatalf("picked %q rc=%d, want v2026.11.10.1", got, rc)
@@ -96,7 +96,7 @@ func TestAutoSyncSortsTagsByVersionNotByName(t *testing.T) {
 // A read failure that is not a 404 must stop the sync, never be read as
 // "unpublished" (which would quietly fall back to an older tag).
 func TestAutoSyncRefusesWhenVlReleasesCannotBeRead(t *testing.T) {
-	gh := fakeGh(t, map[string]string{"v2026.11.07.1": "error", "v2026.11.04.1": "published"})
+	gh := fakeGhReleaseTags(t, map[string]string{"v2026.11.07.1": "error", "v2026.11.04.1": "published"})
 	got, _, rc := pickNewestPublished(t, gh, []string{"v2026.11.04.1", "v2026.11.07.1"})
 	if rc != 2 || got != "" {
 		t.Fatalf("got %q rc=%d, want rc=2 and no tag", got, rc)
@@ -104,7 +104,7 @@ func TestAutoSyncRefusesWhenVlReleasesCannotBeRead(t *testing.T) {
 }
 
 func TestAutoSyncNothingPublishedReturnsOne(t *testing.T) {
-	gh := fakeGh(t, map[string]string{})
+	gh := fakeGhReleaseTags(t, map[string]string{})
 	got, _, rc := pickNewestPublished(t, gh, []string{"v2026.11.07.1"})
 	if rc != 1 || got != "" {
 		t.Fatalf("got %q rc=%d, want rc=1", got, rc)
