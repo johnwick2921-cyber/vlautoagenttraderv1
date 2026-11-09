@@ -29,6 +29,7 @@ type mentorTuned struct {
 	ISBReverseEMA9Enabled  bool
 	HTFGateNewsOnly        bool
 	Exec2mAfter30m         bool
+	BEOffsetTicks          int // m472 A5: 0 = OFF (BE at the entry exactly)
 	DayGateSpentPts        float64
 	DayGateTargetCapPts    float64
 	SwingMaxStopPts        float64
@@ -209,6 +210,13 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 	if t.Exec2mAfter30m != nil {
 		out.Exec2mAfter30m = *t.Exec2mAfter30m
 	}
+	if t.BEOffsetTicks != nil {
+		if v := *t.BEOffsetTicks; v >= 0 && v <= mentorBEOffsetMaxTicks {
+			out.BEOffsetTicks = v // 0 = OFF
+		} else {
+			bad()
+		}
+	}
 
 	// Release #25 course-entry knobs: absent → the DefaultConfig value; an
 	// unknown enum value fails closed to that default and is counted (L7).
@@ -228,7 +236,7 @@ func mentorTuningResolve(at *AutoTrader, rc *store.RiskControlConfig) mentorTune
 	enum(t.FifteenMinIBRequires5mISB, &out.FifteenMinIBRule, mentor.FifteenMinOff, mentor.FifteenMinRequire5mISB, mentor.FifteenMinUntilEscape)
 	enum(t.MTFConfluenceSource, &out.MTFConfluenceSource, mentor.MTFConfluenceStandingBoxes, mentor.MTFConfluenceLastPair) // m465 P1
 	enum(t.TFConflictEnd, &out.TFConflictEnd, mentor.TFConflictFirstBox, mentor.TFConflictBothBoxes)
-	enum(t.ISBBoxEscape, &out.ISBBoxEscapeMode, mentor.ISBBoxEscapeClose, mentor.ISBBoxEscapeBody)
+	enum(t.ISBBoxEscape, &out.ISBBoxEscapeMode, mentor.ISBBoxEscapeCloseBoxTF, mentor.ISBBoxEscapeClose, mentor.ISBBoxEscapeBody) // m473 B3: close5m default [Oct D4.3 @ 65:00-66:13]
 	enum(t.EMA34LossRelock, &out.EmaLossRelock, mentor.EmaRelockSession, mentor.EmaRelockUntilZoneExit)
 	enum(t.D43TrendSource, &out.D43TrendSource, mentor.D43TrendTriggerLine, mentor.D43TrendStructure)
 	pick(t.OrbEdgeVetoPts, 0.25, 50, &out.OrbEdgeVetoPts)
