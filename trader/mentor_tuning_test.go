@@ -115,7 +115,7 @@ func TestMentorTuningDefaultsAreTheRuledOnes(t *testing.T) {
 			TriggerSchool: 1, PingPongMinGapPts: 50, PingPongCandleMaxPts: 20, PingPongCandleLookback: 30,
 			LevelMaxVisits: 3, OrbGateEnabled: true, ISBReverseEMA9Enabled: true,
 			HTFGateNewsOnly:       false,                                              // m462 (release #59): the 4h/1h gate applies ALL SESSION by default (D5.1-R9/R11)
-			Exec2mAfter30m:        true,                                               // X5-10 rule 4 (release #31): 1m for the first 30 min, then the 2m
+			Exec2mAfter30m:        false,                                              // m472 A1 [Oct D4.2 @ 22:56-23:46]: the 1m all day (was ON, X5-10 rule 4 release #31)
 			OrbISBFractionOutside: 0.80,                                               // rule 5 (release #31): the ORB-edge ISB candle must be ≥ 80% outside
 			DayGateSpentPts:       265, DayGateTargetCapPts: 15, SwingMaxStopPts: 100, // m465 (#60) D5.1-R18: spent line 265
 			// Release #25 course-entry knobs (course-defaults-30 changes).
@@ -123,9 +123,9 @@ func TestMentorTuningDefaultsAreTheRuledOnes(t *testing.T) {
 			// m465 P1 (release #60): early 15m read ON (D4.2-R2), mode C from the
 			// standing boxes (D4.2-R17), trigger escalation ON (D3.4-R43).
 			Early15mRead: true, MTFConfluenceSource: mentor.MTFConfluenceStandingBoxes, TriggerEscalation: true,
-			NewsWaitBothLines: true,                                                                   // CE-3 — course-defaults-30 [D4.4 p1 @21:55–22:12]
-			NewsBarsExcluded:  true,                                                                   // CE-4 (a, release #29 rework: freeze the pre-print read, candles whole)
-			ISBBoxEscapeMode:  mentor.ISBBoxEscapeClose, EmaLossRelock: mentor.EmaRelockUntilZoneExit, // m466 G20/G49 (#61): D4.1-R34 the 1m close
+			NewsWaitBothLines: true,                                                                        // CE-3 — course-defaults-30 [D4.4 p1 @21:55–22:12]
+			NewsBarsExcluded:  true,                                                                        // CE-4 (a, release #29 rework: freeze the pre-print read, candles whole)
+			ISBBoxEscapeMode:  mentor.ISBBoxEscapeCloseBoxTF, EmaLossRelock: mentor.EmaRelockUntilZoneExit, // m473 B3 OctD4.3-R67 [Oct D4.3 @ 65:00-66:13] (was close, m466 G20/G49 D4.1-R34)
 			D43TrendSource: mentor.D43TrendStructure, TrendlineIsTarget: true,
 			TrendlineBetweenBoxes: true, // CE-11/B13 — course-defaults-30 [D3.2 p2 @10:56–11:04]
 			FlagWallTarget:        true, // CE-11 — course-defaults-30 [X9 @05:59–06:12]
@@ -138,11 +138,11 @@ func TestMentorTuningDefaultsAreTheRuledOnes(t *testing.T) {
 			ISBStackCancelCandle2m: 4, EveningSlowPts: 100, EveningSlowFromHour: 15,
 			NearBoxRoomMultiple: 2, NearBoxRoomPHL: true, PHLTargetShyPts: 5, ISBOldExtremePts: 2,
 			// m465 P3 (release #60): the course defaults from the full video read.
-			ISBStackTinyStopPts:  12.5,                        // D5.1-R26 [D5.1 p2 @02:24–04:41]
-			TrendlineEntryTouch:  mentor.TrendlineEntryFourth, // D2.3-R7
-			NearBoxBetweenExempt: false,                       // D3.2-R29/R30
-			PHLFlatLow:           mentor.PHLFlatLowNear,       // D2.2-R64
-			ISBReverseTouch:      mentor.ISBReverseTouchPair,  // D5.4-R7
+			ISBStackTinyStopPts:  12.5,                       // D5.1-R26 [D5.1 p2 @02:24–04:41]
+			TrendlineEntryTouch:  mentor.TrendlineEntryThird, // m472 A2 [Oct D3.2 @ 31:00-31:17] supersedes Sept D2.3-R7
+			NearBoxBetweenExempt: false,                      // D3.2-R29/R30
+			PHLFlatLow:           mentor.PHLFlatLowNear,      // D2.2-R64
+			ISBReverseTouch:      mentor.ISBReverseTouchPair, // D5.4-R7
 			// m466 P2 (release #61): the course defaults.
 			UnoKeyLevels:       mentor.UnoKeyLevelsOn,            // G2 D1.3-R21
 			SessionOpenLevels:  mentor.SessionOpenLevelsOn,       // G10/G11 D3.1-R26/R20

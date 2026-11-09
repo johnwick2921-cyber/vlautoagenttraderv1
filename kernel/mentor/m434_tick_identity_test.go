@@ -133,10 +133,14 @@ type m434Case struct {
 func m434Cases() []m434Case {
 	return []m434Case{
 		{
+			// m472 note: this case runs on legacy2mCfg() (A1/A2/A3 reverted), NOT
+			// DefaultConfig(); the name is kept because the golden is keyed on it. Its
+			// hashes changed from tick 1326 on only because of A7 (the 1H key-level
+			// candle now ends 15:15, [Oct D5.2 @ 01:00-01:20]); legacy2mCfg does not revert A7.
 			name:  "m423_1023_default_cfg_near1",
 			scale: 1,
 			tape:  m423Bars,
-			cfg:   func() Config { c := DefaultConfig(); c.Enabled = true; return c },
+			cfg:   func() Config { c := legacy2mCfg(); c.Enabled = true; return c },
 			from:  150,
 		},
 		{
@@ -144,7 +148,7 @@ func m434Cases() []m434Case {
 			scale: 0,
 			tape:  m423Bars,
 			cfg: func() Config {
-				c := DefaultConfig()
+				c := legacy2mCfg()
 				c.Enabled = true
 				c.Exec2mAfter30m = false
 				return c
@@ -198,7 +202,11 @@ func m434Digest(t *testing.T, c m434Case) []string {
 			}
 		}
 	}
-	e := New(c.cfg())
+	cfg := c.cfg()
+	if m434PreM473 {
+		cfg.ISBBoxEscapeMode = ISBBoxEscapeClose // pre-m473 B3 default (the 1m close deletes)
+	}
+	e := New(cfg)
 	var lines []string
 	for i := from; i < len(bars); i++ {
 		lo := i + 1 - 1500
@@ -245,7 +253,24 @@ func m434Digest(t *testing.T, c m434Case) []string {
 	return lines
 }
 
+// m434PreM473 turns EVERY m473 behaviour off (B1 carry, B2 peak-1/level pairs,
+// B3 close5m default, B4 08:30 candle) so the frozen m434 golden — recorded
+// before m473 and restored byte for byte from dev ca0beb09d — still proves the
+// non-m473 code moved nothing. The m473 behaviour is pinned separately in
+// testdata/m473_tick_identity.golden (TestM473TickOutputGolden).
+var m434PreM473 bool
+
+func m434SetPreM473(t *testing.T, off bool) {
+	t.Helper()
+	pb, pf, pc, pm := boxPeak1Level, firstRTH5mNotISB, boxCarryRTH, m434PreM473
+	if off {
+		boxPeak1Level, firstRTH5mNotISB, boxCarryRTH, m434PreM473 = false, false, false, true
+	}
+	t.Cleanup(func() { boxPeak1Level, firstRTH5mNotISB, boxCarryRTH, m434PreM473 = pb, pf, pc, pm })
+}
+
 func TestM434TickOutputIsByteIdentical(t *testing.T) {
+	m434SetPreM473(t, true)
 	if os.Getenv("M434_WRITE_GOLDEN") != "" {
 		var all []string
 		for _, c := range m434Cases() {
@@ -398,7 +423,7 @@ func BenchmarkM434Tick(b *testing.B) {
 	if len(win) < 600 {
 		b.Fatalf("window %d", len(win))
 	}
-	cfg := DefaultConfig()
+	cfg := legacy2mCfg()
 	cfg.Enabled = true
 	old := flatNearScale
 	flatNearScale = 1

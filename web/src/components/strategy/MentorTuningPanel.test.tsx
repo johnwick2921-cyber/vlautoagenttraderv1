@@ -90,7 +90,7 @@ const COURSE_ENTRY_WRITES: Array<[string, string, unknown]> = [
   ['tf_conflict_end', 'both_boxes', 'both_boxes'],
   ['news_wait_both_lines', 'on', true],
   ['news_bars_excluded', 'on', true],
-  ['isb_box_escape', 'close', 'close'],
+  ['isb_box_escape', 'close5m', 'close5m'],
   ['ema34_loss_relock', 'session', 'session'],
   ['orb_edge_veto_pts', '2.5', 2.5],
   ['orb_isb_fraction_outside', '0.5', 0.5],
@@ -114,7 +114,7 @@ const COURSE_ENTRY_WRITES: Array<[string, string, unknown]> = [
   ['isb_old_extreme_pts', '3', 3],
   ['isb_in_range_gap_pts', '40', 40],
   // m465 P3 (release #60) structure-fidelity knobs
-  ['trendline_entry_touch', 'third', 'third'],
+  ['trendline_entry_touch', 'fourth', 'fourth'],
   ['near_box_between_exempt', 'on', true],
   ['phl_flat_low', 'strict', 'strict'],
   ['isb_reverse_touch', 'isb_candle', 'isb_candle'],
@@ -158,7 +158,7 @@ it('an enum knob shows its ruled default on the blank option', () => {
   const esc = screen.getByTestId('mentor-tuning-isb_box_escape')
   expect(esc).toHaveValue('')
   expect(within(esc).getAllByRole('option')[0]).toHaveTextContent(
-    'default: close — the 1m close beyond the edge (default, #61)'
+    'default: close5m — a 1m close beyond the edge lets you trade; the box is deleted only when a candle of its own timeframe closes outside (default, m473)'
   )
   const ib = screen.getByTestId('mentor-tuning-15m_ib_requires_5m_isb')
   expect(within(ib).getAllByRole('option')[0]).toHaveTextContent(
@@ -179,11 +179,11 @@ it('the course-entry defaults follow the knob rule (a) ON / (b) OFF', () => {
     tf_conflict_end: 'both_boxes', // course-defaults-30
     news_wait_both_lines: true, // course-defaults-30
     news_bars_excluded: true, // course-defaults-30 (CE-4, release #29 rework)
-    isb_box_escape: 'close', // m466 G20/G49 (release #61): D4.1-R34 the 1m close
+    isb_box_escape: 'close5m', // m473 B3 OctD4.3-R67
     ema34_loss_relock: 'until_zone_exit',
     orb_edge_veto_pts: 0,
     orb_isb_fraction_outside: 0.8, // rule 5 (release #31) default ON
-    exec_2m_after_30m: true, // rule 4 (release #31) default ON
+    exec_2m_after_30m: false, // m472 A1 [Oct D4.2 @ 22:56-23:46] default OFF (was ON, release #31 rule 4)
     d43_trend_source: 'structure', // course-defaults-30
     level_entries_need_trigger_side: false,
     trendline_is_target: true,
@@ -204,7 +204,7 @@ it('the course-entry defaults follow the knob rule (a) ON / (b) OFF', () => {
     isb_old_extreme_pts: 2,
     isb_in_range_gap_pts: 0,
     htf_gate_news_only: false, // m462 — the 4h/1h gate applies all session by default (D5.1-R9/R11)
-    trendline_entry_touch: 'fourth', // m465 D2.3-R7
+    trendline_entry_touch: 'third', // m472 A2 [Oct D3.2 @ 31:17] (was fourth, Sept D2.3-R7)
     near_box_between_exempt: false, // m465 D3.2-R29/R30
     phl_flat_low: 'flat_near', // m465 D2.2-R64
     isb_reverse_touch: 'pair', // m465 D5.4-R7

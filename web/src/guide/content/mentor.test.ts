@@ -230,13 +230,12 @@ describe('mentor guide — c52 W12 doc sweep', () => {
   })
 
   // release #59 fix round: one setup per level (an open swing refuses the
-  // inside bar) and the PHL rays are the drawn 0.50 / 0.50 [D2.2-R10].
+  // inside bar) and the PHL rays are the October 1.00 / 1.00 [Oct D2.3 @ 46:20-47:20; Sept was 0.50 / 0.50, D2.2-R10].
   it('names the open-swing inside-bar refusal and the drawn PHL rays', () => {
     expect(all).toContain('swing_position_open')
-    expect(all).toContain('stop 0.50 under that candle’s low')
-    expect(all).toContain('0.50 / 0.50')
+    expect(all).toContain('stop 1 point under that candle’s low')
+    expect(all).toContain('1.00 / 1.00')
     expect(all).toContain('rolling_phl_15m_box_ban')
-    expect(all).not.toContain('the PHL entry buffer, default 1.00')
   })
 
   // release #59 review round 2: the closing 4h candle's last bar is read
@@ -278,5 +277,38 @@ describe('mentor guide — m462 all-session 4h/1h gate', () => {
   it('no longer calls news + open the default', () => {
     expect(all).not.toContain('ON — news + open is the default')
     expect(all).not.toContain('NEWS + OPEN (the mentor’s rule')
+  })
+})
+
+// m473 (PR B, October course): the guide must describe the shipped box rules.
+// Kernel twins: kernel/mentor/box_validity_m473_test.go, box_peak1_m473_test.go,
+// m473_b3_box_tf_close_test.go, isb_first_rth_m473_test.go.
+describe('mentor guide — m473 October boxes', () => {
+  const all = JSON.stringify(mentor)
+  it('names the 08:30-to-08:30 box validity, peak 1, close5m and the 08:30 candle', () => {
+    for (const needle of [
+      'Oct D3.3 @ 40:40',
+      'Oct D3.3 @ 19:31',
+      'PEAK 1',
+      'close5m',
+      'Oct D4.3 @ 65:00-66:13',
+      'Oct D4.3 @ 57:20-57:35',
+    ]) {
+      expect(all, `missing ${needle}`).toContain(needle)
+    }
+  })
+})
+
+// m473 PR B round 2: evening-box validity and the extreme-anchored pair.
+describe('mentor guide — m473 round 2 boxes', () => {
+  const all = JSON.stringify(mentor)
+  it('describes the evening box expiry and the extreme-anchored level pair', () => {
+    for (const needle of [
+      'valid to the FIRST open after it formed',
+      'most extreme confirmed one',
+      'never beats the prominent peaks',
+    ]) {
+      expect(all, `missing ${needle}`).toContain(needle)
+    }
   })
 })
