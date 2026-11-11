@@ -2,6 +2,7 @@ package mentor
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -54,6 +55,19 @@ type CourseExitsCfg struct {
 	// 25 (Config.StopCeilingPts). Pre-#61 default 25 (W-MENTOR-EXACT); a
 	// stored mentor_isb_max_pts still wins.
 	ISBMaxStopPts float64
+	// StopSizeLadder (owner order 2026-11-10, default ON): a non-swing stop
+	// above the setup's own ceiling (ISB: ISBMaxStopPts; PHL/PLH/BOX:
+	// Config.StopCeilingPts) is NOT refused up to WideStopMaxPts — it goes on
+	// to the trader's size table, which sizes it DOWN (20–30 → 3 [OctD2.2-R73
+	// @01:12:32], 30–max → 1 MNQ [OctD2.3-R47 @48:12]). The kernel only lets
+	// it through; the target is never changed [OctD2.2-R49 @40:47]. OFF = the
+	// pre-ladder ceilings exactly. Knob mentor_stop_size_ladder.
+	StopSizeLadder bool
+	// WideStopMaxPts (default 40, knob mentor_wide_stop_max_pts): with the
+	// ladder ON a non-swing stop ABOVE this is refused — "40 điểm thì mình làm
+	// gì? Mình không trade" [OctD2.3-R47 @48:12; R48 @49:38]. Never narrows a
+	// setup's ladder-OFF ceiling (a stored mentor_isb_max_pts above it wins).
+	WideStopMaxPts float64
 	// KeypairCandleRatio (CX-10, default 1 = today): the X4 keypair rule sits
 	// out when the gap to the next key level is ≤ ratio × the current closed
 	// 1m candle (High-Low, eval.go) ("một cái nến nó bằng cái range của 2 cái level rồi thì ngồi
@@ -124,6 +138,8 @@ func DefaultCourseExitsCfg() CourseExitsCfg {
 		EMA9VisitCap:            EMA9VisitShared,
 		KeypairCandleRatio:      1,
 		ISBMaxStopPts:           20,                     // m466 G23: "hai mươi mấy điểm… đừng vô" [D4.1 p1 @05:41–06:08] (later than D3.3's 25)
+		StopSizeLadder:          true,                   // owner order 2026-11-10: size DOWN, not refuse [OctD2.2-R73 @01:12:32, OctD2.3-R47 @48:12, OctD2.2-R49 @40:47]
+		WideStopMaxPts:          40,                     // "40 điểm thì mình làm gì? Mình không trade" [OctD2.3-R47 @48:12; R48 @49:38]
 		Open5mBreak:             Open5mBreak1mClose,     // m466 G55 D4.4-R40
 		NewsWaitMode:            NewsWaitBoth,           // m466 G56 D4.4-R22
 		NewsReadLeadMin:         NewsReadLeadMinDefault, // m466 G58 D4.4-R6
@@ -178,7 +194,32 @@ func swingRoomFilterRefuses(cfg Config, in Intent, obstacle float64) bool {
 // 20; 20.0 itself is taken — his own "20 points" [D4.1 p1 @02:39–03:20]). The
 // knob has no OFF — the trader resolves unset/0 to the default.
 func isbOverMaxStop(stopPts float64, cfg Config) bool {
-	return cfg.CourseExits.ISBMaxStopPts > 0 && stopPts > cfg.CourseExits.ISBMaxStopPts
+	return cfg.CourseExits.ISBMaxStopPts > 0 && stopPts > StopLadderCeiling(cfg, cfg.CourseExits.ISBMaxStopPts)
+}
+
+// StopLadderCeiling is the refusal ceiling a NON-SWING stop is measured
+// against (the stop-to-size LADDER, owner order 2026-11-10). offCeiling is
+// the setup's own pre-ladder ceiling (ISB: CourseExits.ISBMaxStopPts; PHL/PLH
+// and BOX: Config.StopCeilingPts). Ladder OFF → offCeiling, unchanged. Ladder
+// ON → max(offCeiling, CourseExits.WideStopMaxPts): a stop up to the wide max
+// passes to the trader's size table, which sizes it DOWN — 20–30 → the
+// reduced tier ("tầm 20 điểm, 30 điểm… Tôi vô size 3 hoặc tôi không trade"
+// [OctD2.2-R73 @01:12:32]), 30–max → 1 MNQ ("Trade vẫn được. 1 MNQ"
+// [OctD2.3-R47 @48:12]). The ladder never narrows a setup's ceiling (a stored
+// mentor_isb_max_pts above the wide max still wins) and never touches the
+// target [OctD2.2-R49 @40:47]. Exported: the trader's R8 backstop reads the
+// SAME function, one rule in two places is not two rules.
+func StopLadderCeiling(cfg Config, offCeiling float64) float64 {
+	if cfg.CourseExits.StopSizeLadder && cfg.CourseExits.WideStopMaxPts > offCeiling {
+		return cfg.CourseExits.WideStopMaxPts
+	}
+	return offCeiling
+}
+
+// stopLadderWidened reports whether the ladder raised this ceiling (the
+// refusal then names the wide-stop knob instead of the pre-ladder one).
+func stopLadderWidened(cfg Config, offCeiling float64) bool {
+	return StopLadderCeiling(cfg, offCeiling) > offCeiling
 }
 
 // keypairCandleRatio (CX-10) resolves the ratio; ≤ 0 → 1 (today).
@@ -269,11 +310,39 @@ func boxLatchDayKey(now int64, cfg Config) string {
 // slice) replaces old (the role's latched box): the knob is ON, nb formed in
 // RTH (08:30 <= t < 17:00 CT) and old formed before that day's 08:30 open. An
 // RTH-formed latched box is never replaced (the first RTH box stands).
+//
+// D3-G1: with BoxPreOpenLookbackMin L > 0 the replacement window opens L
+// minutes BEFORE 08:30 — a pair formed in that window from pre-open peaks (the
+// Fri 30 Oct FTGH from the ~08:00 and ~08:29 peaks, see preOpenBoxes) is the
+// morning box, and any latched box formed before that window (the overnight
+// pair) is the one it replaces. L = 0 is the pre-D3-G1 rule exactly.
 func (e *Evaluator) freshRTHReplaces(old, nb Box) bool {
-	if !boxRTHWindow(nb.FormedAtMs, e.Cfg) {
+	if !e.Cfg.CourseExits.BoxFreshRTHPair {
 		return false
 	}
-	return old.FormedAtMs < rthOpenMs(nb.FormedAtMs)
+	lo := rthOpenMs(nb.FormedAtMs) - preOpenLookbackMs(e.Cfg)
+	t := time.UnixMilli(nb.FormedAtMs).In(ctime())
+	if nb.FormedAtMs < lo || t.Hour()*60+t.Minute() >= 17*60 {
+		return false
+	}
+	if old.FormedAtMs < lo {
+		return true
+	}
+	// A box formed INSIDE the pre-open window is provisional only against the
+	// pair the open candle itself confirms: peak 2 of the course's pair is the
+	// 08:29 candle, confirmed by the 08:30 bar, so that box forms exactly at the
+	// open — one minute after the first RTH tick could already have latched a
+	// smaller pre-open pair. Any later box never displaces it (first RTH box
+	// stands).
+	return nb.FormedAtMs == rthOpenMs(nb.FormedAtMs) && old.FormedAtMs < nb.FormedAtMs
+}
+
+// preOpenLookbackMs is the D3-G1 pre-open window in ms (0 = off).
+func preOpenLookbackMs(cfg Config) int64 {
+	if cfg.BoxPreOpenLookbackMin <= 0 {
+		return 0
+	}
+	return int64(cfg.BoxPreOpenLookbackMin * 60_000)
 }
 
 // dropPreRTHPost retires the same-role post-escape boxes that formed before
@@ -306,6 +375,56 @@ func boxBuildBars(bars []market.Kline, now int64, cfg Config) []market.Kline {
 	return nil
 }
 
+// preOpenPeakSpanMs is how far back the pre-open pair search reads for PEAK 1:
+// the worked example's peak 1 is the ~08:00 candle, 30 minutes before the open
+// [Oct D3.3 @ 17:13-17:25; E3 frames s_00866/s_00977], plus the two bars of left
+// context swings3 needs. [B: the example fixes only that 30 minutes is enough.]
+const preOpenPeakSpanMs = 32 * 60_000
+
+// preOpenBoxes (D3-G1) is the box the course draws BEFORE the open: "trước khi
+// Market Open tầm 10 phút thì em coi có … nếu mà nó có thì em vẽ" [Oct D3.3 @
+// 42:00] (OctD3.3-R52). It is BoxesBuild over the last preOpenPeakSpanMs of
+// pre-open bars (the Fri 30 Oct FTGH: peak 1 ~08:00, peak 2 08:29, neither the
+// session extreme [R23/R24]) and keeps only a box that FORMED inside the
+// BoxPreOpenLookbackMin minutes up to the open. A pair that formed earlier
+// (Thu 29 Oct: the 29,700 pair at 08:11) is not the morning box — the pair the
+// RTH build finds is. Nil when the knob is off or `now` is outside RTH.
+func (e *Evaluator) preOpenBoxes(bars []market.Kline, now int64, build BoxCfg) []Box {
+	lb := preOpenLookbackMs(e.Cfg)
+	if lb <= 0 || !boxRTHWindow(now, e.Cfg) {
+		return nil
+	}
+	open := rthOpenMs(now)
+	from := open - preOpenPeakSpanMs
+	i := sort.Search(len(bars), func(i int) bool { return bars[i].OpenTime >= from })
+	var out []Box
+	for _, b := range BoxesBuild(bars[i:], build, time.UnixMilli(now)) {
+		if b.FormedAtMs >= open-lb && b.FormedAtMs <= open {
+			out = append(out, b)
+		}
+	}
+	return out
+}
+
+// boxesBuildRTH is BoxesBuild over the box build slice (boxBuildBars) with the
+// D3-G1 pre-open box taking its role first: it formed before any RTH box can.
+func (e *Evaluator) boxesBuildRTH(bars []market.Kline, now int64, build BoxCfg) []Box {
+	boxes := BoxesBuild(boxBuildBars(bars, now, e.Cfg), build, time.UnixMilli(now))
+	for _, pb := range e.preOpenBoxes(bars, now, build) {
+		replaced := false
+		for i := range boxes {
+			if boxes[i].Kind == pb.Kind {
+				boxes[i] = pb
+				replaced = true
+			}
+		}
+		if !replaced {
+			boxes = append(boxes, pb)
+		}
+	}
+	return boxes
+}
+
 // buildBoxes (CX-11) is the evaluator's box build: BoxesBuild over the
 // boxBuildBars slice; with the fresh-RTH pair in force the formation index is
 // re-resolved against the FULL window (the latch, the touch count and the box
@@ -315,7 +434,7 @@ func (e *Evaluator) buildBoxes(bars []market.Kline, now int64) []Box {
 	src := boxBuildBars(bars, now, e.Cfg)
 	base := e.baseBoxCfg()
 	build := e.boxFrameCfg(now)
-	boxes := BoxesBuild(src, build, time.UnixMilli(now))
+	boxes := e.boxesBuildRTH(bars, now, build)
 	if build.TF != base.TF {
 		for i := range boxes {
 			boxes[i].TF = build.TF // m410: drawn on the frame traded at draw time
@@ -338,6 +457,14 @@ func (e *Evaluator) baseBoxCfg() BoxCfg {
 	if cfg.TF == "" {
 		cfg = DefaultBoxCfg()
 	}
+	return e.withBoxFlags(cfg)
+}
+
+// withBoxFlags overlays the box knobs that live on Config (not Config.Box) onto
+// a BoxCfg, without defaulting anything else: D3-G2 box_swing_both_roles, D3-G7 box_flip_reversible.
+func (e *Evaluator) withBoxFlags(cfg BoxCfg) BoxCfg {
+	cfg.OneRoleSwings = !e.Cfg.BoxSwingBothRoles
+	cfg.FlipPermanent = !e.Cfg.BoxFlipReversible // D3-G7
 	return cfg
 }
 
@@ -365,6 +492,15 @@ func (e *Evaluator) boxBuildCfg(cfg BoxCfg) BoxCfg {
 	}
 	return cfg
 }
+
+// ISBWideStopReason is the refusal ISBStopVerdict returns when the stop-size
+// ladder is ON and the ISB stop is above mentor_wide_stop_max_pts.
+const ISBWideStopReason = "ISB stop above mentor_wide_stop_max_pts — refused [stop-size ladder, default 40 — \"40 điểm thì mình làm gì? Mình không trade\" OctD2.3-R47 @48:12, R48 @49:38]"
+
+// PHLWideStopReasonPrefix starts the PHL/PLH refusal when the ladder is ON
+// and the stop is above mentor_wide_stop_max_pts (counted phl_stop_ceiling,
+// the same counter as the pre-ladder 25-pt refusal).
+const PHLWideStopReasonPrefix = "stop over the mentor_wide_stop_max_pts ceiling"
 
 // ISBMaxStopReason is the CX-9 refusal reason ISBStopVerdict returns.
 const ISBMaxStopReason = "ISB stop above mentor_isb_max_pts — refused [CX-9 knob, default 20 — \"hai mươi mấy điểm… đừng vô\" D4.1 p1 @05:41–06:08]"
