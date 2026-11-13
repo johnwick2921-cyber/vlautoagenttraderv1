@@ -19,10 +19,12 @@ deploy/partner_signers_test.go
 deploy/partner_sync_carveouts
 deploy/partner_sync_carveouts_test.go
 deploy/release_allowed_signers
+deploy/release_autosync_published_test.go
 deploy/release_contract_test.go
 deploy/release_source_pin_test.go
 deploy/systemd-user/vl-updater.service
 deploy/vl-auto-sync.sh
+deploy/vl-published-tag.sh
 docs/superpowers/runbooks/2026-09-22-vl-partner-update.md
 docs/superpowers/runbooks/2026-09-27-one-button-update.md
 internal/updatersource/source.go

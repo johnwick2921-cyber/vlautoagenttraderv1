@@ -13,7 +13,8 @@
 #
 # Env:
 #   VL_REPO            vl repo URL   (default https://github.com/johnwick2921-cyber/vl.git)
-#   NEW_TAG            the vl tag to sync (default: newest v* tag from VL_REPO)
+#   NEW_TAG            the vl tag to sync (default: newest v* tag vl has PUBLISHED, m470)
+#   ALLOW_UNPUBLISHED_TAG=1  sync an explicit NEW_TAG even without a published vl release
 #   NEW_SHA            override: sync to this exact vl sha (dry-run proof)
 #   DRY_RUN=1          commit but do NOT push / open a PR / write the state file
 #   GITLEAKS           path to gitleaks  (default ~/go/bin/gitleaks)
@@ -41,6 +42,11 @@ trap 'rm -rf "${WORK:?}" "${TH:?}"' EXIT
 say()  { printf '%s\n' "$*"; }
 die()  { say "REFUSED — $*" >&2; exit 1; }
 
+# m470: VL_SLUG (owner/repo) for the GitHub releases lookup.
+VL_SLUG="${VL_SLUG:-$(printf '%s' "$VL_REPO" | sed -E 's#^https://github\.com/##; s#\.git$##')}"
+# shellcheck source=deploy/vl-published-tag.sh
+. "$ROOT/deploy/vl-published-tag.sh"
+
 # --- 1. fetch vl refs into this clone (objects must be LOCAL for the parity check) ------
 say "fetch: $VL_REPO"
 git fetch --quiet "$VL_REPO" '+refs/tags/*:refs/vl/tags/*' '+refs/heads/*:refs/vl/heads/*'
@@ -52,12 +58,24 @@ if [ -n "${NEW_SHA:-}" ]; then
   NEW_SHA_RESOLVED="$NEW_SHA"
   NEW_TAG="${NEW_TAG:-manual-sha}"
 else
+  # m470: only a tag vl PUBLISHED is synced. A tag stopped by vl's release
+  # quality gate, or held as a pre-release, is skipped (see vl-published-tag.sh).
   if [ -z "$NEW_TAG" ]; then
-    NEW_TAG="$(git for-each-ref --format='%(refname:short)' refs/vl/tags \
-                 | sed 's#vl/tags/##' | grep '^v' | sort -V | tail -1 || true)"
-    [ -n "$NEW_TAG" ] || NEW_TAG="$(git ls-remote --tags "$VL_REPO" 'v*' \
-                 | sed 's#.*refs/tags/##;s#\^{}##' | sort -V | tail -1 || true)"
-    [ -n "$NEW_TAG" ] || die "no v* tag found in $VL_REPO"
+    CANDS="$(git for-each-ref --format='%(refname:short)' refs/vl/tags \
+               | sed 's#vl/tags/##' | grep '^v' || true)"
+    [ -n "$CANDS" ] || CANDS="$(git ls-remote --tags "$VL_REPO" 'v*' \
+               | sed 's#.*refs/tags/##;s#\^{}##' | sort -u || true)"
+    [ -n "$CANDS" ] || die "no v* tag found in $VL_REPO"
+    pick_rc=0
+    NEW_TAG="$(printf '%s\n' "$CANDS" | newest_published_vl_tag)" || pick_rc=$?
+    case "$pick_rc" in
+      0) ;;
+      1) die "none of the newest vl tags is published (vl release gate or a HOLD) — nothing to sync" ;;
+      *) die "cannot read vl releases — refusing to guess which tag is published" ;;
+    esac
+  elif [ "${ALLOW_UNPUBLISHED_TAG:-}" != 1 ]; then
+    st="$(vl_release_state "$NEW_TAG")" || die "cannot read the vl release for $NEW_TAG"
+    [ "$st" = published ] || die "vl tag $NEW_TAG is $st — not synced (set ALLOW_UNPUBLISHED_TAG=1 only on purpose)"
   fi
   NEW_SHA_RESOLVED="$(git rev-parse "refs/vl/tags/${NEW_TAG}^{}" 2>/dev/null || true)"
   [ -n "$NEW_SHA_RESOLVED" ] || NEW_SHA_RESOLVED="$(git ls-remote "$VL_REPO" "refs/tags/${NEW_TAG}^{}" \
